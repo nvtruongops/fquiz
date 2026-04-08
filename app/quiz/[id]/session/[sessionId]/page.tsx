@@ -1,0 +1,574 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import QuizHeader from '@/components/quiz/QuizHeader'
+import QuizSidebar from '@/components/quiz/QuizSidebar'
+import { useQuizSessionStore } from '@/store/quiz-session.store'
+import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
+import { cn } from '@/lib/utils'
+import { withCsrfHeaders } from '@/lib/csrf'
+
+interface QuestionFeedback {
+  isCorrect: boolean
+  correctAnswer: number
+  correctAnswers?: number[]
+  explanation?: string
+}
+
+interface SessionQuestion {
+  _id: string
+  text: string
+  options: string[]
+  answer_selection_count?: number
+  image_url?: string
+}
+
+interface SessionData {
+  session: {
+    _id: string
+    mode: 'immediate' | 'review'
+    status: 'active' | 'completed'
+    current_question_index: number
+    user_answers: Array<{ question_index: number; answer_index: number; answer_indexes?: number[]; is_correct: boolean }>
+    score: number
+    totalQuestions: number
+    courseCode: string
+    categoryName: string
+    title: string
+  }
+  question: SessionQuestion
+}
+
+type SessionApiError = Error & {
+  status?: number
+  code?: string
+}
+
+async function fetchSession(sessionId: string): Promise<SessionData> {
+  const res = await fetch(`/api/sessions/${sessionId}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
+    const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
+    apiError.status = res.status
+    apiError.code = err.code
+    throw apiError
+  }
+  return res.json()
+}
+
+async function fetchSessionQuestion(sessionId: string, questionIndex: number): Promise<SessionData> {
+  const res = await fetch(`/api/sessions/${sessionId}?question_index=${questionIndex}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
+    const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
+    apiError.status = res.status
+    apiError.code = err.code
+    throw apiError
+  }
+  return res.json()
+}
+
+export default function QuizSessionPage() {
+  const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
+  const rawQuizId = params?.id
+  const rawSessionId = params?.sessionId
+  const quizId = Array.isArray(rawQuizId) ? rawQuizId[0] : rawQuizId
+  const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId
+  const resolvedQuizId = quizId ?? ''
+  const resolvedSessionId = sessionId ?? ''
+  const router = useRouter()
+
+  const {
+    sessionId: storeSessionId,
+    currentQuestionIndex,
+    answeredQuestions,
+    lastAnswerResult,
+    initSession,
+    navigateToQuestion,
+    setLastAnswerResult,
+  } = useQuizSessionStore()
+
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([])
+  const [submitted, setSubmitted] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
+  const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
+  const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
+
+  function reportSessionActivity(event: 'pause' | 'resume') {
+    if (!sessionId) return
+    const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
+    const url = `/api/sessions/${sessionId}/activity`
+
+    void fetch(url, {
+      method: 'POST',
+      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: payload,
+      keepalive: true,
+    })
+  }
+
+  const {
+    data: initialData,
+    isLoading: isInitialLoading,
+    isError: isInitialError,
+    error: initialError,
+  } = useQuery<SessionData, Error>({
+    queryKey: ['sessions', resolvedSessionId, 'initial'],
+    queryFn: () => fetchSession(resolvedSessionId),
+    enabled: resolvedSessionId.length > 0,
+    staleTime: 0,
+  })
+
+  const clampedQuestionIndex = Math.min(
+    Math.max(currentQuestionIndex, 0),
+    Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0)
+  )
+
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<SessionData, Error>({
+    queryKey: ['sessions', resolvedSessionId, clampedQuestionIndex],
+    queryFn: () => fetchSessionQuestion(resolvedSessionId, clampedQuestionIndex),
+    enabled: Boolean(initialData && resolvedSessionId),
+    staleTime: 0,
+  })
+
+  const activeData = data ?? initialData
+  const activeError = error ?? initialError
+
+  useEffect(() => {
+    const err = activeError as SessionApiError | undefined
+    if (!quizId || !err) return
+    if (err.code !== 'SESSION_EXPIRED' && err.status !== 410) return
+
+    router.replace(`/quiz/${quizId}?reason=session_expired`)
+  }, [activeError, quizId, router])
+
+  useEffect(() => {
+    if (!initialData || isHydratedFromServer) return
+
+    if (storeSessionId !== sessionId) {
+      initSession(resolvedSessionId, resolvedQuizId, initialData.session.mode, initialData.session.totalQuestions)
+    }
+
+    navigateToQuestion(initialData.session.current_question_index)
+    setIsHydratedFromServer(true)
+  }, [initSession, initialData, isHydratedFromServer, navigateToQuestion, resolvedQuizId, resolvedSessionId, sessionId, storeSessionId])
+
+  useEffect(() => {
+    if (!activeData?.session) return
+
+    const existing = activeData.session.user_answers.find((a) => a.question_index === currentQuestionIndex)
+    if (existing) {
+      const restored = existing.answer_indexes && existing.answer_indexes.length > 0
+        ? existing.answer_indexes
+        : [existing.answer_index]
+      setSelectedOptions(restored)
+      setSubmitted(activeData.session.mode === 'immediate')
+
+      if (activeData.session.mode === 'immediate') {
+        setLastAnswerResult(feedbackByQuestion[currentQuestionIndex] ?? null)
+      }
+    } else {
+      setSelectedOptions([])
+      setSubmitted(false)
+      setLastAnswerResult(null)
+    }
+  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, setLastAnswerResult])
+
+  useEffect(() => {
+    if (!sessionId) return
+    reportSessionActivity('resume')
+  }, [sessionId])
+
+  useEffect(() => {
+    if (activeData?.session.status === 'completed') {
+      router.push(`/quiz/${quizId}/result/${sessionId}`)
+    }
+  }, [activeData?.session.status, quizId, router, sessionId])
+
+  const shouldWarnBeforeLeave = Boolean(activeData?.session && activeData.session.status !== 'completed')
+
+  useEffect(() => {
+    if (!shouldWarnBeforeLeave || !sessionId) return
+
+    const guardState = { quizSessionGuard: sessionId }
+    globalThis.history.pushState(guardState, '', globalThis.location.href)
+
+    const handlePopState = () => {
+      setExitConfirmOpen(true)
+      globalThis.history.pushState(guardState, '', globalThis.location.href)
+    }
+
+    globalThis.addEventListener('popstate', handlePopState)
+    return () => globalThis.removeEventListener('popstate', handlePopState)
+  }, [sessionId, shouldWarnBeforeLeave])
+
+  useEffect(() => {
+    if (!shouldWarnBeforeLeave) return
+
+    const handlePageHide = () => {
+      reportSessionActivity('pause')
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        reportSessionActivity('pause')
+      }
+    }
+
+    globalThis.addEventListener('pagehide', handlePageHide)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      globalThis.removeEventListener('pagehide', handlePageHide)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex])
+
+  const submitMutation = useSubmitAnswer(resolvedSessionId)
+  const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
+    mutationFn: async () => {
+      const res = await fetch(`/api/sessions/${sessionId}/submit`, {
+        method: 'POST',
+        headers: withCsrfHeaders(),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Không thể nộp bài')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      router.push(`/quiz/${quizId}/result/${sessionId}`)
+    },
+  })
+
+  function handleSubmit() {
+    if (!activeData?.session) return
+    setConfirmOpen(true)
+  }
+
+  function submitInImmediateMode(answerIndexes: number[]) {
+    if (!activeData?.session) return
+    if (activeData.session.mode !== 'immediate') return
+    if (submitted || submitMutation.isPending) return
+
+    setSubmitted(true)
+    submitMutation.mutate(
+      { questionIndex: currentQuestionIndex, answerIndexes },
+      {
+        onSuccess: (result) => {
+          if ('isCorrect' in result) {
+            const feedback: QuestionFeedback = {
+              isCorrect: result.isCorrect,
+              correctAnswer: result.correctAnswer,
+              correctAnswers: result.correctAnswers,
+              explanation: result.explanation,
+            }
+            setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
+            setLastAnswerResult(feedback)
+          }
+        },
+        onError: () => setSubmitted(false),
+      }
+    )
+  }
+
+  function handleSelectOption(idx: number) {
+    if (!activeData?.session) return
+    if (submitted || submitMutation.isPending) return
+
+    const exists = selectedOptions.includes(idx)
+    let nextSelections: number[]
+
+    if (requiredSelectionCount === 1 && activeData.session.mode === 'review') {
+      nextSelections = [idx]
+    } else if (exists) {
+      nextSelections = selectedOptions.filter((v) => v !== idx)
+    } else if (selectedOptions.length >= requiredSelectionCount) {
+      nextSelections = selectedOptions
+    } else {
+      nextSelections = [...selectedOptions, idx].sort((a, b) => a - b)
+    }
+
+    const hasChanged =
+      nextSelections.length !== selectedOptions.length ||
+      nextSelections.some((value, index) => value !== selectedOptions[index])
+
+    if (!hasChanged) return
+
+    setSelectedOptions(nextSelections)
+
+    if (nextSelections.length === requiredSelectionCount) {
+      if (activeData.session.mode === 'immediate') {
+        submitInImmediateMode(nextSelections)
+      } else {
+        submitMutation.mutate({
+          questionIndex: currentQuestionIndex,
+          answerIndexes: nextSelections,
+        })
+      }
+    }
+  }
+
+  function handleConfirmSubmit() {
+    if (!activeData?.session || finalizeMutation.isPending || submitMutation.isPending) {
+      setConfirmOpen(false)
+      return
+    }
+
+    setConfirmOpen(false)
+
+    finalizeMutation.mutate()
+  }
+
+  function handleExitQuiz() {
+    if (!activeData?.session || activeData.session.status === 'completed') {
+      router.push(`/quiz/${quizId}`)
+      return
+    }
+    setExitConfirmOpen(true)
+  }
+
+  function handleConfirmExitQuiz() {
+    reportSessionActivity('pause')
+    setExitConfirmOpen(false)
+    router.push(`/quiz/${quizId}`)
+  }
+
+  if (isInitialLoading || (!activeData && isLoading)) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-white font-sans">
+        <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
+        <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-gray-500">Loading Exam Mode...</p>
+      </div>
+    )
+  }
+
+  if (isInitialError || isError || !activeData) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#f3f3f3] font-sans">
+        <div className="max-w-sm border-2 border-[#101010] bg-white p-6 text-center">
+          <XCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
+          <h2 className="text-[26px] font-bold text-[#111111]">Lỗi phòng thi</h2>
+          <p className="mt-2 text-[16px] text-[#444444]">{activeError?.message}</p>
+          <Button
+            type="button"
+            onClick={() => router.back()}
+            className="mt-5 rounded-none border-2 border-[#101010] bg-[#efefef] text-[18px] font-semibold text-[#111111] hover:bg-white"
+          >
+            Quay lại
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const { session, question } = activeData
+  const effectiveTotal = session.totalQuestions || 0
+  const effectiveIndex = Math.min(currentQuestionIndex, Math.max(effectiveTotal - 1, 0))
+  const answeredFromSession = new Set(
+    session.user_answers
+      .map((answer) => answer.question_index)
+      .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal)
+  )
+  if (selectedOptions.length > 0) {
+    answeredFromSession.add(currentQuestionIndex)
+  }
+  const answeredCount = Math.max(answeredQuestions.size, answeredFromSession.size)
+  const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
+  const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
+  const correctAnswerSet = showImmediateFeedback
+    ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
+    : []
+
+  function handleNavigate(index: number) {
+    if (!isHydratedFromServer) return
+    if (index < 0 || index >= effectiveTotal) return
+    navigateToQuestion(index)
+  }
+
+  return (
+    <div className="quiz-scroll h-screen overflow-auto bg-[#ececec] font-sans">
+      <div className="flex min-h-full min-w-[820px] flex-col">
+        <QuizHeader
+          categoryName={session.categoryName}
+          courseCode={session.courseCode}
+          totalQuestions={effectiveTotal}
+          currentIndex={effectiveIndex}
+          answeredCount={answeredCount}
+        />
+
+        <div className="flex min-h-0 flex-1">
+          <QuizSidebar
+            onSelectOption={handleSelectOption}
+            onNavigate={handleNavigate}
+            onSubmit={handleSubmit}
+            currentIndex={effectiveIndex}
+            totalQuestions={effectiveTotal}
+            selectedOptions={selectedOptions}
+            optionCount={question.options.length}
+            isSubmitted={submitted}
+            isPending={submitMutation.isPending || finalizeMutation.isPending}
+            answeredCount={answeredCount}
+          />
+
+          <main className="min-w-0 flex-1 border-l-2 border-[#101010] bg-[#ececec]">
+            <div className="flex h-full flex-col">
+              <section className="quiz-main-scale quiz-scroll border-b-2 border-[#101010] overflow-y-auto px-4 py-4 sm:px-6 sm:py-4">
+                <p className="mb-2 text-[clamp(11px,0.2vw+10px,13px)] text-[#4f4f4f]">
+                  {requiredSelectionCount === 1
+                    ? '(Choose 1 answer)'
+                    : `(Choose ${requiredSelectionCount} answers)`}
+                </p>
+                <div className="max-w-4xl border border-[#c7c7c7] bg-[#f5f5f5] px-[clamp(12px,1vw,20px)] py-[clamp(12px,1vw,20px)]">
+                  <p className="text-[clamp(14px,0.4vw+12px,17px)] font-semibold leading-snug text-[#101010]">
+                    Câu {effectiveIndex + 1}/{effectiveTotal}
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed text-[#101010]">
+                    {question.text}
+                  </p>
+
+                  {question.image_url && (
+                    <div className="mt-4 border border-[#d0d0d0] bg-white p-2">
+                      <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-sm bg-[#fafafa]">
+                        <img
+                          src={question.image_url}
+                          alt="Minh họa câu hỏi"
+                          className="h-full max-h-[420px] w-full object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 space-y-2.5">
+                    {question.options.map((option, idx) => {
+                      const isSelected = selectedOptions.includes(idx)
+                      const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
+                      const isWrongSelected = showImmediateFeedback && isSelected && !lastAnswerResult?.isCorrect
+                      const optionKey = `${idx}-${option}`
+
+                      return (
+                        <div
+                          key={optionKey}
+                          className={cn(
+                            'w-full select-none px-1 py-0.5 text-left text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed transition-colors',
+                            isCorrect && 'text-green-700',
+                            isWrongSelected && 'text-red-700',
+                            !isCorrect && !isWrongSelected && isSelected && 'font-semibold text-[#1d5b20]',
+                            !isCorrect && !isWrongSelected && !isSelected && 'text-[#202020]'
+                          )}
+                        >
+                          <span className="font-semibold">{String.fromCodePoint(65 + idx)}.</span> {option}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                </div>
+              </section>
+
+              {session.mode === 'immediate' && (
+                <section className="quiz-main-scale quiz-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+                  <h3 className="text-[clamp(18px,0.7vw+14px,24px)] font-bold leading-none text-[#101010]">Giải thích nếu có</h3>
+                  <div className="mt-4 min-h-[140px] max-w-4xl border border-[#c7c7c7] bg-[#f5f5f5] p-[clamp(12px,1vw,20px)]">
+                    {showImmediateFeedback ? (
+                      <div className="flex items-start gap-3 text-[clamp(12px,0.35vw+11px,15px)] text-[#111111]">
+                        {lastAnswerResult?.isCorrect ? (
+                          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-600" />
+                        ) : (
+                          <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-600" />
+                        )}
+                        <div>
+                          <p className="font-semibold">
+                            {lastAnswerResult?.isCorrect ? 'Bạn đã trả lời đúng.' : 'Bạn trả lời chưa đúng.'}
+                          </p>
+                          <p className="mt-1 leading-relaxed">
+                            {lastAnswerResult?.explanation || 'Hệ thống chưa có phần giải thích cho câu này.'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[clamp(12px,0.35vw+11px,15px)] leading-relaxed text-[#4f4f4f]">
+                        Chưa có giải thích. Sau khi nộp đáp án ở chế độ luyện tập, nội dung giải thích sẽ hiển thị tại đây.
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+            </div>
+          </main>
+        </div>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+            <DialogHeader>
+              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Xác nhận nộp bài</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+                Bạn đã làm {answeredCount}/{effectiveTotal} câu. Bạn có chắc chắn muốn nộp không?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-none border-[#101010] bg-white px-6 text-[15px] font-semibold text-[#111111] hover:bg-[#efefef]"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmSubmit}
+                disabled={submitMutation.isPending || finalizeMutation.isPending}
+                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+              >
+                {finalizeMutation.isPending ? 'Đang nộp...' : 'OK'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+            <DialogHeader>
+              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Quiz chưa hoàn thành</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+                Bạn đang ở câu {effectiveIndex + 1}/{effectiveTotal}, đã trả lời {answeredCount}/{effectiveTotal} câu.
+                <br />
+                Bạn có muốn thoát không?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setExitConfirmOpen(false)}
+                className="rounded-none border-[#101010] bg-white px-6 text-[15px] font-semibold text-[#111111] hover:bg-[#efefef]"
+              >
+                Ở lại làm tiếp
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmExitQuiz}
+                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+              >
+                Thoát
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  )
+}
