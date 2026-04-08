@@ -4,8 +4,15 @@ import { verifyToken, requireRole } from '@/lib/auth'
 import { Category } from '@/models/Category'
 import { Quiz } from '@/models/Quiz'
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+function isPublicCategory(category: any): boolean {
+  if (!category) return false
+  if (category.type === 'public') return true
+  return category.type == null && category.owner_id == null
+}
+
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
@@ -18,17 +25,28 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
     }
 
-    const duplicate = await Category.findOne({ name: name.trim(), _id: { $ne: params.id } })
+    const duplicate = await Category.findOne({
+      name: name.trim(),
+      _id: { $ne: id },
+      $or: [
+        { type: 'public' },
+        { type: { $exists: false }, owner_id: null },
+      ],
+    })
     if (duplicate) {
       return NextResponse.json({ error: 'Category name already exists' }, { status: 409 })
     }
 
+    const existing = await Category.findById(id)
+    if (!isPublicCategory(existing)) {
+      return NextResponse.json({ error: 'Public category not found' }, { status: 404 })
+    }
+
     const category = await Category.findByIdAndUpdate(
-      params.id,
-      { name: name.trim() },
+      id,
+      { name: name.trim(), type: 'public', owner_id: null, is_public: true },
       { new: true }
     )
-    if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
 
     return NextResponse.json({ category })
   } catch (err) {
@@ -37,24 +55,29 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
 
     await connectDB()
 
-    const quizCount = await Quiz.countDocuments({ category_id: params.id })
-    if (quizCount > 0) {
+    const category = await Category.findById(id).lean()
+    if (!isPublicCategory(category)) {
+      return NextResponse.json({ error: 'Public category not found' }, { status: 404 })
+    }
+
+    const hasAnyQuiz = await Quiz.exists({ category_id: category._id })
+    if (hasAnyQuiz) {
       return NextResponse.json(
         { error: 'Cannot delete category: it has associated quizzes' },
         { status: 400 }
       )
     }
 
-    const category = await Category.findByIdAndDelete(params.id)
-    if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    await Category.deleteOne({ _id: category._id })
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {

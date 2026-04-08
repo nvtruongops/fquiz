@@ -4,7 +4,7 @@ import { QuizEditor } from '@/components/quiz/QuizEditor'
 
 async function getCategories() {
   await connectDB()
-  return Category.find().sort({ name: 1 }).lean()
+  return Category.find({ type: 'public', status: 'approved' }).sort({ name: 1 }).lean()
 }
 
 export default async function AdminNewQuizPage() {

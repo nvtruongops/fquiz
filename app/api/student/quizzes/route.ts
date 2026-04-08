@@ -125,10 +125,13 @@ function mapQuizzesForResponse(
 ) {
   return quizzes.map((q: any) => {
     const original = q.original_quiz_id
-    const count = q.questionCount ||
-      original?.questionCount ||
-      (Array.isArray(original?.questions) ? original.questions.length : 0) ||
-      (Array.isArray(q.questions) ? q.questions.length : 0)
+    const ownQuestionsLength = Array.isArray(q.questions) ? q.questions.length : 0
+    const originalQuestionsLength = Array.isArray(original?.questions) ? original.questions.length : 0
+    const count =
+      ownQuestionsLength ||
+      Number(q.questionCount || 0) ||
+      originalQuestionsLength ||
+      Number(original?.questionCount || 0)
 
     const displayId = q._id.toString()
     const sourceId = sourceQuizIdByDisplayId.get(displayId) ?? displayId
@@ -295,7 +298,7 @@ export async function POST(req: Request) {
       category_id,
       created_by: new Types.ObjectId(payload.userId),
       is_public: false, // Default to private for students
-      status: 'draft',
+      status: 'published',
       questions: processedQuestions,
       questionCount: processedQuestions.length
     })

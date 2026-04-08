@@ -6,15 +6,16 @@ import { UpdateCategoryStatusSchema, MongoIdSchema } from '@/lib/schemas'
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
 
     // Validate ObjectId
-    const idValidation = MongoIdSchema.safeParse(params.id)
+    const idValidation = MongoIdSchema.safeParse(id)
     if (!idValidation.success) {
       return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
     }
@@ -38,7 +39,7 @@ export async function PATCH(
     const { status } = parsed.data
 
     await connectDB()
-    const category = await Category.findById(params.id)
+    const category = await Category.findById(id)
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }

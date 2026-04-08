@@ -265,12 +265,14 @@ export default function QuizDetailPage() {
                   </span>
                 </div>
 
-                <h1 className="text-4xl font-normal leading-tight tracking-tight text-gray-900">{quiz?.title}</h1>
+                <h1 className="text-4xl font-normal leading-tight tracking-tight text-gray-900">{quiz?.course_code}</h1>
 
-                <p className="max-w-2xl border-l-2 border-[#A4C3A2] py-2 pl-6 text-[15px] font-normal leading-relaxed text-gray-500">
-                  {quiz?.description ||
-                    'Chưa có mô tả chi tiết cho đề thi này. Hãy chuẩn bị tinh thần để bắt đầu thử thách kiến thức của bạn.'}
-                </p>
+                {quiz?.description && (
+                  <div className="max-w-2xl border-l-2 border-[#A4C3A2] py-2 pl-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Mô tả quiz</p>
+                    <p className="text-[15px] font-normal leading-relaxed text-gray-500 whitespace-pre-wrap">{quiz.description}</p>
+                  </div>
+                )}
               </div>
             </div>
 

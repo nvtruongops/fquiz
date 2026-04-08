@@ -3,18 +3,20 @@ import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
-import { CreateQuizSchema } from '@/lib/schemas'
+import { Category } from '@/models/Category'
+import { CreateQuizSchema, SaveDraftQuizSchema } from '@/lib/schemas'
 import { uploadImage, deleteImage, deleteFolder, getPublicIdFromUrl } from '@/lib/cloudinary'
 import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
 
     await connectDB()
-    const quiz = await Quiz.findById(params.id).lean()
+    const quiz = await Quiz.findById(id).lean()
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     // Admin gets full quiz including correct_answer
@@ -25,8 +27,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const userPayload = await verifyToken(req)
     if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(userPayload, 'admin')
@@ -35,12 +38,30 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const body = await req.json()
     const { lastUpdatedAt } = body // Client sends the last known updatedAt
 
-    const parsed = CreateQuizSchema.safeParse(body)
+    const isDraft = body.status === 'draft'
+    const parsed = isDraft
+      ? SaveDraftQuizSchema.safeParse(body)
+      : CreateQuizSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { title, category_id, course_code, questions, status } = parsed.data
+    const { title, category_id, course_code, questions, status, description } = parsed.data
+
+    const category = await Category.findOne({
+      _id: category_id,
+      type: 'public',
+      status: 'approved',
+    })
+      .select('_id')
+      .lean()
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Danh mục không hợp lệ cho admin (chỉ cho phép môn học public đã duyệt).' },
+        { status: 400 }
+      )
+    }
 
     // 1. Strict Validation for Publishing
     if (status === 'published') {
@@ -54,7 +75,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     // 2. Optimistic Locking Check
-    const existingQuiz = await Quiz.findById(params.id)
+    const existingQuiz = await Quiz.findById(id)
     if (!existingQuiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     if (lastUpdatedAt && new Date(existingQuiz.updatedAt).getTime() !== new Date(lastUpdatedAt).getTime()) {
@@ -77,7 +98,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         if (q.image_url?.startsWith('data:image')) {
           try {
             finalImageUrl = await uploadImage(q.image_url, {
-              folder: `fquiz/quizzes/${params.id}/questions`,
+              folder: `fquiz/quizzes/${id}/questions`,
               public_id: `q_${index}_${Date.now()}`
             })
           } catch (uploadErr) {
@@ -105,8 +126,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     // 3. Atomic Update with Lock
     const quiz = await Quiz.findOneAndUpdate(
-      { _id: params.id, updatedAt: existingQuiz.updatedAt },
-      { title, category_id, course_code, questions: processedQuestions, status, is_public: status === 'published' },
+      { _id: id, updatedAt: existingQuiz.updatedAt },
+      {
+        $set: {
+          title,
+          description,
+          category_id,
+          course_code,
+          questions: processedQuestions,
+          questionCount: processedQuestions.length,
+          status,
+          is_public: status === 'published',
+        },
+      },
       { new: true }
     )
 
@@ -116,7 +148,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     // Count affected completed sessions for FE warning
     const affectedSessionCount = await QuizSession.countDocuments({
-      quiz_id: params.id,
+      quiz_id: id,
       status: 'completed',
     })
 
@@ -128,8 +160,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const userPayload = await verifyToken(req)
     if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(userPayload, 'admin')
@@ -144,7 +177,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     // 1. Strict Validation for Publishing
     if (status === 'published') {
-      const existing = await Quiz.findById(params.id)
+      const existing = await Quiz.findById(id)
       if (!existing) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
       
       const diagnostics = analyzeQuizCompleteness(existing)
@@ -157,7 +190,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     // 2. Atomic Update with Lock
-    const query: any = { _id: params.id }
+    const query: any = { _id: id }
     if (lastUpdatedAt) query.updatedAt = new Date(lastUpdatedAt)
 
     const quiz = await Quiz.findOneAndUpdate(
@@ -175,8 +208,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const userPayload = await verifyToken(req)
     if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(userPayload, 'admin')
@@ -184,13 +218,13 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     await connectDB()
     
     // 1. Delete from DB first
-    const quiz = await Quiz.findByIdAndDelete(params.id)
+    const quiz = await Quiz.findByIdAndDelete(id)
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     // 2. Delete the associated folder in Cloudinary
     // fquiz/quizzes/{id}
-    deleteFolder(`fquiz/quizzes/${params.id}`).catch(err => {
-      console.error(`Failed to delete Cloudinary folder for quiz ${params.id}:`, err)
+    deleteFolder(`fquiz/quizzes/${id}`).catch(err => {
+      console.error(`Failed to delete Cloudinary folder for quiz ${id}:`, err)
     })
 
     return NextResponse.json({ message: 'Deleted' })

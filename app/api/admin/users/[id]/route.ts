@@ -7,8 +7,9 @@ import { UpdateUserSchema, validateObjectId } from '@/lib/schemas'
 const SENSITIVE_FIELDS = '-password_hash -reset_token -reset_token_expires'
 
 /** PUT — Update user role or status (ban/unban) */
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
@@ -46,7 +47,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    const user = await User.findByIdAndUpdate(params.id, updates, { new: true })
+    const user = await User.findByIdAndUpdate(id, updates, { new: true })
       .select(SENSITIVE_FIELDS)
       .lean()
 
@@ -59,18 +60,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 /** DELETE — Delete a single user. Admin cannot delete themselves. */
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await verifyToken(req)
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     requireRole(payload, 'admin')
 
-    if (params.id === payload.userId) {
+    if (id === payload.userId) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 403 })
     }
 
     await connectDB()
-    const user = await User.findByIdAndDelete(params.id)
+    const user = await User.findByIdAndDelete(id)
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {

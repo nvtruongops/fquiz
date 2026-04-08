@@ -5,30 +5,27 @@ import { QuizSession } from '@/models/QuizSession'
 import { verifyToken } from '@/lib/auth'
 import { Types } from 'mongoose'
 import logger from '@/lib/logger'
+import { PublicQuizzesQuerySchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
-// Simple in-memory cache for Serverless (Best effort)
-const cache: Record<string, { data: any, expiresAt: number }> = {}
-
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const categoryId = searchParams.get('category_id')
-  const searchInput = searchParams.get('search') ?? ''
-  const sort = searchParams.get('sort') ?? 'newest'
-  const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10))
-  const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get('limit') ?? '20', 10)))
+  const queryRaw = Object.fromEntries(searchParams.entries())
+  const queryParsed = PublicQuizzesQuerySchema.safeParse(queryRaw)
+  if (!queryParsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: queryParsed.error.issues }, { status: 400 })
+  }
+
+  const {
+    category_id: categoryId,
+    search: searchInput,
+    sort,
+    page,
+    limit,
+  } = queryParsed.data
   const payload = await verifyToken(req)
   const studentUserId = payload?.role === 'student' ? payload.userId : null
-  
-  // Cache key based on query params
-  const cacheScope = studentUserId ? `user-${studentUserId}` : 'anon'
-  const cacheKey = `quizzes-${cacheScope}-${categoryId || 'all'}-${searchInput}-${sort}-${page}-${limit}`
-  const now = Date.now()
-  
-  if (cache[cacheKey] && cache[cacheKey].expiresAt > now) {
-    return NextResponse.json(cache[cacheKey].data, { headers: { 'X-Cache': 'HIT' } })
-  }
 
   try {
     await connectDB()
@@ -78,6 +75,8 @@ export async function GET(req: Request) {
     // 4. Decouple ID and Format Response
     const data = quizzesRaw.map((q: any) => {
       const category = q.category_id as any
+      const actualQuestionCount = Array.isArray(q.questions) ? q.questions.length : 0
+      const normalizedQuestionCount = actualQuestionCount > 0 ? actualQuestionCount : Number(q.questionCount || 0)
       return {
         id: q._id.toString(),
         title: q.title,
@@ -85,7 +84,7 @@ export async function GET(req: Request) {
         source_type: 'explore_public',
         source_label: 'Từ Explore',
         source_creator_name: q.created_by?.username ?? null,
-        questionCount: q.questionCount || (q.questions?.length ?? 0),
+        questionCount: normalizedQuestionCount,
         studentCount: q.studentCount || 0,
         categoryId: category?._id?.toString() || q.category_id.toString(),
         categoryName: category?.name || 'Môn học chung',
@@ -185,13 +184,7 @@ export async function GET(req: Request) {
       },
     }
 
-    // 5. Update Cache (60s TTL)
-    cache[cacheKey] = {
-      data: responseData,
-      expiresAt: now + 60 * 1000,
-    }
-
-    return NextResponse.json(responseData, { headers: { 'X-Cache': 'MISS' } })
+    return NextResponse.json(responseData)
   } catch (err) {
     logger.error({ err }, 'Public Quizzes List API Error')
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })

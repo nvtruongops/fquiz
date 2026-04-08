@@ -5,9 +5,9 @@ import logger from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     await connectDB()
 
     // 1. Fetch Quiz with Populated Category (Subject)
@@ -41,7 +41,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       data: responseData,
     })
   } catch (err) {
-    logger.error({ err }, `Public Quiz Detail API Error for id: ${params.id}`)
+    logger.error({ err }, `Public Quiz Detail API Error for id: ${id}`)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
 }

@@ -15,6 +15,10 @@ const CategorySchema = new Schema<ICategory>(
 
 // Unique name per owner (null owner = admin/public categories)
 CategorySchema.index({ name: 1, owner_id: 1 }, { unique: true })
+// Fast path for admin category listing/filtering.
+CategorySchema.index({ type: 1, status: 1, created_at: -1 })
+// Fast path for user-owned category queries.
+CategorySchema.index({ owner_id: 1, type: 1, created_at: -1 })
 
 export const Category =
   mongoose.models.Category ?? mongoose.model<ICategory>('Category', CategorySchema)

@@ -30,6 +30,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { useToast } from '@/lib/store/toast-store'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 interface Category {
   id: string
@@ -270,7 +271,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta, isLoggedIn: boolean })
     mutationFn: async () => {
       const res = await fetch('/api/student/save-quiz', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+            headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quizId: quiz.id })
       })
       if (!res.ok) {

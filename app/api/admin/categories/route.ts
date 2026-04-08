@@ -2,9 +2,57 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Category } from '@/models/Category'
+import { Quiz } from '@/models/Quiz'
 import { CategoryListQuerySchema, CreateCategorySchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
+
+const publicCategoryMatch = {
+  $or: [
+    { type: 'public' },
+    { type: { $exists: false }, owner_id: null },
+  ],
+}
+
+function buildCategoryMatchFilter(search?: string, typeParam?: 'public' | 'private' | '', status?: 'pending' | 'approved' | 'rejected' | '') {
+  const filter: Record<string, unknown> = {}
+
+  if (search) {
+    filter.name = { $regex: search, $options: 'i' }
+  }
+
+  const effectiveType = typeParam || 'public'
+  if (effectiveType === 'public') {
+    Object.assign(filter, publicCategoryMatch)
+  } else if (effectiveType !== '') {
+    filter.type = effectiveType
+  }
+
+  if (status && status !== '') {
+    filter.status = status
+  }
+
+  return filter
+}
+
+async function attachQuizCounts(categories: any[]) {
+  if (categories.length === 0) return []
+
+  const categoryIds = categories.map((c) => c._id)
+  const grouped = await Quiz.aggregate([
+    { $match: { category_id: { $in: categoryIds } } },
+    { $group: { _id: '$category_id', quizCount: { $sum: 1 } } },
+  ])
+
+  const countMap = new Map<string, number>(
+    grouped.map((item: { _id: any; quizCount: number }) => [String(item._id), item.quizCount])
+  )
+
+  return categories.map((category) => ({
+    ...category,
+    quizCount: countMap.get(String(category._id)) ?? 0,
+  }))
+}
 
 
 export async function GET(req: Request) {
@@ -34,66 +82,13 @@ export async function GET(req: Request) {
 
     await connectDB()
 
-    const matchStage: any = {}
-    
-    if (search) {
-      matchStage.name = { $regex: search, $options: 'i' }
-    }
-    
-    // For admin moderation/listing screen, default to public categories only.
-    // This avoids mixing user-private categories (often same names), which appears as duplicates.
-    let effectiveType = typeParam
-    if (!effectiveType && (status === 'approved' || status === 'pending')) {
-      effectiveType = 'public'
-    }
+    const matchFilter = buildCategoryMatchFilter(search, typeParam, status)
+    const categoriesRaw = await Category.find(matchFilter).sort({ created_at: -1 }).lean()
+    const categoriesWithCount = await attachQuizCounts(categoriesRaw)
 
-    if (effectiveType && effectiveType !== '') matchStage.type = effectiveType
-    if (status && status !== '') matchStage.status = status
-
-    const pipeline: any[] = [
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: 'quizzes',
-          let: { categoryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ['$category_id', '$$categoryId'] },
-              },
-            },
-            { $count: 'count' },
-          ],
-          as: 'quizStats',
-        },
-      },
-      {
-        $addFields: {
-          quizCount: {
-            $ifNull: [{ $arrayElemAt: ['$quizStats.count', 0] }, 0],
-          },
-        },
-      },
-      {
-        $project: {
-          quizStats: 0,
-        },
-      },
-      {
-        $sort: { created_at: -1 },
-      },
-    ]
-
-    // Apply minimum quizzes filter if present
-    if (minQuizzes > 0) {
-      pipeline.push({
-        $match: {
-          quizCount: { $gte: minQuizzes },
-        },
-      })
-    }
-
-    const categories = await Category.aggregate(pipeline)
+    const categories = minQuizzes > 0
+      ? categoriesWithCount.filter((c) => c.quizCount >= minQuizzes)
+      : categoriesWithCount
 
     return NextResponse.json({ categories })
   } catch (err) {
@@ -127,9 +122,9 @@ export async function POST(req: Request) {
       )
     }
 
-    const { name, description, is_public } = parsed.data
+    const { name, description } = parsed.data
 
-    const existing = await Category.findOne({ name })
+    const existing = await Category.findOne({ name, ...publicCategoryMatch })
     if (existing) {
       return NextResponse.json({ error: 'Category name already exists' }, { status: 409 })
     }
@@ -137,7 +132,8 @@ export async function POST(req: Request) {
     const category = await Category.create({ 
       name, 
       description,
-      is_public,
+      owner_id: null,
+      is_public: true,
       type: 'public',
       status: 'approved'
     })

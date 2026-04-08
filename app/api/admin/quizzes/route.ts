@@ -4,7 +4,8 @@ import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { User } from '@/models/User'
-import { CreateQuizSchema, QuizListQuerySchema } from '@/lib/schemas'
+import { Category } from '@/models/Category'
+import { CreateQuizSchema, SaveDraftQuizSchema } from '@/lib/schemas'
 import { uploadImage } from '@/lib/cloudinary'
 import { QuizSession } from '@/models/QuizSession'
 import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
@@ -19,22 +20,11 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     
-    // Validate query params
-    const queryValidation = QuizListQuerySchema.safeParse({
-      ...(searchParams.get('page') !== null && { page: searchParams.get('page') }),
-      ...(searchParams.get('limit') !== null && { limit: searchParams.get('limit') }),
-      ...(searchParams.get('category_id') !== null && { category_id: searchParams.get('category_id') }),
-      ...(searchParams.get('search') !== null && { search: searchParams.get('search') }),
-    })
-
-    if (!queryValidation.success) {
-      return NextResponse.json(
-        { error: 'Invalid query parameters', details: queryValidation.error.issues },
-        { status: 400 }
-      )
-    }
-
-    const { page, limit, category_id: categoryId, search } = queryValidation.data
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get('limit') ?? '20', 10) || 20))
+    const categoryRaw = (searchParams.get('category_id') ?? '').trim()
+    const categoryId = /^[a-fA-F0-9]{24}$/.test(categoryRaw) ? categoryRaw.toLowerCase() : ''
+    const search = (searchParams.get('search') ?? '').trim().slice(0, 200)
     const skip = (page - 1) * limit
 
     await connectDB()
@@ -77,12 +67,15 @@ export async function GET(req: Request) {
           status: 'completed',
         })
         const studentCount = uniqueStudents.length
-        let normalizedQuestionCount = 0
+        const actualQuestionCount = Array.isArray(quiz.questions) ? quiz.questions.length : 0
         const declaredQuestionCount = Number(quiz.questionCount ?? 0)
-        if (declaredQuestionCount > 0) {
-          normalizedQuestionCount = declaredQuestionCount
-        } else if (Array.isArray(quiz.questions)) {
-          normalizedQuestionCount = quiz.questions.length
+        const normalizedQuestionCount = actualQuestionCount > 0 ? actualQuestionCount : declaredQuestionCount
+
+        if (actualQuestionCount > 0 && declaredQuestionCount !== actualQuestionCount) {
+          await Quiz.updateOne(
+            { _id: quiz._id },
+            { $set: { questionCount: actualQuestionCount } }
+          )
         }
 
         return {
@@ -109,13 +102,31 @@ export async function POST(req: Request) {
 
     await connectDB()
     const body = await req.json()
-    const parsed = CreateQuizSchema.safeParse(body)
+    const isDraft = body.status === 'draft'
+    const parsed = isDraft
+      ? SaveDraftQuizSchema.safeParse(body)
+      : CreateQuizSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    const { title, category_id, course_code, questions, status } = parsed.data
+    const { title, category_id, course_code, questions, status, description } = parsed.data
     const normalizedCourseCode = course_code.trim().toUpperCase()
+
+    const category = await Category.findOne({
+      _id: category_id,
+      type: 'public',
+      status: 'approved',
+    })
+      .select('_id')
+      .lean()
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Danh mục không hợp lệ cho admin (chỉ cho phép môn học public đã duyệt).' },
+        { status: 400 }
+      )
+    }
 
     const existingOwnedQuiz = await Quiz.findOne({
       created_by: new mongoose.Types.ObjectId(userPayload.userId),
@@ -177,6 +188,7 @@ export async function POST(req: Request) {
     const quiz = await Quiz.create({
       _id: quizId,
       title,
+      description: description || '',
       category_id,
       course_code: normalizedCourseCode,
       questions: processedQuestions,
