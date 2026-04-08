@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+
+# Build and framework outputs
+.next/
+out/
+dist/
+build/
+
+# Test and coverage outputs
+coverage/
+.nyc_output/
+test-results/
+
+# Runtime files and logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment and secrets
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+
+# Local database / dump files
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Temporary and cache files
+tmp/
+temp/
+.cache/
+*.tmp
+
+# Uploads and generated user content
+uploads/
+public/uploads/
+
+# Misc local config
+.vercel/

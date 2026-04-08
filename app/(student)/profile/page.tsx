@@ -1,0 +1,315 @@
+'use client'
+
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { Loader2, Mail, CalendarClock, Save, UserRound, Upload } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/lib/store/toast-store'
+import { validateImageFile, fileToBase64, validateBase64Image } from '@/lib/client-validation'
+
+type ProfileResponse = {
+  profile: {
+    username: string
+    email: string
+    avatarUrl: string
+    bio: string
+    createdAt: string
+  }
+}
+
+export default function ProfilePage() {
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [avatarVersion, setAvatarVersion] = useState<number>(Date.now())
+  const [profile, setProfile] = useState<ProfileResponse['profile'] | null>(null)
+  const [form, setForm] = useState({ username: '', avatarUrl: '', bio: '' })
+  const [pendingAvatarBase64, setPendingAvatarBase64] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await fetch('/api/student/profile', { credentials: 'include' })
+        if (!res.ok) {
+          if (res.status === 404 || res.status === 501) {
+            toast.info('Trang hồ sơ đang được phát triển. Coming soon.')
+            return
+          }
+          toast.error('Không tải được hồ sơ người dùng')
+          return
+        }
+
+        const data = (await res.json()) as ProfileResponse
+        setProfile(data.profile)
+        setForm({
+          username: data.profile.username,
+          avatarUrl: data.profile.avatarUrl,
+          bio: data.profile.bio,
+        })
+        setAvatarVersion(Date.now())
+      } catch {
+        toast.error('Hệ thống đang bận, vui lòng thử lại')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    run()
+  }, [toast])
+
+  const bioLength = useMemo(() => form.bio.length, [form.bio])
+
+  const avatarDisplayUrl = useMemo(() => {
+    if (!form.avatarUrl) return ''
+    if (form.avatarUrl.startsWith('data:image')) return form.avatarUrl
+    const separator = form.avatarUrl.includes('?') ? '&' : '?'
+    return `${form.avatarUrl}${separator}v=${avatarVersion}`
+  }, [form.avatarUrl, avatarVersion])
+
+  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Client-side validation using helper
+    const fileValidation = validateImageFile(file)
+    if (!fileValidation.valid) {
+      toast.error(fileValidation.error)
+      event.target.value = ''
+      return
+    }
+
+    try {
+      const base64 = await fileToBase64(file)
+      
+      // Validate base64 format
+      const base64Validation = validateBase64Image(base64)
+      if (!base64Validation.valid) {
+        toast.error(base64Validation.error)
+        event.target.value = ''
+        return
+      }
+
+      setPendingAvatarBase64(base64)
+      setForm((prev) => ({ ...prev, avatarUrl: base64 }))
+      toast.info('Ảnh đã được chọn. Nhấn "Lưu hồ sơ" để cập nhật ảnh đại diện.')
+    } catch {
+      toast.error('Không thể đọc ảnh tải lên')
+    }
+
+    event.target.value = ''
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      let persistedAvatarUrl: string | undefined
+
+      if (pendingAvatarBase64) {
+        const avatarRes = await fetch('/api/student/profile/avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ image: pendingAvatarBase64 }),
+        })
+
+        if (!avatarRes.ok) {
+          if (avatarRes.status === 404 || avatarRes.status === 501) {
+            toast.info('Tính năng upload avatar đang được phát triển. Coming soon.')
+            return
+          }
+
+          const avatarErr = await avatarRes.json().catch(() => ({}))
+          toast.error(avatarErr?.error ?? 'Upload avatar thất bại')
+          return
+        }
+
+        const avatarData = (await avatarRes.json()) as { avatarUrl: string }
+        persistedAvatarUrl = avatarData.avatarUrl
+        setForm((prev) => ({ ...prev, avatarUrl: avatarData.avatarUrl }))
+        setProfile((prev) => (prev ? { ...prev, avatarUrl: avatarData.avatarUrl } : prev))
+        setAvatarVersion(Date.now())
+        setPendingAvatarBase64(null)
+      }
+
+      const res = await fetch('/api/student/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          profile_bio: form.bio,
+          ...(persistedAvatarUrl ? { avatar_url: persistedAvatarUrl } : {}),
+        }),
+      })
+
+      if (!res.ok) {
+        if (res.status === 404 || res.status === 501) {
+          toast.info('Tính năng cập nhật hồ sơ đang được phát triển. Coming soon.')
+          return
+        }
+        const data = await res.json().catch(() => ({}))
+        toast.error(data?.error ?? 'Cập nhật hồ sơ thất bại')
+        return
+      }
+
+      const data = (await res.json()) as ProfileResponse
+      const finalAvatarUrl = data.profile.avatarUrl || persistedAvatarUrl || profile?.avatarUrl || form.avatarUrl || ''
+      setForm({
+        username: data.profile.username,
+        avatarUrl: finalAvatarUrl,
+        bio: data.profile.bio,
+      })
+      setProfile((prev) => ({
+        username: data.profile.username,
+        email: data.profile.email,
+        avatarUrl: finalAvatarUrl,
+        bio: data.profile.bio,
+        createdAt: data.profile.createdAt,
+      }))
+      setAvatarVersion(Date.now())
+      toast.success('Đã cập nhật hồ sơ thành công')
+    } catch {
+      toast.error('Không thể cập nhật hồ sơ vào lúc này')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[#5D7B6F]">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm font-bold uppercase tracking-wider">Đang tải hồ sơ</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6 pb-10">
+      <section className="rounded-[28px] bg-gradient-to-br from-[#5D7B6F] to-[#4A6359] text-white p-6 md:p-8 shadow-2xl shadow-[#5D7B6F]/20">
+        <div className="flex items-start gap-4 md:gap-6">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center overflow-hidden">
+            {form.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarDisplayUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-black text-2xl">{(profile?.username?.[0] ?? 'U').toUpperCase()}</span>
+            )}
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/70 font-bold">Trang cá nhân</p>
+            <h1 className="text-2xl md:text-3xl font-black mt-1">{profile?.username ?? 'Người dùng'}</h1>
+            <p className="text-sm text-white/80 mt-2 max-w-xl">
+              Quản lý thông tin cá nhân để hồ sơ của bạn nhất quán, tin cậy và dễ nhận diện trong hệ thống.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-[#5D7B6F]/10 rounded-3xl shadow-lg shadow-[#5D7B6F]/5">
+          <CardHeader>
+            <CardTitle className="text-xl font-black text-[#5D7B6F]">Thông tin cá nhân</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <label htmlFor="profile-username" className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">Tên hiển thị</label>
+              <div className="relative mt-2">
+                <UserRound className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  id="profile-username"
+                  value={form.username}
+                  readOnly
+                  disabled
+                  className="pl-10 rounded-xl border-[#5D7B6F]/20 bg-gray-50 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1 font-bold">Username được cố định theo lúc đăng ký để đảm bảo nhất quán dữ liệu.</p>
+            </div>
+
+            <div>
+              <label htmlFor="profile-avatar-file" className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">Ảnh đại diện</label>
+              <div className="mt-2 rounded-2xl border border-[#5D7B6F]/15 bg-[#EAE7D6]/30 p-4 flex items-center justify-between gap-4">
+                <div className="text-sm text-gray-600 font-bold"></div>
+                <input
+                  id="profile-avatar-file"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl border-[#5D7B6F]/30 text-[#5D7B6F] font-black"
+                  disabled={saving}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload avatar
+                </Button>
+              </div>
+              {pendingAvatarBase64 && (
+                <p className="text-[11px] text-[#5D7B6F] mt-1 font-bold">Ảnh mới đang chờ lưu.</p>
+              )}
+              <p className="text-[11px] text-gray-400 mt-1 font-bold">JPG, PNG, GIF, WEBP. Tối đa 5MB.</p>
+            </div>
+
+            <div>
+              <label htmlFor="profile-bio" className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">Giới thiệu ngắn</label>
+              <textarea
+                id="profile-bio"
+                value={form.bio}
+                onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
+                maxLength={300}
+                rows={5}
+                className="mt-2 w-full rounded-2xl border border-[#5D7B6F]/20 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#5D7B6F]"
+                placeholder="Chia sẻ ngắn về mục tiêu học tập của bạn..."
+              />
+              <p className="text-[11px] text-gray-400 mt-1 text-right font-bold">{bioLength}/300</p>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-xl bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-black"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Lưu hồ sơ
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#A4C3A2]/30 rounded-3xl bg-[#EAE7D6]/40 shadow-lg shadow-[#5D7B6F]/5">
+          <CardHeader>
+            <CardTitle className="text-base font-black text-[#5D7B6F]">Thông tin tài khoản</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div className="flex items-center gap-3 rounded-xl bg-white p-3 border border-[#5D7B6F]/10">
+              <Mail className="w-4 h-4 text-[#5D7B6F]" />
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Email</p>
+                <p className="font-bold text-gray-700 break-all">{profile?.email ?? '-'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-xl bg-white p-3 border border-[#5D7B6F]/10">
+              <CalendarClock className="w-4 h-4 text-[#5D7B6F]" />
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Ngày tham gia</p>
+                <p className="font-bold text-gray-700">
+                  {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('vi-VN') : '-'}
+                </p>
+              </div>
+            </div>
+
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

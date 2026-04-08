@@ -1,0 +1,144 @@
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+interface LastAnswerResult {
+  isCorrect: boolean
+  correctAnswer: number
+  correctAnswers?: number[]
+  explanation?: string
+}
+
+interface QuizSessionState {
+  // Session data
+  sessionId: string | null
+  quizId: string | null
+  mode: 'immediate' | 'review' | null
+
+  // Question navigation
+  currentQuestionIndex: number
+  totalQuestions: number
+
+  // Answer tracking (client-side mirror of DB state)
+  answeredQuestions: Set<number>
+  highlightedQuestions: Set<number>
+
+  // Immediate mode feedback
+  lastAnswerResult: LastAnswerResult | null
+
+  // Optimistic answer tracking
+  pendingAnswerIndex: number | null
+
+  // Actions
+  initSession: (sessionId: string, quizId: string, mode: string, total: number) => void
+  navigateToQuestion: (index: number) => void
+  markAnswered: (index: number) => void
+  markHighlighted: (index: number) => void
+  optimisticallyMarkAnswered: (questionIndex: number) => void
+  rollbackOptimisticAnswer: (questionIndex: number) => void
+  confirmAnswer: (questionIndex: number) => void
+  setLastAnswerResult: (result: LastAnswerResult | null) => void
+  resetSession: () => void
+}
+
+// Persisted shape uses arrays instead of Sets (JSON-serializable)
+interface PersistedQuizSession {
+  sessionId: string | null
+  quizId: string | null
+  currentQuestionIndex: number
+  answeredQuestions: number[]
+  pendingAnswerIndex: number | null
+}
+
+export const useQuizSessionStore = create<QuizSessionState>()(
+  persist(
+    (set) => ({
+      sessionId: null,
+      quizId: null,
+      mode: null,
+      currentQuestionIndex: 0,
+      totalQuestions: 0,
+      answeredQuestions: new Set(),
+      highlightedQuestions: new Set(),
+      lastAnswerResult: null,
+      pendingAnswerIndex: null,
+
+      initSession: (sessionId, quizId, mode, total) =>
+        set({
+          sessionId,
+          quizId,
+          mode: mode as 'immediate' | 'review',
+          totalQuestions: total,
+          currentQuestionIndex: 0,
+          answeredQuestions: new Set(),
+          highlightedQuestions: new Set(),
+          lastAnswerResult: null,
+          pendingAnswerIndex: null,
+        }),
+
+      navigateToQuestion: (index) => set({ currentQuestionIndex: index }),
+
+      markAnswered: (index) =>
+        set((state) => ({
+          answeredQuestions: new Set(Array.from(state.answeredQuestions).concat(index)),
+        })),
+
+      markHighlighted: (index) =>
+        set((state) => ({
+          highlightedQuestions: new Set(Array.from(state.highlightedQuestions).concat(index)),
+        })),
+
+      optimisticallyMarkAnswered: (questionIndex) =>
+        set((state) => ({
+          answeredQuestions: new Set(Array.from(state.answeredQuestions).concat(questionIndex)),
+          pendingAnswerIndex: questionIndex,
+        })),
+
+      rollbackOptimisticAnswer: (questionIndex) =>
+        set((state) => {
+          const next = new Set(state.answeredQuestions)
+          next.delete(questionIndex)
+          return { answeredQuestions: next, pendingAnswerIndex: null }
+        }),
+
+      confirmAnswer: (_questionIndex) => set({ pendingAnswerIndex: null }),
+
+      setLastAnswerResult: (result) => set({ lastAnswerResult: result }),
+
+      resetSession: () =>
+        set({
+          sessionId: null,
+          quizId: null,
+          mode: null,
+          currentQuestionIndex: 0,
+          totalQuestions: 0,
+          answeredQuestions: new Set(),
+          highlightedQuestions: new Set(),
+          lastAnswerResult: null,
+          pendingAnswerIndex: null,
+        }),
+    }),
+    {
+      name: 'quiz-session',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist fields needed to restore on crash/reload
+      partialize: (state): PersistedQuizSession => ({
+        sessionId: state.sessionId,
+        quizId: state.quizId,
+        currentQuestionIndex: state.currentQuestionIndex,
+        answeredQuestions: Array.from(state.answeredQuestions),
+        pendingAnswerIndex: state.pendingAnswerIndex,
+      }),
+      // Convert arrays back to Sets on rehydration
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const raw = state as unknown as QuizSessionState & {
+            answeredQuestions: number[] | Set<number>
+          }
+          if (Array.isArray(raw.answeredQuestions)) {
+            state.answeredQuestions = new Set(raw.answeredQuestions)
+          }
+        }
+      },
+    }
+  )
+)
