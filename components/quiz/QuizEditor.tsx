@@ -8,6 +8,7 @@ import { invalidateHistoryForQuiz } from '@/lib/cache-invalidation'
 import { analyzeQuizCompleteness, QuizDiagnostics, ValidationError } from '@/lib/quiz-analyzer'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useToast } from '@/lib/store/toast-store'
+import { withCsrfHeaders } from '@/lib/csrf'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +34,7 @@ import {
   X, LayoutDashboard, History, AlertTriangle 
 } from 'lucide-react'
 import { ImageUpload } from './ImageUpload'
+import { QuizImportPanel, ImportedQuiz } from './QuizImportPanel'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -51,6 +53,7 @@ interface QuestionForm {
 
 interface QuizFormData {
   title: string
+  description: string
   category_id: string
   course_code: string
   questions: QuestionForm[]
@@ -66,6 +69,33 @@ interface Props {
   initialData?: Partial<QuizFormData>
   quizId?: string
   categories: Category[]
+  mode?: 'admin' | 'student'
+  createEndpoint?: string
+  updateEndpointBuilder?: (id: string) => string
+  redirectOnPublish?: string
+  cancelPath?: string
+  allowDraft?: boolean
+  enableAutosave?: boolean
+}
+
+function extractApiErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
+  if (Array.isArray(error)) {
+    const firstIssue = error[0] as { message?: unknown; path?: unknown[] } | undefined
+    if (firstIssue && typeof firstIssue.message === 'string') {
+      const path = Array.isArray(firstIssue.path) && firstIssue.path.length > 0 ? String(firstIssue.path.join('.')) : ''
+      return path ? `${path}: ${firstIssue.message}` : firstIssue.message
+    }
+    return 'Dữ liệu không hợp lệ'
+  }
+  if (!error || typeof error !== 'object') return 'Lưu thất bại'
+  const flat = error as { fieldErrors?: Record<string, string[] | undefined>; formErrors?: string[] }
+  const fieldMessages = Object.values(flat.fieldErrors ?? {})
+    .flat()
+    .filter((msg): msg is string => Boolean(msg))
+  const formMessages = (flat.formErrors ?? []).filter(Boolean)
+  const all = [...fieldMessages, ...formMessages]
+  return all.length > 0 ? all[0] : 'Lưu thất bại'
 }
 
 function emptyQuestion(): QuestionForm {
@@ -78,14 +108,36 @@ function emptyQuestion(): QuestionForm {
   }
 }
 
-export function QuizEditor({ initialData, quizId, categories }: Props) {
+export function QuizEditor({
+  initialData,
+  quizId,
+  categories,
+  mode = 'admin',
+  createEndpoint,
+  updateEndpointBuilder,
+  redirectOnPublish,
+  cancelPath,
+  allowDraft,
+  enableAutosave,
+}: Props) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const [activeQuizId, setActiveQuizId] = useState<string | undefined>(quizId)
 
+  const isStudentMode = mode === 'student'
+  const canSaveDraft = allowDraft ?? !isStudentMode
+  const autosaveEnabled = enableAutosave ?? !isStudentMode
+  const effectiveCreateEndpoint = createEndpoint ?? (isStudentMode ? '/api/student/quizzes' : '/api/admin/quizzes')
+  const effectiveUpdateEndpointBuilder = updateEndpointBuilder ?? ((id: string) =>
+    isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`
+  )
+  const effectiveRedirectOnPublish = redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes')
+  const effectiveCancelPath = cancelPath ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes')
+
   const [form, setForm] = useState<QuizFormData>(() => ({
     title: initialData?.title ?? '',
+    description: (initialData as any)?.description ?? '',
     category_id: initialData?.category_id ?? categories[0]?._id ?? '',
     course_code: (initialData as any)?.course_code ?? '',
     questions: initialData?.questions?.length
@@ -102,10 +154,30 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>((initialData as any)?.updatedAt ?? null)
   const [confirmDialog, setConfirmDialog] = useState(false)
+  const [hasImportBlockingErrors, setHasImportBlockingErrors] = useState(false)
+  const [importPreviewErrors, setImportPreviewErrors] = useState<Array<{ code: string; message: string; questionIndex?: number }>>([])
+  const [showImportPanel, setShowImportPanel] = useState(false)
+  const [isCategorySelectOpen, setIsCategorySelectOpen] = useState(false)
+  const [isInlineCreateOpen, setIsInlineCreateOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const autosaveInFlightRef = useRef(false)
+  const importEnabled = process.env.NEXT_PUBLIC_ENABLE_QUIZ_IMPORT !== 'false'
   
   // Real-time diagnostics
   const diagnostics = useMemo(() => analyzeQuizCompleteness({ ...form, course_code: form.course_code } as any, targetCount), [form, targetCount])
+  const combinedErrors = useMemo(
+    () => [
+      ...diagnostics.errors,
+      ...importPreviewErrors.map((item) => ({
+        code: item.code as any,
+        severity: 'error' as const,
+        message: item.message,
+        questionIndex: item.questionIndex,
+      })),
+    ],
+    [diagnostics.errors, importPreviewErrors]
+  )
   
   // Autosave Logic
   const debouncedForm = useDebounce(form, 3000)
@@ -113,6 +185,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
   const isFirstLoad = useRef(true)
 
   useEffect(() => {
+    if (!autosaveEnabled) return
     if (isFirstLoad.current) {
       isFirstLoad.current = false
       return
@@ -127,7 +200,8 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
     autosaveInFlightRef.current = true
     setAutosaving(true)
     try {
-      await doSave('draft', true)
+      // Keep current status for existing quizzes; only new quiz autosaves as draft.
+      await doSave(activeQuizId ? form.status : 'draft', true)
     } finally {
       setAutosaving(false)
       autosaveInFlightRef.current = false
@@ -225,11 +299,13 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
   const doSave = async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
     if (!quiet) setSaving(true)
     setError('')
-    const finalStatus = overrideStatus ?? form.status
+    const finalStatus = isStudentMode ? 'published' : (overrideStatus ?? form.status)
+    const normalizedCourseCode = form.course_code.trim().toUpperCase()
     const payload = {
-      title: form.title.trim() || 'Untitled Quiz',
+      title: form.title.trim() || normalizedCourseCode || 'GENERAL',
+      description: form.description.trim(),
       category_id: form.category_id,
-      course_code: form.course_code.trim().toUpperCase() || 'GENERAL',
+      course_code: normalizedCourseCode || 'GENERAL',
       status: finalStatus,
       lastUpdatedAt, 
       questions: form.questions.map((q) => {
@@ -244,11 +320,11 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
       }),
     }
     try {
-      const url = activeQuizId ? `/api/admin/quizzes/${activeQuizId}` : '/api/admin/quizzes'
+      const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : effectiveCreateEndpoint
       const res = await fetch(url, {
-        method: activeQuizId ? 'PUT' : 'POST',
+        method: activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       })
       const data = await res.json()
@@ -259,7 +335,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
           toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
           return
         }
-        setError(typeof data.error === 'string' ? data.error : 'Lưu thất bại')
+        setError(extractApiErrorMessage(data.error))
         return 
       }
 
@@ -267,14 +343,17 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
       if (savedQuizId) {
         setActiveQuizId(savedQuizId)
       }
+      if (data?.quiz?.status && (data.quiz.status === 'published' || data.quiz.status === 'draft')) {
+        setForm((prev) => ({ ...prev, status: data.quiz.status }))
+      }
       setLastUpdatedAt(data.quiz.updatedAt)
       setLastSavedAt(new Date())
 
       if (!quiet) {
         if (savedQuizId) await invalidateHistoryForQuiz(queryClient, savedQuizId)
         if (finalStatus === 'published') {
-           toast.success('Đã công khai quiz thành công!')
-           router.push('/admin/quizzes')
+            toast.success(isStudentMode ? 'Đã tạo quiz thành công!' : 'Đã công khai quiz thành công!')
+            router.push(effectiveRedirectOnPublish)
            router.refresh()
         } else {
            toast.success('Đã lưu bản nháp')
@@ -289,6 +368,10 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (hasImportBlockingErrors) {
+      setError('File import van con loi. Vui long sua loi trong preview truoc khi luu.')
+      return
+    }
     if (!diagnostics.isValid) {
       setError('Vui lòng hoàn thiện các thông tin còn thiếu trước khi công khai.')
       scrollToQuestion(diagnostics.errors[0]?.questionIndex ?? 0)
@@ -298,7 +381,45 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
   }
 
   const handleSaveDraft = async () => {
+    if (!canSaveDraft) return
+    if (hasImportBlockingErrors) {
+      setError('File import van con loi. Vui long sua loi trong preview truoc khi luu.')
+      return
+    }
     await doSave('draft')
+  }
+
+  const handleCreateCategoryQuick = async () => {
+    if (!isStudentMode) return
+    const name = newCategoryName.trim()
+    if (!name) return
+
+    setIsCreatingCategory(true)
+    try {
+      const res = await fetch('/api/student/categories', {
+        method: 'POST',
+        credentials: 'include',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ name }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.error || 'Không thể tạo danh mục')
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
+      if (data?.category?._id) {
+        setForm((prev) => ({ ...prev, category_id: String(data.category._id) }))
+      }
+      setIsInlineCreateOpen(false)
+      setIsCategorySelectOpen(false)
+      setNewCategoryName('')
+      toast.success('Đã tạo danh mục cá nhân')
+    } catch (err: any) {
+      toast.error(err?.message || 'Không thể tạo danh mục')
+    } finally {
+      setIsCreatingCategory(false)
+    }
   }
 
   const scrollToQuestion = (idx: number) => {
@@ -312,14 +433,129 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
 
   const actual = form.questions.length
 
+  const handleApplyImportedQuiz = (importedQuiz: ImportedQuiz) => {
+    const mappedQuestions = importedQuiz.questions.map((q) => ({
+      question_no: q.question_no,
+      data: {
+        text: q.text,
+        options: q.options.length >= 2 ? q.options : [...q.options, ''],
+        correct_answers: q.correct_answer,
+        explanation: q.explanation ?? '',
+        image_url: q.image_url ?? '',
+      } as QuestionForm,
+    }))
+
+    const importedCategoryToken = (importedQuiz.category_id ?? '').trim()
+    const matchedCategory = categories.find(
+      (cat) =>
+        cat._id === importedCategoryToken ||
+        cat.name.trim().toLowerCase() === importedCategoryToken.toLowerCase()
+    )
+
+    const importedCourseCode = (importedQuiz.course_code ?? '').trim()
+    let overwriteCount = 0
+    let addedCount = 0
+    let nextLength = 0
+
+    setForm((prev) => {
+      const nextQuestions = [...prev.questions]
+      const hasQuestionNo = mappedQuestions.some((q) => typeof q.question_no === 'number' && q.question_no > 0)
+
+      if (hasQuestionNo) {
+        mappedQuestions.forEach((item) => {
+          const targetIndex =
+            typeof item.question_no === 'number' && item.question_no > 0
+              ? item.question_no - 1
+              : nextQuestions.length
+
+          while (nextQuestions.length <= targetIndex) {
+            nextQuestions.push(emptyQuestion())
+          }
+
+          const existing = nextQuestions[targetIndex]
+          const hasExistingContent =
+            existing &&
+            (existing.text.trim() ||
+              existing.options.some((o) => o.trim()) ||
+              existing.correct_answers.length > 0 ||
+              existing.explanation.trim() ||
+              existing.image_url.trim())
+
+          if (hasExistingContent) overwriteCount += 1
+          else addedCount += 1
+
+          nextQuestions[targetIndex] = item.data
+        })
+      } else {
+        mappedQuestions.forEach((item) => {
+          nextQuestions.push(item.data)
+          addedCount += 1
+        })
+      }
+
+      nextLength = nextQuestions.length
+
+      return {
+        ...prev,
+        title: importedQuiz.title || prev.title,
+        description: importedQuiz.description || prev.description,
+        category_id: matchedCategory?._id ?? prev.category_id,
+        // course_code is optional in import file; keep existing value when missing.
+        course_code: importedCourseCode || prev.course_code,
+        questions: nextQuestions,
+      }
+    })
+
+    if (nextLength > 0) {
+      setTargetCount(nextLength)
+      setTargetInput(String(nextLength))
+    }
+
+    setHasImportBlockingErrors(false)
+    setImportPreviewErrors([])
+    if (overwriteCount > 0) {
+      toast.success(`Đã áp dụng file: thêm ${addedCount} câu, ghi đè ${overwriteCount} câu trùng số.`)
+    } else {
+      toast.success(`Đã áp dụng file: thêm ${addedCount} câu.`)
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 w-full space-y-6">
-            <h1 className="text-2xl font-bold text-[#5D7B6F]">
-              {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
-            </h1>
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-2xl font-bold text-[#5D7B6F]">
+                {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
+              </h1>
+              {importEnabled && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-[#A4C3A2] text-[#5D7B6F]"
+                  onClick={() => {
+                    setShowImportPanel((prev) => !prev)
+                    setTimeout(() => {
+                      const panel = document.getElementById('quiz-import-panel')
+                      panel?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }, 0)
+                  }}
+                >
+                  {showImportPanel ? 'Ẩn upload file JSON/TXT' : 'Upload file JSON/TXT'}
+                </Button>
+              )}
+            </div>
+
+            {importEnabled && showImportPanel && (
+              <QuizImportPanel
+                onApply={handleApplyImportedQuiz}
+                onValidationStateChange={setHasImportBlockingErrors}
+                onPreviewDiagnosticsChange={(errors) =>
+                  setImportPreviewErrors(errors.map((item) => ({ code: item.code, message: item.message, questionIndex: item.questionIndex })))
+                }
+              />
+            )}
 
             {/* PROGRESS HUB */}
             <Card className="bg-white border-[#A4C3A2] shadow-sm overflow-hidden">
@@ -340,11 +576,11 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                       Đã lưu lúc {lastSavedAt.toLocaleTimeString()}
                     </div>
                   ) : null}
-                  <Badge variant={diagnostics.isValid ? 'default' : 'secondary'} className={cn(
+                  <Badge variant={diagnostics.isValid && !hasImportBlockingErrors ? 'default' : 'secondary'} className={cn(
                     "text-[10px] uppercase font-bold",
-                    diagnostics.isValid ? "bg-[#5D7B6F]" : "bg-orange-400"
+                    diagnostics.isValid && !hasImportBlockingErrors ? "bg-[#5D7B6F]" : "bg-orange-400"
                   )}>
-                    {diagnostics.isValid ? 'Sẵn sàng công khai' : 'Bản nháp'}
+                    {diagnostics.isValid && !hasImportBlockingErrors ? 'Sẵn sàng công khai' : 'Bản nháp'}
                   </Badge>
                 </div>
               </div>
@@ -365,7 +601,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                        </div>
                        <div className="text-center">
                           <p className="text-[10px] text-gray-400 font-bold uppercase">Lỗi</p>
-                          <p className={cn("text-xl font-black", diagnostics.errors.length > 0 ? "text-red-500" : "text-gray-300")}>{diagnostics.errors.length}</p>
+                          <p className={cn("text-xl font-black", combinedErrors.length > 0 ? "text-red-500" : "text-gray-300")}>{combinedErrors.length}</p>
                        </div>
                     </div>
 
@@ -390,7 +626,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
               {/* Quiz Details */}
               <Card className={cn(
                 "bg-white border-[#A4C3A2]",
-                diagnostics.errors.some(e => ['MISSING_CATEGORY', 'MISSING_TITLE', 'MISSING_COURSE_CODE'].includes(e.code)) ? "ring-1 ring-red-500" : ""
+                diagnostics.errors.some(e => ['MISSING_CATEGORY', 'MISSING_COURSE_CODE'].includes(e.code)) ? "ring-1 ring-red-500" : ""
               )}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
@@ -402,12 +638,19 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* CATEGORY - PRIMARY (MÔN HỌC) */}
                     <div className="p-4 rounded-xl bg-[#A4C3A2]/5 border border-[#A4C3A2]/20 shadow-sm">
-                      <label className="block text-xs font-black uppercase tracking-widest text-[#5D7B6F] mb-3 flex items-center gap-1.5">
-                        1. Môn học
-                        {diagnostics.errors.some(e => e.code === 'MISSING_CATEGORY') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
-                      </label>
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F] flex items-center gap-1.5">
+                          1. Môn học
+                          {diagnostics.errors.some(e => e.code === 'MISSING_CATEGORY') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
+                        </label>
+                      </div>
                       <Select
+                        open={isCategorySelectOpen}
                         value={form.category_id}
+                        onOpenChange={(open) => {
+                          setIsCategorySelectOpen(open)
+                          if (!open) setIsInlineCreateOpen(false)
+                        }}
                         onValueChange={(v) => setForm((p) => ({ ...p, category_id: v }))}
                       >
                         <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]">
@@ -415,11 +658,62 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                           {categories.length === 0 && (
-                            <SelectItem value="" disabled>— Chưa có môn học —</SelectItem>
+                            <SelectItem value="__no_category__" disabled>— Chưa có môn học —</SelectItem>
                           )}
                           {categories.map((cat) => (
                             <SelectItem key={cat._id} value={cat._id} className="font-medium text-gray-700">{cat.name}</SelectItem>
                           ))}
+                          {isStudentMode && (
+                            <div className="border-t mt-2 pt-2 px-2 space-y-2">
+                              {categories.length >= 5 ? (
+                                <p className="text-[11px] font-medium text-amber-600 px-2 py-1">
+                                  Đã đạt giới hạn 5 danh mục cá nhân.
+                                </p>
+                              ) : (
+                                <>
+                                  {!isInlineCreateOpen ? (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="w-full h-8 justify-center px-2 text-[12px] font-bold text-[#5D7B6F]"
+                                      onMouseDown={(e) => e.preventDefault()}
+                                      onClick={() => setIsInlineCreateOpen(true)}
+                                    >
+                                      + Tạo danh mục mới
+                                    </Button>
+                                  ) : (
+                                    <div className="px-1 pb-1">
+                                      <div className="flex items-center gap-2">
+                                        <Input
+                                          value={newCategoryName}
+                                          onChange={(e) => setNewCategoryName(e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault()
+                                              void handleCreateCategoryQuick()
+                                            }
+                                          }}
+                                          placeholder="Tên danh mục mới"
+                                          className="h-8 text-sm"
+                                          onMouseDown={(e) => e.stopPropagation()}
+                                        />
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          onMouseDown={(e) => e.preventDefault()}
+                                          onClick={() => void handleCreateCategoryQuick()}
+                                          disabled={isCreatingCategory || !newCategoryName.trim()}
+                                          className="h-8 px-3 bg-[#5D7B6F] hover:bg-[#5D7B6F]/90"
+                                        >
+                                          {isCreatingCategory ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Tạo'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -439,18 +733,17 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                     </div>
                   </div>
 
-                  {/* TITLE - SECONDARY */}
+                  {/* DESCRIPTION */}
                   <div className="px-4">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-tight mb-1 flex items-center gap-1.5">
-                      3. Tiêu đề chi tiết
-                      {diagnostics.errors.some(e => e.code === 'MISSING_TITLE') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-tight mb-1">
+                      3. Mô tả chi tiết (tùy chọn)
                     </label>
-                    <Input
-                      value={form.title}
-                      onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                      placeholder="VD: Kiểm tra kiến thức chương 1, Đề thi thử số 02..."
-                      title="Tiêu đề Quiz"
-                      className="border-0 border-b rounded-none shadow-none px-0 focus-visible:ring-0 focus-visible:border-b-2 focus-visible:border-[#5D7B6F] text-lg font-medium placeholder:text-gray-300 transition-all h-10"
+                    <Textarea
+                      value={form.description}
+                      onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                      placeholder="Mô tả nội dung, phạm vi kiến thức hoặc hướng dẫn cho người làm bài..."
+                      autoResize
+                      className="text-sm border-0 border-b rounded-none shadow-none px-0 focus-visible:ring-0 focus-visible:border-b-2 focus-visible:border-[#5D7B6F] placeholder:text-gray-300"
                     />
                   </div>
 
@@ -665,7 +958,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
               )}
 
               <div className="flex gap-3 pb-8">
-                <Button type="submit" disabled={saving} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90">
+                <Button type="submit" disabled={saving || hasImportBlockingErrors} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90">
                   {saving ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -673,13 +966,15 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                         ? 'Đang tải ảnh & Lưu...' 
                         : 'Đang lưu...'}
                     </div>
-                  ) : quizId ? 'Cập nhật Quiz' : 'Tạo & Công khai'}
+                  ) : quizId ? 'Cập nhật Quiz' : (isStudentMode ? 'Tạo Quiz' : 'Tạo & Công khai')}
                 </Button>
-                <Button type="button" variant="outline" disabled={saving} onClick={handleSaveDraft}
-                  className="border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/5">
-                  Lưu bản nháp
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => router.push('/admin/quizzes')}>
+                {canSaveDraft && (
+                  <Button type="button" variant="outline" disabled={saving || hasImportBlockingErrors} onClick={handleSaveDraft}
+                    className="border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/5">
+                    Lưu bản nháp
+                  </Button>
+                )}
+                <Button type="button" variant="ghost" onClick={() => router.push(effectiveCancelPath)}>
                   Hủy
                 </Button>
               </div>
@@ -694,19 +989,19 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                       <LayoutDashboard className="w-4 h-4 text-gray-500" />
                       <span className="text-xs font-black uppercase tracking-widest text-gray-500">Danh sách lỗi</span>
                    </div>
-                   <Badge variant="outline" className="h-5 text-[9px] font-bold">{diagnostics.errors.length}</Badge>
+                   <Badge variant="outline" className="h-5 text-[9px] font-bold">{combinedErrors.length}</Badge>
                 </div>
                 
                 <ScrollArea className="flex-1 p-2">
-                  {diagnostics.errors.length === 0 ? (
+                  {combinedErrors.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-3 opacity-50 pt-20">
                        <CheckCircle2 className="w-10 h-10 text-[#5D7B6F]" />
                        <p className="text-xs font-bold text-gray-900">Mọi thứ đều hoàn hảo!</p>
                     </div>
                   ) : (
                     <div className="space-y-4 pr-1">
-                      {Array.from(new Set(diagnostics.errors.map(e => e.code))).map(code => {
-                        const group = diagnostics.errors.filter(e => e.code === code)
+                      {Array.from(new Set(combinedErrors.map(e => e.code))).map(code => {
+                        const group = combinedErrors.filter(e => e.code === code)
                         const isTargetMismatch = code === 'TARGET_MISMATCH'
                         
                         return (
@@ -734,7 +1029,7 @@ export function QuizEditor({ initialData, quizId, categories }: Props) {
                                     onClick={() => {
                                       if (err.questionIndex !== undefined) {
                                         scrollToQuestion(err.questionIndex)
-                                      } else if (['MISSING_CATEGORY', 'MISSING_TITLE'].includes(err.code)) {
+                                        } else if (err.code === 'MISSING_CATEGORY') {
                                          window.scrollTo({ top: 0, behavior: 'smooth' })
                                       }
                                     }}

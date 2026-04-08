@@ -12,6 +12,7 @@ export interface IQuestion {
 export interface IQuiz {
   _id: Types.ObjectId
   title: string
+  description?: string
   category_id: Types.ObjectId
   course_code: string
   questions?: IQuestion[]

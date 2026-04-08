@@ -4,6 +4,7 @@ import { Quiz } from '@/models/Quiz'
 import { Category } from '@/models/Category'
 import { connectDB } from '@/lib/mongodb'
 import { Types } from 'mongoose'
+import { SaveQuizSchema } from '@/lib/schemas'
 
 export async function POST(req: Request) {
   try {
@@ -12,10 +13,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { quizId } = await req.json()
-    if (!quizId) {
-      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 })
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
+
+    const parsed = SaveQuizSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+    }
+
+    const { quizId } = parsed.data
 
     await connectDB()
 

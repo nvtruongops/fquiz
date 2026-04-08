@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 
 import { useToast } from '@/lib/store/toast-store'
 import { normalizeSearchInput, sanitizeQueryParams } from '@/lib/client-validation'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 interface Category {
   _id: string
@@ -40,6 +41,7 @@ async function fetchCategories(search = '', status = 'approved'): Promise<{ cate
   const queryParams = sanitizeQueryParams({
     ...(normalizedSearch ? { search: normalizedSearch } : {}),
     ...(validStatus ? { status: validStatus } : {}),
+    type: 'public',
   })
   
   const params = new URLSearchParams(queryParams)
@@ -52,7 +54,7 @@ async function createCategory(name: string): Promise<{ category: Category }> {
   const res = await fetch('/api/admin/categories', {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ name }),
   })
   if (!res.ok) {
@@ -66,7 +68,7 @@ async function updateCategory(id: string, name: string): Promise<{ category: Cat
   const res = await fetch(`/api/admin/categories/${id}`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ name }),
   })
   if (!res.ok) {
@@ -80,6 +82,7 @@ async function deleteCategory(id: string): Promise<void> {
   const res = await fetch(`/api/admin/categories/${id}`, {
     method: 'DELETE',
     credentials: 'include',
+    headers: withCsrfHeaders(),
   })
   if (!res.ok) {
     const data = await res.json()
@@ -91,7 +94,7 @@ async function updateCategoryStatus(id: string, status: 'approved' | 'rejected')
   const res = await fetch(`/api/admin/categories/${id}/status`, {
     method: 'PATCH',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ status }),
   })
   if (!res.ok) throw new Error('Failed to update category status')
@@ -111,6 +114,8 @@ export default function AdminCategoriesPage() {
     queryKey: ['admin', 'categories', search, activeTab],
     queryFn: () => fetchCategories(search, activeTab),
   })
+
+  const publicCategories = (data?.categories ?? []).filter((cat) => cat.type === 'public')
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => 
@@ -145,7 +150,15 @@ export default function AdminCategoriesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
+      queryClient.setQueriesData({ queryKey: ['admin', 'categories'] }, (oldData: unknown) => {
+        if (!oldData || typeof oldData !== 'object' || !('categories' in oldData)) return oldData
+        const typed = oldData as { categories: Category[] }
+        return {
+          ...typed,
+          categories: typed.categories.filter((cat) => cat._id !== deletedId),
+        }
+      })
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setDeleteTarget(null)
       toast.success('Đã xóa danh mục')
@@ -183,10 +196,10 @@ export default function AdminCategoriesPage() {
         <Tabs defaultValue="approved" onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-white/50 border border-[#5D7B6F]/10 p-1 rounded-2xl h-14 mb-6 shadow-sm">
             <TabsTrigger value="approved" className="rounded-xl px-8 font-bold data-[state=active]:bg-[#5D7B6F] data-[state=active]:text-white transition-all">
-               Đã duyệt ({activeTab === 'approved' ? data?.categories.length : '...'})
+              Đã duyệt ({activeTab === 'approved' ? publicCategories.length : '...'})
             </TabsTrigger>
             <TabsTrigger value="pending" className="rounded-xl px-8 font-bold data-[state=active]:bg-orange-500 data-[state=active]:text-white transition-all relative">
-               Chờ duyệt ({activeTab === 'pending' ? data?.categories.length : '...'})
+              Chờ duyệt ({activeTab === 'pending' ? publicCategories.length : '...'})
                {activeTab !== 'pending' && <div className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />}
             </TabsTrigger>
           </TabsList>
@@ -235,7 +248,7 @@ export default function AdminCategoriesPage() {
                       </div>
                     ) : (
                       <ul className="space-y-2">
-                        {data?.categories.map((cat) => (
+                        {publicCategories.map((cat) => (
                            <li key={cat._id} className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#EAE7D6]/30 transition-all border border-transparent hover:border-[#5D7B6F]/5 group">
                               <div className="flex items-center gap-4">
                                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#5D7B6F] shadow-sm font-black">
@@ -274,11 +287,11 @@ export default function AdminCategoriesPage() {
                    </CardTitle>
                 </CardHeader>
                 <CardContent>
-                   {data?.categories.length === 0 ? (
+                   {publicCategories.length === 0 ? (
                      <div className="p-12 text-center text-gray-400 font-medium italic">Không có yêu cầu chờ duyệt.</div>
                    ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {data?.categories.map((cat) => (
+                        {publicCategories.map((cat) => (
                            <div key={cat._id} className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all space-y-4">
                               <div className="flex items-center justify-between">
                                  <Badge className="bg-orange-100 text-orange-600 border-none font-bold">Yêu cầu mới</Badge>
@@ -312,6 +325,37 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Delete confirmation dialog */}
+      <Dialog open={!!editId} onOpenChange={(open) => !open && setEditId(null)}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black text-[#5D7B6F]">Chỉnh sửa danh mục</DialogTitle>
+            <DialogDescription className="font-medium text-gray-500">
+              Cập nhật tên danh mục.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nhập tên danh mục..."
+              className="rounded-xl py-6 border-[#5D7B6F]/10 focus:ring-[#5D7B6F] font-medium"
+            />
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="ghost" onClick={() => setEditId(null)} className="rounded-xl font-bold">
+                Hủy bỏ
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateMutation.isPending || !editName.trim()}
+                className="rounded-xl font-bold bg-[#5D7B6F] hover:bg-[#4a6358]"
+              >
+                Lưu thay đổi
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>
@@ -327,7 +371,14 @@ export default function AdminCategoriesPage() {
             <Button
               variant="destructive"
               disabled={deleteMutation.isPending}
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget._id)}
+              onClick={() => {
+                if (!deleteTarget) return
+                if (deleteTarget.type !== 'public') {
+                  toast.error('Chỉ có thể xóa danh mục public ở màn admin.')
+                  return
+                }
+                deleteMutation.mutate(deleteTarget._id)
+              }}
               className="rounded-xl font-bold"
             >
               Xác nhận xóa

@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select'
 import { Plus, Pencil, Search, Filter, MoreVertical, Trash2, Loader2 } from 'lucide-react'
 import { invalidateHistoryForDeletedQuiz } from '@/lib/cache-invalidation'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 const PAGE_SIZE = 20
 
@@ -96,7 +97,8 @@ export default function AdminQuizzesPage() {
     mutationFn: async ({ id, status }: { id: string, status: string }) => {
       const res = await fetch(`/api/admin/quizzes/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ status }),
       })
       if (!res.ok) throw new Error('Failed to update status')
@@ -109,7 +111,11 @@ export default function AdminQuizzesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/quizzes/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/quizzes/${id}`, { 
+        method: 'DELETE', 
+        credentials: 'include',
+        headers: withCsrfHeaders(),
+      })
       if (!res.ok) throw new Error('Failed to delete quiz')
       return res.json()
     },

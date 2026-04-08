@@ -18,6 +18,7 @@ const QuestionSchema = new Schema<IQuestion>(
 const QuizSchema = new Schema<IQuiz>(
   {
     title: { type: String, required: true },
+    description: { type: String, default: '' },
     category_id: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     course_code: { type: String, required: true },
     questions: { type: [QuestionSchema], required: false, default: [] },

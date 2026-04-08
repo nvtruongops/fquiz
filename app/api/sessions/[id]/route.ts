@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
 import { authorizeResource } from '@/lib/authz'
+import { SessionQuestionQuerySchema } from '@/lib/schemas'
 
 /**
  * GET /api/sessions/[id]
@@ -47,12 +48,15 @@ export async function GET(
 
     const category = quiz.category_id
     const requestUrl = new URL(req.url)
-    const requestedIndexRaw = requestUrl.searchParams.get('question_index')
-    const parsedRequestedIndex = requestedIndexRaw === null ? Number.NaN : Number(requestedIndexRaw)
+    const queryParsed = SessionQuestionQuerySchema.safeParse(
+      Object.fromEntries(requestUrl.searchParams.entries())
+    )
 
-    const currentIndex = Number.isInteger(parsedRequestedIndex)
-      ? parsedRequestedIndex
-      : session.current_question_index
+    if (!queryParsed.success) {
+      return NextResponse.json({ error: 'Validation failed', details: queryParsed.error.issues }, { status: 400 })
+    }
+
+    const currentIndex = queryParsed.data.question_index ?? session.current_question_index
 
     if (currentIndex < 0 || currentIndex >= quiz.questions.length) {
       return NextResponse.json({ error: 'Invalid question index' }, { status: 400 })

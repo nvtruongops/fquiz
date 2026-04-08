@@ -33,8 +33,11 @@ export default async function AdminEditQuizPage({ params }: Readonly<{ params: P
 
   const initialData = {
     title: quiz.title,
+    description: (quiz as any).description ?? '',
     category_id: String(quiz.category_id),
     course_code: quiz.course_code,
+    status: quiz.status,
+    updatedAt: (quiz as any).updatedAt,
     questions: ((quiz.questions ?? []) as EditableQuestion[]).map((q) => ({
       text: q.text,
       options: q.options,

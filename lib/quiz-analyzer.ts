@@ -53,9 +53,6 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
   }
 
   // 1. Basic Metadata Rules
-  if (!data.title?.trim()) {
-    errors.push({ code: 'MISSING_TITLE', severity: 'error', message: 'Thiếu tiêu đề quiz' })
-  }
   if (!data.category_id) {
     errors.push({ code: 'MISSING_CATEGORY', severity: 'error', message: 'Chưa chọn môn học' })
   }

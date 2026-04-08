@@ -28,6 +28,16 @@ jest.mock('@/lib/cloudinary', () => ({
   deleteFolder: jest.fn().mockResolvedValue(true),
   getPublicIdFromUrl: jest.fn(),
 }))
+jest.mock('mongoose', () => {
+  const actual = jest.requireActual('mongoose')
+  return {
+    ...actual,
+    Types: {
+      ...actual.Types,
+      ObjectId: jest.fn().mockImplementation((id?: string) => ({ toString: () => id ?? 'mock-id' })),
+    },
+  }
+})
 jest.mock('@/models/Category', () => ({
   Category: {
     find: jest.fn(),
@@ -45,9 +55,11 @@ jest.mock('@/models/Quiz', () => ({
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
     findOneAndUpdate: jest.fn(),
+    findOne: jest.fn(),
     findByIdAndDelete: jest.fn(),
     countDocuments: jest.fn(),
     create: jest.fn(),
+    updateOne: jest.fn(),
   },
 }))
 jest.mock('@/models/QuizSession', () => ({
@@ -77,7 +89,7 @@ import { QuizSession } from '@/models/QuizSession'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const mockAdminPayload = { userId: 'admin-user-id', role: 'admin' as const, iat: 0, exp: 9999999999 }
+const mockAdminPayload = { userId: '64a1b2c3d4e5f6a7b8c9d0e0', role: 'admin' as const, iat: 0, exp: 9999999999 }
 
 function makeRequest(method: string, url: string, body?: unknown): Request {
   return new Request(url, {
@@ -111,6 +123,14 @@ beforeEach(() => {
   ;(verifyToken as jest.Mock).mockResolvedValue(mockAdminPayload)
   ;(requireRole as jest.Mock).mockReturnValue(undefined)
   ;(validateImageDomain as jest.Mock).mockReturnValue(true)
+  // Default: category exists and is valid
+  ;(Category.findOne as jest.Mock).mockReturnValue({
+    select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: '64a1b2c3d4e5f6a7b8c9d0e1' }) }),
+  })
+  // Default: no duplicate quiz
+  ;(Quiz.findOne as jest.Mock).mockReturnValue({
+    select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
+  })
 })
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -448,6 +468,75 @@ describe('PUT /api/admin/quizzes/[id]', () => {
     const data = await res.json()
     expect(data.quiz).toEqual(updated)
     expect(data.affectedSessionCount).toBe(7)
+  })
+})
+
+describe('POST /api/admin/quizzes — security & edge cases', () => {
+  it('returns 400 when course_code contains special characters', async () => {
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      course_code: 'MATH 101; DROP TABLE',
+    })
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('strips HTML tags from title before saving', async () => {
+    const created = { _id: 'quiz1', ...validQuizBody }
+    ;(Quiz.create as jest.Mock).mockResolvedValue(created)
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      title: '<script>alert(1)</script>Math Quiz',
+    })
+    const res = await postQuizHandler(req)
+    // Schema strips HTML — title becomes "Math Quiz", passes validation
+    expect(res.status).toBe(201)
+    const args = (Quiz.create as jest.Mock).mock.calls[0]?.[0]
+    if (args) expect(args.title).not.toContain('<script>')
+  })
+
+  it('returns 400 when question image_url uses HTTP (not HTTPS)', async () => {
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      questions: [{ ...validQuestion, image_url: 'http://evil.com/img.png' }],
+    })
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when base64 image has disallowed MIME type (svg)', async () => {
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      questions: [{ ...validQuestion, image_url: 'data:image/svg+xml;base64,PHN2Zy8+' }],
+    })
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when base64 image exceeds 5MB', async () => {
+    const bigBase64 = 'A'.repeat(8 * 1024 * 1024)
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      questions: [{ ...validQuestion, image_url: `data:image/jpeg;base64,${bigBase64}` }],
+    })
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 409 on MongoDB duplicate key error (code 11000)', async () => {
+    ;(Quiz.create as jest.Mock).mockRejectedValue({ code: 11000 })
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', validQuizBody)
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(409)
+  })
+
+  it('returns 400 when category_id is not a valid ObjectId', async () => {
+    const req = makeRequest('POST', 'http://localhost/api/admin/quizzes', {
+      ...validQuizBody,
+      category_id: 'not-valid',
+    })
+    const res = await postQuizHandler(req)
+    expect(res.status).toBe(400)
   })
 })
 

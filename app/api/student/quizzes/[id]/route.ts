@@ -89,7 +89,7 @@ export async function GET(
     }
 
     const quiz = await Quiz.findById(new Types.ObjectId(id))
-      .select('title course_code questionCount studentCount questions original_quiz_id is_saved_from_explore created_at category_id')
+      .select('title description course_code questionCount studentCount questions original_quiz_id is_saved_from_explore created_at category_id')
       .populate('category_id', 'name')
       .lean()
 
@@ -132,7 +132,7 @@ export async function GET(
     return NextResponse.json({
       _id: quiz._id.toString(),
       title: quiz.title,
-      description: '',
+      description: (quiz as any).description || '',
       category_id: { name: category?.name || 'Chung' },
       course_code: quiz.course_code,
       num_questions: numQuestions,
