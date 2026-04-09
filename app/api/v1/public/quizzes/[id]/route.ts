@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { Quiz } from '@/models/Quiz'
+import { Category } from '@/models/Category'
 import logger from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'

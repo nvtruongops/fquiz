@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
+import { Category } from '@/models/Category'
 import { authorizeResource } from '@/lib/authz'
 import { SessionQuestionQuerySchema } from '@/lib/schemas'
 
