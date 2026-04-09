@@ -75,29 +75,31 @@ type QuizDetailApiError = Error & {
 }
 
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${id}`)
+  // Use public API endpoint for quiz detail (accessible without authentication)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes/${id}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
     const error = new Error(data.error || 'Không thể tải thông tin đề thi') as QuizDetailApiError
     error.status = res.status
-
-    const isGenericOwnershipForbidden =
-      res.status === 403 &&
-      typeof data.error === 'string' &&
-      /forbidden: you do not own this resource/i.test(data.error)
-
-    if (isGenericOwnershipForbidden) {
-      error.code = 'QUIZ_SOURCE_LOCKED'
-      error.message = 'Không thể làm lại vì bộ đề gốc đã bị ẩn.'
-      error.hint = 'Bạn vẫn có thể xem lại kết quả tại mục Lịch sử hoặc chọn một bộ đề khác.'
-    } else {
-      error.code = data.code
-      error.hint = data.hint
-    }
-
+    error.code = data.code
+    error.hint = data.hint
     throw error
   }
-  return res.json()
+  
+  // Transform public API response to match expected format
+  const response = await res.json()
+  const publicQuiz = response.data
+  
+  return {
+    _id: publicQuiz.id,
+    title: publicQuiz.title,
+    description: publicQuiz.description || '',
+    category_id: { name: publicQuiz.categoryName },
+    course_code: publicQuiz.course_code,
+    num_questions: publicQuiz.questionCount,
+    num_attempts: publicQuiz.studentCount,
+    created_at: publicQuiz.createdAt,
+  }
 }
 
 export default function QuizDetailPage() {
@@ -153,6 +155,15 @@ export default function QuizDetailPage() {
       router.push(`/quiz/${quizId}/session/${nextSessionId}`)
     },
     onError: (error: StartSessionError, variables) => {
+      // Handle 401 Unauthorized - show clear message and redirect to login
+      if (error.status === 401) {
+        toast.error('Bạn cần đăng nhập để làm bài quiz này')
+        setTimeout(() => {
+          router.push(`/login?redirect=/quiz/${quizId}`)
+        }, 1500)
+        return
+      }
+      
       if (error.status === 409 && error.code === 'ACTIVE_SESSION_EXISTS') {
         setPendingMode(variables.mode)
         setActiveSessionInfo(
