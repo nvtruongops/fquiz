@@ -233,6 +233,7 @@ export async function POST(req: Request) {
       status: 'active',
       current_question_index: 0,
       question_order: questionOrder,
+      questions_cache: quizQuestions, // Cache questions to avoid DB query on every answer
       user_answers: [],
       score: 0,
       expires_at: expiresAt,

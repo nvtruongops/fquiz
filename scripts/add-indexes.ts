@@ -38,10 +38,18 @@ async function addIndexes() {
 
     // User indexes
     console.log('Creating User indexes...')
-    await User.collection.createIndex(
-      { email: 1 },
-      { name: 'email_unique', unique: true }
-    )
+    try {
+      await User.collection.createIndex(
+        { email: 1 },
+        { name: 'email_unique', unique: true }
+      )
+    } catch (err: any) {
+      if (err.code === 85) {
+        console.log('  - email index already exists (skipped)')
+      } else {
+        throw err
+      }
+    }
     await User.collection.createIndex(
       { role: 1, is_active: 1 },
       { name: 'role_active' }
