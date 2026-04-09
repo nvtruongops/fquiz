@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
 const CLOUDINARY_SAMPLE_JSON_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711290/fquiz/import-samples/quiz-valid-json'
-const CLOUDINARY_SAMPLE_TXT_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711290/fquiz/import-samples/quiz-valid-txt'
+const CLOUDINARY_SAMPLE_TXT_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711738/fquiz/import-samples/quiz-valid-txt'
 
 export interface ImportedQuestion {
   text: string
