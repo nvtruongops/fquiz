@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Category } from '@/models/Category'
@@ -137,6 +138,10 @@ export async function POST(req: Request) {
       type: 'public',
       status: 'approved'
     })
+    
+    // Revalidate admin pages to show new category immediately
+    revalidatePath('/admin/categories')
+    revalidatePath('/admin/quizzes/new')
     
     return NextResponse.json({ category }, { status: 201 })
   } catch (err) {

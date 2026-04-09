@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Category } from '@/models/Category'
@@ -50,6 +51,10 @@ export async function PATCH(
     }
     
     await category.save()
+
+    // Revalidate admin pages when status changes
+    revalidatePath('/admin/categories')
+    revalidatePath('/admin/quizzes/new')
 
     return NextResponse.json({ category })
   } catch (err) {
