@@ -75,7 +75,7 @@ type QuizDetailApiError = Error & {
 }
 
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
-  const res = await fetch(`/api/student/quizzes/${id}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${id}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
     const error = new Error(data.error || 'Không thể tải thông tin đề thi') as QuizDetailApiError
@@ -125,7 +125,7 @@ export default function QuizDetailPage() {
 
   const startSessionMutation = useMutation({
     mutationFn: async ({ mode, action }: StartSessionRequest) => {
-      const res = await fetch('/api/sessions', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions`, {
         method: 'POST',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quiz_id: quizId, mode, ...(action ? { action } : {}) }),

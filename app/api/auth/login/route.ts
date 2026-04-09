@@ -89,12 +89,15 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({ token, role: user.role }, { status: 200 })
 
+    const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
+
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 60 * 60 * 24,
       path: '/',
+      ...(authCookieDomain ? { domain: authCookieDomain } : {}),
     })
 
     return response

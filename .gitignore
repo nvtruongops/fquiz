@@ -64,3 +64,5 @@ public/uploads/
 
 # Misc local config
 .vercel/
+.vercel
+.env*.local

@@ -67,13 +67,13 @@ async function fetchUsers(page: number, search: string, role: string, status: st
   })
   
   const params = new URLSearchParams(queryParams)
-  const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' })
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users?${params}`, { credentials: 'include' })
   if (!res.ok) throw new Error('Failed to fetch users')
   return res.json()
 }
 
 async function bulkAction(ids: string[], action: 'delete' | 'ban' | 'unban') {
-  const res = await fetch('/api/admin/users/bulk', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users/bulk`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -87,7 +87,7 @@ async function bulkAction(ids: string[], action: 'delete' | 'ban' | 'unban') {
 }
 
 async function updateUser(id: string, updates: Record<string, unknown>) {
-  const res = await fetch(`/api/admin/users/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

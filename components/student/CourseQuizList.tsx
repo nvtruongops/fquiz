@@ -13,7 +13,7 @@ interface QuizItem {
 }
 
 async function fetchCourseQuizzes(code: string): Promise<QuizItem[]> {
-  const res = await fetch(`/api/courses/${code}/quizzes`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/courses/${code}/quizzes`)
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   const data = await res.json()
   return data.quizzes as QuizItem[]

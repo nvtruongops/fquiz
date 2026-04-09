@@ -64,13 +64,13 @@ async function fetchQuizzes(page: number, categoryId: string, search: string): P
   if (categoryId && categoryId !== 'all') params.set('category_id', categoryId)
   if (search) params.set('search', search)
   
-  const res = await fetch(`/api/admin/quizzes?${params.toString()}`, { credentials: 'include' })
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/quizzes?${params.toString()}`, { credentials: 'include' })
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
 }
 
 async function fetchCategories(): Promise<{ categories: Category[] }> {
-  const res = await fetch('/api/admin/categories', { credentials: 'include' })
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories`, { credentials: 'include' })
   if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
 }
@@ -95,7 +95,7 @@ export default function AdminQuizzesPage() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string, status: string }) => {
-      const res = await fetch(`/api/admin/quizzes/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/quizzes/${id}`, {
         method: 'PATCH',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
@@ -111,7 +111,7 @@ export default function AdminQuizzesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/quizzes/${id}`, { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/quizzes/${id}`, { 
         method: 'DELETE', 
         credentials: 'include',
         headers: withCsrfHeaders(),

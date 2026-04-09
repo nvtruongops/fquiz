@@ -1,6 +1,30 @@
 /** @type {import('next').NextConfig} */
 const allowedDomains = (process.env.ALLOWED_IMAGE_DOMAINS || '').split(',').filter(Boolean)
 const isProduction = process.env.NODE_ENV === 'production'
+const defaultApiOrigin = 'https://fquiz-api.vercel.app'
+
+function toOrigin(value) {
+  const input = String(value || '').trim()
+  if (!input) return null
+
+  // CSP host sources should be scheme + origin; strip any paths/query/hash.
+  const candidate = /^https?:\/\//i.test(input) ? input : `https://${input}`
+  try {
+    return new URL(candidate).origin
+  } catch {
+    return null
+  }
+}
+
+const apiConnectOrigins = Array.from(
+  new Set([
+    defaultApiOrigin,
+    ...String(process.env.NEXT_PUBLIC_API_BASE_URL || '')
+      .split(',')
+      .map((item) => toOrigin(item))
+      .filter(Boolean),
+  ])
+)
 
 const imgSrcDomains = allowedDomains.map((d) => d.trim()).join(' ')
 
@@ -13,7 +37,7 @@ const cspDirectives = [
   ].filter(Boolean).join(' '),
   "style-src 'self' 'unsafe-inline' https://upload-widget.cloudinary.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.cloudinary.com https://upload-widget.cloudinary.com https://res.cloudinary.com",
+  `connect-src 'self' https://api.cloudinary.com https://upload-widget.cloudinary.com https://res.cloudinary.com ${apiConnectOrigins.join(' ')}`,
   "frame-src 'self' https://upload-widget.cloudinary.com",
   "worker-src 'self' blob:",
   "object-src 'none'",

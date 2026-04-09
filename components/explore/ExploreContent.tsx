@@ -66,7 +66,7 @@ function formatStudyDuration(minutes: number): string {
 }
 
 async function fetchCategories(): Promise<{ data: Category[] }> {
-  const res = await fetch('/api/v1/public/categories')
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/categories`)
   if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
 }
@@ -77,7 +77,7 @@ async function fetchQuizzes(categoryId: string, search: string): Promise<{ data:
   if (search) params.set('search', search)
   params.set('sort', 'popular')
   
-  const res = await fetch(`/api/v1/public/quizzes?${params.toString()}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes?${params.toString()}`)
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
 }
@@ -92,7 +92,7 @@ export default function ExploreContent() {
   const debouncedSearch = useDebounce(search, 300)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(res => {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`).then(res => {
       if (res.ok) res.json().then(data => setUser(data.user))
     })
   }, [])
@@ -269,7 +269,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta, isLoggedIn: boolean })
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/student/save-quiz', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/save-quiz`, {
         method: 'POST',
             headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quizId: quiz.id })

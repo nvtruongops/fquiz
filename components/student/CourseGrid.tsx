@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
 async function fetchCourses(): Promise<string[]> {
-  const res = await fetch('/api/courses')
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/courses`)
   if (!res.ok) throw new Error('Failed to fetch courses')
   const data = await res.json()
   return data.courses as string[]

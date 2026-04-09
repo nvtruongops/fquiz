@@ -50,7 +50,7 @@ type SessionApiError = Error & {
 }
 
 async function fetchSession(sessionId: string): Promise<SessionData> {
-  const res = await fetch(`/api/sessions/${sessionId}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`)
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
     const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
@@ -62,7 +62,7 @@ async function fetchSession(sessionId: string): Promise<SessionData> {
 }
 
 async function fetchSessionQuestion(sessionId: string, questionIndex: number): Promise<SessionData> {
-  const res = await fetch(`/api/sessions/${sessionId}?question_index=${questionIndex}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}?question_index=${questionIndex}`)
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
     const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
@@ -103,7 +103,7 @@ export default function QuizSessionPage() {
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
     const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
-    const url = `/api/sessions/${sessionId}/activity`
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
 
     void fetch(url, {
       method: 'POST',
@@ -238,7 +238,7 @@ export default function QuizSessionPage() {
   const submitMutation = useSubmitAnswer(resolvedSessionId)
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
     mutationFn: async () => {
-      const res = await fetch(`/api/sessions/${sessionId}/submit`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`, {
         method: 'POST',
         headers: withCsrfHeaders(),
       })

@@ -106,7 +106,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
     try {
       const form = new FormData()
       form.append('file', fileSnapshot)
-      const res = await fetch('/api/import/quiz/preview', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/import/quiz/preview`, {
         method: 'POST',
         credentials: 'include',
         headers: withCsrfHeaders(),

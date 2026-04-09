@@ -64,7 +64,7 @@ interface HistoryResponse {
 type SourceFilter = 'all' | 'self_created' | 'from_explore'
 
 async function fetchHistory(page: number): Promise<HistoryResponse> {
-  const res = await fetch(`/api/history?page=${page}&limit=10`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?page=${page}&limit=10`)
   if (!res.ok) throw new Error('Failed to fetch history')
   return res.json()
 }

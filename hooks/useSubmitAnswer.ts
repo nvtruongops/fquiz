@@ -38,7 +38,7 @@ async function submitAnswer(
 ): Promise<SubmitAnswerResponse> {
   const normalizedAnswerIndexes = [...new Set(answerIndexes)].sort((a, b) => a - b)
 
-  const res = await fetch(`/api/sessions/${sessionId}/answer`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/answer`, {
     method: 'POST',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({

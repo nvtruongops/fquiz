@@ -201,7 +201,7 @@ export const CreateHighlightSchema = z.object({
     .min(1, 'text_segment is required')
     .max(500, 'text_segment tối đa 500 ký tự'),
   color_code: z.enum(['#B0D4B8', '#D7F9FA', '#FFE082', '#EF9A9A'], {
-    errorMap: () => ({ message: 'color_code must be one of the 4 allowed colors' })
+    message: 'color_code must be one of the 4 allowed colors',
   }),
   offset: z
     .number()
@@ -375,7 +375,7 @@ export const UpdateCategorySchema = z.object({
 // Category status update schema
 export const UpdateCategoryStatusSchema = z.object({
   status: z.enum(['approved', 'rejected'], {
-    errorMap: () => ({ message: 'Status must be either approved or rejected' })
+    message: 'Status must be either approved or rejected',
   }),
 }).strict()
 

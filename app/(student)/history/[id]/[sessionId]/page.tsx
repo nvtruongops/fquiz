@@ -63,13 +63,13 @@ const HIGHLIGHT_COLORS: { color: string; label: string }[] = [
 ]
 
 async function fetchHistoryDetail(id: string, sessionId: string): Promise<HistoryDetail> {
-  const res = await fetch(`/api/history/${id}?sessionId=${sessionId}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history/${id}?sessionId=${sessionId}`)
   if (!res.ok) throw new Error('Failed to fetch history detail')
   return res.json()
 }
 
 async function fetchHighlightsForQuestion(questionId: string): Promise<Highlight[]> {
-  const res = await fetch(`/api/highlights?question_id=${questionId}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/highlights?question_id=${questionId}`)
   if (!res.ok) return []
   const data = await res.json()
   return data.highlights ?? []

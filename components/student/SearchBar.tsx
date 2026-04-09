@@ -36,7 +36,7 @@ interface Category {
 }
 
 async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch('/api/admin/categories')
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories`)
   if (!res.ok) throw new Error('Failed to fetch categories')
   const data = await res.json()
   return data.categories as Category[]
@@ -60,7 +60,7 @@ async function fetchSearch(params: {
   })
   
   const query = new URLSearchParams(queryParams)
-  const res = await fetch(`/api/search?${query}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/search?${query}`)
   if (!res.ok) throw new Error('Search failed')
   return res.json()
 }

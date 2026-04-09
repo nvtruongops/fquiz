@@ -439,7 +439,7 @@ export default function MyQuizzesPage() {
   const { data: catData, isLoading: catsLoading } = useQuery({
     queryKey: ['student', 'categories'],
     queryFn: async () => {
-      const res = await fetch('/api/student/categories')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`)
       if (!res.ok) throw new Error('Failed to fetch categories')
       return res.json()
     }
@@ -453,7 +453,7 @@ export default function MyQuizzesPage() {
   const { data: quizData, isLoading: quizzesLoading } = useQuery({
     queryKey: ['student', 'quizzes', selectedCategoryId],
     queryFn: async () => {
-      const url = new URL('/api/student/quizzes', globalThis.location.origin)
+      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? globalThis.location.origin}/api/student/quizzes`)
       if (selectedCategoryId) url.searchParams.append('categoryId', selectedCategoryId)
       const res = await fetch(url.toString())
       if (!res.ok) throw new Error('Failed to fetch quizzes')
@@ -482,7 +482,7 @@ export default function MyQuizzesPage() {
   // 4. Delete Quiz Mutation
   const deleteQuizMutation = useMutation({
     mutationFn: async (quizId: string) => {
-      const res = await fetch(`/api/student/quizzes/${quizId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${quizId}`, {
         method: 'DELETE',
         headers: withCsrfHeaders()
       })
@@ -504,7 +504,7 @@ export default function MyQuizzesPage() {
   // 5. Category Mutations
   const createCatMutation = useMutation({
     mutationFn: async (name: string) => {
-      const res = await fetch('/api/student/categories', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`, {
         method: 'POST',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name })
@@ -525,7 +525,7 @@ export default function MyQuizzesPage() {
 
   const updateCatMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string, name: string }) => {
-      const res = await fetch(`/api/student/categories`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`, {
         method: 'PATCH',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ id, name })
@@ -546,7 +546,7 @@ export default function MyQuizzesPage() {
 
   const deleteCatMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/student/categories?id=${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories?id=${id}`, {
         method: 'DELETE',
         headers: withCsrfHeaders()
       })
@@ -565,7 +565,7 @@ export default function MyQuizzesPage() {
 
   const moveQuizCategoryMutation = useMutation({
     mutationFn: async ({ quizId, categoryId }: { quizId: string; categoryId: string }) => {
-      const res = await fetch(`/api/student/quizzes/${quizId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${quizId}`, {
         method: 'PATCH',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ category_id: categoryId || null }),
