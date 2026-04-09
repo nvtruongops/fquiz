@@ -152,17 +152,13 @@ export default function QuizSessionMobilePage() {
     queryFn: async () => {
       setPreloadProgress(10)
       const data = await fetchAllQuestions(resolvedSessionId)
-      setPreloadProgress(40)
+      setPreloadProgress(60)
       
-      // Wait longer to ensure data is fully cached and ready
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setPreloadProgress(70)
-      
-      await new Promise(resolve => setTimeout(resolve, 400))
+      // Short wait to ensure React Query cache is ready
+      await new Promise(resolve => setTimeout(resolve, 200))
       setPreloadProgress(90)
       
-      // Final wait to ensure everything is ready
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 100))
       setPreloadProgress(100)
       
       return data
@@ -452,10 +448,9 @@ export default function QuizSessionMobilePage() {
               />
             </div>
             <p className="mt-2 text-center text-xs text-gray-400">
-              {preloadProgress < 40 && 'Đang kết nối với server...'}
-              {preloadProgress >= 40 && preloadProgress < 70 && `Đang tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi...`}
-              {preloadProgress >= 70 && preloadProgress < 90 && 'Đang chuẩn bị dữ liệu...'}
-              {preloadProgress >= 90 && 'Hoàn tất, đang khởi động phòng thi...'}
+              {preloadProgress < 60 && 'Đang tải câu hỏi...'}
+              {preloadProgress >= 60 && preloadProgress < 90 && `Đã tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi`}
+              {preloadProgress >= 90 && 'Sẵn sàng!'}
             </p>
           </div>
         )}
