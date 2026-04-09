@@ -152,7 +152,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const totalStudyMinutes = attempts.reduce((sum, a) => {
       const started = new Date(a.started_at).getTime()
       const completed = new Date(a.completed_at).getTime()
-      return sum + Math.max(0, completed - started)
+      const pausedDuration = a.total_paused_duration_ms || 0
+      const actualDuration = Math.max(0, completed - started - pausedDuration)
+      return sum + actualDuration
     }, 0)
 
     return NextResponse.json({

@@ -164,8 +164,8 @@ function QuestionCard({
         >
           {index + 1}
         </span>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
             {notAnswered ? (
               <MinusCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
             ) : is_correct ? (
@@ -189,7 +189,7 @@ function QuestionCard({
               </div>
             )}
           </div>
-          <p className="text-gray-800 font-medium leading-snug">{text}</p>
+          <p className="text-gray-800 font-medium leading-snug" style={{ overflowWrap: 'break-word', wordBreak: 'normal' }}>{text}</p>
         </div>
       </div>
 
@@ -220,35 +220,43 @@ function QuestionCard({
             textClass = 'text-red-700'
           }
 
+          const showBadge = isCorrectOpt || isWrongSubmission || (isSubmitted && is_correct)
+
           return (
             <div
               key={`${question._id}-${optIdx}`}
-              className={`flex items-start gap-3 px-4 py-2.5 rounded-lg border ${bgClass}`}
+              className={`px-4 py-2.5 rounded-lg border ${bgClass}`}
             >
-              <span
-                className="flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold mt-0.5"
-                style={{
-                  borderColor: isCorrectOpt ? '#A4C3A2' : isWrongSubmission ? '#f87171' : '#9ca3af',
-                  color: isCorrectOpt ? '#166534' : isWrongSubmission ? '#b91c1c' : '#6b7280',
-                }}
-              >
-                {String.fromCodePoint(65 + optIdx)}
-              </span>
-              <span className={`text-sm ${textClass}`}>{option}</span>
-              {isCorrectOpt && (
-                <span className="ml-auto text-xs font-semibold text-green-700 flex-shrink-0">
-                  ✓ Correct
+              <div className="flex items-start gap-3">
+                <span
+                  className="flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold mt-0.5"
+                  style={{
+                    borderColor: isCorrectOpt ? '#A4C3A2' : isWrongSubmission ? '#f87171' : '#9ca3af',
+                    color: isCorrectOpt ? '#166534' : isWrongSubmission ? '#b91c1c' : '#6b7280',
+                  }}
+                >
+                  {String.fromCodePoint(65 + optIdx)}
                 </span>
-              )}
-              {isWrongSubmission && (
-                <span className="ml-auto text-xs font-semibold text-red-600 flex-shrink-0">
-                  Your answer
-                </span>
-              )}
-              {isSubmitted && is_correct && (
-                <span className="ml-auto text-xs font-semibold text-green-700 flex-shrink-0">
-                  Your answer ✓
-                </span>
+                <span className={`text-sm ${textClass} flex-1`}>{option}</span>
+              </div>
+              {showBadge && (
+                <div className="mt-1.5 pl-8 flex items-center gap-2 flex-wrap">
+                  {isCorrectOpt && (
+                    <span className="text-xs font-semibold text-green-700">
+                      ✓ Correct
+                    </span>
+                  )}
+                  {isWrongSubmission && (
+                    <span className="text-xs font-semibold text-red-600">
+                      Your answer
+                    </span>
+                  )}
+                  {isSubmitted && is_correct && (
+                    <span className="text-xs font-semibold text-green-700">
+                      Your answer ✓
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           )
@@ -263,7 +271,7 @@ function QuestionCard({
 
       {explanation && (
         <div
-          className="ml-10 p-3 rounded-lg border text-sm text-gray-600"
+          className="ml-10 p-3 rounded-lg border text-sm text-gray-600 whitespace-pre-wrap"
           style={{ backgroundColor: '#D7F9FA33', borderColor: '#D7F9FA' }}
         >
           <span className="font-semibold text-gray-700">Explanation: </span>

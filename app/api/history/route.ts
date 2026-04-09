@@ -50,8 +50,13 @@ export async function GET(req: Request) {
               0,
               {
                 $subtract: [
-                  { $ifNull: ['$completed_at', '$started_at'] },
-                  '$started_at',
+                  {
+                    $subtract: [
+                      { $ifNull: ['$completed_at', '$started_at'] },
+                      '$started_at',
+                    ],
+                  },
+                  { $ifNull: ['$total_paused_duration_ms', 0] },
                 ],
               },
             ],

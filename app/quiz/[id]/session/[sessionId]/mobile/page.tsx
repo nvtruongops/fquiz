@@ -11,6 +11,7 @@ import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
 import { cn } from '@/lib/utils'
 import { withCsrfHeaders } from '@/lib/csrf'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { QuizTimer } from '@/components/QuizTimer'
 
 interface QuestionFeedback {
   isCorrect: boolean
@@ -25,6 +26,8 @@ interface SessionQuestion {
   options: string[]
   answer_selection_count?: number
   image_url?: string
+  correct_answer?: number | number[]
+  explanation?: string
 }
 
 interface SessionData {
@@ -39,8 +42,19 @@ interface SessionData {
     courseCode: string
     categoryName: string
     title: string
+    started_at: string
+    paused_at?: string | null
+    total_paused_duration_ms?: number
   }
   question: SessionQuestion
+}
+
+interface PreloadedQuestions {
+  sessionId: string
+  mode: 'immediate' | 'review'
+  status: 'active' | 'completed'
+  totalQuestions: number
+  questions: SessionQuestion[]
 }
 
 type SessionApiError = Error & {
@@ -65,6 +79,18 @@ async function fetchSessionQuestion(sessionId: string, questionIndex: number): P
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
     const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
+    apiError.status = res.status
+    apiError.code = err.code
+    throw apiError
+  }
+  return res.json()
+}
+
+async function fetchAllQuestions(sessionId: string): Promise<PreloadedQuestions> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
+    const apiError = new Error(err.error ?? 'Failed to load questions') as SessionApiError
     apiError.status = res.status
     apiError.code = err.code
     throw apiError
@@ -99,6 +125,8 @@ export default function QuizSessionMobilePage() {
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
   const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
+  const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
+  const [preloadProgress, setPreloadProgress] = useState(0)
 
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
@@ -113,6 +141,28 @@ export default function QuizSessionMobilePage() {
     })
   }
 
+  // Preload all questions
+  const {
+    data: preloadData,
+    isLoading: isPreloading,
+    isError: isPreloadError,
+  } = useQuery<PreloadedQuestions, Error>({
+    queryKey: ['sessions', resolvedSessionId, 'all-questions'],
+    queryFn: async () => {
+      setPreloadProgress(10)
+      const data = await fetchAllQuestions(resolvedSessionId)
+      setPreloadProgress(50)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      setPreloadProgress(80)
+      await new Promise(resolve => setTimeout(resolve, 200))
+      setPreloadProgress(100)
+      return data
+    },
+    enabled: resolvedSessionId.length > 0,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
+  })
+
   const {
     data: initialData,
     isLoading: isInitialLoading,
@@ -121,29 +171,34 @@ export default function QuizSessionMobilePage() {
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 && !isPreloading && !!preloadData,
     staleTime: 0,
   })
+
+  // Store preloaded questions when available
+  useEffect(() => {
+    if (preloadData?.questions) {
+      setPreloadedQuestions(preloadData.questions)
+    }
+  }, [preloadData])
 
   const clampedQuestionIndex = Math.min(
     Math.max(currentQuestionIndex, 0),
     Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0)
   )
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<SessionData, Error>({
-    queryKey: ['sessions', resolvedSessionId, clampedQuestionIndex],
-    queryFn: () => fetchSessionQuestion(resolvedSessionId, clampedQuestionIndex),
-    enabled: Boolean(initialData && resolvedSessionId),
-    staleTime: 0,
-  })
+  // Use preloaded questions instead of fetching individually
+  const currentQuestion = preloadedQuestions?.[clampedQuestionIndex]
 
-  const activeData = data ?? initialData
-  const activeError = error ?? initialError
+  // Construct session data from preloaded questions and initial session data
+  const activeData: SessionData | undefined = initialData && currentQuestion ? {
+    session: initialData.session,
+    question: currentQuestion,
+  } : initialData
+
+  const activeError = initialError
+  const isLoading = isInitialLoading
+  const isError = isInitialError
 
   useEffect(() => {
     const err = activeError as SessionApiError | undefined
@@ -176,14 +231,34 @@ export default function QuizSessionMobilePage() {
       setSubmitted(activeData.session.mode === 'immediate')
 
       if (activeData.session.mode === 'immediate') {
-        setLastAnswerResult(feedbackByQuestion[currentQuestionIndex] ?? null)
+        // Try to get feedback from cache first
+        let feedback = feedbackByQuestion[currentQuestionIndex]
+        
+        // If not in cache, reconstruct from preloaded question data
+        if (!feedback && currentQuestion?.correct_answer !== undefined) {
+          const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
+            ? currentQuestion.correct_answer
+            : [currentQuestion.correct_answer]
+          
+          feedback = {
+            isCorrect: existing.is_correct,
+            correctAnswer: correctAnswerIndexes[0],
+            correctAnswers: correctAnswerIndexes,
+            explanation: currentQuestion.explanation,
+          }
+          
+          // Cache it for future navigation
+          setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback! }))
+        }
+        
+        setLastAnswerResult(feedback ?? null)
       }
     } else {
       setSelectedOptions([])
       setSubmitted(false)
       setLastAnswerResult(null)
     }
-  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, setLastAnswerResult])
+  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
 
   useEffect(() => {
     if (!sessionId) return
@@ -223,6 +298,9 @@ export default function QuizSessionMobilePage() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         reportSessionActivity('pause')
+      } else if (document.visibilityState === 'visible') {
+        // Resume when user comes back to the tab
+        reportSessionActivity('resume')
       }
     }
 
@@ -344,11 +422,54 @@ export default function QuizSessionMobilePage() {
     setQuestionMapOpen(false)
   }
 
-  if (isInitialLoading || (!activeData && isLoading)) {
+  // Show preloading screen with progress
+  if (isPreloading || isInitialLoading || (!activeData && isLoading)) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-[#F9F9F7]">
-        <Loader2 className="h-10 w-10 animate-spin text-[#5D7B6F]" />
-        <p className="mt-4 text-sm font-bold uppercase tracking-wider text-gray-500">Đang tải...</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-br from-[#EAE7D6]/30 to-white">
+        <div className="relative">
+          <div className="absolute inset-0 animate-ping rounded-full bg-[#5D7B6F]/20" />
+          <Loader2 className="relative h-12 w-12 animate-spin text-[#5D7B6F]" />
+        </div>
+        <p className="mt-6 text-sm font-bold uppercase tracking-wider text-[#5D7B6F]">
+          {isPreloading ? 'Đang tải bộ câu hỏi...' : 'Đang tải...'}
+        </p>
+        {isPreloading && (
+          <div className="mt-4 w-64 px-4">
+            <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+              <div 
+                className="h-full bg-gradient-to-r from-[#5D7B6F] to-[#A4C3A2] transition-all duration-300 ease-out"
+                style={{ width: `${preloadProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-center text-xs text-gray-400">
+              {preloadProgress < 50 && 'Đang kết nối với server...'}
+              {preloadProgress >= 50 && preloadProgress < 80 && `Đang tải ${preloadData?.totalQuestions ?? '...'} câu hỏi...`}
+              {preloadProgress >= 80 && 'Chuẩn bị phòng thi...'}
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Show error if preload failed
+  if (isPreloadError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F9F9F7] p-6">
+        <div className="w-full max-w-md rounded-2xl border-2 border-gray-100 bg-white p-8 text-center shadow-xl">
+          <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <h2 className="mb-2 text-xl font-black text-gray-900">Không thể tải bộ câu hỏi</h2>
+          <p className="mb-6 text-sm text-gray-600">
+            Vui lòng kiểm tra kết nối mạng và thử lại
+          </p>
+          <Button
+            type="button"
+            onClick={() => router.push(`/quiz/${quizId}`)}
+            className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358]"
+          >
+            Quay lại
+          </Button>
+        </div>
       </div>
     )
   }
@@ -409,11 +530,19 @@ export default function QuizSessionMobilePage() {
               <p className="text-sm font-black text-[#5D7B6F]">{session.courseCode}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-bold text-gray-400">Tiến độ</p>
-            <p className="text-sm font-black text-[#5D7B6F]">
-              {answeredCount}/{effectiveTotal}
-            </p>
+          <div className="flex items-center gap-4">
+            <QuizTimer
+              startedAt={session.started_at}
+              pausedAt={session.paused_at}
+              totalPausedDurationMs={session.total_paused_duration_ms}
+              className="text-[#5D7B6F]"
+            />
+            <div className="text-right">
+              <p className="text-xs font-bold text-gray-400">Tiến độ</p>
+              <p className="text-sm font-black text-[#5D7B6F]">
+                {answeredCount}/{effectiveTotal}
+              </p>
+            </div>
           </div>
         </div>
         <div className="h-1 bg-gray-100">
@@ -523,7 +652,7 @@ export default function QuizSessionMobilePage() {
                     <p className="mb-2 font-bold text-gray-900">
                       {lastAnswerResult?.isCorrect ? 'Bạn đã trả lời đúng!' : 'Bạn trả lời chưa đúng.'}
                     </p>
-                    <p className="text-sm leading-relaxed text-gray-600">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
                       {lastAnswerResult?.explanation || 'Hệ thống chưa có phần giải thích cho câu này.'}
                     </p>
                   </div>
@@ -540,31 +669,35 @@ export default function QuizSessionMobilePage() {
 
       {/* Bottom Navigation */}
       <div className="sticky bottom-0 border-t-2 border-gray-200 bg-white p-4 shadow-lg">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => handleNavigate(effectiveIndex - 1)}
-            disabled={effectiveIndex === 0}
-            className="h-12 w-12 shrink-0 rounded-xl border-2 border-gray-200 p-0 disabled:opacity-30"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
+        <div className="flex items-center justify-between gap-3">
+          {/* Back/Next buttons on the left */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleNavigate(effectiveIndex - 1)}
+              disabled={effectiveIndex === 0}
+              className="h-12 w-12 shrink-0 rounded-xl border-2 border-gray-200 p-0 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
 
+            <Button
+              variant="outline"
+              onClick={() => handleNavigate(effectiveIndex + 1)}
+              disabled={effectiveIndex === effectiveTotal - 1}
+              className="h-12 w-12 shrink-0 rounded-xl border-2 border-gray-200 p-0 disabled:opacity-30"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Submit button on the right */}
           <Button
             onClick={handleSubmit}
             disabled={finalizeMutation.isPending}
             className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold uppercase tracking-wider text-white hover:bg-[#4a6358]"
           >
             {finalizeMutation.isPending ? 'Đang nộp...' : 'Nộp bài'}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => handleNavigate(effectiveIndex + 1)}
-            disabled={effectiveIndex === effectiveTotal - 1}
-            className="h-12 w-12 shrink-0 rounded-xl border-2 border-gray-200 p-0 disabled:opacity-30"
-          >
-            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
       </div>

@@ -8,6 +8,7 @@ interface QuizHeaderProps {
   totalQuestions: number
   currentIndex: number
   answeredCount: number
+  children?: React.ReactNode
 }
 
 export default function QuizHeader({
@@ -15,7 +16,8 @@ export default function QuizHeader({
   courseCode,
   totalQuestions,
   currentIndex,
-  answeredCount
+  answeredCount,
+  children
 }: Readonly<QuizHeaderProps>) {
   const safeTotal = totalQuestions > 0 ? totalQuestions : 1
   const progressPercent = Math.min(100, Math.max(0, Math.round((answeredCount / safeTotal) * 100)))
@@ -28,9 +30,12 @@ export default function QuizHeader({
           <p>Mã Quiz: <span className="font-bold uppercase">{courseCode || 'N/A'}</span></p>
         </div>
         <div className="min-w-0 flex-1 border border-[#c8c8c8] bg-[#efefef] px-3 py-2">
-          <p className="text-[12px] text-[#2f6f31]">
-            There are {totalQuestions || 0} questions, and your progress of answering is {progressPercent}% ({answeredCount}/{totalQuestions || 0}) - current question: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[12px] text-[#2f6f31]">
+              There are {totalQuestions || 0} questions, and your progress of answering is {progressPercent}% ({answeredCount}/{totalQuestions || 0}) - current question: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}
+            </p>
+            {children && <div className="shrink-0">{children}</div>}
+          </div>
           <div className="mt-1 border border-[#c8c8c8] bg-white p-[2px]">
             <progress
               value={progressPercent}

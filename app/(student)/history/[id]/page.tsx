@@ -286,7 +286,7 @@ function QuestionCard({
       {/* Explanation */}
       {explanation && (
         <div
-          className="ml-10 p-3 rounded-lg border text-sm text-gray-600"
+          className="ml-10 p-3 rounded-lg border text-sm text-gray-600 whitespace-pre-wrap"
           style={{ backgroundColor: '#D7F9FA33', borderColor: '#D7F9FA' }}
         >
           <span className="font-semibold text-gray-700">Explanation: </span>

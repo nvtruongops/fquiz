@@ -258,7 +258,7 @@ export const SessionQuestionQuerySchema = z.object({
     (value) => (value === undefined || value === null || value === '' ? undefined : value),
     z.coerce.number().int().min(0).max(1000).optional()
   ),
-}).strict()
+})
 
 export const QuizListQuerySchema = PaginationQuerySchema.extend({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID').optional(),
@@ -386,6 +386,7 @@ export const UpdateCategoryStatusSchema = z.object({
 export const CreateSessionSchema = z.object({
   quiz_id: MongoIdSchema,
   mode: z.enum(['immediate', 'review']).default('immediate'),
+  difficulty: z.enum(['sequential', 'random']).default('sequential'),
   action: z.enum(['continue', 'restart']).optional(),
 }).strict()
 
