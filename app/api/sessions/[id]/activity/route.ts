@@ -49,8 +49,9 @@ export async function POST(
       return NextResponse.json({ ok: true })
     }
 
+    const now = new Date()
     const setPayload: Record<string, unknown> = {
-      last_activity_at: new Date(),
+      last_activity_at: now,
     }
 
     const currentQuestionIndex = body.current_question_index
@@ -58,12 +59,32 @@ export async function POST(
       setPayload.current_question_index = currentQuestionIndex
     }
 
+    // Handle pause event
     if (body.event === 'pause') {
-      setPayload.paused_at = new Date()
+      setPayload.paused_at = now
     }
 
+    // Handle resume event - calculate paused duration
     if (body.event === 'resume') {
-      setPayload.paused_at = null
+      // If there's a paused_at timestamp, calculate the pause duration
+      if (session.paused_at) {
+        const pausedDuration = now.getTime() - new Date(session.paused_at).getTime()
+        const currentPausedTotal = session.total_paused_duration_ms || 0
+        setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
+        setPayload.paused_at = null
+      } 
+      // Auto-detect pause: If last_activity was more than 5 minutes ago and no paused_at
+      // This handles cases where user closed tab without proper pause event
+      else if (session.last_activity_at) {
+        const timeSinceLastActivity = now.getTime() - new Date(session.last_activity_at).getTime()
+        const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
+        
+        if (timeSinceLastActivity > AUTO_PAUSE_THRESHOLD) {
+          // Assume user was away, add the time to paused duration
+          const currentPausedTotal = session.total_paused_duration_ms || 0
+          setPayload.total_paused_duration_ms = currentPausedTotal + timeSinceLastActivity
+        }
+      }
     }
 
     await QuizSession.updateOne({ _id: session._id }, { $set: setPayload })

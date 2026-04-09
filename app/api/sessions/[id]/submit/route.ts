@@ -62,7 +62,7 @@ export async function POST(
 
     const questions = (quiz.questions ?? []) as IQuestion[]
     const userAnswers = (session.user_answers ?? []) as UserAnswer[]
-    const score = calculateScore(userAnswers, questions)
+    const score = calculateScore(userAnswers, questions, session.question_order)
 
     const completed = await QuizSession.findOneAndUpdate(
       {

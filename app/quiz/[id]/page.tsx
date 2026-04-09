@@ -59,6 +59,7 @@ type StartAction = 'continue' | 'restart'
 
 type StartSessionRequest = {
   mode: 'immediate' | 'review'
+  difficulty: 'sequential' | 'random'
   action?: StartAction
 }
 
@@ -112,6 +113,7 @@ export default function QuizDetailPage() {
   const { toast } = useToast()
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
   const [pendingMode, setPendingMode] = useState<'immediate' | 'review' | null>(null)
+  const [pendingDifficulty, setPendingDifficulty] = useState<'sequential' | 'random' | null>(null)
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
 
   useEffect(() => {
@@ -126,11 +128,11 @@ export default function QuizDetailPage() {
   })
 
   const startSessionMutation = useMutation({
-    mutationFn: async ({ mode, action }: StartSessionRequest) => {
+    mutationFn: async ({ mode, difficulty, action }: StartSessionRequest) => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions`, {
         method: 'POST',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ quiz_id: quizId, mode, ...(action ? { action } : {}) }),
+        body: JSON.stringify({ quiz_id: quizId, mode, difficulty, ...(action ? { action } : {}) }),
       })
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as {
@@ -148,11 +150,24 @@ export default function QuizDetailPage() {
     },
     onSuccess: (data) => {
       const nextSessionId = data.sessionId ?? data.session?._id
+      console.log('[START SESSION] Success - Session ID:', nextSessionId)
+      console.log('[START SESSION] Response data:', data)
+      
       if (!nextSessionId) {
         toast.error('Không nhận được mã phiên thi từ hệ thống. Vui lòng thử lại.')
         return
       }
-      router.push(`/quiz/${quizId}/session/${nextSessionId}`)
+      // Clear pending state and close dialog
+      setPendingMode(null)
+      setPendingDifficulty(null)
+      setActiveSessionInfo(null)
+      setResumeDialogOpen(false)
+      
+      const targetUrl = `/quiz/${quizId}/session/${nextSessionId}`
+      console.log('[START SESSION] Redirecting to:', targetUrl)
+      
+      // Use window.location.href for hard navigation to avoid cache issues
+      window.location.href = targetUrl
     },
     onError: (error: StartSessionError, variables) => {
       // Handle 401 Unauthorized - show clear message and redirect to login
@@ -166,6 +181,7 @@ export default function QuizDetailPage() {
       
       if (error.status === 409 && error.code === 'ACTIVE_SESSION_EXISTS') {
         setPendingMode(variables.mode)
+        setPendingDifficulty(variables.difficulty)
         setActiveSessionInfo(
           error.activeSession ?? {
             sessionId: '',
@@ -184,19 +200,19 @@ export default function QuizDetailPage() {
     },
   })
 
-  function handleSelectMode(mode: 'immediate' | 'review') {
-    startSessionMutation.mutate({ mode })
+  function handleSelectMode(mode: 'immediate' | 'review', difficulty: 'sequential' | 'random') {
+    startSessionMutation.mutate({ mode, difficulty })
   }
 
   function handleContinueSession() {
-    if (!pendingMode) return
-    startSessionMutation.mutate({ mode: pendingMode, action: 'continue' })
+    if (!pendingMode || !pendingDifficulty) return
+    startSessionMutation.mutate({ mode: pendingMode, difficulty: pendingDifficulty, action: 'continue' })
     setResumeDialogOpen(false)
   }
 
   function handleRestartSession() {
-    if (!pendingMode) return
-    startSessionMutation.mutate({ mode: pendingMode, action: 'restart' })
+    if (!pendingMode || !pendingDifficulty) return
+    startSessionMutation.mutate({ mode: pendingMode, difficulty: pendingDifficulty, action: 'restart' })
     setResumeDialogOpen(false)
   }
 
@@ -335,57 +351,101 @@ export default function QuizDetailPage() {
                     Bắt đầu ngay <PlayCircle className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[500px]">
+                <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[600px]">
                   <div className="rounded-sm border border-gray-100 bg-white px-6 py-6 shadow-2xl sm:px-10 sm:py-10">
                     <DialogHeader className="mb-8">
                       <DialogTitle className="border-b pb-4 text-center text-2xl font-normal uppercase tracking-[0.2em] text-[#5D7B6F]">
-                        Chọn chế độ thi
+                        Chọn chế độ làm bài
                       </DialogTitle>
                       <DialogDescription className="pt-2 text-center text-[12px] font-normal text-gray-400">
-                        Hãy chọn phong cách làm bài phù hợp với mục tiêu ôn tập của bạn
+                        Chọn chế độ và độ khó phù hợp với mục tiêu học tập của bạn
                       </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleSelectMode('immediate')}
-                        disabled={startSessionMutation.isPending}
-                        className="group flex h-20 items-center justify-between rounded-sm border border-gray-100 px-6 transition-all hover:border-[#A4C3A2] hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-5">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-50 text-green-500 transition-transform group-hover:scale-110">
-                            <Zap className="h-5 w-5" />
-                          </div>
-                          <div className="text-left">
-                            <span className="block text-[14px] font-normal text-gray-800">Chế độ luyện tập</span>
-                            <span className="block text-[10px] font-normal uppercase tracking-widest text-gray-400">
-                              Xem đáp án & giải thích ngay
-                            </span>
-                          </div>
+                    <div className="grid gap-6">
+                      {/* Immediate Mode */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 border-b pb-2">
+                          <Zap className="h-5 w-5 text-green-500" />
+                          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#5D7B6F]">
+                            Chế độ luyện tập
+                          </h3>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-gray-200 transition-all group-hover:translate-x-1 group-hover:text-[#5D7B6F]" />
-                      </Button>
+                        <p className="text-xs text-gray-500">Xem đáp án và giải thích ngay sau mỗi câu</p>
+                        
+                        <div className="grid gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSelectMode('immediate', 'sequential')}
+                            disabled={startSessionMutation.isPending}
+                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-green-400 hover:bg-green-50"
+                          >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-100 text-green-600 transition-transform group-hover:scale-110">
+                              <Zap className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">Học nhanh</span>
+                          </Button>
 
-                      <Button
-                        variant="outline"
-                        onClick={() => handleSelectMode('review')}
-                        disabled={startSessionMutation.isPending}
-                        className="group flex h-20 items-center justify-between rounded-sm border border-gray-100 px-6 transition-all hover:border-[#A4C3A2] hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-5">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-50 text-blue-500 transition-transform group-hover:scale-110">
-                            <BookOpen className="h-5 w-5" />
-                          </div>
-                          <div className="text-left">
-                            <span className="block text-[14px] font-normal text-gray-800">Chế độ kiểm tra</span>
-                            <span className="block text-[10px] font-normal uppercase tracking-widest text-gray-400">
-                              Chấm điểm sau khi nộp bài
-                            </span>
-                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSelectMode('immediate', 'random')}
+                            disabled={startSessionMutation.isPending}
+                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-green-400 hover:bg-green-50"
+                          >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-100 text-green-600 transition-transform group-hover:scale-110">
+                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="3" />
+                                <path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12m11.32-11.32l2.12-2.12" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">Học sâu</span>
+                          </Button>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-gray-200 transition-all group-hover:translate-x-1 group-hover:text-[#5D7B6F]" />
-                      </Button>
+                      </div>
+
+                      {/* Review Mode */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 border-b pb-2">
+                          <BookOpen className="h-5 w-5 text-blue-500" />
+                          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#5D7B6F]">
+                            Chế độ kiểm tra
+                          </h3>
+                        </div>
+                        <p className="text-xs text-gray-500">Chấm điểm sau khi nộp bài</p>
+                        
+                        <div className="grid gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSelectMode('review', 'sequential')}
+                            disabled={startSessionMutation.isPending}
+                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-blue-400 hover:bg-blue-50"
+                          >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-100 text-blue-600 transition-transform group-hover:scale-110">
+                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">Chế độ dễ</span>
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSelectMode('review', 'random')}
+                            disabled={startSessionMutation.isPending}
+                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-blue-400 hover:bg-blue-50"
+                          >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-100 text-blue-600 transition-transform group-hover:scale-110">
+                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+                                <path d="M6 16l-2 2m14-14l2-2M8 8L6 6m12 12l2 2" strokeLinecap="round" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">Chế độ khó</span>
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </DialogContent>

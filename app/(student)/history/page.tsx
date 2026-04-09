@@ -252,12 +252,14 @@ export default function HistoryPage() {
             </div>
           )
           : filteredItems.map((item) => (
-            <div key={item.quiz_id} className="flex items-center gap-4 p-4 rounded-xl bg-white hover:shadow-md transition-shadow">
-              <Link href={`/history/${item.quiz_id}`} className="flex-1 min-w-0">
-                <p className="font-semibold truncate" style={{ color: '#5D7B6F' }}>
+            <div key={item.quiz_id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl bg-white hover:shadow-md transition-shadow">
+              <Link href={`/history/${item.quiz_id}`} className="flex-1 min-w-0 w-full">
+                <p className="font-semibold truncate text-base" style={{ color: '#5D7B6F' }}>
                   {displayQuizName(item)}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
+                
+                {/* First row: Time and source */}
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                   {item.latest?.completed_at ? (
                     <>
                       <Clock size={12} style={{ color: '#A4C3A2' }} />
@@ -270,22 +272,27 @@ export default function HistoryPage() {
                       Chưa có lần nộp hoàn thành
                     </span>
                   )}
-                  <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold" style={{ color: '#5D7B6F' }}>
+                  <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
                     {sourceText(item.source_label, item.source_creator_name)}
                   </span>
+                </div>
+
+                {/* Second row: Stats and mode */}
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   {item.latest && (
                     <>
-                      <span className="text-xs font-semibold" style={{ color: '#5D7B6F' }}>
+                      <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
                         Đã học: {item.latest.total_study_minutes} phút
                       </span>
-                      <span className="text-xs font-semibold" style={{ color: '#5D7B6F' }}>
-                        Số lần làm: {item.latest.attempt_count}
+                      <span className="text-xs text-gray-300">•</span>
+                      <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
+                        Số lần: {item.latest.attempt_count}
                       </span>
                       <ModeBadge mode={item.latest.mode} />
                     </>
                   )}
                   {item.active && (
-                    <span className="text-xs font-semibold" style={{ color: '#5D7B6F' }}>
+                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
                       Đang làm dở: {item.active.answered_count}/{item.active.total_questions}
                     </span>
                   )}
@@ -293,7 +300,7 @@ export default function HistoryPage() {
               </Link>
               <Link
                 href={`/history/${item.quiz_id}`}
-                className="rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap self-end sm:self-center"
                 style={{ backgroundColor: '#5D7B6F' }}
               >
                 Xem chi tiết

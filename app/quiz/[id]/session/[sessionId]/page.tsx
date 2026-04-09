@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import QuizHeader from '@/components/quiz/QuizHeader'
 import QuizSidebar from '@/components/quiz/QuizSidebar'
+import { QuizTimer } from '@/components/QuizTimer'
 import { useQuizSessionStore } from '@/store/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
 import { cn } from '@/lib/utils'
@@ -26,6 +27,8 @@ interface SessionQuestion {
   options: string[]
   answer_selection_count?: number
   image_url?: string
+  correct_answer?: number | number[]
+  explanation?: string
 }
 
 interface SessionData {
@@ -40,8 +43,19 @@ interface SessionData {
     courseCode: string
     categoryName: string
     title: string
+    started_at: string
+    paused_at?: string | null
+    total_paused_duration_ms?: number
   }
   question: SessionQuestion
+}
+
+interface PreloadedQuestions {
+  sessionId: string
+  mode: 'immediate' | 'review'
+  status: 'active' | 'completed'
+  totalQuestions: number
+  questions: SessionQuestion[]
 }
 
 type SessionApiError = Error & {
@@ -66,6 +80,18 @@ async function fetchSessionQuestion(sessionId: string, questionIndex: number): P
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
     const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
+    apiError.status = res.status
+    apiError.code = err.code
+    throw apiError
+  }
+  return res.json()
+}
+
+async function fetchAllQuestions(sessionId: string): Promise<PreloadedQuestions> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
+    const apiError = new Error(err.error ?? 'Failed to load questions') as SessionApiError
     apiError.status = res.status
     apiError.code = err.code
     throw apiError
@@ -99,6 +125,8 @@ export default function QuizSessionPage() {
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
+  const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
+  const [preloadProgress, setPreloadProgress] = useState(0)
 
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
@@ -113,6 +141,29 @@ export default function QuizSessionPage() {
     })
   }
 
+  // Preload all questions
+  const {
+    data: preloadData,
+    isLoading: isPreloading,
+    isError: isPreloadError,
+  } = useQuery<PreloadedQuestions, Error>({
+    queryKey: ['sessions', resolvedSessionId, 'all-questions'],
+    queryFn: async () => {
+      setPreloadProgress(10)
+      const data = await fetchAllQuestions(resolvedSessionId)
+      setPreloadProgress(50)
+      // Simulate progress for better UX
+      await new Promise(resolve => setTimeout(resolve, 300))
+      setPreloadProgress(80)
+      await new Promise(resolve => setTimeout(resolve, 200))
+      setPreloadProgress(100)
+      return data
+    },
+    enabled: resolvedSessionId.length > 0,
+    staleTime: Infinity, // Cache forever since questions don't change
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+  })
+
   const {
     data: initialData,
     isLoading: isInitialLoading,
@@ -121,29 +172,34 @@ export default function QuizSessionPage() {
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 && !isPreloading && !!preloadData,
     staleTime: 0,
   })
+
+  // Store preloaded questions when available
+  useEffect(() => {
+    if (preloadData?.questions) {
+      setPreloadedQuestions(preloadData.questions)
+    }
+  }, [preloadData])
 
   const clampedQuestionIndex = Math.min(
     Math.max(currentQuestionIndex, 0),
     Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0)
   )
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<SessionData, Error>({
-    queryKey: ['sessions', resolvedSessionId, clampedQuestionIndex],
-    queryFn: () => fetchSessionQuestion(resolvedSessionId, clampedQuestionIndex),
-    enabled: Boolean(initialData && resolvedSessionId),
-    staleTime: 0,
-  })
+  // Use preloaded questions instead of fetching individually
+  const currentQuestion = preloadedQuestions?.[clampedQuestionIndex]
 
-  const activeData = data ?? initialData
-  const activeError = error ?? initialError
+  // Construct session data from preloaded questions and initial session data
+  const activeData: SessionData | undefined = initialData && currentQuestion ? {
+    session: initialData.session,
+    question: currentQuestion,
+  } : initialData
+
+  const activeError = initialError
+  const isLoading = isInitialLoading
+  const isError = isInitialError
 
   useEffect(() => {
     const err = activeError as SessionApiError | undefined
@@ -176,14 +232,34 @@ export default function QuizSessionPage() {
       setSubmitted(activeData.session.mode === 'immediate')
 
       if (activeData.session.mode === 'immediate') {
-        setLastAnswerResult(feedbackByQuestion[currentQuestionIndex] ?? null)
+        // Try to get feedback from cache first
+        let feedback = feedbackByQuestion[currentQuestionIndex]
+        
+        // If not in cache, reconstruct from preloaded question data
+        if (!feedback && currentQuestion?.correct_answer !== undefined) {
+          const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
+            ? currentQuestion.correct_answer
+            : [currentQuestion.correct_answer]
+          
+          feedback = {
+            isCorrect: existing.is_correct,
+            correctAnswer: correctAnswerIndexes[0],
+            correctAnswers: correctAnswerIndexes,
+            explanation: currentQuestion.explanation,
+          }
+          
+          // Cache it for future navigation
+          setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback! }))
+        }
+        
+        setLastAnswerResult(feedback ?? null)
       }
     } else {
       setSelectedOptions([])
       setSubmitted(false)
       setLastAnswerResult(null)
     }
-  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, setLastAnswerResult])
+  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
 
   useEffect(() => {
     if (!sessionId) return
@@ -223,6 +299,9 @@ export default function QuizSessionPage() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         reportSessionActivity('pause')
+      } else if (document.visibilityState === 'visible') {
+        // Resume when user comes back to the tab
+        reportSessionActivity('resume')
       }
     }
 
@@ -346,11 +425,54 @@ export default function QuizSessionPage() {
     router.push(`/quiz/${quizId}`)
   }
 
-  if (isInitialLoading || (!activeData && isLoading)) {
+  // Show preloading screen with progress
+  if (isPreloading || isInitialLoading || (!activeData && isLoading)) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-white font-sans">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
-        <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-gray-500">Loading Exam Mode...</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-br from-[#EAE7D6]/30 to-white font-sans">
+        <div className="relative">
+          <div className="absolute inset-0 animate-ping rounded-full bg-[#5D7B6F]/20" />
+          <Loader2 className="relative h-12 w-12 animate-spin text-[#5D7B6F]" />
+        </div>
+        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.25em] text-[#5D7B6F]">
+          {isPreloading ? 'Đang tải bộ câu hỏi...' : 'Loading Exam Mode...'}
+        </p>
+        {isPreloading && (
+          <div className="mt-4 w-64">
+            <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+              <div 
+                className="h-full bg-gradient-to-r from-[#5D7B6F] to-[#A4C3A2] transition-all duration-300 ease-out"
+                style={{ width: `${preloadProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-center text-[10px] text-gray-400">
+              {preloadProgress < 50 && 'Đang kết nối với server...'}
+              {preloadProgress >= 50 && preloadProgress < 80 && `Đang tải ${preloadData?.totalQuestions ?? '...'} câu hỏi...`}
+              {preloadProgress >= 80 && 'Chuẩn bị phòng thi...'}
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Show error if preload failed
+  if (isPreloadError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#f3f3f3] font-sans">
+        <div className="max-w-sm border-2 border-[#101010] bg-white p-6 text-center">
+          <XCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
+          <h2 className="text-[26px] font-bold text-[#111111]">Không thể tải bộ câu hỏi</h2>
+          <p className="mt-2 text-[16px] text-[#444444]">
+            Vui lòng kiểm tra kết nối mạng và thử lại
+          </p>
+          <Button
+            type="button"
+            onClick={() => router.push(`/quiz/${quizId}`)}
+            className="mt-5 rounded-none border-2 border-[#101010] bg-[#efefef] text-[18px] font-semibold text-[#111111] hover:bg-white"
+          >
+            Quay lại
+          </Button>
+        </div>
       </div>
     )
   }
@@ -407,7 +529,14 @@ export default function QuizSessionPage() {
           totalQuestions={effectiveTotal}
           currentIndex={effectiveIndex}
           answeredCount={answeredCount}
-        />
+        >
+          <QuizTimer
+            startedAt={session.started_at}
+            pausedAt={session.paused_at}
+            totalPausedDurationMs={session.total_paused_duration_ms}
+            className="text-[#5D7B6F]"
+          />
+        </QuizHeader>
 
         <div className="flex min-h-0 flex-1">
           <QuizSidebar
@@ -493,7 +622,7 @@ export default function QuizSessionPage() {
                           <p className="font-semibold">
                             {lastAnswerResult?.isCorrect ? 'Bạn đã trả lời đúng.' : 'Bạn trả lời chưa đúng.'}
                           </p>
-                          <p className="mt-1 leading-relaxed">
+                          <p className="mt-1 whitespace-pre-wrap leading-relaxed">
                             {lastAnswerResult?.explanation || 'Hệ thống chưa có phần giải thích cho câu này.'}
                           </p>
                         </div>

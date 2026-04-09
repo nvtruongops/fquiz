@@ -19,15 +19,18 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     quiz_id: { type: Schema.Types.ObjectId, ref: 'Quiz', required: true },
     mode: { type: String, enum: ['immediate', 'review'], required: true },
+    difficulty: { type: String, enum: ['sequential', 'random'], required: true, default: 'sequential' },
     status: { type: String, enum: ['active', 'completed'], required: true, default: 'active' },
     user_answers: { type: [UserAnswerSchema], default: [] },
     current_question_index: { type: Number, required: true, default: 0 },
+    question_order: { type: [Number], required: true, default: [] },
     score: { type: Number, required: true, default: 0 },
     expires_at: { type: Date, required: true },
     started_at: { type: Date, required: true, default: Date.now },
     completed_at: { type: Date },
     last_activity_at: { type: Date, default: Date.now },
     paused_at: { type: Date },
+    total_paused_duration_ms: { type: Number, default: 0 },
   },
   { timestamps: false }
 )

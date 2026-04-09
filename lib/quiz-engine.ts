@@ -91,9 +91,14 @@ export async function processImmediateAnswer(
 
     const questionIndex =
       typeof questionIndexInput === 'number' ? questionIndexInput : session.current_question_index
-    const question = quiz.questions[questionIndex]
+    
+    // Use question_order to get the actual question index
+    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
+    const actualQuestionIndex = questionOrder[questionIndex]
+    const question = quiz.questions[actualQuestionIndex]
+    
     if (!question) {
-      throw new Error(`Question at index ${questionIndex} not found`)
+      throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
     }
 
     const correctAnswerIndexes = normalizeIndexes(
@@ -115,7 +120,7 @@ export async function processImmediateAnswer(
     const nextIndex = questionIndex + 1
     const isLastQuestion = nextIndex >= quiz.questions.length
     const updatedAnswers = upsertAnswer(session.user_answers, userAnswer)
-    const score = calculateScore(updatedAnswers, quiz.questions)
+    const score = calculateScore(updatedAnswers, quiz.questions, session.question_order)
 
     // Immediate mode only records answers and running score.
     // The session is completed only when user explicitly confirms submit.
@@ -162,9 +167,14 @@ export async function processReviewAnswer(
 
     const questionIndex =
       typeof questionIndexInput === 'number' ? questionIndexInput : session.current_question_index
-    const question = quiz.questions[questionIndex]
+    
+    // Use question_order to get the actual question index
+    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
+    const actualQuestionIndex = questionOrder[questionIndex]
+    const question = quiz.questions[actualQuestionIndex]
+    
     if (!question) {
-      throw new Error(`Question at index ${questionIndex} not found`)
+      throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
     }
 
     const correctAnswerIndexes = normalizeIndexes(
@@ -199,7 +209,8 @@ export async function processReviewAnswer(
       })
 
       // Return next question with correct_answer and explanation stripped (Req 12.1, 12.3)
-      const nextQuestion = quiz.questions[nextIndex]
+      const nextActualQuestionIndex = questionOrder[nextIndex]
+      const nextQuestion = quiz.questions[nextActualQuestionIndex]
       const safeQuestion = {
         _id: nextQuestion._id,
         text: nextQuestion.text,
@@ -212,7 +223,7 @@ export async function processReviewAnswer(
 
     // Last question — persist answer and running score.
     // In review mode, session completion only happens via explicit submit confirmation.
-    const score = calculateScore(updatedAnswers, quiz.questions)
+    const score = calculateScore(updatedAnswers, quiz.questions, session.question_order)
     await QuizSession.findByIdAndUpdate(session._id, {
       $set: {
         user_answers: updatedAnswers,
@@ -231,16 +242,22 @@ export async function processReviewAnswer(
 
 /**
  * Calculate score server-side from DB data.
- * Counts entries where answer_index === correct_answer.
+ * Counts entries where answer matches correct_answer, using question_order for random quizzes.
  * Requirements: 7.5, 8.4
  */
 export function calculateScore(
   userAnswers: UserAnswer[],
-  questions: IQuestion[]
+  questions: IQuestion[],
+  questionOrder?: number[]
 ): number {
   let score = 0
+  const order = questionOrder || Array.from({ length: questions.length }, (_, i) => i)
+  
   for (const answer of userAnswers) {
-    const question = questions[answer.question_index]
+    // answer.question_index is the display index (0, 1, 2...)
+    // We need to get the actual question using question_order
+    const actualQuestionIndex = order[answer.question_index]
+    const question = questions[actualQuestionIndex]
     if (!question) continue
 
     const correctAnswerIndexes = normalizeIndexes(

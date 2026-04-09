@@ -54,16 +54,43 @@ export async function GET(
     )
 
     if (!queryParsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: queryParsed.error.issues }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: queryParsed.error.issues,
+        receivedParams: Object.fromEntries(requestUrl.searchParams.entries())
+      }, { status: 400 })
     }
 
     const currentIndex = queryParsed.data.question_index ?? session.current_question_index
 
+    // If session is completed or currentIndex is out of bounds, return session info without question
     if (currentIndex < 0 || currentIndex >= quiz.questions.length) {
-      return NextResponse.json({ error: 'Invalid question index' }, { status: 400 })
+      return NextResponse.json(
+        {
+          session: {
+            _id: session._id,
+            mode: session.mode,
+            status: session.status,
+            current_question_index: session.current_question_index,
+            totalQuestions: quiz.questions.length,
+            user_answers: session.user_answers,
+            courseCode: quiz.course_code,
+            categoryName: category?.name || 'Chưa phân loại',
+            title: quiz.title,
+            started_at: session.started_at,
+            paused_at: session.paused_at,
+            total_paused_duration_ms: session.total_paused_duration_ms,
+          },
+          question: null,
+        },
+        { status: 200 }
+      )
     }
 
-    const rawQuestion = quiz.questions[currentIndex]
+    // Use question_order to get the actual question index
+    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
+    const actualQuestionIndex = questionOrder[currentIndex]
+    const rawQuestion = quiz.questions[actualQuestionIndex]
 
     if (!rawQuestion) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
@@ -106,6 +133,9 @@ export async function GET(
           courseCode: quiz.course_code,
           categoryName: category?.name || 'Chưa phân loại',
           title: quiz.title,
+          started_at: session.started_at,
+          paused_at: session.paused_at,
+          total_paused_duration_ms: session.total_paused_duration_ms,
         },
         question,
       },

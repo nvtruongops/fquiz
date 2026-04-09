@@ -8,6 +8,18 @@ import mongoose from 'mongoose'
 import type { IQuestion } from '@/types/quiz'
 import { CreateSessionSchema } from '@/lib/schemas'
 
+/**
+ * Fisher-Yates shuffle algorithm for randomizing question order
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
 export async function GET() {
   return NextResponse.json({ message: 'Not implemented' }, { status: 501 })
 }
@@ -45,7 +57,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { quiz_id, mode, action } = parsed.data
+    const { quiz_id, mode, difficulty, action } = parsed.data
 
     // 3. Connect to DB
     await connectDB()
@@ -208,18 +220,26 @@ export async function POST(req: Request) {
     const now = new Date()
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // now + 24h
 
+    // Generate question order based on difficulty
+    const questionOrder = difficulty === 'random'
+      ? shuffleArray([...Array(quizQuestions.length).keys()])
+      : Array.from({ length: quizQuestions.length }, (_, i) => i)
+
     const session = await QuizSession.create({
       student_id: studentObjectId,
       quiz_id: new mongoose.Types.ObjectId(effectiveQuizId),
       mode,
+      difficulty,
       status: 'active',
       current_question_index: 0,
+      question_order: questionOrder,
       user_answers: [],
       score: 0,
       expires_at: expiresAt,
       started_at: now,
       last_activity_at: now,
       paused_at: null,
+      total_paused_duration_ms: 0,
     })
 
     // 6. Query UserHighlights for all question_ids in the quiz
@@ -229,8 +249,9 @@ export async function POST(req: Request) {
       question_id: { $in: questionIds },
     }).lean()
 
-    // 7. Return first question — exclude correct_answer and explanation (Req 12.1)
-    const firstQuestion = quizQuestions[0]
+    // 7. Return first question based on question_order
+    const firstQuestionIndex = questionOrder[0]
+    const firstQuestion = quizQuestions[firstQuestionIndex]
     const safeQuestion = {
       _id: firstQuestion._id,
       text: firstQuestion.text,
@@ -242,6 +263,7 @@ export async function POST(req: Request) {
       {
         sessionId: session._id,
         mode: session.mode,
+        difficulty: session.difficulty,
         question: safeQuestion,
         highlights,
         totalQuestions: quizQuestions.length,

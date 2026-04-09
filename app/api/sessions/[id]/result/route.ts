@@ -58,10 +58,13 @@ export async function GET(
 
     const quizQuestions = (quiz.questions ?? []) as IQuestion[]
     const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
+    const questionOrder = session.question_order || Array.from({ length: quizQuestions.length }, (_, i) => i)
 
     // Build full result — include correct_answer and explanation (Req 12.2)
-    const questions = quizQuestions.map((q: IQuestion, idx: number) => {
-      const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === idx)
+    // Map questions according to question_order so they appear in the same order as during the quiz
+    const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
+      const q = quizQuestions[actualIndex]
+      const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
       const correctAnswerIndex = Array.isArray(q.correct_answer)
         ? q.correct_answer[0]
         : (q.correct_answer as unknown as number)
@@ -74,7 +77,7 @@ export async function GET(
         explanation: q.explanation,
         ...(q.image_url ? { image_url: q.image_url } : {}),
         submitted_answer: submitted?.answer_index ?? null,
-        is_correct: submitted?.answer_index === correctAnswerIndex,
+        is_correct: submitted?.is_correct ?? false,
       }
     })
 
