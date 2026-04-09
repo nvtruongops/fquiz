@@ -443,7 +443,7 @@ export default function QuizSessionMobilePage() {
             </div>
             <p className="mt-2 text-center text-xs text-gray-400">
               {preloadProgress < 50 && 'Đang kết nối với server...'}
-              {preloadProgress >= 50 && preloadProgress < 80 && `Đang tải ${preloadData?.totalQuestions ?? '...'} câu hỏi...`}
+              {preloadProgress >= 50 && preloadProgress < 80 && `Đang tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi...`}
               {preloadProgress >= 80 && 'Chuẩn bị phòng thi...'}
             </p>
           </div>
