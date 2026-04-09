@@ -57,7 +57,7 @@ export async function GET(
 
     // For immediate mode or completed sessions: include correct_answer and explanation
     // For review mode (active): exclude correct_answer and explanation
-    const questions = questionOrder.map((originalIndex) => {
+    const questions = questionOrder.map((originalIndex: number) => {
       const q = quiz.questions[originalIndex]
       const baseQuestion = {
         _id: q._id,
