@@ -729,9 +729,21 @@ export function QuizEditor({
                       <Input
                         value={form.course_code}
                         onChange={(e) => setForm((p) => ({ ...p, course_code: e.target.value }))}
-                        placeholder="VD: DE-01, CA-01, HK1..."
-                        className="h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]"
+                        placeholder="VD: ABC_123, HK1_DE01..."
+                        className={cn(
+                          "h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]",
+                          form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && "border-red-500 focus:border-red-500"
+                        )}
                       />
+                      {form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && (
+                        <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-2">
+                        Chỉ dùng chữ cái (A-Z), số (0-9) và dấu gạch dưới (_). Không dấu cách.
+                      </p>
                     </div>
                   </div>
 
