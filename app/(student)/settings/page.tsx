@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/lib/store/toast-store'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 type SettingsResponse = {
   settings: {
@@ -75,7 +76,7 @@ export default function StudentSettingsPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/settings`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           timezone: form.timezone,
