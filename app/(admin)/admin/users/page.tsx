@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/lib/store/toast-store'
 import { normalizeSearchInput, clampPagination, sanitizeQueryParams } from '@/lib/client-validation'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 interface User {
   _id: string
@@ -76,8 +77,8 @@ async function bulkAction(ids: string[], action: 'delete' | 'ban' | 'unban') {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users/bulk`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids, action }),
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ user_ids: ids, action }),
   })
   if (!res.ok) {
     const data = await res.json()
@@ -90,7 +91,7 @@ async function updateUser(id: string, updates: Record<string, unknown>) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users/${id}`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(updates),
   })
   if (!res.ok) {
