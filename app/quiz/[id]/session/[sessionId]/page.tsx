@@ -146,17 +146,25 @@ export default function QuizSessionPage() {
     data: preloadData,
     isLoading: isPreloading,
     isError: isPreloadError,
+    isSuccess: isPreloadSuccess,
   } = useQuery<PreloadedQuestions, Error>({
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
       setPreloadProgress(10)
       const data = await fetchAllQuestions(resolvedSessionId)
-      setPreloadProgress(50)
-      // Simulate progress for better UX
+      setPreloadProgress(40)
+      
+      // Wait longer to ensure data is fully cached and ready
+      await new Promise(resolve => setTimeout(resolve, 500))
+      setPreloadProgress(70)
+      
+      await new Promise(resolve => setTimeout(resolve, 400))
+      setPreloadProgress(90)
+      
+      // Final wait to ensure everything is ready
       await new Promise(resolve => setTimeout(resolve, 300))
-      setPreloadProgress(80)
-      await new Promise(resolve => setTimeout(resolve, 200))
       setPreloadProgress(100)
+      
       return data
     },
     enabled: resolvedSessionId.length > 0,
@@ -169,10 +177,11 @@ export default function QuizSessionPage() {
     isLoading: isInitialLoading,
     isError: isInitialError,
     error: initialError,
+    isSuccess: isInitialSuccess,
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0 && !isPreloading && !!preloadData,
+    enabled: resolvedSessionId.length > 0 && isPreloadSuccess && !!preloadData,
     staleTime: 0,
   })
 
@@ -426,7 +435,7 @@ export default function QuizSessionPage() {
   }
 
   // Show preloading screen with progress
-  if (isPreloading || isInitialLoading || (!activeData && isLoading)) {
+  if (isPreloading || isInitialLoading || !isPreloadSuccess || !isInitialSuccess || (!activeData && isLoading)) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-br from-[#EAE7D6]/30 to-white font-sans">
         <div className="relative">
@@ -445,9 +454,10 @@ export default function QuizSessionPage() {
               />
             </div>
             <p className="mt-2 text-center text-[10px] text-gray-400">
-              {preloadProgress < 50 && 'Đang kết nối với server...'}
-              {preloadProgress >= 50 && preloadProgress < 80 && `Đang tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi...`}
-              {preloadProgress >= 80 && 'Chuẩn bị phòng thi...'}
+              {preloadProgress < 40 && 'Đang kết nối với server...'}
+              {preloadProgress >= 40 && preloadProgress < 70 && `Đang tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi...`}
+              {preloadProgress >= 70 && preloadProgress < 90 && 'Đang chuẩn bị dữ liệu...'}
+              {preloadProgress >= 90 && 'Hoàn tất, đang khởi động phòng thi...'}
             </p>
           </div>
         )}
