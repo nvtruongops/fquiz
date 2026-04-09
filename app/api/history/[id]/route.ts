@@ -138,6 +138,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           mode: s.mode,
           completed_at: s.completed_at,
           started_at: s.started_at,
+          total_paused_duration_ms: s.total_paused_duration_ms,
         }))
       : [
           {
@@ -146,6 +147,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             mode: session.mode,
             completed_at: session.completed_at,
             started_at: session.started_at,
+            total_paused_duration_ms: session.total_paused_duration_ms,
           },
         ]
 
