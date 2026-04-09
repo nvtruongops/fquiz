@@ -34,6 +34,16 @@ async function addIndexes() {
       { original_quiz_id: 1 },
       { name: 'original_quiz' }
     )
+    // Index for /my-quizzes page - filter by user and category
+    await Quiz.collection.createIndex(
+      { created_by: 1, category_id: 1 },
+      { name: 'created_by_category' }
+    )
+    // Index for duplicate check when creating quiz
+    await Quiz.collection.createIndex(
+      { created_by: 1, is_saved_from_explore: 1, course_code: 1 },
+      { name: 'created_by_saved_code' }
+    )
     console.log('✓ Quiz indexes created')
 
     // User indexes
