@@ -1,5 +1,8 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IQuizSession, UserAnswer } from '@/types/session'
+// Import referenced models to ensure they're registered
+import '@/models/User'
+import '@/models/Quiz'
 
 const UserAnswerSchema = new Schema<UserAnswer>(
   {

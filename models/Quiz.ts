@@ -1,5 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IQuiz, IQuestion } from '@/types/quiz'
+// Import Category to ensure it's registered before Quiz uses it in populate
+import '@/models/Category'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
