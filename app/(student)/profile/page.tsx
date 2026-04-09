@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/lib/store/toast-store'
 import { validateImageFile, fileToBase64, validateBase64Image } from '@/lib/client-validation'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 type ProfileResponse = {
   profile: {
@@ -31,7 +32,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const run = async () => {
       try {
-        const res = await fetch('/api/student/profile', { credentials: 'include' })
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/profile`, { credentials: 'include' })
         if (!res.ok) {
           if (res.status === 404 || res.status === 501) {
             toast.info('Trang hồ sơ đang được phát triển. Coming soon.')
@@ -107,9 +108,9 @@ export default function ProfilePage() {
       let persistedAvatarUrl: string | undefined
 
       if (pendingAvatarBase64) {
-        const avatarRes = await fetch('/api/student/profile/avatar', {
+        const avatarRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/profile/avatar`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'include',
           body: JSON.stringify({ image: pendingAvatarBase64 }),
         })
@@ -133,7 +134,7 @@ export default function ProfilePage() {
         setPendingAvatarBase64(null)
       }
 
-      const res = await fetch('/api/student/profile', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
