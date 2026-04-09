@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       _id: id, 
       status: 'published' 
     })
-    .select('title course_code questionCount studentCount category_id created_at questions')
+    .select('title description course_code questionCount studentCount category_id created_at questions')
     .populate('category_id', 'name')
     .lean()
 
@@ -30,6 +30,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const responseData = {
       id: quiz._id.toString(),
       title: quiz.title,
+      description: (quiz as any).description || '',
       course_code: quiz.course_code,
       questionCount: quiz.questionCount || (quiz.questions?.length ?? 0),
       studentCount: quiz.studentCount || 0,
