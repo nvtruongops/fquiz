@@ -7,6 +7,20 @@ import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { LoginSchema } from '@/lib/schemas'
 import { useToast } from '@/lib/store/toast-store'
 
+function parseSafeCallbackUrl(search: string) {
+  const raw = new URLSearchParams(search).get('callbackUrl')
+  if (!raw) return null
+
+  // Support previously double-encoded callback values, e.g. %252Fadmin.
+  let decoded = raw
+  try { decoded = decodeURIComponent(decoded) } catch {}
+  try { decoded = decodeURIComponent(decoded) } catch {}
+
+  if (!decoded.startsWith('/')) return null
+  if (decoded.startsWith('//')) return null
+  return decoded
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -33,6 +47,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ identifier, password }),
       })
       const data = (await res.json().catch(() => ({}))) as { error?: string; role?: string }
@@ -58,7 +73,8 @@ export default function LoginPage() {
       }
 
       toast.success('Đăng nhập thành công! Đang chuyển hướng...')
-      router.push(data.role === 'admin' ? '/admin' : '/dashboard')
+      const callbackUrl = parseSafeCallbackUrl(globalThis.location.search)
+      router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
       router.refresh()
     } catch {
       toast.error('Hệ thống đang bận, vui lòng thử lại sau.')

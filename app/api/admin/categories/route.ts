@@ -24,11 +24,11 @@ function buildCategoryMatchFilter(search?: string, typeParam?: 'public' | 'priva
   const effectiveType = typeParam || 'public'
   if (effectiveType === 'public') {
     Object.assign(filter, publicCategoryMatch)
-  } else if (effectiveType !== '') {
+  } else {
     filter.type = effectiveType
   }
 
-  if (status && status !== '') {
+  if (status) {
     filter.status = status
   }
 

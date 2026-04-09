@@ -6,8 +6,8 @@ import logger from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
-    const { id } = await params
     await connectDB()
 
     // 1. Fetch Quiz with Populated Category (Subject)

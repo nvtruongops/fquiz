@@ -29,7 +29,7 @@ interface ResultData {
 }
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
-  const headersList = headers()
+  const headersList = await headers()
   const host = headersList.get('host') ?? 'localhost:3000'
   const protocol = host.includes('localhost') ? 'http' : 'https'
   const res = await fetch(`${protocol}://${host}/api/sessions/${sessionId}/result`, {

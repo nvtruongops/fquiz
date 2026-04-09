@@ -45,13 +45,13 @@ async function fetchCategories(search = '', status = 'approved'): Promise<{ cate
   })
   
   const params = new URLSearchParams(queryParams)
-  const res = await fetch(`/api/admin/categories?${params.toString()}`, { credentials: 'include' })
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories?${params.toString()}`, { credentials: 'include' })
   if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
 }
 
 async function createCategory(name: string): Promise<{ category: Category }> {
-  const res = await fetch('/api/admin/categories', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories`, {
     method: 'POST',
     credentials: 'include',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
@@ -65,7 +65,7 @@ async function createCategory(name: string): Promise<{ category: Category }> {
 }
 
 async function updateCategory(id: string, name: string): Promise<{ category: Category }> {
-  const res = await fetch(`/api/admin/categories/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
@@ -79,7 +79,7 @@ async function updateCategory(id: string, name: string): Promise<{ category: Cat
 }
 
 async function deleteCategory(id: string): Promise<void> {
-  const res = await fetch(`/api/admin/categories/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories/${id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: withCsrfHeaders(),
@@ -91,7 +91,7 @@ async function deleteCategory(id: string): Promise<void> {
 }
 
 async function updateCategoryStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
-  const res = await fetch(`/api/admin/categories/${id}/status`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/categories/${id}/status`, {
     method: 'PATCH',
     credentials: 'include',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),

@@ -48,7 +48,7 @@ export default function StudentSettingsPage() {
   useEffect(() => {
     const run = async () => {
       try {
-        const res = await fetch('/api/student/settings', { credentials: 'include' })
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/settings`, { credentials: 'include' })
         if (!res.ok) {
           if (res.status === 404 || res.status === 501) {
             toast.info('Trang cài đặt đang được phát triển. Coming soon.')
@@ -73,7 +73,7 @@ export default function StudentSettingsPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      const res = await fetch('/api/student/settings', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

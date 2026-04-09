@@ -19,13 +19,13 @@ interface Settings {
 }
 
 async function fetchSettings(): Promise<{ settings: Settings }> {
-  const res = await fetch('/api/admin/settings', { credentials: 'include' })
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/settings`, { credentials: 'include' })
   if (!res.ok) throw new Error('Failed to fetch settings')
   return res.json()
 }
 
 async function saveSettings(updates: Partial<Settings>): Promise<{ settings: Settings }> {
-  const res = await fetch('/api/admin/settings', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/settings`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

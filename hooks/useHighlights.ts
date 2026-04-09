@@ -9,7 +9,7 @@ export function useHighlights(questionId: string) {
     staleTime: 0,
     enabled: !!questionId,
     queryFn: async () => {
-      const res = await fetch(`/api/highlights?question_id=${questionId}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/highlights?question_id=${questionId}`)
       if (!res.ok) {
         const error = await res.json().catch(() => ({ message: 'Failed to fetch highlights' }))
         throw new Error(error.message || 'Failed to fetch highlights')
@@ -32,7 +32,7 @@ export function useAddHighlight(questionId: string) {
 
   return useMutation<IUserHighlight, Error, AddHighlightVariables, { previousHighlights: IUserHighlight[] | undefined }>({
     mutationFn: async (variables) => {
-      const res = await fetch('/api/highlights', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/highlights`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(variables),
@@ -81,7 +81,7 @@ export function useRemoveHighlight(questionId: string) {
 
   return useMutation<void, Error, string>({
     mutationFn: async (highlightId) => {
-      const res = await fetch(`/api/highlights/${highlightId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/highlights/${highlightId}`, {
         method: 'DELETE',
       })
       if (!res.ok) {

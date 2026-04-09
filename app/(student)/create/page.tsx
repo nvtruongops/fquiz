@@ -13,7 +13,7 @@ export default function StudentCreateQuizPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['student', 'categories'],
     queryFn: async () => {
-      const res = await fetch('/api/student/categories')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`)
       if (!res.ok) throw new Error('Failed to fetch categories')
       return res.json() as Promise<{ categories: Category[] }>
     },
@@ -36,7 +36,7 @@ export default function StudentCreateQuizPage() {
       categories={categories.map((c) => ({ _id: c._id, name: c.name }))}
       allowDraft={false}
       enableAutosave={false}
-      createEndpoint="/api/student/quizzes"
+      createEndpoint={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes`}
       redirectOnPublish="/my-quizzes"
       cancelPath="/my-quizzes"
     />

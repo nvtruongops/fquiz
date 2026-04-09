@@ -30,7 +30,7 @@ export default function Navbar() {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     
-    fetch('/api/auth/me')
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
       .then(async (res) => {
         if (!res.ok) return
         const data = (await res.json()) as { user?: { name: string; role: string; avatarUrl?: string } | null }
@@ -133,7 +133,7 @@ export default function Navbar() {
                   <DropdownMenuItem 
                     className="text-red-500 focus:text-red-500 flex items-center gap-2 cursor-pointer py-2.5 rounded-xl font-black"
                     onClick={() => {
-                      fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+                      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/logout`, { method: 'POST' }).then(() => {
                         globalThis.location.href = '/'
                       })
                     }}

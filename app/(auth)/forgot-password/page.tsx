@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
     setDevCode('')
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'send', email }),
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
 
     setVerifyingCode(true)
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'verify', email, code: code.trim() }),
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
 
     setResetting(true)
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: code.trim(), password: newPassword }),

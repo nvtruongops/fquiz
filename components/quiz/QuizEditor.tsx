@@ -128,9 +128,11 @@ export function QuizEditor({
   const isStudentMode = mode === 'student'
   const canSaveDraft = allowDraft ?? !isStudentMode
   const autosaveEnabled = enableAutosave ?? !isStudentMode
-  const effectiveCreateEndpoint = createEndpoint ?? (isStudentMode ? '/api/student/quizzes' : '/api/admin/quizzes')
+  const effectiveCreateEndpoint =
+    createEndpoint ??
+    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${isStudentMode ? '/api/student/quizzes' : '/api/admin/quizzes'}`
   const effectiveUpdateEndpointBuilder = updateEndpointBuilder ?? ((id: string) =>
-    isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`
+    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`}`
   )
   const effectiveRedirectOnPublish = redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes')
   const effectiveCancelPath = cancelPath ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes')
@@ -396,7 +398,7 @@ export function QuizEditor({
 
     setIsCreatingCategory(true)
     try {
-      const res = await fetch('/api/student/categories', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`, {
         method: 'POST',
         credentials: 'include',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),

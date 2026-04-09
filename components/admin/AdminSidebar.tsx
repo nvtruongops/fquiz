@@ -20,7 +20,7 @@ export function AdminSidebar() {
   const queryClient = useQueryClient()
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/logout`, { method: 'POST' })
     clearAllUserCache(queryClient)
     router.push('/login')
     router.refresh()

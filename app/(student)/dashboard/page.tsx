@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ name: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(res => {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`).then(res => {
       if (res.ok) res.json().then(data => setUser(data.user))
     })
   }, [])
@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['student', 'dashboard'],
     queryFn: async () => {
-      const res = await fetch('/api/student/dashboard')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/dashboard`)
       if (!res.ok) throw new Error('Failed to fetch dashboard data')
       return res.json()
     }

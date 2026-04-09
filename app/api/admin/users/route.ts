@@ -47,11 +47,11 @@ export async function GET(req: Request) {
       ]
     }
 
-    if (roleFilter && roleFilter !== '') {
+    if (roleFilter) {
       query.role = roleFilter
     }
 
-    if (statusFilter && statusFilter !== '') {
+    if (statusFilter) {
       query.status = statusFilter
     }
 
