@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/mongodb'
 import { verifyToken, requireRole } from '@/lib/auth'
 import { Category } from '@/models/Category'
@@ -48,6 +49,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       { new: true }
     )
 
+    // Revalidate admin pages to show updated category
+    revalidatePath('/admin/categories')
+    revalidatePath('/admin/quizzes/new')
+
     return NextResponse.json({ category })
   } catch (err) {
     if (err instanceof Response) return err
@@ -78,6 +83,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     await Category.deleteOne({ _id: category._id })
+
+    // Revalidate admin pages to remove deleted category
+    revalidatePath('/admin/categories')
+    revalidatePath('/admin/quizzes/new')
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
