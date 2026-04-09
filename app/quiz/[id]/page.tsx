@@ -150,8 +150,6 @@ export default function QuizDetailPage() {
     },
     onSuccess: (data) => {
       const nextSessionId = data.sessionId ?? data.session?._id
-      console.log('[START SESSION] Success - Session ID:', nextSessionId)
-      console.log('[START SESSION] Response data:', data)
       
       if (!nextSessionId) {
         toast.error('Không nhận được mã phiên thi từ hệ thống. Vui lòng thử lại.')
@@ -164,7 +162,6 @@ export default function QuizDetailPage() {
       setResumeDialogOpen(false)
       
       const targetUrl = `/quiz/${quizId}/session/${nextSessionId}`
-      console.log('[START SESSION] Redirecting to:', targetUrl)
       
       // Use window.location.href for hard navigation to avoid cache issues
       window.location.href = targetUrl

@@ -89,7 +89,6 @@ export async function POST(req: Request) {
         .map((item) => item.code)
         .slice(0, 5)
       console.warn('Quiz import preview validation errors', {
-        userId: payload.userId,
         role: payload.role,
         errorCount: preview.summary.errors,
         topCodes,
