@@ -122,7 +122,7 @@ export default function ExploreContent() {
   }, [categories, catSearch])
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6 space-y-6 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto px-6 py-6 pb-28 md:pb-6 space-y-6 animate-in fade-in duration-700">
       {/* Hero Header */}
       <div className="space-y-2">
         <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight group">
@@ -150,7 +150,7 @@ export default function ExploreContent() {
               </Button>
            </DialogTrigger>
            
-           <DialogContent className="sm:max-w-xl rounded-[40px] p-8 border-[#5D7B6F]/10 shadow-3xl bg-white/95 backdrop-blur-xl">
+           <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-xl rounded-[40px] px-6 py-6 sm:px-8 sm:py-8 border-[#5D7B6F]/10 shadow-3xl bg-white/95 backdrop-blur-xl">
               <DialogHeader>
                  <DialogTitle className="text-2xl font-black text-[#5D7B6F] flex items-center gap-3">
                     <GraduationCap className="w-6 h-6 text-[#A4C3A2]" />

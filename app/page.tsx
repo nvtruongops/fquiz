@@ -4,7 +4,7 @@ import { BookOpen, BarChart2, Layers, ArrowRight, CheckCircle, GraduationCap, Us
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#EAE7D6] flex flex-col font-sans selection:bg-[#A4C3A2] selection:text-[#5D7B6F]">
+    <div className="min-h-screen bg-[#EAE7D6] flex flex-col font-sans selection:bg-[#A4C3A2] selection:text-[#5D7B6F] pb-28 md:pb-0">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-0 left-0 w-full h-full opacity-[0.025]"
@@ -17,7 +17,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-20 pb-20">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-20 pb-28 md:pb-20">
         {/* Subtle Glow Behind Hero */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-[#D7F9FA]/30 blur-[120px] rounded-full pointer-events-none -z-10" />
 

@@ -260,7 +260,7 @@ export default function QuizDetailPage() {
     <div className="flex min-h-screen flex-col bg-[#F9F9F7] font-sans">
       <Navbar />
 
-      <main className="flex flex-1 flex-col px-6 py-12">
+      <main className="flex flex-1 flex-col px-6 py-12 pb-28 md:pb-12">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="flex flex-col gap-8 lg:col-span-8">
             <div className="relative overflow-hidden rounded-sm border border-gray-100 bg-white p-10 shadow-sm">
@@ -335,8 +335,8 @@ export default function QuizDetailPage() {
                     Bắt đầu ngay <PlayCircle className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="border-none bg-transparent p-0 sm:max-w-[500px]">
-                  <div className="rounded-sm border border-gray-100 bg-white p-10 shadow-2xl">
+                <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[500px]">
+                  <div className="rounded-sm border border-gray-100 bg-white px-6 py-6 shadow-2xl sm:px-10 sm:py-10">
                     <DialogHeader className="mb-8">
                       <DialogTitle className="border-b pb-4 text-center text-2xl font-normal uppercase tracking-[0.2em] text-[#5D7B6F]">
                         Chọn chế độ thi
@@ -392,8 +392,8 @@ export default function QuizDetailPage() {
               </Dialog>
 
               <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
-                <DialogContent className="border-none bg-transparent p-0 sm:max-w-[500px]">
-                  <div className="rounded-sm border border-gray-100 bg-white p-8 shadow-2xl">
+                <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[500px]">
+                  <div className="rounded-sm border border-gray-100 bg-white px-6 py-6 shadow-2xl sm:px-8 sm:py-8">
                     <DialogHeader className="mb-4">
                       <DialogTitle className="text-center text-xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
                         Bài quiz chưa hoàn thành

@@ -144,16 +144,16 @@ export default function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <Link
                   href="/login"
-                  className="hidden sm:block text-sm font-black text-gray-500 hover:text-[#5D7B6F] px-4 py-2 transition-all uppercase tracking-tighter"
+                  className="text-xs sm:text-base font-black text-[#5D7B6F] hover:text-[#4a6358] px-3 sm:px-6 py-2 sm:py-3 transition-all uppercase tracking-tighter border-2 border-[#5D7B6F] rounded-2xl hover:bg-[#5D7B6F]/5 active:scale-95 whitespace-nowrap"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/register"
-                  className="text-sm font-black bg-[#5D7B6F] text-white px-6 py-2.5 rounded-2xl hover:bg-[#4a6358] hover:shadow-lg hover:shadow-[#5D7B6F]/30 active:scale-95 transition-all text-center"
+                  className="text-xs sm:text-base font-black bg-[#5D7B6F] text-white px-3 sm:px-6 py-2 sm:py-3 rounded-2xl hover:bg-[#4a6358] hover:shadow-lg hover:shadow-[#5D7B6F]/30 active:scale-95 transition-all whitespace-nowrap"
                 >
                   Đăng ký
                 </Link>

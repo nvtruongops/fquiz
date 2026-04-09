@@ -651,32 +651,33 @@ export default function MyQuizzesPage() {
                       Quản lý danh mục
                    </Button>
                 </DialogTrigger>
-                <DialogContent className="rounded-[32px] border-none shadow-2xl p-0 overflow-hidden max-w-md">
-                   <div className="p-8 bg-[#5D7B6F] text-white space-y-2">
-                      <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                         <FolderTree className="w-6 h-6" /> Danh mục của bạn
+                <DialogContent className="rounded-[32px] border-none shadow-2xl p-0 overflow-hidden w-[calc(100vw-2rem)] sm:max-w-md">
+                   <div className="px-6 py-6 sm:px-8 sm:py-8 bg-[#5D7B6F] text-white space-y-2">
+                      <DialogTitle className="text-xl sm:text-2xl font-black flex items-center gap-3">
+                         <FolderTree className="w-5 h-5 sm:w-6 sm:h-6" /> Danh mục của bạn
                       </DialogTitle>
                      <DialogDescription className="sr-only">
                       Tạo, sửa, xóa danh mục cá nhân và xem số lượng quiz tự tạo hoặc quiz đã lưu trong từng danh mục.
                      </DialogDescription>
-                      <p className="text-xs font-bold opacity-70 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
+                      <p className="text-[10px] sm:text-xs font-bold opacity-70 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
                    </div>
                    
-                   <div className="p-8 space-y-6">
+                   <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
                       {privateCategoryCount < 5 && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <Input 
                             placeholder="Tên danh mục mới..." 
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
-                            className="h-12 rounded-xl border-[#5D7B6F]/10 font-bold"
+                            onKeyDown={(e) => e.key === 'Enter' && newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
+                            className="h-14 rounded-xl border-[#5D7B6F]/10 font-bold text-sm flex-1"
                           />
                           <Button 
                             onClick={() => newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
-                            disabled={createCatMutation.isPending}
-                            className="bg-[#5D7B6F] h-12 w-12 rounded-xl shrink-0"
+                            disabled={createCatMutation.isPending || !newCategoryName.trim()}
+                            className="bg-[#5D7B6F] hover:bg-[#4a6358] h-14 w-14 rounded-xl shrink-0 disabled:opacity-50"
                           >
-                             <Plus className="w-5 h-5" />
+                             {createCatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6" />}
                           </Button>
                         </div>
                       )}
@@ -774,24 +775,24 @@ export default function MyQuizzesPage() {
                   <button 
                     onClick={() => setActiveTab('personal')}
                     className={cn(
-                      "flex-1 lg:flex-none px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+                      "flex-1 lg:flex-none px-4 sm:px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap",
                       activeTab === 'personal' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <FolderPlus className="w-4 h-4" /> Quiz tự tạo
-                    <Badge className={cn("ml-2 border-none px-2", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <FolderPlus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Quiz tự tạo</span><span className="sm:hidden">Tự tạo</span>
+                    <Badge className={cn("ml-1 sm:ml-2 border-none px-1.5 sm:px-2 text-[10px] sm:text-xs", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {ownQuizTotal}
                     </Badge>
                   </button>
                   <button 
                     onClick={() => setActiveTab('saved')}
                     className={cn(
-                      "flex-1 lg:flex-none px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+                      "flex-1 lg:flex-none px-4 sm:px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap",
                       activeTab === 'saved' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <Download className="w-4 h-4" /> Quiz đã lưu
-                    <Badge className={cn("ml-2 border-none px-2", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <Download className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Quiz đã lưu</span><span className="sm:hidden">Đã lưu</span>
+                    <Badge className={cn("ml-1 sm:ml-2 border-none px-1.5 sm:px-2 text-[10px] sm:text-xs", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {savedQuizTotal}
                     </Badge>
                   </button>
