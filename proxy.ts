@@ -163,6 +163,23 @@ export async function proxy(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || generateId()
   const deployTarget = process.env.DEPLOY_TARGET
 
+  // Mobile detection and redirect for quiz session pages
+  const quizSessionPattern = /^\/quiz\/[^/]+\/session\/[^/]+$/
+  const isMobilePath = pathname.includes('/mobile')
+  
+  if (quizSessionPattern.test(pathname) && !isMobilePath) {
+    const userAgent = request.headers.get('user-agent') || ''
+    
+    // Detect mobile devices and tablets
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+    
+    if (isMobileDevice) {
+      const url = request.nextUrl.clone()
+      url.pathname = `${pathname}/mobile`
+      return NextResponse.redirect(url)
+    }
+  }
+
   if (pathname.startsWith('/api/') && request.method === 'OPTIONS') {
     const preflight = new NextResponse(null, { status: 204 })
     preflight.headers.set('x-request-id', requestId)
