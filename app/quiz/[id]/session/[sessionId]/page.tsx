@@ -595,7 +595,8 @@ export default function QuizSessionPage() {
                     {question.options.map((option, idx) => {
                       const isSelected = selectedOptions.includes(idx)
                       const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
-                      const isWrongSelected = showImmediateFeedback && isSelected && !lastAnswerResult?.isCorrect
+                      // An option is wrong if: it was selected BUT it's not in the correct answer set
+                      const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
                       const optionKey = `${idx}-${option}`
                       const isDisabled = submitted || submitMutation.isPending
 

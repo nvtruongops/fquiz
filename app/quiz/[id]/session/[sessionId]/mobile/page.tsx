@@ -602,7 +602,8 @@ export default function QuizSessionMobilePage() {
             {question.options.map((option, idx) => {
               const isSelected = selectedOptions.includes(idx)
               const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
-              const isWrongSelected = showImmediateFeedback && isSelected && !lastAnswerResult?.isCorrect
+              // An option is wrong if: it was selected BUT it's not in the correct answer set
+              const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
 
               return (
                 <button
