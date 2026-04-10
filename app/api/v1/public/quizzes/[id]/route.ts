@@ -7,11 +7,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Apply rate limiting
-  const rateLimitResponse = await checkPublicApiRateLimit(request)
-  if (rateLimitResponse) return rateLimitResponse
-
   try {
+    // Apply rate limiting (with error handling inside)
+    const rateLimitResponse = await checkPublicApiRateLimit(request)
+    if (rateLimitResponse) return rateLimitResponse
+
     await connectDB()
 
     const { id } = await params
@@ -57,7 +57,10 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching quiz:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch quiz' },
+      { 
+        error: 'Failed to fetch quiz',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
