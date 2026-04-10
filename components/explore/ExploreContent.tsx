@@ -71,13 +71,18 @@ async function fetchCategories(): Promise<{ data: Category[] }> {
   return res.json()
 }
 
-async function fetchQuizzes(categoryId: string, search: string): Promise<{ data: QuizMeta[], pagination: any }> {
+async function fetchQuizzes(categoryId: string, search: string, isLoggedIn: boolean): Promise<{ data: QuizMeta[], pagination: any }> {
   const params = new URLSearchParams()
   if (categoryId && categoryId !== 'all') params.set('category_id', categoryId)
   if (search) params.set('search', search)
   params.set('sort', 'popular')
-  
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes?${params.toString()}`)
+
+  // Use authenticated endpoint for logged-in users to get session history
+  const endpoint = isLoggedIn
+    ? `/api/v1/explore/quizzes?${params.toString()}`
+    : `/api/v1/public/quizzes?${params.toString()}`
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${endpoint}`)
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
 }
@@ -87,14 +92,15 @@ export default function ExploreContent() {
   const [categoryId, setCategoryId] = useState('')
   const [catSearch, setCatSearch] = useState('')
   const [isCatPickerOpen, setIsCatPickerOpen] = useState(false)
-  const [user, setUser] = useState<{ id: string } | null>(null)
+  const [user, setUser] = useState<{ id: string } | null | undefined>(undefined) // undefined = loading
   
   const debouncedSearch = useDebounce(search, 300)
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`).then(res => {
       if (res.ok) res.json().then(data => setUser(data.user))
-    })
+      else setUser(null)
+    }).catch(() => setUser(null))
   }, [])
 
    const { data: catData } = useQuery({
@@ -102,10 +108,13 @@ export default function ExploreContent() {
     queryFn: fetchCategories,
   })
 
+  const isLoggedIn = !!user
+  const userLoaded = user !== undefined
+
   const { data: quizData, isLoading: isQuizzesLoading } = useQuery({
-    queryKey: ['public', 'quizzes', categoryId, debouncedSearch],
-    queryFn: () => fetchQuizzes(categoryId, debouncedSearch),
-    enabled: true // Always fetch to show popular quizzes by default
+    queryKey: ['explore', 'quizzes', categoryId, debouncedSearch, isLoggedIn],
+    queryFn: () => fetchQuizzes(categoryId, debouncedSearch, isLoggedIn),
+    enabled: userLoaded, // Wait until we know if user is logged in
   })
 
   const categories = catData?.data || []
