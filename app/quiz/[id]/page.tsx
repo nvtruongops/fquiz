@@ -76,7 +76,24 @@ type QuizDetailApiError = Error & {
 }
 
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
-  // Use public API endpoint for quiz detail (accessible without authentication)
+  // First try authenticated student API (for own quizzes)
+  const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${id}`)
+  if (studentRes.ok) {
+    const data = await studentRes.json()
+    const q = data.quiz ?? data
+    return {
+      _id: q._id,
+      title: q.title,
+      description: q.description || '',
+      category_id: { name: q.category_id?.name || q.categoryName || 'Chung' },
+      course_code: q.course_code,
+      num_questions: q.questionCount ?? q.questions?.length ?? 0,
+      num_attempts: q.studentCount ?? 0,
+      created_at: q.created_at ?? q.createdAt,
+    }
+  }
+
+  // Fallback to public API (for public quizzes from explore)
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes/${id}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
@@ -87,7 +104,6 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
     throw error
   }
   
-  // Transform public API response to match expected format
   const response = await res.json()
   const publicQuiz = response.data
   
