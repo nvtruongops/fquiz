@@ -18,6 +18,11 @@ async function addIndexes() {
       { student_id: 1, status: 1, completed_at: -1 },
       { name: 'student_status_completed' }
     )
+    // Explore page: aggregate sessions by quiz_id for a student
+    await QuizSession.collection.createIndex(
+      { student_id: 1, quiz_id: 1, status: 1, completed_at: -1 },
+      { name: 'student_quiz_status_completedAt' }
+    )
     console.log('✓ QuizSession indexes created')
 
     // Quiz indexes for faster lookups
@@ -29,6 +34,16 @@ async function addIndexes() {
     await Quiz.collection.createIndex(
       { is_public: 1, status: 1, category_id: 1 },
       { name: 'public_status_category' }
+    )
+    // Explore page: sort by popular (no category filter)
+    await Quiz.collection.createIndex(
+      { is_public: 1, status: 1, studentCount: -1 },
+      { name: 'public_status_studentCount' }
+    )
+    // Explore page: sort by recent (no category filter)
+    await Quiz.collection.createIndex(
+      { is_public: 1, status: 1, created_at: -1 },
+      { name: 'public_status_createdAt' }
     )
     await Quiz.collection.createIndex(
       { original_quiz_id: 1 },
