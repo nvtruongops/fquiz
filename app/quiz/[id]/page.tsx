@@ -97,7 +97,15 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes/${id}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
-    const error = new Error(data.error || 'Không thể tải thông tin đề thi') as QuizDetailApiError
+    const error = new Error(
+      res.status === 404
+        ? 'Bộ đề này không tồn tại hoặc đã bị xóa.'
+        : res.status === 403
+          ? 'Bộ đề này là riêng tư. Bạn không có quyền truy cập.'
+          : res.status === 401
+            ? 'Bạn cần đăng nhập để xem bộ đề này.'
+            : data.error || 'Không thể tải thông tin đề thi.'
+    ) as QuizDetailApiError
     error.status = res.status
     error.code = data.code
     error.hint = data.hint
@@ -254,33 +262,61 @@ export default function QuizDetailPage() {
     return (
       <div className="h-screen bg-[#EAE7D6]/30 p-4 text-center">
         <div className="mx-auto mt-24 max-w-md rounded-2xl border-2 border-gray-100 bg-white p-10 shadow-xl">
-          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h2 className="mb-2 text-2xl font-black uppercase">
-            {(error as QuizDetailApiError | undefined)?.code === 'QUIZ_SOURCE_LOCKED'
-              ? 'Không thể làm lại quiz này'
-              : 'Lỗi hệ thống'}
-          </h2>
-          <p className="mb-8 font-bold text-gray-400">
-            {(error as Error | undefined)?.message || 'Không thể tìm thấy thông tin đề thi này. Quý khách vui lòng kiểm tra lại.'}
-          </p>
-          {(error as QuizDetailApiError | undefined)?.hint && (
-            <p className="mb-6 text-sm text-gray-500">{(error as QuizDetailApiError).hint}</p>
-          )}
-
-          {(error as QuizDetailApiError | undefined)?.code === 'QUIZ_SOURCE_LOCKED' ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Button asChild className="bg-[#5D7B6F] py-6 text-white">
-                <Link href="/my-quizzes">Về Bộ đề của tôi</Link>
-              </Button>
-              <Button asChild variant="outline" className="py-6">
-                <Link href="/history">Xem Lịch sử</Link>
-              </Button>
+          {(error as QuizDetailApiError)?.status === 403 ? (
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
+              <ShieldCheck className="h-8 w-8 text-orange-400" />
+            </div>
+          ) : (error as QuizDetailApiError)?.status === 404 ? (
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+              <HelpCircle className="h-8 w-8 text-gray-400" />
             </div>
           ) : (
-            <Button onClick={() => router.back()} className="w-full bg-[#5D7B6F] py-6 text-white">
-              Quay lại
-            </Button>
+            <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
           )}
+
+          <h2 className="mb-2 text-xl font-black uppercase tracking-tight">
+            {(error as QuizDetailApiError)?.status === 403
+              ? 'Không có quyền truy cập'
+              : (error as QuizDetailApiError)?.status === 404
+                ? 'Không tìm thấy bộ đề'
+                : (error as QuizDetailApiError)?.code === 'QUIZ_SOURCE_LOCKED'
+                  ? 'Không thể làm lại quiz này'
+                  : 'Đã xảy ra lỗi'}
+          </h2>
+
+          <p className="mb-8 font-medium text-gray-500">
+            {(error as Error | undefined)?.message || 'Không thể tải thông tin đề thi này.'}
+          </p>
+
+          {(error as QuizDetailApiError | undefined)?.hint && (
+            <p className="mb-6 text-sm text-gray-400">{(error as QuizDetailApiError).hint}</p>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(error as QuizDetailApiError)?.code === 'QUIZ_SOURCE_LOCKED' ? (
+              <>
+                <Button asChild className="bg-[#5D7B6F] py-6 text-white">
+                  <Link href="/my-quizzes">Về Bộ đề của tôi</Link>
+                </Button>
+                <Button asChild variant="outline" className="py-6">
+                  <Link href="/history">Xem Lịch sử</Link>
+                </Button>
+              </>
+            ) : (error as QuizDetailApiError)?.status === 403 ? (
+              <>
+                <Button asChild className="bg-[#5D7B6F] py-6 text-white">
+                  <Link href="/explore">Khám phá bộ đề</Link>
+                </Button>
+                <Button asChild variant="outline" className="py-6">
+                  <Link href="/my-quizzes">Bộ đề của tôi</Link>
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => router.back()} className="col-span-2 w-full bg-[#5D7B6F] py-6 text-white">
+                Quay lại
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
