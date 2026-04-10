@@ -31,6 +31,7 @@ interface QuizSessionState {
   // Actions
   initSession: (sessionId: string, quizId: string, mode: string, total: number) => void
   navigateToQuestion: (index: number) => void
+  restoreAnswers: (answered: Set<number>) => void
   markAnswered: (index: number) => void
   markHighlighted: (index: number) => void
   optimisticallyMarkAnswered: (questionIndex: number) => void
@@ -76,6 +77,8 @@ export const useQuizSessionStore = create<QuizSessionState>()(
         }),
 
       navigateToQuestion: (index) => set({ currentQuestionIndex: index }),
+
+      restoreAnswers: (answered) => set({ answeredQuestions: new Set(answered) }),
 
       markAnswered: (index) =>
         set((state) => ({

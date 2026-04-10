@@ -115,6 +115,7 @@ export default function QuizSessionMobilePage() {
     lastAnswerResult,
     initSession,
     navigateToQuestion,
+    restoreAnswers,
     setLastAnswerResult,
   } = useQuizSessionStore()
 
@@ -217,13 +218,18 @@ export default function QuizSessionMobilePage() {
   useEffect(() => {
     if (!initialData || isHydratedFromServer) return
 
+    const serverAnsweredSet = new Set<number>(
+      initialData.session.user_answers.map((a) => a.question_index)
+    )
+
     if (storeSessionId !== sessionId) {
       initSession(resolvedSessionId, resolvedQuizId, initialData.session.mode, initialData.session.totalQuestions)
     }
 
+    restoreAnswers(serverAnsweredSet)
     navigateToQuestion(initialData.session.current_question_index)
     setIsHydratedFromServer(true)
-  }, [initSession, initialData, isHydratedFromServer, navigateToQuestion, resolvedQuizId, resolvedSessionId, sessionId, storeSessionId])
+  }, [initSession, initialData, isHydratedFromServer, navigateToQuestion, restoreAnswers, resolvedQuizId, resolvedSessionId, sessionId, storeSessionId])
 
   useEffect(() => {
     if (!activeData?.session) return
