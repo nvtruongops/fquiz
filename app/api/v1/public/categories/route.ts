@@ -2,67 +2,64 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { Category } from '@/models/Category'
 import { Quiz } from '@/models/Quiz'
+import type { NextRequest } from 'next/server'
+import { checkPublicApiRateLimit } from '@/lib/rate-limit/public-api'
 
-export const dynamic = 'force-dynamic'
+export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = await checkPublicApiRateLimit(request)
+  if (rateLimitResponse) return rateLimitResponse
 
-export async function GET() {
   try {
     await connectDB()
+    
+    // Get public categories that are approved
+    const categories = await Category.find({ 
+      is_public: true,
+      status: 'approved'
+    })
+      .select('name')
+      .sort({ name: 1 })
+      .lean()
 
-    // Optimization: Join categories with quizzes but filter for categories that have at least one published quiz
-    const pipeline: any[] = [
-      {
-        $lookup: {
-          from: 'quizzes',
-          localField: '_id',
-          foreignField: 'category_id',
-          as: 'quizzes',
-        },
-      },
-      {
-        $addFields: {
-          publishedQuizCount: {
-            $size: {
-              $filter: {
-                input: '$quizzes',
-                as: 'q',
-                cond: { 
-                  $and: [
-                    { $eq: ['$$q.status', 'published'] },
-                    { $eq: ['$$q.is_public', true] },
-                    { $ne: ['$$q.is_saved_from_explore', true] }
-                  ]
-                },
-              },
-            },
-          },
-        },
-      },
+    // Count published quizzes for each category
+    const categoryIds = categories.map(cat => cat._id)
+    const quizCounts = await Quiz.aggregate([
       {
         $match: {
-          publishedQuizCount: { $gt: 0 },
-        },
+          category_id: { $in: categoryIds },
+          is_public: true,
+          status: 'published'
+        }
       },
       {
-        $project: {
-          id: '$_id',
-          _id: 0,
-          name: 1,
-          publishedQuizCount: 1,
-        },
-      },
-      {
-        $sort: { name: 1 },
-      },
-    ]
+        $group: {
+          _id: '$category_id',
+          count: { $sum: 1 }
+        }
+      }
+    ])
 
-    const categoriesList = await Category.aggregate(pipeline)
+    const countMap = new Map(quizCounts.map(item => [item._id.toString(), item.count]))
 
-    return NextResponse.json({
-      data: categoriesList,
+    const response = NextResponse.json({
+      data: categories.map((cat: any) => ({
+        id: cat._id.toString(),
+        name: cat.name,
+        publishedQuizCount: countMap.get(cat._id.toString()) || 0,
+        type: 'public' as const,
+      })),
     })
-  } catch (err) {
-    console.error('Public Categories Error:', err)
-    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+
+    // Add cache headers for public data
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    
+    return response
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch categories' },
+      { status: 500 }
+    )
   }
 }

@@ -20,6 +20,17 @@ export default function RegisterPage() {
   const [devCode, setDevCode] = useState('')
   const [retryAfterSec, setRetryAfterSec] = useState<number | null>(null)
 
+  // Get callback URL from query params
+  function getCallbackUrl() {
+    if (typeof window === 'undefined') return null
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect')
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      return redirect
+    }
+    return null
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
     if (errors[e.target.name]) setErrors((prev) => ({ ...prev, [e.target.name]: '' }))
@@ -109,7 +120,8 @@ export default function RegisterPage() {
 
       toast.success('Đăng ký thành công! Chào mừng bạn.')
       setSuccess(true)
-      setTimeout(() => router.push('/login'), 2000)
+      const callbackUrl = getCallbackUrl()
+      setTimeout(() => router.push(callbackUrl || '/login'), 2000)
     } catch {
       toast.error('Hệ thống đang bận, vui lòng thử lại sau.')
     } finally {
@@ -302,7 +314,10 @@ export default function RegisterPage() {
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-gray-500 font-medium">
             Bạn đã có tài khoản rồi?{' '}
-            <Link href="/login" className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4">
+            <Link 
+              href={`/login${getCallbackUrl() ? `?redirect=${encodeURIComponent(getCallbackUrl()!)}` : ''}`}
+              className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4"
+            >
               Đăng nhập ngay
             </Link>
           </p>

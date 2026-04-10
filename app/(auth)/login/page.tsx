@@ -8,7 +8,9 @@ import { LoginSchema } from '@/lib/schemas'
 import { useToast } from '@/lib/store/toast-store'
 
 function parseSafeCallbackUrl(search: string) {
-  const raw = new URLSearchParams(search).get('callbackUrl')
+  // Support both 'callbackUrl' and 'redirect' params
+  const params = new URLSearchParams(search)
+  const raw = params.get('callbackUrl') || params.get('redirect')
   if (!raw) return null
 
   // Support previously double-encoded callback values, e.g. %252Fadmin.
@@ -176,7 +178,10 @@ export default function LoginPage() {
         <div className="mt-6 pt-6 border-t border-gray-100">
           <p className="text-center text-gray-500 font-medium">
             Bạn chưa có tài khoản?{' '}
-            <Link href="/register" className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4">
+            <Link 
+              href={`/register${parseSafeCallbackUrl(globalThis.location?.search || '') ? `?redirect=${encodeURIComponent(parseSafeCallbackUrl(globalThis.location?.search || '') || '')}` : ''}`}
+              className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4"
+            >
               Đăng ký miễn phí
             </Link>
           </p>

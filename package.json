@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "jest",
     "seed": "tsx --env-file=.env.local scripts/seed-users.ts",
+    "seed:public-quizzes": "tsx --env-file=.env.local scripts/seed-public-quizzes.ts",
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
     "cleanup:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts --apply"
   },
