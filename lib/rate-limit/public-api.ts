@@ -119,48 +119,59 @@ const limiter = new PublicApiRateLimiter()
 export async function checkPublicApiRateLimit(
   request: NextRequest
 ): Promise<NextResponse | null> {
-  const result = await limiter.check(request)
+  try {
+    const result = await limiter.check(request)
 
-  // Add rate limit headers
-  const headers = {
-    'X-RateLimit-Limit': result.limit.toString(),
-    'X-RateLimit-Remaining': result.remaining.toString(),
-    'X-RateLimit-Reset': result.reset.toString(),
-  }
+    // Add rate limit headers
+    const headers = {
+      'X-RateLimit-Limit': result.limit.toString(),
+      'X-RateLimit-Remaining': result.remaining.toString(),
+      'X-RateLimit-Reset': result.reset.toString(),
+    }
 
-  if (!result.success) {
-    const retryAfter = Math.ceil((result.reset - Date.now()) / 1000)
-    
-    logger.warn(
-      { 
-        identifier: getClientIdentifier(request),
-        path: request.nextUrl.pathname,
-        remaining: result.remaining,
-        reset: new Date(result.reset).toISOString()
-      },
-      'Public API rate limit exceeded'
-    )
+    if (!result.success) {
+      const retryAfter = Math.ceil((result.reset - Date.now()) / 1000)
+      
+      logger.warn(
+        { 
+          identifier: getClientIdentifier(request),
+          path: request.nextUrl.pathname,
+          remaining: result.remaining,
+          reset: new Date(result.reset).toISOString()
+        },
+        'Public API rate limit exceeded'
+      )
 
-    return NextResponse.json(
-      { 
-        error: 'Too many requests. Please try again later.',
-        retryAfter,
-        limit: result.limit,
-        reset: result.reset
-      },
-      { 
-        status: 429,
-        headers: {
-          ...headers,
-          'Retry-After': retryAfter.toString(),
+      return NextResponse.json(
+        { 
+          error: 'Too many requests. Please try again later.',
+          retryAfter,
+          limit: result.limit,
+          reset: result.reset
+        },
+        { 
+          status: 429,
+          headers: {
+            ...headers,
+            'Retry-After': retryAfter.toString(),
+          }
         }
-      }
-    )
-  }
+      )
+    }
 
-  // Return null to indicate request should proceed
-  // Caller should add headers to response
-  return null
+    // Return null to indicate request should proceed
+    return null
+  } catch (error) {
+    // On error, log and allow the request (fail open for availability)
+    logger.error(
+      { 
+        err: error,
+        path: request.nextUrl.pathname 
+      },
+      'Rate limiter error - allowing request'
+    )
+    return null
+  }
 }
 
 /**
