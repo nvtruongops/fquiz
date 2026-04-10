@@ -44,7 +44,7 @@ async function testConnection() {
 
 async function testSimpleQueries() {
   console.log('\n📊 Test 2: Simple Queries')
-  const db = mongoose.connection.db
+  const db = mongoose.connection.db!
   
   // Test 2.1: Count quizzes
   let start = Date.now()
@@ -88,7 +88,7 @@ async function testSimpleQueries() {
 
 async function testComplexQueries() {
   console.log('\n📊 Test 3: Complex Queries')
-  const db = mongoose.connection.db
+  const db = mongoose.connection.db!
   
   // Test 3.1: Quiz with populate simulation
   let start = Date.now()
@@ -127,7 +127,7 @@ async function testComplexQueries() {
 
 async function testSessionOperations() {
   console.log('\n📊 Test 4: Session Operations (Simulating Quiz Flow)')
-  const db = mongoose.connection.db
+  const db = mongoose.connection.db!
   
   // Test 4.1: Find a quiz
   let start = Date.now()
@@ -242,7 +242,7 @@ async function testSessionOperations() {
 
 async function testIndexes() {
   console.log('\n📊 Test 5: Index Analysis')
-  const db = mongoose.connection.db
+  const db = mongoose.connection.db!
   
   try {
     // Check quizzes indexes
