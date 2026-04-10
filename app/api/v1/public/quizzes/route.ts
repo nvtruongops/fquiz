@@ -9,7 +9,19 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
 
   try {
-    await connectDB()
+    // Connect to database with timeout handling
+    try {
+      await connectDB()
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      return NextResponse.json(
+        { 
+          error: 'Database connection failed',
+          message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        },
+        { status: 503 }
+      )
+    }
 
     const { searchParams } = request.nextUrl
     const sort = searchParams.get('sort') || 'recent'
@@ -71,8 +83,13 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Error fetching quizzes:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
-      { error: 'Failed to fetch quizzes' },
+      { 
+        error: 'Failed to fetch quizzes',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.constructor.name : typeof error
+      },
       { status: 500 }
     )
   }
