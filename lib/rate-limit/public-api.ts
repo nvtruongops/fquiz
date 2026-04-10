@@ -57,14 +57,25 @@ class PublicApiRateLimiter {
 
     try {
       const mongoose = await connectDB()
+      
+      // Check if connection is ready
+      if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+        throw new Error('MongoDB connection not ready')
+      }
+      
       const collection = mongoose.connection.collection('rate_limits')
 
       if (!this.indexesReady) {
-        await Promise.all([
-          collection.createIndex({ bucketKey: 1 }, { unique: true }),
-          collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-        ])
-        this.indexesReady = true
+        try {
+          await Promise.all([
+            collection.createIndex({ bucketKey: 1 }, { unique: true }),
+            collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+          ])
+          this.indexesReady = true
+        } catch (indexErr) {
+          // Index creation might fail if already exists, continue anyway
+          logger.warn({ err: indexErr }, 'Rate limit index creation warning')
+        }
       }
 
       await collection.updateOne(
@@ -96,7 +107,12 @@ class PublicApiRateLimiter {
       }
     } catch (err) {
       logger.error(
-        { err, identifier },
+        { 
+          err, 
+          identifier,
+          errorMessage: err instanceof Error ? err.message : 'Unknown error',
+          errorType: err instanceof Error ? err.constructor.name : typeof err
+        },
         'Public API rate limiter error - allowing request'
       )
       // On error, allow the request (fail open)

@@ -12,9 +12,30 @@ export async function GET(
     const rateLimitResponse = await checkPublicApiRateLimit(request)
     if (rateLimitResponse) return rateLimitResponse
 
-    await connectDB()
+    // Connect to database with timeout handling
+    try {
+      await connectDB()
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      return NextResponse.json(
+        { 
+          error: 'Database connection failed',
+          message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        },
+        { status: 503 }
+      )
+    }
 
     const { id } = await params
+    
+    // Validate ObjectId format
+    if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid quiz ID format' },
+        { status: 400 }
+      )
+    }
+
     const quiz = await Quiz.findById(id)
       .select('title description category_id course_code questionCount studentCount created_by created_at is_public status')
       .populate('created_by', 'username')
@@ -56,10 +77,12 @@ export async function GET(
     return response
   } catch (error) {
     console.error('Error fetching quiz:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { 
         error: 'Failed to fetch quiz',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.constructor.name : typeof error
       },
       { status: 500 }
     )

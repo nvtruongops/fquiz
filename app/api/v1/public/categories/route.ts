@@ -11,7 +11,19 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
 
   try {
-    await connectDB()
+    // Connect to database with timeout handling
+    try {
+      await connectDB()
+    } catch (dbError) {
+      console.error('Database connection error:', dbError)
+      return NextResponse.json(
+        { 
+          error: 'Database connection failed',
+          message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        },
+        { status: 503 }
+      )
+    }
     
     // Get public categories that are approved
     const categories = await Category.find({ 
@@ -57,8 +69,13 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Error fetching categories:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { 
+        error: 'Failed to fetch categories',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.constructor.name : typeof error
+      },
       { status: 500 }
     )
   }
