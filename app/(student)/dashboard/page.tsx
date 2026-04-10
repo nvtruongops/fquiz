@@ -126,7 +126,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-4">
-            {data?.recentActivities?.length === 0 ? (
+            {!data?.recentActivities || data.recentActivities.length === 0 ? (
               <div className="p-12 rounded-[32px] bg-white border-2 border-dashed border-gray-100 flex flex-col items-center text-center space-y-4">
                  <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center text-gray-200">
                     <BookOpen className="w-8 h-8" />
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                  </Button>
               </div>
             ) : (
-              data?.recentActivities?.map((activity: any) => (
+              data.recentActivities.map((activity: any) => (
                 <Link
                   key={activity.id}
                   href={`/history/${activity.quizId || activity.id}`}

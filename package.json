@@ -10,6 +10,7 @@
     "test": "jest",
     "test:performance": "tsx --env-file=.env.local scripts/test-quiz-performance.ts",
     "test:mongodb": "tsx --env-file=.env.local scripts/test-mongodb-performance.ts",
+    "check:dashboard": "tsx --env-file=.env.local scripts/check-dashboard.ts",
     "seed": "tsx --env-file=.env.local scripts/seed-users.ts",
     "seed:public-quizzes": "tsx --env-file=.env.local scripts/seed-public-quizzes.ts",
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
