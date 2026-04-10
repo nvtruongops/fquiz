@@ -47,16 +47,20 @@ export async function GET(request: Request) {
         const remaining = exp - now
 
         if (remaining > 0 && remaining < REFRESH_THRESHOLD_SECONDS) {
-          const newToken = await signToken(payload.userId, payload.role, user.token_version ?? 1)
+          const newToken = await signToken(payload.userId, payload.role, user.token_version ?? 1, {
+            username: user.username,
+            avatarUrl: user.avatar_url ?? user.avatarUrl ?? '',
+          })
           const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
-          response.cookies.set('auth-token', newToken, {
+          const cookieOpts = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'strict' as const,
             maxAge: 60 * 60 * 24,
             path: '/',
             ...(authCookieDomain ? { domain: authCookieDomain } : {}),
-          })
+          }
+          response.cookies.set('auth-token', newToken, cookieOpts)
         }
       }
     } catch {
