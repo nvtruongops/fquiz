@@ -593,6 +593,12 @@ export default function QuizSessionMobilePage() {
 
           {/* Options */}
           <div className="space-y-3">
+            {submitMutation.isPending && (
+              <div className="flex items-center gap-2 rounded-xl bg-blue-50 border-2 border-blue-200 px-4 py-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <span className="text-sm font-bold text-blue-700">Đang gửi câu trả lời...</span>
+              </div>
+            )}
             {question.options.map((option, idx) => {
               const isSelected = selectedOptions.includes(idx)
               const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)

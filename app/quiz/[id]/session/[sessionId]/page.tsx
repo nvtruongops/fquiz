@@ -586,25 +586,36 @@ export default function QuizSessionPage() {
                   )}
 
                   <div className="mt-4 space-y-2.5">
+                    {submitMutation.isPending && (
+                      <div className="mb-3 flex items-center gap-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <span className="text-sm font-medium text-blue-700">Đang gửi câu trả lời...</span>
+                      </div>
+                    )}
                     {question.options.map((option, idx) => {
                       const isSelected = selectedOptions.includes(idx)
                       const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
                       const isWrongSelected = showImmediateFeedback && isSelected && !lastAnswerResult?.isCorrect
                       const optionKey = `${idx}-${option}`
+                      const isDisabled = submitted || submitMutation.isPending
 
                       return (
-                        <div
+                        <button
                           key={optionKey}
+                          onClick={() => !isDisabled && handleSelectOption(idx)}
+                          disabled={isDisabled}
                           className={cn(
-                            'w-full select-none px-1 py-0.5 text-left text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed transition-colors',
-                            isCorrect && 'text-green-700',
-                            isWrongSelected && 'text-red-700',
-                            !isCorrect && !isWrongSelected && isSelected && 'font-semibold text-[#1d5b20]',
-                            !isCorrect && !isWrongSelected && !isSelected && 'text-[#202020]'
+                            'w-full select-none px-3 py-2.5 text-left text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed transition-all duration-200 rounded-md border-2',
+                            isDisabled && 'cursor-not-allowed opacity-60',
+                            !isDisabled && 'cursor-pointer hover:bg-gray-50',
+                            isCorrect && 'border-green-500 bg-green-50 text-green-700 font-semibold',
+                            isWrongSelected && 'border-red-500 bg-red-50 text-red-700 font-semibold',
+                            !isCorrect && !isWrongSelected && isSelected && 'border-[#1d5b20] bg-green-50 font-semibold text-[#1d5b20]',
+                            !isCorrect && !isWrongSelected && !isSelected && 'border-gray-300 bg-white text-[#202020]'
                           )}
                         >
                           <span className="font-semibold">{String.fromCodePoint(65 + idx)}.</span> {option}
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
