@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { Category } from '@/models/Category'
 import { Quiz } from '@/models/Quiz'
+import '@/models/User' // Import to register the User schema
 import type { NextRequest } from 'next/server'
 import { checkPublicApiRateLimit } from '@/lib/rate-limit/public-api'
 
