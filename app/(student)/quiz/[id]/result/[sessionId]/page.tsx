@@ -10,10 +10,10 @@ interface ResultQuestion {
   _id: string
   text: string
   options: string[]
-  correct_answer: number
+  correct_answer: number | number[]  // Support both single and multiple answers
   explanation?: string
   image_url?: string
-  submitted_answer: number | null
+  submitted_answer: number | number[] | null  // Support both single and multiple answers
   is_correct: boolean
 }
 
@@ -96,9 +96,14 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
         {/* Question Breakdown */}
         <div className="space-y-4">
           {questions.map((q, idx) => {
-            const submittedIdx = q.submitted_answer
-            const correctIdx = q.correct_answer
-            const notAnswered = submittedIdx === null || submittedIdx === undefined
+            // Normalize to arrays for consistent handling
+            const correctAnswers = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
+            const submittedAnswers = q.submitted_answer === null || q.submitted_answer === undefined 
+              ? [] 
+              : Array.isArray(q.submitted_answer) 
+                ? q.submitted_answer 
+                : [q.submitted_answer]
+            const notAnswered = submittedAnswers.length === 0
 
             return (
               <div
@@ -144,9 +149,9 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
                 {/* Options */}
                 <div className="space-y-2 pl-10">
                   {q.options.map((option, optIdx) => {
-                    const isCorrect = optIdx === correctIdx
-                    const isSubmitted = optIdx === submittedIdx
-                    const isWrongSubmission = isSubmitted && !q.is_correct
+                    const isCorrect = correctAnswers.includes(optIdx)
+                    const isSubmitted = submittedAnswers.includes(optIdx)
+                    const isWrongSubmission = isSubmitted && !isCorrect
 
                     let bgStyle = 'bg-gray-50 border-gray-200'
                     let textStyle = 'text-gray-700'
@@ -159,7 +164,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
                       textStyle = 'text-red-700'
                     }
 
-                    const showBadge = isCorrect || isWrongSubmission || (isSubmitted && q.is_correct)
+                    const showBadge = isCorrect || isWrongSubmission || (isSubmitted && isCorrect)
 
                     return (
                       <div
@@ -186,7 +191,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
                             {isWrongSubmission && (
                               <span className="text-xs font-semibold text-red-600">Your answer</span>
                             )}
-                            {isSubmitted && q.is_correct && (
+                            {isSubmitted && isCorrect && (
                               <span className="text-xs font-semibold text-green-700">Your answer ✓</span>
                             )}
                           </div>

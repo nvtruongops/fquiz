@@ -65,18 +65,25 @@ export async function GET(
     const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
       const q = quizQuestions[actualIndex]
       const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
-      const correctAnswerIndex = Array.isArray(q.correct_answer)
-        ? q.correct_answer[0]
-        : (q.correct_answer as unknown as number)
+      
+      // Return correct_answer as-is (can be number or number[])
+      const correctAnswer = q.correct_answer
+      
+      // Return submitted answer as-is (can be single or multiple)
+      const submittedAnswer = submitted 
+        ? (submitted.answer_indexes && submitted.answer_indexes.length > 0 
+            ? submitted.answer_indexes 
+            : submitted.answer_index)
+        : null
 
       return {
         _id: q._id,
         text: q.text,
         options: q.options,
-        correct_answer: correctAnswerIndex,
+        correct_answer: correctAnswer,
         explanation: q.explanation,
         ...(q.image_url ? { image_url: q.image_url } : {}),
-        submitted_answer: submitted?.answer_index ?? null,
+        submitted_answer: submittedAnswer,
         is_correct: submitted?.is_correct ?? false,
       }
     })
