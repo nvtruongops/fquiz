@@ -30,7 +30,7 @@ const imgSrcDomains = allowedDomains.map((d) => d.trim()).join(' ')
 
 const cspDirectives = [
   "default-src 'self'",
-  `img-src 'self' data: https://res.cloudinary.com ${imgSrcDomains}`,
+  `img-src 'self' data: blob: https://res.cloudinary.com ${imgSrcDomains}`,
   [
     "script-src 'self' 'unsafe-inline' https://upload-widget.cloudinary.com https://cdn.cloudinary.com",
     isProduction ? '' : "'unsafe-eval'",
