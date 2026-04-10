@@ -77,7 +77,10 @@ export async function POST(request: Request) {
       }
     } catch {}
 
-    const token = await signToken(user._id.toString(), user.role, user.token_version || 1)
+    const token = await signToken(user._id.toString(), user.role, user.token_version || 1, {
+      username: user.username,
+      avatarUrl: user.avatar_url || '',
+    })
     
     logSecurityEvent('login_success', {
       request_id: requestId,

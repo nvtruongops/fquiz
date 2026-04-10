@@ -101,9 +101,9 @@ export async function verifyToken(req: Request): Promise<JWTPayload | null> {
   return null
 }
 
-export async function signToken(userId: string, role: string, v: number = 1): Promise<string> {
+export async function signToken(userId: string, role: string, v: number = 1, meta?: { username?: string; avatarUrl?: string }): Promise<string> {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET)
-  return new SignJWT({ userId, role, v })
+  return new SignJWT({ userId, role, v, username: meta?.username ?? '', avatarUrl: meta?.avatarUrl ?? '' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')

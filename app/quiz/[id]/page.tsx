@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/dialog'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
-import Navbar from '@/components/Navbar'
 
 interface QuizDetail {
   _id: string
@@ -323,8 +322,6 @@ export default function QuizDetailPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F9F9F7] font-sans">
-      <Navbar />
-
       <main className="flex flex-1 flex-col px-6 py-12 pb-28 md:pb-12">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="flex flex-col gap-8 lg:col-span-8">

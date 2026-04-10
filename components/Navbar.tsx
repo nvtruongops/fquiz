@@ -21,15 +21,21 @@ const navLinks = [
   { name: 'Cộng đồng', href: '/community', icon: Users },
 ]
 
-export default function Navbar() {
+interface NavbarProps {
+  initialUser?: { name: string; role: string; avatarUrl?: string } | null
+}
+
+export default function Navbar({ initialUser }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [user, setUser] = useState<{ name: string; role: string; avatarUrl?: string } | null>(null)
+  // Start with initialUser to avoid flash - then sync with server
+  const [user, setUser] = useState<{ name: string; role: string; avatarUrl?: string } | null>(initialUser ?? null)
   const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     
+    // Sync with server to get fresh data (avatar updates, etc.)
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
       .then(async (res) => {
         if (!res.ok) return

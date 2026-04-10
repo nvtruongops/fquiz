@@ -1,8 +1,10 @@
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { BookOpen, BarChart2, Layers, ArrowRight, CheckCircle, GraduationCap, Users, ShieldCheck } from "lucide-react";
+import { getServerUser } from "@/lib/get-server-user";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const initialUser = await getServerUser()
   return (
     <div className="min-h-screen bg-[#EAE7D6] flex flex-col font-sans selection:bg-[#A4C3A2] selection:text-[#5D7B6F] pb-28 md:pb-0">
       {/* Decorative Background Elements */}
@@ -14,7 +16,7 @@ export default function LandingPage() {
         <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#5D7B6F]/10 blur-[120px] rounded-full" />
       </div>
 
-      <Navbar />
+      <Navbar initialUser={initialUser} />
 
       {/* Hero Section */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-20 pb-28 md:pb-20">
