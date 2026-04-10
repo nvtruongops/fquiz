@@ -1,49 +1,64 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { Quiz } from '@/models/Quiz'
-import { Category } from '@/models/Category'
-import logger from '@/lib/logger'
+import { checkPublicApiRateLimit } from '@/lib/rate-limit/public-api'
 
-export const dynamic = 'force-dynamic'
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // Apply rate limiting
+  const rateLimitResponse = await checkPublicApiRateLimit(request)
+  if (rateLimitResponse) return rateLimitResponse
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
   try {
     await connectDB()
 
-    // 1. Fetch Quiz with Populated Category (Subject)
-    const quiz = await Quiz.findOne({ 
-      _id: id, 
-      status: 'published' 
-    })
-    .select('title description course_code questionCount studentCount category_id created_at questions')
-    .populate('category_id', 'name')
-    .lean()
+    const { id } = await params
+    const quiz = await Quiz.findById(id)
+      .select('title description category_id course_code questionCount studentCount created_by created_at is_public status')
+      .populate('created_by', 'username')
+      .populate('category_id', 'name')
+      .lean()
 
     if (!quiz) {
-      return NextResponse.json({ error: 'Quiz not found or unpublished' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Quiz not found' },
+        { status: 404 }
+      )
     }
 
-    const category = quiz.category_id as any
-
-    // 2. Mapping to Decoupled ID
-    const responseData = {
-      id: quiz._id.toString(),
-      title: quiz.title,
-      description: (quiz as any).description || '',
-      course_code: quiz.course_code,
-      questionCount: quiz.questionCount || (quiz.questions?.length ?? 0),
-      studentCount: quiz.studentCount || 0,
-      categoryId: category._id.toString(),
-      categoryName: category.name || 'Môn học chung',
-      createdAt: quiz.created_at,
+    // Check if quiz is public and published
+    const quizAny = quiz as any
+    if (!quizAny.is_public || quizAny.status !== 'published') {
+      return NextResponse.json(
+        { error: 'This quiz is not publicly accessible' },
+        { status: 403 }
+      )
     }
 
-    return NextResponse.json({
-      data: responseData,
+    const response = NextResponse.json({
+      data: {
+        id: quizAny._id.toString(),
+        title: quizAny.title,
+        description: quizAny.description || '',
+        categoryName: quizAny.category_id?.name || 'Chưa phân loại',
+        course_code: quizAny.course_code,
+        questionCount: quizAny.questionCount,
+        studentCount: quizAny.studentCount || 0,
+        createdAt: quizAny.created_at,
+      },
     })
-  } catch (err) {
-    logger.error({ err }, `Public Quiz Detail API Error for id: ${id}`)
-    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+
+    // Add cache headers for public data
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300')
+    
+    return response
+  } catch (error) {
+    console.error('Error fetching quiz:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch quiz' },
+      { status: 500 }
+    )
   }
 }
