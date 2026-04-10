@@ -98,7 +98,9 @@ function isPublicRoute(pathname: string) {
 }
 
 function shouldSkipAuth(pathname: string) {
-  return pathname.startsWith('/api/v1/public/') || pathname.startsWith('/api/auth/')
+  return pathname.startsWith('/api/v1/public/') || 
+         pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
+         pathname.startsWith('/api/auth/')
 }
 
 function validateCsrf(request: NextRequest, pathname: string, requestId: string) {
