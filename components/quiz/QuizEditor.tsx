@@ -192,6 +192,10 @@ export function QuizEditor({
       isFirstLoad.current = false
       return
     }
+    // Skip autosave if any question has a pending base64 image (not yet uploaded)
+    const hasPendingBase64 = debouncedForm.questions.some(q => q.image_url?.startsWith('data:image'))
+    if (hasPendingBase64) return
+
     if (debouncedForm.title && debouncedForm.category_id && debouncedForm.course_code) {
        handleAutosave()
     }
@@ -299,6 +303,17 @@ export function QuizEditor({
   // ── Save ───────────────────────────────────────────────────────────────────
 
   const doSave = async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
+    // If manual save, wait for any in-flight autosave to finish first
+    if (!quiet && autosaveInFlightRef.current) {
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (!autosaveInFlightRef.current) {
+            clearInterval(interval)
+            resolve()
+          }
+        }, 100)
+      })
+    }
     if (!quiet) setSaving(true)
     setError('')
     const finalStatus = isStudentMode ? 'published' : (overrideStatus ?? form.status)
