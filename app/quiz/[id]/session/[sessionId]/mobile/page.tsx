@@ -74,18 +74,6 @@ async function fetchSession(sessionId: string): Promise<SessionData> {
   return res.json()
 }
 
-async function fetchSessionQuestion(sessionId: string, questionIndex: number): Promise<SessionData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}?question_index=${questionIndex}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
-    const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
-    apiError.status = res.status
-    apiError.code = err.code
-    throw apiError
-  }
-  return res.json()
-}
-
 async function fetchAllQuestions(sessionId: string): Promise<PreloadedQuestions> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
   if (!res.ok) {
@@ -183,9 +171,7 @@ export default function QuizSessionMobilePage() {
       setPreloadProgress(10)
       const data = await fetchAllQuestions(resolvedSessionId)
       setPreloadProgress(60)
-      await new Promise(resolve => setTimeout(resolve, 200))
       setPreloadProgress(90)
-      await new Promise(resolve => setTimeout(resolve, 100))
       setPreloadProgress(100)
       return data
     },
@@ -203,7 +189,7 @@ export default function QuizSessionMobilePage() {
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0 && isPreloadSuccess && !!preloadData,
+    enabled: resolvedSessionId.length > 0,
     staleTime: 0,
     gcTime: 0, // Never cache - always fetch fresh to get correct current_question_index
     refetchOnMount: 'always',

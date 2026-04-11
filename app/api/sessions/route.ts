@@ -3,7 +3,6 @@ import { connectDB } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
-import { UserHighlight } from '@/models/UserHighlight'
 import mongoose from 'mongoose'
 import type { IQuestion } from '@/types/quiz'
 import { CreateSessionSchema } from '@/lib/schemas'
@@ -107,7 +106,7 @@ export async function POST(req: Request) {
 
     // 4. Find requested quiz
     const requestedQuiz = await Quiz.findById(quiz_id)
-      .select('questions original_quiz_id created_by is_public status')
+      .select('questions original_quiz_id created_by is_public status is_saved_from_explore')
       .lean()
     if (!requestedQuiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
@@ -176,22 +175,25 @@ export async function POST(req: Request) {
     const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
     const nowDate = new Date()
 
-    // Cleanup expired active sessions to avoid blocking new attempts with stale rows.
-    await QuizSession.deleteMany({
-      student_id: studentObjectId,
-      quiz_id: new mongoose.Types.ObjectId(effectiveQuizId),
-      status: 'active',
-      expires_at: { $lte: nowDate },
-    })
+    const effectiveQuizObjectId = new mongoose.Types.ObjectId(effectiveQuizId)
 
-    const activeSession = await QuizSession.findOne({
-      student_id: studentObjectId,
-      quiz_id: new mongoose.Types.ObjectId(effectiveQuizId),
-      status: 'active',
-      expires_at: { $gt: nowDate },
-    })
-      .sort({ started_at: -1, _id: -1 })
-      .lean()
+    // Expired cleanup and active lookup are independent and can run in parallel.
+    const [, activeSession] = await Promise.all([
+      QuizSession.deleteMany({
+        student_id: studentObjectId,
+        quiz_id: effectiveQuizObjectId,
+        status: 'active',
+        expires_at: { $lte: nowDate },
+      }),
+      QuizSession.findOne({
+        student_id: studentObjectId,
+        quiz_id: effectiveQuizObjectId,
+        status: 'active',
+        expires_at: { $gt: nowDate },
+      })
+        .sort({ started_at: -1, _id: -1 })
+        .lean(),
+    ])
 
     if (activeSession && action !== 'continue' && action !== 'restart') {
       const uniqueAnswered = new Set(
@@ -224,37 +226,6 @@ export async function POST(req: Request) {
           ? activeSession.current_question_index
           : 0
       const safeIndex = Math.min(currentIndex, Math.max(quizQuestions.length - 1, 0))
-      const resumeQuestion = quizQuestions[safeIndex]
-      const safeQuestion = {
-        _id: resumeQuestion._id,
-        text: resumeQuestion.text,
-        options: resumeQuestion.options,
-        ...(resumeQuestion.image_url ? { image_url: resumeQuestion.image_url } : {}),
-      }
-
-      const questionIds = quizQuestions.map((q: IQuestion) => q._id)
-      const highlights = await UserHighlight.find({
-        student_id: studentObjectId,
-        question_id: { $in: questionIds },
-      }).lean()
-
-      // Build ordered questions for preload (same as new session)
-      const questionOrder = (activeSession as any).question_order || Array.from({ length: quizQuestions.length }, (_, i) => i)
-      const orderedQuestionsForResume = questionOrder.map((originalIdx: number) => {
-        const q = quizQuestions[originalIdx]
-        if (!q) return null
-        const base = {
-          _id: q._id,
-          text: q.text,
-          options: q.options,
-          answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
-          ...(q.image_url ? { image_url: q.image_url } : {}),
-        }
-        if (activeSession.mode === 'immediate') {
-          return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
-        }
-        return base
-      }).filter(Boolean)
 
       return NextResponse.json(
         {
@@ -262,27 +233,8 @@ export async function POST(req: Request) {
           mode: activeSession.mode,
           difficulty: activeSession.difficulty,
           resumed: true,
-          question: safeQuestion,
-          highlights,
           totalQuestions: quizQuestions.length,
           currentQuestionIndex: safeIndex,
-          // Include all questions so client can skip /questions fetch
-          questions: orderedQuestionsForResume,
-          session: {
-            _id: activeSession._id,
-            mode: activeSession.mode,
-            status: activeSession.status,
-            current_question_index: (activeSession as any).current_question_index ?? 0,
-            totalQuestions: quizQuestions.length,
-            user_answers: (activeSession as any).user_answers ?? [],
-            score: (activeSession as any).score ?? 0,
-            courseCode: '',
-            categoryName: '',
-            title: '',
-            started_at: (activeSession as any).started_at,
-            paused_at: null,
-            total_paused_duration_ms: 0,
-          },
         },
         { status: 200 }
       )
@@ -291,7 +243,7 @@ export async function POST(req: Request) {
     if (activeSession && action === 'restart') {
       await QuizSession.deleteMany({
         student_id: studentObjectId,
-        quiz_id: new mongoose.Types.ObjectId(effectiveQuizId),
+        quiz_id: effectiveQuizObjectId,
         status: 'active',
       })
     }
@@ -307,7 +259,7 @@ export async function POST(req: Request) {
 
     const session = await QuizSession.create({
       student_id: studentObjectId,
-      quiz_id: new mongoose.Types.ObjectId(effectiveQuizId),
+      quiz_id: effectiveQuizObjectId,
       mode,
       difficulty,
       status: 'active',
@@ -322,66 +274,12 @@ export async function POST(req: Request) {
       total_paused_duration_ms: 0,
     })
 
-    // 6. Query UserHighlights for all question_ids in the quiz
-    const questionIds = quizQuestions.map((q: IQuestion) => q._id)
-    const highlights = await UserHighlight.find({
-      student_id: studentObjectId,
-      question_id: { $in: questionIds },
-    }).lean()
-
-    // 7. Return first question based on question_order
-    const firstQuestionIndex = questionOrder[0]
-    const firstQuestion = quizQuestions[firstQuestionIndex]
-    const safeQuestion = {
-      _id: firstQuestion._id,
-      text: firstQuestion.text,
-      options: firstQuestion.options,
-      ...(firstQuestion.image_url ? { image_url: firstQuestion.image_url } : {}),
-    }
-
-    // Build all questions ordered by question_order for preload (avoid separate /questions fetch)
-    const orderedQuestions = questionOrder.map((originalIdx: number) => {
-      const q = quizQuestions[originalIdx]
-      if (!q) return null
-      const base = {
-        _id: q._id,
-        text: q.text,
-        options: q.options,
-        answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
-        ...(q.image_url ? { image_url: q.image_url } : {}),
-      }
-      if (mode === 'immediate') {
-        return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
-      }
-      return base
-    }).filter(Boolean)
-
     return NextResponse.json(
       {
         sessionId: session._id,
         mode: session.mode,
         difficulty: session.difficulty,
-        question: safeQuestion,
-        highlights,
         totalQuestions: quizQuestions.length,
-        // Include all questions so client doesn't need a separate /questions fetch
-        questions: orderedQuestions,
-        // Include session state so client doesn't need a separate /sessions/[id] fetch
-        session: {
-          _id: session._id,
-          mode: session.mode,
-          status: session.status,
-          current_question_index: 0,
-          totalQuestions: quizQuestions.length,
-          user_answers: [],
-          score: 0,
-          courseCode: '', // will be populated by client from quiz detail
-          categoryName: '',
-          title: '',
-          started_at: session.started_at,
-          paused_at: null,
-          total_paused_duration_ms: 0,
-        },
       },
       { status: 201 }
     )
