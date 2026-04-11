@@ -20,11 +20,54 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-export async function GET() {
-  return NextResponse.json({ message: 'Not implemented' }, { status: 501 })
-}
+export async function GET(req: Request) {
+  try {
+    const payload = await verifyToken(req)
+    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-/**
+    const { searchParams } = new URL(req.url)
+    const quizId = searchParams.get('quiz_id')
+    if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
+      return NextResponse.json({ activeSession: null })
+    }
+
+    await connectDB()
+    const nowDate = new Date()
+    const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
+
+    const activeSession = await QuizSession.findOne({
+      student_id: studentObjectId,
+      quiz_id: new mongoose.Types.ObjectId(quizId),
+      status: 'active',
+      expires_at: { $gt: nowDate },
+    })
+      .sort({ started_at: -1 })
+      .lean() as any
+
+    if (!activeSession) return NextResponse.json({ activeSession: null })
+
+    const uniqueAnswered = new Set(
+      (activeSession.user_answers ?? [])
+        .map((a: any) => a.question_index)
+        .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
+    )
+
+    return NextResponse.json({
+      activeSession: {
+        sessionId: activeSession._id,
+        mode: activeSession.mode,
+        difficulty: activeSession.difficulty,
+        current_question_index: activeSession.current_question_index,
+        answeredCount: uniqueAnswered.size,
+        started_at: activeSession.started_at,
+      },
+    })
+  } catch (err) {
+    console.error('GET /api/sessions error:', err)
+    return NextResponse.json({ activeSession: null })
+  }
+}/**
  * POST /api/sessions
  * Creates a new quiz session for a student.
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 12.1

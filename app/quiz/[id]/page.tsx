@@ -141,6 +141,7 @@ export default function QuizDetailPage() {
   const resolvedQuizId = quizId ?? ''
   const { toast } = useToast()
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
+  const [modeSelectOpen, setModeSelectOpen] = useState(false)
   const [pendingMode, setPendingMode] = useState<'immediate' | 'review' | null>(null)
   const [pendingDifficulty, setPendingDifficulty] = useState<'sequential' | 'random' | null>(null)
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
@@ -154,6 +155,18 @@ export default function QuizDetailPage() {
     queryKey: ['quiz', quizId],
     queryFn: () => fetchQuizDetail(resolvedQuizId),
     enabled: resolvedQuizId.length > 0,
+  })
+
+  // Pre-check active session when page loads (authenticated users only)
+  const { data: activeSessionData } = useQuery({
+    queryKey: ['active-session', quizId],
+    queryFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions?quiz_id=${quizId}`)
+      if (!res.ok) return { activeSession: null }
+      return res.json() as Promise<{ activeSession: ActiveSessionPayload | null }>
+    },
+    enabled: resolvedQuizId.length > 0,
+    staleTime: 0,
   })
 
   const startSessionMutation = useMutation({
@@ -179,9 +192,10 @@ export default function QuizDetailPage() {
     },
     onSuccess: (data) => {
       const nextSessionId = data.sessionId ?? data.session?._id
-      
+
       if (!nextSessionId) {
-        toast.error('Không nhận được mã phiên thi từ hệ thống. Vui lòng thử lại.')
+        // Restart completed (old session deleted), now show mode select
+        setModeSelectOpen(true)
         return
       }
       // Clear pending state and close dialog
@@ -208,7 +222,6 @@ export default function QuizDetailPage() {
       window.location.href = targetUrl
     },
     onError: (error: StartSessionError, variables) => {
-      // Handle 401 Unauthorized - show clear message and redirect to login
       if (error.status === 401) {
         toast.error('Bạn cần đăng nhập để làm bài quiz này')
         setTimeout(() => {
@@ -216,22 +229,13 @@ export default function QuizDetailPage() {
         }, 1500)
         return
       }
-      
+
+      // 409 shouldn't happen now since we pre-check, but handle gracefully
       if (error.status === 409 && error.code === 'ACTIVE_SESSION_EXISTS') {
-        setPendingMode(variables.mode)
-        setPendingDifficulty(variables.difficulty)
-        setActiveSessionInfo(
-          error.activeSession ?? {
-            sessionId: '',
-            mode: variables.mode,
-            difficulty: variables.difficulty,
-            current_question_index: 0,
-            totalQuestions: 0,
-            answeredCount: 0,
-            started_at: new Date().toISOString(),
-          }
-        )
-        setResumeDialogOpen(true)
+        if (error.activeSession) {
+          setActiveSessionInfo(error.activeSession)
+          setResumeDialogOpen(true)
+        }
         return
       }
 
@@ -240,19 +244,36 @@ export default function QuizDetailPage() {
   })
 
   function handleSelectMode(mode: 'immediate' | 'review', difficulty: 'sequential' | 'random') {
+    setModeSelectOpen(false)
     startSessionMutation.mutate({ mode, difficulty })
   }
 
+  // "Bắt đầu ngay" click - check for active session first
+  function handleStartClick() {
+    const existing = activeSessionData?.activeSession
+    if (existing) {
+      setActiveSessionInfo(existing)
+      setResumeDialogOpen(true)
+    } else {
+      setModeSelectOpen(true)
+    }
+  }
+
   function handleContinueSession() {
-    if (!pendingMode || !pendingDifficulty) return
-    startSessionMutation.mutate({ mode: pendingMode, difficulty: pendingDifficulty, action: 'continue' })
+    if (!activeSessionInfo?.sessionId) return
+    // Navigate directly to existing session
     setResumeDialogOpen(false)
+    window.location.href = `/quiz/${quizId}/session/${activeSessionInfo.sessionId}`
   }
 
   function handleRestartSession() {
-    if (!pendingMode || !pendingDifficulty) return
-    startSessionMutation.mutate({ mode: pendingMode, difficulty: pendingDifficulty, action: 'restart' })
+    // Delete old session then show mode select
     setResumeDialogOpen(false)
+    startSessionMutation.mutate({
+      mode: activeSessionInfo?.mode ?? 'immediate',
+      difficulty: activeSessionInfo?.difficulty ?? 'sequential',
+      action: 'restart',
+    })
   }
 
   if (isLoading)
@@ -410,9 +431,12 @@ export default function QuizDetailPage() {
                 </div>
               </div>
 
-              <Dialog>
+              <Dialog open={modeSelectOpen} onOpenChange={setModeSelectOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex h-14 w-full items-center gap-3 rounded-sm bg-[#5D7B6F] text-[11px] font-normal uppercase tracking-[0.25em] text-white shadow-lg shadow-[#5D7B6F]/20 transition-all hover:bg-[#4a6358] active:scale-[0.98]">
+                  <Button
+                    onClick={handleStartClick}
+                    className="flex h-14 w-full items-center gap-3 rounded-sm bg-[#5D7B6F] text-[11px] font-normal uppercase tracking-[0.25em] text-white shadow-lg shadow-[#5D7B6F]/20 transition-all hover:bg-[#4a6358] active:scale-[0.98]"
+                  >
                     Bắt đầu ngay <PlayCircle className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
