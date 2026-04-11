@@ -207,6 +207,7 @@ export default function QuizDetailPage() {
           error.activeSession ?? {
             sessionId: '',
             mode: variables.mode,
+            difficulty: variables.difficulty,
             current_question_index: 0,
             totalQuestions: 0,
             answeredCount: 0,
