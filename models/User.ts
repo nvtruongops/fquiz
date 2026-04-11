@@ -29,6 +29,7 @@ const UserSchema = new Schema<IUser>(
     reset_token: { type: String, default: null },
     reset_token_expires: { type: Date, default: null },
     token_version: { type: Number, required: true, default: 1 },
+    pinned_categories: { type: [String], default: [] },
   },
   { timestamps: false }
 )
