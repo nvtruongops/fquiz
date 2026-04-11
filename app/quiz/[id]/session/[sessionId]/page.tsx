@@ -511,6 +511,15 @@ export default function QuizSessionPage() {
     )
   }
 
+  // Wait for server hydration before rendering to avoid showing wrong question index
+  if (!isHydratedFromServer) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#f3f3f3]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
+      </div>
+    )
+  }
+
   const { session, question } = activeData
   const effectiveTotal = session.totalQuestions || 0
   const effectiveIndex = Math.min(currentQuestionIndex, Math.max(effectiveTotal - 1, 0))
