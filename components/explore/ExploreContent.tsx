@@ -292,7 +292,7 @@ function CategorySection({
       )}
 
       {/* Infinite scroll sentinel - placed inside grid area */}
-      {expanded && <div ref={loadMoreRef} className="h-1" />
+      {expanded && <div ref={loadMoreRef} className="h-1" />}
 
       {/* Expand / Collapse button */}
       {total > PREVIEW_COUNT && (
@@ -391,7 +391,7 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
         </div>
       )}
 
-      {expanded && <div ref={loadMoreRef} className="h-1" />
+      {expanded && <div ref={loadMoreRef} className="h-1" />}
 
       {previewQuizzes.length >= PREVIEW_COUNT && (
         <button
