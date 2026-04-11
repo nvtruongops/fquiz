@@ -242,33 +242,26 @@ function CategorySection({
   return (
     <section className="space-y-3">
       {/* Section header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={cn('w-1.5 h-5 rounded-full', isPinned ? 'bg-[#5D7B6F]' : 'bg-[#A4C3A2]')} />
-          <h3 className="text-lg font-black text-[#5D7B6F]">{category.name}</h3>
-          {total > 0 && (
-            <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-              {total} bộ đề
-            </span>
-          )}
-          {isPinned && (
-            <span className="text-[10px] font-black text-[#5D7B6F] bg-[#5D7B6F]/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Đã ghim
-            </span>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <div className={cn('w-1.5 h-5 rounded-full', isPinned ? 'bg-[#5D7B6F]' : 'bg-[#A4C3A2]')} />
+        <h3 className="text-lg font-black text-[#5D7B6F]">{category.name}</h3>
+        {total > 0 && (
+          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            {total} bộ đề
+          </span>
+        )}
+        {/* Pin button - next to category name */}
         <button
           onClick={() => onPin(category.id)}
           title={isPinned ? 'Bỏ ghim' : 'Ghim danh mục này lên đầu'}
           className={cn(
-            'flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all',
+            'flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg transition-all',
             isPinned
               ? 'text-[#5D7B6F] bg-[#5D7B6F]/10 hover:bg-[#5D7B6F]/20'
               : 'text-gray-400 hover:text-[#5D7B6F] hover:bg-[#5D7B6F]/5'
           )}
         >
           {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-          {isPinned ? 'Bỏ ghim' : 'Ghim'}
         </button>
       </div>
 
