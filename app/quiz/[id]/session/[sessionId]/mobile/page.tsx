@@ -383,21 +383,31 @@ export default function QuizSessionMobilePage() {
     if (submitted || submitMutation.isPending) return
 
     setSubmitted(true)
+
+    // Compute feedback instantly from preloaded questions (no need to wait for API)
+    if (currentQuestion?.correct_answer !== undefined) {
+      const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
+        ? [...new Set(currentQuestion.correct_answer)].sort((a, b) => a - b)
+        : [currentQuestion.correct_answer as number]
+      const submittedSorted = [...new Set(answerIndexes)].sort((a, b) => a - b)
+      const isCorrect =
+        submittedSorted.length === correctAnswerIndexes.length &&
+        submittedSorted.every((v, i) => v === correctAnswerIndexes[i])
+
+      const feedback: QuestionFeedback = {
+        isCorrect,
+        correctAnswer: correctAnswerIndexes[0],
+        correctAnswers: correctAnswerIndexes,
+        explanation: currentQuestion.explanation,
+      }
+      setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
+      setLastAnswerResult(feedback)
+    }
+
+    // Fire-and-forget API call to persist answer
     submitMutation.mutate(
       { questionIndex: currentQuestionIndex, answerIndexes },
       {
-        onSuccess: (result) => {
-          if ('isCorrect' in result) {
-            const feedback: QuestionFeedback = {
-              isCorrect: result.isCorrect,
-              correctAnswer: result.correctAnswer,
-              correctAnswers: result.correctAnswers,
-              explanation: result.explanation,
-            }
-            setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
-            setLastAnswerResult(feedback)
-          }
-        },
         onError: () => setSubmitted(false),
       }
     )
