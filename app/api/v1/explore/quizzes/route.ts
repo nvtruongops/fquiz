@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('category_id')
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
 
     const query: Record<string, unknown> = {
       is_public: true,
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
       .populate('created_by', 'username')
       .populate('category_id', 'name')
       .sort(sortOption)
+      .skip(offset)
       .limit(limit)
       .lean()
 
