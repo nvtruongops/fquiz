@@ -155,7 +155,7 @@ export default function QuizSessionPage() {
     })
   }
 
-  // Preload all questions
+  // Preload all questions - check sessionStorage cache first (seeded by quiz detail page)
   const {
     data: preloadData,
     isLoading: isPreloading,
@@ -164,22 +164,31 @@ export default function QuizSessionPage() {
   } = useQuery<PreloadedQuestions, Error>({
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
+      // Check sessionStorage for pre-seeded data from create session response
+      try {
+        const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed.questions?.length > 0) {
+            sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
+            setPreloadProgress(100)
+            return parsed as PreloadedQuestions
+          }
+        }
+      } catch {}
+
       setPreloadProgress(10)
       const data = await fetchAllQuestions(resolvedSessionId)
       setPreloadProgress(60)
-      
-      // Short wait to ensure React Query cache is ready
       await new Promise(resolve => setTimeout(resolve, 200))
       setPreloadProgress(90)
-      
       await new Promise(resolve => setTimeout(resolve, 100))
       setPreloadProgress(100)
-      
       return data
     },
     enabled: resolvedSessionId.length > 0,
-    staleTime: Infinity, // Cache forever since questions don't change
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
   })
 
   const {
