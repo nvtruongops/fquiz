@@ -131,8 +131,17 @@ export default function QuizSessionMobilePage() {
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const [preloadProgress, setPreloadProgress] = useState(0)
 
-  // isHydratedFromServer is only true when we've hydrated for THIS specific session
+  // Only render quiz when server data has been applied for THIS session
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
+
+  // Reset hydration when sessionId changes so we always wait for fresh server data
+  useEffect(() => {
+    setIsHydratedFromServer(false)
+    setHydratedSessionId(null)
+    setSelectedOptions([])
+    setSubmitted(false)
+    setFeedbackByQuestion({})
+  }, [resolvedSessionId])
 
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
@@ -185,6 +194,8 @@ export default function QuizSessionMobilePage() {
     queryFn: () => fetchSession(resolvedSessionId),
     enabled: resolvedSessionId.length > 0 && isPreloadSuccess && !!preloadData,
     staleTime: 0,
+    gcTime: 0, // Never cache - always fetch fresh to get correct current_question_index
+    refetchOnMount: 'always',
   })
 
   // Store preloaded questions when available
