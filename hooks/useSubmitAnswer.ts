@@ -85,9 +85,9 @@ export function useSubmitAnswer(sessionId: string) {
           correctAnswers: data.correctAnswers,
           explanation: data.explanation,
         })
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
       }
-
-      queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
     },
 
     onError: (error, _variables, context) => {

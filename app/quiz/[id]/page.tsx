@@ -44,10 +44,11 @@ interface QuizDetail {
 
 interface CreateSessionResponse {
   sessionId?: string
-  session?: { _id?: string; mode?: string; status?: string; current_question_index?: number; totalQuestions?: number; user_answers?: any[]; score?: number; courseCode?: string; categoryName?: string; title?: string; started_at?: string; paused_at?: null; total_paused_duration_ms?: number }
   mode?: string
+  difficulty?: 'sequential' | 'random'
+  resumed?: boolean
+  currentQuestionIndex?: number
   totalQuestions?: number
-  questions?: any[]
 }
 
 interface ActiveSessionPayload {
@@ -191,7 +192,7 @@ export default function QuizDetailPage() {
       return (await res.json()) as CreateSessionResponse
     },
     onSuccess: (data) => {
-      const nextSessionId = data.sessionId ?? data.session?._id
+      const nextSessionId = data.sessionId
 
       if (!nextSessionId) {
         // Restart completed (old session deleted), now show mode select
@@ -203,20 +204,6 @@ export default function QuizDetailPage() {
       setPendingDifficulty(null)
       setActiveSessionInfo(null)
       setResumeDialogOpen(false)
-
-      // Seed session data into sessionStorage so quiz page can skip extra fetches
-      if (data.questions && data.session) {
-        try {
-          sessionStorage.setItem(`session_preload_${nextSessionId}`, JSON.stringify({
-            questions: data.questions,
-            session: data.session,
-            totalQuestions: data.totalQuestions,
-            mode: data.mode,
-            sessionId: nextSessionId,
-            status: 'active',
-          }))
-        } catch {}
-      }
       
       const targetUrl = `/quiz/${quizId}/session/${nextSessionId}`
       window.location.href = targetUrl
