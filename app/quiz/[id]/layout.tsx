@@ -1,7 +1,7 @@
 import { getServerUser } from '@/lib/get-server-user'
-import NavbarWrapper from '@/components/NavbarWrapper'
+import QuizLayoutClient from '@/components/QuizLayoutClient'
 
 export default async function QuizLayout({ children }: { children: React.ReactNode }) {
   const initialUser = await getServerUser()
-  return <NavbarWrapper initialUser={initialUser}>{children}</NavbarWrapper>
+  return <QuizLayoutClient initialUser={initialUser}>{children}</QuizLayoutClient>
 }

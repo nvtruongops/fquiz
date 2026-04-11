@@ -115,6 +115,7 @@ export default function QuizSessionPage() {
     answeredQuestions,
     lastAnswerResult,
     initSession,
+    resumeSession,
     navigateToQuestion,
     restoreAnswers,
     setLastAnswerResult,
@@ -222,15 +223,17 @@ export default function QuizSessionPage() {
       initialData.session.user_answers.map((a) => a.question_index)
     )
 
-    if (storeSessionId !== sessionId) {
-      initSession(resolvedSessionId, resolvedQuizId, initialData.session.mode, initialData.session.totalQuestions)
-    }
-
-    // Restore answered questions from DB and navigate to correct position
-    restoreAnswers(serverAnsweredSet)
-    navigateToQuestion(initialData.session.current_question_index)
+    // Single atomic update - no flash between states
+    resumeSession(
+      resolvedSessionId,
+      resolvedQuizId,
+      initialData.session.mode,
+      initialData.session.totalQuestions,
+      initialData.session.current_question_index,
+      serverAnsweredSet
+    )
     setIsHydratedFromServer(true)
-  }, [initSession, initialData, isHydratedFromServer, navigateToQuestion, restoreAnswers, resolvedQuizId, resolvedSessionId, sessionId, storeSessionId])
+  }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
 
   useEffect(() => {
     if (!activeData?.session) return
