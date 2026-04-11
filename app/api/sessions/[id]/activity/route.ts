@@ -54,13 +54,13 @@ export async function POST(
       last_activity_at: now,
     }
 
-    const currentQuestionIndex = body.current_question_index
-    if (typeof currentQuestionIndex === 'number' && Number.isInteger(currentQuestionIndex) && currentQuestionIndex >= 0) {
-      setPayload.current_question_index = currentQuestionIndex
-    }
-
-    // Handle pause event
+    // Only update current_question_index on pause (to save progress)
+    // Never update on resume - the DB value is the source of truth
     if (body.event === 'pause') {
+      const currentQuestionIndex = body.current_question_index
+      if (typeof currentQuestionIndex === 'number' && Number.isInteger(currentQuestionIndex) && currentQuestionIndex >= 0) {
+        setPayload.current_question_index = currentQuestionIndex
+      }
       setPayload.paused_at = now
     }
 
