@@ -138,11 +138,12 @@ export const useQuizSessionStore = create<QuizSessionState>()(
     {
       name: 'quiz-session',
       storage: createJSONStorage(() => localStorage),
-      // Only persist fields needed to restore on crash/reload
+      // Only persist session identity, NOT currentQuestionIndex
+      // currentQuestionIndex is always restored from server on mount to avoid stale index
       partialize: (state): PersistedQuizSession => ({
         sessionId: state.sessionId,
         quizId: state.quizId,
-        currentQuestionIndex: state.currentQuestionIndex,
+        currentQuestionIndex: 0, // always start at 0, server will correct it
         answeredQuestions: Array.from(state.answeredQuestions),
         pendingAnswerIndex: state.pendingAnswerIndex,
       }),
