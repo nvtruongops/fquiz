@@ -268,6 +268,39 @@ export async function POST(req: Request) {
       ...(firstQuestion.image_url ? { image_url: firstQuestion.image_url } : {}),
     }
 
+    // Build all questions for preload (avoid separate /questions fetch)
+    const allQuestions = quizQuestions.map((q: IQuestion, idx: number) => {
+      const displayIndex = questionOrder.indexOf(idx)
+      const base = {
+        _id: q._id,
+        text: q.text,
+        options: q.options,
+        answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
+        ...(q.image_url ? { image_url: q.image_url } : {}),
+      }
+      // Immediate mode: include correct_answer and explanation
+      if (mode === 'immediate') {
+        return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
+      }
+      return base
+    })
+
+    // Reorder by question_order for display
+    const orderedQuestions = questionOrder.map((originalIdx: number) => {
+      const q = quizQuestions[originalIdx]
+      const base = {
+        _id: q._id,
+        text: q.text,
+        options: q.options,
+        answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
+        ...(q.image_url ? { image_url: q.image_url } : {}),
+      }
+      if (mode === 'immediate') {
+        return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
+      }
+      return base
+    })
+
     return NextResponse.json(
       {
         sessionId: session._id,
@@ -276,6 +309,24 @@ export async function POST(req: Request) {
         question: safeQuestion,
         highlights,
         totalQuestions: quizQuestions.length,
+        // Include all questions so client doesn't need a separate /questions fetch
+        questions: orderedQuestions,
+        // Include session state so client doesn't need a separate /sessions/[id] fetch
+        session: {
+          _id: session._id,
+          mode: session.mode,
+          status: session.status,
+          current_question_index: 0,
+          totalQuestions: quizQuestions.length,
+          user_answers: [],
+          score: 0,
+          courseCode: '', // will be populated by client from quiz detail
+          categoryName: '',
+          title: '',
+          started_at: session.started_at,
+          paused_at: null,
+          total_paused_duration_ms: 0,
+        },
       },
       { status: 201 }
     )
