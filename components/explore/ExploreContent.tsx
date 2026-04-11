@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
   Search, GraduationCap, Users, Clock3,
-  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp,
+  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Pin, PinOff,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -52,6 +52,23 @@ async function fetchCategories(): Promise<{ data: Category[] }> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/categories`)
   if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
+}
+
+async function fetchPinnedCategories(): Promise<{ pinnedCategories: string[] }> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-categories`)
+  if (!res.ok) return { pinnedCategories: [] }
+  return res.json()
+}
+
+async function togglePinCategory(categoryId: string): Promise<{ pinned: boolean; pinnedCategories: string[]; error?: string }> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-categories`, {
+    method: 'POST',
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ categoryId }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to pin category')
+  return data
 }
 
 async function fetchQuizzes(params: {
@@ -170,10 +187,12 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
 // ── Category Section with expand + infinite scroll ─────────────────────────
 
 function CategorySection({
-  category, isLoggedIn,
+  category, isLoggedIn, isPinned, onPin,
 }: {
   category: Category
   isLoggedIn: boolean
+  isPinned: boolean
+  onPin: (id: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -225,14 +244,32 @@ function CategorySection({
       {/* Section header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-5 bg-[#A4C3A2] rounded-full" />
+          <div className={cn('w-1.5 h-5 rounded-full', isPinned ? 'bg-[#5D7B6F]' : 'bg-[#A4C3A2]')} />
           <h3 className="text-lg font-black text-[#5D7B6F]">{category.name}</h3>
           {total > 0 && (
             <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
               {total} bộ đề
             </span>
           )}
+          {isPinned && (
+            <span className="text-[10px] font-black text-[#5D7B6F] bg-[#5D7B6F]/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Đã ghim
+            </span>
+          )}
         </div>
+        <button
+          onClick={() => onPin(category.id)}
+          title={isPinned ? 'Bỏ ghim' : 'Ghim danh mục này lên đầu'}
+          className={cn(
+            'flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all',
+            isPinned
+              ? 'text-[#5D7B6F] bg-[#5D7B6F]/10 hover:bg-[#5D7B6F]/20'
+              : 'text-gray-400 hover:text-[#5D7B6F] hover:bg-[#5D7B6F]/5'
+          )}
+        >
+          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+          {isPinned ? 'Bỏ ghim' : 'Ghim'}
+        </button>
       </div>
 
       {/* Quiz grid */}
@@ -378,6 +415,8 @@ export default function ExploreContent() {
   const [search, setSearch] = useState('')
   const [user, setUser] = useState<{ id: string } | null | undefined>(undefined)
   const debouncedSearch = useDebounce(search, 300)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
@@ -393,10 +432,44 @@ export default function ExploreContent() {
   const isLoggedIn = !!user
   const userLoaded = user !== undefined
 
+  // Fetch pinned categories (only when logged in)
+  const { data: pinnedData } = useQuery({
+    queryKey: ['student', 'pinned-categories'],
+    queryFn: fetchPinnedCategories,
+    enabled: isLoggedIn,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const pinnedCategoryIds = new Set<string>(pinnedData?.pinnedCategories ?? [])
+
+  const pinMutation = useMutation({
+    mutationFn: (categoryId: string) => togglePinCategory(categoryId),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: data.pinnedCategories })
+      toast.success(data.pinned ? 'Đã ghim danh mục' : 'Đã bỏ ghim danh mục')
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const handlePin = (categoryId: string) => {
+    if (!isLoggedIn) {
+      toast.error('Vui lòng đăng nhập để ghim danh mục')
+      return
+    }
+    pinMutation.mutate(categoryId)
+  }
+
   const categories = useMemo(() => {
     const list = catData?.data ?? []
     return [...list].sort((a, b) => a.name.localeCompare(b.name, 'vi'))
   }, [catData])
+
+  // Split: pinned first, then rest A-Z
+  const { pinnedCategories, unpinnedCategories } = useMemo(() => {
+    const pinned = categories.filter(c => pinnedCategoryIds.has(c.id))
+    const unpinned = categories.filter(c => !pinnedCategoryIds.has(c.id))
+    return { pinnedCategories: pinned, unpinnedCategories: unpinned }
+  }, [categories, pinnedCategoryIds])
 
   const isSearching = debouncedSearch.length > 0
 
@@ -461,8 +534,38 @@ export default function ExploreContent() {
             </div>
           ) : (
             <div className="space-y-10">
-              {categories.map(cat => (
-                <CategorySection key={cat.id} category={cat} isLoggedIn={isLoggedIn} />
+              {/* Pinned categories first */}
+              {pinnedCategories.length > 0 && (
+                <>
+                  <div className="space-y-10">
+                    {pinnedCategories.map(cat => (
+                      <CategorySection
+                        key={cat.id}
+                        category={cat}
+                        isLoggedIn={isLoggedIn}
+                        isPinned={true}
+                        onPin={handlePin}
+                      />
+                    ))}
+                  </div>
+                  {unpinnedCategories.length > 0 && (
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 h-px bg-gray-100" />
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tất cả môn học</span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Remaining A-Z */}
+              {unpinnedCategories.map(cat => (
+                <CategorySection
+                  key={cat.id}
+                  category={cat}
+                  isLoggedIn={isLoggedIn}
+                  isPinned={false}
+                  onPin={handlePin}
+                />
               ))}
             </div>
           )}
