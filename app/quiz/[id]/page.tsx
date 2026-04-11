@@ -553,19 +553,36 @@ export default function QuizDetailPage() {
                             <div className="rounded-lg border border-gray-100 px-3 py-2">
                               <p className="font-black uppercase tracking-wider text-gray-400">Độ khó</p>
                               <div className="mt-1 flex items-center gap-1.5 font-bold text-gray-700">
-                                {activeSessionInfo?.difficulty === 'random' ? (
+                                {activeSessionInfo?.mode === 'immediate' && activeSessionInfo?.difficulty === 'sequential' && (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-green-100 text-green-600">
+                                      <Zap className="h-3 w-3" />
+                                    </div>
+                                    Học nhanh
+                                  </>
+                                )}
+                                {activeSessionInfo?.mode === 'immediate' && activeSessionInfo?.difficulty === 'random' && (
                                   <>
                                     <div className="flex h-5 w-5 items-center justify-center rounded bg-green-100 text-green-600">
                                       <Shuffle className="h-3 w-3" />
                                     </div>
-                                    Ngẫu nhiên
+                                    Học sâu
                                   </>
-                                ) : (
+                                )}
+                                {activeSessionInfo?.mode === 'review' && activeSessionInfo?.difficulty === 'sequential' && (
                                   <>
                                     <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 text-blue-600">
                                       <AlignJustify className="h-3 w-3" />
                                     </div>
-                                    Tuần tự
+                                    Chế độ dễ
+                                  </>
+                                )}
+                                {activeSessionInfo?.mode === 'review' && activeSessionInfo?.difficulty === 'random' && (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 text-blue-600">
+                                      <Shuffle className="h-3 w-3" />
+                                    </div>
+                                    Chế độ khó
                                   </>
                                 )}
                               </div>
