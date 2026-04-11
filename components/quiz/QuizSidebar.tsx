@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,10 +32,51 @@ export default function QuizSidebar({
 }: Readonly<QuizSidebarProps>) {
   const options = Array.from({ length: Math.max(optionCount, 1) }, (_, i) => String.fromCodePoint(65 + i))
 
+  // Keyboard navigation: ← → arrows
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        onNavigate(currentIndex - 1)
+      } else if (e.key === 'ArrowRight' && currentIndex < totalQuestions - 1) {
+        onNavigate(currentIndex + 1)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentIndex, totalQuestions, onNavigate])
+
   return (
     <aside className="w-[210px] shrink-0 bg-[#e9e9e9] sm:w-[250px]">
       <div className="quiz-scroll flex h-full flex-col overflow-y-auto">
         <div className="px-4 py-4 sm:px-5">
+
+          {/* Back / Next - above answer options */}
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onNavigate(currentIndex - 1)}
+              disabled={currentIndex === 0}
+              className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
+              title="Câu trước (←)"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" /> Back
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onNavigate(currentIndex + 1)}
+              disabled={currentIndex === totalQuestions - 1}
+              className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
+              title="Câu sau (→)"
+            >
+              Next <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Answer options - auto scale for A B C D E F... */}
           <h3 className="mb-2 whitespace-nowrap text-[24px] font-bold leading-none text-[#111111]">Chọn đáp án</h3>
           <div className="space-y-1.5">
             {options.map((option, idx) => (
@@ -60,28 +101,8 @@ export default function QuizSidebar({
           </div>
         </div>
 
+        {/* Submit - always at bottom */}
         <div className="mt-auto border-t-2 border-[#101010] p-3 sm:p-4">
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onNavigate(currentIndex - 1)}
-              disabled={currentIndex === 0}
-              className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" /> Back
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onNavigate(currentIndex + 1)}
-              disabled={currentIndex === totalQuestions - 1}
-              className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
-            >
-              Next <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-
           <Button
             type="button"
             onClick={onSubmit}
@@ -94,6 +115,7 @@ export default function QuizSidebar({
           <p className="mt-2 text-[17px] font-semibold text-[#333333]">
             {answeredCount}/{totalQuestions} câu đã trả lời
           </p>
+          <p className="mt-1 text-[11px] text-gray-400">← → để chuyển câu</p>
         </div>
       </div>
     </aside>
