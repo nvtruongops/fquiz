@@ -261,9 +261,13 @@ export default function QuizDetailPage() {
 
   function handleContinueSession() {
     if (!activeSessionInfo?.sessionId) return
-    // Navigate directly to existing session
     setResumeDialogOpen(false)
-    window.location.href = `/quiz/${quizId}/session/${activeSessionInfo.sessionId}`
+    // Call continue action to get questions preloaded
+    startSessionMutation.mutate({
+      mode: activeSessionInfo.mode,
+      difficulty: activeSessionInfo.difficulty,
+      action: 'continue',
+    })
   }
 
   function handleRestartSession() {
