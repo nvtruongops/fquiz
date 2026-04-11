@@ -46,6 +46,10 @@ export async function GET(req: Request) {
 
     if (!activeSession) return NextResponse.json({ activeSession: null })
 
+    // Get quiz to retrieve totalQuestions
+    const quiz = await Quiz.findById(activeSession.quiz_id).select('questions').lean()
+    const totalQuestions = (quiz?.questions ?? []).length
+
     const uniqueAnswered = new Set(
       (activeSession.user_answers ?? [])
         .map((a: any) => a.question_index)
@@ -58,6 +62,7 @@ export async function GET(req: Request) {
         mode: activeSession.mode,
         difficulty: activeSession.difficulty,
         current_question_index: activeSession.current_question_index,
+        totalQuestions: totalQuestions,
         answeredCount: uniqueAnswered.size,
         started_at: activeSession.started_at,
       },
