@@ -639,19 +639,13 @@ export default function QuizSessionPage() {
                   )}
 
                   <div className="mt-4 space-y-2.5">
-                    {submitMutation.isPending && (
-                      <div className="mb-3 flex items-center gap-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Đang gửi câu trả lời...</span>
-                      </div>
-                    )}
                     {question.options.map((option, idx) => {
                       const isSelected = selectedOptions.includes(idx)
                       const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
-                      // An option is wrong if: it was selected BUT it's not in the correct answer set
                       const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
                       const optionKey = `${idx}-${option}`
-                      const isDisabled = submitted || submitMutation.isPending
+                      // Only disable after submitted (not while API is pending - feedback already shown)
+                      const isDisabled = submitted
 
                       return (
                         <button
