@@ -30,6 +30,7 @@ interface QuizSessionState {
 
   // Actions
   initSession: (sessionId: string, quizId: string, mode: string, total: number) => void
+  resumeSession: (sessionId: string, quizId: string, mode: string, total: number, currentIndex: number, answered: Set<number>) => void
   navigateToQuestion: (index: number) => void
   restoreAnswers: (answered: Set<number>) => void
   markAnswered: (index: number) => void
@@ -71,6 +72,20 @@ export const useQuizSessionStore = create<QuizSessionState>()(
           totalQuestions: total,
           currentQuestionIndex: 0,
           answeredQuestions: new Set(),
+          highlightedQuestions: new Set(),
+          lastAnswerResult: null,
+          pendingAnswerIndex: null,
+        }),
+
+      // Resume existing session - single atomic update to avoid flash
+      resumeSession: (sessionId, quizId, mode, total, currentIndex, answered) =>
+        set({
+          sessionId,
+          quizId,
+          mode: mode as 'immediate' | 'review',
+          totalQuestions: total,
+          currentQuestionIndex: currentIndex,
+          answeredQuestions: new Set(answered),
           highlightedQuestions: new Set(),
           lastAnswerResult: null,
           pendingAnswerIndex: null,
