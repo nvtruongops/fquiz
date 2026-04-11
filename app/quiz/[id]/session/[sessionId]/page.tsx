@@ -133,6 +133,15 @@ export default function QuizSessionPage() {
 
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
 
+  // Reset hydration when sessionId changes so we always wait for fresh server data
+  useEffect(() => {
+    setIsHydratedFromServer(false)
+    setHydratedSessionId(null)
+    setSelectedOptions([])
+    setSubmitted(false)
+    setFeedbackByQuestion({})
+  }, [resolvedSessionId])
+
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
     const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
@@ -184,6 +193,8 @@ export default function QuizSessionPage() {
     queryFn: () => fetchSession(resolvedSessionId),
     enabled: resolvedSessionId.length > 0 && isPreloadSuccess && !!preloadData,
     staleTime: 0,
+    gcTime: 0, // Never cache - always fetch fresh to get correct current_question_index
+    refetchOnMount: 'always',
   })
 
   // Store preloaded questions when available
