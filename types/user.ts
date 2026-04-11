@@ -20,4 +20,5 @@ export interface IUser {
   reset_token?: string
   reset_token_expires?: Date
   token_version?: number
+  pinned_categories?: string[]
 }
