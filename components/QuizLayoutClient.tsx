@@ -11,10 +11,10 @@ interface QuizLayoutClientProps {
 export default function QuizLayoutClient({ initialUser, children }: QuizLayoutClientProps) {
   const pathname = usePathname()
 
-  // Hide Navbar on mobile quiz session pages to avoid overlapping controls
-  const isMobileSession = pathname?.includes('/session/') && pathname?.endsWith('/mobile')
+  // Hide Navbar on all quiz session pages (desktop + mobile) to maximize space
+  const isSession = pathname?.includes('/session/')
 
-  if (isMobileSession) {
+  if (isSession) {
     return <>{children}</>
   }
 
