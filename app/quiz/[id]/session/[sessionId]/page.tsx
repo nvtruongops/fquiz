@@ -126,9 +126,12 @@ export default function QuizSessionPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
+  const [hydratedSessionId, setHydratedSessionId] = useState<string | null>(null)
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const [preloadProgress, setPreloadProgress] = useState(0)
+
+  const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
 
   function reportSessionActivity(event: 'pause' | 'resume') {
     if (!sessionId) return
@@ -233,6 +236,7 @@ export default function QuizSessionPage() {
       serverAnsweredSet
     )
     setIsHydratedFromServer(true)
+    setHydratedSessionId(resolvedSessionId)
   }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
 
   useEffect(() => {
@@ -512,7 +516,7 @@ export default function QuizSessionPage() {
   }
 
   // Wait for server hydration before rendering to avoid showing wrong question index
-  if (!isHydratedFromServer) {
+  if (!isReadyToRender) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f3f3f3]">
         <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
