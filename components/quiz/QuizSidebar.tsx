@@ -91,14 +91,14 @@ export default function QuizSidebar({
                 onClick={() => onSelectOption(idx)}
                 className={cn(
                   'flex items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-80 rounded px-1 transition-colors',
-                  focusedOption === idx && !isSubmitted && 'bg-[#5D7B6F]/10 outline outline-2 outline-[#5D7B6F]/40'
+                  focusedOption === idx && !isSubmitted && 'bg-gray-300'
                 )}
               >
                 <span
                   className={cn(
                     'inline-flex h-6 w-6 items-center justify-center border-2 border-[#111111] bg-white text-[10px] font-bold',
                     selectedOptions.includes(idx) && 'bg-[#d8ebd8]',
-                    focusedOption === idx && !isSubmitted && 'border-[#5D7B6F]'
+                    focusedOption === idx && !isSubmitted && 'border-gray-600 bg-gray-200'
                   )}
                 >
                   {selectedOptions.includes(idx) ? 'X' : ''}
