@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
-  Search, Library, GraduationCap, Users, Clock3,
-  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Loader2,
+  Search, GraduationCap, Users, Clock3,
+  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -39,7 +39,7 @@ interface QuizMeta {
 }
 
 const PREVIEW_COUNT = 4
-const PAGE_SIZE = 12
+const PAGE_SIZE = 20
 
 function formatStudyDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} phút`
@@ -197,7 +197,7 @@ function CategorySection({
     staleTime: 5 * 60 * 1000,
   })
 
-  // Infinite scroll observer
+  // Infinite scroll observer - trigger when sentinel is visible (2 rows before end)
   useEffect(() => {
     if (!expanded || !loadMoreRef.current) return
     const observer = new IntersectionObserver(
@@ -206,7 +206,7 @@ function CategorySection({
           infiniteQuery.fetchNextPage()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0, rootMargin: '400px' } // trigger 400px before sentinel is visible
     )
     observer.observe(loadMoreRef.current)
     return () => observer.disconnect()
@@ -247,16 +247,15 @@ function CategorySection({
           {allQuizzes.map(quiz => (
             <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />
           ))}
+          {/* Skeleton cards while loading next page */}
+          {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => (
+            <div key={`sk-${i}`} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
+          ))}
         </div>
       )}
 
-      {/* Infinite scroll sentinel */}
-      {expanded && <div ref={loadMoreRef} className="h-4" />}
-      {expanded && infiniteQuery.isFetchingNextPage && (
-        <div className="flex justify-center py-2">
-          <Loader2 className="w-5 h-5 animate-spin text-[#5D7B6F]" />
-        </div>
-      )}
+      {/* Infinite scroll sentinel - placed inside grid area */}
+      {expanded && <div ref={loadMoreRef} className="h-1" />
 
       {/* Expand / Collapse button */}
       {total > PREVIEW_COUNT && (
@@ -308,7 +307,7 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
           infiniteQuery.fetchNextPage()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0, rootMargin: '400px' }
     )
     observer.observe(loadMoreRef.current)
     return () => observer.disconnect()
@@ -349,15 +348,13 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
           {allQuizzes.map(quiz => (
             <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />
           ))}
+          {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => (
+            <div key={`sk-${i}`} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
+          ))}
         </div>
       )}
 
-      {expanded && <div ref={loadMoreRef} className="h-4" />}
-      {expanded && infiniteQuery.isFetchingNextPage && (
-        <div className="flex justify-center py-2">
-          <Loader2 className="w-5 h-5 animate-spin text-[#5D7B6F]" />
-        </div>
-      )}
+      {expanded && <div ref={loadMoreRef} className="h-1" />
 
       {previewQuizzes.length >= PREVIEW_COUNT && (
         <button
