@@ -119,6 +119,7 @@ export default function QuizSessionMobilePage() {
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const [preloadProgress, setPreloadProgress] = useState(0)
+  const lastSyncedQuestionIndexRef = useRef<number | null>(null)
 
   // Only render quiz when server data has been applied for THIS session
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
@@ -130,6 +131,7 @@ export default function QuizSessionMobilePage() {
     setSelectedOptions([])
     setSubmitted(false)
     submittedRef.current = false
+    lastSyncedQuestionIndexRef.current = null
     setFeedbackByQuestion({})
   }, [resolvedSessionId])
 
@@ -251,6 +253,9 @@ export default function QuizSessionMobilePage() {
   useEffect(() => {
     if (!activeData?.session) return
 
+    const previousQuestionIndex = lastSyncedQuestionIndexRef.current
+    const isSameQuestionRender = previousQuestionIndex === currentQuestionIndex
+
     const existing = activeData.session.user_answers.find((a) => a.question_index === currentQuestionIndex)
     if (existing) {
       const restored = existing.answer_indexes && existing.answer_indexes.length > 0
@@ -282,10 +287,28 @@ export default function QuizSessionMobilePage() {
         
         setLastAnswerResult(feedback ?? null)
       }
+      lastSyncedQuestionIndexRef.current = currentQuestionIndex
     } else {
+      const localImmediateFeedback =
+        activeData.session.mode === 'immediate'
+          ? feedbackByQuestion[currentQuestionIndex]
+          : undefined
+
+      if (localImmediateFeedback) {
+        setSubmitted(true)
+        setLastAnswerResult(localImmediateFeedback)
+        lastSyncedQuestionIndexRef.current = currentQuestionIndex
+        return
+      }
+
+      if (isSameQuestionRender) {
+        return
+      }
+
       setSelectedOptions([])
       setSubmitted(false)
       setLastAnswerResult(null)
+      lastSyncedQuestionIndexRef.current = currentQuestionIndex
     }
   }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
 

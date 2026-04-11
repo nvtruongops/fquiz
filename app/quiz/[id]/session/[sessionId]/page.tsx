@@ -119,6 +119,7 @@ export default function QuizSessionPage() {
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const [preloadProgress, setPreloadProgress] = useState(0)
+  const lastSyncedQuestionIndexRef = useRef<number | null>(null)
 
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
 
@@ -129,6 +130,7 @@ export default function QuizSessionPage() {
     setSelectedOptions([])
     setSubmitted(false)
     submittedRef.current = false
+    lastSyncedQuestionIndexRef.current = null
     setFeedbackByQuestion({})
   }, [resolvedSessionId])
 
@@ -250,6 +252,9 @@ export default function QuizSessionPage() {
   useEffect(() => {
     if (!activeData?.session) return
 
+    const previousQuestionIndex = lastSyncedQuestionIndexRef.current
+    const isSameQuestionRender = previousQuestionIndex === currentQuestionIndex
+
     const existing = activeData.session.user_answers.find((a) => a.question_index === currentQuestionIndex)
     if (existing) {
       const restored = existing.answer_indexes && existing.answer_indexes.length > 0
@@ -281,10 +286,28 @@ export default function QuizSessionPage() {
         
         setLastAnswerResult(feedback ?? null)
       }
+      lastSyncedQuestionIndexRef.current = currentQuestionIndex
     } else {
+      const localImmediateFeedback =
+        activeData.session.mode === 'immediate'
+          ? feedbackByQuestion[currentQuestionIndex]
+          : undefined
+
+      if (localImmediateFeedback) {
+        setSubmitted(true)
+        setLastAnswerResult(localImmediateFeedback)
+        lastSyncedQuestionIndexRef.current = currentQuestionIndex
+        return
+      }
+
+      if (isSameQuestionRender) {
+        return
+      }
+
       setSelectedOptions([])
       setSubmitted(false)
       setLastAnswerResult(null)
+      lastSyncedQuestionIndexRef.current = currentQuestionIndex
     }
   }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
 
@@ -654,7 +677,9 @@ export default function QuizSessionPage() {
                             !isDisabled && 'cursor-pointer hover:bg-gray-50',
                             isCorrect && 'border-green-500 bg-green-50 text-green-700 font-semibold',
                             isWrongSelected && 'border-red-500 bg-red-50 text-red-700 font-semibold',
-                            !isCorrect && !isWrongSelected && isSelected && 'border-[#1d5b20] bg-green-50 font-semibold text-[#1d5b20]',
+                            // Selected but not yet submitted - neutral blue (not green to avoid confusion)
+                            !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-blue-400 bg-blue-50 font-semibold text-blue-700',
+                            // Selected after submitted but correct (already covered by isCorrect)
                             !isCorrect && !isWrongSelected && !isSelected && 'border-gray-300 bg-white text-[#202020]'
                           )}
                         >
