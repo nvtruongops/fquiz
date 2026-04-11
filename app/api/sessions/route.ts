@@ -238,15 +238,51 @@ export async function POST(req: Request) {
         question_id: { $in: questionIds },
       }).lean()
 
+      // Build ordered questions for preload (same as new session)
+      const questionOrder = (activeSession as any).question_order || Array.from({ length: quizQuestions.length }, (_, i) => i)
+      const orderedQuestionsForResume = questionOrder.map((originalIdx: number) => {
+        const q = quizQuestions[originalIdx]
+        if (!q) return null
+        const base = {
+          _id: q._id,
+          text: q.text,
+          options: q.options,
+          answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
+          ...(q.image_url ? { image_url: q.image_url } : {}),
+        }
+        if (activeSession.mode === 'immediate') {
+          return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
+        }
+        return base
+      }).filter(Boolean)
+
       return NextResponse.json(
         {
           sessionId: activeSession._id,
           mode: activeSession.mode,
+          difficulty: activeSession.difficulty,
           resumed: true,
           question: safeQuestion,
           highlights,
           totalQuestions: quizQuestions.length,
           currentQuestionIndex: safeIndex,
+          // Include all questions so client can skip /questions fetch
+          questions: orderedQuestionsForResume,
+          session: {
+            _id: activeSession._id,
+            mode: activeSession.mode,
+            status: activeSession.status,
+            current_question_index: (activeSession as any).current_question_index ?? 0,
+            totalQuestions: quizQuestions.length,
+            user_answers: (activeSession as any).user_answers ?? [],
+            score: (activeSession as any).score ?? 0,
+            courseCode: '',
+            categoryName: '',
+            title: '',
+            started_at: (activeSession as any).started_at,
+            paused_at: null,
+            total_paused_duration_ms: 0,
+          },
         },
         { status: 200 }
       )
