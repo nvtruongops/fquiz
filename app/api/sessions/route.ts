@@ -164,6 +164,7 @@ export async function POST(req: Request) {
           activeSession: {
             sessionId: activeSession._id,
             mode: activeSession.mode,
+            difficulty: activeSession.difficulty,
             current_question_index: activeSession.current_question_index,
             totalQuestions: quizQuestions.length,
             answeredCount: uniqueAnswered.size,

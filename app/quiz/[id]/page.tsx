@@ -48,6 +48,7 @@ interface CreateSessionResponse {
 interface ActiveSessionPayload {
   sessionId: string
   mode: 'immediate' | 'review'
+  difficulty: 'sequential' | 'random'
   current_question_index: number
   totalQuestions: number
   answeredCount: number
@@ -533,11 +534,9 @@ export default function QuizDetailPage() {
                               </p>
                             </div>
                             <div className="rounded-lg border border-gray-100 px-3 py-2">
-                              <p className="font-black uppercase tracking-wider text-gray-400">Bắt đầu</p>
+                              <p className="font-black uppercase tracking-wider text-gray-400">Độ khó</p>
                               <p className="mt-0.5 font-bold text-gray-700">
-                                {activeSessionInfo?.started_at
-                                  ? new Date(activeSessionInfo.started_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                                  : '--'}
+                                {activeSessionInfo?.difficulty === 'random' ? '🔀 Ngẫu nhiên' : '📑 Tuần tự'}
                               </p>
                             </div>
                           </div>
