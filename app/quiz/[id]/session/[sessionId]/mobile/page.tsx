@@ -647,30 +647,23 @@ export default function QuizSessionMobilePage() {
 
           {/* Options */}
           <div className="space-y-3">
-            {submitMutation.isPending && (
-              <div className="flex items-center gap-2 rounded-xl bg-blue-50 border-2 border-blue-200 px-4 py-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                <span className="text-sm font-bold text-blue-700">Đang gửi câu trả lời...</span>
-              </div>
-            )}
             {question.options.map((option, idx) => {
               const isSelected = selectedOptions.includes(idx)
               const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
-              // An option is wrong if: it was selected BUT it's not in the correct answer set
               const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
 
               return (
                 <button
                   key={idx}
                   onClick={() => handleSelectOption(idx)}
-                  disabled={submitted || submitMutation.isPending}
+                  disabled={submitted}
                   className={cn(
                     'w-full rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98]',
                     isCorrect && 'border-green-500 bg-green-50',
                     isWrongSelected && 'border-red-500 bg-red-50',
                     !isCorrect && !isWrongSelected && isSelected && 'border-[#5D7B6F] bg-[#5D7B6F]/5',
                     !isCorrect && !isWrongSelected && !isSelected && 'border-gray-200 bg-white hover:border-[#A4C3A2]',
-                    (submitted || submitMutation.isPending) && 'cursor-not-allowed opacity-60'
+                    submitted && 'cursor-not-allowed opacity-60'
                   )}
                 >
                   <div className="flex items-start gap-3">
