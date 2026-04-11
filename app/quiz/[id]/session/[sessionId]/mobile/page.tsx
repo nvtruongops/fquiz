@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
@@ -122,6 +122,7 @@ export default function QuizSessionMobilePage() {
 
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const submittedRef = useRef(false) // Synchronous guard to prevent double-submit on fast clicks
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
@@ -140,6 +141,7 @@ export default function QuizSessionMobilePage() {
     setHydratedSessionId(null)
     setSelectedOptions([])
     setSubmitted(false)
+    submittedRef.current = false
     setFeedbackByQuestion({})
   }, [resolvedSessionId])
 
@@ -380,8 +382,9 @@ export default function QuizSessionMobilePage() {
   function submitInImmediateMode(answerIndexes: number[]) {
     if (!activeData?.session) return
     if (activeData.session.mode !== 'immediate') return
-    if (submitted || submitMutation.isPending) return
-
+    // Use ref for synchronous guard - prevents double-submit on fast clicks
+    if (submittedRef.current) return
+    submittedRef.current = true
     setSubmitted(true)
 
     // Compute feedback instantly from preloaded questions (no need to wait for API)
@@ -408,7 +411,10 @@ export default function QuizSessionMobilePage() {
     submitMutation.mutate(
       { questionIndex: currentQuestionIndex, answerIndexes },
       {
-        onError: () => setSubmitted(false),
+        onError: () => {
+          submittedRef.current = false
+          setSubmitted(false)
+        },
       }
     )
   }

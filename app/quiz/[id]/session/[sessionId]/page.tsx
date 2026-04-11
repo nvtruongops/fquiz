@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
@@ -123,6 +123,7 @@ export default function QuizSessionPage() {
 
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const submittedRef = useRef(false) // Synchronous guard to prevent double-submit on fast clicks
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
@@ -139,6 +140,7 @@ export default function QuizSessionPage() {
     setHydratedSessionId(null)
     setSelectedOptions([])
     setSubmitted(false)
+    submittedRef.current = false
     setFeedbackByQuestion({})
   }, [resolvedSessionId])
 
@@ -379,8 +381,9 @@ export default function QuizSessionPage() {
   function submitInImmediateMode(answerIndexes: number[]) {
     if (!activeData?.session) return
     if (activeData.session.mode !== 'immediate') return
-    if (submitted || submitMutation.isPending) return
-
+    // Use ref for synchronous guard - prevents double-submit on fast clicks
+    if (submittedRef.current) return
+    submittedRef.current = true
     setSubmitted(true)
 
     // Compute feedback instantly from preloaded questions (no need to wait for API)
@@ -407,7 +410,10 @@ export default function QuizSessionPage() {
     submitMutation.mutate(
       { questionIndex: currentQuestionIndex, answerIndexes },
       {
-        onError: () => setSubmitted(false),
+        onError: () => {
+          submittedRef.current = false
+          setSubmitted(false)
+        },
       }
     )
   }
@@ -599,7 +605,11 @@ export default function QuizSessionPage() {
         <div className="flex min-h-0 flex-1">
           <QuizSidebar
             onSelectOption={handleSelectOption}
-            onNavigate={handleNavigate}
+            onNavigate={(index) => {
+              submittedRef.current = false
+              setSubmitted(false)
+              navigateToQuestion(index)
+            }}
             onSubmit={handleSubmit}
             currentIndex={effectiveIndex}
             totalQuestions={effectiveTotal}
