@@ -234,7 +234,14 @@ export async function POST(req: Request) {
       status: 'active',
       current_question_index: 0,
       question_order: questionOrder,
-      questions_cache: quizQuestions, // Cache questions to avoid DB query on every answer
+      // Cache only essential fields for answer checking (not text/options/explanation)
+      // This reduces document size significantly vs caching full questions
+      questions_cache: quizQuestions.map((q: IQuestion) => ({
+        _id: q._id,
+        text: '',
+        options: [],
+        correct_answer: q.correct_answer,
+      })),
       user_answers: [],
       score: 0,
       expires_at: expiresAt,
