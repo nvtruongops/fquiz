@@ -12,6 +12,7 @@
     "test:mongodb": "tsx --env-file=.env.local scripts/test-mongodb-performance.ts",
     "check:dashboard": "tsx --env-file=.env.local scripts/check-dashboard.ts",
     "cleanup:images": "tsx --env-file=.env.local scripts/cleanup-orphan-images.ts",
+    "test:session-perf": "tsx --env-file=.env.local scripts/test-session-start-perf.ts",
     "seed": "tsx --env-file=.env.local scripts/seed-users.ts",
     "seed:public-quizzes": "tsx --env-file=.env.local scripts/seed-public-quizzes.ts",
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
