@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,21 +31,49 @@ export default function QuizSidebar({
   answeredCount,
 }: Readonly<QuizSidebarProps>) {
   const options = Array.from({ length: Math.max(optionCount, 1) }, (_, i) => String.fromCodePoint(65 + i))
+  const [focusedOption, setFocusedOption] = useState<number | null>(null)
 
-  // Keyboard navigation: ← → arrows
+  // Keyboard navigation: ← → for Back/Next, ↑↓ for options, Enter to select
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger when typing in input/textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        onNavigate(currentIndex - 1)
-      } else if (e.key === 'ArrowRight' && currentIndex < totalQuestions - 1) {
-        onNavigate(currentIndex + 1)
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          if (currentIndex > 0) onNavigate(currentIndex - 1)
+          break
+        case 'ArrowRight':
+          if (currentIndex < totalQuestions - 1) onNavigate(currentIndex + 1)
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          setFocusedOption(prev => {
+            const next = prev === null ? options.length - 1 : Math.max(0, prev - 1)
+            return next
+          })
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          setFocusedOption(prev => {
+            const next = prev === null ? 0 : Math.min(options.length - 1, prev + 1)
+            return next
+          })
+          break
+        case 'Enter':
+          if (focusedOption !== null && !isSubmitted) {
+            onSelectOption(focusedOption)
+          }
+          break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentIndex, totalQuestions, onNavigate])
+  }, [currentIndex, totalQuestions, onNavigate, options.length, focusedOption, isSubmitted, onSelectOption])
+
+  // Reset focused option when question changes
+  useEffect(() => {
+    setFocusedOption(null)
+  }, [currentIndex])
 
   return (
     <aside className="w-[210px] shrink-0 bg-[#e9e9e9] sm:w-[250px]">
@@ -61,12 +89,16 @@ export default function QuizSidebar({
                 type="button"
                 disabled={isSubmitted}
                 onClick={() => onSelectOption(idx)}
-                className="flex items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-80"
+                className={cn(
+                  'flex items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-80 rounded px-1 transition-colors',
+                  focusedOption === idx && !isSubmitted && 'bg-[#5D7B6F]/10 outline outline-2 outline-[#5D7B6F]/40'
+                )}
               >
                 <span
                   className={cn(
                     'inline-flex h-6 w-6 items-center justify-center border-2 border-[#111111] bg-white text-[10px] font-bold',
-                    selectedOptions.includes(idx) && 'bg-[#d8ebd8]'
+                    selectedOptions.includes(idx) && 'bg-[#d8ebd8]',
+                    focusedOption === idx && !isSubmitted && 'border-[#5D7B6F]'
                   )}
                 >
                   {selectedOptions.includes(idx) ? 'X' : ''}
