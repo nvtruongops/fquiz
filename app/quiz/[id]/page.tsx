@@ -15,6 +15,8 @@ import {
   Zap,
   LayoutDashboard,
   Users,
+  Shuffle,
+  AlignJustify,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -530,15 +532,43 @@ export default function QuizDetailPage() {
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="rounded-lg border border-gray-100 px-3 py-2">
                               <p className="font-black uppercase tracking-wider text-gray-400">Chế độ</p>
-                              <p className="mt-0.5 font-bold text-gray-700">
-                                {activeSessionInfo?.mode === 'immediate' ? '⚡ Luyện tập' : '📋 Kiểm tra'}
-                              </p>
+                              <div className="mt-1 flex items-center gap-1.5 font-bold text-gray-700">
+                                {activeSessionInfo?.mode === 'immediate' ? (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-green-100 text-green-600">
+                                      <Zap className="h-3 w-3" />
+                                    </div>
+                                    Luyện tập
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 text-blue-600">
+                                      <BookOpen className="h-3 w-3" />
+                                    </div>
+                                    Kiểm tra
+                                  </>
+                                )}
+                              </div>
                             </div>
                             <div className="rounded-lg border border-gray-100 px-3 py-2">
                               <p className="font-black uppercase tracking-wider text-gray-400">Độ khó</p>
-                              <p className="mt-0.5 font-bold text-gray-700">
-                                {activeSessionInfo?.difficulty === 'random' ? '🔀 Ngẫu nhiên' : '📑 Tuần tự'}
-                              </p>
+                              <div className="mt-1 flex items-center gap-1.5 font-bold text-gray-700">
+                                {activeSessionInfo?.difficulty === 'random' ? (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-green-100 text-green-600">
+                                      <Shuffle className="h-3 w-3" />
+                                    </div>
+                                    Ngẫu nhiên
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 text-blue-600">
+                                      <AlignJustify className="h-3 w-3" />
+                                    </div>
+                                    Tuần tự
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
 
