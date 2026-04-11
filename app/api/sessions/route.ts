@@ -268,26 +268,10 @@ export async function POST(req: Request) {
       ...(firstQuestion.image_url ? { image_url: firstQuestion.image_url } : {}),
     }
 
-    // Build all questions for preload (avoid separate /questions fetch)
-    const allQuestions = quizQuestions.map((q: IQuestion, idx: number) => {
-      const displayIndex = questionOrder.indexOf(idx)
-      const base = {
-        _id: q._id,
-        text: q.text,
-        options: q.options,
-        answer_selection_count: Array.isArray(q.correct_answer) ? Math.max(q.correct_answer.length, 1) : 1,
-        ...(q.image_url ? { image_url: q.image_url } : {}),
-      }
-      // Immediate mode: include correct_answer and explanation
-      if (mode === 'immediate') {
-        return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
-      }
-      return base
-    })
-
-    // Reorder by question_order for display
+    // Build all questions ordered by question_order for preload (avoid separate /questions fetch)
     const orderedQuestions = questionOrder.map((originalIdx: number) => {
       const q = quizQuestions[originalIdx]
+      if (!q) return null
       const base = {
         _id: q._id,
         text: q.text,
@@ -299,7 +283,7 @@ export async function POST(req: Request) {
         return { ...base, correct_answer: q.correct_answer, explanation: q.explanation }
       }
       return base
-    })
+    }).filter(Boolean)
 
     return NextResponse.json(
       {
