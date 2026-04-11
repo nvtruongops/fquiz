@@ -504,20 +504,59 @@ export default function QuizDetailPage() {
                       <DialogTitle className="text-center text-xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
                         Bài quiz chưa hoàn thành
                       </DialogTitle>
-                      <DialogDescription className="pt-2 text-center text-sm text-gray-500">
-                        Bạn đã làm {activeSessionInfo?.answeredCount ?? 0}/{activeSessionInfo?.totalQuestions ?? 0} câu.
-                        Bạn muốn tiếp tục bài đang làm hay làm mới từ đầu?
+                      <DialogDescription asChild>
+                        <div className="pt-3 space-y-3">
+                          {/* Progress */}
+                          <div className="rounded-lg bg-gray-50 px-4 py-3 text-center">
+                            <p className="text-2xl font-black text-[#5D7B6F]">
+                              {activeSessionInfo?.answeredCount ?? 0}
+                              <span className="text-base font-bold text-gray-400">/{activeSessionInfo?.totalQuestions ?? 0} câu</span>
+                            </p>
+                            <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                              <div
+                                className="h-2 rounded-full bg-[#5D7B6F] transition-all"
+                                style={{
+                                  width: `${activeSessionInfo?.totalQuestions
+                                    ? Math.round(((activeSessionInfo.answeredCount) / activeSessionInfo.totalQuestions) * 100)
+                                    : 0}%`
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Mode details */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="rounded-lg border border-gray-100 px-3 py-2">
+                              <p className="font-black uppercase tracking-wider text-gray-400">Chế độ</p>
+                              <p className="mt-0.5 font-bold text-gray-700">
+                                {activeSessionInfo?.mode === 'immediate' ? '⚡ Luyện tập' : '📋 Kiểm tra'}
+                              </p>
+                            </div>
+                            <div className="rounded-lg border border-gray-100 px-3 py-2">
+                              <p className="font-black uppercase tracking-wider text-gray-400">Bắt đầu</p>
+                              <p className="mt-0.5 font-bold text-gray-700">
+                                {activeSessionInfo?.started_at
+                                  ? new Date(activeSessionInfo.started_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                                  : '--'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="text-center text-sm text-gray-500">
+                            Bạn muốn tiếp tục bài đang làm hay làm mới từ đầu?
+                          </p>
+                        </div>
                       </DialogDescription>
                     </DialogHeader>
 
-                    <DialogFooter className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <DialogFooter className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <Button
                         type="button"
                         onClick={handleContinueSession}
                         disabled={startSessionMutation.isPending}
                         className="bg-[#5D7B6F] text-white hover:bg-[#4a6358]"
                       >
-                        Tiếp tục làm
+                        {startSessionMutation.isPending ? 'Đang tải...' : 'Tiếp tục làm'}
                       </Button>
                       <Button
                         type="button"
