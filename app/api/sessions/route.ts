@@ -251,6 +251,8 @@ export async function POST(req: Request) {
         quiz_id: effectiveQuizObjectId,
         status: 'active',
       })
+      // Return empty response to trigger mode selection dialog
+      return NextResponse.json({}, { status: 200 })
     }
 
     // 5. Create QuizSession
