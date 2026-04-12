@@ -36,8 +36,8 @@ interface HistoryDetail {
   mode: 'immediate' | 'review'
   score: number
   total_questions: number
-  completed_at: string
-  started_at: string
+  completed_at: string | null
+  started_at: string | null
   total_study_minutes: number
   attempts: Array<{
     session_id: string
@@ -46,7 +46,11 @@ interface HistoryDetail {
     completed_at: string
     started_at: string
   }>
+  has_active_session?: boolean
   active_session_id?: string | null
+  active_answered_count?: number
+  active_total_count?: number
+  active_started_at?: string | null
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: HistoryQuestion[]
 }
@@ -438,7 +442,7 @@ export default function HistoryDetailPage() {
                 </span>
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <Clock size={12} />
-                  {hasCompletedAttempts ? formatDate(completed_at) : 'Chưa có lần nộp hoàn thành'}
+                  {hasCompletedAttempts && completed_at ? formatDate(completed_at) : 'Chưa có lần nộp hoàn thành'}
                 </span>
               </div>
             </div>
@@ -473,6 +477,34 @@ export default function HistoryDetailPage() {
         {/* Attempts list */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 space-y-3">
           <p className="text-sm font-semibold" style={{ color: '#5D7B6F' }}>Các lần làm trước đó</p>
+          
+          {/* Active session indicator */}
+          {data.active_session_id && data.active_started_at && (
+            <div className="rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="text-sm font-bold text-orange-700">Đang làm dở</span>
+                </div>
+                <Link
+                  href={`/quiz/${data.quiz_id}/session/${data.active_session_id}`}
+                  className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 bg-orange-600"
+                >
+                  Tiếp tục làm
+                </Link>
+              </div>
+              <div className="flex items-center justify-between text-xs text-orange-600">
+                <span className="flex items-center gap-1">
+                  <Clock size={12} />
+                  {formatDate(data.active_started_at)}
+                </span>
+                <span className="font-semibold">
+                  {data.active_answered_count ?? 0}/{data.active_total_count ?? total_questions} câu đã làm
+                </span>
+              </div>
+            </div>
+          )}
+
           {data.attempts.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-200 px-3 py-3 text-xs text-gray-500">
               Chưa có lần nộp hoàn thành cho bộ đề này.
