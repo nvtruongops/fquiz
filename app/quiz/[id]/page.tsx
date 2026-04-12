@@ -196,7 +196,12 @@ export default function QuizDetailPage() {
 
       if (!nextSessionId) {
         // Restart completed (old session deleted), now show mode select
-        setModeSelectOpen(true)
+        setResumeDialogOpen(false)
+        setActiveSessionInfo(null)
+        // Small delay to ensure resume dialog is closed before opening mode select
+        setTimeout(() => {
+          setModeSelectOpen(true)
+        }, 100)
         return
       }
       // Clear pending state and close dialog
