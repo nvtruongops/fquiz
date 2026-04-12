@@ -68,8 +68,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       const activeSession = Array.isArray(activeList) ? activeList[0] : null
 
       if (!activeSession) {
-        // No completed and no active attempts under this quiz id; continue to legacy session-id flow.
+        // No completed and no active attempts under this quiz id
+        return NextResponse.json({ error: 'No sessions found for this quiz' }, { status: 404 })
       } else {
+        // Return active session info with indication that there's no completed session yet
+        const answeredCount = new Set(
+          (activeSession.user_answers ?? [])
+            .map((a: any) => a.question_index)
+            .filter((idx: unknown) => Number.isInteger(idx) && idx >= 0)
+        ).size
+
         return NextResponse.json({
           _id: null,
           quiz_id: idObjectId,
@@ -87,11 +95,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           mode: activeSession.mode ?? 'review',
           score: 0,
           total_questions: quiz.questions?.length ?? 0,
-          completed_at: activeSession.started_at ?? new Date(),
-          started_at: activeSession.started_at ?? new Date(),
+          completed_at: null,
+          started_at: null,
           total_study_minutes: 0,
           attempts: [],
           active_session_id: activeSession._id ?? null,
+          active_answered_count: answeredCount,
+          active_total_count: quiz.questions?.length ?? 0,
+          active_started_at: activeSession.started_at,
           user_answers: [],
           questions: [],
         })
@@ -159,6 +170,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return sum + actualDuration
     }, 0)
 
+    // Check if there's an active session for this quiz
+    const activeSessionQuery = QuizSession.find({
+      student_id: new mongoose.Types.ObjectId(payload.userId),
+      quiz_id: session.quiz_id,
+      status: 'active',
+    })
+      .sort({ started_at: -1 })
+      .limit(1)
+
+    const activeList = activeSessionQuery.lean ? await activeSessionQuery.lean() : await activeSessionQuery
+    const activeSession = Array.isArray(activeList) ? activeList[0] : null
+    const activeAnsweredCount = activeSession
+      ? new Set(
+          (activeSession.user_answers ?? [])
+            .map((a: any) => a.question_index)
+            .filter((idx: unknown) => Number.isInteger(idx) && idx >= 0)
+        ).size
+      : 0
+
     return NextResponse.json({
       _id: session._id,
       quiz_id: session.quiz_id,
@@ -182,6 +212,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       attempts,
       user_answers: session.user_answers,
       questions,
+      has_active_session: Boolean(activeSession),
+      active_session_id: activeSession?._id ?? null,
+      active_answered_count: activeAnsweredCount,
+      active_total_count: quiz.questions?.length ?? 0,
+      active_started_at: activeSession?.started_at ?? null,
     })
   } catch (err) {
     console.error('GET /api/history/[id] error:', err)

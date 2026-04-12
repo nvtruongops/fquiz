@@ -203,6 +203,17 @@ export async function GET(req: Request) {
         ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')
         : quiz?.created_by?.toString?.()
 
+      // Check if there's an active session for this quiz
+      const activeSession = activeGrouped.find((active) => active.quiz_id.toString() === item.quiz_id.toString())
+      const hasActiveSession = Boolean(activeSession)
+      const activeAnsweredCount = activeSession
+        ? new Set(
+            (activeSession.user_answers ?? [])
+              .map((answer) => answer.question_index)
+              .filter((idx) => Number.isInteger(idx) && idx >= 0)
+          ).size
+        : 0
+
       return {
         _id: item.quiz_id.toString(),
         quiz_id: item.quiz_id,
@@ -220,6 +231,10 @@ export async function GET(req: Request) {
         started_at: item.started_at,
         total_study_minutes: item.total_study_minutes,
         attempt_count: item.attempt_count,
+        has_active_session: hasActiveSession,
+        active_session_id: activeSession?.active_session_id ?? null,
+        active_answered_count: activeAnsweredCount,
+        active_started_at: activeSession?.started_at ?? null,
       }
     })
 

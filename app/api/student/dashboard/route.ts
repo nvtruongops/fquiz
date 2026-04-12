@@ -272,6 +272,45 @@ export async function GET(req: Request) {
       }
     })
 
+    // Map active sessions by quizId for quick lookup
+    const activeSessionsByQuizId = new Map<string, any>()
+    activeActivitiesRaw.forEach((session: any) => {
+      const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
+      if (quizId) {
+        activeSessionsByQuizId.set(quizId, session)
+      }
+    })
+
+    // Enhance completed activities with active session info if exists
+    const enhancedCompletedActivities = completedActivities.map((activity) => {
+      const activeSession = activeSessionsByQuizId.get(activity.quizId)
+      if (activeSession) {
+        const declaredCount = Number(activeSession.quiz_id?.questionCount ?? 0)
+        const derivedFromQuestions = Array.isArray(activeSession.quiz_id?.questions)
+          ? activeSession.quiz_id.questions.length
+          : 0
+        const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
+        const answeredCount = Array.isArray(activeSession.user_answers)
+          ? new Set(
+              activeSession.user_answers
+                .map((a: any) => a.question_index)
+                .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+            ).size
+          : 0
+
+        return {
+          ...activity,
+          hasActiveSession: true,
+          activeSessionId: activeSession._id.toString(),
+          activeAnsweredCount: answeredCount,
+          activeTotalCount: Math.max(totalQuestions, 0),
+          activeStartedAt: activeSession.started_at,
+        }
+      }
+      return activity
+    })
+
+    // Only show active sessions for quizzes that have NO completed sessions
     const activeOnlyActivities = activeActivitiesRaw
       .map((session: any) => {
         const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
@@ -313,7 +352,7 @@ export async function GET(req: Request) {
       })
       .filter((activity) => !completedActivities.some((completed) => completed.quizId === activity.quizId))
 
-    const recentActivities = [...completedActivities, ...activeOnlyActivities]
+    const recentActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
       .sort((a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime())
       .slice(0, 5)
 

@@ -151,14 +151,29 @@ export default function DashboardPage() {
                       {(activity.categoryName || 'Chưa phân loại')} - {(activity.quizCode || 'N/A')}
                     </h3>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-                      <span className="text-[#A4C3A2]">{activity.status === 'active' ? 'Đang làm dở' : 'Hoàn thành'}</span>
+                      {activity.status === 'completed' && activity.hasActiveSession ? (
+                        <>
+                          <span className="text-[#5D7B6F]">Đã hoàn thành</span>
+                          <span>•</span>
+                          <span className="text-orange-500">Đang làm lại</span>
+                        </>
+                      ) : activity.status === 'active' ? (
+                        <span className="text-[#A4C3A2]">Đang làm dở</span>
+                      ) : (
+                        <span className="text-[#5D7B6F]">Hoàn thành</span>
+                      )}
                       <span>•</span>
                       <span>{formatDistanceToNow(new Date(activity.activityAt), { addSuffix: true, locale: vi })}</span>
                     </p>
-                    <div className="mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold text-[#5D7B6F]">
                         {sourceText(activity.sourceLabel, activity.sourceCreatorName)}
                       </span>
+                      {activity.hasActiveSession && (
+                        <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
+                          {activity.activeAnsweredCount}/{activity.activeTotalCount} câu đang làm
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
