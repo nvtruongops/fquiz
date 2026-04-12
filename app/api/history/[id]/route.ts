@@ -75,7 +75,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         const answeredCount = new Set(
           (activeSession.user_answers ?? [])
             .map((a: any) => a.question_index)
-            .filter((idx: unknown) => Number.isInteger(idx) && idx >= 0)
+            .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
         ).size
 
         return NextResponse.json({
@@ -185,7 +185,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ? new Set(
           (activeSession.user_answers ?? [])
             .map((a: any) => a.question_index)
-            .filter((idx: unknown) => Number.isInteger(idx) && idx >= 0)
+            .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
         ).size
       : 0
 
