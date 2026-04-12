@@ -484,6 +484,8 @@ export default function QuizSessionMobilePage() {
   function handleNavigate(index: number) {
     if (!isHydratedFromServer) return
     if (index < 0 || index >= effectiveTotal) return
+    submittedRef.current = false
+    setSubmitted(false)
     navigateToQuestion(index)
     setQuestionMapOpen(false)
   }
