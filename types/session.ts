@@ -20,7 +20,7 @@ export interface IQuizSession {
   question_order: number[] // Array of original question indices in shuffled order
   questions_cache?: IQuestion[] // Cached questions to avoid DB query on every answer
   score: number
-  expires_at: Date
+  expires_at?: Date
   started_at: Date
   completed_at?: Date
   last_activity_at?: Date

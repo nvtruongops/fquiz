@@ -39,7 +39,9 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     question_order: { type: [Number], required: true, default: [] },
     questions_cache: { type: [QuestionCacheSchema], required: false },
     score: { type: Number, required: true, default: 0 },
-    expires_at: { type: Date, required: true },
+    // TTL field for active sessions only.
+    // Completed sessions will unset this field to keep result history.
+    expires_at: { type: Date, required: false },
     started_at: { type: Date, required: true, default: Date.now },
     completed_at: { type: Date },
     last_activity_at: { type: Date, default: Date.now },

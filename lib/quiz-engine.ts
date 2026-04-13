@@ -320,6 +320,10 @@ export async function atomicCompleteSession(
           current_question_index: currentQuestionIndex,
           completed_at: new Date(),
         },
+        // Keep completed results permanently; TTL should apply to active sessions only.
+        $unset: {
+          expires_at: 1,
+        },
       },
       { new: true }
     )
