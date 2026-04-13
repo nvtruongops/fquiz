@@ -16,6 +16,8 @@
     "test:answer-perf": "tsx --env-file=.env.local scripts/test-answer-perf.ts",
     "seed": "tsx --env-file=.env.local scripts/seed-users.ts",
     "seed:public-quizzes": "tsx --env-file=.env.local scripts/seed-public-quizzes.ts",
+    "migrate:preserve-results": "tsx --env-file=.env.local scripts/migrate-preserve-completed-session-results.ts",
+    "migrate:preserve-results:dry-run": "tsx --env-file=.env.local scripts/migrate-preserve-completed-session-results.ts --dry-run",
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
     "cleanup:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts --apply"
   },

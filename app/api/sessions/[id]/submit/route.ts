@@ -76,6 +76,10 @@ export async function POST(
           current_question_index: questions.length,
           completed_at: new Date(),
         },
+        // Keep completed results permanently; TTL should apply to active sessions only.
+        $unset: {
+          expires_at: 1,
+        },
       },
       { new: true }
     )
