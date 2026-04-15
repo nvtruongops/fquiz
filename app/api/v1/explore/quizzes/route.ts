@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .lean()
 
     // Try to get user session data if authenticated
-    let sessionMap = new Map<string, { score: number; totalQuestions: number; durationMs: number }>()
+    const sessionMap = new Map<string, { score: number; totalQuestions: number; durationMs: number }>()
 
     const payload = await verifyToken(request).catch(() => null)
     if (payload?.role === 'student') {

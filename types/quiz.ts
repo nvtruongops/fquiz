@@ -25,6 +25,8 @@ export interface IQuiz {
   price?: number
   original_quiz_id?: Types.ObjectId
   is_saved_from_explore?: boolean
+  is_temp?: boolean
+  expires_at?: Date
 }
 
 export interface ICategory {

@@ -47,6 +47,7 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     last_activity_at: { type: Date, default: Date.now },
     paused_at: { type: Date },
     total_paused_duration_ms: { type: Number, default: 0 },
+    is_temp: { type: Boolean, default: false },
   },
   { timestamps: false }
 )
@@ -55,6 +56,8 @@ const QuizSessionSchema = new Schema<IQuizSession>(
 QuizSessionSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 })
 // Compound index for student session lookups
 QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
+// Compound index for mix quiz concurrent check
+QuizSessionSchema.index({ student_id: 1, is_temp: 1, expires_at: 1 })
 
 export const QuizSession =
   mongoose.models.QuizSession ??

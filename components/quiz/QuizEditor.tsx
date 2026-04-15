@@ -52,7 +52,6 @@ interface QuestionForm {
 }
 
 interface QuizFormData {
-  title: string
   description: string
   category_id: string
   course_code: string
@@ -138,7 +137,6 @@ export function QuizEditor({
   const effectiveCancelPath = cancelPath ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes')
 
   const [form, setForm] = useState<QuizFormData>(() => ({
-    title: initialData?.title ?? '',
     description: (initialData as any)?.description ?? '',
     category_id: initialData?.category_id ?? categories[0]?._id ?? '',
     course_code: (initialData as any)?.course_code ?? '',
@@ -196,7 +194,7 @@ export function QuizEditor({
     const hasPendingBase64 = debouncedForm.questions.some(q => q.image_url?.startsWith('data:image'))
     if (hasPendingBase64) return
 
-    if (debouncedForm.title && debouncedForm.category_id && debouncedForm.course_code) {
+    if (debouncedForm.category_id && debouncedForm.course_code) {
        handleAutosave()
     }
   }, [debouncedForm])
@@ -319,7 +317,6 @@ export function QuizEditor({
     const finalStatus = isStudentMode ? 'published' : (overrideStatus ?? form.status)
     const normalizedCourseCode = form.course_code.trim().toUpperCase()
     const payload = {
-      title: form.title.trim() || normalizedCourseCode || 'GENERAL',
       description: form.description.trim(),
       category_id: form.category_id,
       course_code: normalizedCourseCode || 'GENERAL',
@@ -514,7 +511,6 @@ export function QuizEditor({
 
       return {
         ...prev,
-        title: importedQuiz.title || prev.title,
         description: importedQuiz.description || prev.description,
         category_id: matchedCategory?._id ?? prev.category_id,
         // course_code is optional in import file; keep existing value when missing.

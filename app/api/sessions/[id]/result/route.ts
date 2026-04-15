@@ -98,6 +98,7 @@ export async function GET(
         completed_at: session.completed_at,
         user_answers: sessionAnswers,
         questions,
+        is_temp: (session as any).is_temp ?? false,
       },
       { status: 200 }
     )

@@ -6,7 +6,6 @@ import {
   BookOpen, 
   Clock, 
   ArrowRight, 
-  Search,
   Zap,
   TrendingUp,
   ChevronRight,
@@ -16,7 +15,6 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
@@ -74,21 +72,34 @@ export default function DashboardPage() {
           <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight leading-tight">
             Chào mừng trở lại, <span className="text-[#A4C3A2]">{user?.name || 'Bạn học'}</span>! 👋
           </h1>
-          <p className="text-[#EAE7D6]/80 text-lg mb-8 font-bold leading-relaxed">
+          <p className="text-[#EAE7D6]/80 text-lg font-bold leading-relaxed">
             Hôm nay là một ngày tuyệt vời để chinh phục những kiến thức mới. 
             Bạn muốn ôn tập bộ đề nào đầu tiên?
           </p>
-          <div className="relative max-w-md group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#5D7B6F] w-5 h-5 group-focus-within:scale-110 transition-transform" />
-            <Input 
-              placeholder="Tìm kiếm bộ đề hoặc mã số..." 
-              className="pl-16 py-7 bg-[#EAE7D6] text-[#5D7B6F] border-none rounded-2xl shadow-inner font-bold focus-visible:ring-4 focus-visible:ring-[#A4C3A2]/30 transition-all placeholder:text-[#5D7B6F]/40"
-            />
-          </div>
         </div>
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-96 h-96 bg-[#A4C3A2]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-0 translate-y-1/4 -translate-x-1/4 w-64 h-64 bg-white/5 rounded-full blur-2xl" />
+      </section>
+
+      {/* Explore CTA — nổi bật cho user mới */}
+      <section>
+        <Card className="rounded-[32px] border-none bg-white shadow-xl shadow-[#5D7B6F]/5 overflow-hidden group">
+          <CardContent className="p-6 md:p-8 flex flex-col sm:flex-row items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform shrink-0">
+              <Compass className="w-8 h-8" />
+            </div>
+            <div className="flex-1 text-center sm:text-left space-y-1">
+              <h3 className="text-xl font-black text-gray-800">Đề xuất cho bạn — Khám phá thư viện</h3>
+              <p className="text-sm font-bold text-gray-400 leading-relaxed">
+                Có các bộ đề thi chất lượng đang chờ bạn chinh phục.
+              </p>
+            </div>
+            <Button asChild className="bg-[#5D7B6F] rounded-2xl px-8 py-6 font-black uppercase tracking-widest text-xs shrink-0 w-full sm:w-auto">
+              <Link href="/explore">Xem ngay nào <ArrowRight className="w-4 h-4 ml-2" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Stats Grid */}
@@ -108,15 +119,14 @@ export default function DashboardPage() {
         ))}
       </section>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Recent Activity */}
-        <section className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-[#5D7B6F] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#5D7B6F]/5 flex items-center justify-center">
-                 <TrendingUp className="w-6 h-6" />
-              </div>
-              Hoạt động gần đây
+      {/* Recent Activity */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-[#5D7B6F] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#5D7B6F]/5 flex items-center justify-center">
+               <TrendingUp className="w-6 h-6" />
+            </div>
+            Hoạt động gần đây
             </h2>
             <Button variant="ghost" asChild className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest hover:bg-[#5D7B6F]/5">
               <Link href="/history">
@@ -190,29 +200,8 @@ export default function DashboardPage() {
               ))
             )}
           </div>
-        </section>
+      </section>
 
-        {/* Quick Actions / Highlights */}
-        <section className="space-y-6">
-          <h2 className="text-2xl font-black text-[#5D7B6F]">Đề xuất cho bạn</h2>
-          <Card className="rounded-[32px] border-none bg-white shadow-xl shadow-[#5D7B6F]/5 overflow-hidden group">
-             <CardContent className="p-8 space-y-6">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                   <Compass className="w-8 h-8" />
-                </div>
-                <div className="space-y-2">
-                   <h3 className="text-xl font-black text-gray-800">Khám phá thư viện</h3>
-                   <p className="text-sm font-bold text-gray-400 leading-relaxed">
-                      Có các bộ đề thi chất lượng đang chờ bạn chinh phục.
-                   </p>
-                </div>
-                <Button asChild className="w-full bg-[#5D7B6F] rounded-2xl py-6 font-black uppercase tracking-widest text-xs">
-                   <Link href="/explore">Xem ngay nào <ArrowRight className="w-4 h-4 ml-2" /></Link>
-                </Button>
-             </CardContent>
-          </Card>
-        </section>
-      </div>
     </div>
   )
 }

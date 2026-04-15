@@ -136,12 +136,6 @@ export const DraftQuestionSchema = z.object({
 })
 
 export const CreateQuizSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, 'Tiêu đề không được để trống')
-    .max(200, 'Tiêu đề tối đa 200 ký tự')
-    .transform(stripHtml),
   description: z
     .string()
     .trim()
@@ -168,7 +162,6 @@ export const CreateQuizSchema = z.object({
 
 // Lenient schema for draft saves — skips per-option and correct_answer strictness
 export const SaveDraftQuizSchema = z.object({
-  title: z.string().trim().min(1, 'Tiêu đề không được để trống').max(200).transform(stripHtml),
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
   category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
   course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50)
@@ -310,10 +303,10 @@ export const ImageUploadSchema = z.object({
 // ============================================
 
 export const CreateStudentQuizSchema = z.object({
-  title: z.string().trim().min(1, 'Tiêu đề không được để trống').max(200, 'Tiêu đề tối đa 200 ký tự').transform(stripHtml),
   course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50, 'Mã đề tối đa 50 ký tự')
     .regex(/^[a-zA-Z0-9_]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
   category_id: MongoIdSchema,
+  description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
   questions: z.array(QuestionSchema).min(1, 'Cần ít nhất một câu hỏi').max(150, 'Tối đa 150 câu hỏi'),
 })
 

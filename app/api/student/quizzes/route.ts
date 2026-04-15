@@ -181,7 +181,7 @@ export async function GET(req: Request) {
     }
 
     // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo và bộ lưu/shortcut)
-    const query: any = { created_by: new Types.ObjectId(payload.userId) }
+    const query: any = { created_by: new Types.ObjectId(payload.userId), is_temp: { $ne: true } }
     if (categoryId) query.category_id = new Types.ObjectId(categoryId)
 
     const quizzes = await Quiz.find(query)
@@ -236,7 +236,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { course_code, category_id, questions, title } = parsed.data
+    const { course_code, category_id, questions, description } = parsed.data
     const normalizedCourseCode = course_code.trim().toUpperCase()
 
     const existingOwnedQuiz = await Quiz.findOne({
@@ -293,8 +293,9 @@ export async function POST(req: Request) {
 
     const quiz = await Quiz.create({
       _id: quizId,
-      title: title || `Bộ đề ${course_code}`,
+      title: normalizedCourseCode,
       course_code: normalizedCourseCode,
+      description: description || '',
       category_id,
       created_by: new Types.ObjectId(payload.userId),
       is_public: false, // Default to private for students

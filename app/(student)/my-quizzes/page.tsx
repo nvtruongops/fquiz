@@ -461,7 +461,7 @@ export default function MyQuizzesPage() {
     }
   })
 
-  const allLocalQuizzes = quizData?.quizzes || []
+  const allLocalQuizzes = (quizData?.quizzes || []).filter((q: Quiz) => !(q as any).is_temp)
   const ownQuizTotal = allLocalQuizzes.filter((q: Quiz) => !q.is_saved_from_explore).length
   const savedQuizTotal = allLocalQuizzes.filter((q: Quiz) => q.is_saved_from_explore).length
 
@@ -771,28 +771,30 @@ export default function MyQuizzesPage() {
               </div>
 
               <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                <div className="flex p-1.5 bg-white rounded-2xl w-full lg:w-fit shadow-sm border border-gray-100">
+                <div className="flex p-1.5 bg-white rounded-2xl w-full lg:w-fit shadow-sm border border-gray-100 min-w-0">
                   <button 
                     onClick={() => setActiveTab('personal')}
                     className={cn(
-                      "flex-1 lg:flex-none px-4 sm:px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap",
+                      "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
                       activeTab === 'personal' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <FolderPlus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Quiz tự tạo</span><span className="sm:hidden">Tự tạo</span>
-                    <Badge className={cn("ml-1 sm:ml-2 border-none px-1.5 sm:px-2 text-[10px] sm:text-xs", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <FolderPlus className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Quiz tự tạo</span>
+                    <Badge className={cn("shrink-0 border-none px-1.5 text-[10px]", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {ownQuizTotal}
                     </Badge>
                   </button>
                   <button 
                     onClick={() => setActiveTab('saved')}
                     className={cn(
-                      "flex-1 lg:flex-none px-4 sm:px-8 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap",
+                      "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
                       activeTab === 'saved' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <Download className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Quiz đã lưu</span><span className="sm:hidden">Đã lưu</span>
-                    <Badge className={cn("ml-1 sm:ml-2 border-none px-1.5 sm:px-2 text-[10px] sm:text-xs", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <Download className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Quiz đã lưu</span>
+                    <Badge className={cn("shrink-0 border-none px-1.5 text-[10px]", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {savedQuizTotal}
                     </Badge>
                   </button>

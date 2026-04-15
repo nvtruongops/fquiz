@@ -70,6 +70,8 @@ import { POST as registerHandler } from '@/app/api/auth/register/route'
 import { POST as loginHandler } from '@/app/api/auth/login/route'
 import { User } from '@/models/User'
 import bcrypt from 'bcryptjs'
+import { connectDB } from '@/lib/mongodb'
+import { rateLimiter } from '@/lib/rate-limit/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -190,7 +192,6 @@ describe('POST /api/auth/register', () => {
   })
 
   it('returns 503 when DB is unavailable', async () => {
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(new Error('MongoDB connection failed: DB down'))
 
     const res = await registerHandler(makeRequest(validRegisterBody))
@@ -320,7 +321,6 @@ describe('POST /api/auth/login', () => {
   })
 
   it('returns 503 when DB is unavailable', async () => {
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(new Error('MongoDB connection failed: DB down'))
 
     const res = await loginHandler(makeRequest(validLoginBody))
@@ -328,7 +328,6 @@ describe('POST /api/auth/login', () => {
   })
 
   it('returns 429 after 5 failed attempts from same IP', async () => {
-    const { rateLimiter } = require('@/lib/rate-limit/provider')
     // Simulate rate limit being triggered on 6th call
     ;(rateLimiter.check as jest.Mock)
       .mockResolvedValueOnce({ success: true })

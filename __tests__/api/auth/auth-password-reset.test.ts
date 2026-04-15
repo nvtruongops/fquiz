@@ -42,6 +42,7 @@ import { POST as forgotHandler } from '@/app/api/auth/forgot-password/route'
 import { POST as resetHandler } from '@/app/api/auth/reset-password/route'
 import { User } from '@/models/User'
 import bcrypt from 'bcryptjs'
+import { connectDB } from '@/lib/mongodb'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,6 @@ describe('POST /api/auth/forgot-password', () => {
   })
 
   it('returns 500 when DB is unavailable', async () => {
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(new Error('DB down'))
 
     const res = await forgotHandler(makeRequest({ action: 'send', email: 'user@example.com' }))
@@ -230,7 +230,6 @@ describe('POST /api/auth/reset-password', () => {
   })
 
   it('returns 500 when DB is unavailable', async () => {
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(new Error('DB down'))
 
     const res = await resetHandler(makeRequest(validBody, '/api/auth/reset-password'))

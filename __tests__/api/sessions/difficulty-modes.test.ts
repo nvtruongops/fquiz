@@ -12,6 +12,9 @@ import { GET as getQuestionsHandler } from '@/app/api/sessions/[id]/questions/ro
 import { connectDB } from '@/lib/mongodb'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
+import { UserHighlight } from '@/models/UserHighlight'
+import { authorizeResource } from '@/lib/authz'
+import { signToken } from '@/lib/auth'
 import mongoose from 'mongoose'
 
 // Mock MongoDB connection
@@ -37,6 +40,11 @@ jest.mock('@/lib/auth', () => ({
     }
     return Promise.resolve(null)
   }),
+}))
+
+// Mock authz
+jest.mock('@/lib/authz', () => ({
+  authorizeResource: jest.fn(),
 }))
 
 describe('Quiz Difficulty Modes', () => {
@@ -95,7 +103,6 @@ describe('Quiz Difficulty Modes', () => {
   let studentToken: string
 
   beforeAll(() => {
-    const { signToken } = require('@/lib/auth')
     studentToken = signToken({ userId: studentId.toString(), role: 'student' })
   })
 
@@ -139,7 +146,7 @@ describe('Quiz Difficulty Modes', () => {
         return [capturedSession]
       }) as any)
 
-      jest.spyOn(require('@/models/UserHighlight').UserHighlight, 'find').mockReturnValue({
+      jest.spyOn(UserHighlight, 'find').mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
       } as any)
 
@@ -181,7 +188,7 @@ describe('Quiz Difficulty Modes', () => {
         return [capturedSession]
       }) as any)
 
-      jest.spyOn(require('@/models/UserHighlight').UserHighlight, 'find').mockReturnValue({
+      jest.spyOn(UserHighlight, 'find').mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
       } as any)
 
@@ -224,7 +231,7 @@ describe('Quiz Difficulty Modes', () => {
         }]
       }) as any)
 
-      jest.spyOn(require('@/models/UserHighlight').UserHighlight, 'find').mockReturnValue({
+      jest.spyOn(UserHighlight, 'find').mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
       } as any)
 
@@ -270,7 +277,7 @@ describe('Quiz Difficulty Modes', () => {
         }]
       }) as any)
 
-      jest.spyOn(require('@/models/UserHighlight').UserHighlight, 'find').mockReturnValue({
+      jest.spyOn(UserHighlight, 'find').mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
       } as any)
 
@@ -305,7 +312,7 @@ describe('Quiz Difficulty Modes', () => {
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
       }
 
-      jest.spyOn(require('@/lib/authz'), 'authorizeResource').mockResolvedValue(mockSession)
+      ;(authorizeResource as jest.Mock).mockResolvedValue(mockSession)
       jest.spyOn(Quiz, 'findById').mockReturnValue({
         lean: jest.fn().mockResolvedValue(mockQuiz),
       } as any)
@@ -376,7 +383,7 @@ describe('Quiz Difficulty Modes', () => {
         }]
       }) as any)
 
-      jest.spyOn(require('@/models/UserHighlight').UserHighlight, 'find').mockReturnValue({
+      jest.spyOn(UserHighlight, 'find').mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
       } as any)
 
