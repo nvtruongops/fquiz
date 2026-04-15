@@ -50,6 +50,7 @@ import { verifyToken } from '@/lib/auth'
 import { QuizSession } from '@/models/QuizSession'
 import { Quiz } from '@/models/Quiz'
 import { Types } from 'mongoose'
+import { connectDB } from '@/lib/mongodb'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -354,7 +355,6 @@ describe('GET /api/history', () => {
 
   it('returns 503 when DB connection fails', async () => {
     ;(verifyToken as jest.Mock).mockResolvedValue(mockStudentPayload)
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(
       new Error('MongoDB connection failed: timeout')
     )
@@ -626,7 +626,6 @@ describe('GET /api/history/[id]', () => {
 
   it('returns 503 when DB connection fails', async () => {
     ;(verifyToken as jest.Mock).mockResolvedValue(mockStudentPayload)
-    const { connectDB } = require('@/lib/mongodb')
     ;(connectDB as jest.Mock).mockRejectedValueOnce(
       new Error('MongoDB connection failed: timeout')
     )

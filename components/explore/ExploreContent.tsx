@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
   Search, GraduationCap, Users, Clock3,
-  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Pin, PinOff,
+  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Pin, PinOff, Shuffle,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
+import MixQuizTab from '@/components/explore/MixQuizTab'
 
 interface Category {
   id: string
@@ -407,6 +408,7 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
 export default function ExploreContent() {
   const [search, setSearch] = useState('')
   const [user, setUser] = useState<{ id: string } | null | undefined>(undefined)
+  const [activeTab, setActiveTab] = useState<'explore' | 'mix'>('explore')
   const debouncedSearch = useDebounce(search, 300)
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -478,91 +480,127 @@ export default function ExploreContent() {
         </p>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-3 bg-white px-4 rounded-[28px] shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/10">
-        <Search className="w-5 h-5 text-gray-300 shrink-0" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Nhập tên quiz hoặc mã đề..."
-          className="h-14 border-none focus-visible:ring-0 text-base font-bold text-[#5D7B6F] bg-transparent"
-        />
-        {search && (
-          <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 shrink-0 text-sm font-bold">
-            Xóa
-          </button>
-        )}
+      {/* Tab switcher */}
+      <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl w-fit">
+        <button
+          onClick={() => setActiveTab('explore')}
+          className={cn(
+            'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all',
+            activeTab === 'explore'
+              ? 'bg-white text-[#5D7B6F] shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          <Search className="w-4 h-4" />
+          Khám phá
+        </button>
+        <button
+          onClick={() => setActiveTab('mix')}
+          className={cn(
+            'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all',
+            activeTab === 'mix'
+              ? 'bg-white text-[#5D7B6F] shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          <Shuffle className="w-4 h-4" />
+          Trộn Quiz
+        </button>
       </div>
 
-      {!userLoaded ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
-        </div>
-      ) : isSearching ? (
-        // Search mode: show popular results only
-        <PopularSection isLoggedIn={isLoggedIn} search={debouncedSearch} />
-      ) : (
-        // Browse mode: popular + categories A-Z
-        <div className="space-y-10">
-          <PopularSection isLoggedIn={isLoggedIn} search="" />
+      {/* Mix Quiz Tab */}
+      {activeTab === 'mix' && <MixQuizTab />}
 
-          {/* Divider */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Theo môn học</span>
-            <div className="flex-1 h-px bg-gray-100" />
+      {/* Explore Tab */}
+      {activeTab === 'explore' && (
+        <>
+          {/* Search */}
+          <div className="flex items-center gap-3 bg-white px-4 rounded-[28px] shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/10">
+            <Search className="w-5 h-5 text-gray-300 shrink-0" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nhập tên quiz hoặc mã đề..."
+              className="h-14 border-none focus-visible:ring-0 text-base font-bold text-[#5D7B6F] bg-transparent"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 shrink-0 text-sm font-bold">
+                Xóa
+              </button>
+            )}
           </div>
 
-          {/* Categories A-Z */}
-          {catsLoading ? (
-            <div className="space-y-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="space-y-3">
-                  <div className="h-6 w-32 bg-gray-100 rounded animate-pulse" />
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {[1, 2, 3, 4].map(j => <div key={j} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
-                  </div>
-                </div>
-              ))}
+          {!userLoaded ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
             </div>
+          ) : isSearching ? (
+            // Search mode: show popular results only
+            <PopularSection isLoggedIn={isLoggedIn} search={debouncedSearch} />
           ) : (
+            // Browse mode: popular + categories A-Z
             <div className="space-y-10">
-              {/* Pinned categories first */}
-              {pinnedCategories.length > 0 && (
-                <>
-                  <div className="space-y-10">
-                    {pinnedCategories.map(cat => (
-                      <CategorySection
-                        key={cat.id}
-                        category={cat}
-                        isLoggedIn={isLoggedIn}
-                        isPinned={true}
-                        onPin={handlePin}
-                      />
-                    ))}
-                  </div>
-                  {unpinnedCategories.length > 0 && (
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tất cả môn học</span>
-                      <div className="flex-1 h-px bg-gray-100" />
+              <PopularSection isLoggedIn={isLoggedIn} search="" />
+
+              {/* Divider */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Theo môn học</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+
+              {/* Categories A-Z */}
+              {catsLoading ? (
+                <div className="space-y-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="space-y-3">
+                      <div className="h-6 w-32 bg-gray-100 rounded animate-pulse" />
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {[1, 2, 3, 4].map(j => <div key={j} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-10">
+                  {/* Pinned categories first */}
+                  {pinnedCategories.length > 0 && (
+                    <>
+                      <div className="space-y-10">
+                        {pinnedCategories.map(cat => (
+                          <CategorySection
+                            key={cat.id}
+                            category={cat}
+                            isLoggedIn={isLoggedIn}
+                            isPinned={true}
+                            onPin={handlePin}
+                          />
+                        ))}
+                      </div>
+                      {unpinnedCategories.length > 0 && (
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 h-px bg-gray-100" />
+                          <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tất cả môn học</span>
+                          <div className="flex-1 h-px bg-gray-100" />
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
+                  {/* Remaining A-Z */}
+                  {unpinnedCategories.map(cat => (
+                    <CategorySection
+                      key={cat.id}
+                      category={cat}
+                      isLoggedIn={isLoggedIn}
+                      isPinned={false}
+                      onPin={handlePin}
+                    />
+                  ))}
+                </div>
               )}
-              {/* Remaining A-Z */}
-              {unpinnedCategories.map(cat => (
-                <CategorySection
-                  key={cat.id}
-                  category={cat}
-                  isLoggedIn={isLoggedIn}
-                  isPinned={false}
-                  onPin={handlePin}
-                />
-              ))}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )

@@ -33,6 +33,8 @@ const QuizSchema = new Schema<IQuiz>(
     price: { type: Number, default: 0 },
     original_quiz_id: { type: Schema.Types.ObjectId, ref: 'Quiz' },
     is_saved_from_explore: { type: Boolean, default: false },
+    is_temp: { type: Boolean, default: false },
+    expires_at: { type: Date, required: false },
   },
   { timestamps: true }
 )
@@ -50,6 +52,8 @@ QuizSchema.index(
     },
   }
 )
+// TTL index for temporary quizzes — sparse so it only applies to docs with expires_at
+QuizSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0, sparse: true })
 
 QuizSchema.pre('validate', function () {
   if (typeof this.course_code === 'string') {

@@ -46,7 +46,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { title, category_id, course_code, questions, status, description } = parsed.data
+    const { category_id, course_code, questions, status, description } = parsed.data
 
     const category = await Category.findOne({
       _id: category_id,
@@ -129,7 +129,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       { _id: id, updatedAt: existingQuiz.updatedAt },
       {
         $set: {
-          title,
+          title: course_code.trim().toUpperCase(),
           description,
           category_id,
           course_code,

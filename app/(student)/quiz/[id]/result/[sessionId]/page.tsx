@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, MinusCircle, BookOpen, LayoutDashboard, RotateCc
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import ExitMixQuizButton from '@/components/quiz/ExitMixQuizButton'
 
 interface ResultQuestion {
   _id: string
@@ -26,6 +27,7 @@ interface ResultData {
   completed_at: string
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: ResultQuestion[]
+  is_temp?: boolean
 }
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
@@ -52,7 +54,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
     redirect(`/quiz/${quizId}/session/${sessionId}`)
   }
 
-  const { score, totalQuestions, mode, questions, completed_at } = data
+  const { score, totalQuestions, mode, questions, completed_at, is_temp } = data
   const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
   const scoreOnTen = totalQuestions > 0 ? (score / totalQuestions) * 10 : 0
   const scoreOnTenDisplay = Number.isInteger(scoreOnTen) ? scoreOnTen.toFixed(0) : scoreOnTen.toFixed(1)
@@ -226,36 +228,44 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
         {/* Navigation buttons */}
         <div className="flex flex-wrap gap-3 justify-between pt-2 pb-8">
           <div className="flex flex-wrap gap-3">
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/10"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Back to Dashboard
-              </Button>
-            </Link>
+            {is_temp ? (
+              <ExitMixQuizButton sessionId={sessionId} />
+            ) : (
+              <>
+                <Link href="/dashboard">
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/10"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Back to Dashboard
+                  </Button>
+                </Link>
 
-            <Link href={`/quiz/${quizId}`}>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/10"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Làm lại
-              </Button>
-            </Link>
+                <Link href={`/quiz/${quizId}`}>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/10"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Làm lại
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
-          <Link href="/history">
-            <Button
-              className="flex items-center gap-2 text-white"
-              style={{ backgroundColor: '#5D7B6F' }}
-            >
-              <BookOpen className="w-4 h-4" />
-              View History
-            </Button>
-          </Link>
+          {!is_temp && (
+            <Link href="/history">
+              <Button
+                className="flex items-center gap-2 text-white"
+                style={{ backgroundColor: '#5D7B6F' }}
+              >
+                <BookOpen className="w-4 h-4" />
+                View History
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>

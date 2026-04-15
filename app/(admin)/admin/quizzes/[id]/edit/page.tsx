@@ -32,7 +32,6 @@ export default async function AdminEditQuizPage({ params }: Readonly<{ params: P
   if (!quiz) notFound()
 
   const initialData = {
-    title: quiz.title,
     description: (quiz as any).description ?? '',
     category_id: String(quiz.category_id),
     course_code: quiz.course_code,

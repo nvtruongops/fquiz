@@ -18,8 +18,13 @@ export interface RateLimitProvider {
 
 class MemoryRateLimitProvider implements RateLimitProvider {
   private readonly store = new Map<string, { count: number; expires: number }>()
-  private readonly interval = 60 * 1000 // 1 minute
-  private readonly limit = 5
+  private readonly interval: number
+  private readonly limit: number
+
+  constructor(limit = 5, windowMs = 60 * 1000) {
+    this.limit = limit
+    this.interval = windowMs
+  }
 
   async check(identifier: string): Promise<RateLimitResult> {
     const now = Date.now()
@@ -49,12 +54,14 @@ class MemoryRateLimitProvider implements RateLimitProvider {
  */
 class MongoRateLimitProvider implements RateLimitProvider {
   private readonly fallback: RateLimitProvider
-  private readonly limit = 5
-  private readonly windowMs = 60 * 1000
+  private readonly limit: number
+  private readonly windowMs: number
   private indexesReady = false
 
-  constructor(fallback: RateLimitProvider) {
+  constructor(fallback: RateLimitProvider, limit = 5, windowMs = 60 * 1000) {
     this.fallback = fallback
+    this.limit = limit
+    this.windowMs = windowMs
   }
 
   async check(identifier: string): Promise<RateLimitResult> {
@@ -122,6 +129,15 @@ class ProviderFactory {
 
   getProvider(): RateLimitProvider {
     return new MongoRateLimitProvider(this.getMemoryProvider())
+  }
+
+  /**
+   * Create a rate limiter with custom limit and window.
+   * @param limit - max requests per window
+   * @param windowMs - window size in milliseconds
+   */
+  createProvider(limit: number, windowMs: number): RateLimitProvider {
+    return new MongoRateLimitProvider(this.getMemoryProvider(), limit, windowMs)
   }
 }
 

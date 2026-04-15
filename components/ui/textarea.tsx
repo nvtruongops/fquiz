@@ -9,7 +9,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, autoResize, onInput, ...props }, ref) => {
     const internalRef = React.useRef<HTMLTextAreaElement>(null)
     const combinedRef = (node: HTMLTextAreaElement | null) => {
-      // @ts-ignore
+      // @ts-expect-error -- combining refs
       internalRef.current = node
       if (typeof ref === "function") ref(node)
       else if (ref) (ref as any).current = node

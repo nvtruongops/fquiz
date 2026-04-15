@@ -338,7 +338,7 @@ describe('Session Pause/Resume Time Tracking', () => {
       // 5. Work until 11:03
       // 6. Complete quiz
 
-      let session: QuizSession = {
+      const session: QuizSession = {
         _id: new Types.ObjectId(),
         student_id: new Types.ObjectId(),
         quiz_id: new Types.ObjectId(),
@@ -383,7 +383,7 @@ describe('Session Pause/Resume Time Tracking', () => {
       // 5. Work until 11:03
       // 6. Complete quiz
 
-      let session: QuizSession = {
+      const session: QuizSession = {
         _id: new Types.ObjectId(),
         student_id: new Types.ObjectId(),
         quiz_id: new Types.ObjectId(),

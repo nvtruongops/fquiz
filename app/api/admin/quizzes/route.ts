@@ -110,7 +110,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    const { title, category_id, course_code, questions, status, description } = parsed.data
+    const { category_id, course_code, questions, status, description } = parsed.data
     const normalizedCourseCode = course_code.trim().toUpperCase()
 
     const category = await Category.findOne({
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
 
     const quiz = await Quiz.create({
       _id: quizId,
-      title,
+      title: normalizedCourseCode,
       description: description || '',
       category_id,
       course_code: normalizedCourseCode,

@@ -41,6 +41,7 @@ export async function GET(req: Request) {
         $match: {
           student_id: studentId,
           status: 'completed',
+          is_temp: { $ne: true },
         },
       },
       {
@@ -108,6 +109,7 @@ export async function GET(req: Request) {
         $match: {
           student_id: studentId,
           status: 'active',
+          is_temp: { $ne: true },
         },
       },
       { $sort: { started_at: -1 } },

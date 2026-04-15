@@ -39,6 +39,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       student_id: new mongoose.Types.ObjectId(payload.userId),
       quiz_id: idObjectId,
       status: 'completed',
+      is_temp: { $ne: true },
     })
       .sort({ completed_at: -1 })
       .limit(10)
