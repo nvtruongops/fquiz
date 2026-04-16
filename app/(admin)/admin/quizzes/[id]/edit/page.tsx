@@ -21,7 +21,7 @@ async function getData(id: string) {
   await connectDB()
   const [quiz, categories] = await Promise.all([
     Quiz.findById(id).lean(),
-    Category.find().sort({ name: 1 }).lean(),
+    Category.find({ type: 'public', status: 'approved' }).sort({ name: 1 }).lean(),
   ])
   return { quiz, categories }
 }

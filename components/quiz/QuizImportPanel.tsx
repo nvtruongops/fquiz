@@ -52,9 +52,10 @@ interface Props {
   onApply: (quiz: ImportedQuiz) => void
   onValidationStateChange?: (hasBlockingErrors: boolean) => void
   onPreviewDiagnosticsChange?: (errors: ImportDiagnostic[]) => void
+  onProcessingStateChange?: (isProcessing: boolean) => void
 }
 
-export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange }: Readonly<Props>) {
+export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange }: Readonly<Props>) {
   const [file, setFile] = React.useState<File | null>(null)
   const [fileSnapshot, setFileSnapshot] = React.useState<File | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -103,6 +104,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
 
     setLoading(true)
     setError('')
+    onProcessingStateChange?.(true)
     try {
       const form = new FormData()
       form.append('file', fileSnapshot)
@@ -146,6 +148,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
       ])
     } finally {
       setLoading(false)
+      onProcessingStateChange?.(false)
     }
   }
 
@@ -180,19 +183,23 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
               setError('')
               onValidationStateChange?.(false)
               onPreviewDiagnosticsChange?.([])
+              onProcessingStateChange?.(false)
 
               if (!selectedFile) return
 
               setPreparingFile(true)
+              onProcessingStateChange?.(true)
               void createFileSnapshot(selectedFile)
                 .then((snapshot) => {
                   setFileSnapshot(snapshot)
+                  onProcessingStateChange?.(false)
                 })
                 .catch(() => {
                   setFile(null)
                   setFileSnapshot(null)
                   setError('Không thể đọc file đã chọn. Vui lòng thử lại.')
                   onValidationStateChange?.(true)
+                  onProcessingStateChange?.(false)
                   onPreviewDiagnosticsChange?.([
                     {
                       level: 'error',
