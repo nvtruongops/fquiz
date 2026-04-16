@@ -7,6 +7,8 @@ import '@/models/Category'
 import { verifyToken } from '@/lib/auth'
 import { Types } from 'mongoose'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/v1/explore/quizzes
  * Authenticated version of public quizzes - merges user's session history
