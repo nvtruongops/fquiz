@@ -263,6 +263,7 @@ export default function QuizSessionMobilePage() {
         : [existing.answer_index]
       setSelectedOptions(restored)
       setSubmitted(activeData.session.mode === 'immediate')
+      submittedRef.current = activeData.session.mode === 'immediate'
 
       if (activeData.session.mode === 'immediate') {
         // Try to get feedback from cache first
@@ -296,6 +297,7 @@ export default function QuizSessionMobilePage() {
 
       if (localImmediateFeedback) {
         setSubmitted(true)
+        submittedRef.current = true
         setLastAnswerResult(localImmediateFeedback)
         lastSyncedQuestionIndexRef.current = currentQuestionIndex
         return
@@ -307,6 +309,7 @@ export default function QuizSessionMobilePage() {
 
       setSelectedOptions([])
       setSubmitted(false)
+      submittedRef.current = false
       setLastAnswerResult(null)
       lastSyncedQuestionIndexRef.current = currentQuestionIndex
     }
