@@ -5,7 +5,7 @@ import { useState, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { invalidateHistoryForQuiz } from '@/lib/cache-invalidation'
-import { analyzeQuizCompleteness, QuizDiagnostics, ValidationError } from '@/lib/quiz-analyzer'
+import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
@@ -30,8 +30,8 @@ import {
 } from '@/components/ui/select'
 import { 
   Plus, Trash2, Hash, ChevronUp, ChevronDown, ImageIcon, 
-  Upload, Loader2, AlertCircle, CheckCircle2, ChevronRight, 
-  X, LayoutDashboard, History, AlertTriangle 
+  Loader2, AlertCircle, CheckCircle2, ChevronRight, 
+  LayoutDashboard, History, AlertTriangle 
 } from 'lucide-react'
 import { ImageUpload } from './ImageUpload'
 import { QuizImportPanel, ImportedQuiz } from './QuizImportPanel'
@@ -157,6 +157,7 @@ export function QuizEditor({
   const [hasImportBlockingErrors, setHasImportBlockingErrors] = useState(false)
   const [importPreviewErrors, setImportPreviewErrors] = useState<Array<{ code: string; message: string; questionIndex?: number }>>([])
   const [showImportPanel, setShowImportPanel] = useState(false)
+  const [isImportProcessing, setIsImportProcessing] = useState(false)
   const [isCategorySelectOpen, setIsCategorySelectOpen] = useState(false)
   const [isInlineCreateOpen, setIsInlineCreateOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -179,6 +180,15 @@ export function QuizEditor({
     [diagnostics.errors, importPreviewErrors]
   )
   
+  // Check if any question has pending base64 image upload
+  const hasPendingImageUploads = useMemo(() => 
+    form.questions.some(q => q.image_url?.startsWith('data:image')),
+    [form.questions]
+  )
+  
+  // Combined blocking state for submit button
+  const isSubmitBlocked = saving || hasImportBlockingErrors || isImportProcessing || hasPendingImageUploads
+  
   // Autosave Logic
   const debouncedForm = useDebounce(form, 3000)
   const pendingSubmit = useRef<(() => Promise<void>) | null>(null)
@@ -193,11 +203,14 @@ export function QuizEditor({
     // Skip autosave if any question has a pending base64 image (not yet uploaded)
     const hasPendingBase64 = debouncedForm.questions.some(q => q.image_url?.startsWith('data:image'))
     if (hasPendingBase64) return
+    
+    // Skip autosave if import is processing
+    if (isImportProcessing) return
 
     if (debouncedForm.category_id && debouncedForm.course_code) {
        handleAutosave()
     }
-  }, [debouncedForm])
+  }, [debouncedForm, isImportProcessing])
 
   const handleAutosave = async () => {
     if (autosaveInFlightRef.current) return
@@ -567,6 +580,7 @@ export function QuizEditor({
                 onPreviewDiagnosticsChange={(errors) =>
                   setImportPreviewErrors(errors.map((item) => ({ code: item.code, message: item.message, questionIndex: item.questionIndex })))
                 }
+                onProcessingStateChange={setIsImportProcessing}
               />
             )}
 
@@ -983,18 +997,28 @@ export function QuizEditor({
               )}
 
               <div className="flex gap-3 pb-8">
-                <Button type="submit" disabled={saving || hasImportBlockingErrors} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90">
+                <Button type="submit" disabled={isSubmitBlocked} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90">
                   {saving ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {form.questions.some(q => q.image_url?.startsWith('data:image')) 
+                      {hasPendingImageUploads
                         ? 'Đang tải ảnh & Lưu...' 
                         : 'Đang lưu...'}
+                    </div>
+                  ) : isImportProcessing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang xử lý import...
+                    </div>
+                  ) : hasPendingImageUploads ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang tải ảnh...
                     </div>
                   ) : quizId ? 'Cập nhật Quiz' : (isStudentMode ? 'Tạo Quiz' : 'Tạo & Công khai')}
                 </Button>
                 {canSaveDraft && (
-                  <Button type="button" variant="outline" disabled={saving || hasImportBlockingErrors} onClick={handleSaveDraft}
+                  <Button type="button" variant="outline" disabled={isSubmitBlocked} onClick={handleSaveDraft}
                     className="border-[#5D7B6F] text-[#5D7B6F] hover:bg-[#5D7B6F]/5">
                     Lưu bản nháp
                   </Button>

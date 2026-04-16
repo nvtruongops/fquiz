@@ -20,7 +20,6 @@ import {
   Search,
   Settings2,
   FolderTree,
-  ChevronRight,
   ArrowRightLeft,
   Loader2,
   ArrowRight,
@@ -281,91 +280,103 @@ function QuizCard({
   const categoryName = (quiz.category_id as any)?.name || 'Chưa phân loại'
 
   return (
-    <Card className="group relative w-full max-w-[390px] border-none shadow-xl shadow-[#5D7B6F]/5 rounded-[32px] overflow-hidden bg-white hover:shadow-2xl hover:shadow-[#5D7B6F]/10 transition-all duration-500 min-h-[420px] flex flex-col">
-      <CardContent className="p-8 flex-1 flex flex-col relative">
+    <Card className="group relative w-full border-none shadow-lg shadow-[#5D7B6F]/5 rounded-[24px] overflow-hidden bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/10 transition-all duration-300">
+      <CardContent className="p-6 relative">
         
         {/* Main Content (Default View) */}
-        <div className={cn("flex-1 flex flex-col transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
-          <div className="flex items-start justify-between mb-6">
-            <Badge variant="secondary" className="rounded-xl px-4 py-1.5 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-xs tracking-wider uppercase">
-              {categoryName}
-            </Badge>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setView('actions')}
-              className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-white text-gray-400 group-hover:text-[#5D7B6F] shadow-sm"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </Button>
-          </div>
+        <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
+          <div className="flex items-center gap-6">
+            {/* Left Section: Quiz Info */}
+            <div className="flex-1 min-w-0 space-y-3">
+              {/* Category Badge */}
+              <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
+                {categoryName}
+              </Badge>
 
-          <div className="flex-1 space-y-4">
-             <h3 className="text-2xl font-black text-[#5D7B6F] leading-tight flex items-center gap-2">
-                <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest align-middle">Mã</span>
-                {quiz.course_code}
-             </h3>
+              {/* Quiz Code */}
+              <div className="flex items-start gap-2">
+                <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5">Mã</span>
+                <h3 className="text-lg font-black text-[#5D7B6F] leading-tight break-words line-clamp-2" title={quiz.course_code}>
+                  {quiz.course_code}
+                </h3>
+              </div>
 
-             <div className="flex items-center gap-6 py-4 border-y border-gray-50/50">
-                <div className="flex items-center gap-2 text-xs font-black text-gray-400">
-                  <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
-                     <BookOpen className="w-4 h-4" />
+              {/* Quiz Title */}
+              {quiz.title && (
+                <p className="text-xs font-bold text-gray-600 leading-relaxed line-clamp-2" title={quiz.title}>
+                  {quiz.title}
+                </p>
+              )}
+
+              {/* Quiz Meta Info */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
+                  <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
+                    <BookOpen className="w-3 h-3" />
                   </div>
                   <span className="uppercase tracking-tighter">{quiz.questionCount} CÂU</span>
                 </div>
                 <div className={cn(
-                  "flex items-center gap-2 text-xs font-black",
+                  "flex items-center gap-1.5 text-[10px] font-black",
                   quiz.is_public ? 'text-green-500' : 'text-orange-400'
                 )}>
-                   <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center",
-                      quiz.is_public ? 'bg-green-50' : 'bg-orange-50'
-                   )}>
-                      {quiz.is_public ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                   </div>
-                   <span className="uppercase tracking-tighter">{quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
+                  <div className={cn(
+                    "w-6 h-6 rounded-lg flex items-center justify-center",
+                    quiz.is_public ? 'bg-green-50' : 'bg-orange-50'
+                  )}>
+                    {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  </div>
+                  <span className="uppercase tracking-tighter">{quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
                 </div>
-             </div>
-          </div>
+              </div>
+            </div>
 
-          <div className="mt-8 space-y-4">
-             <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-1.5">
-                 <QuizStatusBadge
-                   quiz={quiz}
-                   hasAttempt={hasAttempt}
-                   isPassed={isPassed}
-                   scoreOnTen={scoreOnTen}
-                   totalStudyMinutes={totalStudyMinutes}
-                   isSourceLocked={isSourceLocked}
-                 />
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
-             </div>
+            {/* Middle Section: Status */}
+            <div className="flex items-center justify-center px-6 border-l border-r border-gray-100 min-w-[180px]">
+              <QuizStatusBadge
+                quiz={quiz}
+                hasAttempt={hasAttempt}
+                isPassed={isPassed}
+                scoreOnTen={scoreOnTen}
+                totalStudyMinutes={totalStudyMinutes}
+                isSourceLocked={isSourceLocked}
+              />
+            </div>
 
-             <Button 
-               asChild={!isSourceLocked}
-               disabled={isSourceLocked}
-               className={cn(
-                 'w-full rounded-2xl py-6 font-black text-sm uppercase tracking-[0.15em] shadow-xl flex items-center gap-3 transition-all active:scale-95',
-                 isSourceLocked
-                   ? 'bg-gray-300 text-white shadow-gray-200 cursor-not-allowed'
-                   : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
-               )}
-             >
+            {/* Right Section: Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Button 
+                asChild={!isSourceLocked}
+                disabled={isSourceLocked}
+                className={cn(
+                  'rounded-xl px-6 py-5 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all active:scale-95',
+                  isSourceLocked
+                    ? 'bg-gray-300 text-white shadow-gray-200 cursor-not-allowed'
+                    : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
+                )}
+              >
                 {isSourceLocked ? (
                   <span className="inline-flex items-center gap-2">
-                    Nguồn đã bị đóng/ẩn
                     <AlertCircle className="w-4 h-4" />
+                    Đã đóng
                   </span>
                 ) : (
                   <Link href={`/quiz/${quiz._id}`}>
-                    {hasAttempt ? 'Làm lại' : 'Ôn tập ngay'}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    {hasAttempt ? 'Làm lại' : 'Ôn tập'}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 )}
-             </Button>
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setView('actions')}
+                className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-gray-100 text-gray-400 group-hover:text-[#5D7B6F]"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -404,16 +415,23 @@ function QuizCard({
 
 function QuizCardSkeleton() {
   return (
-    <Card className="w-full max-w-[390px] border-none rounded-[32px] overflow-hidden bg-white min-h-[420px] shadow-xl shadow-[#5D7B6F]/5 animate-pulse">
-      <CardContent className="p-8 flex-1 flex flex-col justify-between">
-        <div className="space-y-6">
-          <div className="h-6 w-24 rounded-xl bg-[#EAE7D6]" />
-          <div className="h-10 w-40 rounded-xl bg-[#D7F9FA]" />
-          <div className="h-14 w-full rounded-2xl bg-[#EAE7D6]" />
-        </div>
-        <div className="space-y-4">
-          <div className="h-12 w-full rounded-xl bg-[#D7F9FA]" />
-          <div className="h-14 w-full rounded-2xl bg-[#B0D4B8]" />
+    <Card className="w-full border-none rounded-[24px] overflow-hidden bg-white shadow-lg shadow-[#5D7B6F]/5 animate-pulse">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-6">
+          <div className="flex-1 space-y-3">
+            <div className="h-5 w-24 rounded-lg bg-[#EAE7D6]" />
+            <div className="h-6 w-40 rounded-lg bg-[#D7F9FA]" />
+            <div className="h-4 w-full max-w-md rounded-lg bg-[#EAE7D6]" />
+            <div className="flex gap-4">
+              <div className="h-6 w-20 rounded-lg bg-[#D7F9FA]" />
+              <div className="h-6 w-20 rounded-lg bg-[#D7F9FA]" />
+            </div>
+          </div>
+          <div className="w-[180px] h-16 rounded-xl bg-[#EAE7D6]" />
+          <div className="flex gap-3">
+            <div className="h-12 w-24 rounded-xl bg-[#B0D4B8]" />
+            <div className="h-10 w-10 rounded-xl bg-[#EAE7D6]" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -585,7 +603,7 @@ export default function MyQuizzesPage() {
   })
 
   const quizCardsContent = (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+    <div className="space-y-4">
       {filteredQuizzes.map((quiz: Quiz) => (
         <QuizCard
           key={quiz._id}
@@ -608,8 +626,8 @@ export default function MyQuizzesPage() {
             <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin" />
             <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Đang tải kho lưu trữ...</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => (
+          <div className="space-y-4">
+            {['a', 'b', 'c', 'd', 'e'].map((id) => (
               <QuizCardSkeleton key={`quiz-skeleton-${id}`} />
             ))}
           </div>
