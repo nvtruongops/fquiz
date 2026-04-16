@@ -455,6 +455,7 @@ export default function QuizSessionPage() {
 
     setSelectedOptions(nextSelections)
 
+    // Auto-submit when user has selected the required number of answers
     if (nextSelections.length === requiredSelectionCount) {
       if (activeData.session.mode === 'immediate') {
         submitInImmediateMode(nextSelections)

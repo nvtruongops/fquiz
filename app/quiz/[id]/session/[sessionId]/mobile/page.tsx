@@ -456,6 +456,7 @@ export default function QuizSessionMobilePage() {
 
     setSelectedOptions(nextSelections)
 
+    // Auto-submit when user has selected the required number of answers
     if (nextSelections.length === requiredSelectionCount) {
       if (activeData.session.mode === 'immediate') {
         submitInImmediateMode(nextSelections)
@@ -487,8 +488,7 @@ export default function QuizSessionMobilePage() {
   function handleNavigate(index: number) {
     if (!isHydratedFromServer) return
     if (index < 0 || index >= effectiveTotal) return
-    submittedRef.current = false
-    setSubmitted(false)
+    
     navigateToQuestion(index)
     setQuestionMapOpen(false)
   }
