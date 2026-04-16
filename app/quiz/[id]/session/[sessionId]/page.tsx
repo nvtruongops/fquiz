@@ -262,6 +262,7 @@ export default function QuizSessionPage() {
         : [existing.answer_index]
       setSelectedOptions(restored)
       setSubmitted(activeData.session.mode === 'immediate')
+      submittedRef.current = activeData.session.mode === 'immediate'
 
       if (activeData.session.mode === 'immediate') {
         // Try to get feedback from cache first
@@ -295,6 +296,7 @@ export default function QuizSessionPage() {
 
       if (localImmediateFeedback) {
         setSubmitted(true)
+        submittedRef.current = true
         setLastAnswerResult(localImmediateFeedback)
         lastSyncedQuestionIndexRef.current = currentQuestionIndex
         return
@@ -306,6 +308,7 @@ export default function QuizSessionPage() {
 
       setSelectedOptions([])
       setSubmitted(false)
+      submittedRef.current = false
       setLastAnswerResult(null)
       lastSyncedQuestionIndexRef.current = currentQuestionIndex
     }
@@ -615,8 +618,7 @@ export default function QuizSessionPage() {
           <QuizSidebar
             onSelectOption={handleSelectOption}
             onNavigate={(index) => {
-              submittedRef.current = false
-              setSubmitted(false)
+              // Don't reset submitted state here - let useEffect handle it based on server data
               navigateToQuestion(index)
             }}
             onSubmit={handleSubmit}
