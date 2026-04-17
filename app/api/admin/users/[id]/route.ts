@@ -36,7 +36,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (parsed.data.status) {
       updates.status = parsed.data.status
       if (parsed.data.status === 'banned') {
-        updates.ban_reason = (body as any).ban_reason ?? 'manual'
+        updates.ban_reason = parsed.data.ban_reason ?? 'manual'
       } else {
         updates.ban_reason = null
         updates.sharing_violations = 0
