@@ -54,6 +54,41 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       } else {
         session = quizSessions[0]
       }
+
+      // Nếu có session nhưng quiz đã bị xóa
+      if (!quiz && session) {
+        const attempts = quizSessions.map((s) => ({
+          session_id: s._id,
+          score: s.score,
+          mode: s.mode,
+          completed_at: s.completed_at,
+          started_at: s.started_at,
+          total_paused_duration_ms: s.total_paused_duration_ms,
+        }))
+
+        return NextResponse.json({
+          _id: session._id,
+          quiz_id: session.quiz_id,
+          quiz_title: 'Quiz đã bị xóa',
+          quiz_deleted: true,
+          source_type: 'deleted',
+          source_label: 'Quiz đã bị xóa',
+          mode: session.mode,
+          score: session.score,
+          total_questions: session.user_answers?.length || 0,
+          completed_at: session.completed_at,
+          started_at: session.started_at,
+          total_study_minutes: 0,
+          attempts,
+          user_answers: session.user_answers || [],
+          questions: [],
+          has_active_session: false,
+          active_session_id: null,
+          active_answered_count: 0,
+          active_total_count: 0,
+          active_started_at: null,
+        })
+      }
     }
 
     if (!session && quiz) {
@@ -125,7 +160,38 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     quiz = await Quiz.findById(session.quiz_id).lean() as any
-    if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
+    if (!quiz) {
+      // Quiz đã bị xóa - trả về thông tin cơ bản từ session
+      return NextResponse.json({
+        _id: session._id,
+        quiz_id: session.quiz_id,
+        quiz_title: 'Quiz đã bị xóa',
+        quiz_deleted: true,
+        source_type: 'deleted',
+        source_label: 'Quiz đã bị xóa',
+        mode: session.mode,
+        score: session.score,
+        total_questions: session.user_answers?.length || 0,
+        completed_at: session.completed_at,
+        started_at: session.started_at,
+        total_study_minutes: 0,
+        attempts: [{
+          session_id: session._id,
+          score: session.score,
+          mode: session.mode,
+          completed_at: session.completed_at,
+          started_at: session.started_at,
+          total_paused_duration_ms: session.total_paused_duration_ms,
+        }],
+        user_answers: session.user_answers || [],
+        questions: [],
+        has_active_session: false,
+        active_session_id: null,
+        active_answered_count: 0,
+        active_total_count: 0,
+        active_started_at: null,
+      })
+    }
 
     const questions = (quiz.questions ?? []).map((q: any, idx: number) => {
       const submitted = (session.user_answers ?? []).find((a: any) => a.question_index === idx)

@@ -391,6 +391,46 @@ export default function HistoryDetailPage() {
     )
   }
 
+  // ── Quiz deleted state ──
+  if (data.quiz_deleted) {
+    return (
+      <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
+        <div className="max-w-3xl mx-auto">
+          <Link
+            href="/history"
+            className="inline-flex items-center gap-1 text-sm mb-6"
+            style={{ color: '#5D7B6F' }}
+          >
+            <ArrowLeft size={16} />
+            Back to History
+          </Link>
+          <div className="rounded-xl p-8 text-center space-y-4" style={{ backgroundColor: '#fff3cd', border: '2px solid #ffc107' }}>
+            <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto">
+              <XCircle className="w-8 h-8 text-orange-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Quiz đã bị xóa</h3>
+            <p className="text-sm text-gray-600">
+              Quiz này đã bị Admin xóa hoặc không còn tồn tại. Bạn vẫn có thể xem điểm số của lần làm bài này.
+            </p>
+            <div className="mt-6 p-4 rounded-lg bg-white">
+              <p className="text-sm text-gray-500 mb-2">Kết quả của bạn:</p>
+              <p className="text-3xl font-black text-[#5D7B6F]">{data.score}/{data.total_questions}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Hoàn thành lúc: {data.completed_at ? formatDate(data.completed_at) : 'N/A'}
+              </p>
+            </div>
+            <Link
+              href="/history"
+              className="inline-block mt-4 px-6 py-2 rounded-lg bg-[#5D7B6F] text-white font-semibold hover:bg-[#4a6359] transition-colors"
+            >
+              Quay lại lịch sử
+            </Link>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   const { quiz_title, mode, score, total_questions, completed_at, questions } = data
   const hasCompletedAttempts = data.attempts.length > 0
   const percentage = total_questions > 0 ? Math.round((score / total_questions) * 100) : 0

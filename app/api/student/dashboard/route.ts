@@ -238,6 +238,29 @@ export async function GET(req: Request) {
     const completedActivities = recentActivitiesRaw.map((session: any) => {
       const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
       const quizMeta = quizMetaMap.get(quizId)
+      
+      // Nếu quiz bị xóa (không có quiz_id populated)
+      if (!session.quiz_id || typeof session.quiz_id === 'string') {
+        const totalQuestions = session.user_answers?.length || 0
+        return {
+          id: session._id.toString(),
+          quizId,
+          quizTitle: 'Quiz đã bị xóa',
+          quizCode: 'N/A',
+          categoryName: 'Chưa phân loại',
+          sourceType: 'deleted',
+          sourceLabel: 'Quiz đã bị xóa',
+          sourceCreatorName: null,
+          status: 'completed' as const,
+          score: Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
+          maxScore: 10,
+          correctCount: session.user_answers?.filter((a: any) => a.is_correct).length || 0,
+          totalCount: totalQuestions,
+          activityAt: session.completed_at,
+          quizDeleted: true,
+        }
+      }
+      
       const sourceType = inferSourceType(quizMeta, payload.userId)
       const sourceCreatorId = quizMeta?.is_saved_from_explore
         ? originalCreatorMap.get(quizMeta?.original_quiz_id?.toString?.() ?? '')
@@ -269,6 +292,7 @@ export async function GET(req: Request) {
         correctCount: session.user_answers.filter((a: any) => a.is_correct).length,
         totalCount: totalQuestions,
         activityAt: session.completed_at,
+        quizDeleted: false,
       }
     })
 
