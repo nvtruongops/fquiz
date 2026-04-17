@@ -63,9 +63,17 @@ export async function GET(req: Request) {
       {
         $addFields: {
           totalQuestions: {
-            $ifNull: [
-              '$quizDoc.questionCount',
-              { $size: { $ifNull: ['$quizDoc.questions', []] } },
+            $cond: [
+              { $ne: ['$quizDoc', null] },
+              // Quiz exists: use questionCount or questions array length
+              {
+                $ifNull: [
+                  '$quizDoc.questionCount',
+                  { $size: { $ifNull: ['$quizDoc.questions', []] } },
+                ],
+              },
+              // Quiz deleted: fallback to user_answers length (best effort)
+              { $size: { $ifNull: ['$user_answers', []] } },
             ],
           },
         },
