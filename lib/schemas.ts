@@ -332,6 +332,7 @@ export const CreateCategoryRequestSchema = z.object({
 export const UpdateUserSchema = z.object({
   role: z.enum(['student', 'admin']).optional(),
   status: z.enum(['active', 'banned']).optional(),
+  ban_reason: z.string().max(200).optional(),
 }).strict()
 
 export const BulkUserActionSchema = z.object({
