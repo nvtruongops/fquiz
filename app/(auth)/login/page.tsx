@@ -32,6 +32,18 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
 
+  // Show message based on URL params
+  useState(() => {
+    const params = new URLSearchParams(globalThis.location?.search || '')
+    const reason = params.get('reason')
+    
+    if (reason === 'account_banned') {
+      toast.error('Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ.')
+    } else if (reason === 'session_expired') {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    }
+  })
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 

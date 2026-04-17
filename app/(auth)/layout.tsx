@@ -1,7 +1,15 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { BookOpen, Sparkles } from 'lucide-react'
+import { verifySession } from '@/lib/dal'
 
-export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // If already logged in, redirect to dashboard
+  const user = await verifySession()
+  if (user) {
+    redirect(user.role === 'admin' ? '/admin' : '/dashboard')
+  }
+
   return (
     <div className="h-[100dvh] bg-[#EAE7D6] relative overflow-hidden flex flex-col items-center justify-center px-3 py-3 sm:px-5 sm:py-4 [@media(max-height:860px)]:justify-start [@media(max-height:860px)]:pt-3">
       {/* Decorative Background Glows */}

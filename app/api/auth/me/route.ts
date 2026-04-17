@@ -14,15 +14,24 @@ export async function GET(request: Request) {
 
   try {
     await connectDB()
-    const user = await User.findById(payload.userId).select('username role avatar_url avatarUrl token_version').lean() as {
+    const user = await User.findById(payload.userId).select('username role avatar_url avatarUrl token_version status').lean() as {
       username: string
       role: string
       avatar_url?: string | null
       avatarUrl?: string | null
       token_version?: number
+      status?: string
     } | null
     if (!user) {
       return NextResponse.json({ user: null }, { status: 200 })
+    }
+
+    // Check if user is banned
+    if (user.status === 'banned') {
+      // Clear auth cookie
+      const response = NextResponse.json({ user: null, banned: true }, { status: 403 })
+      response.cookies.delete('auth-token')
+      return response
     }
 
     const avatarUrl = user.avatar_url ?? user.avatarUrl ?? ''
