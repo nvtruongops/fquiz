@@ -49,6 +49,14 @@ async function submitAnswer(
   })
 
   if (!res.ok) {
+    // Handle 401 Unauthorized - token expired
+    if (res.status === 401) {
+      // Redirect to login with return URL
+      const currentUrl = window.location.pathname + window.location.search
+      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
+      throw new Error('Session expired. Redirecting to login...')
+    }
+
     const error = await res.json().catch(() => ({})) as { message?: string; error?: string }
     throw new Error(error.error || error.message || 'Failed to submit answer')
   }
