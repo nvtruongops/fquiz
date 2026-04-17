@@ -31,7 +31,8 @@ interface HistoryDetail {
   _id: string | null
   quiz_id: string
   quiz_title: string
-  source_type: 'self_created' | 'saved_explore' | 'explore_public'
+  quiz_deleted?: boolean
+  source_type: 'self_created' | 'saved_explore' | 'explore_public' | 'deleted'
   source_label: string
   mode: 'immediate' | 'review'
   score: number
