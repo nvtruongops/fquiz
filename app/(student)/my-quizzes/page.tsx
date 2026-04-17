@@ -198,9 +198,10 @@ function QuizActionsOverlay({
         <Button
           onClick={onConfirmDelete}
           variant="outline"
-          className="w-full h-16 rounded-2xl border-none bg-red-50 text-red-500 font-black hover:bg-red-100 gap-3 transition-all"
+          disabled={isDeleting}
+          className="w-full h-16 rounded-2xl border-none bg-red-50 text-red-500 font-black hover:bg-red-100 gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Trash2 className="w-5 h-5" /> {isDeleting ? 'Bổ đề đang được xử lý...' : 'Xóa bài thi này'}
+          <Trash2 className="w-5 h-5" /> {isDeleting ? 'Bộ đề đang được xử lý...' : 'Xóa bài thi này'}
         </Button>
         <Button
           onClick={onBack}
@@ -214,48 +215,62 @@ function QuizActionsOverlay({
   )
 }
 
-function QuizDeleteConfirmOverlay({
+function QuizDeleteConfirmDialog({
   quiz,
   isDeleting,
-  onBack,
+  open,
+  onOpenChange,
   onDelete,
 }: Readonly<{
   quiz: Quiz
   isDeleting: boolean
-  onBack: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onDelete: (id: string) => void
 }>) {
   return (
-    <div className="absolute inset-0 bg-white z-20 p-8 flex flex-col items-center justify-center animate-in slide-in-from-bottom-4 duration-300">
-      <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-8 shadow-inner">
-        <AlertTriangle className="w-10 h-10 text-red-500" />
-      </div>
-      <h3 className="text-xl font-black text-gray-900 mb-2">Xác nhận xóa?</h3>
-      <p className="text-[11px] font-bold text-gray-400 text-center mb-10 px-6 leading-relaxed uppercase tracking-widest opacity-80">
-        Bộ đề này sẽ bị gỡ bỏ vĩnh viễn khỏi kho lưu trữ của bạn.
-      </p>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+        <div className="p-8 flex flex-col items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-8 shadow-inner">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          
+          <DialogTitle className="text-xl font-black text-gray-900 mb-2 text-center">
+            Xác nhận xóa?
+          </DialogTitle>
+          
+          <DialogDescription className="text-[11px] font-bold text-gray-400 text-center mb-10 px-6 leading-relaxed uppercase tracking-widest opacity-80">
+            Bộ đề này sẽ bị gỡ bỏ vĩnh viễn khỏi kho lưu trữ của bạn.
+          </DialogDescription>
 
-      <div className="grid grid-cols-2 gap-4 w-full">
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="h-14 rounded-2xl border-gray-100 font-black text-gray-400 hover:bg-gray-50"
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={() => onDelete(quiz._id)}
-          disabled={isDeleting}
-          className="h-14 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black shadow-xl shadow-red-500/20 active:scale-95 transition-all"
-        >
-          {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Xác nhận xóa'}
-        </Button>
-      </div>
-    </div>
+          <div className="grid grid-cols-2 gap-4 w-full">
+            <Button
+              onClick={() => onOpenChange(false)}
+              variant="outline"
+              disabled={isDeleting}
+              className="h-14 rounded-2xl border-gray-200 font-black text-gray-500 hover:bg-gray-50"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={() => {
+                onDelete(quiz._id)
+                onOpenChange(false)
+              }}
+              disabled={isDeleting}
+              className="h-14 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black shadow-xl shadow-red-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Xác nhận xóa'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-// Sub-component for individual Quiz Card to manage internal UI state (Deletetion Flow)
+// Sub-component for individual Quiz Card to manage internal UI state (Deletion Flow)
 function QuizCard({
   quiz,
   onDelete,
@@ -271,7 +286,8 @@ function QuizCard({
   onMoveCategory: (quizId: string, categoryId: string) => Promise<unknown>
   isMovingCategory: boolean
 }>) {
-  const [view, setView] = useState<'default' | 'actions' | 'confirm'>('default')
+  const [view, setView] = useState<'default' | 'actions'>('default')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const hasAttempt = typeof quiz.latestCorrectCount === 'number'
   const scoreOnTen = quiz.latestScoreOnTen ?? 0
   const totalStudyMinutes = Number(quiz.totalStudyMinutes ?? 0)
@@ -279,137 +295,150 @@ function QuizCard({
   const isSourceLocked = Boolean(quiz.is_saved_from_explore && quiz.sourceStatus === 'source_locked')
   const categoryName = (quiz.category_id as any)?.name || 'Chưa phân loại'
 
+  // Hide overlays when deleting
+  React.useEffect(() => {
+    if (isDeleting) {
+      setView('default')
+      setShowDeleteDialog(false)
+    }
+  }, [isDeleting])
+
   return (
-    <Card className="group relative w-full border-none shadow-lg shadow-[#5D7B6F]/5 rounded-[24px] overflow-hidden bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/10 transition-all duration-300">
-      <CardContent className="p-6 relative">
-        
-        {/* Main Content (Default View) */}
-        <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
-          <div className="flex items-center gap-6">
-            {/* Left Section: Quiz Info */}
-            <div className="flex-1 min-w-0 space-y-3">
-              {/* Category Badge */}
-              <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
-                {categoryName}
-              </Badge>
+    <>
+      <Card className="group relative w-full border-none shadow-lg shadow-[#5D7B6F]/5 rounded-[24px] overflow-hidden bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/10 transition-all duration-300">
+        <CardContent className="p-6 relative">
+          
+          {/* Main Content (Default View) */}
+          <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
+            <div className="flex items-center gap-6">
+              {/* Left Section: Quiz Info */}
+              <div className="flex-1 min-w-0 space-y-3">
+                {/* Category Badge */}
+                <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
+                  {categoryName}
+                </Badge>
 
-              {/* Quiz Code */}
-              <div className="flex items-start gap-2">
-                <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5">Mã</span>
-                <h3 className="text-lg font-black text-[#5D7B6F] leading-tight break-words line-clamp-2" title={quiz.course_code}>
-                  {quiz.course_code}
-                </h3>
-              </div>
-
-              {/* Quiz Title */}
-              {quiz.title && (
-                <p className="text-xs font-bold text-gray-600 leading-relaxed line-clamp-2" title={quiz.title}>
-                  {quiz.title}
-                </p>
-              )}
-
-              {/* Quiz Meta Info */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
-                  <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
-                    <BookOpen className="w-3 h-3" />
-                  </div>
-                  <span className="uppercase tracking-tighter">{quiz.questionCount} CÂU</span>
+                {/* Quiz Code */}
+                <div className="flex items-start gap-2">
+                  <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5">Mã</span>
+                  <h3 className="text-lg font-black text-[#5D7B6F] leading-tight break-words line-clamp-2" title={quiz.course_code}>
+                    {quiz.course_code}
+                  </h3>
                 </div>
-                <div className={cn(
-                  "flex items-center gap-1.5 text-[10px] font-black",
-                  quiz.is_public ? 'text-green-500' : 'text-orange-400'
-                )}>
+
+                {/* Quiz Title */}
+                {quiz.title && (
+                  <p className="text-xs font-bold text-gray-600 leading-relaxed line-clamp-2" title={quiz.title}>
+                    {quiz.title}
+                  </p>
+                )}
+
+                {/* Quiz Meta Info */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
+                    <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
+                      <BookOpen className="w-3 h-3" />
+                    </div>
+                    <span className="uppercase tracking-tighter">{quiz.questionCount} CÂU</span>
+                  </div>
                   <div className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center",
-                    quiz.is_public ? 'bg-green-50' : 'bg-orange-50'
+                    "flex items-center gap-1.5 text-[10px] font-black",
+                    quiz.is_public ? 'text-green-500' : 'text-orange-400'
                   )}>
-                    {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                    <div className={cn(
+                      "w-6 h-6 rounded-lg flex items-center justify-center",
+                      quiz.is_public ? 'bg-green-50' : 'bg-orange-50'
+                    )}>
+                      {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                    </div>
+                    <span className="uppercase tracking-tighter">{quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
                   </div>
-                  <span className="uppercase tracking-tighter">{quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Middle Section: Status */}
-            <div className="flex items-center justify-center px-6 border-l border-r border-gray-100 min-w-[180px]">
-              <QuizStatusBadge
-                quiz={quiz}
-                hasAttempt={hasAttempt}
-                isPassed={isPassed}
-                scoreOnTen={scoreOnTen}
-                totalStudyMinutes={totalStudyMinutes}
-                isSourceLocked={isSourceLocked}
-              />
-            </div>
+              {/* Middle Section: Status */}
+              <div className="flex items-center justify-center px-6 border-l border-r border-gray-100 min-w-[180px]">
+                <QuizStatusBadge
+                  quiz={quiz}
+                  hasAttempt={hasAttempt}
+                  isPassed={isPassed}
+                  scoreOnTen={scoreOnTen}
+                  totalStudyMinutes={totalStudyMinutes}
+                  isSourceLocked={isSourceLocked}
+                />
+              </div>
 
-            {/* Right Section: Actions */}
-            <div className="flex items-center gap-3 shrink-0">
-              <Button 
-                asChild={!isSourceLocked}
-                disabled={isSourceLocked}
-                className={cn(
-                  'rounded-xl px-6 py-5 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all active:scale-95',
-                  isSourceLocked
-                    ? 'bg-gray-300 text-white shadow-gray-200 cursor-not-allowed'
-                    : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
-                )}
-              >
-                {isSourceLocked ? (
-                  <span className="inline-flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Đã đóng
-                  </span>
-                ) : (
-                  <Link href={`/quiz/${quiz._id}`}>
-                    {hasAttempt ? 'Làm lại' : 'Ôn tập'}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                )}
-              </Button>
+              {/* Right Section: Actions */}
+              <div className="flex items-center gap-3 shrink-0">
+                <Button 
+                  asChild={!isSourceLocked}
+                  disabled={isSourceLocked}
+                  className={cn(
+                    'rounded-xl px-6 py-5 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all active:scale-95',
+                    isSourceLocked
+                      ? 'bg-gray-300 text-white shadow-gray-200 cursor-not-allowed'
+                      : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
+                  )}
+                >
+                  {isSourceLocked ? (
+                    <span className="inline-flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      Đã đóng
+                    </span>
+                  ) : (
+                    <Link href={`/quiz/${quiz._id}`}>
+                      {hasAttempt ? 'Làm lại' : 'Ôn tập'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  )}
+                </Button>
 
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setView('actions')}
-                className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-gray-100 text-gray-400 group-hover:text-[#5D7B6F]"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setView('actions')}
+                  disabled={isDeleting}
+                  className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-gray-100 text-gray-400 group-hover:text-[#5D7B6F] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* --- OVERLAYS --- */}
+          {/* --- OVERLAYS --- */}
 
-        {/* View 1: Actions (Xóa / Hủy) */}
-        {view === 'actions' && (
-          <QuizActionsOverlay
-            quiz={quiz}
-            isDeleting={isDeleting}
-            isMoving={isMovingCategory}
-            categories={categories}
-            onDelete={onDelete}
-            onMove={async (quizId, categoryId) => {
-              await onMoveCategory(quizId, categoryId)
-              setView('default')
-            }}
-            onBack={() => setView('default')}
-            onConfirmDelete={() => setView('confirm')}
-          />
-        )}
+          {/* View 1: Actions (Xóa / Hủy) */}
+          {view === 'actions' && !isDeleting && (
+            <QuizActionsOverlay
+              quiz={quiz}
+              isDeleting={isDeleting}
+              isMoving={isMovingCategory}
+              categories={categories}
+              onDelete={onDelete}
+              onMove={async (quizId, categoryId) => {
+                await onMoveCategory(quizId, categoryId)
+                setView('default')
+              }}
+              onBack={() => setView('default')}
+              onConfirmDelete={() => {
+                setView('default')
+                setShowDeleteDialog(true)
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
 
-        {/* View 2: Confirmation (Xác nhận Xóa / Hủy) */}
-        {view === 'confirm' && (
-          <QuizDeleteConfirmOverlay
-            quiz={quiz}
-            isDeleting={isDeleting}
-            onBack={() => setView('actions')}
-            onDelete={onDelete}
-          />
-        )}
-      </CardContent>
-    </Card>
+      {/* Delete Confirmation Dialog */}
+      <QuizDeleteConfirmDialog
+        quiz={quiz}
+        isDeleting={isDeleting}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onDelete={onDelete}
+      />
+    </>
   )
 }
 
