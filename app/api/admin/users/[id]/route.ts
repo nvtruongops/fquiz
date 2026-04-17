@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
+import { verifyToken, requireRole, clearUserStatusCache } from '@/lib/auth'
 import { User } from '@/models/User'
 import { UpdateUserSchema, validateObjectId } from '@/lib/schemas'
 
@@ -52,6 +52,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       .lean()
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    
+    // Clear cache immediately when status changes
+    if (updates.status) {
+      clearUserStatusCache(id)
+    }
+    
     return NextResponse.json({ user })
   } catch (err) {
     if (err instanceof Response) return err

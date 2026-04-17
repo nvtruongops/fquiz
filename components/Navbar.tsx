@@ -38,6 +38,15 @@ export default function Navbar({ initialUser }: NavbarProps) {
     // Sync with server to get fresh data (avatar updates, etc.)
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
       .then(async (res) => {
+        if (res.status === 403) {
+          // User is banned
+          const data = await res.json()
+          if (data.banned) {
+            // Redirect to login with banned message
+            globalThis.location.href = '/login?reason=account_banned'
+          }
+          return
+        }
         if (!res.ok) return
         const data = (await res.json()) as { user?: { name: string; role: string; avatarUrl?: string } | null }
         setUser(data.user ?? null)

@@ -13,6 +13,20 @@ export interface JWTPayload {
 const userStatusCache = new Map<string, { version: number; status: string; expires: number }>()
 const CACHE_TTL = 60 * 1000 // 60 seconds
 
+/**
+ * Clear user status cache - call this when admin bans/unbans a user
+ */
+export function clearUserStatusCache(userId: string): void {
+  userStatusCache.delete(userId)
+}
+
+/**
+ * Clear all user status cache - call this when doing bulk operations
+ */
+export function clearAllUserStatusCache(): void {
+  userStatusCache.clear()
+}
+
 async function checkUserSession(userId: string, version?: number): Promise<boolean> {
   const now = Date.now()
   const cached = userStatusCache.get(userId)
