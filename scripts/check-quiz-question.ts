@@ -20,8 +20,8 @@ async function checkQuizQuestion() {
     console.log(`✅ Tìm thấy quiz: ${quiz.title}`)
     console.log(`   Số câu hỏi: ${quiz.questions?.length || 0}`)
 
-    // Kiểm tra câu 32 (index 31)
-    const questionIndex = 31
+    // Kiểm tra câu 22 (index 21)
+    const questionIndex = 21
     const question = quiz.questions?.[questionIndex]
 
     if (!question) {
