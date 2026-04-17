@@ -150,18 +150,37 @@ export default function DashboardPage() {
               data.recentActivities.map((activity: any) => (
                 <Link
                   key={activity.id}
-                  href={`/history/${activity.quizId || activity.id}`}
-                  className="flex items-center gap-6 p-6 rounded-[28px] bg-white border border-[#5D7B6F]/5 hover:border-[#5D7B6F]/20 transition-all group cursor-pointer shadow-xl shadow-[#5D7B6F]/5"
+                  href={activity.quizDeleted ? '#' : `/history/${activity.quizId || activity.id}`}
+                  className={`flex items-center gap-6 p-6 rounded-[28px] bg-white border border-[#5D7B6F]/5 transition-all group shadow-xl shadow-[#5D7B6F]/5 ${
+                    activity.quizDeleted 
+                      ? 'opacity-60 cursor-not-allowed' 
+                      : 'hover:border-[#5D7B6F]/20 cursor-pointer'
+                  }`}
+                  onClick={(e) => {
+                    if (activity.quizDeleted) {
+                      e.preventDefault()
+                    }
+                  }}
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-[#5D7B6F] group-hover:bg-[#A4C3A2]/10 transition-colors shadow-inner">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
+                    activity.quizDeleted 
+                      ? 'bg-gray-100 text-gray-400' 
+                      : 'bg-gray-50 text-[#5D7B6F] group-hover:bg-[#A4C3A2]/10'
+                  } transition-colors`}>
                     <GraduationCap className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-gray-800 group-hover:text-[#5D7B6F] transition-colors truncate text-lg">
+                    <h3 className={`font-black truncate text-lg ${
+                      activity.quizDeleted 
+                        ? 'text-gray-400' 
+                        : 'text-gray-800 group-hover:text-[#5D7B6F]'
+                    } transition-colors`}>
                       {(activity.categoryName || 'Chưa phân loại')} - {(activity.quizCode || 'N/A')}
                     </h3>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-                      {activity.status === 'completed' && activity.hasActiveSession ? (
+                      {activity.quizDeleted ? (
+                        <span className="text-red-500">Quiz đã bị xóa</span>
+                      ) : activity.status === 'completed' && activity.hasActiveSession ? (
                         <>
                           <span className="text-[#5D7B6F]">Đã hoàn thành</span>
                           <span>•</span>
@@ -176,10 +195,14 @@ export default function DashboardPage() {
                       <span>{formatDistanceToNow(new Date(activity.activityAt), { addSuffix: true, locale: vi })}</span>
                     </p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold text-[#5D7B6F]">
-                        {sourceText(activity.sourceLabel, activity.sourceCreatorName)}
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        activity.quizDeleted 
+                          ? 'bg-red-50 text-red-600' 
+                          : 'bg-[#f2f2f2] text-[#5D7B6F]'
+                      }`}>
+                        {activity.quizDeleted ? 'Đã xóa' : sourceText(activity.sourceLabel, activity.sourceCreatorName)}
                       </span>
-                      {activity.hasActiveSession && (
+                      {activity.hasActiveSession && !activity.quizDeleted && (
                         <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
                           {activity.activeAnsweredCount}/{activity.activeTotalCount} câu đang làm
                         </span>
@@ -187,7 +210,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-[#5D7B6F] leading-none">
+                    <p className={`text-2xl font-black leading-none ${
+                      activity.quizDeleted ? 'text-gray-300' : 'text-[#5D7B6F]'
+                    }`}>
                       {activity.status === 'active' ? '--' : `${activity.score}/10`}
                     </p>
                     <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter mt-1">
