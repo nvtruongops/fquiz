@@ -64,7 +64,7 @@ export async function GET(
         text: q.text,
         options: q.options,
         answer_selection_count: Array.isArray(q.correct_answer)
-          ? Math.max(q.correct_answer.length, 1)
+          ? Math.min(Math.max(q.correct_answer.length, 1), q.options.length)
           : 1,
         ...(q.image_url ? { image_url: q.image_url } : {}),
       }

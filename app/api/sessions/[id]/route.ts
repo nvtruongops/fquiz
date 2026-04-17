@@ -107,7 +107,7 @@ export async function GET(
           correct_answer: rawQuestion.correct_answer,
           explanation: rawQuestion.explanation,
           answer_selection_count: Array.isArray(rawQuestion.correct_answer)
-            ? Math.max(rawQuestion.correct_answer.length, 1)
+            ? Math.min(Math.max(rawQuestion.correct_answer.length, 1), rawQuestion.options.length)
             : 1,
           ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
         }
@@ -116,7 +116,7 @@ export async function GET(
           text: rawQuestion.text,
           options: rawQuestion.options,
           answer_selection_count: Array.isArray(rawQuestion.correct_answer)
-            ? Math.max(rawQuestion.correct_answer.length, 1)
+            ? Math.min(Math.max(rawQuestion.correct_answer.length, 1), rawQuestion.options.length)
             : 1,
           ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
         }
