@@ -97,6 +97,7 @@ export async function GET(req: Request) {
       started_at: Date
       total_study_minutes: number
       attempt_count: number
+      flashcard_stats?: any
     }>
 
     const total = grouped.length
