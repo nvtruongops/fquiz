@@ -379,7 +379,7 @@ export const UpdateCategoryStatusSchema = z.object({
 
 export const CreateSessionSchema = z.object({
   quiz_id: MongoIdSchema,
-  mode: z.enum(['immediate', 'review']).default('immediate'),
+  mode: z.enum(['immediate', 'review', 'flashcard']).default('immediate'),
   difficulty: z.enum(['sequential', 'random']).default('sequential'),
   action: z.enum(['continue', 'restart']).optional(),
 }).strict()

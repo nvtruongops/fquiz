@@ -84,6 +84,7 @@ export async function GET(req: Request) {
           started_at: '$latestSession.started_at',
           total_study_minutes: { $round: [{ $divide: ['$totalDurationMs', 60000] }, 0] },
           attempt_count: 1,
+          flashcard_stats: '$latestSession.flashcard_stats',
         },
       },
       { $sort: { completed_at: -1 } },
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
       quiz_id: mongoose.Types.ObjectId
       latest_session_id: mongoose.Types.ObjectId
       score: number
-      mode: 'immediate' | 'review'
+      mode: 'immediate' | 'review' | 'flashcard'
       completed_at: Date
       started_at: Date
       total_study_minutes: number
@@ -127,6 +128,7 @@ export async function GET(req: Request) {
           started_at: '$latestSession.started_at',
           current_question_index: '$latestSession.current_question_index',
           user_answers: '$latestSession.user_answers',
+          flashcard_stats: '$latestSession.flashcard_stats',
         },
       },
       { $sort: { started_at: -1 } },
@@ -136,6 +138,7 @@ export async function GET(req: Request) {
       started_at: Date
       current_question_index: number
       user_answers?: Array<{ question_index: number }>
+      flashcard_stats?: any
     }>
 
     const quizIds = Array.from(
@@ -233,6 +236,7 @@ export async function GET(req: Request) {
         started_at: item.started_at,
         total_study_minutes: item.total_study_minutes,
         attempt_count: item.attempt_count,
+        flashcard_stats: item.flashcard_stats,
         has_active_session: hasActiveSession,
         active_session_id: activeSession?.active_session_id ?? null,
         active_answered_count: activeAnsweredCount,
@@ -245,11 +249,17 @@ export async function GET(req: Request) {
     const inProgressRaw = activeGrouped.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any
       const sourceType = inferSourceType(quiz, payload.userId)
-      const answeredCount = new Set(
-        (item.user_answers ?? [])
-          .map((answer) => answer.question_index)
-          .filter((idx) => Number.isInteger(idx) && idx >= 0)
-      ).size
+      let answeredCount = 0
+      if (item.flashcard_stats) {
+        answeredCount = item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown
+      } else if (Array.isArray(item.user_answers)) {
+        answeredCount = new Set(
+          item.user_answers
+            .map((answer) => answer.question_index)
+            .filter((idx) => Number.isInteger(idx) && idx >= 0)
+        ).size
+      }
+
       const sourceCreatorId = quiz?.is_saved_from_explore
         ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')
         : quiz?.created_by?.toString?.()
@@ -268,6 +278,7 @@ export async function GET(req: Request) {
         answered_count: answeredCount,
         total_questions: quiz?.questions?.length ?? 0,
         current_question_index: Math.max(0, Number(item.current_question_index ?? 0)),
+        flashcard_stats: item.flashcard_stats,
       }
     })
 

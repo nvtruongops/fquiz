@@ -11,6 +11,7 @@ import QuizSidebar from '@/components/quiz/QuizSidebar'
 import { QuizTimer } from '@/components/QuizTimer'
 import { useQuizSessionStore } from '@/store/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
+import { QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 import { cn } from '@/lib/utils'
 import { withCsrfHeaders } from '@/lib/csrf'
 
@@ -517,30 +518,11 @@ export default function QuizSessionPage() {
   // Show preloading screen with progress
   if (isPreloading || isInitialLoading || !isPreloadSuccess || !isInitialSuccess || (!activeData && isLoading)) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-br from-[#EAE7D6]/30 to-white font-sans">
-        <div className="relative">
-          <div className="absolute inset-0 animate-ping rounded-full bg-[#5D7B6F]/20" />
-          <Loader2 className="relative h-12 w-12 animate-spin text-[#5D7B6F]" />
-        </div>
-        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.25em] text-[#5D7B6F]">
-          {isPreloading ? 'Đang tải bộ câu hỏi...' : 'Loading Exam Mode...'}
-        </p>
-        {isPreloading && (
-          <div className="mt-4 w-64">
-            <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-              <div 
-                className="h-full bg-gradient-to-r from-[#5D7B6F] to-[#A4C3A2] transition-all duration-300 ease-out"
-                style={{ width: `${preloadProgress}%` }}
-              />
-            </div>
-            <p className="mt-2 text-center text-[10px] text-gray-400">
-              {preloadProgress < 60 && 'Đang tải câu hỏi...'}
-              {preloadProgress >= 60 && preloadProgress < 90 && `Đã tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi`}
-              {preloadProgress >= 90 && 'Sẵn sàng!'}
-            </p>
-          </div>
-        )}
-      </div>
+      <QuizLoadingOverlay 
+        isOpen={true} 
+        progress={isPreloading ? Math.max(90, preloadProgress) : 99} 
+        status={isPreloading ? "Hoàn thiện dữ liệu câu hỏi..." : "Đồng bộ phiên thi..."} 
+      />
     )
   }
 
@@ -588,9 +570,11 @@ export default function QuizSessionPage() {
   // Wait for server hydration before rendering to avoid showing wrong question index
   if (!isReadyToRender) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#f3f3f3]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
-      </div>
+      <QuizLoadingOverlay 
+        isOpen={true} 
+        progress={99} 
+        status="Sẵn sàng..." 
+      />
     )
   }
 

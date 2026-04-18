@@ -99,6 +99,7 @@ export async function GET(
         user_answers: sessionAnswers,
         questions,
         is_temp: (session as any).is_temp ?? false,
+        flashcard_stats: session.mode === 'flashcard' ? session.flashcard_stats : undefined,
       },
       { status: 200 }
     )

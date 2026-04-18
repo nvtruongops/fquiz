@@ -17,7 +17,7 @@ interface HistoryItem {
   source_creator_name: string | null
   score: number
   total_questions: number
-  mode: 'immediate' | 'review'
+  mode: 'immediate' | 'review' | 'flashcard'
   completed_at: string
   started_at: string
   total_study_minutes: number
@@ -106,16 +106,23 @@ function ScoreBadge({ score, total }: { score: number; total: number }) {
   )
 }
 
-function ModeBadge({ mode }: { mode: 'immediate' | 'review' }) {
+function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
+  const config = {
+    immediate: { bg: '#D7F9FA', label: 'Luyện tập' },
+    review: { bg: '#EAE7D6', label: 'Kiểm tra' },
+    flashcard: { bg: '#f3e8ff', label: 'Flashcard' },
+  }
+  const { bg, label } = config[mode]
+  
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
       style={{
-        backgroundColor: mode === 'immediate' ? '#D7F9FA' : '#EAE7D6',
+        backgroundColor: bg,
         color: '#5D7B6F',
       }}
     >
-      {mode === 'immediate' ? 'Immediate' : 'Review'}
+      {label}
     </span>
   )
 }

@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 160 15% 42%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,8 +22,8 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 160 15% 42%;
-    --radius: 0px;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
   }
 
   .dark {
@@ -33,7 +33,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 160 15% 42%;
+    --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -45,7 +45,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 160 15% 42%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -58,29 +58,53 @@
   }
 }
 
-/* Global square UI mode: force every surface to sharp corners. */
-.square-ui,
-.square-ui *,
-.square-ui *::before,
-.square-ui *::after {
-  border-radius: 0 !important;
+/* Flashcard 3D flip animation - Vertical flip (top to bottom) */
+.perspective-1000 {
+  perspective: 1000px;
 }
 
-/* Quiz pages: keep both-axis scroll available and easy to grab. */
-.quiz-scroll {
-  overflow: auto;
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
 }
 
-.quiz-scroll::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+.rotate-y-180 {
+  transform: rotateX(180deg);
 }
 
-.quiz-scroll::-webkit-scrollbar-track {
-  background: #dfdfdf;
+.flashcard-face {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.quiz-scroll::-webkit-scrollbar-thumb {
-  background: #8a8a8a;
-  border: 2px solid #dfdfdf;
+/* Front face - always positioned relatively to allow expansion */
+.flashcard-inner .flashcard-face:first-child {
+  position: relative;
+}
+
+/* Back face - positioned absolutely on top of front, but transforms to show when flipped */
+.flashcard-inner .flashcard-face:last-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 100%;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.duration-600 {
+  transition-duration: 600ms;
 }

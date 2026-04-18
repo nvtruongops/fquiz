@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -28,8 +28,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
+import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 
 interface QuizDetail {
   _id: string
@@ -53,7 +61,7 @@ interface CreateSessionResponse {
 
 interface ActiveSessionPayload {
   sessionId: string
-  mode: 'immediate' | 'review'
+  mode: 'immediate' | 'review' | 'flashcard'
   difficulty: 'sequential' | 'random'
   current_question_index: number
   totalQuestions: number
@@ -64,7 +72,7 @@ interface ActiveSessionPayload {
 type StartAction = 'continue' | 'restart'
 
 type StartSessionRequest = {
-  mode: 'immediate' | 'review'
+  mode: 'immediate' | 'review' | 'flashcard'
   difficulty: 'sequential' | 'random'
   action?: StartAction
 }
@@ -135,6 +143,7 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
 
 export default function QuizDetailPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const params = useParams<{ id?: string | string[] }>()
   const rawQuizId = params?.id
@@ -146,6 +155,13 @@ export default function QuizDetailPage() {
   const [pendingMode, setPendingMode] = useState<'immediate' | 'review' | null>(null)
   const [pendingDifficulty, setPendingDifficulty] = useState<'sequential' | 'random' | null>(null)
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
+  
+  // Use professional QuizLoader hook
+  const { loadingOverlay, startLoading, completeLoading, stopLoading } = useQuizLoader()
+  
+  // Dropdown states
+  const [selectedMode, setSelectedMode] = useState<'immediate' | 'review' | 'flashcard'>('immediate')
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'sequential' | 'random'>('sequential')
 
   useEffect(() => {
     if (searchParams.get('reason') !== 'session_expired') return
@@ -163,8 +179,11 @@ export default function QuizDetailPage() {
     queryKey: ['active-session', quizId],
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions?quiz_id=${quizId}`)
-      if (!res.ok) return { activeSession: null }
-      return res.json() as Promise<{ activeSession: ActiveSessionPayload | null }>
+      if (!res.ok) return { assessmentSession: null, learningSession: null }
+      return res.json() as Promise<{ 
+        assessmentSession: ActiveSessionPayload | null
+        learningSession: ActiveSessionPayload | null 
+      }>
     },
     enabled: resolvedQuizId.length > 0,
     staleTime: 0,
@@ -195,13 +214,10 @@ export default function QuizDetailPage() {
       const nextSessionId = data.sessionId
 
       if (!nextSessionId) {
-        // Restart completed (old session deleted), now show mode select
+        // Restart completed (old session deleted)
+        // Don't open mode select - the restart handler will create new session
         setResumeDialogOpen(false)
         setActiveSessionInfo(null)
-        // Small delay to ensure resume dialog is closed before opening mode select
-        setTimeout(() => {
-          setModeSelectOpen(true)
-        }, 100)
         return
       }
       // Clear pending state and close dialog
@@ -210,10 +226,55 @@ export default function QuizDetailPage() {
       setActiveSessionInfo(null)
       setResumeDialogOpen(false)
       
-      const targetUrl = `/quiz/${quizId}/session/${nextSessionId}`
-      window.location.href = targetUrl
+      const targetUrl = data.mode === 'flashcard' 
+        ? `/quiz/${quizId}/session/${nextSessionId}/flashcard`
+        : `/quiz/${quizId}/session/${nextSessionId}`
+
+      // Preload the target page's data to eliminate double loading
+      Promise.all([
+        data.mode === 'flashcard' 
+          ? queryClient.prefetchQuery({
+              queryKey: ['flashcard-session', nextSessionId],
+              queryFn: async () => {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}`)
+                return res.json()
+              }
+            })
+          : Promise.all([
+              queryClient.prefetchQuery({
+                queryKey: ['sessions', nextSessionId, 'initial'],
+                queryFn: async () => {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}`)
+                  return res.json()
+                }
+              }),
+              queryClient.prefetchQuery({
+                queryKey: ['sessions', nextSessionId, 'all-questions'],
+                queryFn: async () => {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}/questions`)
+                  return res.json()
+                }
+              })
+            ])
+      ]).then(() => {
+        // Slide loading to 100% after API data is fully cached
+        completeLoading()
+        
+        setTimeout(() => {
+          router.push(targetUrl)
+        }, 300)
+      }).catch((e) => {
+        console.error("Prefetch failed", e)
+        // Fallback to push anyway
+        completeLoading()
+        setTimeout(() => {
+          router.push(targetUrl)
+        }, 300)
+      })
     },
     onError: (error: StartSessionError, variables) => {
+      stopLoading() // stop loading on error
+
       if (error.status === 401) {
         toast.error('Bạn cần đăng nhập để làm bài quiz này')
         setTimeout(() => {
@@ -235,25 +296,43 @@ export default function QuizDetailPage() {
     },
   })
 
-  function handleSelectMode(mode: 'immediate' | 'review', difficulty: 'sequential' | 'random') {
-    setModeSelectOpen(false)
-    startSessionMutation.mutate({ mode, difficulty })
-  }
-
-  // "Bắt đầu ngay" click - check for active session first
-  function handleStartClick() {
-    const existing = activeSessionData?.activeSession
-    if (existing) {
-      setActiveSessionInfo(existing)
+  function handleSelectMode(mode: 'immediate' | 'review' | 'flashcard', difficulty: 'sequential' | 'random') {
+    const LEARNING_MODES = ['flashcard']
+    const selectedModeGroup = LEARNING_MODES.includes(mode) ? 'learning' : 'assessment'
+    
+    // Save selected mode and difficulty for potential restart
+    setPendingMode(mode === 'flashcard' ? null : mode)
+    setPendingDifficulty(difficulty)
+    setSelectedMode(mode)
+    setSelectedDifficulty(difficulty)
+    
+    // Check if there's an active session in the selected mode's group
+    const existingInGroup = selectedModeGroup === 'learning' 
+      ? activeSessionData?.learningSession 
+      : activeSessionData?.assessmentSession
+    
+    if (existingInGroup) {
+      // Show resume dialog for existing session in this group
+      setModeSelectOpen(false)
+      setActiveSessionInfo(existingInGroup)
       setResumeDialogOpen(true)
     } else {
-      setModeSelectOpen(true)
+      // No conflict, create new session
+      setModeSelectOpen(false)
+      startLoading('Đang tải dữ liệu bộ câu hỏi...')
+      startSessionMutation.mutate({ mode, difficulty })
     }
+  }
+
+  // "Chọn chế độ học" click - show mode selection directly (no pre-check)
+  function handleStartClick() {
+    setModeSelectOpen(true)
   }
 
   function handleContinueSession() {
     if (!activeSessionInfo?.sessionId) return
     setResumeDialogOpen(false)
+    startLoading('Đang kết nối lại phiên học...')
     // Call continue action to get questions preloaded
     startSessionMutation.mutate({
       mode: activeSessionInfo.mode,
@@ -263,13 +342,44 @@ export default function QuizDetailPage() {
   }
 
   function handleRestartSession() {
-    // Delete old session then show mode select
+    // Save the selected mode and difficulty before restarting
+    if (!activeSessionInfo) return
+    
+    // Store the mode and difficulty we want to create after restart
+    const targetMode = selectedMode
+    const targetDifficulty = selectedDifficulty
+    
     setResumeDialogOpen(false)
-    startSessionMutation.mutate({
-      mode: activeSessionInfo?.mode ?? 'immediate',
-      difficulty: activeSessionInfo?.difficulty ?? 'sequential',
+    startLoading('Đang làm mới tiến trình...')
+    
+    // First delete the old session using mutateAsync
+    startSessionMutation.mutateAsync({
+      mode: activeSessionInfo.mode,
+      difficulty: activeSessionInfo.difficulty,
       action: 'restart',
+    }).then((data) => {
+      // After restart completes (session deleted), create new session with selected mode
+      if (!data.sessionId) {
+        // Session deleted successfully, now create new one
+        startSessionMutation.mutate({
+          mode: targetMode,
+          difficulty: targetDifficulty,
+        })
+      }
+    }).catch((error) => {
+      console.error('Restart failed:', error)
+      toast.error('Không thể làm mới session')
     })
+  }
+
+  function handleCloseResumeDialog() {
+    // Close resume dialog and go back to mode selection
+    setResumeDialogOpen(false)
+    setActiveSessionInfo(null)
+    // Small delay to ensure resume dialog is closed
+    setTimeout(() => {
+      setModeSelectOpen(true)
+    }, 100)
   }
 
   if (isLoading)
@@ -433,106 +543,125 @@ export default function QuizDetailPage() {
                     onClick={handleStartClick}
                     className="flex h-14 w-full items-center gap-3 rounded-sm bg-[#5D7B6F] text-[11px] font-normal uppercase tracking-[0.25em] text-white shadow-lg shadow-[#5D7B6F]/20 transition-all hover:bg-[#4a6358] active:scale-[0.98]"
                   >
-                    Bắt đầu ngay <PlayCircle className="h-5 w-5" />
+                    Chọn chế độ học <PlayCircle className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[600px]">
-                  <div className="rounded-sm border border-gray-100 bg-white px-6 py-6 shadow-2xl sm:px-10 sm:py-10">
-                    <DialogHeader className="mb-8">
-                      <DialogTitle className="border-b pb-4 text-center text-2xl font-normal uppercase tracking-[0.2em] text-[#5D7B6F]">
-                        Chọn chế độ làm bài
-                      </DialogTitle>
-                      <DialogDescription className="pt-2 text-center text-[12px] font-normal text-gray-400">
-                        Chọn chế độ và độ khó phù hợp với mục tiêu học tập của bạn
-                      </DialogDescription>
-                    </DialogHeader>
+                <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[550px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-center text-2xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
+                      Chọn chế độ làm bài
+                    </DialogTitle>
+                    <DialogDescription className="pt-2 text-center text-sm text-gray-500">
+                      Chọn chế độ và độ khó phù hợp với mục tiêu học tập của bạn
+                    </DialogDescription>
+                  </DialogHeader>
 
-                    <div className="grid gap-6">
-                      {/* Immediate Mode */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 border-b pb-2">
-                          <Zap className="h-5 w-5 text-green-500" />
-                          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#5D7B6F]">
-                            Chế độ luyện tập
-                          </h3>
-                        </div>
-                        <p className="text-xs text-gray-500">Xem đáp án và giải thích ngay sau mỗi câu</p>
-                        
-                        <div className="grid gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSelectMode('immediate', 'sequential')}
-                            disabled={startSessionMutation.isPending}
-                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-green-400 hover:bg-green-50"
-                          >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-100 text-green-600 transition-transform group-hover:scale-110">
-                              <Zap className="h-5 w-5" />
+                  <div className="space-y-6 py-6">
+                    {/* Mode Selection */}
+                    <div className="space-y-3">
+                      <label className="text-base font-semibold text-gray-700">
+                        Chế độ
+                      </label>
+                      <Select
+                        value={selectedMode}
+                        onValueChange={(value) => setSelectedMode(value as 'immediate' | 'review' | 'flashcard')}
+                      >
+                        <SelectTrigger className="h-14 text-base">
+                          <SelectValue placeholder="Chọn chế độ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="immediate" className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Zap className="h-5 w-5 text-green-600" />
+                              <div>
+                                <div className="font-semibold text-base">Chế độ luyện tập</div>
+                                <div className="text-sm text-gray-500">Xem đáp án ngay sau mỗi câu</div>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-gray-800">Học nhanh</span>
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSelectMode('immediate', 'random')}
-                            disabled={startSessionMutation.isPending}
-                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-green-400 hover:bg-green-50"
-                          >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-100 text-green-600 transition-transform group-hover:scale-110">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="3" />
-                                <path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12m11.32-11.32l2.12-2.12" />
+                          </SelectItem>
+                          <SelectItem value="review" className="py-4">
+                            <div className="flex items-center gap-3">
+                              <BookOpen className="h-5 w-5 text-blue-600" />
+                              <div>
+                                <div className="font-semibold text-base">Chế độ kiểm tra</div>
+                                <div className="text-sm text-gray-500">Chấm điểm sau khi nộp bài</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="flashcard" className="py-4">
+                            <div className="flex items-center gap-3">
+                              <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="2" y="6" width="20" height="12" rx="2" />
+                                <path d="M12 6v12" />
                               </svg>
+                              <div>
+                                <div className="font-semibold text-base">Chế độ lật thẻ</div>
+                                <div className="text-sm text-gray-500">Học theo phương pháp flashcard</div>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-gray-800">Học sâu</span>
-                          </Button>
-                        </div>
-                      </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                      {/* Review Mode */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 border-b pb-2">
-                          <BookOpen className="h-5 w-5 text-blue-500" />
-                          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#5D7B6F]">
-                            Chế độ kiểm tra
-                          </h3>
-                        </div>
-                        <p className="text-xs text-gray-500">Chấm điểm sau khi nộp bài</p>
-                        
-                        <div className="grid gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSelectMode('review', 'sequential')}
-                            disabled={startSessionMutation.isPending}
-                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-blue-400 hover:bg-blue-50"
-                          >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-100 text-blue-600 transition-transform group-hover:scale-110">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
-                                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
-                              </svg>
+                    {/* Difficulty Selection */}
+                    <div className="space-y-3">
+                      <label className="text-base font-semibold text-gray-700">
+                        Độ khó
+                      </label>
+                      <Select
+                        value={selectedDifficulty}
+                        onValueChange={(value) => setSelectedDifficulty(value as 'sequential' | 'random')}
+                      >
+                        <SelectTrigger className="h-14 text-base">
+                          <SelectValue placeholder="Chọn độ khó" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sequential" className="py-4">
+                            <div className="flex items-center gap-3">
+                              <AlignJustify className="h-5 w-5" />
+                              <div>
+                                <div className="font-semibold text-base">Theo thứ tự</div>
+                                <div className="text-sm text-gray-500">Câu hỏi hiển thị theo thứ tự</div>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-gray-800">Chế độ dễ</span>
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSelectMode('review', 'random')}
-                            disabled={startSessionMutation.isPending}
-                            className="group flex h-14 items-center justify-start gap-4 rounded-sm border border-gray-200 px-4 transition-all hover:border-blue-400 hover:bg-blue-50"
-                          >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-100 text-blue-600 transition-transform group-hover:scale-110">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
-                                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
-                                <path d="M6 16l-2 2m14-14l2-2M8 8L6 6m12 12l2 2" strokeLinecap="round" />
-                              </svg>
+                          </SelectItem>
+                          <SelectItem value="random" className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Shuffle className="h-5 w-5" />
+                              <div>
+                                <div className="font-semibold text-base">Ngẫu nhiên</div>
+                                <div className="text-sm text-gray-500">Câu hỏi được xáo trộn</div>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-gray-800">Chế độ khó</span>
-                          </Button>
-                        </div>
-                      </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
+
+                  <DialogFooter>
+                    <Button
+                      onClick={() => {
+                        setModeSelectOpen(false)
+                        handleSelectMode(selectedMode, selectedDifficulty)
+                      }}
+                      disabled={startSessionMutation.isPending}
+                      className="w-full h-14 text-base bg-[#5D7B6F] hover:bg-[#4a6358]"
+                    >
+                      {startSessionMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Đang khởi tạo...
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="mr-2 h-5 w-5" />
+                          Bắt đầu
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
                 </DialogContent>
               </Dialog>
 
@@ -540,9 +669,19 @@ export default function QuizDetailPage() {
                 <DialogContent className="w-[calc(100vw-2rem)] border-none bg-transparent p-0 sm:max-w-[500px]">
                   <div className="rounded-sm border border-gray-100 bg-white px-6 py-6 shadow-2xl sm:px-8 sm:py-8">
                     <DialogHeader className="mb-4">
-                      <DialogTitle className="text-center text-xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
-                        Bài quiz chưa hoàn thành
-                      </DialogTitle>
+                      <div className="flex items-center justify-between">
+                        <DialogTitle className="text-xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
+                          Bài quiz chưa hoàn thành
+                        </DialogTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={handleCloseResumeDialog}
+                        >
+                          <span className="text-xl text-gray-400 hover:text-gray-600">×</span>
+                        </Button>
+                      </div>
                       <DialogDescription asChild>
                         <div className="pt-3 space-y-3">
                           {/* Progress */}
@@ -574,6 +713,16 @@ export default function QuizDetailPage() {
                                       <Zap className="h-3 w-3" />
                                     </div>
                                     Luyện tập
+                                  </>
+                                ) : activeSessionInfo?.mode === 'flashcard' ? (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-purple-600">
+                                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                                        <path d="M12 6v12" />
+                                      </svg>
+                                    </div>
+                                    Lật thẻ
                                   </>
                                 ) : (
                                   <>
@@ -620,6 +769,22 @@ export default function QuizDetailPage() {
                                     Chế độ khó
                                   </>
                                 )}
+                                {activeSessionInfo?.mode === 'flashcard' && activeSessionInfo?.difficulty === 'sequential' && (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-purple-600">
+                                      <AlignJustify className="h-3 w-3" />
+                                    </div>
+                                    Theo thứ tự
+                                  </>
+                                )}
+                                {activeSessionInfo?.mode === 'flashcard' && activeSessionInfo?.difficulty === 'random' && (
+                                  <>
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-purple-600">
+                                      <Shuffle className="h-3 w-3" />
+                                    </div>
+                                    Ngẫu nhiên
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -660,6 +825,13 @@ export default function QuizDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Professional 0-100% Loading Overlay */}
+      <QuizLoadingOverlay 
+        isOpen={loadingOverlay.isOpen} 
+        progress={loadingOverlay.progress} 
+        status={loadingOverlay.status} 
+      />
     </div>
   )
 }
