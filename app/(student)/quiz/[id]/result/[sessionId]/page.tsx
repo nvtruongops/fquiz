@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import ExitMixQuizButton from '@/components/quiz/ExitMixQuizButton'
+import { FlashcardReviewButton } from '@/components/quiz/FlashcardReviewButton'
 
 interface ResultQuestion {
   _id: string
@@ -21,13 +22,20 @@ interface ResultQuestion {
 interface ResultData {
   sessionId: string
   quizId: string
-  mode: 'immediate' | 'review'
+  mode: 'immediate' | 'review' | 'flashcard'
   score: number
   totalQuestions: number
   completed_at: string
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: ResultQuestion[]
   is_temp?: boolean
+  flashcard_stats?: {
+    total_cards: number
+    cards_known: number
+    cards_unknown: number
+    time_spent_ms: number
+    current_round: number
+  }
 }
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
@@ -54,11 +62,96 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
     redirect(`/quiz/${quizId}/session/${sessionId}`)
   }
 
-  const { score, totalQuestions, mode, questions, completed_at, is_temp } = data
-  const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
+  const { score, totalQuestions, mode, questions, completed_at, is_temp, flashcard_stats } = data
+  const percentage = mode === 'flashcard' && flashcard_stats
+    ? Math.round((flashcard_stats.cards_known / flashcard_stats.total_cards) * 100)
+    : totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
   const scoreOnTen = totalQuestions > 0 ? (score / totalQuestions) * 10 : 0
   const scoreOnTenDisplay = Number.isInteger(scoreOnTen) ? scoreOnTen.toFixed(0) : scoreOnTen.toFixed(1)
   const completedDate = new Date(completed_at).toLocaleString()
+
+  // Flashcard mode display
+  if (mode === 'flashcard' && flashcard_stats) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#EAE7D6' }}>
+        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+          {/* Flashcard Summary Card */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h1 className="text-2xl font-bold" style={{ color: '#5D7B6F' }}>Kết quả Flashcard</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{completedDate}</p>
+              </div>
+              <Badge
+                className="text-sm px-3 py-1 capitalize"
+                style={{ backgroundColor: '#9333ea', color: '#fff', border: 'none' }}
+              >
+                Flashcard Mode
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-3xl font-bold text-gray-800">{flashcard_stats.total_cards}</p>
+                <p className="text-sm text-gray-500 mt-1">Tổng số thẻ</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-3xl font-bold text-green-600">{flashcard_stats.cards_known}</p>
+                <p className="text-sm text-gray-500 mt-1">Đã biết</p>
+              </div>
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <p className="text-3xl font-bold text-red-600">{flashcard_stats.cards_unknown}</p>
+                <p className="text-sm text-gray-500 mt-1">Chưa biết</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold text-gray-700">
+                  Tỷ lệ biết: <span style={{ color: '#5D7B6F' }}>{percentage}%</span>
+                </span>
+              </div>
+              <Progress
+                value={percentage}
+                className="h-3"
+                style={{ '--progress-foreground': '#5D7B6F' } as React.CSSProperties}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {flashcard_stats.cards_unknown > 0 && (
+              <div className="sm:col-span-2">
+                <FlashcardReviewButton
+                  sessionId={sessionId}
+                  quizId={quizId}
+                  unknownCount={flashcard_stats.cards_unknown}
+                />
+              </div>
+            )}
+            <Link href={`/quiz/${quizId}`} className="w-full">
+              <Button
+                className="w-full h-12 text-sm font-medium"
+                style={{ backgroundColor: '#5D7B6F', color: '#fff' }}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Học lại toàn bộ
+              </Button>
+            </Link>
+            <Link href="/dashboard" className="w-full">
+              <Button variant="outline" className="w-full h-12 text-sm font-medium">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
+          </div>
+
+          {is_temp && <ExitMixQuizButton />}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#EAE7D6' }}>

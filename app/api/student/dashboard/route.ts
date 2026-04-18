@@ -285,6 +285,13 @@ export async function GET(req: Request) {
         totalQuestions = derivedFromQuestions
       }
 
+      const isFlashcard = session.mode === 'flashcard'
+      const fcStats = session.flashcard_stats
+      const actualCorrectCount = isFlashcard && fcStats 
+        ? fcStats.cards_known
+        : session.user_answers?.filter((a: any) => a.is_correct)?.length || 0
+      const baseScore = isFlashcard && fcStats ? fcStats.cards_known : (session.score || 0)
+
       return {
         id: session._id.toString(),
         quizId,
@@ -295,9 +302,9 @@ export async function GET(req: Request) {
         sourceLabel: sourceLabelFromType(sourceType),
         sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
         status: 'completed' as const,
-        score: Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
+        score: Number(((baseScore / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
         maxScore: 10,
-        correctCount: session.user_answers.filter((a: any) => a.is_correct).length,
+        correctCount: actualCorrectCount,
         totalCount: totalQuestions,
         activityAt: session.completed_at,
         quizDeleted: false,
@@ -357,13 +364,19 @@ export async function GET(req: Request) {
           ? session.quiz_id.questions.length
           : 0
         const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
-        const answeredCount = Array.isArray(session.user_answers)
-          ? new Set(
-              session.user_answers
-                .map((a: any) => a.question_index)
-                .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
-            ).size
-          : 0
+        const isFlashcard = session.mode === 'flashcard'
+        const fcStats = session.flashcard_stats
+        
+        let answeredCount = 0
+        if (isFlashcard && fcStats) {
+             answeredCount = fcStats.cards_known + fcStats.cards_unknown
+        } else if (Array.isArray(session.user_answers)) {
+             answeredCount = new Set(
+                 session.user_answers
+                   .map((a: any) => a.question_index)
+                   .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+               ).size
+        }
 
         return {
           id: session._id.toString(),
@@ -377,7 +390,7 @@ export async function GET(req: Request) {
           status: 'active' as const,
           score: 0,
           maxScore: 10,
-          correctCount: answeredCount,
+          correctCount: answeredCount, // Note: For active session this shows answered_count
           totalCount: Math.max(totalQuestions, 0),
           activityAt: session.started_at,
         }

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose'
-import type { IQuizSession, UserAnswer } from '@/types/session'
+import type { IQuizSession, UserAnswer, FlashcardStats } from '@/types/session'
 import type { IQuestion } from '@/types/quiz'
 // Import referenced models to ensure they're registered
 import '@/models/User'
@@ -11,6 +11,17 @@ const UserAnswerSchema = new Schema<UserAnswer>(
     answer_index: { type: Number, required: true },
     answer_indexes: { type: [Number], required: false, default: undefined },
     is_correct: { type: Boolean, required: true },
+  },
+  { _id: false }
+)
+
+const FlashcardStatsSchema = new Schema<FlashcardStats>(
+  {
+    total_cards: { type: Number, required: true, default: 0 },
+    cards_known: { type: Number, required: true, default: 0 },
+    cards_unknown: { type: Number, required: true, default: 0 },
+    time_spent_ms: { type: Number, required: true, default: 0 },
+    current_round: { type: Number, required: true, default: 1 },
   },
   { _id: false }
 )
@@ -31,7 +42,7 @@ const QuizSessionSchema = new Schema<IQuizSession>(
   {
     student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     quiz_id: { type: Schema.Types.ObjectId, ref: 'Quiz', required: true },
-    mode: { type: String, enum: ['immediate', 'review'], required: true },
+    mode: { type: String, enum: ['immediate', 'review', 'flashcard'], required: true },
     difficulty: { type: String, enum: ['sequential', 'random'], required: true, default: 'sequential' },
     status: { type: String, enum: ['active', 'completed'], required: true, default: 'active' },
     user_answers: { type: [UserAnswerSchema], default: [] },
@@ -39,6 +50,7 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     question_order: { type: [Number], required: true, default: [] },
     questions_cache: { type: [QuestionCacheSchema], required: false },
     score: { type: Number, required: true, default: 0 },
+    flashcard_stats: { type: FlashcardStatsSchema, required: false },
     // TTL field for active sessions only.
     // Completed sessions will unset this field to keep result history.
     expires_at: { type: Date, required: false },

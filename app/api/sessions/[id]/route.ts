@@ -63,8 +63,12 @@ export async function GET(
 
     const currentIndex = queryParsed.data.question_index ?? session.current_question_index
 
+    // Use question_order to get the actual question index
+    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
+    const sessionTotalQuestions = questionOrder.length
+
     // If session is completed or currentIndex is out of bounds, return session info without question
-    if (currentIndex < 0 || currentIndex >= quiz.questions.length) {
+    if (currentIndex < 0 || currentIndex >= sessionTotalQuestions) {
       return NextResponse.json(
         {
           session: {
@@ -72,7 +76,7 @@ export async function GET(
             mode: session.mode,
             status: session.status,
             current_question_index: session.current_question_index,
-            totalQuestions: quiz.questions.length,
+            totalQuestions: sessionTotalQuestions,
             user_answers: session.user_answers,
             courseCode: quiz.course_code,
             categoryName: category?.name || 'Chưa phân loại',
@@ -80,6 +84,7 @@ export async function GET(
             started_at: session.started_at,
             paused_at: session.paused_at,
             total_paused_duration_ms: session.total_paused_duration_ms,
+            ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
           },
           question: null,
         },
@@ -87,8 +92,6 @@ export async function GET(
       )
     }
 
-    // Use question_order to get the actual question index
-    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
     const actualQuestionIndex = questionOrder[currentIndex]
     const rawQuestion = quiz.questions[actualQuestionIndex]
 
@@ -97,9 +100,11 @@ export async function GET(
     }
 
     // Req 12.3: exclude correct_answer and explanation when session is not completed
+    // Exception: flashcard mode always needs correct_answer and explanation
     const isCompleted = session.status === 'completed'
+    const isFlashcardMode = session.mode === 'flashcard'
 
-    const question = isCompleted
+    const question = (isCompleted || isFlashcardMode)
       ? {
           _id: rawQuestion._id,
           text: rawQuestion.text,
@@ -128,7 +133,7 @@ export async function GET(
           mode: session.mode,
           status: session.status,
           current_question_index: session.current_question_index,
-          totalQuestions: quiz.questions.length,
+          totalQuestions: sessionTotalQuestions,
           user_answers: session.user_answers,
           courseCode: quiz.course_code,
           categoryName: category?.name || 'Chưa phân loại',
@@ -136,6 +141,7 @@ export async function GET(
           started_at: session.started_at,
           paused_at: session.paused_at,
           total_paused_duration_ms: session.total_paused_duration_ms,
+          ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
         },
         question,
       },

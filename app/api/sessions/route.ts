@@ -28,48 +28,63 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const quizId = searchParams.get('quiz_id')
     if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
-      return NextResponse.json({ activeSession: null })
+      return NextResponse.json({ assessmentSession: null, learningSession: null })
     }
 
     await connectDB()
     const nowDate = new Date()
     const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
 
-    const activeSession = await QuizSession.findOne({
+    // Find all active sessions for this quiz (max 2: 1 assessment + 1 learning)
+    const activeSessions = await QuizSession.find({
       student_id: studentObjectId,
       quiz_id: new mongoose.Types.ObjectId(quizId),
       status: 'active',
       expires_at: { $gt: nowDate },
     })
       .sort({ started_at: -1 })
-      .lean() as any
+      .lean() as any[]
 
-    if (!activeSession) return NextResponse.json({ activeSession: null })
+    if (!activeSessions || activeSessions.length === 0) {
+      return NextResponse.json({ assessmentSession: null, learningSession: null })
+    }
 
     // Get quiz to retrieve totalQuestions
-    const quiz = await Quiz.findById(activeSession.quiz_id).select('questions').lean()
+    const quiz = await Quiz.findById(quizId).select('questions').lean()
     const totalQuestions = (quiz?.questions ?? []).length
 
-    const uniqueAnswered = new Set(
-      (activeSession.user_answers ?? [])
-        .map((a: any) => a.question_index)
-        .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
-    )
+    // Separate sessions by group
+    const ASSESSMENT_MODES = ['immediate', 'review']
+    const LEARNING_MODES = ['flashcard']
 
-    return NextResponse.json({
-      activeSession: {
-        sessionId: activeSession._id,
-        mode: activeSession.mode,
-        difficulty: activeSession.difficulty,
-        current_question_index: activeSession.current_question_index,
+    const assessmentSession = activeSessions.find(s => ASSESSMENT_MODES.includes(s.mode))
+    const learningSession = activeSessions.find(s => LEARNING_MODES.includes(s.mode))
+
+    const formatSession = (session: any) => {
+      if (!session) return null
+      const uniqueAnswered = new Set(
+        (session.user_answers ?? [])
+          .map((a: any) => a.question_index)
+          .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
+      )
+      return {
+        sessionId: session._id,
+        mode: session.mode,
+        difficulty: session.difficulty,
+        current_question_index: session.current_question_index,
         totalQuestions: totalQuestions,
         answeredCount: uniqueAnswered.size,
-        started_at: activeSession.started_at,
-      },
+        started_at: session.started_at,
+      }
+    }
+
+    return NextResponse.json({
+      assessmentSession: formatSession(assessmentSession),
+      learningSession: formatSession(learningSession),
     })
   } catch (err) {
     console.error('GET /api/sessions error:', err)
-    return NextResponse.json({ activeSession: null })
+    return NextResponse.json({ assessmentSession: null, learningSession: null })
   }
 }/**
  * POST /api/sessions
@@ -182,15 +197,20 @@ export async function POST(req: Request) {
 
     const effectiveQuizObjectId = new mongoose.Types.ObjectId(effectiveQuizId)
 
+    // Define mode groups
+    const ASSESSMENT_MODES = ['immediate', 'review']
+    const LEARNING_MODES = ['flashcard']
+    const currentModeGroup = LEARNING_MODES.includes(mode) ? 'learning' : 'assessment'
+
     // Expired cleanup and active lookup are independent and can run in parallel.
-    const [, activeSession] = await Promise.all([
+    const [, activeSessions] = await Promise.all([
       QuizSession.deleteMany({
         student_id: studentObjectId,
         quiz_id: effectiveQuizObjectId,
         status: 'active',
         expires_at: { $lte: nowDate },
       }),
-      QuizSession.findOne({
+      QuizSession.find({
         student_id: studentObjectId,
         quiz_id: effectiveQuizObjectId,
         status: 'active',
@@ -200,43 +220,52 @@ export async function POST(req: Request) {
         .lean(),
     ])
 
-    if (activeSession && action !== 'continue' && action !== 'restart') {
+    // Find active session in the same group
+    const activeSessionInGroup = (activeSessions as any[])?.find((s: any) => {
+      if (currentModeGroup === 'learning') {
+        return LEARNING_MODES.includes(s.mode)
+      } else {
+        return ASSESSMENT_MODES.includes(s.mode)
+      }
+    })
+
+    if (activeSessionInGroup && action !== 'continue' && action !== 'restart') {
       const uniqueAnswered = new Set(
-        (activeSession.user_answers ?? [])
+        (activeSessionInGroup.user_answers ?? [])
           .map((answer: { question_index?: number }) => answer.question_index)
           .filter((idx: unknown): idx is number => Number.isInteger(idx as number) && (idx as number) >= 0)
       )
 
       return NextResponse.json(
         {
-          error: 'Bạn có một bài quiz chưa hoàn thành.',
+          error: `Bạn có một bài ${currentModeGroup === 'learning' ? 'lật thẻ' : 'quiz'} chưa hoàn thành.`,
           code: 'ACTIVE_SESSION_EXISTS',
           activeSession: {
-            sessionId: activeSession._id,
-            mode: activeSession.mode,
-            difficulty: activeSession.difficulty,
-            current_question_index: activeSession.current_question_index,
+            sessionId: activeSessionInGroup._id,
+            mode: activeSessionInGroup.mode,
+            difficulty: activeSessionInGroup.difficulty,
+            current_question_index: activeSessionInGroup.current_question_index,
             totalQuestions: quizQuestions.length,
             answeredCount: uniqueAnswered.size,
-            started_at: activeSession.started_at,
+            started_at: activeSessionInGroup.started_at,
           },
         },
         { status: 409 }
       )
     }
 
-    if (activeSession && action === 'continue') {
+    if (activeSessionInGroup && action === 'continue') {
       const currentIndex =
-        Number.isInteger(activeSession.current_question_index) && activeSession.current_question_index >= 0
-          ? activeSession.current_question_index
+        Number.isInteger(activeSessionInGroup.current_question_index) && activeSessionInGroup.current_question_index >= 0
+          ? activeSessionInGroup.current_question_index
           : 0
       const safeIndex = Math.min(currentIndex, Math.max(quizQuestions.length - 1, 0))
 
       return NextResponse.json(
         {
-          sessionId: activeSession._id,
-          mode: activeSession.mode,
-          difficulty: activeSession.difficulty,
+          sessionId: activeSessionInGroup._id,
+          mode: activeSessionInGroup.mode,
+          difficulty: activeSessionInGroup.difficulty,
           resumed: true,
           totalQuestions: quizQuestions.length,
           currentQuestionIndex: safeIndex,
@@ -245,12 +274,9 @@ export async function POST(req: Request) {
       )
     }
 
-    if (activeSession && action === 'restart') {
-      await QuizSession.deleteMany({
-        student_id: studentObjectId,
-        quiz_id: effectiveQuizObjectId,
-        status: 'active',
-      })
+    if (activeSessionInGroup && action === 'restart') {
+      // Delete only the session in the same group
+      await QuizSession.deleteOne({ _id: activeSessionInGroup._id })
       // Return empty response to trigger mode selection dialog
       return NextResponse.json({}, { status: 200 })
     }
@@ -264,6 +290,15 @@ export async function POST(req: Request) {
       ? shuffleArray([...Array(quizQuestions.length).keys()])
       : Array.from({ length: quizQuestions.length }, (_, i) => i)
 
+    // Initialize flashcard stats if mode is flashcard
+    const flashcardStats = mode === 'flashcard' ? {
+      total_cards: quizQuestions.length,
+      cards_known: 0,
+      cards_unknown: 0,
+      time_spent_ms: 0,
+      current_round: 1,
+    } : undefined
+
     const session = await QuizSession.create({
       student_id: studentObjectId,
       quiz_id: effectiveQuizObjectId,
@@ -274,6 +309,7 @@ export async function POST(req: Request) {
       question_order: questionOrder,
       user_answers: [],
       score: 0,
+      flashcard_stats: flashcardStats,
       expires_at: expiresAt,
       started_at: now,
       last_activity_at: now,

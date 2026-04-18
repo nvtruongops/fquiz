@@ -8,11 +8,19 @@ export interface UserAnswer {
   is_correct: boolean
 }
 
+export interface FlashcardStats {
+  total_cards: number
+  cards_known: number
+  cards_unknown: number
+  time_spent_ms: number
+  current_round: number
+}
+
 export interface IQuizSession {
   _id: Types.ObjectId
   student_id: Types.ObjectId
   quiz_id: Types.ObjectId
-  mode: 'immediate' | 'review'
+  mode: 'immediate' | 'review' | 'flashcard'
   difficulty: 'sequential' | 'random' // sequential = theo thứ tự, random = xáo trộn
   status: 'active' | 'completed'
   user_answers: UserAnswer[]
@@ -20,6 +28,7 @@ export interface IQuizSession {
   question_order: number[] // Array of original question indices in shuffled order
   questions_cache?: IQuestion[] // Cached questions to avoid DB query on every answer
   score: number
+  flashcard_stats?: FlashcardStats // Statistics for flashcard mode
   expires_at?: Date
   started_at: Date
   completed_at?: Date
