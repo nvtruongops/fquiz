@@ -147,8 +147,12 @@ export async function POST(
     await session.save()
 
     // Prepare full return data to avoid extra GET request on the frontend!
-    const quiz = await Quiz.findById(session.quiz_id).populate('category_id').lean()
-    const category = quiz?.category_id
+    // Optimized: Select only necessary fields
+    const quiz = await Quiz.findById(session.quiz_id)
+      .populate('category_id', 'name')
+      .select('title course_code questions category_id')
+      .lean()
+    const category = quiz?.category_id as any
 
     let nextQuestion = null
     if (!isLastQuestion && quiz) {

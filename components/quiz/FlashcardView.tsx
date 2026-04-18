@@ -148,11 +148,10 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
     return 'leading-normal'
   }
 
-  return (
-    <div className="w-full h-full max-w-3xl mx-auto flex flex-col">
+    <div className="w-full h-full max-w-3xl mx-auto flex flex-col" key={question._id}>
       {/* Flashcard container */}
       <div 
-        className="perspective-1000 transition-all duration-300 flex-1 min-h-0"
+        className="perspective-1000 transition-all duration-300 flex-1 min-h-0 animate-in fade-in slide-in-from-bottom-2 duration-500"
         onClick={handleFlip}
       >
         <div

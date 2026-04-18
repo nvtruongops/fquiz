@@ -55,21 +55,29 @@ export function QuizLoadingOverlay({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#F9F9F7]/95 backdrop-blur-md">
-      <div className="w-full max-w-md px-8 text-center space-y-6">
-        <h2 className="text-sm md:text-base font-semibold tracking-[0.2em] text-[#5D7B6F] uppercase animate-pulse">
-          {status}
-        </h2>
-        
-        <div className="relative w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-          <div 
-            className="absolute left-0 top-0 h-full bg-[#5D7B6F] transition-all duration-100 ease-out"
-            style={{ width: `${Math.min(100, Math.round(progress))}%` }}
-          />
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#F9F9F7]/98 backdrop-blur-xl">
+      <div className="w-full max-w-md px-8 text-center space-y-10 animate-in fade-in zoom-in duration-500">
+        <div className="space-y-3">
+          <h2 className="text-[10px] md:text-xs font-bold tracking-[0.3em] text-[#5D7B6F]/60 uppercase">
+            {status || 'Đang xử lý'}
+          </h2>
+          <div className="relative w-full h-[2px] bg-[#5D7B6F]/10 rounded-full overflow-hidden">
+            <div 
+              className="absolute left-0 top-0 h-full bg-[#5D7B6F] shadow-[0_0_8px_rgba(93,123,111,0.5)] transition-all duration-300 ease-out"
+              style={{ width: `${Math.min(100, Math.round(progress))}%` }}
+            />
+          </div>
         </div>
         
-        <p className="text-4xl md:text-5xl font-light tracking-tighter text-[#5D7B6F]">
-          {Math.min(100, Math.round(progress))}%
+        <div className="relative inline-block">
+          <p className="text-6xl md:text-7xl font-light tracking-tighter text-[#5D7B6F] tabular-nums">
+            {Math.min(100, Math.round(progress))}
+          </p>
+          <span className="absolute -top-1 -right-4 text-sm font-medium text-[#5D7B6F]/40">%</span>
+        </div>
+
+        <p className="text-[10px] text-[#5D7B6F]/40 italic tracking-widest uppercase">
+          Vui lòng đợi trong giây lát
         </p>
       </div>
     </div>
