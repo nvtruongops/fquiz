@@ -94,7 +94,7 @@ export async function GET(
         quizId: session.quiz_id,
         mode: session.mode,
         score: session.score,
-        totalQuestions: quizQuestions.length,
+        totalQuestions: questionOrder.length,
         completed_at: session.completed_at,
         user_answers: sessionAnswers,
         questions,

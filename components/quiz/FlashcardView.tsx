@@ -4,10 +4,16 @@ import { useState, forwardRef, useImperativeHandle, useCallback, useEffect } fro
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { RotateCw, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import type { IQuestion } from '@/types/quiz'
 
 interface FlashcardViewProps {
-  question: IQuestion
+  question: {
+    _id: string
+    text: string
+    options: string[]
+    correct_answer: number[]
+    explanation?: string
+    image_url?: string
+  }
   questionNumber: number
   totalQuestions: number
   onAnswer: (knows: boolean) => void
