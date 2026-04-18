@@ -147,7 +147,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
             </Link>
           </div>
 
-          {is_temp && <ExitMixQuizButton />}
+          {is_temp && <ExitMixQuizButton sessionId={sessionId} />}
         </div>
       </div>
     )
