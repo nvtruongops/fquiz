@@ -226,8 +226,9 @@ export default function QuizDetailPage() {
       setActiveSessionInfo(null)
       setResumeDialogOpen(false)
       
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const targetUrl = data.mode === 'flashcard' 
-        ? `/quiz/${quizId}/session/${nextSessionId}/flashcard`
+        ? (isMobile ? `/quiz/${quizId}/session/${nextSessionId}/flashcard/mobile` : `/quiz/${quizId}/session/${nextSessionId}/flashcard`)
         : `/quiz/${quizId}/session/${nextSessionId}`
 
       // Preload the target page's data to eliminate double loading
