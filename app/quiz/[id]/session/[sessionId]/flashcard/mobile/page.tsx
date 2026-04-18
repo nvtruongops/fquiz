@@ -7,7 +7,6 @@ import { useFlashcardSession } from '@/hooks/useFlashcardSession'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import type { IQuestion } from '@/types/quiz'
 
 interface SwipeState {
   startX: number
@@ -22,7 +21,14 @@ function MobileFlashcardView({
   onAnswer,
   isLoading = false,
 }: {
-  question: IQuestion
+  question: {
+    _id: string
+    text: string
+    options: string[]
+    correct_answer: number[]
+    explanation?: string
+    image_url?: string
+  }
   questionNumber: number
   totalQuestions: number
   onAnswer: (knows: boolean) => void
