@@ -44,7 +44,7 @@ export async function GET(
       )
     }
 
-    const quiz = await Quiz.findById(session.quiz_id).lean()
+    const quiz = await Quiz.findById(session.quiz_id).select('questions').lean()
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
