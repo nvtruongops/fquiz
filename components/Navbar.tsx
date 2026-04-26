@@ -62,14 +62,14 @@ export default function Navbar({ initialUser }: NavbarProps) {
         "sticky top-0 z-50 transition-all duration-300 w-full",
         isScrolled ? "bg-white/80 backdrop-blur-xl border-b border-[#5D7B6F]/10 shadow-sm" : "bg-[#EAE7D6]/80 backdrop-blur-md"
       )}>
-        <div className="flex items-center justify-between px-4 md:px-12 py-3 md:py-4 max-w-7xl mx-auto relative">
+        <div className="flex items-center justify-between px-4 md:px-12 py-2 md:py-2.5 max-w-7xl mx-auto relative">
           {/* Logo - Left Section */}
           <div className="flex-1 flex justify-start">
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer shrink-0">
-              <div className="w-10 h-10 rounded-xl bg-[#5D7B6F] flex items-center justify-center shadow-lg shadow-[#5D7B6F]/20 group-hover:rotate-6 transition-transform">
-                <BookOpen className="w-5 h-5 text-white" />
+            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#5D7B6F] flex items-center justify-center shadow-lg shadow-[#5D7B6F]/20 group-hover:rotate-6 transition-transform">
+                <BookOpen className="w-4 h-4 text-white" />
               </div>
-              <span className="font-black text-[#5D7B6F] text-2xl tracking-tighter hidden sm:block">FQuiz</span>
+              <span className="font-black text-[#5D7B6F] text-xl tracking-tighter hidden sm:block">FQuiz</span>
             </Link>
           </div>
 
@@ -84,18 +84,18 @@ export default function Navbar({ initialUser }: NavbarProps) {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      'flex flex-col items-center gap-1 px-3 lg:px-4 py-1.5 rounded-2xl transition-all relative group min-w-[70px]',
+                      'flex flex-col items-center gap-0.5 px-3 lg:px-4 py-1 rounded-2xl transition-all relative group min-w-[65px]',
                       isActive
                         ? 'text-[#5D7B6F]'
                         : 'text-gray-400 hover:text-[#5D7B6F] hover:bg-[#5D7B6F]/5'
                     )}
                   >
-                    <Icon className={cn("w-5 h-5 transition-transform group-hover:scale-110", isActive && "scale-110 font-black")} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest block whitespace-nowrap">
+                    <Icon className={cn("w-4 h-4 transition-transform group-hover:scale-110", isActive && "scale-110 font-black")} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest block whitespace-nowrap">
                       {link.name}
                     </span>
                     {isActive && (
-                      <div className="absolute -bottom-1 w-1 h-1 bg-[#5D7B6F] rounded-full animate-in fade-in zoom-in duration-300" />
+                      <div className="absolute -bottom-0.5 w-1 h-1 bg-[#5D7B6F] rounded-full animate-in fade-in zoom-in duration-300" />
                     )}
                   </Link>
                 )
@@ -108,21 +108,21 @@ export default function Navbar({ initialUser }: NavbarProps) {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 p-1.5 hover:bg-[#5D7B6F]/5 rounded-full transition-all">
+                  <Button variant="ghost" className="flex items-center gap-2 p-1 hover:bg-[#5D7B6F]/5 rounded-full transition-all">
                     {user.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={user.avatarUrl}
                         alt="avatar"
-                        className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-md"
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-md"
                       />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#A4C3A2] flex items-center justify-center text-[#5D7B6F] font-black text-sm ring-2 ring-white shadow-md">
+                      <div className="w-8 h-8 rounded-full bg-[#A4C3A2] flex items-center justify-center text-[#5D7B6F] font-black text-[13px] ring-2 ring-white shadow-md">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <div className="hidden sm:block text-left mr-1">
-                      <p className="text-[12px] font-black text-[#5D7B6F] leading-tight tracking-tight">{user.name}</p>
+                    <div className="hidden sm:block text-left mr-0.5">
+                      <p className="text-[11px] font-black text-[#5D7B6F] leading-tight tracking-tight">{user.name}</p>
                     </div>
                     <ChevronDown className="w-3 h-3 text-gray-400" />
                   </Button>
@@ -180,8 +180,8 @@ export default function Navbar({ initialUser }: NavbarProps) {
 
       {/* Mobile Bottom Navigation */}
       {user && (
-        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
-          <div className="bg-white/90 backdrop-blur-xl border border-[#5D7B6F]/10 rounded-3xl shadow-2xl shadow-[#5D7B6F]/20 px-4 py-3 flex items-center justify-around">
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-sm">
+          <div className="bg-white/95 backdrop-blur-xl border border-[#5D7B6F]/10 rounded-[28px] shadow-2xl shadow-[#5D7B6F]/20 px-2 py-2 flex items-center justify-around">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname?.startsWith(link.href + '/')
               const Icon = link.icon
@@ -195,13 +195,13 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   )}
                 >
                   <div className={cn(
-                    "w-10 h-10 flex items-center justify-center rounded-xl transition-all",
+                    "w-9 h-9 flex items-center justify-center rounded-xl transition-all",
                     isActive ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "hover:bg-[#5D7B6F]/5"
                   )}>
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                   </div>
                   <span className={cn(
-                    "text-[9px] font-bold uppercase tracking-tighter truncate w-full text-center px-1",
+                    "text-[8px] font-black uppercase tracking-tighter truncate w-full text-center px-0.5",
                     isActive ? "text-[#5D7B6F]" : "text-gray-400"
                   )}>
                     {link.name}

@@ -76,9 +76,9 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-in fade-in duration-700 pb-12">
       {/* ── Welcome Header ────────────────────────────────────────────────── */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <p className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-[0.3em]">Bảng điều khiển học tập</p>
-          <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+        <div className="space-y-1 md:space-y-2">
+          <p className="text-[10px] md:text-[11px] font-black text-[#5D7B6F] uppercase tracking-[0.3em]">Bảng điều khiển học tập</p>
+          <h1 className="text-2xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
             Chào {user?.name || 'Bạn học'}, <br className="hidden md:block" /> 
             hôm nay học gì nhỉ? 👋
           </h1>
@@ -107,9 +107,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Continue Learning Card */}
-        <Card className="lg:col-span-2 rounded-[32px] border-none bg-white shadow-2xl shadow-[#5D7B6F]/5 overflow-hidden group">
+        <Card className="lg:col-span-2 rounded-[32px] border-none bg-white shadow-2xl shadow-[#5D7B6F]/5 overflow-hidden group relative">
           <CardContent className="p-0">
-            <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="relative p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
               <div className="relative shrink-0">
                 <div className="w-24 h-24 rounded-3xl bg-[#5D7B6F]/10 flex items-center justify-center text-[#5D7B6F]">
                   <GraduationCap className="w-12 h-12" />
@@ -147,7 +147,7 @@ export default function DashboardPage() {
             </div>
             
             {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#5D7B6F]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#5D7B6F]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none select-none" />
           </CardContent>
         </Card>
 
