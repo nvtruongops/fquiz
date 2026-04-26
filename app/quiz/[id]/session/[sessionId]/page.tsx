@@ -11,6 +11,7 @@ import QuizSidebar from '@/components/quiz/QuizSidebar'
 import { QuizTimer } from '@/components/QuizTimer'
 import { useQuizSessionStore } from '@/store/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
+import QuizSessionMobilePage from './mobile/page'
 import { QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 import { cn } from '@/lib/utils'
 import { withCsrfHeaders } from '@/lib/csrf'
@@ -135,6 +136,7 @@ export default function QuizSessionPage() {
     setLastAnswerResult,
   } = useQuizSessionStore()
 
+  const [isMobile, setIsMobile] = useState(false)
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
   const submittedRef = useRef(false) // Synchronous guard to prevent double-submit on fast clicks
@@ -146,6 +148,14 @@ export default function QuizSessionPage() {
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const [preloadProgress, setPreloadProgress] = useState(0)
   const lastSyncedQuestionIndexRef = useRef<number | null>(null)
+
+  // Handle responsive check
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
 
@@ -576,6 +586,10 @@ export default function QuizSessionPage() {
         </div>
       </div>
     )
+  }
+
+  if (isMobile) {
+    return <QuizSessionMobilePage />
   }
 
   // Wait for server hydration before rendering to avoid showing wrong question index

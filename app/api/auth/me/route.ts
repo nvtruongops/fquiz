@@ -38,6 +38,7 @@ export async function GET(request: Request) {
 
     const response = NextResponse.json({
       user: {
+        _id: payload.userId,
         name: user.username,
         role: user.role,
         avatarUrl,

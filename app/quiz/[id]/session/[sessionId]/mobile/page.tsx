@@ -748,7 +748,7 @@ export default function QuizSessionMobilePage() {
       </ScrollArea>
 
       {/* Bottom Navigation */}
-      <div className="sticky bottom-0 border-t-2 border-gray-200 bg-white p-4 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 border-t-2 border-gray-200 bg-white p-4 pb-8 md:pb-4 shadow-lg z-50">
         <div className="flex items-center justify-between gap-3">
           {/* Back/Next buttons on the left */}
           <div className="flex items-center gap-2">

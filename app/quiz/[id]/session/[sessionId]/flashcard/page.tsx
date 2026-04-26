@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/FlashcardView'
 import { useFlashcardSession } from '@/hooks/useFlashcardSession'
+import MobileFlashcardSessionPage from './mobile/page'
 import { QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -24,9 +25,18 @@ export default function FlashcardSessionPage() {
   const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
     useFlashcardSession(resolvedSessionId)
 
+  const [isMobile, setIsMobile] = useState(false)
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
   const flashcardRef = useRef<FlashcardViewRef>(null)
   
+  // Handle responsive check
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Lock submissions to prevent multi-hit logic
   const submittedRef = useRef(false)
 
@@ -115,6 +125,10 @@ export default function FlashcardSessionPage() {
       window.removeEventListener('keydown', handleKeyPress)
     }
   }, [isSubmitting, question, handleAnswer])
+
+  if (isMobile) {
+    return <MobileFlashcardSessionPage />
+  }
 
   if (isLoading || isPreloading) {
     return (
