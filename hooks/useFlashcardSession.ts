@@ -87,7 +87,8 @@ export function useFlashcardSession(sessionId: string) {
   const answerMutation = useMutation<
     FlashcardAnswerResponse,
     Error,
-    { knows: boolean; questionIndex: number }
+    { knows: boolean; questionIndex: number },
+    { previousData: FlashcardSessionData | undefined }
   >({
     mutationFn: async ({ knows, questionIndex }) => {
       const res = await fetch(
