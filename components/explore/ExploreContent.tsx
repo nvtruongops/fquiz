@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
-  Search, GraduationCap, Users, Clock3,
-  Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Pin, PinOff, Shuffle,
+  Search, Users, Clock3, Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, 
+  Pin, PinOff, Shuffle, Sparkles, SearchCode, BookOpen
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -43,10 +43,10 @@ const PREVIEW_COUNT = 4
 const PAGE_SIZE = 20
 
 function formatStudyDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} phút`
+  if (minutes < 60) return `${minutes}m`
   const hours = Math.floor(minutes / 60)
   const rem = minutes % 60
-  return rem === 0 ? `${hours} giờ` : `${hours} giờ ${rem} phút`
+  return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`
 }
 
 async function fetchCategories(): Promise<{ data: Category[] }> {
@@ -92,8 +92,6 @@ async function fetchQuizzes(params: {
   return res.json()
 }
 
-// ── Quiz Card ──────────────────────────────────────────────────────────────
-
 function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -119,62 +117,81 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
     onError: (e: Error) => toast.error(e.message),
   })
 
+  const normTitle = (quiz.title || '').trim().toLowerCase()
+  const normCode = (quiz.course_code || '').trim().toLowerCase()
+  const showCourseCodeBadge = quiz.course_code && normTitle !== normCode
+
   return (
     <div className="group block relative">
-      <Card className="h-full rounded-[24px] bg-white border-2 border-[#A4C3A2]/10 group-hover:border-[#5D7B6F]/40 overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#5D7B6F]/10">
-        <CardContent className="p-5 flex flex-col h-full">
-          <div className="flex items-start justify-between mb-3">
-            <Badge className="bg-[#D7F9FA] text-[#5D7B6F] border-none px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase">
-              {quiz.categoryName}
-            </Badge>
+      <Card className="h-full rounded-[20px] bg-white border border-gray-100 group-hover:border-[#5D7B6F]/40 overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#5D7B6F]/10">
+        <CardContent className="p-4 flex flex-col h-full">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex flex-col gap-1 min-h-[3rem]">
+               <Badge className="bg-slate-100 text-slate-500 border-none px-1.5 py-0 rounded-md text-[8px] font-black tracking-widest uppercase w-fit">
+                  {quiz.categoryName}
+               </Badge>
+               {showCourseCodeBadge && (
+                  <div className="flex items-center gap-1 px-1.5 py-0 bg-[#5D7B6F]/10 rounded-md w-fit">
+                    <SearchCode className="w-2.5 h-2.5 text-[#5D7B6F]" />
+                    <span className="text-[9px] font-black text-[#5D7B6F] uppercase tracking-wider">{quiz.course_code}</span>
+                  </div>
+               )}
+            </div>
             {isLoggedIn && (
               <Button
                 variant="ghost" size="icon"
                 disabled={saveMutation.isPending}
                 onClick={(e) => { e.stopPropagation(); saveMutation.mutate() }}
-                className={cn('w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:bg-[#5D7B6F] hover:text-white transition-all shadow-sm active:scale-90', saveMutation.isPending && 'animate-pulse')}
+                className={cn('w-7 h-7 rounded-xl bg-slate-50 text-slate-400 hover:bg-[#5D7B6F] hover:text-white transition-all shadow-sm active:scale-90', saveMutation.isPending && 'animate-pulse')}
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
               </Button>
             )}
           </div>
 
           <Link href={`/quiz/${quiz.id}`} className="flex-1 flex flex-col">
-            <h4 className="text-base font-black text-gray-900 mb-3 leading-tight group-hover:text-[#5D7B6F] transition-colors line-clamp-2 min-h-[2.5rem]">
-              {quiz.course_code}
+            <h4 className="text-[15px] font-black text-slate-900 mb-1 leading-tight group-hover:text-[#5D7B6F] transition-colors line-clamp-2 min-h-[2.5rem]">
+              {quiz.title || quiz.course_code}
             </h4>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+            
+            <p className="mb-3 text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Users className="w-2.5 h-2.5" />
               {quiz.source_label}{quiz.source_creator_name ? ` • ${quiz.source_creator_name}` : ''}
             </p>
 
             {hasAttempt && (
-              <div className={`mb-2 ${isPassed ? 'text-[#166534]' : 'text-[#B91C1C]'}`}>
-                <p className="text-[10px] uppercase tracking-widest font-black">Đã làm</p>
-                <p className="text-sm font-black leading-tight">
-                  {scoreOnTen.toFixed(2)}/10
-                  <span className="text-[10px] font-bold text-gray-400 ml-1">({quiz.latestCorrectCount}/{quiz.latestTotalCount ?? quiz.questionCount})</span>
-                </p>
-                <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-gray-500">
-                  <Clock3 className="h-3 w-3 text-[#5D7B6F]" />
-                  {formatStudyDuration(totalStudyMinutes)}
-                </p>
+              <div className={cn(
+                "mb-3 p-2 rounded-xl border",
+                isPassed ? 'bg-green-50/50 border-green-100 text-green-700' : 'bg-red-50/50 border-red-100 text-red-700'
+              )}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-1.5">
+                    <p className="text-sm font-black leading-none">{scoreOnTen.toFixed(1)}/10</p>
+                    <p className="text-[8px] font-bold opacity-60">({quiz.latestCorrectCount}/{quiz.latestTotalCount ?? quiz.questionCount})</p>
+                  </div>
+                  <p className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider opacity-60">
+                    <Clock3 className="h-2.5 w-2.5" />
+                    {formatStudyDuration(totalStudyMinutes)}
+                  </p>
+                </div>
               </div>
             )}
 
-            <div className="mt-auto relative min-h-[40px]">
-              <div className="flex items-center gap-4 py-2 border-t border-[#A4C3A2]/10 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-1">
-                <div className="flex items-center gap-1 text-gray-400">
-                  <GraduationCap className="w-3.5 h-3.5 text-[#A4C3A2]" />
-                  <span className="text-[10px] uppercase tracking-widest">{quiz.questionCount} câu</span>
+            <div className="mt-auto pt-3 border-t border-slate-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black text-slate-900 leading-none">{quiz.questionCount}</span>
+                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Câu hỏi</span>
+                  </div>
+                  <div className="w-px h-5 bg-slate-100" />
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black text-slate-900 leading-none">{quiz.studentCount}</span>
+                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Lượt luyện</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-gray-400">
-                  <Users className="w-3.5 h-3.5 text-[#A4C3A2]" />
-                  <span className="text-[10px] uppercase tracking-widest">{quiz.studentCount} luyện</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                <div className="flex items-center gap-2 bg-[#5D7B6F] text-white px-5 py-2 rounded-xl shadow-lg font-black uppercase tracking-[0.15em] text-[10px]">
-                  Ôn tập ngay <ArrowRight className="w-3.5 h-3.5" />
+                <div className="w-7 h-7 rounded-xl bg-slate-900 text-white flex items-center justify-center group-hover:bg-[#5D7B6F] transition-colors shadow-lg shadow-slate-900/10">
+                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
             </div>
@@ -185,16 +202,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
   )
 }
 
-// ── Category Section with expand + infinite scroll ─────────────────────────
-
-function CategorySection({
-  category, isLoggedIn, isPinned, onPin,
-}: {
-  category: Category
-  isLoggedIn: boolean
-  isPinned: boolean
-  onPin: (id: string) => void
-}) {
+function CategorySection({ category, isLoggedIn, isPinned, onPin }: { category: Category; isLoggedIn: boolean; isPinned: boolean; onPin: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
@@ -206,8 +214,7 @@ function CategorySection({
 
   const infiniteQuery = useInfiniteQuery({
     queryKey: ['explore', 'cat-infinite', category.id, isLoggedIn],
-    queryFn: ({ pageParam = 0 }) =>
-      fetchQuizzes({ categoryId: category.id, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
+    queryFn: ({ pageParam = 0 }) => fetchQuizzes({ categoryId: category.id, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((s, p) => s + p.data.length, 0)
@@ -217,95 +224,63 @@ function CategorySection({
     staleTime: 5 * 60 * 1000,
   })
 
-  // Infinite scroll observer - trigger when sentinel is visible (2 rows before end)
   useEffect(() => {
     if (!expanded || !loadMoreRef.current) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
-          infiniteQuery.fetchNextPage()
-        }
-      },
-      { threshold: 0, rootMargin: '400px' } // trigger 400px before sentinel is visible
-    )
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
+        infiniteQuery.fetchNextPage()
+      }
+    }, { threshold: 0, rootMargin: '400px' })
     observer.observe(loadMoreRef.current)
     return () => observer.disconnect()
   }, [expanded, infiniteQuery])
 
-  const previewQuizzes = previewQuery.data?.data ?? []
-  const allQuizzes = expanded
-    ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? []
-    : previewQuizzes
-
+  const quizzes = expanded ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? [] : previewQuery.data?.data ?? []
   const total = category.publishedQuizCount ?? 0
   if (total === 0 && !previewQuery.isLoading) return null
 
   return (
-    <section className="space-y-3">
-      {/* Section header */}
-      <div className="flex items-center gap-2">
-        <div className={cn('w-1.5 h-5 rounded-full', isPinned ? 'bg-[#5D7B6F]' : 'bg-[#A4C3A2]')} />
-        <h3 className="text-lg font-black text-[#5D7B6F]">{category.name}</h3>
-        {total > 0 && (
-          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-            {total} bộ đề
-          </span>
-        )}
-        {/* Pin button - next to category name */}
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shadow-sm', isPinned ? 'bg-[#5D7B6F] text-white' : 'bg-white text-[#5D7B6F] border border-slate-100')}>
+            <BookOpen className="w-4.5 h-4.5" />
+          </div>
+          <div>
+             <h3 className="text-base font-black text-slate-900 leading-none">{category.name}</h3>
+             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{total} bộ đề</p>
+          </div>
+        </div>
         <button
           onClick={() => onPin(category.id)}
-          title={isPinned ? 'Bỏ ghim' : 'Ghim danh mục này lên đầu'}
           className={cn(
-            'flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg transition-all',
-            isPinned
-              ? 'text-[#5D7B6F] bg-[#5D7B6F]/10 hover:bg-[#5D7B6F]/20'
-              : 'text-gray-400 hover:text-[#5D7B6F] hover:bg-[#5D7B6F]/5'
+            'w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm border',
+            isPinned 
+              ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-[#5D7B6F]/20' 
+              : 'bg-white text-slate-400 border-slate-100 hover:text-[#5D7B6F] hover:border-[#5D7B6F]/30 hover:shadow-md'
           )}
+          title={isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục'}
         >
-          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+          {isPinned ? <PinOff className="w-4.5 h-4.5" /> : <Pin className="w-4.5 h-4.5" />}
         </button>
       </div>
 
-      {/* Quiz grid */}
-      {previewQuery.isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
-          ))}
-        </div>
-      ) : allQuizzes.length === 0 ? null : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {allQuizzes.map(quiz => (
-            <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />
-          ))}
-          {/* Skeleton cards while loading next page */}
-          {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => (
-            <div key={`sk-${i}`} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
+        {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => <div key={i} className="h-64 rounded-[32px] bg-white border border-slate-100 animate-pulse" />)}
+      </div>
 
-      {/* Infinite scroll sentinel - placed inside grid area */}
-      {expanded && <div ref={loadMoreRef} className="h-1" />}
-
-      {/* Expand / Collapse button */}
       {total > PREVIEW_COUNT && (
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-2 text-[#5D7B6F] font-black text-sm hover:text-[#4a6358] transition-colors"
-        >
-          {expanded ? (
-            <><ChevronUp className="w-4 h-4" /> Thu gọn</>
-          ) : (
-            <><ChevronDown className="w-4 h-4" /> Xem thêm {total - PREVIEW_COUNT} bộ đề</>
-          )}
-        </button>
+        <div className="flex justify-center pt-2">
+          <Button variant="ghost" onClick={() => setExpanded(v => !v)} className="text-[#5D7B6F] font-black text-xs uppercase tracking-widest h-10 px-8 rounded-xl border border-[#5D7B6F]/10 hover:bg-[#5D7B6F]/5">
+            {expanded ? <><ChevronUp className="w-4 h-4 mr-2" /> Thu gọn</> : <><ChevronDown className="w-4 h-4 mr-2" /> Xem thêm {total - PREVIEW_COUNT}</>}
+          </Button>
+        </div>
       )}
+      {expanded && <div ref={loadMoreRef} className="h-1" />}
     </section>
   )
 }
-
-// ── Popular Section ────────────────────────────────────────────────────────
 
 function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: string }) {
   const [expanded, setExpanded] = useState(false)
@@ -319,8 +294,7 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
 
   const infiniteQuery = useInfiniteQuery({
     queryKey: ['explore', 'popular-infinite', isLoggedIn, search],
-    queryFn: ({ pageParam = 0 }) =>
-      fetchQuizzes({ search, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
+    queryFn: ({ pageParam = 0 }) => fetchQuizzes({ search, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((s, p) => s + p.data.length, 0)
@@ -332,78 +306,55 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
 
   useEffect(() => {
     if (!expanded || !loadMoreRef.current) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
-          infiniteQuery.fetchNextPage()
-        }
-      },
-      { threshold: 0, rootMargin: '400px' }
-    )
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
+        infiniteQuery.fetchNextPage()
+      }
+    }, { threshold: 0, rootMargin: '400px' })
     observer.observe(loadMoreRef.current)
     return () => observer.disconnect()
   }, [expanded, infiniteQuery])
 
-  const previewQuizzes = previewQuery.data?.data ?? []
-  const allQuizzes = expanded
-    ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? []
-    : previewQuizzes
+  const quizzes = expanded ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? [] : previewQuery.data?.data ?? []
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="w-1.5 h-5 bg-[#5D7B6F] rounded-full" />
-        <h3 className="text-lg font-black text-[#5D7B6F]">
-          {search ? `Kết quả cho "${search}"` : 'Bộ đề phổ biến'}
-        </h3>
-        {previewQuizzes.length > 0 && !expanded && (
-          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-            {previewQuizzes.length}+ bộ đề
-          </span>
-        )}
+    <section className="space-y-4">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm">
+          <Sparkles className="w-4.5 h-4.5" />
+        </div>
+        <div>
+           <h3 className="text-base font-black text-slate-900 leading-none">{search ? `Kết quả cho "${search}"` : 'Bộ đề phổ biến'}</h3>
+           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Xu hướng học tập</p>
+        </div>
       </div>
 
       {previewQuery.isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-64 rounded-[32px] bg-white border border-slate-100 animate-pulse" />)}
         </div>
-      ) : allQuizzes.length === 0 ? (
-        <div className="py-16 text-center space-y-4 bg-white/40 rounded-[40px] border-2 border-dashed border-red-100">
-          <AlertCircle className="w-10 h-10 text-red-300 mx-auto" />
-          <p className="text-xl font-black text-gray-400">Không tìm thấy bộ đề nào</p>
+      ) : quizzes.length === 0 ? (
+        <div className="py-20 text-center space-y-4 bg-white rounded-[40px] border border-dashed border-slate-200">
+          <AlertCircle className="w-10 h-10 text-slate-200 mx-auto" />
+          <p className="text-lg font-black text-slate-800">Không tìm thấy kết quả</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {allQuizzes.map(quiz => (
-            <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />
-          ))}
-          {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => (
-            <div key={`sk-${i}`} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
         </div>
       )}
 
-      {expanded && <div ref={loadMoreRef} className="h-1" />}
-
-      {previewQuizzes.length >= PREVIEW_COUNT && (
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-2 text-[#5D7B6F] font-black text-sm hover:text-[#4a6358] transition-colors"
-        >
-          {expanded ? (
-            <><ChevronUp className="w-4 h-4" /> Thu gọn</>
-          ) : (
-            <><ChevronDown className="w-4 h-4" /> Xem thêm</>
-          )}
-        </button>
+      {quizzes.length >= PREVIEW_COUNT && (
+        <div className="flex justify-center">
+          <Button variant="ghost" onClick={() => setExpanded(v => !v)} className="text-[#5D7B6F] font-black text-xs uppercase tracking-widest h-10 px-8 rounded-xl border border-[#5D7B6F]/10 hover:bg-[#5D7B6F]/5">
+            {expanded ? 'Thu gọn' : 'Xem tất cả'}
+          </Button>
+        </div>
       )}
+      {expanded && <div ref={loadMoreRef} className="h-1" />}
     </section>
   )
 }
-
-// ── Main ExploreContent ────────────────────────────────────────────────────
 
 export default function ExploreContent() {
   const [search, setSearch] = useState('')
@@ -415,7 +366,7 @@ export default function ExploreContent() {
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
-      .then(res => { if (res.ok) res.json().then(d => setUser(d.user)); else setUser(null) })
+      .then(res => res.ok ? res.json().then(d => setUser(d.user)) : setUser(null))
       .catch(() => setUser(null))
   }, [])
 
@@ -424,184 +375,103 @@ export default function ExploreContent() {
     queryFn: fetchCategories,
   })
 
-  const isLoggedIn = !!user
-  const userLoaded = user !== undefined
-
-  // Fetch pinned categories (only when logged in)
   const { data: pinnedData } = useQuery({
     queryKey: ['student', 'pinned-categories'],
     queryFn: fetchPinnedCategories,
-    enabled: isLoggedIn,
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   })
-
-  const pinnedCategoryIds = new Set<string>(pinnedData?.pinnedCategories ?? [])
 
   const pinMutation = useMutation({
     mutationFn: (categoryId: string) => togglePinCategory(categoryId),
     onSuccess: (data) => {
       queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: data.pinnedCategories })
-      toast.success(data.pinned ? 'Đã ghim danh mục' : 'Đã bỏ ghim danh mục')
+      toast.success(data.pinned ? 'Đã ghim' : 'Đã bỏ ghim')
     },
     onError: (err: Error) => toast.error(err.message),
   })
-
-  const handlePin = (categoryId: string) => {
-    if (!isLoggedIn) {
-      toast.error('Vui lòng đăng nhập để ghim danh mục')
-      return
-    }
-    pinMutation.mutate(categoryId)
-  }
 
   const categories = useMemo(() => {
     const list = catData?.data ?? []
     return [...list].sort((a, b) => a.name.localeCompare(b.name, 'vi'))
   }, [catData])
 
-  // Split: pinned first, then rest A-Z
-  const { pinnedCategories, unpinnedCategories } = useMemo(() => {
-    const pinned = categories.filter(c => pinnedCategoryIds.has(c.id))
-    const unpinned = categories.filter(c => !pinnedCategoryIds.has(c.id))
-    return { pinnedCategories: pinned, unpinnedCategories: unpinned }
-  }, [categories, pinnedCategoryIds])
+  const pinnedIds = new Set(pinnedData?.pinnedCategories ?? [])
+  const pinnedCats = categories.filter(c => pinnedIds.has(c.id))
+  const unpinnedCats = categories.filter(c => !pinnedIds.has(c.id))
 
-  const isSearching = debouncedSearch.length > 0
+  const quickSearchTags = [
+    { label: 'MLN111', icon: BookOpen },
+    { label: 'FRS401C', icon: SearchCode },
+    { label: 'GTDVH', icon: SearchCode },
+    { label: 'MLN122', icon: BookOpen },
+    { label: 'Văn hóa', icon: Sparkles },
+  ]
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-10 space-y-8 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
-          Khám phá <span className="text-[#5D7B6F]">Thư viện</span>
-        </h1>
-        <p className="text-gray-500 max-w-xl font-medium">
-          Tìm kiếm và chinh phục những mã đề thi chất lượng từ cộng đồng FQuiz.
-        </p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-20 space-y-10 animate-in fade-in duration-500">
+      <section className="flex flex-col items-center text-center space-y-6 pt-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none">
+            Khám phá <span className="text-[#5D7B6F]">Thư viện</span>
+          </h1>
+          <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Tìm kiếm môn học của bạn</p>
+        </div>
 
-      {/* Tab switcher */}
-      <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl w-fit">
-        <button
-          onClick={() => setActiveTab('explore')}
-          className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all',
-            activeTab === 'explore'
-              ? 'bg-white text-[#5D7B6F] shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          )}
-        >
-          <Search className="w-4 h-4" />
-          Khám phá
-        </button>
-        <button
-          onClick={() => setActiveTab('mix')}
-          className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all',
-            activeTab === 'mix'
-              ? 'bg-white text-[#5D7B6F] shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          )}
-        >
-          <Shuffle className="w-4 h-4" />
-          Trộn Quiz
-        </button>
-      </div>
-
-      {/* Mix Quiz Tab */}
-      {activeTab === 'mix' && <MixQuizTab />}
-
-      {/* Explore Tab */}
-      {activeTab === 'explore' && (
-        <>
-          {/* Search */}
-          <div className="flex items-center gap-3 bg-white px-4 rounded-[28px] shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/10">
-            <Search className="w-5 h-5 text-gray-300 shrink-0" />
+        <div className="w-full max-w-xl space-y-4">
+          <div className="flex items-center gap-3 bg-white px-5 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 focus-within:border-[#5D7B6F]/40 transition-all group">
+            <Search className="w-5 h-5 text-slate-300 group-focus-within:text-[#5D7B6F] shrink-0" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Nhập tên quiz hoặc mã đề..."
-              className="h-14 border-none focus-visible:ring-0 text-base font-bold text-[#5D7B6F] bg-transparent"
+              placeholder="Ví dụ: MLN111, FRS401C..."
+              className="h-12 md:h-14 border-none focus-visible:ring-0 text-sm md:text-base font-black text-[#5D7B6F] placeholder:text-slate-300 placeholder:font-bold"
             />
-            {search && (
-              <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 shrink-0 text-sm font-bold">
-                Xóa
-              </button>
-            )}
+            {search && <button onClick={() => setSearch('')} className="text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-2 py-1 bg-slate-50 rounded-lg">Xóa</button>}
           </div>
 
-          {!userLoaded ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
-            </div>
-          ) : isSearching ? (
-            // Search mode: show popular results only
-            <PopularSection isLoggedIn={isLoggedIn} search={debouncedSearch} />
-          ) : (
-            // Browse mode: popular + categories A-Z
-            <div className="space-y-10">
-              <PopularSection isLoggedIn={isLoggedIn} search="" />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mr-1">Gợi ý:</span>
+            {quickSearchTags.map(tag => (
+              <button key={tag.label} onClick={() => setSearch(tag.label)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[9px] font-black text-slate-500 transition-all border border-slate-100 hover:border-[#5D7B6F]/30 uppercase tracking-widest shadow-sm">
+                <tag.icon className="w-3 h-3 text-[#5D7B6F]/60" />
+                {tag.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Divider */}
-              <div className="flex items-center gap-4">
-                <div className="flex-1 h-px bg-gray-100" />
-                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Theo môn học</span>
-                <div className="flex-1 h-px bg-gray-100" />
+      <div className="flex justify-center">
+        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit shadow-inner">
+          <button onClick={() => setActiveTab('explore')} className={cn('flex items-center gap-2 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all', activeTab === 'explore' ? 'bg-white text-[#5D7B6F] shadow-md' : 'text-slate-400 hover:text-slate-600')}>
+            <Search className="w-3.5 h-3.5" /> Thư viện
+          </button>
+          <button onClick={() => setActiveTab('mix')} className={cn('flex items-center gap-2 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all', activeTab === 'mix' ? 'bg-white text-[#5D7B6F] shadow-md' : 'text-slate-400 hover:text-slate-600')}>
+            <Shuffle className="w-3.5 h-3.5" /> Trộn Quiz
+          </button>
+        </div>
+      </div>
+
+      <div className="animate-in slide-in-from-bottom-4 duration-700">
+        {activeTab === 'mix' ? <MixQuizTab /> : (
+          <div className="space-y-10">
+            <PopularSection isLoggedIn={!!user} search={debouncedSearch} />
+            {!debouncedSearch && (
+              <div className="space-y-10">
+                <div className="flex items-center gap-6"><div className="flex-1 h-px bg-slate-100" /><h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] whitespace-nowrap">Danh mục học phần</h4><div className="flex-1 h-px bg-slate-100" /></div>
+                {catsLoading ? <div className="h-40 bg-slate-50 rounded-3xl animate-pulse" /> : (
+                  <div className="space-y-10">
+                    {pinnedCats.map(cat => <CategorySection key={cat.id} category={cat} isLoggedIn={!!user} isPinned={true} onPin={(id) => pinMutation.mutate(id)} />)}
+                    {pinnedCats.length > 0 && <div className="flex items-center gap-6"><div className="flex-1 h-px bg-slate-100" /><h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] whitespace-nowrap">Tất cả môn học</h4><div className="flex-1 h-px bg-slate-100" /></div>}
+                    {unpinnedCats.map(cat => <CategorySection key={cat.id} category={cat} isLoggedIn={!!user} isPinned={false} onPin={(id) => pinMutation.mutate(id)} />)}
+                  </div>
+                )}
               </div>
-
-              {/* Categories A-Z */}
-              {catsLoading ? (
-                <div className="space-y-6">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="space-y-3">
-                      <div className="h-6 w-32 bg-gray-100 rounded animate-pulse" />
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {[1, 2, 3, 4].map(j => <div key={j} className="h-40 rounded-[24px] bg-gray-50 animate-pulse" />)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-10">
-                  {/* Pinned categories first */}
-                  {pinnedCategories.length > 0 && (
-                    <>
-                      <div className="space-y-10">
-                        {pinnedCategories.map(cat => (
-                          <CategorySection
-                            key={cat.id}
-                            category={cat}
-                            isLoggedIn={isLoggedIn}
-                            isPinned={true}
-                            onPin={handlePin}
-                          />
-                        ))}
-                      </div>
-                      {unpinnedCategories.length > 0 && (
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1 h-px bg-gray-100" />
-                          <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tất cả môn học</span>
-                          <div className="flex-1 h-px bg-gray-100" />
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {/* Remaining A-Z */}
-                  {unpinnedCategories.map(cat => (
-                    <CategorySection
-                      key={cat.id}
-                      category={cat}
-                      isLoggedIn={isLoggedIn}
-                      isPinned={false}
-                      onPin={handlePin}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

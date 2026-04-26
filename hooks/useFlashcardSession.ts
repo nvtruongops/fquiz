@@ -68,6 +68,20 @@ export function useFlashcardSession(sessionId: string) {
     enabled: !!sessionId,
     refetchOnWindowFocus: false,
   })
+  
+  // Preload all questions for immediate transitions
+  const { data: allQuestionsData, isLoading: isAllQuestionsLoading } = useQuery<{ questions: FlashcardQuestion[] }>({
+    queryKey: ['flashcard-session', sessionId, 'all-questions'],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`
+      )
+      if (!res.ok) throw new Error('Failed to preload questions')
+      return res.json()
+    },
+    enabled: !!sessionId,
+    staleTime: Infinity, // Preloaded once, stay in cache
+  })
 
   // Submit flashcard answer
   const answerMutation = useMutation<
@@ -90,6 +104,31 @@ export function useFlashcardSession(sessionId: string) {
       }
       return res.json()
     },
+    onMutate: async ({ knows }) => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['flashcard-session', sessionId] })
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<FlashcardSessionData>(['flashcard-session', sessionId])
+
+      // Optimistically update the session index and stats
+      if (previousData) {
+        queryClient.setQueryData(['flashcard-session', sessionId], {
+          ...previousData,
+          session: {
+            ...previousData.session,
+            current_question_index: previousData.session.current_question_index + 1,
+            flashcard_stats: previousData.session.flashcard_stats ? {
+              ...previousData.session.flashcard_stats,
+              cards_known: previousData.session.flashcard_stats.cards_known + (knows ? 1 : 0),
+              cards_unknown: previousData.session.flashcard_stats.cards_unknown + (knows ? 0 : 1),
+            } : undefined
+          }
+        })
+      }
+
+      return { previousData }
+    },
     onSuccess: (data) => {
       // If the API provided the next piece of data directly, we can update the cache
       // optimistically without waiting for a whole GET request roundtrip!
@@ -100,12 +139,27 @@ export function useFlashcardSession(sessionId: string) {
         void queryClient.invalidateQueries({ queryKey: ['flashcard-session', sessionId] })
       }
     },
+    onError: (err, newAnswer, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['flashcard-session', sessionId], context.previousData)
+      }
+    },
+    onSettled: () => {
+      // Always refetch session info to ensure sync
+      void queryClient.invalidateQueries({ queryKey: ['flashcard-session', sessionId] })
+    },
   })
+
+  // Get current question from preloaded pool if available, otherwise fallback to session-provided question
+  const currentQuestion = allQuestionsData?.questions?.[data?.session?.current_question_index ?? -1] ?? data?.question
 
   return {
     session: data?.session,
-    question: data?.question,
-    isLoading,
+    question: currentQuestion,
+    allQuestions: allQuestionsData?.questions,
+    isLoading: isLoading || isAllQuestionsLoading,
+    isPreloading: isAllQuestionsLoading,
     error,
     refetch,
     submitAnswer: answerMutation.mutate,

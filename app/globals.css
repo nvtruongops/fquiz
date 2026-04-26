@@ -54,11 +54,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
   }
 }
 
-/* Flashcard 3D flip animation - Vertical flip (top to bottom) */
+/* Flashcard 3D flip animation - Professional Horizontal Flip */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -66,33 +69,38 @@
 .flashcard-inner {
   position: relative;
   width: 100%;
-  min-height: 400px;
-  transition: transform 0.6s;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-style: preserve-3d;
 }
 
 .rotate-y-180 {
-  transform: rotateX(180deg);
+  transform: rotateY(180deg);
 }
 
 .flashcard-face {
-  width: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-/* Front face - always positioned relatively to allow expansion */
-.flashcard-inner .flashcard-face:first-child {
-  position: relative;
-}
-
-/* Back face - positioned absolutely on top of front, but transforms to show when flipped */
-.flashcard-inner .flashcard-face:last-child {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Front face */
+.flashcard-face-front {
+  z-index: 2;
+  transform: rotateY(0deg);
+}
+
+/* Back face */
+.flashcard-face-back {
+  transform: rotateY(180deg);
 }
 
 .backface-hidden {
@@ -105,6 +113,42 @@
   -webkit-transform-style: preserve-3d;
 }
 
-.duration-600 {
-  transition-duration: 600ms;
+/* Smooth shadow transition for depth */
+.flashcard-shadow {
+  transition: box-shadow 0.5s ease-in-out;
+}
+
+.flashcard-inner:hover .flashcard-shadow {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+/* Custom scrollbar for a cleaner look */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
 }

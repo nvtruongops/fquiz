@@ -1,67 +1,58 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Clock, BookOpen, CheckCircle } from 'lucide-react'
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Clock, 
+  BookOpen, 
+  CheckCircle,
+  Zap,
+  RotateCcw,
+  Calendar,
+  Filter,
+  Search,
+  Loader2,
+  GraduationCap,
+  Play
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns'
+import { vi } from 'date-fns/locale'
 
 interface HistoryItem {
   _id: string
   quiz_id: string
-  latest_session_id: string
-  quiz_title: string | null
-  quiz_code: string | null
-  category_name: string | null
-  source_type: 'self_created' | 'saved_explore' | 'explore_public'
+  quiz_title: string
+  quiz_code: string
+  category_name: string
+  source_type: string
   source_label: string
   source_creator_name: string | null
   score: number
   total_questions: number
-  mode: 'immediate' | 'review' | 'flashcard'
-  completed_at: string
-  started_at: string
-  total_study_minutes: number
-  attempt_count: number
-}
-
-interface InProgressItem {
-  _id: string
-  quiz_id: string
-  active_session_id: string
-  quiz_title: string | null
-  quiz_code: string | null
-  category_name: string | null
-  source_type: 'self_created' | 'saved_explore' | 'explore_public'
-  source_label: string
-  source_creator_name: string | null
-  started_at: string
   answered_count: number
-  total_questions: number
-  current_question_index: number
-}
-
-interface HistoryDisplayItem {
-  quiz_id: string
-  quiz_title: string | null
-  quiz_code: string | null
-  category_name: string | null
-  source_type: 'self_created' | 'saved_explore' | 'explore_public'
-  source_label: string
-  source_creator_name: string | null
-  latest: HistoryItem | null
-  active: InProgressItem | null
+  mode: 'immediate' | 'review' | 'flashcard'
+  status: 'active' | 'completed'
+  completed_at?: string
+  started_at: string
+  duration_minutes: number
+  flashcard_stats?: any
 }
 
 interface HistoryResponse {
   history: HistoryItem[]
-  inProgress: InProgressItem[]
   total: number
   page: number
   limit: number
   totalPages: number
 }
-
-type SourceFilter = 'all' | 'self_created' | 'from_explore'
 
 async function fetchHistory(page: number): Promise<HistoryResponse> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?page=${page}&limit=10`)
@@ -69,278 +60,216 @@ async function fetchHistory(page: number): Promise<HistoryResponse> {
   return res.json()
 }
 
-function SkeletonRow() {
-  return (
-    <div className="flex items-center gap-4 p-4 rounded-xl animate-pulse" style={{ backgroundColor: '#fff' }}>
-      <div className="flex-1 space-y-2">
-        <div className="h-4 rounded w-1/3" style={{ backgroundColor: '#B0D4B8' }} />
-        <div className="h-3 rounded w-1/4" style={{ backgroundColor: '#EAE7D6' }} />
-      </div>
-      <div className="h-8 w-16 rounded" style={{ backgroundColor: '#B0D4B8' }} />
-    </div>
-  )
-}
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function ScoreBadge({ score, total }: { score: number; total: number }) {
-  const pct = total > 0 ? score / total : 0
-  const color = pct >= 0.8 ? '#5D7B6F' : pct >= 0.5 ? '#A4C3A2' : '#ef4444'
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold"
-      style={{ backgroundColor: pct >= 0.8 ? '#B0D4B8' : pct >= 0.5 ? '#EAE7D6' : '#fee2e2', color }}
-    >
-      <CheckCircle size={14} />
-      {score}/{total}
-    </span>
-  )
-}
-
 function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
   const config = {
-    immediate: { bg: '#D7F9FA', label: 'Luyện tập' },
-    review: { bg: '#EAE7D6', label: 'Kiểm tra' },
-    flashcard: { bg: '#f3e8ff', label: 'Flashcard' },
+    immediate: { bg: 'bg-green-50', text: 'text-green-600', label: 'Luyện tập', icon: Zap },
+    review: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Kiểm tra', icon: BookOpen },
+    flashcard: { bg: 'bg-purple-50', text: 'text-purple-600', label: 'Lật thẻ', icon: GraduationCap },
   }
-  const { bg, label } = config[mode]
+  const { bg, text, label, icon: Icon } = config[mode]
   
   return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-      style={{
-        backgroundColor: bg,
-        color: '#5D7B6F',
-      }}
-    >
+    <Badge variant="secondary" className={cn("rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border-none", bg, text)}>
+      <Icon className="w-2.5 h-2.5 mr-1" />
       {label}
-    </span>
+    </Badge>
   )
 }
 
 export default function HistoryPage() {
   const [page, setPage] = useState(1)
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
+  const [search, setSearch] = useState('')
 
   const { data, isLoading, isError } = useQuery<HistoryResponse>({
     queryKey: ['history', page],
     queryFn: () => fetchHistory(page),
-    staleTime: 1000 * 30,
   })
 
-  const mergedMap = new Map<string, HistoryDisplayItem>()
+  const groupedHistory = useMemo(() => {
+    if (!data?.history) return []
 
-  for (const item of data?.history ?? []) {
-    mergedMap.set(item.quiz_id, {
-      quiz_id: item.quiz_id,
-      quiz_title: item.quiz_title,
-      quiz_code: item.quiz_code,
-      category_name: item.category_name,
-      source_type: item.source_type,
-      source_label: item.source_label,
-      source_creator_name: item.source_creator_name,
-      latest: item,
-      active: null,
+    const filtered = data.history.filter(item => 
+      item.quiz_code.toLowerCase().includes(search.toLowerCase()) ||
+      item.category_name.toLowerCase().includes(search.toLowerCase())
+    )
+
+    const groups: { title: string; items: HistoryItem[] }[] = []
+    
+    filtered.forEach(item => {
+      const date = new Date(item.started_at)
+      let groupTitle = format(date, 'dd/MM/yyyy')
+      
+      if (isToday(date)) groupTitle = 'Hôm nay'
+      else if (isYesterday(date)) groupTitle = 'Hôm qua'
+      
+      const existingGroup = groups.find(g => g.title === groupTitle)
+      if (existingGroup) {
+        existingGroup.items.push(item)
+      } else {
+        groups.push({ title: groupTitle, items: [item] })
+      }
     })
-  }
 
-  for (const activeItem of data?.inProgress ?? []) {
-    const existing = mergedMap.get(activeItem.quiz_id)
-    if (existing) {
-      existing.active = activeItem
-      continue
-    }
-
-    mergedMap.set(activeItem.quiz_id, {
-      quiz_id: activeItem.quiz_id,
-      quiz_title: activeItem.quiz_title,
-      quiz_code: activeItem.quiz_code,
-      category_name: activeItem.category_name,
-      source_type: activeItem.source_type,
-      source_label: activeItem.source_label,
-      source_creator_name: activeItem.source_creator_name,
-      latest: null,
-      active: activeItem,
-    })
-  }
-
-  const mergedItems = Array.from(mergedMap.values()).sort((a, b) => {
-    const aLatest = a.latest?.completed_at ? new Date(a.latest.completed_at).getTime() : 0
-    const aActive = a.active?.started_at ? new Date(a.active.started_at).getTime() : 0
-    const bLatest = b.latest?.completed_at ? new Date(b.latest.completed_at).getTime() : 0
-    const bActive = b.active?.started_at ? new Date(b.active.started_at).getTime() : 0
-    return Math.max(bLatest, bActive) - Math.max(aLatest, aActive)
-  })
-
-  const filteredItems = mergedItems.filter((item) => {
-    if (sourceFilter === 'all') return true
-    if (sourceFilter === 'self_created') return item.source_type === 'self_created'
-    return item.source_type !== 'self_created'
-  })
-
-  function sourceText(sourceLabel: string, sourceCreatorName: string | null) {
-    if (!sourceCreatorName) return sourceLabel
-    return `${sourceLabel} • ${sourceCreatorName}`
-  }
-
-  function displayQuizName(item: HistoryDisplayItem) {
-    if (item.quiz_code && item.category_name) {
-      return `${item.category_name} - ${item.quiz_code}`
-    }
-    if (item.quiz_code) {
-      return item.quiz_code
-    }
-    return item.quiz_title ?? 'Untitled Quiz'
-  }
+    return groups
+  }, [data?.history, search])
 
   return (
-    <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
-      <h1 className="text-3xl font-bold mb-8" style={{ color: '#5D7B6F' }}>
-        Quiz History
-      </h1>
-
-      {isError && (
-        <div className="rounded-xl p-4 mb-6 text-sm" style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>
-          Failed to load history. Please try again.
+    <main className="min-h-screen bg-[#F8F9FA] pb-20">
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-10 md:py-16">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <p className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-[0.3em]">Hành trình của bạn</p>
+              <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+                Lịch sử làm bài
+              </h1>
+            </div>
+            
+            <div className="relative w-full md:w-80 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#5D7B6F] transition-colors" />
+              <Input 
+                placeholder="Tìm mã môn hoặc danh mục..." 
+                className="pl-11 h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all shadow-sm group-hover:border-gray-200"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
-      )}
-
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {[
-          { id: 'all', label: 'Tất cả nguồn' },
-          { id: 'self_created', label: 'Tự tạo' },
-          { id: 'from_explore', label: 'Từ Explore' },
-        ].map((opt) => (
-          <button
-            key={opt.id}
-            onClick={() => setSourceFilter(opt.id as SourceFilter)}
-            className="rounded-full border px-3 py-1 text-xs font-semibold"
-            style={{
-              borderColor: '#5D7B6F',
-              backgroundColor: sourceFilter === opt.id ? '#5D7B6F' : '#fff',
-              color: sourceFilter === opt.id ? '#fff' : '#5D7B6F',
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
       </div>
 
-      <div className="space-y-3">
-        {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
-          : filteredItems.length === 0
-          ? (
-            <div
-              className="flex flex-col items-center justify-center py-20 rounded-2xl"
-              style={{ backgroundColor: '#fff' }}
-            >
-              <BookOpen size={48} style={{ color: '#A4C3A2' }} className="mb-4" />
-              <p className="text-lg font-medium" style={{ color: '#5D7B6F' }}>No quiz history yet</p>
-              <p className="text-sm mt-1" style={{ color: '#A4C3A2' }}>
-                Complete a quiz to see your results here.
-              </p>
-              <Link
-                href="/dashboard"
-                className="mt-6 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#5D7B6F' }}
-              >
-                Browse Quizzes
-              </Link>
+      <div className="max-w-5xl mx-auto px-6 mt-10">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-10 h-10 text-[#5D7B6F] animate-spin" />
+            <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Đang tải lịch sử...</p>
+          </div>
+        ) : isError ? (
+          <div className="p-8 text-center bg-red-50 rounded-3xl border border-red-100">
+             <p className="text-sm font-bold text-red-600">Đã xảy ra lỗi khi tải lịch sử. Vui lòng thử lại.</p>
+          </div>
+        ) : groupedHistory.length === 0 ? (
+          <div className="p-20 text-center bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20">
+            <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-200">
+              <Calendar className="w-10 h-10" />
             </div>
-          )
-          : filteredItems.map((item) => (
-            <div key={item.quiz_id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl bg-white hover:shadow-md transition-shadow">
-              <Link href={`/history/${item.quiz_id}`} className="flex-1 min-w-0 w-full">
-                <p className="font-semibold truncate text-base" style={{ color: '#5D7B6F' }}>
-                  {displayQuizName(item)}
-                </p>
+            <h3 className="text-xl font-black text-gray-800">Trống trơn!</h3>
+            <p className="text-sm font-bold text-gray-400 mt-2">Bạn chưa có hoạt động nào phù hợp với tìm kiếm.</p>
+            <Button asChild className="mt-8 bg-[#5D7B6F] rounded-xl px-8 h-12">
+               <Link href="/explore">Bắt đầu học ngay</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {groupedHistory.map((group) => (
+              <section key={group.title} className="space-y-6">
+                <div className="flex items-center gap-4">
+                   <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] whitespace-nowrap">{group.title}</h2>
+                   <div className="h-px w-full bg-gray-100" />
+                </div>
                 
-                {/* First row: Time and source */}
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  {item.latest?.completed_at ? (
-                    <>
-                      <Clock size={12} style={{ color: '#A4C3A2' }} />
-                      <span className="text-xs" style={{ color: '#A4C3A2' }}>
-                        {formatDate(item.latest.completed_at)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xs font-semibold" style={{ color: '#A4C3A2' }}>
-                      Chưa có lần nộp hoàn thành
-                    </span>
-                  )}
-                  <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
-                    {sourceText(item.source_label, item.source_creator_name)}
-                  </span>
-                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {group.items.map((item) => (
+                    <Card key={item._id} className="rounded-[28px] border-none bg-white shadow-xl shadow-gray-200/20 hover:shadow-2xl hover:shadow-[#5D7B6F]/5 transition-all group overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row md:items-center gap-6 p-6">
+                          <div className={cn(
+                            "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
+                            item.status === 'completed' ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
+                          )}>
+                            {item.status === 'completed' ? <CheckCircle className="w-7 h-7" /> : <Play className="w-7 h-7" />}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-black text-gray-900 truncate uppercase tracking-tight group-hover:text-[#5D7B6F] transition-colors">
+                                {item.quiz_code}
+                              </h3>
+                              <ModeBadge mode={item.mode} />
+                              {item.status === 'active' && (
+                                <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none font-black text-[9px] uppercase">Đang làm</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs font-bold text-gray-400">
+                              {item.category_name} • {format(new Date(item.started_at), 'HH:mm')}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-4 mt-2">
+                               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase">
+                                  <Clock className="w-3 h-3" />
+                                  {item.duration_minutes} phút học
+                               </div>
+                               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase">
+                                  <RotateCcw className="w-3 h-3" />
+                                  {item.source_label}
+                               </div>
+                            </div>
+                          </div>
 
-                {/* Second row: Stats and mode */}
-                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  {item.latest && (
-                    <>
-                      <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
-                        Đã học: {item.latest.total_study_minutes} phút
-                      </span>
-                      <span className="text-xs text-gray-300">•</span>
-                      <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
-                        Số lần: {item.latest.attempt_count}
-                      </span>
-                      <ModeBadge mode={item.latest.mode} />
-                    </>
-                  )}
-                  {item.active && (
-                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#5D7B6F' }}>
-                      Đang làm dở: {item.active.answered_count}/{item.active.total_questions}
-                    </span>
-                  )}
+                          <div className="flex items-center gap-8 justify-between md:justify-end">
+                            <div className="text-right">
+                              <p className={cn(
+                                "text-3xl font-black leading-none tracking-tighter",
+                                item.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
+                              )}>
+                                {item.status === 'active' ? '--' : `${item.score}/10`}
+                              </p>
+                              <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
+                                {item.answered_count}/{item.total_questions} CÂU ĐÚNG
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                               <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl hover:bg-[#5D7B6F]/5 text-[#5D7B6F]" asChild>
+                                  <Link href={`/quiz/${item.quiz_id}`}>
+                                     <RotateCcw className="w-4 h-4" />
+                                  </Link>
+                               </Button>
+                               <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg" asChild>
+                                  <Link href={item.status === 'active' ? `/quiz/${item.quiz_id}/session/${item._id}` : `/history/${item.quiz_id}`}>
+                                     <ChevronRight className="w-5 h-5" />
+                                  </Link>
+                               </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </Link>
-              <Link
-                href={`/history/${item.quiz_id}`}
-                className="rounded-lg px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap self-end sm:self-center"
-                style={{ backgroundColor: '#5D7B6F' }}
-              >
-                Xem chi tiết
-              </Link>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {/* ── Pagination ───────────────────────────────────────────────────── */}
+        {data && data.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-16">
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="rounded-xl border-gray-100 hover:bg-white shadow-sm h-10 px-4"
+            >
+              <ChevronLeft size={16} className="mr-2" />
+              Trước
+            </Button>
+            <div className="flex items-center gap-1">
+               <span className="text-xs font-black text-[#5D7B6F] px-3 py-2 bg-[#5D7B6F]/5 rounded-lg">{page}</span>
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">trên {data.totalPages}</span>
             </div>
-          ))}
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+              disabled={page === data.totalPages}
+              className="rounded-xl border-gray-100 hover:bg-white shadow-sm h-10 px-4"
+            >
+              Sau
+              <ChevronRight size={16} className="ml-2" />
+            </Button>
+          </div>
+        )}
       </div>
-
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-40 transition-opacity"
-            style={{ backgroundColor: '#B0D4B8', color: '#5D7B6F' }}
-          >
-            <ChevronLeft size={16} />
-            Prev
-          </button>
-          <span className="text-sm" style={{ color: '#5D7B6F' }}>
-            Page {page} of {data.totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
-            disabled={page === data.totalPages}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-40 transition-opacity"
-            style={{ backgroundColor: '#B0D4B8', color: '#5D7B6F' }}
-          >
-            Next
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
     </main>
   )
 }

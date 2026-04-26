@@ -139,6 +139,91 @@ export async function GET(req: Request) {
     const learningHoursRaw = totalDurationMs / (60 * 60 * 1000)
     const learningMinutes = Math.round(totalDurationMs / (60 * 1000))
 
+    // 1c. Weekly activity (last 7 days)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+    sevenDaysAgo.setHours(0, 0, 0, 0)
+
+    const weeklyActivityAgg = await QuizSession.aggregate([
+      { 
+        $match: { 
+          student_id: userId, 
+          started_at: { $gte: sevenDaysAgo } 
+        } 
+      },
+      {
+        $project: {
+          dayOfWeek: { $dayOfWeek: { $add: ["$started_at", 7 * 60 * 60 * 1000] } }, // Adjust for UTC+7 if needed, or keep as is
+          answerCount: { $size: { $ifNull: ["$user_answers", []] } }
+        }
+      },
+      {
+        $group: {
+          _id: "$dayOfWeek",
+          count: { $sum: "$answerCount" }
+        }
+      }
+    ])
+
+    // Map Mongo dayOfWeek (1=Sun, 7=Sat) to Vietnamese labels
+    const dayMap: Record<number, string> = {
+      1: 'CN', 2: 'T2', 3: 'T3', 4: 'T4', 5: 'T5', 6: 'T6', 7: 'T7'
+    }
+    
+    // Ensure all 7 days are present
+    const weeklyActivity = [2, 3, 4, 5, 6, 7, 1].map(dayNum => {
+      const found = weeklyActivityAgg.find(item => item._id === dayNum)
+      return {
+        day: dayMap[dayNum],
+        val: found ? found.count : 0
+      }
+    })
+
+    // 1d. Streak calculation
+    const allActivityDatesAgg = await QuizSession.aggregate([
+      { $match: { student_id: userId } },
+      {
+        $project: {
+          date: { 
+            $dateToString: { 
+              format: "%Y-%m-%d", 
+              date: { $add: ["$started_at", 7 * 60 * 60 * 1000] } 
+            } 
+          }
+        }
+      },
+      { $group: { _id: "$date" } },
+      { $sort: { _id: -1 } }
+    ])
+
+    const activityDates = allActivityDatesAgg.map(x => x._id)
+    let streak = 0
+    if (activityDates.length > 0) {
+      const today = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const yesterday = new Date(new Date().getTime() + 7 * 60 * 60 * 1000 - 86400000).toISOString().split('T')[0]
+      
+      let currentCheckDate: string | null = null
+      if (activityDates[0] === today) {
+        currentCheckDate = today
+      } else if (activityDates[0] === yesterday) {
+        currentCheckDate = yesterday
+      }
+
+      if (currentCheckDate) {
+        streak = 1
+        let checkDateObj = new Date(currentCheckDate)
+        for (let i = 1; i < activityDates.length; i++) {
+          checkDateObj.setDate(checkDateObj.getDate() - 1)
+          const prevDateStr = checkDateObj.toISOString().split('T')[0]
+          if (activityDates[i] === prevDateStr) {
+            streak++
+          } else {
+            break
+          }
+        }
+      }
+    }
+
     // 2. Fetch Recent Activities (Top 5 latest-by-quiz), including active quizzes.
     const latestSessionIdsByQuiz = await QuizSession.aggregate([
       { $match: { student_id: userId, status: 'completed' } },
@@ -158,7 +243,7 @@ export async function GET(req: Request) {
     const sessionIds = latestSessionIdsByQuiz.map((x) => x.latestSessionId)
     const recentActivitiesRaw = await QuizSession.find({ _id: { $in: sessionIds } })
       .sort({ completed_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount questions')
+      .populate('quiz_id', 'title course_code questionCount questions category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
 
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
@@ -179,7 +264,7 @@ export async function GET(req: Request) {
     const activeSessionIds = latestActiveIdsByQuiz.map((x) => x.latestSessionId)
     const activeActivitiesRaw = await QuizSession.find({ _id: { $in: activeSessionIds } })
       .sort({ started_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount questions')
+      .populate('quiz_id', 'title course_code questionCount questions category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
 
     const allRecentSessions = [...recentActivitiesRaw, ...activeActivitiesRaw] as any[]
@@ -199,10 +284,11 @@ export async function GET(req: Request) {
       : []
     const quizMetaMap = new Map((quizDocs as any[]).map((quiz) => [quiz._id.toString(), quiz]))
 
+    // Lấy category IDs từ populated data
     const categoryIds = Array.from(
       new Set(
-        (quizDocs as any[])
-          .map((quiz) => quiz?.category_id?.toString?.() ?? null)
+        [...recentActivitiesRaw, ...activeActivitiesRaw]
+          .map((session: any) => session.quiz_id?.category_id?.toString?.() ?? null)
           .filter((id): id is string => Boolean(id))
       )
     ).map((id) => new Types.ObjectId(id))
@@ -297,7 +383,7 @@ export async function GET(req: Request) {
         quizId,
         quizTitle: session.quiz_id?.title || 'Bộ đề không xác định',
         quizCode: quizMeta?.course_code || session.quiz_id?.course_code || 'N/A',
-        categoryName: quizMeta?.category_id ? (categoryNameMap.get(quizMeta.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
+        categoryName: session.quiz_id?.category_id ? (categoryNameMap.get(session.quiz_id.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
         sourceType,
         sourceLabel: sourceLabelFromType(sourceType),
         sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
@@ -383,7 +469,7 @@ export async function GET(req: Request) {
           quizId,
           quizTitle: session.quiz_id?.title || 'Bộ đề không xác định',
           quizCode: quizMeta?.course_code || session.quiz_id?.course_code || 'N/A',
-          categoryName: quizMeta?.category_id ? (categoryNameMap.get(quizMeta.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
+          categoryName: session.quiz_id?.category_id ? (categoryNameMap.get(session.quiz_id.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
           sourceType,
           sourceLabel: sourceLabelFromType(sourceType),
           sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
@@ -408,6 +494,8 @@ export async function GET(req: Request) {
         totalCorrectAnswers: stats.totalCorrectAnswers,
         learningHours: Number(learningHoursRaw.toFixed(2)),
         learningMinutes,
+        weeklyActivity,
+        streak,
       },
       recentActivities
     })

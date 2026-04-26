@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { requireAdmin } from '@/lib/dal'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Verify admin access - will throw if not admin
   try {

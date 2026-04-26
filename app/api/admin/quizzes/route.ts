@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       quizzesRaw.map(async (quiz: any) => {
         const uniqueStudents = await QuizSession.distinct('student_id', {
           quiz_id: quiz._id,
-          status: 'completed',
+          // Đếm cả active và completed sessions - tính ngay khi user bắt đầu làm
         })
         const studentCount = uniqueStudents.length
         const actualQuestionCount = Array.isArray(quiz.questions) ? quiz.questions.length : 0

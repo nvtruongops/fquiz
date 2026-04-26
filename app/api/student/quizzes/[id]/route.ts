@@ -121,7 +121,7 @@ export async function GET(
 
     const uniqueStudents = await QuizSession.distinct('student_id', {
       quiz_id: effectiveQuizId,
-      status: 'completed',
+      // Đếm cả active và completed sessions - tính ngay khi user bắt đầu làm
     })
     const numAttempts = uniqueStudents.length
 

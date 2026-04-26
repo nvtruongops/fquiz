@@ -51,6 +51,7 @@ export async function GET(
 
     const isCompleted = session.status === 'completed'
     const isImmediateMode = session.mode === 'immediate'
+    const isFlashcardMode = session.mode === 'flashcard'
 
     // Get question order (use existing or create sequential)
     const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
@@ -69,8 +70,8 @@ export async function GET(
         ...(q.image_url ? { image_url: q.image_url } : {}),
       }
 
-      // Include answers for immediate mode or completed sessions
-      if (isImmediateMode || isCompleted) {
+      // Include answers for immediate mode, completed sessions, or flashcard mode
+      if (isImmediateMode || isCompleted || isFlashcardMode) {
         return {
           ...baseQuestion,
           correct_answer: q.correct_answer,
