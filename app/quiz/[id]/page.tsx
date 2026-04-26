@@ -598,12 +598,12 @@ export default function QuizDetailPage() {
         <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-[#A4C3A2]/5 blur-[100px]" />
       </div>
 
-      <main className="relative z-10 flex flex-1 flex-col px-6 py-10 pb-28 md:pb-10">
-        <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="flex flex-col gap-6 lg:col-span-8">
+      <main className="relative z-10 flex flex-1 flex-col px-4 py-6 pb-28 md:pb-10">
+        <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-5 lg:grid-cols-12">
+          <div className="flex flex-col gap-5 lg:col-span-8">
             {/* Main Quiz Header Card */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-7 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#5D7B6F]/5 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[#5D7B6F]/5 blur-2xl" />
               
               <div className="relative space-y-6">
                 <div className="flex items-center gap-4">
@@ -639,7 +639,7 @@ export default function QuizDetailPage() {
                 </div>
               </div>
 
-              <div className="group flex items-center gap-5 rounded-2xl border border-gray-50 bg-white p-6 shadow-[0_4px_20px_rgb(0,0,0,0.01)] transition-all hover:shadow-xl hover:shadow-[#5D7B6F]/5 hover:-translate-y-0.5">
+              <div className="group flex items-center gap-5 rounded-2xl border border-gray-50 bg-white p-5 shadow-[0_4px_20px_rgb(0,0,0,0.01)] transition-all hover:shadow-xl hover:shadow-[#5D7B6F]/5 hover:-translate-y-0.5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50/50 text-green-500 ring-1 ring-green-100 transition-all group-hover:scale-110 group-hover:bg-green-50">
                   <Users className="h-6 w-6" />
                 </div>
@@ -647,6 +647,118 @@ export default function QuizDetailPage() {
                   <p className="mb-1.5 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400">Độ phổ biến</p>
                   <p className="text-xl font-normal text-gray-900 tracking-tight">{quiz?.num_attempts ?? 0} <span className="text-[10px] font-bold text-gray-300">LƯỢT THI</span></p>
                 </div>
+              </div>
+            </div>
+
+            {/* Comments Section moved here to avoid whitespace issues */}
+            <div className="flex flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5D7B6F]/5 text-[#5D7B6F]">
+                    <MessageSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.1em] text-gray-900">Thảo luận cộng đồng</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{comments.length} đóng góp</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Comment Input */}
+              <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all focus-within:shadow-md focus-within:border-[#5D7B6F]/30">
+                <div className="flex items-center gap-3 border-b border-gray-50 pb-3">
+                  <Avatar className="h-8 w-8 border border-gray-100 shadow-sm">
+                    <AvatarImage src={currentUser?.avatarUrl || currentUser?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-[#5D7B6F] text-white text-[10px] font-black">
+                      {(currentUser?.username || currentUser?.name || '??').substring(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#5D7B6F]">Viết bình luận của bạn</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <Textarea 
+                    placeholder="Chia sẻ suy nghĩ hoặc thắc mắc của bạn về bộ đề này..." 
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    className="min-h-[80px] w-full resize-none border-none bg-transparent p-0 text-[14px] font-medium text-gray-700 placeholder:text-gray-300 focus-visible:ring-0 focus:outline-none"
+                  />
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">Tối đa 1000 ký tự</p>
+                    <Button 
+                      onClick={handlePostComment}
+                      disabled={postCommentMutation.isPending || !commentContent.trim()}
+                      className="bg-[#5D7B6F] h-9 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-[#5D7B6F]/10 hover:bg-[#4a6358] hover:translate-y-[-1px] active:translate-y-0 transition-all"
+                    >
+                      {postCommentMutation.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          Gửi bình luận <Send className="h-3 w-3" />
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments List */}
+              <div className="space-y-8 mt-2">
+                {isCommentsLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-200" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-200">
+                      <MessageSquare className="h-8 w-8" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-400 italic">Chưa có bình luận nào cho bộ đề này.</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-300 mt-2">Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
+                      <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
+                        <AvatarImage src={comment.user_id.avatar_url || comment.user_id.avatarUrl || undefined} />
+                        <AvatarFallback className="bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase">
+                          {(comment.user_id.username || comment.user_id.name || '??').substring(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-black text-gray-900">{comment.user_id.username || comment.user_id.name || 'Thành viên'}</span>
+                            <span className="h-1 w-1 rounded-full bg-gray-200" />
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">
+                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
+                            </span>
+                          </div>
+                          {currentUser && String(currentUser._id) === String((comment.user_id as any)._id) && (
+                            <button 
+                              onClick={() => {
+                                setCommentToDelete(comment._id)
+                                setIsDeleteDialogOpen(true)
+                              }}
+                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
+                              title="Xóa bình luận"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
+                          <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
+                          <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -1003,119 +1115,6 @@ export default function QuizDetailPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-6 lg:col-span-8 order-3 lg:order-none">
-            {/* Comments Section */}
-            <div className="flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-7 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5D7B6F]/5 text-[#5D7B6F]">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.1em] text-gray-900">Thảo luận cộng đồng</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{comments.length} đóng góp</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Enhanced Comment Input */}
-              <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all focus-within:shadow-md focus-within:border-[#5D7B6F]/30">
-                <div className="flex items-center gap-3 border-b border-gray-50 pb-3">
-                  <Avatar className="h-8 w-8 border border-gray-100 shadow-sm">
-                    <AvatarImage src={currentUser?.avatarUrl || currentUser?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-[#5D7B6F] text-white text-[10px] font-black">
-                      {(currentUser?.username || currentUser?.name || '??').substring(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#5D7B6F]">Viết bình luận của bạn</p>
-                </div>
-                
-                <div className="space-y-4">
-                  <Textarea 
-                    placeholder="Chia sẻ suy nghĩ hoặc thắc mắc của bạn về bộ đề này..." 
-                    value={commentContent}
-                    onChange={(e) => setCommentContent(e.target.value)}
-                    className="min-h-[100px] w-full resize-none border-none bg-transparent p-0 text-[14px] font-medium text-gray-700 placeholder:text-gray-300 focus-visible:ring-0 focus:outline-none"
-                  />
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">Tối đa 1000 ký tự</p>
-                    <Button 
-                      onClick={handlePostComment}
-                      disabled={postCommentMutation.isPending || !commentContent.trim()}
-                      className="bg-[#5D7B6F] h-9 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-[#5D7B6F]/10 hover:bg-[#4a6358] hover:translate-y-[-1px] active:translate-y-0 transition-all"
-                    >
-                      {postCommentMutation.isPending ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          Gửi bình luận <Send className="h-3 w-3" />
-                        </div>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comments List */}
-              <div className="space-y-10 mt-2">
-                {isCommentsLoading ? (
-                  <div className="flex justify-center py-10">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-200" />
-                  </div>
-                ) : comments.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-200">
-                      <MessageSquare className="h-8 w-8" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-400 italic">Chưa có bình luận nào cho bộ đề này.</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-300 mt-2">Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
-                  </div>
-                ) : (
-                  comments.map((comment) => (
-                    <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
-                      <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                        <AvatarImage src={comment.user_id.avatar_url || comment.user_id.avatarUrl || undefined} />
-                        <AvatarFallback className="bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase">
-                          {(comment.user_id.username || comment.user_id.name || '??').substring(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-black text-gray-900">{comment.user_id.username || comment.user_id.name || 'Thành viên'}</span>
-                            <span className="h-1 w-1 rounded-full bg-gray-200" />
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">
-                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
-                            </span>
-                          </div>
-                          {currentUser && String(currentUser._id) === String((comment.user_id as any)._id) && (
-                            <button 
-                              onClick={() => {
-                                setCommentToDelete(comment._id)
-                                setIsDeleteDialogOpen(true)
-                              }}
-                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
-                              title="Xóa bình luận"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                        <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
-                          <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
-                          <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 

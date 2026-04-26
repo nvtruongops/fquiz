@@ -47,20 +47,40 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { content } = body
+    let { content } = body
     
     if (!content || content.trim().length === 0) {
       return NextResponse.json({ error: 'Nội dung bình luận không được để trống' }, { status: 400 })
     }
     
+    // Sanitization: Strip HTML tags
+    content = content.replace(/<[^>]*>?/gm, '').trim()
+    
+    if (content.length === 0) {
+      return NextResponse.json({ error: 'Nội dung bình luận không hợp lệ' }, { status: 400 })
+    }
+
     if (content.length > 1000) {
       return NextResponse.json({ error: 'Bình luận quá dài (tối đa 1000 ký tự)' }, { status: 400 })
+    }
+
+    // Rate Limiting: 1 comment per 30 seconds per user on this quiz
+    const lastComment = await QuizComment.findOne({
+      quiz_id: new Types.ObjectId(id),
+      user_id: new Types.ObjectId(payload.userId),
+      created_at: { $gt: new Date(Date.now() - 30 * 1000) }
+    })
+
+    if (lastComment) {
+      return NextResponse.json({ 
+        error: 'Bạn đang bình luận quá nhanh. Vui lòng đợi 30 giây.' 
+      }, { status: 429 })
     }
 
     const newComment = await QuizComment.create({
       quiz_id: new Types.ObjectId(id),
       user_id: new Types.ObjectId(payload.userId),
-      content: content.trim(),
+      content: content,
     })
     
     const populatedComment = await QuizComment.findById(newComment._id)
