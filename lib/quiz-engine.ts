@@ -26,7 +26,7 @@ export interface ReviewAnswerResult {
 export async function syncUniqueStudentCount(quizId: unknown): Promise<void> {
   const uniqueStudents = await QuizSession.distinct('student_id', {
     quiz_id: quizId,
-    status: 'completed',
+    // Đếm cả active và completed sessions - tính ngay khi user bắt đầu làm
   })
 
   await Quiz.updateOne(

@@ -6,6 +6,7 @@ import { QuizSession } from '@/models/QuizSession'
 import mongoose from 'mongoose'
 import type { IQuestion } from '@/types/quiz'
 import { CreateSessionSchema } from '@/lib/schemas'
+import { syncUniqueStudentCount } from '@/lib/quiz-engine'
 
 /**
  * Fisher-Yates shuffle algorithm for randomizing question order
@@ -316,6 +317,9 @@ export async function POST(req: Request) {
       paused_at: null,
       total_paused_duration_ms: 0,
     })
+
+    // Sync student count ngay khi tạo session (tính ngay khi user bắt đầu làm)
+    await syncUniqueStudentCount(effectiveQuizObjectId)
 
     return NextResponse.json(
       {

@@ -36,11 +36,10 @@ export async function GET(req: Request) {
     }
 
     const studentId = new mongoose.Types.ObjectId(payload.userId)
-    const grouped = await QuizSession.aggregate([
+    const sessions = await QuizSession.aggregate([
       {
         $match: {
           student_id: studentId,
-          status: 'completed',
           is_temp: { $ne: true },
         },
       },
@@ -64,89 +63,44 @@ export async function GET(req: Request) {
           },
         },
       },
-      { $sort: { completed_at: -1 } },
-      {
-        $group: {
-          _id: '$quiz_id',
-          latestSession: { $first: '$$ROOT' },
-          totalDurationMs: { $sum: '$duration_ms' },
-          attempt_count: { $sum: 1 },
-        },
-      },
+      { $sort: { started_at: -1 } },
       {
         $project: {
-          _id: 0,
-          quiz_id: '$_id',
-          latest_session_id: '$latestSession._id',
-          score: '$latestSession.score',
-          mode: '$latestSession.mode',
-          completed_at: '$latestSession.completed_at',
-          started_at: '$latestSession.started_at',
-          total_study_minutes: { $round: [{ $divide: ['$totalDurationMs', 60000] }, 0] },
-          attempt_count: 1,
-          flashcard_stats: '$latestSession.flashcard_stats',
+          _id: 1,
+          quiz_id: 1,
+          score: 1,
+          mode: 1,
+          status: 1,
+          completed_at: 1,
+          started_at: 1,
+          duration_minutes: { $round: [{ $divide: ['$duration_ms', 60000] }, 0] },
+          flashcard_stats: 1,
+          user_answers: 1,
         },
       },
-      { $sort: { completed_at: -1 } },
     ]) as Array<{
+      _id: mongoose.Types.ObjectId
       quiz_id: mongoose.Types.ObjectId
-      latest_session_id: mongoose.Types.ObjectId
       score: number
       mode: 'immediate' | 'review' | 'flashcard'
-      completed_at: Date
+      status: 'active' | 'completed'
+      completed_at?: Date
       started_at: Date
-      total_study_minutes: number
-      attempt_count: number
+      duration_minutes: number
       flashcard_stats?: any
+      user_answers?: any[]
     }>
 
-    const total = grouped.length
+    const total = sessions.length
     const totalPages = Math.max(1, Math.ceil(total / limit))
     const safePage = Math.min(page, totalPages)
     const skip = (safePage - 1) * limit
-    const pageItems = grouped.slice(skip, skip + limit)
+    const pageItems = sessions.slice(skip, skip + limit)
 
-    const activeGrouped = await QuizSession.aggregate([
-      {
-        $match: {
-          student_id: studentId,
-          status: 'active',
-          is_temp: { $ne: true },
-        },
-      },
-      { $sort: { started_at: -1 } },
-      {
-        $group: {
-          _id: '$quiz_id',
-          latestSession: { $first: '$$ROOT' },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          quiz_id: '$_id',
-          active_session_id: '$latestSession._id',
-          started_at: '$latestSession.started_at',
-          current_question_index: '$latestSession.current_question_index',
-          user_answers: '$latestSession.user_answers',
-          flashcard_stats: '$latestSession.flashcard_stats',
-        },
-      },
-      { $sort: { started_at: -1 } },
-    ]) as Array<{
-      quiz_id: mongoose.Types.ObjectId
-      active_session_id: mongoose.Types.ObjectId
-      started_at: Date
-      current_question_index: number
-      user_answers?: Array<{ question_index: number }>
-      flashcard_stats?: any
-    }>
+    const inProgress = [] // We'll combine them in the main list
 
     const quizIds = Array.from(
-      new Set([
-        ...pageItems.map((item) => item.quiz_id.toString()),
-        ...activeGrouped.map((item) => item.quiz_id.toString()),
-      ])
+      new Set(pageItems.map((item) => item.quiz_id.toString()))
     ).map((id) => new mongoose.Types.ObjectId(id))
 
     const quizzes = quizIds.length
@@ -202,54 +156,19 @@ export async function GET(req: Request) {
       : []
     const creatorNameMap = new Map((sourceCreators as any[]).map((u) => [u._id.toString(), u.username]))
 
-    const allHistory = pageItems.map((item) => {
+    const history = pageItems.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any
       const sourceType = inferSourceType(quiz, payload.userId)
       const sourceCreatorId = quiz?.is_saved_from_explore
         ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')
         : quiz?.created_by?.toString?.()
 
-      // Check if there's an active session for this quiz
-      const activeSession = activeGrouped.find((active) => active.quiz_id.toString() === item.quiz_id.toString())
-      const hasActiveSession = Boolean(activeSession)
-      const activeAnsweredCount = activeSession
-        ? new Set(
-            (activeSession.user_answers ?? [])
-              .map((answer) => answer.question_index)
-              .filter((idx) => Number.isInteger(idx) && idx >= 0)
-          ).size
+      const declaredCount = Number(quiz?.questionCount ?? 0)
+      const derivedFromQuestions = Array.isArray(quiz?.questions)
+        ? quiz.questions.length
         : 0
+      const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
 
-      return {
-        _id: item.quiz_id.toString(),
-        quiz_id: item.quiz_id,
-        latest_session_id: item.latest_session_id,
-        quiz_title: quiz?.title ?? null,
-        quiz_code: quiz?.course_code ?? null,
-        category_name: quiz?.category_id ? (categoryNameMap.get(quiz.category_id.toString()) ?? null) : null,
-        source_type: sourceType,
-        source_label: sourceLabelFromType(sourceType),
-        source_creator_name: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
-        score: item.score,
-        total_questions: quiz?.questions?.length ?? 0,
-        mode: item.mode,
-        completed_at: item.completed_at,
-        started_at: item.started_at,
-        total_study_minutes: item.total_study_minutes,
-        attempt_count: item.attempt_count,
-        flashcard_stats: item.flashcard_stats,
-        has_active_session: hasActiveSession,
-        active_session_id: activeSession?.active_session_id ?? null,
-        active_answered_count: activeAnsweredCount,
-        active_started_at: activeSession?.started_at ?? null,
-      }
-    })
-
-    const history = allHistory
-
-    const inProgressRaw = activeGrouped.map((item) => {
-      const quiz = quizMap.get(item.quiz_id.toString()) as any
-      const sourceType = inferSourceType(quiz, payload.userId)
       let answeredCount = 0
       if (item.flashcard_stats) {
         answeredCount = item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown
@@ -261,31 +180,28 @@ export async function GET(req: Request) {
         ).size
       }
 
-      const sourceCreatorId = quiz?.is_saved_from_explore
-        ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')
-        : quiz?.created_by?.toString?.()
-
       return {
-        _id: item.quiz_id.toString(),
-        quiz_id: item.quiz_id,
-        active_session_id: item.active_session_id,
-        quiz_title: quiz?.title ?? null,
-        quiz_code: quiz?.course_code ?? null,
-        category_name: quiz?.category_id ? (categoryNameMap.get(quiz.category_id.toString()) ?? null) : null,
+        _id: item._id.toString(),
+        quiz_id: item.quiz_id.toString(),
+        quiz_title: quiz?.title ?? 'Quiz đã bị xóa',
+        quiz_code: quiz?.course_code ?? 'N/A',
+        category_name: quiz?.category_id ? (categoryNameMap.get(quiz.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
         source_type: sourceType,
         source_label: sourceLabelFromType(sourceType),
         source_creator_name: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
-        started_at: item.started_at,
+        score: item.score,
+        total_questions: totalQuestions,
         answered_count: answeredCount,
-        total_questions: quiz?.questions?.length ?? 0,
-        current_question_index: Math.max(0, Number(item.current_question_index ?? 0)),
+        mode: item.mode,
+        status: item.status,
+        completed_at: item.completed_at,
+        started_at: item.started_at,
+        duration_minutes: item.duration_minutes,
         flashcard_stats: item.flashcard_stats,
       }
     })
 
-    const inProgress = inProgressRaw.slice(0, 10)
-
-    return NextResponse.json({ history, inProgress, total, page: safePage, limit, totalPages })
+    return NextResponse.json({ history, inProgress: [], total, page: safePage, limit, totalPages })
   } catch (err) {
     if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })

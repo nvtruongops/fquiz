@@ -21,7 +21,7 @@ export default function FlashcardSessionPage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
 
-  const { session, question, isLoading, error, submitAnswer, isSubmitting } = 
+  const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
     useFlashcardSession(resolvedSessionId)
 
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
@@ -116,12 +116,12 @@ export default function FlashcardSessionPage() {
     }
   }, [isSubmitting, question, handleAnswer])
 
-  if (isLoading) {
+  if (isLoading || isPreloading) {
     return (
       <QuizLoadingOverlay 
         isOpen={true} 
-        progress={99} 
-        status="Đồng bộ phiên học..." 
+        progress={isPreloading ? 45 : 99} 
+        status={isPreloading ? "Đang chuẩn bị bộ câu hỏi..." : "Đồng bộ phiên học..."} 
       />
     )
   }

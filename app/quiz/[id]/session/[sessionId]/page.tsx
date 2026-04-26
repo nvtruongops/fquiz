@@ -112,6 +112,17 @@ export default function QuizSessionPage() {
   const resolvedSessionId = sessionId ?? ''
   const router = useRouter()
 
+  // Safety check: if sessionId is missing or literally the string "undefined", redirect back
+  useEffect(() => {
+    if (!resolvedSessionId || resolvedSessionId === 'undefined') {
+      if (resolvedQuizId) {
+        router.replace(`/quiz/${resolvedQuizId}`)
+      } else {
+        router.replace('/explore')
+      }
+    }
+  }, [resolvedSessionId, resolvedQuizId, router])
+
   const {
     sessionId: storeSessionId,
     currentQuestionIndex,
@@ -150,7 +161,7 @@ export default function QuizSessionPage() {
   }, [resolvedSessionId])
 
   function reportSessionActivity(event: 'pause' | 'resume') {
-    if (!sessionId) return
+    if (!sessionId || sessionId === 'undefined') return
     const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
 
@@ -191,7 +202,7 @@ export default function QuizSessionPage() {
       setPreloadProgress(100)
       return data
     },
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
     staleTime: Infinity,
     gcTime: 1000 * 60 * 30,
   })
@@ -205,7 +216,7 @@ export default function QuizSessionPage() {
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
     staleTime: 0,
     gcTime: 0, // Never cache - always fetch fresh to get correct current_question_index
     refetchOnMount: 'always',
@@ -330,7 +341,7 @@ export default function QuizSessionPage() {
   }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || sessionId === 'undefined') return
     reportSessionActivity('resume')
   }, [sessionId])
 

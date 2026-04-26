@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
+import { cn } from '@/lib/utils'
 import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 
 interface QuizDetail {
@@ -101,8 +102,8 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
       description: q.description || '',
       category_id: { name: q.category_id?.name || q.categoryName || 'Chung' },
       course_code: q.course_code,
-      num_questions: q.questionCount ?? q.questions?.length ?? 0,
-      num_attempts: q.studentCount ?? 0,
+      num_questions: q.num_questions ?? q.questionCount ?? q.questions?.length ?? 0,
+      num_attempts: q.num_attempts ?? q.studentCount ?? 0,
       created_at: q.created_at ?? q.createdAt,
     }
   }
@@ -226,6 +227,12 @@ export default function QuizDetailPage() {
       setActiveSessionInfo(null)
       setResumeDialogOpen(false)
       
+      if (!nextSessionId || nextSessionId === 'undefined') {
+        toast.error('Không tìm thấy phiên thi hợp lệ. Vui lòng thử lại.')
+        stopLoading()
+        return
+      }
+
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const targetUrl = data.mode === 'flashcard' 
         ? (isMobile ? `/quiz/${quizId}/session/${nextSessionId}/flashcard/mobile` : `/quiz/${quizId}/session/${nextSessionId}/flashcard`)
@@ -547,97 +554,128 @@ export default function QuizDetailPage() {
                     Chọn chế độ học <PlayCircle className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[550px]">
-                  <DialogHeader>
-                    <DialogTitle className="text-center text-2xl font-normal uppercase tracking-[0.15em] text-[#5D7B6F]">
+                <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[650px] overflow-hidden border-none shadow-2xl">
+                  <DialogHeader className="pb-4">
+                    <DialogTitle className="text-center text-2xl font-black uppercase tracking-[0.1em] text-[#5D7B6F]">
                       Chọn chế độ làm bài
                     </DialogTitle>
-                    <DialogDescription className="pt-2 text-center text-sm text-gray-500">
+                    <DialogDescription className="pt-2 text-center text-sm text-gray-500 font-medium">
                       Chọn chế độ và độ khó phù hợp với mục tiêu học tập của bạn
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="space-y-6 py-6">
-                    {/* Mode Selection */}
-                    <div className="space-y-3">
-                      <label className="text-base font-semibold text-gray-700">
-                        Chế độ
+                  <div className="space-y-5 py-4">
+                    {/* Mode Selection - Interactive Cards */}
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">
+                        1. Phương thức học tập
                       </label>
-                      <Select
-                        value={selectedMode}
-                        onValueChange={(value) => setSelectedMode(value as 'immediate' | 'review' | 'flashcard')}
-                      >
-                        <SelectTrigger className="h-14 text-base">
-                          <SelectValue placeholder="Chọn chế độ" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="immediate" className="py-4">
-                            <div className="flex items-center gap-3">
-                              <Zap className="h-5 w-5 text-green-600" />
-                              <div>
-                                <div className="font-semibold text-base">Chế độ luyện tập</div>
-                                <div className="text-sm text-gray-500">Xem đáp án ngay sau mỗi câu</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="review" className="py-4">
-                            <div className="flex items-center gap-3">
-                              <BookOpen className="h-5 w-5 text-blue-600" />
-                              <div>
-                                <div className="font-semibold text-base">Chế độ kiểm tra</div>
-                                <div className="text-sm text-gray-500">Chấm điểm sau khi nộp bài</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="flashcard" className="py-4">
-                            <div className="flex items-center gap-3">
-                              <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="2" y="6" width="20" height="12" rx="2" />
-                                <path d="M12 6v12" />
-                              </svg>
-                              <div>
-                                <div className="font-semibold text-base">Chế độ lật thẻ</div>
-                                <div className="text-sm text-gray-500">Học theo phương pháp flashcard</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        {/* Practice Mode */}
+                        <div 
+                          onClick={() => setSelectedMode('immediate')}
+                          className={cn(
+                            "relative group cursor-pointer rounded-2xl border-2 p-4 transition-all duration-300",
+                            selectedMode === 'immediate' 
+                              ? "border-green-500 bg-green-50/50 ring-4 ring-green-500/10" 
+                              : "border-gray-100 bg-white hover:border-green-200 hover:shadow-lg hover:-translate-y-1"
+                          )}
+                        >
+                          <div className={cn(
+                            "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500",
+                            selectedMode === 'immediate' ? "bg-green-500 text-white shadow-lg shadow-green-200" : "bg-green-50 text-green-500 group-hover:scale-110"
+                          )}>
+                            <Zap className="h-5 w-5" />
+                          </div>
+                          <h3 className="font-black text-[13px] text-gray-900 uppercase tracking-tight">Luyện tập</h3>
+                          <p className="mt-1.5 text-[10px] font-medium leading-relaxed text-gray-500">Xem đáp án & giải thích ngay sau mỗi câu</p>
+                          {selectedMode === 'immediate' && (
+                            <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-pulse" />
+                          )}
+                        </div>
+
+                        {/* Test Mode */}
+                        <div 
+                          onClick={() => setSelectedMode('review')}
+                          className={cn(
+                            "relative group cursor-pointer rounded-2xl border-2 p-4 transition-all duration-300",
+                            selectedMode === 'review' 
+                              ? "border-blue-500 bg-blue-50/50 ring-4 ring-blue-500/10" 
+                              : "border-gray-100 bg-white hover:border-blue-200 hover:shadow-lg hover:-translate-y-1"
+                          )}
+                        >
+                          <div className={cn(
+                            "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500",
+                            selectedMode === 'review' ? "bg-blue-500 text-white shadow-lg shadow-blue-200" : "bg-blue-50 text-blue-500 group-hover:scale-110"
+                          )}>
+                            <BookOpen className="h-5 w-5" />
+                          </div>
+                          <h3 className="font-black text-[13px] text-gray-900 uppercase tracking-tight">Kiểm tra</h3>
+                          <p className="mt-1.5 text-[10px] font-medium leading-relaxed text-gray-500">Thi thử chuẩn cấu trúc, chấm điểm sau khi nộp</p>
+                          {selectedMode === 'review' && (
+                            <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-pulse" />
+                          )}
+                        </div>
+
+                        {/* Flashcard Mode */}
+                        <div 
+                          onClick={() => setSelectedMode('flashcard')}
+                          className={cn(
+                            "relative group cursor-pointer rounded-2xl border-2 p-4 transition-all duration-300",
+                            selectedMode === 'flashcard' 
+                              ? "border-purple-500 bg-purple-50/50 ring-4 ring-purple-500/10" 
+                              : "border-gray-100 bg-white hover:border-purple-200 hover:shadow-lg hover:-translate-y-1"
+                          )}
+                        >
+                          <div className={cn(
+                            "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500",
+                            selectedMode === 'flashcard' ? "bg-purple-500 text-white shadow-lg shadow-purple-200" : "bg-purple-50 text-purple-500 group-hover:scale-110"
+                          )}>
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <rect x="2" y="6" width="20" height="12" rx="2" />
+                              <path d="M12 6v12" />
+                            </svg>
+                          </div>
+                          <h3 className="font-black text-[13px] text-gray-900 uppercase tracking-tight">Lật thẻ</h3>
+                          <p className="mt-1.5 text-[10px] font-medium leading-relaxed text-gray-500">Phương pháp ghi nhớ chủ động (Flashcard)</p>
+                          {selectedMode === 'flashcard' && (
+                            <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] animate-pulse" />
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Difficulty Selection */}
-                    <div className="space-y-3">
-                      <label className="text-base font-semibold text-gray-700">
-                        Độ khó
+                    {/* Difficulty Selection - Segmented Control */}
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">
+                        2. Cấu hình nội dung
                       </label>
-                      <Select
-                        value={selectedDifficulty}
-                        onValueChange={(value) => setSelectedDifficulty(value as 'sequential' | 'random')}
-                      >
-                        <SelectTrigger className="h-14 text-base">
-                          <SelectValue placeholder="Chọn độ khó" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sequential" className="py-4">
-                            <div className="flex items-center gap-3">
-                              <AlignJustify className="h-5 w-5" />
-                              <div>
-                                <div className="font-semibold text-base">Theo thứ tự</div>
-                                <div className="text-sm text-gray-500">Câu hỏi hiển thị theo thứ tự</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="random" className="py-4">
-                            <div className="flex items-center gap-3">
-                              <Shuffle className="h-5 w-5" />
-                              <div>
-                                <div className="font-semibold text-base">Ngẫu nhiên</div>
-                                <div className="text-sm text-gray-500">Câu hỏi được xáo trộn</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
+                        <button
+                          onClick={() => setSelectedDifficulty('sequential')}
+                          className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                            selectedDifficulty === 'sequential' 
+                              ? "bg-white text-[#5D7B6F] shadow-sm border border-gray-100" 
+                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                          )}
+                        >
+                          <AlignJustify className="h-3.5 w-3.5" />
+                          Hiển thị theo thứ tự
+                        </button>
+                        <button
+                          onClick={() => setSelectedDifficulty('random')}
+                          className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                            selectedDifficulty === 'random' 
+                              ? "bg-white text-[#5D7B6F] shadow-sm border border-gray-100" 
+                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                          )}
+                        >
+                          <Shuffle className="h-3.5 w-3.5" />
+                          Xáo trộn ngẫu nhiên
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -648,7 +686,7 @@ export default function QuizDetailPage() {
                         handleSelectMode(selectedMode, selectedDifficulty)
                       }}
                       disabled={startSessionMutation.isPending}
-                      className="w-full h-14 text-base bg-[#5D7B6F] hover:bg-[#4a6358]"
+                      className="w-full h-12 text-sm bg-[#5D7B6F] hover:bg-[#4a6358] rounded-xl"
                     >
                       {startSessionMutation.isPending ? (
                         <>

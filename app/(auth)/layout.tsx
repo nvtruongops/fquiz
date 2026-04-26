@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { BookOpen, Sparkles } from 'lucide-react'
 import { verifySession } from '@/lib/dal'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // If already logged in, redirect to dashboard
   const user = await verifySession()

@@ -149,15 +149,14 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   }
 
   return (
-    <div className="w-full h-full max-w-3xl mx-auto flex flex-col" key={question._id}>
-      {/* Flashcard container */}
+    <div className="w-full h-full max-w-4xl mx-auto flex flex-col" key={question._id}>
       <div 
-        className="perspective-1000 transition-all duration-300 flex-1 min-h-0 animate-in fade-in slide-in-from-bottom-2 duration-500"
+        className="perspective-1000 flex-1 min-h-0 animate-in fade-in duration-300"
         onClick={handleFlip}
       >
         <div
           className={cn(
-            'flashcard-inner relative w-full h-full min-h-0 transition-transform duration-600',
+            'flashcard-inner relative w-full h-full min-h-0 transition-transform duration-700',
             isFlipped && 'rotate-y-180'
           )}
           style={{ transformStyle: 'preserve-3d' }}
@@ -165,133 +164,157 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           {/* Front side */}
           <div
             className={cn(
-              'flashcard-face h-full flex flex-col hover:shadow-lg transition-shadow',
-              'backface-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800',
+              'flashcard-face flashcard-face-front h-full flex flex-col transition-all duration-300',
+              'bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 shadow-xl flashcard-shadow',
               getCardPadding()
             )}
           >
-            <div className="flex-1 overflow-y-auto px-1 -mx-1 flex flex-col pt-1 pb-4">
-              <div className="flex-1 flex flex-col justify-start">
-                {/* Question image */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 flex flex-col pt-1 pb-4">
+              <div className="flex-1 flex flex-col justify-center">
+                {/* Question image - Improved Scaling */}
                 {question.image_url && (
-                  <div className="mb-6">
-                    <img
-                      src={question.image_url}
-                      alt="Question"
-                      className="max-w-full h-auto rounded-lg mx-auto max-h-64 object-contain"
-                    />
+                  <div className="mb-6 relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary-bg/20 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                    <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+                      <img
+                        src={question.image_url}
+                        alt="Question"
+                        className="max-w-full h-auto mx-auto max-h-[35vh] md:max-h-[400px] object-contain transition-transform duration-500 hover:scale-[1.02]"
+                      />
+                    </div>
                   </div>
                 )}
 
                 {/* Question text */}
                 <h2 className={cn(
-                  "font-semibold text-left whitespace-pre-wrap",
+                  "font-bold text-center whitespace-pre-wrap tracking-tight",
                   getQuestionFontSize(),
                   getQuestionMargin(),
-                  getQuestionLineHeight()
+                  getQuestionLineHeight(),
+                  "text-slate-800 dark:text-slate-100"
                 )}>
                   {question.text}
                 </h2>
 
                 {/* Options */}
-                <div className={getOptionSpacing()}>
+                <div className={cn("max-w-2xl mx-auto w-full", getOptionSpacing())}>
                   {(question.options || []).map((option, idx) => (
                     <div
                       key={idx}
                       className={cn(
-                        "bg-secondary rounded-lg text-left",
+                        "bg-slate-50 dark:bg-slate-800/50 rounded-xl text-left border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm",
                         getOptionPadding()
                       )}
                     >
-                      <span className="font-medium mr-2">
-                        {String.fromCharCode(65 + idx)}.
-                      </span>
-                      <span className={cn("whitespace-pre-wrap", getOptionFontSize())}>{option}</span>
+                      <div className="flex items-start gap-3">
+                        <span className="flex-none flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                        <span className={cn("whitespace-pre-wrap flex-1 text-slate-700 dark:text-slate-300", getOptionFontSize())}>
+                          {option}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
+            </div>
+            
+            {/* Flip hint at bottom */}
+            <div className="text-center pt-2 opacity-40 group">
+              <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
+                <RotateCw className="w-3 h-3 animate-spin-slow" />
+                Nhấn để xem đáp án
+              </p>
             </div>
           </div>
 
           {/* Back side */}
           <div
             className={cn(
-              'flashcard-face h-full flex flex-col',
-              'backface-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800',
+              'flashcard-face flashcard-face-back h-full flex flex-col',
+              'bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-2xl',
               getCardPadding()
             )}
-            style={{ transform: 'rotateX(180deg)' }}
           >
-            <div className="flex-1 overflow-y-auto px-1 -mx-1 pt-1 pb-4 flex flex-col justify-start">
-              <div className="space-y-4">
-                {/* Correct answer */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 pt-1 pb-4 flex flex-col">
+              <div className="flex-1 flex flex-col justify-center space-y-6">
+                {/* Correct answer - Modernized */}
                 <div 
-                  className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border-2 border-green-500"
+                  className="p-6 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border-2 border-green-500/30 relative overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <h3 className="text-base font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center">
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Đáp án đúng:
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <CheckCircle className="w-16 h-16 text-green-500" />
+                  </div>
+                  
+                  <h3 className="text-sm font-bold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                    <div className="p-1 bg-green-100 dark:bg-green-800 rounded">
+                      <CheckCircle className="h-4 w-4" />
+                    </div>
+                    Đáp án chính xác
                   </h3>
-                  <div className="space-y-1">
+                  
+                  <div className="space-y-3 relative z-10">
                     {correctAnswers.length > 0 ? (
                       correctAnswers.map((answer, idx) => (
-                        <p key={idx} className="text-base font-medium whitespace-pre-wrap">
-                          {String.fromCharCode(65 + (question.correct_answer?.[idx] ?? idx))}. {answer}
-                        </p>
+                        <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30">
+                          <span className="font-bold text-green-600">
+                            {String.fromCharCode(65 + (question.correct_answer?.[idx] ?? idx))}.
+                          </span>
+                          <p className="text-base font-medium whitespace-pre-wrap text-slate-800 dark:text-slate-200 leading-relaxed">
+                            {answer}
+                          </p>
+                        </div>
                       ))
                     ) : (
-                      <p className="text-base font-medium text-muted-foreground">
-                        Không có đáp án
+                      <p className="text-base font-medium text-muted-foreground italic text-center py-4">
+                        Không có đáp án được chỉ định
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Explanation Dropdown */}
+                {/* Explanation Dropdown - Modernized */}
                 {question.explanation && (
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div onClick={(e) => e.stopPropagation()} className="animate-in fade-in slide-in-from-top-2 duration-500">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         setShowExplanation(!showExplanation)
                       }}
-                      className="w-full p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors flex items-center justify-between"
+                      className={cn(
+                        "w-full p-4 rounded-xl border transition-all flex items-center justify-between group",
+                        showExplanation 
+                          ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 shadow-inner" 
+                          : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-300"
+                      )}
                     >
-                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-300 flex items-center">
-                        <span className="mr-2">💡</span>
-                        Giải thích
+                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                        <div className={cn(
+                          "p-1 rounded transition-colors",
+                          showExplanation ? "bg-blue-200 dark:bg-blue-800" : "bg-slate-200 dark:bg-slate-700"
+                        )}>
+                          <span className="text-xs">💡</span>
+                        </div>
+                        Giải thích chi tiết
                       </span>
                       {showExplanation ? (
-                        <ChevronUp className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+                        <ChevronUp className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+                        <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-blue-500" />
                       )}
                     </button>
                     
                     {showExplanation && (
-                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 relative">
-                        {/* Close button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setShowExplanation(false)
-                          }}
-                          className="absolute top-2 right-2 p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded transition-colors z-10"
-                          aria-label="Đóng giải thích"
-                        >
-                          <span className="text-lg text-blue-700 dark:text-blue-300">×</span>
-                        </button>
-                        
-                        {/* Full explanation content - no scroll */}
-                        <div className="pr-6">
+                      <div className="mt-3 p-5 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/50 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30"></div>
+                        <div className="pr-4">
                           <p 
                             className={cn(
-                              "leading-snug whitespace-pre-wrap text-gray-700 dark:text-gray-300",
-                              question.explanation.length > 1000 ? "text-[11px]" :
-                              question.explanation.length > 600 ? "text-xs" : 
-                              question.explanation.length > 300 ? "text-sm" : "text-base"
+                              "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
+                              question.explanation.length > 1000 ? "text-xs" :
+                              question.explanation.length > 600 ? "text-sm" : "text-base"
                             )}
                           >
                             {question.explanation}
@@ -303,32 +326,34 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 )}
               </div>
 
-              {/* Self-assessment buttons */}
-              <div className="pt-4 mt-2 border-t border-gray-100 dark:border-gray-800 flex gap-4 justify-center flex-none" onClick={(e) => e.stopPropagation()}>
+              {/* Self-assessment buttons - Premium look */}
+              <div className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="flex-1 max-w-xs border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                  className="group relative flex-1 h-14 rounded-2xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleAnswer(false)
                   }}
                   disabled={isLoading}
                 >
-                  <XCircle className="mr-2 h-5 w-5" />
-                  Chưa biết
+                  <div className="absolute inset-0 bg-red-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                  <XCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                  <span className="font-bold">Chưa biết</span>
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1 max-w-xs bg-green-600 hover:bg-green-700"
+                  className="group relative flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleAnswer(true)
                   }}
                   disabled={isLoading}
                 >
-                  <CheckCircle className="mr-2 h-5 w-5" />
-                  Đã biết
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                  <CheckCircle className="mr-2 h-5 w-5 group-hover:-rotate-12 transition-transform" />
+                  <span className="font-bold text-white">Đã biết</span>
                 </Button>
               </div>
             </div>
@@ -336,12 +361,26 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
         </div>
       </div>
 
-      {/* Keyboard shortcuts hint */}
-      <div className="mt-4 text-center text-xs md:text-sm text-muted-foreground flex-none pb-2" onClick={(e) => e.stopPropagation()}>
-        <p>Phím tắt: Space = Lật thẻ | 1 = Chưa biết | 2 = Đã biết | Click anywhere = Lật thẻ</p>
+      {/* Keyboard shortcuts hint - More elegant */}
+      <div className="mt-6 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4 border border-slate-200/50 dark:border-slate-700/50" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono uppercase">Space</kbd>
+          <span>Lật thẻ</span>
+        </div>
+        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">1</kbd>
+          <span>Chưa biết</span>
+        </div>
+        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">2</kbd>
+          <span>Đã biết</span>
+        </div>
       </div>
     </div>
   )
+
 })
 
 FlashcardView.displayName = 'FlashcardView'
