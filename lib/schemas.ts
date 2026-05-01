@@ -170,6 +170,41 @@ export const SaveDraftQuizSchema = z.object({
   status: z.literal('draft'),
 })
 
+// Admin schemas — no upper limit on question count
+export const AdminCreateQuizSchema = z.object({
+  description: z
+    .string()
+    .trim()
+    .max(1000, 'Mô tả tối đa 1000 ký tự')
+    .transform(stripHtml)
+    .optional()
+    .default(''),
+  category_id: z
+    .string()
+    .min(1, 'Danh mục (Môn học) không được để trống')
+    .regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
+  course_code: z
+    .string()
+    .trim()
+    .min(1, 'Mã đề / Mã Quiz không được để trống')
+    .max(50, 'Mã đề tối đa 50 ký tự')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+  questions: z
+    .array(QuestionSchema)
+    .min(1, 'Cần ít nhất một câu hỏi'),
+  status: z.enum(['published', 'draft']).optional().default('published'),
+})
+
+// Admin lenient schema for draft saves — no upper limit on question count
+export const AdminSaveDraftQuizSchema = z.object({
+  description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
+  category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
+  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50)
+    .regex(/^[a-zA-Z0-9_]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+  questions: z.array(DraftQuestionSchema).min(1),
+  status: z.literal('draft'),
+})
+
 export const SubmitAnswerSchema = z
   .object({
     answer_index: z.number().int().min(0, 'answer_index must be a non-negative integer').optional(),
@@ -393,6 +428,8 @@ export type LoginInput = z.infer<typeof LoginSchema>
 export type QuestionInput = z.infer<typeof QuestionSchema>
 export type CreateQuizInput = z.infer<typeof CreateQuizSchema>
 export type SaveDraftQuizInput = z.infer<typeof SaveDraftQuizSchema>
+export type AdminCreateQuizInput = z.infer<typeof AdminCreateQuizSchema>
+export type AdminSaveDraftQuizInput = z.infer<typeof AdminSaveDraftQuizSchema>
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>
 export type CreateHighlightInput = z.infer<typeof CreateHighlightSchema>
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>

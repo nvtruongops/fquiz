@@ -1,56 +1,10 @@
 'use client'
 
-import { ChangeEvent, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Upload, X, ImageIcon, AlertCircle } from 'lucide-react'
+import { X, ImageIcon, AlertCircle, Link as LinkIcon } from 'lucide-react'
 import Image from 'next/image'
-
-const MAX_FILE_MB = 10
-const MIN_WIDTH = 320
-const MIN_HEIGHT = 180
-const MAX_DIMENSION = 1600
-
-async function readAndScaleImage(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer()
-  const blob = new Blob([buffer], { type: file.type || 'image/*' })
-  const objectUrl = URL.createObjectURL(blob)
-
-  try {
-    const img = new globalThis.Image()
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error('Không thể đọc ảnh'))
-      img.src = objectUrl
-    })
-
-    const sourceWidth = img.naturalWidth
-    const sourceHeight = img.naturalHeight
-
-    if (sourceWidth < MIN_WIDTH || sourceHeight < MIN_HEIGHT) {
-      throw new Error(`Ảnh quá nhỏ. Tối thiểu ${MIN_WIDTH}x${MIN_HEIGHT}px.`)
-    }
-
-    const longestSide = Math.max(sourceWidth, sourceHeight)
-    const scale = longestSide > MAX_DIMENSION ? MAX_DIMENSION / longestSide : 1
-    const targetWidth = Math.max(1, Math.round(sourceWidth * scale))
-    const targetHeight = Math.max(1, Math.round(sourceHeight * scale))
-
-    const canvas = document.createElement('canvas')
-    canvas.width = targetWidth
-    canvas.height = targetHeight
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Không thể xử lý ảnh')
-
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
-
-    return canvas.toDataURL('image/webp', 0.9)
-  } finally {
-    URL.revokeObjectURL(objectUrl)
-  }
-}
+import { Input } from '@/components/ui/input'
 
 interface ImageUploadProps {
   value: string
@@ -59,29 +13,33 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadProps>) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [urlInput, setUrlInput] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [showUrlInput, setShowUrlInput] = useState(false)
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const handleUrlSubmit = () => {
     setErrorMsg(null)
-
-    if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setErrorMsg(`File quá lớn. Vui lòng chọn file dưới ${MAX_FILE_MB}MB.`)
-      e.target.value = ''
+    
+    if (!urlInput.trim()) {
+      setErrorMsg('Vui lòng nhập URL ảnh')
       return
     }
 
+    // Validate URL format
     try {
-      const processed = await readAndScaleImage(file)
-      onChange(processed)
-    } catch (error) {
-      setErrorMsg((error as Error).message || 'Không thể xử lý ảnh đã chọn.')
-    } finally {
-      e.target.value = ''
+      const url = new URL(urlInput.trim())
+      if (!url.protocol.startsWith('http')) {
+        setErrorMsg('URL phải bắt đầu bằng http:// hoặc https://')
+        return
+      }
+    } catch {
+      setErrorMsg('URL không hợp lệ')
+      return
     }
+
+    onChange(urlInput.trim())
+    setUrlInput('')
+    setShowUrlInput(false)
   }
 
   return (
@@ -110,26 +68,55 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
         )}
 
         <div className="flex-1 space-y-2">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            title="Tải ảnh minh họa cho câu hỏi"
-            aria-label="Tải ảnh minh họa cho câu hỏi"
-          />
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => { setErrorMsg(null); fileInputRef.current?.click() }}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            {value ? 'Thay đổi ảnh' : 'Tải ảnh từ máy'}
-          </Button>
+          {showUrlInput ? (
+            <div className="space-y-2">
+              <Input
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleUrlSubmit()
+                  }
+                }}
+                className="text-sm"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleUrlSubmit}
+                >
+                  Thêm ảnh
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowUrlInput(false)
+                    setUrlInput('')
+                    setErrorMsg(null)
+                  }}
+                >
+                  Hủy
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { setErrorMsg(null); setShowUrlInput(true) }}
+              className="flex items-center gap-2"
+            >
+              <LinkIcon className="h-4 w-4" />
+              {value ? 'Thay đổi ảnh' : 'Thêm ảnh từ URL'}
+            </Button>
+          )}
 
           {errorMsg ? (
             <div className="flex items-start gap-1.5 text-red-600 bg-red-50 border border-red-200 rounded-md px-2.5 py-1.5">
@@ -138,7 +125,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
             </div>
           ) : (
             <p className="text-[10px] text-gray-400">
-              JPG, PNG, WebP · Tối đa {MAX_FILE_MB}MB · Tối thiểu {MIN_WIDTH}x{MIN_HEIGHT}px
+              Nhập URL ảnh từ nguồn bên ngoài (https://...)
             </p>
           )}
         </div>

@@ -42,8 +42,7 @@ export function FlashcardReviewButton({
 
       const data = await res.json()
       
-      // Redirect to the new review session
-      // Check if mobile
+      // Redirect back to the same session (now reset with unknown cards)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const reviewUrl = isMobile
         ? `/quiz/${quizId}/session/${data.sessionId}/flashcard/mobile`
@@ -67,17 +66,19 @@ export function FlashcardReviewButton({
       onClick={handleReview}
       disabled={disabled || isLoading}
       variant="outline"
-      className="w-full h-12 text-sm font-medium border-orange-500 text-orange-600 hover:bg-orange-50"
+      className="h-10 text-sm font-semibold border-2 border-orange-500 text-orange-600 hover:bg-orange-50 whitespace-nowrap px-3"
     >
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Đang tạo phiên ôn tập...
+          <span className="hidden sm:inline">Đang tạo phiên ôn tập...</span>
+          <span className="sm:hidden">Đang tạo...</span>
         </>
       ) : (
         <>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Ôn lại {unknownCount} câu chưa biết
+          <span className="hidden sm:inline">Ôn lại {unknownCount} câu chưa biết</span>
+          <span className="sm:hidden">Ôn lại ({unknownCount})</span>
         </>
       )}
     </Button>

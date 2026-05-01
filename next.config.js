@@ -30,15 +30,15 @@ const imgSrcDomains = allowedDomains.map((d) => d.trim()).join(' ')
 
 const cspDirectives = [
   "default-src 'self'",
-  `img-src 'self' data: blob: https://res.cloudinary.com ${imgSrcDomains}`,
+  `img-src 'self' data: blob: ${imgSrcDomains}`,
   [
-    "script-src 'self' 'unsafe-inline' https://upload-widget.cloudinary.com https://cdn.cloudinary.com",
+    "script-src 'self' 'unsafe-inline'",
     isProduction ? '' : "'unsafe-eval'",
   ].filter(Boolean).join(' '),
-  "style-src 'self' 'unsafe-inline' https://upload-widget.cloudinary.com",
+  "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.cloudinary.com https://upload-widget.cloudinary.com https://res.cloudinary.com ${apiConnectOrigins.join(' ')}`,
-  "frame-src 'self' https://upload-widget.cloudinary.com",
+  `connect-src 'self' ${apiConnectOrigins.join(' ')}`,
+  "frame-src 'self'",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

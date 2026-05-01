@@ -1,11 +1,6 @@
 import nodemailer from 'nodemailer'
 import logger from '@/lib/logger'
 
-interface SendRegistrationMailParams {
-  to: string
-  username: string
-}
-
 interface SendResetPasswordMailParams {
   to: string
   resetUrl: string
@@ -48,29 +43,6 @@ function createTransporter() {
       user,
       pass: appPassword,
     },
-  })
-}
-
-export async function sendRegistrationMail({ to, username }: SendRegistrationMailParams): Promise<void> {
-  const { from } = getMailConfig()
-  if (!from) throw new Error('Missing MAIL_FROM')
-
-  const transporter = createTransporter()
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-
-  await transporter.sendMail({
-    from,
-    to,
-    subject: 'FQuiz - Đăng ký thành công',
-    text: `Xin chào ${username},\n\nTài khoản của bạn đã được tạo thành công.\nĐăng nhập tại: ${baseUrl}\n\nFQuiz`,
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
-        <p>Xin chào <strong>${username}</strong>,</p>
-        <p>Tài khoản của bạn đã được tạo thành công.</p>
-        <p><a href="${baseUrl}">Đăng nhập FQuiz</a></p>
-        <p>FQuiz</p>
-      </div>
-    `,
   })
 }
 

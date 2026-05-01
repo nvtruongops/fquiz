@@ -1,12 +1,11 @@
 'use client'
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, Mail, CalendarClock, Save, UserRound, Upload } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, Mail, CalendarClock, Save, UserRound } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/lib/store/toast-store'
-import { validateImageFile, fileToBase64, validateBase64Image } from '@/lib/client-validation'
 import { withCsrfHeaders } from '@/lib/csrf'
 
 type ProfileResponse = {
@@ -23,11 +22,8 @@ export default function ProfilePage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [avatarVersion, setAvatarVersion] = useState<number>(Date.now())
   const [profile, setProfile] = useState<ProfileResponse['profile'] | null>(null)
-  const [form, setForm] = useState({ username: '', avatarUrl: '', bio: '' })
-  const [pendingAvatarBase64, setPendingAvatarBase64] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [form, setForm] = useState({ username: '', bio: '' })
 
   useEffect(() => {
     const run = async () => {
@@ -46,10 +42,8 @@ export default function ProfilePage() {
         setProfile(data.profile)
         setForm({
           username: data.profile.username,
-          avatarUrl: data.profile.avatarUrl,
           bio: data.profile.bio,
         })
-        setAvatarVersion(Date.now())
       } catch {
         toast.error('Hệ thống đang bận, vui lòng thử lại')
       } finally {
@@ -62,85 +56,15 @@ export default function ProfilePage() {
 
   const bioLength = useMemo(() => form.bio.length, [form.bio])
 
-  const avatarDisplayUrl = useMemo(() => {
-    if (!form.avatarUrl) return ''
-    if (form.avatarUrl.startsWith('data:image')) return form.avatarUrl
-    const separator = form.avatarUrl.includes('?') ? '&' : '?'
-    return `${form.avatarUrl}${separator}v=${avatarVersion}`
-  }, [form.avatarUrl, avatarVersion])
-
-  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    // Client-side validation using helper
-    const fileValidation = validateImageFile(file)
-    if (!fileValidation.valid) {
-      toast.error(fileValidation.error)
-      event.target.value = ''
-      return
-    }
-
-    try {
-      const base64 = await fileToBase64(file)
-      
-      // Validate base64 format
-      const base64Validation = validateBase64Image(base64)
-      if (!base64Validation.valid) {
-        toast.error(base64Validation.error)
-        event.target.value = ''
-        return
-      }
-
-      setPendingAvatarBase64(base64)
-      setForm((prev) => ({ ...prev, avatarUrl: base64 }))
-      toast.info('Ảnh đã được chọn. Nhấn "Lưu hồ sơ" để cập nhật ảnh đại diện.')
-    } catch {
-      toast.error('Không thể đọc ảnh tải lên')
-    }
-
-    event.target.value = ''
-  }
-
   async function handleSave() {
     setSaving(true)
     try {
-      let persistedAvatarUrl: string | undefined
-
-      if (pendingAvatarBase64) {
-        const avatarRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/profile/avatar`, {
-          method: 'POST',
-          headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-          credentials: 'include',
-          body: JSON.stringify({ image: pendingAvatarBase64 }),
-        })
-
-        if (!avatarRes.ok) {
-          if (avatarRes.status === 404 || avatarRes.status === 501) {
-            toast.info('Tính năng upload avatar đang được phát triển. Coming soon.')
-            return
-          }
-
-          const avatarErr = await avatarRes.json().catch(() => ({}))
-          toast.error(avatarErr?.error ?? 'Upload avatar thất bại')
-          return
-        }
-
-        const avatarData = (await avatarRes.json()) as { avatarUrl: string }
-        persistedAvatarUrl = avatarData.avatarUrl
-        setForm((prev) => ({ ...prev, avatarUrl: avatarData.avatarUrl }))
-        setProfile((prev) => (prev ? { ...prev, avatarUrl: avatarData.avatarUrl } : prev))
-        setAvatarVersion(Date.now())
-        setPendingAvatarBase64(null)
-      }
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/profile`, {
         method: 'PATCH',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           profile_bio: form.bio,
-          ...(persistedAvatarUrl ? { avatar_url: persistedAvatarUrl } : {}),
         }),
       })
 
@@ -155,20 +79,17 @@ export default function ProfilePage() {
       }
 
       const data = (await res.json()) as ProfileResponse
-      const finalAvatarUrl = data.profile.avatarUrl || persistedAvatarUrl || profile?.avatarUrl || form.avatarUrl || ''
       setForm({
         username: data.profile.username,
-        avatarUrl: finalAvatarUrl,
         bio: data.profile.bio,
       })
       setProfile((prev) => ({
         username: data.profile.username,
         email: data.profile.email,
-        avatarUrl: finalAvatarUrl,
+        avatarUrl: prev?.avatarUrl || '',
         bio: data.profile.bio,
         createdAt: data.profile.createdAt,
       }))
-      setAvatarVersion(Date.now())
       toast.success('Đã cập nhật hồ sơ thành công')
     } catch {
       toast.error('Không thể cập nhật hồ sơ vào lúc này')
@@ -192,13 +113,8 @@ export default function ProfilePage() {
     <div className="space-y-6 pb-10">
       <section className="rounded-[28px] bg-gradient-to-br from-[#5D7B6F] to-[#4A6359] text-white p-6 md:p-8 shadow-2xl shadow-[#5D7B6F]/20">
         <div className="flex items-start gap-4 md:gap-6">
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center overflow-hidden">
-            {form.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarDisplayUrl} alt="avatar" className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-black text-2xl">{(profile?.username?.[0] ?? 'U').toUpperCase()}</span>
-            )}
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">
+            <span className="font-black text-2xl md:text-3xl">{(profile?.username?.[0] ?? 'U').toUpperCase()}</span>
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-white/70 font-bold">Trang cá nhân</p>
@@ -229,35 +145,6 @@ export default function ProfilePage() {
                 />
               </div>
               <p className="text-[11px] text-gray-400 mt-1 font-bold">Username được cố định theo lúc đăng ký để đảm bảo nhất quán dữ liệu.</p>
-            </div>
-
-            <div>
-              <label htmlFor="profile-avatar-file" className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">Ảnh đại diện</label>
-              <div className="mt-2 rounded-2xl border border-[#5D7B6F]/15 bg-[#EAE7D6]/30 p-4 flex items-center justify-between gap-4">
-                <div className="text-sm text-gray-600 font-bold"></div>
-                <input
-                  id="profile-avatar-file"
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-[#5D7B6F]/30 text-[#5D7B6F] font-black"
-                  disabled={saving}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload avatar
-                </Button>
-              </div>
-              {pendingAvatarBase64 && (
-                <p className="text-[11px] text-[#5D7B6F] mt-1 font-bold">Ảnh mới đang chờ lưu.</p>
-              )}
-              <p className="text-[11px] text-gray-400 mt-1 font-bold">JPG, PNG, GIF, WEBP. Tối đa 5MB.</p>
             </div>
 
             <div>

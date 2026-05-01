@@ -283,10 +283,9 @@ export default function QuizDetailPage() {
       const nextSessionId = data.sessionId
 
       if (!nextSessionId) {
-        // Restart completed (old session deleted)
-        // Don't open mode select - the restart handler will create new session
-        setResumeDialogOpen(false)
-        setActiveSessionInfo(null)
+        // Restart step 1 completed (old session deleted).
+        // Step 2 (create new session) will be triggered by handleRestartSession.
+        // Keep loading state — do NOT stopLoading here.
         return
       }
       // Clear pending state and close dialog
@@ -309,13 +308,24 @@ export default function QuizDetailPage() {
       // Preload the target page's data to eliminate double loading
       Promise.all([
         data.mode === 'flashcard' 
-          ? queryClient.prefetchQuery({
-              queryKey: ['flashcard-session', nextSessionId],
-              queryFn: async () => {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}`)
-                return res.json()
-              }
-            })
+          ? Promise.all([
+              // Prefetch session data
+              queryClient.prefetchQuery({
+                queryKey: ['flashcard-session', nextSessionId],
+                queryFn: async () => {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}`)
+                  return res.json()
+                }
+              }),
+              // Prefetch all questions to prevent second loading screen
+              queryClient.prefetchQuery({
+                queryKey: ['flashcard-session', nextSessionId, 'all-questions'],
+                queryFn: async () => {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${nextSessionId}/questions`)
+                  return res.json()
+                }
+              })
+            ])
           : Promise.all([
               queryClient.prefetchQuery({
                 queryKey: ['sessions', nextSessionId, 'initial'],
@@ -466,32 +476,25 @@ export default function QuizDetailPage() {
   }
 
   function handleRestartSession() {
-    // Save the selected mode and difficulty before restarting
     if (!activeSessionInfo) return
-    
-    // Store the mode and difficulty we want to create after restart
+
     const targetMode = selectedMode
     const targetDifficulty = selectedDifficulty
-    
+
     setResumeDialogOpen(false)
     startLoading('Đang làm mới tiến trình...')
-    
-    // First delete the old session using mutateAsync
+
+    // Step 1: delete old session
     startSessionMutation.mutateAsync({
       mode: activeSessionInfo.mode,
       difficulty: activeSessionInfo.difficulty,
       action: 'restart',
-    }).then((data) => {
-      // After restart completes (session deleted), create new session with selected mode
-      if (!data.sessionId) {
-        // Session deleted successfully, now create new one
-        startSessionMutation.mutate({
-          mode: targetMode,
-          difficulty: targetDifficulty,
-        })
-      }
+    }).then(() => {
+      // Step 2: create new session with the chosen mode
+      startSessionMutation.mutate({ mode: targetMode, difficulty: targetDifficulty })
     }).catch((error) => {
       console.error('Restart failed:', error)
+      stopLoading()
       toast.error('Không thể làm mới session')
     })
   }
@@ -721,43 +724,48 @@ export default function QuizDetailPage() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-300 mt-2">Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
                   </div>
                 ) : (
-                  comments.map((comment) => (
-                    <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
-                      <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                        <AvatarImage src={comment.user_id.avatar_url || comment.user_id.avatarUrl || undefined} />
-                        <AvatarFallback className="bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase">
-                          {(comment.user_id.username || comment.user_id.name || '??').substring(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-black text-gray-900">{comment.user_id.username || comment.user_id.name || 'Thành viên'}</span>
-                            <span className="h-1 w-1 rounded-full bg-gray-200" />
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">
-                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
-                            </span>
+                  comments.map((comment) => {
+                    // Handle deleted user case
+                    const user = comment.user_id || { username: 'Người dùng đã xóa', name: 'Người dùng đã xóa', avatar_url: null, avatarUrl: null }
+                    
+                    return (
+                      <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
+                        <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
+                          <AvatarImage src={user.avatar_url || user.avatarUrl || undefined} />
+                          <AvatarFallback className="bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase">
+                            {(user.username || user.name || '??').substring(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-black text-gray-900">{user.username || user.name || 'Thành viên'}</span>
+                              <span className="h-1 w-1 rounded-full bg-gray-200" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">
+                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
+                              </span>
+                            </div>
+                            {currentUser && comment.user_id && String(currentUser._id) === String((comment.user_id as any)._id) && (
+                              <button 
+                                onClick={() => {
+                                  setCommentToDelete(comment._id)
+                                  setIsDeleteDialogOpen(true)
+                                }}
+                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
+                                title="Xóa bình luận"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
-                          {currentUser && String(currentUser._id) === String((comment.user_id as any)._id) && (
-                            <button 
-                              onClick={() => {
-                                setCommentToDelete(comment._id)
-                                setIsDeleteDialogOpen(true)
-                              }}
-                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
-                              title="Xóa bình luận"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                        <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
-                          <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
-                          <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
+                          <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
+                            <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
+                            <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </div>
@@ -934,10 +942,7 @@ export default function QuizDetailPage() {
                     </ScrollArea>
                     <DialogFooter className="p-6 pt-2 bg-gray-50/50 border-t border-gray-100">
                       <Button
-                        onClick={() => {
-                          setModeSelectOpen(false)
-                          handleSelectMode(selectedMode, selectedDifficulty)
-                        }}
+                        onClick={() => handleSelectMode(selectedMode, selectedDifficulty)}
                         disabled={startSessionMutation.isPending}
                         className="w-full h-12 text-sm bg-[#5D7B6F] hover:bg-[#4a6358] rounded-xl shadow-lg shadow-[#5D7B6F]/20"
                       >

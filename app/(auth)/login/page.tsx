@@ -1,48 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { LoginSchema } from '@/lib/schemas'
 import { useToast } from '@/lib/store/toast-store'
 
-function parseSafeCallbackUrl(search: string) {
-  // Support both 'callbackUrl' and 'redirect' params
-  const params = new URLSearchParams(search)
-  const raw = params.get('callbackUrl') || params.get('redirect')
-  if (!raw) return null
-
-  // Support previously double-encoded callback values, e.g. %252Fadmin.
-  let decoded = raw
-  try { decoded = decodeURIComponent(decoded) } catch {}
-  try { decoded = decodeURIComponent(decoded) } catch {}
-
-  if (!decoded.startsWith('/')) return null
-  if (decoded.startsWith('//')) return null
-  return decoded
-}
-
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
 
-  // Show message based on URL params
-  useState(() => {
-    const params = new URLSearchParams(globalThis.location?.search || '')
-    const reason = params.get('reason')
+  // Handle URL params on client side only
+  useEffect(() => {
+    const reason = searchParams.get('reason')
     
     if (reason === 'account_banned') {
       toast.error('Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ.')
     } else if (reason === 'session_expired') {
       toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
     }
-  })
+
+    // Parse callback URL
+    const raw = searchParams.get('callbackUrl') || searchParams.get('redirect')
+    if (raw) {
+      let decoded = raw
+      try { decoded = decodeURIComponent(decoded) } catch {}
+      try { decoded = decodeURIComponent(decoded) } catch {}
+      
+      if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+        setCallbackUrl(decoded)
+      }
+    }
+  }, [searchParams, toast])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -87,7 +84,6 @@ export default function LoginPage() {
       }
 
       toast.success('Đăng nhập thành công! Đang chuyển hướng...')
-      const callbackUrl = parseSafeCallbackUrl(globalThis.location.search)
       router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
       router.refresh()
     } catch {
@@ -191,7 +187,7 @@ export default function LoginPage() {
           <p className="text-center text-gray-500 font-medium">
             Bạn chưa có tài khoản?{' '}
             <Link 
-              href={`/register${parseSafeCallbackUrl(globalThis.location?.search || '') ? `?redirect=${encodeURIComponent(parseSafeCallbackUrl(globalThis.location?.search || '') || '')}` : ''}`}
+              href={callbackUrl ? `/register?redirect=${encodeURIComponent(callbackUrl)}` : '/register'}
               className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4"
             >
               Đăng ký miễn phí
@@ -200,5 +196,27 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full">
+        <div className="bg-white rounded-3xl shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/20 p-6 sm:p-7">
+          <div className="mb-7 text-center sm:text-left">
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-gray-900 tracking-tight">Đăng nhập</h1>
+            <p className="text-gray-500 mt-1.5 text-sm font-medium">Chào mừng bạn quay lại với hệ thống FQuiz</p>
+          </div>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-12 bg-gray-100 rounded-2xl" />
+            <div className="h-12 bg-gray-100 rounded-2xl" />
+            <div className="h-12 bg-[#5D7B6F]/20 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

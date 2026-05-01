@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
-  Search, Users, Clock3, Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp, 
-  Pin, PinOff, Shuffle, Sparkles, SearchCode, BookOpen
+  Search, Users, Clock3, Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp,
+  Pin, PinOff, Shuffle, SearchCode, BookOpen, Loader2, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/lib/store/toast-store'
 import { withCsrfHeaders } from '@/lib/csrf'
 import MixQuizTab from '@/components/explore/MixQuizTab'
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface Category {
   id: string
@@ -39,8 +41,7 @@ interface QuizMeta {
   totalStudyMinutes?: number | null
 }
 
-const PREVIEW_COUNT = 4
-const PAGE_SIZE = 20
+const PAGE_SIZE = 8 // quizzes per page inside a category dropdown
 
 function formatStudyDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}m`
@@ -48,6 +49,8 @@ function formatStudyDuration(minutes: number): string {
   const rem = minutes % 60
   return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`
 }
+
+// ── API ────────────────────────────────────────────────────────────────────
 
 async function fetchCategories(): Promise<{ data: Category[] }> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/categories`)
@@ -85,12 +88,13 @@ async function fetchQuizzes(params: {
   p.set('sort', 'popular')
   if (params.limit) p.set('limit', String(params.limit))
   if (params.offset) p.set('offset', String(params.offset))
-
   const endpoint = params.isLoggedIn ? '/api/v1/explore/quizzes' : '/api/v1/public/quizzes'
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${endpoint}?${p}`)
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
 }
+
+// ── QuizCard ───────────────────────────────────────────────────────────────
 
 function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean }) {
   const { toast } = useToast()
@@ -127,15 +131,15 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
         <CardContent className="p-4 flex flex-col h-full">
           <div className="flex items-start justify-between mb-2">
             <div className="flex flex-col gap-1 min-h-[3rem]">
-               <Badge className="bg-slate-100 text-slate-500 border-none px-1.5 py-0 rounded-md text-[8px] font-black tracking-widest uppercase w-fit">
-                  {quiz.categoryName}
-               </Badge>
-               {showCourseCodeBadge && (
-                  <div className="flex items-center gap-1 px-1.5 py-0 bg-[#5D7B6F]/10 rounded-md w-fit">
-                    <SearchCode className="w-2.5 h-2.5 text-[#5D7B6F]" />
-                    <span className="text-[9px] font-black text-[#5D7B6F] uppercase tracking-wider">{quiz.course_code}</span>
-                  </div>
-               )}
+              <Badge className="bg-slate-100 text-slate-500 border-none px-1.5 py-0 rounded-md text-[8px] font-black tracking-widest uppercase w-fit">
+                {quiz.categoryName}
+              </Badge>
+              {showCourseCodeBadge && (
+                <div className="flex items-center gap-1 px-1.5 py-0 bg-[#5D7B6F]/10 rounded-md w-fit">
+                  <SearchCode className="w-2.5 h-2.5 text-[#5D7B6F]" />
+                  <span className="text-[9px] font-black text-[#5D7B6F] uppercase tracking-wider">{quiz.course_code}</span>
+                </div>
+              )}
             </div>
             {isLoggedIn && (
               <Button
@@ -153,7 +157,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
             <h4 className="text-[15px] font-black text-slate-900 mb-1 leading-tight group-hover:text-[#5D7B6F] transition-colors line-clamp-2 min-h-[2.5rem]">
               {quiz.title || quiz.course_code}
             </h4>
-            
+
             <p className="mb-3 text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
               <Users className="w-2.5 h-2.5" />
               {quiz.source_label}{quiz.source_creator_name ? ` • ${quiz.source_creator_name}` : ''}
@@ -161,7 +165,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
 
             {hasAttempt && (
               <div className={cn(
-                "mb-3 p-2 rounded-xl border",
+                'mb-3 p-2 rounded-xl border',
                 isPassed ? 'bg-green-50/50 border-green-100 text-green-700' : 'bg-red-50/50 border-red-100 text-red-700'
               )}>
                 <div className="flex items-center justify-between">
@@ -191,7 +195,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
                   </div>
                 </div>
                 <div className="w-7 h-7 rounded-xl bg-slate-900 text-white flex items-center justify-center group-hover:bg-[#5D7B6F] transition-colors shadow-lg shadow-slate-900/10">
-                   <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
             </div>
@@ -202,105 +206,183 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
   )
 }
 
-function CategorySection({ category, isLoggedIn, isPinned, onPin }: { category: Category; isLoggedIn: boolean; isPinned: boolean; onPin: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
+// ── CategoryRow — collapsed by default, paginated quiz list on expand ─────
 
-  const previewQuery = useQuery({
-    queryKey: ['explore', 'cat-preview', category.id, isLoggedIn],
-    queryFn: () => fetchQuizzes({ categoryId: category.id, isLoggedIn, limit: PREVIEW_COUNT }),
+function CategoryRow({ category, isLoggedIn, isPinned, onPin }: {
+  category: Category
+  isLoggedIn: boolean
+  isPinned: boolean
+  onPin: (id: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [page, setPage] = useState(0) // 0-indexed
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['explore', 'cat-page', category.id, isLoggedIn, page],
+    queryFn: () => fetchQuizzes({
+      categoryId: category.id,
+      isLoggedIn,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    }),
+    enabled: open,
     staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev, // keep previous page data while fetching next
   })
 
-  const infiniteQuery = useInfiniteQuery({
-    queryKey: ['explore', 'cat-infinite', category.id, isLoggedIn],
-    queryFn: ({ pageParam = 0 }) => fetchQuizzes({ categoryId: category.id, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      const loaded = allPages.reduce((s, p) => s + p.data.length, 0)
-      return lastPage.data.length === PAGE_SIZE ? loaded : undefined
-    },
-    enabled: expanded,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  useEffect(() => {
-    if (!expanded || !loadMoreRef.current) return
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
-        infiniteQuery.fetchNextPage()
-      }
-    }, { threshold: 0, rootMargin: '400px' })
-    observer.observe(loadMoreRef.current)
-    return () => observer.disconnect()
-  }, [expanded, infiniteQuery])
-
-  const quizzes = expanded ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? [] : previewQuery.data?.data ?? []
+  const quizzes = data?.data ?? []
   const total = category.publishedQuizCount ?? 0
-  if (total === 0 && !previewQuery.isLoading) return null
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const hasNext = page < totalPages - 1
+  const hasPrev = page > 0
+
+  // Reset to page 0 when closing
+  const handleToggle = () => {
+    setOpen(v => !v)
+    if (open) setPage(0)
+  }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shadow-sm', isPinned ? 'bg-[#5D7B6F] text-white' : 'bg-white text-[#5D7B6F] border border-slate-100')}>
-            <BookOpen className="w-4.5 h-4.5" />
+    <div className={cn(
+      'rounded-2xl border transition-all duration-300',
+      open ? 'bg-white border-[#5D7B6F]/20 shadow-md' : 'bg-white border-slate-100 hover:border-[#5D7B6F]/20 hover:shadow-sm'
+    )}>
+      {/* Header row — always visible */}
+      <button
+        onClick={handleToggle}
+        className="w-full flex items-center justify-between px-4 py-3.5 gap-3 text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={cn(
+            'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors',
+            isPinned ? 'bg-[#5D7B6F] text-white' : 'bg-slate-50 text-[#5D7B6F]'
+          )}>
+            <BookOpen className="w-4 h-4" />
           </div>
-          <div>
-             <h3 className="text-base font-black text-slate-900 leading-none">{category.name}</h3>
-             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{total} bộ đề</p>
+          <div className="min-w-0">
+            <p className="text-sm font-black text-slate-900 leading-none truncate">{category.name}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{total} bộ đề</p>
           </div>
         </div>
-        <button
-          onClick={() => onPin(category.id)}
-          className={cn(
-            'w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm border',
-            isPinned 
-              ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-[#5D7B6F]/20' 
-              : 'bg-white text-slate-400 border-slate-100 hover:text-[#5D7B6F] hover:border-[#5D7B6F]/30 hover:shadow-md'
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Pin button */}
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onPin(category.id) }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onPin(category.id) } }}
+            className={cn(
+              'w-7 h-7 rounded-lg flex items-center justify-center transition-all border',
+              isPinned
+                ? 'bg-[#5D7B6F] text-white border-[#5D7B6F]'
+                : 'bg-slate-50 text-slate-300 border-slate-100 hover:text-[#5D7B6F] hover:border-[#5D7B6F]/30'
+            )}
+            title={isPinned ? 'Bỏ ghim' : 'Ghim môn học'}
+          >
+            {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+          </span>
+
+          {/* Expand chevron */}
+          <div className={cn(
+            'w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-slate-50 text-slate-400',
+            open && 'bg-[#5D7B6F]/10 text-[#5D7B6F]'
+          )}>
+            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded quiz list */}
+      {open && (
+        <div className="px-4 pb-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="h-px bg-slate-100" />
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-xs font-bold">Đang tải...</span>
+            </div>
+          ) : quizzes.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs font-bold">Chưa có bộ đề nào</div>
+          ) : (
+            <>
+              <div className={cn(
+                'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-200',
+                isFetching && 'opacity-50'
+              )}>
+                {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
+              </div>
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() => setPage(p => p - 1)}
+                    disabled={!hasPrev || isFetching}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all border',
+                      hasPrev && !isFetching
+                        ? 'bg-white text-[#5D7B6F] border-[#5D7B6F]/20 hover:bg-[#5D7B6F]/5'
+                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                    )}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Trước
+                  </button>
+
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {isFetching
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" />
+                      : `Trang ${page + 1} / ${totalPages}`
+                    }
+                  </span>
+
+                  <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={!hasNext || isFetching}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all border',
+                      hasNext && !isFetching
+                        ? 'bg-white text-[#5D7B6F] border-[#5D7B6F]/20 hover:bg-[#5D7B6F]/5'
+                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                    )}
+                  >
+                    Tiếp
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
-          title={isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục'}
-        >
-          {isPinned ? <PinOff className="w-4.5 h-4.5" /> : <Pin className="w-4.5 h-4.5" />}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
-        {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => <div key={i} className="h-64 rounded-[32px] bg-white border border-slate-100 animate-pulse" />)}
-      </div>
-
-      {total > PREVIEW_COUNT && (
-        <div className="flex justify-center pt-2">
-          <Button variant="ghost" onClick={() => setExpanded(v => !v)} className="text-[#5D7B6F] font-black text-xs uppercase tracking-widest h-10 px-8 rounded-xl border border-[#5D7B6F]/10 hover:bg-[#5D7B6F]/5">
-            {expanded ? <><ChevronUp className="w-4 h-4 mr-2" /> Thu gọn</> : <><ChevronDown className="w-4 h-4 mr-2" /> Xem thêm {total - PREVIEW_COUNT}</>}
-          </Button>
         </div>
       )}
-      {expanded && <div ref={loadMoreRef} className="h-1" />}
-    </section>
+    </div>
   )
 }
 
-function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: string }) {
+// ── SearchResults ──────────────────────────────────────────────────────────
+
+function SearchResults({ search, isLoggedIn }: { search: string; isLoggedIn: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const previewQuery = useQuery({
-    queryKey: ['explore', 'popular-preview', isLoggedIn, search],
-    queryFn: () => fetchQuizzes({ search, isLoggedIn, limit: PREVIEW_COUNT }),
+    queryKey: ['explore', 'search-preview', isLoggedIn, search],
+    queryFn: () => fetchQuizzes({ search, isLoggedIn, limit: 8 }),
     staleTime: 5 * 60 * 1000,
+    enabled: !!search,
   })
 
   const infiniteQuery = useInfiniteQuery({
-    queryKey: ['explore', 'popular-infinite', isLoggedIn, search],
+    queryKey: ['explore', 'search-infinite', isLoggedIn, search],
     queryFn: ({ pageParam = 0 }) => fetchQuizzes({ search, isLoggedIn, limit: PAGE_SIZE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((s, p) => s + p.data.length, 0)
       return lastPage.data.length === PAGE_SIZE ? loaded : undefined
     },
-    enabled: expanded,
+    enabled: expanded && !!search,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -315,46 +397,48 @@ function PopularSection({ isLoggedIn, search }: { isLoggedIn: boolean; search: s
     return () => observer.disconnect()
   }, [expanded, infiniteQuery])
 
-  const quizzes = expanded ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? [] : previewQuery.data?.data ?? []
+  const quizzes = expanded
+    ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? []
+    : previewQuery.data?.data ?? []
+
+  if (previewQuery.isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-52 rounded-[20px] bg-white border border-slate-100 animate-pulse" />)}
+      </div>
+    )
+  }
+
+  if (quizzes.length === 0) {
+    return (
+      <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-dashed border-slate-200">
+        <AlertCircle className="w-8 h-8 text-slate-200 mx-auto" />
+        <p className="text-sm font-black text-slate-500">Không tìm thấy kết quả cho &ldquo;{search}&rdquo;</p>
+      </div>
+    )
+  }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center gap-2.5">
-        <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm">
-          <Sparkles className="w-4.5 h-4.5" />
-        </div>
-        <div>
-           <h3 className="text-base font-black text-slate-900 leading-none">{search ? `Kết quả cho "${search}"` : 'Bộ đề phổ biến'}</h3>
-           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Xu hướng học tập</p>
-        </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
+        {infiniteQuery.isFetchingNextPage && [1, 2, 3, 4].map(i => (
+          <div key={i} className="h-52 rounded-[20px] bg-white border border-slate-100 animate-pulse" />
+        ))}
       </div>
-
-      {previewQuery.isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-64 rounded-[32px] bg-white border border-slate-100 animate-pulse" />)}
-        </div>
-      ) : quizzes.length === 0 ? (
-        <div className="py-20 text-center space-y-4 bg-white rounded-[40px] border border-dashed border-slate-200">
-          <AlertCircle className="w-10 h-10 text-slate-200 mx-auto" />
-          <p className="text-lg font-black text-slate-800">Không tìm thấy kết quả</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {quizzes.map(quiz => <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={isLoggedIn} />)}
-        </div>
-      )}
-
-      {quizzes.length >= PREVIEW_COUNT && (
+      {quizzes.length >= 8 && (
         <div className="flex justify-center">
-          <Button variant="ghost" onClick={() => setExpanded(v => !v)} className="text-[#5D7B6F] font-black text-xs uppercase tracking-widest h-10 px-8 rounded-xl border border-[#5D7B6F]/10 hover:bg-[#5D7B6F]/5">
-            {expanded ? 'Thu gọn' : 'Xem tất cả'}
+          <Button variant="ghost" onClick={() => setExpanded(v => !v)} className="text-[#5D7B6F] font-black text-xs uppercase tracking-widest h-9 px-6 rounded-xl border border-[#5D7B6F]/10 hover:bg-[#5D7B6F]/5">
+            {expanded ? <><ChevronUp className="w-3.5 h-3.5 mr-1.5" />Thu gọn</> : <><ChevronDown className="w-3.5 h-3.5 mr-1.5" />Xem thêm</>}
           </Button>
         </div>
       )}
       {expanded && <div ref={loadMoreRef} className="h-1" />}
-    </section>
+    </div>
   )
 }
+
+// ── Main ───────────────────────────────────────────────────────────────────
 
 export default function ExploreContent() {
   const [search, setSearch] = useState('')
@@ -400,78 +484,111 @@ export default function ExploreContent() {
   const pinnedCats = categories.filter(c => pinnedIds.has(c.id))
   const unpinnedCats = categories.filter(c => !pinnedIds.has(c.id))
 
-  const quickSearchTags = [
-    { label: 'MLN111', icon: BookOpen },
-    { label: 'FRS401C', icon: SearchCode },
-    { label: 'GTDVH', icon: SearchCode },
-    { label: 'MLN122', icon: BookOpen },
-    { label: 'Văn hóa', icon: Sparkles },
-  ]
-
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-20 space-y-10 animate-in fade-in duration-500">
-      <section className="flex flex-col items-center text-center space-y-6 pt-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none">
-            Khám phá <span className="text-[#5D7B6F]">Thư viện</span>
+    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 pb-28 md:pb-20 space-y-6 animate-in fade-in duration-500">
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 pt-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+            Khám phá <span className="text-[#5D7B6F]">Môn học</span>
           </h1>
-          <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Tìm kiếm môn học của bạn</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Chọn môn để xem bộ đề</p>
         </div>
 
-        <div className="w-full max-w-xl space-y-4">
-          <div className="flex items-center gap-3 bg-white px-5 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 focus-within:border-[#5D7B6F]/40 transition-all group">
-            <Search className="w-5 h-5 text-slate-300 group-focus-within:text-[#5D7B6F] shrink-0" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Ví dụ: MLN111, FRS401C..."
-              className="h-12 md:h-14 border-none focus-visible:ring-0 text-sm md:text-base font-black text-[#5D7B6F] placeholder:text-slate-300 placeholder:font-bold"
-            />
-            {search && <button onClick={() => setSearch('')} className="text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-2 py-1 bg-slate-50 rounded-lg">Xóa</button>}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mr-1">Gợi ý:</span>
-            {quickSearchTags.map(tag => (
-              <button key={tag.label} onClick={() => setSearch(tag.label)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[9px] font-black text-slate-500 transition-all border border-slate-100 hover:border-[#5D7B6F]/30 uppercase tracking-widest shadow-sm">
-                <tag.icon className="w-3 h-3 text-[#5D7B6F]/60" />
-                {tag.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="flex justify-center">
-        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit shadow-inner">
-          <button onClick={() => setActiveTab('explore')} className={cn('flex items-center gap-2 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all', activeTab === 'explore' ? 'bg-white text-[#5D7B6F] shadow-md' : 'text-slate-400 hover:text-slate-600')}>
-            <Search className="w-3.5 h-3.5" /> Thư viện
-          </button>
-          <button onClick={() => setActiveTab('mix')} className={cn('flex items-center gap-2 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all', activeTab === 'mix' ? 'bg-white text-[#5D7B6F] shadow-md' : 'text-slate-400 hover:text-slate-600')}>
-            <Shuffle className="w-3.5 h-3.5" /> Trộn Quiz
-          </button>
-        </div>
+        {/* Trộn Quiz button */}
+        <button
+          onClick={() => setActiveTab(activeTab === 'mix' ? 'explore' : 'mix')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all border',
+            activeTab === 'mix'
+              ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-lg shadow-[#5D7B6F]/20'
+              : 'bg-white text-slate-500 border-slate-200 hover:border-[#5D7B6F]/30 hover:text-[#5D7B6F]'
+          )}
+        >
+          <Shuffle className="w-3.5 h-3.5" />
+          Trộn Quiz
+        </button>
       </div>
 
-      <div className="animate-in slide-in-from-bottom-4 duration-700">
-        {activeTab === 'mix' ? <MixQuizTab /> : (
-          <div className="space-y-10">
-            <PopularSection isLoggedIn={!!user} search={debouncedSearch} />
-            {!debouncedSearch && (
-              <div className="space-y-10">
-                <div className="flex items-center gap-6"><div className="flex-1 h-px bg-slate-100" /><h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] whitespace-nowrap">Danh mục học phần</h4><div className="flex-1 h-px bg-slate-100" /></div>
-                {catsLoading ? <div className="h-40 bg-slate-50 rounded-3xl animate-pulse" /> : (
-                  <div className="space-y-10">
-                    {pinnedCats.map(cat => <CategorySection key={cat.id} category={cat} isLoggedIn={!!user} isPinned={true} onPin={(id) => pinMutation.mutate(id)} />)}
-                    {pinnedCats.length > 0 && <div className="flex items-center gap-6"><div className="flex-1 h-px bg-slate-100" /><h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] whitespace-nowrap">Tất cả môn học</h4><div className="flex-1 h-px bg-slate-100" /></div>}
-                    {unpinnedCats.map(cat => <CategorySection key={cat.id} category={cat} isLoggedIn={!!user} isPinned={false} onPin={(id) => pinMutation.mutate(id)} />)}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Mix Quiz panel */}
+      {activeTab === 'mix' && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <MixQuizTab />
+        </div>
+      )}
+
+      {/* Search bar — always visible */}
+      {activeTab === 'explore' && (
+        <div className="flex items-center gap-3 bg-white px-4 rounded-2xl shadow-sm border border-slate-100 focus-within:border-[#5D7B6F]/40 transition-all group">
+          <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[#5D7B6F] shrink-0" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm mã môn: MLN111, FRS401C..."
+            className="h-11 border-none focus-visible:ring-0 text-sm font-bold text-[#5D7B6F] placeholder:text-slate-300 placeholder:font-medium"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-2 py-1 bg-slate-50 rounded-lg shrink-0">
+              Xóa
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Content */}
+      {activeTab === 'explore' && (
+        <div className="space-y-3 animate-in fade-in duration-300">
+          {debouncedSearch ? (
+            /* Search results */
+            <div className="space-y-3">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                Kết quả cho &ldquo;{debouncedSearch}&rdquo;
+              </p>
+              <SearchResults search={debouncedSearch} isLoggedIn={!!user} />
+            </div>
+          ) : (
+            /* Category list */
+            <>
+              {catsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="h-14 rounded-2xl bg-white border border-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Pinned categories first */}
+                  {pinnedCats.length > 0 && (
+                    <>
+                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-1">Đã ghim</p>
+                      {pinnedCats.map(cat => (
+                        <CategoryRow
+                          key={cat.id}
+                          category={cat}
+                          isLoggedIn={!!user}
+                          isPinned={true}
+                          onPin={(id) => pinMutation.mutate(id)}
+                        />
+                      ))}
+                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-1 pt-2">Tất cả môn học</p>
+                    </>
+                  )}
+                  {unpinnedCats.map(cat => (
+                    <CategoryRow
+                      key={cat.id}
+                      category={cat}
+                      isLoggedIn={!!user}
+                      isPinned={false}
+                      onPin={(id) => pinMutation.mutate(id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -7,7 +7,6 @@
 
 jest.mock('@/lib/mongodb', () => ({ connectDB: jest.fn() }))
 jest.mock('@/lib/auth', () => ({ verifyToken: jest.fn() }))
-jest.mock('@/lib/cloudinary', () => ({ uploadImage: jest.fn() }))
 jest.mock('mongoose', () => {
   const actual = jest.requireActual('mongoose')
   return {
@@ -34,7 +33,6 @@ import { POST } from './route'
 import { verifyToken } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { Category } from '@/models/Category'
-import { uploadImage } from '@/lib/cloudinary'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
