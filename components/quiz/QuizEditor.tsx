@@ -180,14 +180,8 @@ export function QuizEditor({
     [diagnostics.errors, importPreviewErrors]
   )
   
-  // Check if any question has pending base64 image upload
-  const hasPendingImageUploads = useMemo(() => 
-    form.questions.some(q => q.image_url?.startsWith('data:image')),
-    [form.questions]
-  )
-  
-  // Combined blocking state for submit button
-  const isSubmitBlocked = saving || hasImportBlockingErrors || isImportProcessing || hasPendingImageUploads
+  // Combined blocking state for submit button (no longer checking for base64 images)
+  const isSubmitBlocked = saving || hasImportBlockingErrors || isImportProcessing
   
   // Autosave Logic
   const debouncedForm = useDebounce(form, 3000)
@@ -200,9 +194,6 @@ export function QuizEditor({
       isFirstLoad.current = false
       return
     }
-    // Skip autosave if any question has a pending base64 image (not yet uploaded)
-    const hasPendingBase64 = debouncedForm.questions.some(q => q.image_url?.startsWith('data:image'))
-    if (hasPendingBase64) return
     
     // Skip autosave if import is processing
     if (isImportProcessing) return
@@ -228,7 +219,8 @@ export function QuizEditor({
   // ── Question count ─────────────────────────────────────────────────────────
 
   function applyTargetCount(raw: string) {
-    const n = Math.max(1, Math.min(200, parseInt(raw) || 1))
+    const maxCount = isStudentMode ? 150 : 9999
+    const n = Math.max(1, Math.min(maxCount, parseInt(raw) || 1))
     setTargetCount(n)
     setTargetInput(String(n))
     setForm((prev) => {
@@ -242,11 +234,16 @@ export function QuizEditor({
   const addQuestion = () =>
     setForm((prev) => ({ ...prev, questions: [...prev.questions, emptyQuestion()] }))
 
-  const removeQuestion = (qi: number) =>
+  const removeQuestion = (qi: number) => {
     setForm((prev) => {
       if (prev.questions.length <= 1) return prev
-      return { ...prev, questions: prev.questions.filter((_, i) => i !== qi) }
+      const next = prev.questions.filter((_, i) => i !== qi)
+      // Sync targetCount with actual question count after removal
+      setTargetCount(next.length)
+      setTargetInput(String(next.length))
+      return { ...prev, questions: next }
     })
+  }
 
   // ── Option management ──────────────────────────────────────────────────────
 
@@ -803,7 +800,7 @@ export function QuizEditor({
                           <ChevronDown className="w-4 h-4" />
                         </button>
                         <input
-                          type="number" min={1} max={200}
+                          type="number" min={1} max={isStudentMode ? 150 : 9999}
                           value={targetInput}
                           title="Nhập số câu mục tiêu"
                           onChange={(e) => setTargetInput(e.target.value)}
@@ -1001,19 +998,12 @@ export function QuizEditor({
                   {saving ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {hasPendingImageUploads
-                        ? 'Đang tải ảnh & Lưu...' 
-                        : 'Đang lưu...'}
+                      Đang lưu...
                     </div>
                   ) : isImportProcessing ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Đang xử lý import...
-                    </div>
-                  ) : hasPendingImageUploads ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Đang tải ảnh...
                     </div>
                   ) : quizId ? 'Cập nhật Quiz' : (isStudentMode ? 'Tạo Quiz' : 'Tạo & Công khai')}
                 </Button>

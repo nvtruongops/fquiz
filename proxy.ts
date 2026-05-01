@@ -94,7 +94,8 @@ function getUnauthorizedOrRedirect(pathname: string, request: NextRequest, reque
 function isPublicRoute(pathname: string) {
   // Allow viewing quiz detail page without auth (but starting quiz requires auth)
   const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9]+$/.test(pathname)
-  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail
+  const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(pathname)
+  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isStaticAsset
 }
 
 function shouldSkipAuth(pathname: string) {

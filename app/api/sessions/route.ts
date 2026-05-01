@@ -41,7 +41,10 @@ export async function GET(req: Request) {
       student_id: studentObjectId,
       quiz_id: new mongoose.Types.ObjectId(quizId),
       status: 'active',
-      expires_at: { $gt: nowDate },
+      $or: [
+        { expires_at: { $gt: nowDate } },
+        { expires_at: { $exists: false } }, // flashcard sessions have no expiry
+      ],
     })
       .sort({ started_at: -1 })
       .lean() as any[]
@@ -215,7 +218,10 @@ export async function POST(req: Request) {
         student_id: studentObjectId,
         quiz_id: effectiveQuizObjectId,
         status: 'active',
-        expires_at: { $gt: nowDate },
+        $or: [
+          { expires_at: { $gt: nowDate } },
+          { expires_at: { $exists: false } }, // flashcard sessions have no expiry
+        ],
       })
         .sort({ started_at: -1, _id: -1 })
         .lean(),
@@ -276,15 +282,25 @@ export async function POST(req: Request) {
     }
 
     if (activeSessionInGroup && action === 'restart') {
-      // Delete only the session in the same group
+      // Delete the active session in the same group
       await QuizSession.deleteOne({ _id: activeSessionInGroup._id })
       // Return empty response to trigger mode selection dialog
       return NextResponse.json({}, { status: 200 })
     }
 
-    // 5. Create QuizSession
+    // 5. Cleanup ALL old sessions (both active and completed) in the same mode group
+    // This ensures only ONE session per mode group exists at any time
+    await QuizSession.deleteMany({
+      student_id: studentObjectId,
+      quiz_id: effectiveQuizObjectId,
+      mode: { $in: currentModeGroup === 'learning' ? LEARNING_MODES : ASSESSMENT_MODES },
+    })
+
+    // 6. Create QuizSession
     const now = new Date()
-    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // now + 24h
+    // Flashcard sessions have no expiry — they persist until the user completes all cards.
+    // Assessment sessions expire after 24h.
+    const expiresAt = mode === 'flashcard' ? undefined : new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
     // Generate question order based on difficulty
     const questionOrder = difficulty === 'random'

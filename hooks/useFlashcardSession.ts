@@ -145,9 +145,7 @@ export function useFlashcardSession(sessionId: string) {
       if (context?.previousData) {
         queryClient.setQueryData(['flashcard-session', sessionId], context.previousData)
       }
-    },
-    onSettled: () => {
-      // Always refetch session info to ensure sync
+      // On error, refetch to get the real server state
       void queryClient.invalidateQueries({ queryKey: ['flashcard-session', sessionId] })
     },
   })

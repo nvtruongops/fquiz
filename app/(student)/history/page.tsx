@@ -38,6 +38,7 @@ interface HistoryItem {
   score: number
   total_questions: number
   answered_count: number
+  correct_count: number
   mode: 'immediate' | 'review' | 'flashcard'
   status: 'active' | 'completed'
   completed_at?: string
@@ -208,15 +209,43 @@ export default function HistoryPage() {
 
                           <div className="flex items-center gap-8 justify-between md:justify-end">
                             <div className="text-right">
-                              <p className={cn(
-                                "text-3xl font-black leading-none tracking-tighter",
-                                item.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
-                              )}>
-                                {item.status === 'active' ? '--' : `${item.score}/10`}
-                              </p>
-                              <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
-                                {item.answered_count}/{item.total_questions} CÂU ĐÚNG
-                              </p>
+                              {item.mode === 'flashcard' ? (
+                                item.status === 'active' ? (
+                                  <>
+                                    <p className="text-3xl font-black leading-none tracking-tighter text-gray-300">--</p>
+                                    <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
+                                      {item.flashcard_stats
+                                        ? `${item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown}/${item.total_questions} THẺ`
+                                        : `0/${item.total_questions} THẺ`}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-3xl font-black leading-none tracking-tighter text-purple-500">
+                                      {item.flashcard_stats?.cards_known ?? 0}
+                                      <span className="text-lg text-purple-300">/{item.flashcard_stats?.total_cards ?? item.total_questions}</span>
+                                    </p>
+                                    <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
+                                      THẺ ĐÃ BIẾT
+                                      {item.flashcard_stats && (item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown < item.flashcard_stats.total_cards) && (
+                                        <span className="text-orange-500 ml-1">• {item.flashcard_stats.total_cards - item.flashcard_stats.cards_known - item.flashcard_stats.cards_unknown} chưa làm</span>
+                                      )}
+                                    </p>
+                                  </>
+                                )
+                              ) : (
+                                <>
+                                  <p className={cn(
+                                    "text-3xl font-black leading-none tracking-tighter",
+                                    item.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
+                                  )}>
+                                    {item.status === 'active' ? '--' : `${item.score}/10`}
+                                  </p>
+                                  <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
+                                    {item.correct_count}/{item.total_questions} CÂU ĐÚNG
+                                  </p>
+                                </>
+                              )}
                             </div>
                             
                             <div className="flex items-center gap-2">
@@ -226,7 +255,13 @@ export default function HistoryPage() {
                                   </Link>
                                </Button>
                                <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg" asChild>
-                                  <Link href={item.status === 'active' ? `/quiz/${item.quiz_id}/session/${item._id}` : `/history/${item.quiz_id}`}>
+                                  <Link href={
+                                    item.status === 'active'
+                                      ? item.mode === 'flashcard'
+                                        ? `/quiz/${item.quiz_id}/session/${item._id}/flashcard`
+                                        : `/quiz/${item.quiz_id}/session/${item._id}`
+                                      : `/history/${item.quiz_id}/${item._id}`
+                                  }>
                                      <ChevronRight className="w-5 h-5" />
                                   </Link>
                                </Button>

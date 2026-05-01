@@ -22,12 +22,6 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/image-utils', () => ({
   validateImageDomain: jest.fn(),
 }))
-jest.mock('@/lib/cloudinary', () => ({
-  uploadImage: jest.fn(),
-  deleteImage: jest.fn(),
-  deleteFolder: jest.fn().mockResolvedValue(true),
-  getPublicIdFromUrl: jest.fn(),
-}))
 jest.mock('mongoose', () => {
   const actual = jest.requireActual('mongoose')
   return {

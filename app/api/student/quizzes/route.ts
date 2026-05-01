@@ -5,7 +5,6 @@ import { QuizSession } from '@/models/QuizSession'
 import { connectDB } from '@/lib/mongodb'
 import { Types } from 'mongoose'
 import { Category } from '@/models/Category'
-import { uploadImage } from '@/lib/cloudinary'
 import { CreateStudentQuizSchema, validateObjectId } from '@/lib/schemas'
 
 function buildSourceMappings(quizzes: any[]) {
@@ -263,33 +262,19 @@ export async function POST(req: Request) {
     // 1. Generate quiz ID first for image folder organization
     const quizId = new Types.ObjectId()
 
-    // 2. Process questions and upload images to Cloudinary
-    const processedQuestions = await Promise.all(
-      questions.map(async (q, index: number) => {
-        let finalImageUrl = q.image_url
+    // 2. Process questions (base64 images are no longer supported)
+    const processedQuestions = questions.map((q) => {
+      // Only accept direct image URLs, not base64
+      const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
 
-        // Check if image_url is base64
-        if (q.image_url?.startsWith('data:image')) {
-          try {
-            finalImageUrl = await uploadImage(q.image_url, {
-              folder: `fquiz/quizzes/${quizId}/questions`,
-              public_id: `q_${index}_${Date.now()}`
-            })
-          } catch (uploadErr) {
-            console.error(`Failed to upload image for question ${index}:`, uploadErr)
-            finalImageUrl = undefined
-          }
-        }
-
-        return {
-          text: q.text || '',
-          options: q.options || [],
-          correct_answer: q.correct_answer || [],
-          explanation: q.explanation || '',
-          image_url: finalImageUrl || '',
-        }
-      })
-    )
+      return {
+        text: q.text || '',
+        options: q.options || [],
+        correct_answer: q.correct_answer || [],
+        explanation: q.explanation || '',
+        image_url: finalImageUrl || '',
+      }
+    })
 
     const quiz = await Quiz.create({
       _id: quizId,

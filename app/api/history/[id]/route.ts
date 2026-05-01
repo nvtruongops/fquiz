@@ -197,6 +197,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       const submitted = (session.user_answers ?? []).find((a: any) => a.question_index === idx)
       const correctAnswerIndex = Array.isArray(q.correct_answer) ? q.correct_answer[0] : q.correct_answer
 
+      // In flashcard mode, is_correct is stored directly in user_answers
+      // In quiz mode, is_correct is calculated by comparing answer_index with correct_answer
+      const isCorrect = session.mode === 'flashcard' 
+        ? (submitted?.is_correct ?? false)
+        : (submitted?.answer_index === correctAnswerIndex)
+
       return {
         _id: q._id,
         text: q.text,
@@ -205,7 +211,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         explanation: q.explanation ?? null,
         ...(q.image_url ? { image_url: q.image_url } : {}),
         submitted_answer: submitted?.answer_index ?? null,
-        is_correct: submitted?.answer_index === correctAnswerIndex,
+        is_correct: isCorrect,
       }
     })
 
@@ -276,6 +282,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       completed_at: session.completed_at,
       started_at: session.started_at,
       total_study_minutes: Math.round(totalStudyMinutes / 60000),
+      ...(session.mode === 'flashcard' && session.flashcard_stats ? {
+        flashcard_stats: {
+          total_cards: session.flashcard_stats.total_cards ?? 0,
+          cards_known: session.flashcard_stats.cards_known ?? 0,
+          cards_unknown: session.flashcard_stats.cards_unknown ?? 0,
+          time_spent_ms: session.flashcard_stats.time_spent_ms ?? 0,
+          current_round: session.flashcard_stats.current_round ?? 1,
+        }
+      } : {}),
       attempts,
       user_answers: session.user_answers,
       questions,

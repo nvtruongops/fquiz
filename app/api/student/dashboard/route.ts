@@ -106,137 +106,27 @@ export async function GET(req: Request) {
       },
     ])
 
-    // 1b. Fetch cumulative learning duration from ALL completed attempts
-    const durationAggResult = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'completed' } },
-      {
-        $group: {
-          _id: null,
-          totalDurationMs: {
-            $sum: {
-              $max: [
-                0,
-                {
-                  $subtract: [
-                    { $ifNull: ['$completed_at', '$started_at'] },
-                    '$started_at',
-                  ],
-                },
-              ],
-            },
-          },
-        },
-      },
-    ])
+    // 1b. (removed: duration, weekly activity, streak)
 
     const stats = latestStatsResult[0] || {
       totalQuizzes: 0,
       averageScore: 0,
       totalCorrectAnswers: 0,
     }
-    const totalDurationMs = durationAggResult[0]?.totalDurationMs || 0
-
-    const learningHoursRaw = totalDurationMs / (60 * 60 * 1000)
-    const learningMinutes = Math.round(totalDurationMs / (60 * 1000))
-
-    // 1c. Weekly activity (last 7 days)
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
-    sevenDaysAgo.setHours(0, 0, 0, 0)
-
-    const weeklyActivityAgg = await QuizSession.aggregate([
-      { 
-        $match: { 
-          student_id: userId, 
-          started_at: { $gte: sevenDaysAgo } 
-        } 
-      },
-      {
-        $project: {
-          dayOfWeek: { $dayOfWeek: { $add: ["$started_at", 7 * 60 * 60 * 1000] } }, // Adjust for UTC+7 if needed, or keep as is
-          answerCount: { $size: { $ifNull: ["$user_answers", []] } }
-        }
-      },
-      {
-        $group: {
-          _id: "$dayOfWeek",
-          count: { $sum: "$answerCount" }
-        }
-      }
-    ])
-
-    // Map Mongo dayOfWeek (1=Sun, 7=Sat) to Vietnamese labels
-    const dayMap: Record<number, string> = {
-      1: 'CN', 2: 'T2', 3: 'T3', 4: 'T4', 5: 'T5', 6: 'T6', 7: 'T7'
-    }
-    
-    // Ensure all 7 days are present
-    const weeklyActivity = [2, 3, 4, 5, 6, 7, 1].map(dayNum => {
-      const found = weeklyActivityAgg.find(item => item._id === dayNum)
-      return {
-        day: dayMap[dayNum],
-        val: found ? found.count : 0
-      }
-    })
-
-    // 1d. Streak calculation
-    const allActivityDatesAgg = await QuizSession.aggregate([
-      { $match: { student_id: userId } },
-      {
-        $project: {
-          date: { 
-            $dateToString: { 
-              format: "%Y-%m-%d", 
-              date: { $add: ["$started_at", 7 * 60 * 60 * 1000] } 
-            } 
-          }
-        }
-      },
-      { $group: { _id: "$date" } },
-      { $sort: { _id: -1 } }
-    ])
-
-    const activityDates = allActivityDatesAgg.map(x => x._id)
-    let streak = 0
-    if (activityDates.length > 0) {
-      const today = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const yesterday = new Date(new Date().getTime() + 7 * 60 * 60 * 1000 - 86400000).toISOString().split('T')[0]
-      
-      let currentCheckDate: string | null = null
-      if (activityDates[0] === today) {
-        currentCheckDate = today
-      } else if (activityDates[0] === yesterday) {
-        currentCheckDate = yesterday
-      }
-
-      if (currentCheckDate) {
-        streak = 1
-        let checkDateObj = new Date(currentCheckDate)
-        for (let i = 1; i < activityDates.length; i++) {
-          checkDateObj.setDate(checkDateObj.getDate() - 1)
-          const prevDateStr = checkDateObj.toISOString().split('T')[0]
-          if (activityDates[i] === prevDateStr) {
-            streak++
-          } else {
-            break
-          }
-        }
-      }
-    }
 
     // 2. Fetch Recent Activities (Top 5 latest-by-quiz), including active quizzes.
     const latestSessionIdsByQuiz = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'completed' } },
+      { $match: { student_id: userId, status: 'completed', is_temp: { $ne: true } } },
       { $sort: { completed_at: -1 } },
       {
         $group: {
-          _id: '$quiz_id',
+          _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
           latestSessionId: { $first: '$_id' },
           completedAt: { $first: '$completed_at' },
         },
       },
       { $sort: { completedAt: -1 } },
-      { $limit: 5 },
+      { $limit: 10 },
       { $project: { _id: 0, latestSessionId: 1 } },
     ])
 
@@ -247,17 +137,17 @@ export async function GET(req: Request) {
       .lean()
 
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'active' } },
+      { $match: { student_id: userId, status: 'active', is_temp: { $ne: true } } },
       { $sort: { started_at: -1 } },
       {
         $group: {
-          _id: '$quiz_id',
+          _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
           latestSessionId: { $first: '$_id' },
           startedAt: { $first: '$started_at' },
         },
       },
       { $sort: { startedAt: -1 } },
-      { $limit: 5 },
+      { $limit: 10 },
       { $project: { _id: 0, latestSessionId: 1 } },
     ])
 
@@ -266,6 +156,24 @@ export async function GET(req: Request) {
       .sort({ started_at: -1 })
       .populate('quiz_id', 'title course_code questionCount questions category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
+
+    // Build a set of ALL (quizId + mode_group) that have completed sessions — used to filter activeOnlyActivities
+    // Query separately (no limit) so active sessions aren't incorrectly shown when a completed session exists outside top 10
+    const allCompletedGroupsAgg = await QuizSession.aggregate([
+      { $match: { student_id: userId, status: 'completed', is_temp: { $ne: true } } },
+      {
+        $group: {
+          _id: {
+            quiz_id: '$quiz_id',
+            mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] },
+          },
+        },
+      },
+      { $project: { _id: 1 } },
+    ])
+    const completedQuizModeGroups = new Set(
+      allCompletedGroupsAgg.map((x: any) => `${x._id.quiz_id.toString()}::${x._id.mode_group}`)
+    )
 
     const allRecentSessions = [...recentActivitiesRaw, ...activeActivitiesRaw] as any[]
     const uniqueQuizIds = Array.from(
@@ -345,6 +253,7 @@ export async function GET(req: Request) {
           sourceType: 'deleted',
           sourceLabel: 'Quiz đã bị xóa',
           sourceCreatorName: null,
+          mode: session.mode as string,
           status: 'completed' as const,
           score: Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
           maxScore: 10,
@@ -387,6 +296,7 @@ export async function GET(req: Request) {
         sourceType,
         sourceLabel: sourceLabelFromType(sourceType),
         sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
+        mode: session.mode as string,
         status: 'completed' as const,
         score: Number(((baseScore / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
         maxScore: 10,
@@ -397,31 +307,39 @@ export async function GET(req: Request) {
       }
     })
 
-    // Map active sessions by quizId for quick lookup
-    const activeSessionsByQuizId = new Map<string, any>()
+    // Map active sessions by "quizId::modeGroup" for precise lookup
+    const LEARNING_MODES = ['flashcard']
+    const activeSessionsByQuizMode = new Map<string, any>()
     activeActivitiesRaw.forEach((session: any) => {
       const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
       if (quizId) {
-        activeSessionsByQuizId.set(quizId, session)
+        const group = LEARNING_MODES.includes(session.mode) ? 'learning' : 'assessment'
+        activeSessionsByQuizMode.set(`${quizId}::${group}`, session)
       }
     })
 
-    // Enhance completed activities with active session info if exists
     const enhancedCompletedActivities = completedActivities.map((activity) => {
-      const activeSession = activeSessionsByQuizId.get(activity.quizId)
+      const completedIsLearning = LEARNING_MODES.includes(activity.mode ?? '')
+      const group = completedIsLearning ? 'learning' : 'assessment'
+      const activeSession = activeSessionsByQuizMode.get(`${activity.quizId}::${group}`)
       if (activeSession) {
         const declaredCount = Number(activeSession.quiz_id?.questionCount ?? 0)
         const derivedFromQuestions = Array.isArray(activeSession.quiz_id?.questions)
           ? activeSession.quiz_id.questions.length
           : 0
         const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
-        const answeredCount = Array.isArray(activeSession.user_answers)
-          ? new Set(
-              activeSession.user_answers
-                .map((a: any) => a.question_index)
-                .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
-            ).size
-          : 0
+        const isFlashcardActive = activeSession.mode === 'flashcard'
+        const fcStats = activeSession.flashcard_stats
+        let answeredCount = 0
+        if (isFlashcardActive && fcStats) {
+          answeredCount = fcStats.cards_known + fcStats.cards_unknown
+        } else if (Array.isArray(activeSession.user_answers)) {
+          answeredCount = new Set(
+            activeSession.user_answers
+              .map((a: any) => a.question_index)
+              .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+          ).size
+        }
 
         return {
           ...activity,
@@ -430,12 +348,13 @@ export async function GET(req: Request) {
           activeAnsweredCount: answeredCount,
           activeTotalCount: Math.max(totalQuestions, 0),
           activeStartedAt: activeSession.started_at,
+          activityAt: activeSession.started_at, // dùng thời gian active session để sort đúng
         }
       }
       return activity
     })
 
-    // Only show active sessions for quizzes that have NO completed sessions
+    // Show active sessions for quizzes that have NO completed session in the SAME mode group
     const activeOnlyActivities = activeActivitiesRaw
       .map((session: any) => {
         const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
@@ -455,13 +374,13 @@ export async function GET(req: Request) {
         
         let answeredCount = 0
         if (isFlashcard && fcStats) {
-             answeredCount = fcStats.cards_known + fcStats.cards_unknown
+          answeredCount = fcStats.cards_known + fcStats.cards_unknown
         } else if (Array.isArray(session.user_answers)) {
-             answeredCount = new Set(
-                 session.user_answers
-                   .map((a: any) => a.question_index)
-                   .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
-               ).size
+          answeredCount = new Set(
+            session.user_answers
+              .map((a: any) => a.question_index)
+              .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+          ).size
         }
 
         return {
@@ -473,15 +392,21 @@ export async function GET(req: Request) {
           sourceType,
           sourceLabel: sourceLabelFromType(sourceType),
           sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
+          mode: session.mode as string,
           status: 'active' as const,
           score: 0,
           maxScore: 10,
-          correctCount: answeredCount, // Note: For active session this shows answered_count
+          correctCount: answeredCount,
           totalCount: Math.max(totalQuestions, 0),
           activityAt: session.started_at,
+          quizDeleted: false,
         }
       })
-      .filter((activity) => !completedActivities.some((completed) => completed.quizId === activity.quizId))
+      // Only show if no completed session exists in the SAME mode group for this quiz
+      .filter((activity) => {
+        const group = LEARNING_MODES.includes(activity.mode) ? 'learning' : 'assessment'
+        return !completedQuizModeGroups.has(`${activity.quizId}::${group}`)
+      })
 
     const recentActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
       .sort((a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime())
@@ -492,10 +417,6 @@ export async function GET(req: Request) {
         totalQuizzes: stats.totalQuizzes,
         averageScore: stats.averageScore?.toFixed(1) || '0.0',
         totalCorrectAnswers: stats.totalCorrectAnswers,
-        learningHours: Number(learningHoursRaw.toFixed(2)),
-        learningMinutes,
-        weeklyActivity,
-        streak,
       },
       recentActivities
     })

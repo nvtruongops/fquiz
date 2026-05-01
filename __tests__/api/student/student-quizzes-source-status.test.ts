@@ -20,9 +20,6 @@ jest.mock('@/models/Category', () => ({
     findById: jest.fn(),
   },
 }))
-jest.mock('@/lib/cloudinary', () => ({
-  uploadImage: jest.fn(),
-}))
 
 import { Types } from 'mongoose'
 import { GET as studentQuizzesGet } from '@/app/api/student/quizzes/route'

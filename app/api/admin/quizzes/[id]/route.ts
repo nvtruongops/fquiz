@@ -4,8 +4,7 @@ import { verifyToken, requireRole } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { QuizSession } from '@/models/QuizSession'
 import { Category } from '@/models/Category'
-import { CreateQuizSchema, SaveDraftQuizSchema } from '@/lib/schemas'
-import { uploadImage, deleteImage, deleteFolder, getPublicIdFromUrl } from '@/lib/cloudinary'
+import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/schemas'
 import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -40,8 +39,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const isDraft = body.status === 'draft'
     const parsed = isDraft
-      ? SaveDraftQuizSchema.safeParse(body)
-      : CreateQuizSchema.safeParse(body)
+      ? AdminSaveDraftQuizSchema.safeParse(body)
+      : AdminCreateQuizSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
@@ -85,44 +84,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       }, { status: 409 })
     }
 
-    const oldImageUrls = (existingQuiz.questions as any[])
-      .map((q: any) => q.image_url)
-      .filter((url: string | undefined): url is string => !!url && url.includes('res.cloudinary.com'))
+    const oldImageUrls: string[] = [] // No longer tracking Cloudinary images
 
-    // Process new questions and upload new images
-    const processedQuestions = await Promise.all(
-      questions.map(async (q, index) => {
-        let finalImageUrl = q.image_url
+    // Process new questions (base64 images are no longer supported)
+    const processedQuestions = questions.map((q) => {
+      // Only accept direct image URLs, not base64
+      const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
 
-        // If it's a new base64 image
-        if (q.image_url?.startsWith('data:image')) {
-          try {
-            finalImageUrl = await uploadImage(q.image_url, {
-              folder: `fquiz/quizzes/${id}/questions`,
-              public_id: `q_${index}_${Date.now()}`
-            })
-          } catch (uploadErr) {
-            console.error(`Failed to upload image for question ${index}:`, uploadErr)
-            finalImageUrl = undefined
-          }
-        }
-
-        return {
-          ...q,
-          image_url: finalImageUrl,
-        }
-      })
-    )
-
-    // Identify orphaned images (existed before but not in the new version)
-    const newImageUrls = processedQuestions.map((q: any) => q.image_url)
-    const orphanedUrls = oldImageUrls.filter((url: string) => !newImageUrls.includes(url))
-
-    // Cleanup orphaned images from Cloudinary in the background
-    orphanedUrls.forEach((url: string) => {
-      const publicId = getPublicIdFromUrl(url)
-      if (publicId) deleteImage(publicId).catch(console.error)
+      return {
+        ...q,
+        image_url: finalImageUrl || '',
+      }
     })
+
+    // No cleanup needed since we're not using Cloudinary anymore
 
     // 3. Atomic Update with Lock
     const quiz = await Quiz.findOneAndUpdate(
@@ -217,15 +192,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     await connectDB()
     
-    // 1. Delete from DB first
+    // 1. Delete from DB
     const quiz = await Quiz.findByIdAndDelete(id)
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    // 2. Delete the associated folder in Cloudinary
-    // fquiz/quizzes/{id}
-    deleteFolder(`fquiz/quizzes/${id}`).catch(err => {
-      console.error(`Failed to delete Cloudinary folder for quiz ${id}:`, err)
-    })
+    // No Cloudinary cleanup needed anymore
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {

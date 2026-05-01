@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/card'
 
 export default function FlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
-  const router = useRouter()
   
   const rawQuizId = params?.id
   const rawSessionId = params?.sessionId
@@ -22,12 +21,11 @@ export default function FlashcardSessionPage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
 
-  const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
-    useFlashcardSession(resolvedSessionId)
-
-  const [isMobile, setIsMobile] = useState(false)
-  const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
-  const flashcardRef = useRef<FlashcardViewRef>(null)
+  // Check mobile FIRST before calling any hooks
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 768
+  })
   
   // Handle responsive check
   useEffect(() => {
@@ -36,6 +34,40 @@ export default function FlashcardSessionPage() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Validate params before rendering
+  if (!resolvedSessionId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="p-6 max-w-md w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">URL không hợp lệ</h2>
+          <p className="text-muted-foreground mb-6">
+            Không tìm thấy session ID trong URL
+          </p>
+          <Button onClick={() => window.location.href = '/dashboard'}>
+            Quay về Dashboard
+          </Button>
+        </Card>
+      </div>
+    )
+  }
+
+  // Early return for mobile - prevents desktop hooks from running
+  if (isMobile) {
+    return <MobileFlashcardSessionPage />
+  }
+
+  // Desktop-only code below
+  return <DesktopFlashcardSession quizId={resolvedQuizId} sessionId={resolvedSessionId} />
+}
+
+function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessionId: string }) {
+  const router = useRouter()
+  const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
+    useFlashcardSession(sessionId)
+
+  const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
+  const flashcardRef = useRef<FlashcardViewRef>(null)
 
   // Lock submissions to prevent multi-hit logic
   const submittedRef = useRef(false)
@@ -54,9 +86,9 @@ export default function FlashcardSessionPage() {
   // Redirect to result page when completed
   useEffect(() => {
     if (session?.status === 'completed') {
-      router.push(`/quiz/${resolvedQuizId}/result/${resolvedSessionId}`)
+      router.push(`/quiz/${quizId}/result/${sessionId}`)
     }
-  }, [session?.status, resolvedQuizId, resolvedSessionId, router])
+  }, [session?.status, quizId, sessionId, router])
 
   // Reset submit lock whenever question index changes
   useEffect(() => {
@@ -126,20 +158,19 @@ export default function FlashcardSessionPage() {
     }
   }, [isSubmitting, question, handleAnswer])
 
-  if (isMobile) {
-    return <MobileFlashcardSessionPage />
-  }
-
-  if (isLoading || isPreloading) {
+  // Show loading while fetching initial data
+  // Skip loading screen if we already have session data (from cache/prefetch)
+  if (isLoading && !session) {
     return (
       <QuizLoadingOverlay 
         isOpen={true} 
         progress={isPreloading ? 45 : 99} 
-        status={isPreloading ? "Đang chuẩn bị bộ câu hỏi..." : "Đồng bộ phiên học..."} 
+        status={isPreloading ? "Đang chuẩn bị bộ câu hỏi..." : "Đang tải phiên học..."} 
       />
     )
   }
 
+  // Show error if loading failed
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -156,13 +187,20 @@ export default function FlashcardSessionPage() {
     )
   }
 
+  // Show error if data is missing after loading completed
   if (!session || !question) {
     return (
-      <QuizLoadingOverlay 
-        isOpen={true} 
-        progress={99} 
-        status="Đang tải câu hỏi..." 
-      />
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="p-6 max-w-md w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Không tìm thấy dữ liệu</h2>
+          <p className="text-muted-foreground mb-6">
+            Phiên học không tồn tại hoặc đã hết hạn
+          </p>
+          <Button onClick={() => router.push('/dashboard')}>
+            Quay về Dashboard
+          </Button>
+        </Card>
+      </div>
     )
   }
 

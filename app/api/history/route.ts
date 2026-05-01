@@ -170,14 +170,17 @@ export async function GET(req: Request) {
       const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
 
       let answeredCount = 0
+      let correctCount = 0
       if (item.flashcard_stats) {
         answeredCount = item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown
+        correctCount = item.flashcard_stats.cards_known
       } else if (Array.isArray(item.user_answers)) {
         answeredCount = new Set(
           item.user_answers
             .map((answer) => answer.question_index)
             .filter((idx) => Number.isInteger(idx) && idx >= 0)
         ).size
+        correctCount = item.user_answers.filter((a) => a.is_correct).length
       }
 
       return {
@@ -192,6 +195,7 @@ export async function GET(req: Request) {
         score: item.score,
         total_questions: totalQuestions,
         answered_count: answeredCount,
+        correct_count: correctCount,
         mode: item.mode,
         status: item.status,
         completed_at: item.completed_at,

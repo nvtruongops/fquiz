@@ -6,7 +6,7 @@ import { User } from '@/models/User'
 import { EmailVerification } from '@/models/EmailVerification'
 import { rateLimiter } from '@/lib/rate-limit/provider'
 import { logSecurityEvent } from '@/lib/logger'
-import { isMailConfigured, sendRegistrationMail } from '@/lib/mail'
+import { isMailConfigured } from '@/lib/mail'
 import { hashVerificationCode, isValidVerificationCode } from '@/lib/verification-code'
 
 export async function POST(request: Request) {
@@ -101,23 +101,6 @@ export async function POST(request: Request) {
       outcome: 'success',
       ip
     }, `New user ${username} registered`)
-
-    // Registration should not fail if mail provider is temporarily unavailable.
-    if (isMailConfigured()) {
-      sendRegistrationMail({
-        to: newUser.email,
-        username: newUser.username,
-      }).catch((mailErr) => {
-        logSecurityEvent('registration_mail_failed', {
-          request_id: requestId,
-          user_id: newUser._id.toString(),
-          route,
-          outcome: 'error',
-          ip,
-          err: mailErr instanceof Error ? mailErr.message : 'Unknown mail error',
-        }, 'Registration email failed to send')
-      })
-    }
 
     return NextResponse.json({ message: 'Account created' }, { status: 201 })
   } catch (err) {

@@ -61,7 +61,6 @@ jest.mock('@/lib/verification-code', () => ({
 }))
 jest.mock('@/lib/mail', () => ({
   isMailConfigured: jest.fn().mockReturnValue(false),
-  sendRegistrationMail: jest.fn().mockResolvedValue(undefined),
 }))
 
 // ─── Imports ──────────────────────────────────────────────────────────────────

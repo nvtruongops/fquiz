@@ -5,8 +5,7 @@ import { verifyToken, requireRole } from '@/lib/auth'
 import { Quiz } from '@/models/Quiz'
 import { User } from '@/models/User'
 import { Category } from '@/models/Category'
-import { CreateQuizSchema, SaveDraftQuizSchema } from '@/lib/schemas'
-import { uploadImage } from '@/lib/cloudinary'
+import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/schemas'
 import { QuizSession } from '@/models/QuizSession'
 import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
 
@@ -104,8 +103,8 @@ export async function POST(req: Request) {
     const body = await req.json()
     const isDraft = body.status === 'draft'
     const parsed = isDraft
-      ? SaveDraftQuizSchema.safeParse(body)
-      : CreateQuizSchema.safeParse(body)
+      ? AdminSaveDraftQuizSchema.safeParse(body)
+      : AdminCreateQuizSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
@@ -157,33 +156,16 @@ export async function POST(req: Request) {
     // 1. Generate quiz ID first for folder organization
     const quizId = new mongoose.Types.ObjectId()
 
-    // 2. Process questions and upload images to Cloudinary
-    const processedQuestions = await Promise.all(
-      questions.map(async (q: any, index) => {
-        let finalImageUrl = q.image_url
+    // 2. Process questions (base64 images are no longer supported)
+    const processedQuestions = questions.map((q: any) => {
+      // Only accept direct image URLs, not base64
+      const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
 
-        // Check if image_url is base64 (starts with "data:image")
-        if (q.image_url?.startsWith('data:image')) {
-          try {
-            // Upload to Cloudinary in a specific folder for this quiz
-            // fquiz/quizzes/{quizId}/questions
-            finalImageUrl = await uploadImage(q.image_url, {
-              folder: `fquiz/quizzes/${quizId}/questions`,
-              public_id: `q_${index}_${Date.now()}` // Using index + timestamp to avoid collisions
-            })
-          } catch (uploadErr) {
-            console.error(`Failed to upload image for question ${index}:`, uploadErr)
-            // Continue without image or handle error? For now, we continue
-            finalImageUrl = undefined
-          }
-        }
-
-        return {
-          ...q,
-          image_url: finalImageUrl,
-        }
-      })
-    )
+      return {
+        ...q,
+        image_url: finalImageUrl || '',
+      }
+    })
 
     const quiz = await Quiz.create({
       _id: quizId,
