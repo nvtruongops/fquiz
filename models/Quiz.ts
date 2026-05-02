@@ -5,6 +5,7 @@ import '@/models/Category'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
+    question_id: { type: String, required: false }, // Content-based unique ID
     text: { type: String, required: false },
     options: { type: [String], required: false, default: [] },
     correct_answer: { type: [Number], required: false, default: [] },

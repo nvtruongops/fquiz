@@ -7,17 +7,19 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   BookOpen, LayoutDashboard, Layers, FileQuestion,
   LogOut, Users, Settings, MessageSquare, Menu, X,
+  Database,
 } from 'lucide-react'
 import { clearAllUserCache } from '@/lib/cache-invalidation'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/admin',            label: 'Dashboard',  icon: LayoutDashboard, exact: true },
-  { href: '/admin/categories', label: 'Categories', icon: Layers,          exact: false },
-  { href: '/admin/quizzes',    label: 'Quizzes',    icon: FileQuestion,    exact: false },
-  { href: '/admin/users',      label: 'Học viên',   icon: Users,           exact: false },
-  { href: '/admin/feedback',   label: 'Góp ý',      icon: MessageSquare,   exact: false },
-  { href: '/admin/settings',   label: 'Cài đặt',    icon: Settings,        exact: false },
+  { href: '/admin',                      label: 'Dashboard',           icon: LayoutDashboard, exact: true },
+  { href: '/admin/categories',           label: 'Categories',          icon: Layers,          exact: false },
+  { href: '/admin/quizzes',              label: 'Quizzes',             icon: FileQuestion,    exact: false },
+  { href: '/admin/question-bank',        label: 'Ngân hàng câu hỏi',   icon: Database,        exact: false },
+  { href: '/admin/users',                label: 'Học viên',            icon: Users,           exact: false },
+  { href: '/admin/feedback',             label: 'Góp ý',               icon: MessageSquare,   exact: false },
+  { href: '/admin/settings',             label: 'Cài đặt',             icon: Settings,        exact: false },
 ]
 
 function SidebarContent({

@@ -694,7 +694,7 @@ export default function HistoryAttemptDetailPage() {
             {unansweredCount > 0 && (
               <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <p className="text-sm text-orange-800">
-                  <span className="font-semibold">⚠️ Lưu ý:</span> Trong session này, bạn đã bỏ qua {unansweredCount} thẻ (không đánh dấu biết/chưa biết). 
+                  <span className="font-semibold"> Lưu ý:</span> Trong session này, bạn đã bỏ qua {unansweredCount} thẻ (không đánh dấu biết/chưa biết). 
                   {data.flashcard_stats.cards_unknown > 0 ? (
                     <> Nhấn <span className="font-bold">"Ôn lại {data.flashcard_stats.cards_unknown} câu chưa biết"</span> để ôn tập các câu đã đánh dấu chưa biết, hoặc </>
                   ) : (

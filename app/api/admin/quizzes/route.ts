@@ -8,6 +8,8 @@ import { Category } from '@/models/Category'
 import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/schemas'
 import { QuizSession } from '@/models/QuizSession'
 import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
+import { checkQuestionsInBank, syncQuizToQuestionBank } from '@/lib/question-bank-manager'
+import { generateQuestionId } from '@/lib/question-id-generator'
 
 export const dynamic = 'force-dynamic'
 
@@ -153,16 +155,52 @@ export async function POST(req: Request) {
        }
     }
 
-    // 1. Generate quiz ID first for folder organization
+    // 2. CHECK QUESTION BANK - Kiểm tra mâu thuẫn với câu hỏi đã có
+    const bankConflicts = await checkQuestionsInBank(category_id, questions)
+    const differentAnswerConflicts: any[] = []
+    const sameAnswerConflicts: any[] = []
+
+    bankConflicts.forEach((conflict, index) => {
+      if (conflict.conflictType === 'different_answer') {
+        differentAnswerConflicts.push({
+          questionIndex: index,
+          question: questions[index],
+          ...conflict
+        })
+      } else if (conflict.conflictType === 'same_answer') {
+        sameAnswerConflicts.push({
+          questionIndex: index,
+          question: questions[index],
+          ...conflict
+        })
+      }
+    })
+
+    // Nếu có mâu thuẫn đáp án, trả về cảnh báo (không block, để user quyết định)
+    if (differentAnswerConflicts.length > 0) {
+      return NextResponse.json({
+        error: 'question_bank_conflict',
+        message: ` Phát hiện ${differentAnswerConflicts.length} câu hỏi có mâu thuẫn đáp án với ngân hàng môn học!`,
+        conflicts: {
+          different_answer: differentAnswerConflicts,
+          same_answer: sameAnswerConflicts
+        },
+        total_conflicts: differentAnswerConflicts.length,
+        suggestion: 'Vui lòng kiểm tra và sửa đáp án cho các câu hỏi bị mâu thuẫn, hoặc xác nhận để tiếp tục (sẽ không đồng bộ các câu mâu thuẫn vào ngân hàng).'
+      }, { status: 409 })
+    }
+
+    // 3. Generate quiz ID first for folder organization
     const quizId = new mongoose.Types.ObjectId()
 
-    // 2. Process questions (base64 images are no longer supported)
+    // 4. Process questions - Add question_id
     const processedQuestions = questions.map((q: any) => {
       // Only accept direct image URLs, not base64
       const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
 
       return {
         ...q,
+        question_id: generateQuestionId(q),
         image_url: finalImageUrl || '',
       }
     })
@@ -179,7 +217,28 @@ export async function POST(req: Request) {
       is_public: (status || 'published') === 'published',
     })
 
-    return NextResponse.json({ quiz }, { status: 201 })
+    // 5. SYNC TO QUESTION BANK - Đồng bộ vào ngân hàng môn học
+    // Chỉ sync khi published và không có mâu thuẫn
+    if ((status || 'published') === 'published') {
+      try {
+        await syncQuizToQuestionBank(
+          category_id,
+          normalizedCourseCode,
+          questions,
+          userPayload.userId
+        )
+      } catch (syncError) {
+        console.error('Failed to sync to question bank:', syncError)
+        // Không fail toàn bộ request nếu sync lỗi
+      }
+    }
+
+    return NextResponse.json({ 
+      quiz,
+      question_bank_info: sameAnswerConflicts.length > 0
+        ? `✅ ${sameAnswerConflicts.length} câu hỏi đã tồn tại trong ngân hàng môn học`
+        : '✅ Tất cả câu hỏi đã được thêm vào ngân hàng môn học'
+    }, { status: 201 })
   } catch (err) {
     console.error('Quiz creation error:', err)
     if (err instanceof Response) return err

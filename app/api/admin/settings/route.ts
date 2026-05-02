@@ -15,7 +15,27 @@ export async function GET(req: Request) {
 
     await connectDB()
     const settings = await getSettings()
-    return NextResponse.json({ settings })
+
+    // Sync maintenance-mode cookie với DB state khi GET
+    const response = NextResponse.json({ settings })
+    if (settings.maintenance_mode) {
+      response.cookies.set('maintenance-mode', '1', {
+        path: '/',
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 365,
+      })
+    } else {
+      response.cookies.set('maintenance-mode', '0', {
+        path: '/',
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 365,
+      })
+    }
+    return response
   } catch (err) {
     if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
@@ -68,7 +88,31 @@ export async function PUT(req: Request) {
       { new: true }
     ).lean()
 
-    return NextResponse.json({ settings })
+    // Sync maintenance-mode cookie với DB state
+    const response = NextResponse.json({ settings })
+    if ('maintenance_mode' in updates) {
+      if (updates.maintenance_mode === true) {
+        response.cookies.set('maintenance-mode', '1', {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 60 * 24 * 365,
+        })
+      } else {
+        // Set '0' thay vì delete để proxy biết maintenance đã tắt
+        // (tránh proxy gọi API lại cho mỗi request)
+        response.cookies.set('maintenance-mode', '0', {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60 * 60 * 24 * 365,
+        })
+      }
+    }
+
+    return response
   } catch (err) {
     if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })

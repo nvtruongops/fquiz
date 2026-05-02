@@ -190,6 +190,76 @@ export async function proxy(request: NextRequest) {
     return applyCors(request, preflight)
   }
 
+  // ── Maintenance Mode ──────────────────────────────────────────────────────
+  // Strategy: Cookie-first (fast), fallback to API (accurate for new users)
+  // Cookie 'maintenance-mode=1' được set bởi /api/admin/settings khi admin bật
+  const isMaintenanceExempt =
+    pathname.startsWith('/maintenance') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/public/') ||
+    pathname.startsWith('/_next') ||
+    /\.(png|jpg|jpeg|gif|svg|ico|webp|css|js)$/i.test(pathname)
+
+  if (!isMaintenanceExempt) {
+    let isMaintenanceOn = false
+
+    // Check cookie first (fast path - no DB call)
+    const maintenanceCookie = request.cookies.get('maintenance-mode')?.value
+    if (maintenanceCookie === '1') {
+      isMaintenanceOn = true
+    } else if (maintenanceCookie === undefined) {
+      // No cookie yet - check API (new user or cookie expired)
+      // Use absolute URL to avoid infinite loop
+      try {
+        const origin = request.nextUrl.origin
+        const settingsRes = await fetch(`${origin}/api/public/settings`, {
+          signal: AbortSignal.timeout(1500),
+          headers: { 'x-from-proxy': '1' },
+        })
+        if (settingsRes.ok) {
+          const data = await settingsRes.json()
+          isMaintenanceOn = data.maintenance_mode === true
+        }
+      } catch {
+        // Fail open - don't block if check fails
+      }
+    }
+    // maintenanceCookie === '0' → explicitly off, skip check
+
+    if (isMaintenanceOn) {
+      const token =
+        request.cookies.get('auth-token')?.value ??
+        request.headers.get('Authorization')?.replace('Bearer ', '')
+
+      let isAdmin = false
+      if (token) {
+        const p = await verifyPayload(token)
+        isAdmin = p?.role === 'admin'
+      }
+
+      if (!isAdmin) {
+        if (pathname.startsWith('/api/')) {
+          return applyCors(request, NextResponse.json(
+            { error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
+            { status: 503, headers: { 'x-request-id': requestId } }
+          ))
+        }
+        // Redirect và set cookie để các request sau không cần gọi API
+        const redirectRes = NextResponse.redirect(new URL('/maintenance', request.url))
+        redirectRes.cookies.set('maintenance-mode', '1', {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 60,  // 60 giây - ngắn để tự refresh khi admin tắt maintenance
+        })
+        return redirectRes
+      }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Split deployments by target: API project only serves /api/*,
   // WEB project serves pages and keeps CSP report endpoint accessible.
   if (deployTarget === 'api' && !pathname.startsWith('/api/')) {

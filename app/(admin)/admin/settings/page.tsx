@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SlidersHorizontal, ShieldAlert, KeyRound, Globe, Save, Loader2 } from 'lucide-react'
 import { useToast } from '@/lib/store/toast-store'
+import { withCsrfHeaders } from '@/lib/csrf'
 
 interface Settings {
   _id: string
@@ -28,7 +29,7 @@ async function saveSettings(updates: Partial<Settings>): Promise<{ settings: Set
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/settings`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(updates),
   })
   if (!res.ok) {

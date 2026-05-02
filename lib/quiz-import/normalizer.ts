@@ -109,11 +109,25 @@ export function normalizeImportedQuiz(raw: ImportRawQuizPayload): NormalizedQuiz
     .filter((item): item is ImportRawQuestion => Boolean(item) && typeof item === 'object' && !Array.isArray(item))
     .map((question) => normalizeQuestion(question))
 
+  // Add question_id to each question for deduplication
+  const questionsWithIds = questions.map(q => {
+    // Import generateQuestionId at the top of the file
+    const { generateQuestionId } = require('@/lib/question-id-generator')
+    return {
+      ...q,
+      question_id: generateQuestionId({
+        text: q.text,
+        options: q.options,
+        correct_answer: q.correct_answer
+      })
+    }
+  })
+
   return {
     title,
     description,
     course_code: courseCode,
     ...(categoryId ? { category_id: categoryId } : {}),
-    questions,
+    questions: questionsWithIds,
   }
 }

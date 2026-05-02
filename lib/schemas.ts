@@ -49,6 +49,7 @@ export const LoginSchema = z.object({
 const stripHtml = (val: string) => val.replace(/<[^>]*>/g, '')
 
 export const QuestionSchema = z.object({
+  question_id: z.string().optional(), // Auto-generated content-based ID
   text: z
     .string()
     .min(1, 'Câu hỏi không được để trống')
@@ -121,6 +122,7 @@ export const QuestionSchema = z.object({
 
 // Lenient schema for draft saves — allows empty option strings and no correct answer
 export const DraftQuestionSchema = z.object({
+  question_id: z.string().optional(),
   text: z.string().max(2000).optional().default(''),
   options: z
     .array(z.string().max(500))

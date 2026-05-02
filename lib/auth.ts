@@ -125,8 +125,18 @@ export async function signToken(userId: string, role: string, v: number = 1, met
 }
 
 /**
+ * Check if the payload role matches the required role.
+ * Returns true if authorized, false otherwise.
+ * Usage: if (!checkRole(payload, 'admin')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+ */
+export function checkRole(payload: JWTPayload, role: string): boolean {
+  return payload.role === role
+}
+
+/**
  * Throws a 403 Response if the payload role does not match the required role.
  * Usage: requireRole(payload, 'admin') — throws if not admin.
+ * @deprecated Use checkRole instead for better Next.js App Router compatibility
  */
 export function requireRole(payload: JWTPayload, role: string): void {
   if (payload.role !== role) {

@@ -8,6 +8,10 @@ export interface ImportDiagnostic {
   message: string
   questionIndex?: number
   field?: string
+  metadata?: {
+    questionId?: string
+    duplicateIndices?: number[]
+  }
 }
 
 export interface ImportSummary {
@@ -19,6 +23,7 @@ export interface ImportSummary {
 }
 
 export interface NormalizedQuestion {
+  question_id?: string      // Content-based unique ID for deduplication
   text: string
   options: string[]
   correct_answer: number[]
