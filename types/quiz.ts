@@ -2,6 +2,7 @@ import { Types } from 'mongoose'
 
 export interface IQuestion {
   _id: Types.ObjectId
+  question_id?: string      // Optional: Content-based unique ID for deduplication
   text: string
   options: string[]
   correct_answer: number[]  // array to support multi-answer questions

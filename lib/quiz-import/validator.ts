@@ -1,4 +1,5 @@
 import { validateObjectId } from '@/lib/schemas'
+import { checkDuplicateQuestions } from './duplicate-checker'
 import type {
   ImportDiagnostic,
   ImportPreviewResult,
@@ -179,6 +180,10 @@ export function validateImportedQuiz(raw: ImportRawQuizPayload, normalized: Norm
       diagnostics.push(diagnostic('warning', 'DUPLICATE_OPTION', 'Có option bị trùng lặp', { questionIndex: index, field: `questions[${index}].options` }))
     }
   })
+
+  // Check for duplicate questions within the quiz
+  const duplicateDiagnostics = checkDuplicateQuestions(normalized.questions)
+  diagnostics.push(...duplicateDiagnostics)
 
   const invalidQuestions = normalized.questions.reduce((total, _, index) => total + (hasQuestionError(diagnostics, index) ? 1 : 0), 0)
   const summary = {

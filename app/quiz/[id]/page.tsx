@@ -674,8 +674,10 @@ export default function QuizDetailPage() {
               <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all focus-within:shadow-md focus-within:border-[#5D7B6F]/30">
                 <div className="flex items-center gap-3 border-b border-gray-50 pb-3">
                   <Avatar className="h-8 w-8 border border-gray-100 shadow-sm">
-                    <AvatarImage src={currentUser?.avatarUrl || currentUser?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-[#5D7B6F] text-white text-[10px] font-black">
+                    {(currentUser?.avatarUrl || currentUser?.avatar_url) && (
+                      <AvatarImage src={currentUser.avatarUrl || currentUser.avatar_url} />
+                    )}
+                    <AvatarFallback className="bg-[#A4C3A2] text-[#5D7B6F] text-[10px] font-black uppercase">
                       {(currentUser?.username || currentUser?.name || '??').substring(0, 2)}
                     </AvatarFallback>
                   </Avatar>
@@ -727,12 +729,13 @@ export default function QuizDetailPage() {
                   comments.map((comment) => {
                     // Handle deleted user case
                     const user = comment.user_id || { username: 'Người dùng đã xóa', name: 'Người dùng đã xóa', avatar_url: null, avatarUrl: null }
+                    const avatarUrl = user.avatar_url || user.avatarUrl
                     
                     return (
                       <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
                         <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                          <AvatarImage src={user.avatar_url || user.avatarUrl || undefined} />
-                          <AvatarFallback className="bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase">
+                          {avatarUrl && <AvatarImage src={avatarUrl} />}
+                          <AvatarFallback className="bg-[#A4C3A2] text-[#5D7B6F] text-[10px] font-black uppercase">
                             {(user.username || user.name || '??').substring(0, 2)}
                           </AvatarFallback>
                         </Avatar>

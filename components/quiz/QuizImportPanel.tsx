@@ -48,14 +48,41 @@ interface ImportPreviewResponse {
   isValid: boolean
 }
 
+interface BankCheckResult {
+  total_questions: number
+  conflicts_found: number
+  same_answer_conflicts: number
+  different_answer_conflicts: number
+  conflicts: {
+    same_answer: Array<{
+      questionIndex: number
+      conflictType: 'same_answer'
+      message: string
+    }>
+    different_answer: Array<{
+      questionIndex: number
+      conflictType: 'different_answer'
+      message: string
+      existingQuestion?: {
+        correct_answer: number[]
+        used_in_quizzes: string[]
+        usage_count: number
+      }
+    }>
+  }
+  summary: string
+}
+
 interface Props {
   onApply: (quiz: ImportedQuiz) => void
   onValidationStateChange?: (hasBlockingErrors: boolean) => void
   onPreviewDiagnosticsChange?: (errors: ImportDiagnostic[]) => void
   onProcessingStateChange?: (isProcessing: boolean) => void
+  categoryId?: string
+  mode?: 'admin' | 'student'
 }
 
-export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange }: Readonly<Props>) {
+export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange, categoryId, mode = 'admin' }: Readonly<Props>) {
   const [file, setFile] = React.useState<File | null>(null)
   const [fileSnapshot, setFileSnapshot] = React.useState<File | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -63,6 +90,8 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
   const [downloading, setDownloading] = React.useState<'json' | 'txt' | null>(null)
   const [error, setError] = React.useState('')
   const [preview, setPreview] = React.useState<ImportPreviewResponse | null>(null)
+  const [bankCheck, setBankCheck] = React.useState<BankCheckResult | null>(null)
+  const [checkingBank, setCheckingBank] = React.useState(false)
 
   const createFileSnapshot = React.useCallback(async (source: File) => {
     const buffer = await source.arrayBuffer()
@@ -104,6 +133,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
 
     setLoading(true)
     setError('')
+    setBankCheck(null)
     onProcessingStateChange?.(true)
     try {
       const form = new FormData()
@@ -131,6 +161,49 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
 
       const nextPreview = data as ImportPreviewResponse
       setPreview(nextPreview)
+      
+      // Check Question Bank if in admin mode and category is selected
+      if (mode === 'admin' && categoryId && nextPreview.isValid && nextPreview.normalizedQuiz.questions.length > 0) {
+        setCheckingBank(true)
+        try {
+          const checkRes = await fetch('/api/question-bank/check', {
+            method: 'POST',
+            headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
+            body: JSON.stringify({
+              category_id: categoryId,
+              questions: nextPreview.normalizedQuiz.questions.map(q => ({
+                text: q.text,
+                options: q.options,
+                correct_answer: q.correct_answer,
+                explanation: q.explanation,
+                image_url: q.image_url,
+              })),
+            }),
+          })
+          
+          if (checkRes.ok) {
+            const checkData: BankCheckResult = await checkRes.json()
+            setBankCheck(checkData)
+          }
+        } catch (err) {
+          console.error('Question bank check failed:', err)
+          // Don't block import if bank check fails
+        } finally {
+          setCheckingBank(false)
+        }
+      } else if (mode === 'admin' && !categoryId && nextPreview.isValid) {
+        // Cảnh báo: chưa chọn môn học
+        setBankCheck({
+          total_questions: nextPreview.normalizedQuiz.questions.length,
+          conflicts_found: 0,
+          same_answer_conflicts: 0,
+          different_answer_conflicts: 0,
+          conflicts: { same_answer: [], different_answer: [] },
+          summary: ' Chưa chọn môn học - không thể kiểm tra Question Bank'
+        })
+      }
+      
       onValidationStateChange?.(!nextPreview.isValid)
       onPreviewDiagnosticsChange?.(nextPreview.diagnostics.filter((item) => item.level === 'error'))
     } catch (err) {
@@ -180,6 +253,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
               setFileSnapshot(null)
               setPreparingFile(false)
               setPreview(null)
+              setBankCheck(null)
               setError('')
               onValidationStateChange?.(false)
               onPreviewDiagnosticsChange?.([])
@@ -234,6 +308,73 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
                 Tổng: {preview.summary.totalQuestions} | Hợp lệ: {preview.summary.validQuestions} | Lỗi: {preview.summary.errors} | Cảnh báo: {preview.summary.warnings}
               </span>
             </div>
+
+            {/* Question Bank Check Results */}
+            {checkingBank && (
+              <div className="flex items-center gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-md p-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Đang kiểm tra ngân hàng câu hỏi...
+              </div>
+            )}
+
+            {bankCheck && bankCheck.summary.includes('Chưa chọn môn học') && (
+              <div className="bg-orange-50 border border-orange-300 rounded-md p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-orange-900 mb-1">
+                       Chưa chọn môn học
+                    </p>
+                    <p className="text-orange-700">
+                      Vui lòng chọn môn học ở trên trước khi upload file để kiểm tra câu hỏi trùng lặp trong Question Bank.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {bankCheck && bankCheck.different_answer_conflicts > 0 && (
+              <div className="bg-red-50 border border-red-300 rounded-md p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-red-900 mb-1">
+                       {bankCheck.different_answer_conflicts} câu hỏi có mâu thuẫn đáp án!
+                    </p>
+                    <p className="text-red-700">
+                      Cùng câu hỏi + cùng options nhưng đáp án khác trong ngân hàng.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {bankCheck && bankCheck.same_answer_conflicts > 0 && (
+              <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-yellow-900 mb-1">
+                      ✓ {bankCheck.same_answer_conflicts} câu hỏi đã có trong ngân hàng
+                    </p>
+                    <p className="text-yellow-700">
+                      Các câu hỏi này đã tồn tại với cùng đáp án. Có thể tái sử dụng an toàn.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {bankCheck && bankCheck.conflicts_found === 0 && !bankCheck.summary.includes('Chưa chọn môn học') && (
+              <div className="bg-green-50 border border-green-300 rounded-md p-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-green-900">✅ Tất cả câu hỏi đều mới</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="max-h-40 overflow-y-auto space-y-1">
               {preview.diagnostics.map((item, idx) => (

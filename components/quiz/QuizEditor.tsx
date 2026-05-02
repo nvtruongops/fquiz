@@ -39,6 +39,9 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { useQuestionBankWarning } from '@/hooks/useQuestionBankWarning'
+import { QuestionBankWarning } from './QuestionBankWarning'
+import { useQuestionBankCheck } from '@/hooks/useQuestionBankCheck'
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
 const DEFAULT_OPTION_COUNT = 4
@@ -138,7 +141,7 @@ export function QuizEditor({
 
   const [form, setForm] = useState<QuizFormData>(() => ({
     description: (initialData as any)?.description ?? '',
-    category_id: initialData?.category_id ?? categories[0]?._id ?? '',
+    category_id: initialData?.category_id ?? '', // Không tự động chọn môn đầu tiên
     course_code: (initialData as any)?.course_code ?? '',
     questions: initialData?.questions?.length
       ? (initialData.questions as QuestionForm[])
@@ -164,6 +167,29 @@ export function QuizEditor({
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const autosaveInFlightRef = useRef(false)
   const importEnabled = process.env.NEXT_PUBLIC_ENABLE_QUIZ_IMPORT !== 'false'
+  
+  // Question Bank Warning
+  const { checkQuestionUsage, usageInfo, clearUsageInfo } = useQuestionBankWarning(form.category_id)
+  const [showBankWarning, setShowBankWarning] = useState(false)
+  const [pendingQuestionUpdate, setPendingQuestionUpdate] = useState<{
+    index: number
+    field: 'text' | 'explanation' | 'image_url'
+    value: string
+  } | null>(null)
+  
+  // Question Bank Real-time Check
+  const bankCheck = useQuestionBankCheck({
+    categoryId: form.category_id,
+    questions: form.questions.map(q => ({
+      text: q.text,
+      options: q.options,
+      correct_answer: q.correct_answers,
+      explanation: q.explanation,
+      image_url: q.image_url,
+    })),
+    enabled: !isStudentMode && !!form.category_id,
+    debounceMs: 2000, // Check sau 2s không thay đổi
+  })
   
   // Real-time diagnostics
   const diagnostics = useMemo(() => analyzeQuizCompleteness({ ...form, course_code: form.course_code } as any, targetCount), [form, targetCount])
@@ -288,12 +314,46 @@ export function QuizEditor({
       return { ...prev, questions }
     })
 
-  const updateQuestion = (qi: number, field: 'text' | 'explanation' | 'image_url', value: string) =>
+  const updateQuestion = async (qi: number, field: 'text' | 'explanation' | 'image_url', value: string) => {
+    // Question Bank warning chỉ dành cho admin mode
+    const isImportantChange = field === 'text' && !isStudentMode
+    
+    if (isImportantChange && form.category_id) {
+      // Build the updated question
+      const currentQuestion = form.questions[qi]
+      const updatedQuestion = {
+        text: field === 'text' ? value : currentQuestion.text,
+        options: currentQuestion.options,
+        correct_answer: currentQuestion.correct_answers,
+        explanation: currentQuestion.explanation,
+        image_url: currentQuestion.image_url,
+      }
+      
+      // Check if question exists in Question Bank
+      const usage = await checkQuestionUsage(updatedQuestion)
+      
+      if (usage && usage.exists && usage.usage_count && usage.usage_count > 1) {
+        // Question is used in multiple quizzes - show warning
+        setPendingQuestionUpdate({ index: qi, field, value })
+        setShowBankWarning(true)
+        return // Wait for user decision
+      }
+      
+      // If question exists but only used in 1 quiz (this quiz)
+      // Auto-update Question Bank without warning
+      if (usage && usage.exists && usage.usage_count === 1) {
+        // This will be handled by auto-sync after save
+        // Just update the question normally
+      }
+    }
+    
+    // No warning needed - update directly
     setForm((prev) => {
       const questions = [...prev.questions]
       questions[qi] = { ...questions[qi], [field]: value }
       return { ...prev, questions }
     })
+  }
 
   const removeQuestionImage = (qi: number) =>
     setForm((prev) => {
@@ -301,6 +361,36 @@ export function QuizEditor({
       questions[qi] = { ...questions[qi], image_url: '' }
       return { ...prev, questions }
     })
+
+  // Question Bank Warning handlers
+  const handleUpdateThisQuizOnly = () => {
+    if (pendingQuestionUpdate) {
+      const { index, field, value } = pendingQuestionUpdate
+      setForm((prev) => {
+        const questions = [...prev.questions]
+        questions[index] = { ...questions[index], [field]: value }
+        return { ...prev, questions }
+      })
+    }
+    setPendingQuestionUpdate(null)
+    clearUsageInfo()
+  }
+
+  const handleUpdateAllQuizzes = () => {
+    // API already updated all quizzes
+    // Just update local state
+    if (pendingQuestionUpdate) {
+      const { index, field, value } = pendingQuestionUpdate
+      setForm((prev) => {
+        const questions = [...prev.questions]
+        questions[index] = { ...questions[index], [field]: value }
+        return { ...prev, questions }
+      })
+    }
+    setPendingQuestionUpdate(null)
+    clearUsageInfo()
+    toast.success('Đã cập nhật tất cả quiz thành công!')
+  }
 
   function effectiveOptions(q: QuestionForm): string[] {
     let last = q.options.length - 1
@@ -372,6 +462,32 @@ export function QuizEditor({
       }
       setLastUpdatedAt(data.quiz.updatedAt)
       setLastSavedAt(new Date())
+
+      // Auto-sync to Question Bank (CHỈ khi quiz được published, KHÔNG sync draft)
+      // Draft quiz có thể chưa hoàn thiện, không nên đưa vào Question Bank
+      if (!isStudentMode && form.category_id && savedQuizId && finalStatus === 'published') {
+        try {
+          await fetch('/api/question-bank/auto-sync', {
+            method: 'POST',
+            credentials: 'include',
+            headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+              category_id: form.category_id,
+              course_code: form.course_code,
+              questions: form.questions.map(q => ({
+                text: q.text,
+                options: q.options,
+                correct_answer: q.correct_answers,
+                explanation: q.explanation,
+                image_url: q.image_url,
+              })),
+            }),
+          })
+          // Ignore errors - auto-sync is not critical
+        } catch (error) {
+          console.log('Auto-sync to Question Bank failed (non-critical):', error)
+        }
+      }
 
       if (!quiet) {
         if (savedQuizId) await invalidateHistoryForQuiz(queryClient, savedQuizId)
@@ -552,35 +668,126 @@ export function QuizEditor({
               <h1 className="text-2xl font-bold text-[#5D7B6F]">
                 {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
               </h1>
-              {importEnabled && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-[#A4C3A2] text-[#5D7B6F]"
-                  onClick={() => {
-                    setShowImportPanel((prev) => !prev)
-                    setTimeout(() => {
-                      const panel = document.getElementById('quiz-import-panel')
-                      panel?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }, 0)
-                  }}
-                >
-                  {showImportPanel ? 'Ẩn upload file JSON/TXT' : 'Upload file JSON/TXT'}
-                </Button>
-              )}
             </div>
 
-            {importEnabled && showImportPanel && (
-              <QuizImportPanel
-                onApply={handleApplyImportedQuiz}
-                onValidationStateChange={setHasImportBlockingErrors}
-                onPreviewDiagnosticsChange={(errors) =>
-                  setImportPreviewErrors(errors.map((item) => ({ code: item.code, message: item.message, questionIndex: item.questionIndex })))
-                }
-                onProcessingStateChange={setIsImportProcessing}
-              />
+            {/* BƯỚC 1: CHỌN MÔN HỌC (BẮT BUỘC) */}
+            {!isStudentMode && (
+              <Card className={cn(
+                "bg-white border-2 shadow-lg",
+                !form.category_id ? "border-orange-400 bg-orange-50" : "border-[#A4C3A2]"
+              )}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center font-bold text-white",
+                      !form.category_id ? "bg-orange-500" : "bg-[#5D7B6F]"
+                    )}>
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-[#5D7B6F] text-lg">
+                        Chọn Môn học {!form.category_id && <span className="text-red-600">*</span>}
+                      </CardTitle>
+                      {!form.category_id && (
+                        <p className="text-xs text-orange-600 mt-1">
+                           Bắt buộc: Vui lòng chọn môn học trước khi tiếp tục
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Select
+                    value={form.category_id || undefined}
+                    onValueChange={(v) => {
+                      if (v && v !== '__placeholder__') {
+                        setForm((p) => ({ ...p, category_id: v }))
+                      }
+                    }}
+                  >
+                    <SelectTrigger className={cn(
+                      "h-14 rounded-xl text-base font-semibold",
+                      !form.category_id 
+                        ? "border-2 border-orange-400 bg-white text-gray-500" 
+                        : "border-[#5D7B6F] bg-white text-[#5D7B6F]"
+                    )}>
+                      <SelectValue placeholder="— Chọn môn học để bắt đầu —" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {categories.length === 0 ? (
+                        <SelectItem value="__no_category__" disabled>
+                          — Chưa có môn học —
+                        </SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="__placeholder__" disabled className="text-gray-400">
+                            — Chọn môn học —
+                          </SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat._id} value={cat._id} className="font-medium text-gray-700">
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
             )}
 
+            {/* Disable tất cả nếu chưa chọn môn học */}
+            {!isStudentMode && !form.category_id && (
+              <Card className="bg-gray-50 border-gray-300">
+                <CardContent className="pt-6 text-center">
+                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">
+                    Vui lòng chọn môn học ở trên để tiếp tục tạo quiz
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Chỉ hiển thị phần còn lại khi đã chọn môn học (hoặc student mode) */}
+            {(isStudentMode || form.category_id) && (
+              <>
+                {importEnabled && (
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-[#A4C3A2] text-[#5D7B6F]"
+                      onClick={() => {
+                        setShowImportPanel((prev) => !prev)
+                        setTimeout(() => {
+                          const panel = document.getElementById('quiz-import-panel')
+                          panel?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }, 0)
+                      }}
+                    >
+                      {showImportPanel ? 'Ẩn upload file JSON/TXT' : 'Upload file JSON/TXT'}
+                    </Button>
+                  </div>
+                )}
+
+                {importEnabled && showImportPanel && (
+                  <QuizImportPanel
+                    onApply={handleApplyImportedQuiz}
+                    onValidationStateChange={setHasImportBlockingErrors}
+                    onPreviewDiagnosticsChange={(errors) =>
+                      setImportPreviewErrors(errors.map((item) => ({ code: item.code, message: item.message, questionIndex: item.questionIndex })))
+                    }
+                    onProcessingStateChange={setIsImportProcessing}
+                    categoryId={form.category_id}
+                    mode={mode}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Chỉ hiển thị form khi đã chọn môn học (hoặc student mode) */}
+            {(isStudentMode || form.category_id) && (
+              <>
             {/* PROGRESS HUB */}
             <Card className="bg-white border-[#A4C3A2] shadow-sm overflow-hidden">
               <div className="p-4 bg-[#A4C3A2]/10 border-b border-[#A4C3A2]/20 flex items-center justify-between">
@@ -659,120 +866,36 @@ export function QuizEditor({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* CATEGORY - PRIMARY (MÔN HỌC) */}
-                    <div className="p-4 rounded-xl bg-[#A4C3A2]/5 border border-[#A4C3A2]/20 shadow-sm">
-                      <div className="mb-3 flex items-center justify-between gap-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F] flex items-center gap-1.5">
-                          1. Môn học
-                          {diagnostics.errors.some(e => e.code === 'MISSING_CATEGORY') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
-                        </label>
-                      </div>
-                      <Select
-                        open={isCategorySelectOpen}
-                        value={form.category_id}
-                        onOpenChange={(open) => {
-                          setIsCategorySelectOpen(open)
-                          if (!open) setIsInlineCreateOpen(false)
-                        }}
-                        onValueChange={(v) => setForm((p) => ({ ...p, category_id: v }))}
-                      >
-                        <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]">
-                          <SelectValue placeholder="— Chọn môn học —" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {categories.length === 0 && (
-                            <SelectItem value="__no_category__" disabled>— Chưa có môn học —</SelectItem>
-                          )}
-                          {categories.map((cat) => (
-                            <SelectItem key={cat._id} value={cat._id} className="font-medium text-gray-700">{cat.name}</SelectItem>
-                          ))}
-                          {isStudentMode && (
-                            <div className="border-t mt-2 pt-2 px-2 space-y-2">
-                              {categories.length >= 5 ? (
-                                <p className="text-[11px] font-medium text-amber-600 px-2 py-1">
-                                  Đã đạt giới hạn 5 danh mục cá nhân.
-                                </p>
-                              ) : (
-                                <>
-                                  {!isInlineCreateOpen ? (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      className="w-full h-8 justify-center px-2 text-[12px] font-bold text-[#5D7B6F]"
-                                      onMouseDown={(e) => e.preventDefault()}
-                                      onClick={() => setIsInlineCreateOpen(true)}
-                                    >
-                                      + Tạo danh mục mới
-                                    </Button>
-                                  ) : (
-                                    <div className="px-1 pb-1">
-                                      <div className="flex items-center gap-2">
-                                        <Input
-                                          value={newCategoryName}
-                                          onChange={(e) => setNewCategoryName(e.target.value)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              e.preventDefault()
-                                              void handleCreateCategoryQuick()
-                                            }
-                                          }}
-                                          placeholder="Tên danh mục mới"
-                                          className="h-8 text-sm"
-                                          onMouseDown={(e) => e.stopPropagation()}
-                                        />
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          onMouseDown={(e) => e.preventDefault()}
-                                          onClick={() => void handleCreateCategoryQuick()}
-                                          disabled={isCreatingCategory || !newCategoryName.trim()}
-                                          className="h-8 px-3 bg-[#5D7B6F] hover:bg-[#5D7B6F]/90"
-                                        >
-                                          {isCreatingCategory ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Tạo'}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* COURSE CODE - MÃ ĐỀ / MÃ QUIZ */}
-                    <div className="p-4 rounded-xl bg-[#A4C3A2]/5 border border-[#A4C3A2]/20 shadow-sm">
-                      <label className="block text-xs font-black uppercase tracking-widest text-[#5D7B6F] mb-3 flex items-center gap-1.5">
-                        2. Mã đề / Mã Quiz
-                        {diagnostics.errors.some(e => e.code === 'MISSING_COURSE_CODE') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
-                      </label>
-                      <Input
-                        value={form.course_code}
-                        onChange={(e) => setForm((p) => ({ ...p, course_code: e.target.value }))}
-                        placeholder="VD: ABC_123, HK1_DE01..."
-                        className={cn(
-                          "h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]",
-                          form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && "border-red-500 focus:border-red-500"
-                        )}
-                      />
-                      {form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && (
-                        <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)
-                        </p>
+                  {/* COURSE CODE - MÃ ĐỀ / MÃ QUIZ */}
+                  <div className="p-4 rounded-xl bg-[#A4C3A2]/5 border border-[#A4C3A2]/20 shadow-sm">
+                    <label className="block text-xs font-black uppercase tracking-widest text-[#5D7B6F] mb-3 flex items-center gap-1.5">
+                      Mã đề / Mã Quiz
+                      {diagnostics.errors.some(e => e.code === 'MISSING_COURSE_CODE') && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" />}
+                    </label>
+                    <Input
+                      value={form.course_code}
+                      onChange={(e) => setForm((p) => ({ ...p, course_code: e.target.value }))}
+                      placeholder="VD: ABC_123, HK1_DE01..."
+                      className={cn(
+                        "h-12 rounded-xl border-gray-200 focus:border-[#5D7B6F] focus:ring-[#5D7B6F]/30 bg-white text-base font-semibold text-[#5D7B6F]",
+                        form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && "border-red-500 focus:border-red-500"
                       )}
-                      <p className="text-xs text-gray-400 mt-2">
-                        Chỉ dùng chữ cái (A-Z), số (0-9) và dấu gạch dưới (_). Không dấu cách.
+                    />
+                    {form.course_code && !/^[a-zA-Z0-9_]+$/.test(form.course_code) && (
+                      <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)
                       </p>
-                    </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-2">
+                      Chỉ dùng chữ cái (A-Z), số (0-9) và dấu gạch dưới (_). Không dấu cách.
+                    </p>
                   </div>
 
                   {/* DESCRIPTION */}
                   <div className="px-4">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-tight mb-1">
-                      3. Mô tả chi tiết (tùy chọn)
+                      Mô tả chi tiết (tùy chọn)
                     </label>
                     <Textarea
                       value={form.description}
@@ -834,15 +957,59 @@ export function QuizEditor({
                 </CardContent>
               </Card>
 
+              {/* Conflict Summary Banner */}
+              {bankCheck.result && bankCheck.hasDifferentAnswerConflicts && (
+                <Card className="bg-red-50 border-red-300">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-bold text-red-900 mb-1">
+                           Phát hiện {bankCheck.result.different_answer_conflicts} câu hỏi có mâu thuẫn đáp án!
+                        </h3>
+                        <p className="text-xs text-red-700">
+                          Cùng câu hỏi + cùng options nhưng đáp án khác trong ngân hàng. Vui lòng kiểm tra lại.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {bankCheck.result && bankCheck.hasSameAnswerConflicts && !bankCheck.hasDifferentAnswerConflicts && (
+                <Card className="bg-yellow-50 border-yellow-300">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-bold text-yellow-900 mb-1">
+                          ✓ {bankCheck.result.same_answer_conflicts} câu hỏi đã có trong ngân hàng
+                        </h3>
+                        <p className="text-xs text-yellow-700">
+                          Các câu hỏi này đã tồn tại với cùng đáp án. Có thể tái sử dụng an toàn.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Questions */}
               {form.questions.map((q, qi) => {
                 const opts = effectiveOptions(q)
                 const selectedCount = q.correct_answers.length
+                
+                const differentAnswerConflict = bankCheck.result?.conflicts.different_answer.find(c => c.questionIndex === qi)
+                const sameAnswerConflict = bankCheck.result?.conflicts.same_answer.find(c => c.questionIndex === qi)
+                const questionConflict = differentAnswerConflict || sameAnswerConflict
+                const hasDifferentAnswer = !!differentAnswerConflict
 
                 return (
                   <Card id={`q-card-${qi}`} key={qi} className={cn(
                     "bg-white border-[#A4C3A2] transition-all",
-                    diagnostics.errors.some(e => e.questionIndex === qi) ? "border-red-200" : ""
+                    diagnostics.errors.some(e => e.questionIndex === qi) ? "border-red-200" : "",
+                    hasDifferentAnswer ? "border-red-400 bg-red-50" : "",
+                    questionConflict && !hasDifferentAnswer ? "border-yellow-400 bg-yellow-50" : ""
                   )}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
@@ -860,6 +1027,16 @@ export function QuizEditor({
                               Chưa hoàn thiện
                             </Badge>
                           )}
+                          {hasDifferentAnswer && (
+                            <Badge variant="destructive" className="h-5 px-1.5 text-[9px] uppercase font-black tracking-tighter">
+                               Đáp án khác ngân hàng
+                            </Badge>
+                          )}
+                          {questionConflict && !hasDifferentAnswer && (
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[9px] uppercase font-black tracking-tighter bg-yellow-100 text-yellow-800">
+                              ✓ Đã có trong ngân hàng
+                            </Badge>
+                          )}
                         </div>
                         {form.questions.length > 1 && (
                           <Button type="button" size="icon" variant="ghost" onClick={() => removeQuestion(qi)}>
@@ -870,6 +1047,49 @@ export function QuizEditor({
                     </CardHeader>
 
                     <CardContent className="space-y-3 pt-0">
+                      {/* Conflict Details */}
+                      {questionConflict && questionConflict.existingQuestion && (
+                        <div className={cn(
+                          "p-3 rounded-lg border",
+                          hasDifferentAnswer ? "bg-red-100 border-red-300" : "bg-yellow-100 border-yellow-300"
+                        )}>
+                          <div className="flex items-start gap-2">
+                            {hasDifferentAnswer
+                              ? <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                              : <CheckCircle2 className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                            }
+                            <div className="flex-1 text-xs">
+                              <p className={cn("font-bold mb-1", hasDifferentAnswer ? "text-red-900" : "text-yellow-900")}>
+                                {hasDifferentAnswer ? " Mâu thuẫn đáp án với ngân hàng" : "✓ Câu hỏi đã tồn tại trong ngân hàng"}
+                              </p>
+                              <p className={cn("mb-2", hasDifferentAnswer ? "text-red-700" : "text-yellow-700")}>
+                                Mã đề: <span className="font-medium">{questionConflict.existingQuestion.used_in_quizzes.join(', ')}</span>
+                                {' '}({questionConflict.existingQuestion.usage_count} quiz)
+                              </p>
+                              {hasDifferentAnswer && (
+                                <div className="space-y-1 mt-2">
+                                  <p className="font-medium text-red-800">Đáp án trong ngân hàng:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {questionConflict.existingQuestion.correct_answer.map((idx) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-red-200 text-red-900 rounded font-medium">
+                                        {questionConflict.existingQuestion!.options[idx] || OPTION_LABELS[idx]}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <p className="font-medium text-red-800 mt-1">Đáp án hiện tại:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {q.correct_answers.map((idx) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-red-200 text-red-900 rounded font-medium">
+                                        {q.options[idx] || OPTION_LABELS[idx]}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div>
                         <Textarea
                           value={q.text}
@@ -1018,6 +1238,8 @@ export function QuizEditor({
                 </Button>
               </div>
             </form>
+              </>
+            )}
           </div>
 
           {/* ISSUE NAVIGATOR SIDEBAR */}
@@ -1116,6 +1338,32 @@ export function QuizEditor({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Question Bank Warning Dialog - chỉ hiện cho admin */}
+      {!isStudentMode && showBankWarning && usageInfo && usageInfo.exists && pendingQuestionUpdate && (
+        <QuestionBankWarning
+          open={showBankWarning}
+          onOpenChange={setShowBankWarning}
+          categoryId={form.category_id}
+          oldQuestionId={usageInfo.question_id!}
+          newQuestion={{
+            text: pendingQuestionUpdate.field === 'text' 
+              ? pendingQuestionUpdate.value 
+              : form.questions[pendingQuestionUpdate.index].text,
+            options: form.questions[pendingQuestionUpdate.index].options,
+            correct_answer: form.questions[pendingQuestionUpdate.index].correct_answers,
+            explanation: form.questions[pendingQuestionUpdate.index].explanation,
+            image_url: form.questions[pendingQuestionUpdate.index].image_url,
+          }}
+          usageInfo={{
+            usage_count: usageInfo.usage_count!,
+            used_in_quizzes: usageInfo.used_in_quizzes!,
+            bank_answer: usageInfo.bank_answer!,
+          }}
+          onUpdateAll={handleUpdateAllQuizzes}
+          onUpdateThisOnly={handleUpdateThisQuizOnly}
+        />
+      )}
     </div>
   )
 }
