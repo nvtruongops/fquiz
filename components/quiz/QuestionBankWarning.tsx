@@ -28,10 +28,10 @@ interface QuestionBankWarningProps {
     image_url?: string
   }
   usageInfo: {
-    usage_count: number
-    used_in_quizzes: string[]
-    bank_answer: number[]
-  }
+    usage_count?: number
+    used_in_quizzes?: string[]
+    bank_answer?: number[]
+  } | null
   onUpdateAll: () => void
   onUpdateThisOnly: () => void
 }
@@ -91,8 +91,9 @@ export function QuestionBankWarning({
 
   // Check if answer changed
   const answerChanged =
+    usageInfo?.bank_answer &&
     JSON.stringify(newQuestion.correct_answer.sort()) !==
-    JSON.stringify(usageInfo.bank_answer.sort())
+    JSON.stringify([...usageInfo.bank_answer].sort())
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,7 +101,7 @@ export function QuestionBankWarning({
         <DialogHeader>
           <DialogTitle> Câu hỏi đang được dùng ở nhiều quiz</DialogTitle>
           <DialogDescription>
-            Câu hỏi này đang được sử dụng trong {usageInfo.usage_count} quiz khác.
+            Câu hỏi này đang được sử dụng trong {usageInfo?.usage_count || 0} quiz khác.
             Bạn muốn cập nhật như thế nào?
           </DialogDescription>
         </DialogHeader>
@@ -111,15 +112,15 @@ export function QuestionBankWarning({
             <AlertDescription>
               <div className="space-y-2">
                 <p className="font-medium">
-                  Đang được dùng trong {usageInfo.usage_count} quiz:
+                  Đang được dùng trong {usageInfo?.usage_count || 0} quiz:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {usageInfo.used_in_quizzes.slice(0, 10).map((code) => (
+                  {usageInfo?.used_in_quizzes?.slice(0, 10).map((code) => (
                     <Badge key={code} variant="secondary">
                       {code}
                     </Badge>
                   ))}
-                  {usageInfo.used_in_quizzes.length > 10 && (
+                  {usageInfo?.used_in_quizzes && usageInfo.used_in_quizzes.length > 10 && (
                     <Badge variant="secondary">
                       +{usageInfo.used_in_quizzes.length - 10} quiz khác
                     </Badge>
@@ -135,7 +136,7 @@ export function QuestionBankWarning({
               <AlertDescription>
                 <p className="font-bold"> Đáp án đã thay đổi!</p>
                 <p className="text-sm mt-1">
-                  Nếu cập nhật tất cả quiz, đáp án trong {usageInfo.usage_count} quiz
+                  Nếu cập nhật tất cả quiz, đáp án trong {usageInfo?.usage_count || 0} quiz
                   sẽ bị thay đổi theo. Điều này có thể ảnh hưởng đến kết quả của
                   học sinh đã làm bài.
                 </p>
@@ -170,7 +171,7 @@ export function QuestionBankWarning({
                 Đang cập nhật...
               </>
             ) : (
-              `Cập nhật tất cả ${usageInfo.usage_count} quiz`
+              `Cập nhật tất cả ${usageInfo?.usage_count || 0} quiz`
             )}
           </Button>
         </DialogFooter>

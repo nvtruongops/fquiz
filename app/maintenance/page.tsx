@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function MaintenancePage() {
   return (
     <div className="min-h-screen bg-[#EAE7D6] flex items-center justify-center p-6">
@@ -38,12 +40,12 @@ export default function MaintenancePage() {
         {/* Footer */}
         <p className="text-sm text-gray-400">
           Nếu bạn là quản trị viên,{' '}
-          <a
-            href="/login"
+          <Link
+            href="/login?callbackUrl=%2Fadmin"
             className="text-[#5D7B6F] font-semibold hover:underline"
           >
             đăng nhập tại đây
-          </a>
+          </Link>
         </p>
       </div>
     </div>

@@ -316,7 +316,7 @@ export default function AdminFeedbackPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] }),
   })
 
-  const allFeedbacks: Feedback[] = data?.feedbacks ?? []
+  const allFeedbacks: Feedback[] = useMemo(() => data?.feedbacks ?? [], [data?.feedbacks])
 
   // Client-side filtering
   const filtered = useMemo(() => {

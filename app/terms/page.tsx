@@ -36,7 +36,7 @@ export default function TermsPage() {
             Chào mừng bạn đến với FQuiz. Bằng việc truy cập và sử dụng nền tảng của chúng tôi, bạn đồng ý tuân thủ các quy định được nêu trong Điều khoản sử dụng này. Nếu bạn không đồng ý với bất kỳ phần nào của các điều khoản, vui lòng ngừng sử dụng dịch vụ.
           </p>
 
-          <h2 className="text-2xl font-bold mt-12 mb-4">1. Đăng ký & Bảo mật tài khoản</h2>
+          <h2 className="text-2xl font-bold mt-12 mb-4">1. Đăng ký &amp; Bảo mật tài khoản</h2>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>Bạn có trách nhiệm bảo vệ thông tin đăng nhập cá nhân (Tên đăng nhập, Mật khẩu).</li>
             <li>Không chia sẻ hoặc sử dụng chung tài khoản với người khác. Mọi hoạt động phát sinh từ tài khoản của bạn sẽ do bạn hoàn toàn chịu trách nhiệm.</li>
@@ -49,7 +49,7 @@ export default function TermsPage() {
             <li>Nghiêm cấm mọi hành vi sao chép, phát tán, cào dữ liệu (scraping), hoặc thương mại hóa nội dung từ hệ thống khi chưa có sự cho phép bằng văn bản.</li>
           </ul>
 
-          <h2 className="text-2xl font-bold mt-12 mb-4">3. Quy định học tập & Miễn trừ trách nhiệm</h2>
+          <h2 className="text-2xl font-bold mt-12 mb-4">3. Quy định học tập &amp; Miễn trừ trách nhiệm</h2>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>FQuiz là một nền tảng công nghệ giáo dục (EdTech) cung cấp môi trường luyện thi giả lập. Chúng tôi không đảm bảo các câu hỏi trên hệ thống sẽ xuất hiện chính xác trong các kỳ thi thực tế của bạn.</li>
             <li>FQuiz không chịu trách nhiệm đánh giá tư cách đạo đức hay kết quả học tập cuối cùng của bất kỳ cá nhân nào. Mọi nỗ lực gian lận trong thi cử thật thông qua ứng dụng công nghệ không thuộc phạm vi trách nhiệm của chúng tôi.</li>

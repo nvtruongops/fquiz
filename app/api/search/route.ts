@@ -62,7 +62,7 @@ export async function GET(req: Request) {
 
     if (category) {
       const cat = await Category.findOne({ 
-        name: { $regex: new RegExp(escapeRegex(category), 'i') } 
+        name: { $regex: escapeRegex(category), $options: 'i' } 
       })
       if (!cat) {
         return NextResponse.json({ quizzes: [], total: 0, page, limit })
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
     }
 
     if (course_code) {
-      filter.course_code = { $regex: new RegExp(escapeRegex(course_code), 'i') }
+      filter.course_code = { $regex: escapeRegex(course_code), $options: 'i' }
     }
 
     const skip = (page - 1) * limit

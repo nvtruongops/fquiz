@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,12 +48,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => {
-    setCurrentPage(1) // Reset to page 1 when category changes
-    fetchAnalytics(1)
-  }, [selectedCategory])
-
-  const fetchAnalytics = async (page: number = currentPage) => {
+  const fetchAnalytics = useCallback(async (page: number = currentPage) => {
     setLoading(true)
     try {
       const url =
@@ -75,7 +70,12 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCategory, currentPage])
+
+  useEffect(() => {
+    setCurrentPage(1) // Reset to page 1 when category changes
+    fetchAnalytics(1)
+  }, [selectedCategory, fetchAnalytics])
 
   const handlePageChange = (page: number) => {
     fetchAnalytics(page)

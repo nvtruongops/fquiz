@@ -1,10 +1,16 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:security/recommended",
+    "plugin:sonarjs/recommended",
+    "plugin:no-unsanitized/DOM"
+  ],
+  "plugins": [
+    "security",
+    "sonarjs",
+    "no-unsanitized"
+  ],
   "rules": {
-    "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "react-hooks/exhaustive-deps": "warn",
-    "spellcheck/spell-checker": "off",
-    "@cspell/spellchecker": "off"
+    "sonarjs/no-duplicate-string": "off"
   }
 }

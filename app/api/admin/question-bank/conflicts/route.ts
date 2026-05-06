@@ -57,11 +57,13 @@ export async function GET(req: Request) {
 
     await connectDB()
 
-    // Lấy tất cả quiz trong môn học
+    // Lấy tất cả quiz trong môn học (bỏ qua temp quiz và quiz private)
     const quizzes = await Quiz.find({
       category_id,
       status: 'published',
+      is_public: true,
       is_saved_from_explore: { $ne: true },
+      is_temp: { $ne: true },
     })
       .select('_id course_code questions')
       .lean()
@@ -219,8 +221,13 @@ export async function POST(req: Request) {
     // 2. Nếu update_quizzes = true, cập nhật tất cả quiz có câu hỏi này
     let updatedQuizzes = 0
     if (update_quizzes) {
-      // Tìm tất cả quiz trong môn học
-      const quizzes = await Quiz.find({ category_id, status: 'published' })
+      // Tìm tất cả quiz trong môn học (bỏ qua temp quiz và quiz private)
+      const quizzes = await Quiz.find({
+        category_id,
+        status: 'published',
+        is_public: true,
+        is_temp: { $ne: true },
+      })
 
       const normalizedText = question_text.trim().toLowerCase().replace(/\s+/g, ' ')
 

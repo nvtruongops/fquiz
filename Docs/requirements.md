@@ -10,8 +10,6 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 - **Validation**: Zod được dùng làm schema validation dùng chung cho cả Frontend (form validation) và Backend (API input validation)
 - **Database Connection**: Mongoose với Singleton Pattern để tránh tạo quá nhiều connection trong môi trường Serverless
 - **Security Headers**: Cấu hình trong `next.config.js` bao gồm `Content-Security-Policy` với `img-src` directive liên kết với domain whitelist của Requirement 14
-- **Highlight Frontend**: Sử dụng `Window.getSelection()` API hoặc thư viện `react-highlight-words` để lấy tọa độ text được chọn và ánh xạ sang `offset` trước khi gửi lên Backend.
-- **UserHighlights Collection**: Compound Index trên `{ "student_id": 1, "question_id": 1 }` để tối ưu truy vấn khi load câu hỏi.
 - **Design Palette (CoolorsPalette)**:
   - `#5D7B6F` (Deep Sage Green): Dùng cho các interactive elements nổi bật (buttons), headers, và text highlight thông tin quan trọng.
   - `#A4C3A2` (Mint Sage Green): Dùng cho success alerts và các interactive elements ít nổi bật hơn.
@@ -44,12 +42,10 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 - **Zod**: Thư viện TypeScript-first schema validation, dùng chung cho cả Frontend (form validation) và Backend (API input validation) trong Next.js
 - **Singleton Pattern**: Mô hình thiết kế đảm bảo chỉ có một instance kết nối database được tạo ra trong suốt vòng đời của ứng dụng, tránh connection pool exhaustion trong môi trường Serverless
 - **Content-Security-Policy (CSP)**: HTTP response header kiểm soát các nguồn tài nguyên (script, image, font) mà trình duyệt được phép tải, được cấu hình trong `next.config.js`
-- **UserHighlights**: Collection MongoDB lưu trữ các đoạn text được sinh viên tô màu, liên kết với `student_id` và `question_id`.
-- **Offset**: Vị trí ký tự bắt đầu của đoạn text được highlight trong chuỗi nguồn, dùng để tái tạo chính xác vị trí highlight khi render lại.
 - **Result Integrity**: Nguyên tắc đảm bảo điểm số được tính toán hoàn toàn ở Backend dựa trên dữ liệu trong database, không tin tưởng bất kỳ giá trị điểm nào từ Client.
 - **Race Condition**: Tình huống hai request đồng thời tác động lên cùng một tài nguyên (Quiz_Session) dẫn đến trạng thái không nhất quán.
 - **CoolorsPalette**: Bộ mã màu hexadecimal được dùng làm hướng dẫn thiết kế cho giao diện hệ thống, hướng tới phong cách chuyên nghiệp, nhẹ nhàng và tập trung. Bao gồm: #5D7B6F (Deep Sage Green), #A4C3A2 (Mint Sage Green), #B0D4B8 (Light Sage Green), #EAE7D6 (Cream White), #D7F9FA (Very Light Cyan).
-- **Question Map**: Lưới điều hướng và trạng thái trong một Quiz Session, hiển thị tất cả câu hỏi cùng trạng thái hoàn thành (đã trả lời, chưa trả lời, đã highlight) và cho phép Student nhảy trực tiếp đến bất kỳ câu hỏi nào.
+- **Question Map**: Lưới điều hướng và trạng thái trong một Quiz Session, hiển thị tất cả câu hỏi cùng trạng thái hoàn thành (đã trả lời, chưa trả lời) và cho phép Student nhảy trực tiếp đến bất kỳ câu hỏi nào.
 
 ---
 
@@ -138,7 +134,6 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 3. WHEN a Quiz_Session is created, THE Quiz_Engine SHALL assign a unique session ID and record the start timestamp.
 4. WHILE a Quiz_Session is active, THE Quiz_Engine SHALL serve Questions in a consistent order for that session.
 5. WHILE a request is made without a valid Student JWT token, THE Quiz_Engine SHALL reject the request with an HTTP 401 error response.
-6. WHEN a Quiz_Session is created, THE Quiz_Engine SHALL query the `UserHighlights` collection for all documents matching the Student's `student_id` and the list of `question_id` values in the Quiz, and SHALL include the retrieved highlight data in the response alongside the first Question.
 
 ---
 
@@ -274,28 +269,11 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 
 ### Requirement 17: Tính khả dụng và Thiết kế giao diện (System-Wide)
 
-**User Story:** As a Student or Admin, I want to use a professional and accessible interface, so that I can perform my tasks without confusion and focus on learning or management.
+**User Story:** As a Student or Admin, I want to use a professional and accessible interface, so that I can focus on learning or management.
 
 #### Acceptance Criteria
 
 1. THE System's User Interface SHALL use a professional and calming color scheme. While the specific codes are defined in the Design documentation, the palette SHALL primarily utilize sage greens, soft grays, and warm off-whites to promote focus and reduce eye strain, referencing the CoolorsPalette defined in the Tech Stack Decisions section.
-2. THE UI SHALL provide a "Question Map" feature available in all quiz sessions, allowing Students to view a status grid of all questions (answered, unanswered, highlighted) and navigate directly to any question by clicking on it.
+2. THE UI SHALL provide a "Question Map" feature available in all quiz sessions, allowing Students to view a status grid of all questions (answered, unanswered) and navigate directly to any question by clicking on it.
 3. IN Immediate_Mode, THE System SHALL clearly indicate correct and incorrect answers with distinct visual cues (green for correct, red for incorrect) alongside the correct answer explanation after each submission.
 4. IN Review_Mode, THE final results view SHALL present a detailed breakdown for each question, including the question text, all answer options, the submitted answer, the correct answer, and the explanation.
-5. THE UI SHALL enforce a limit of 10 distinct text segments per Question that a Student can highlight at any given time.
-6. THE UI SHALL provide at least 4 distinct color codes for Student highlights, and SHALL allow Students to filter their highlighted segments by color in their personal history view.
-
----
-
-### Requirement 16: Highlight nội dung câu hỏi/đáp án (Student)
-
-**User Story:** As a Student, I want to highlight specific keywords in questions or answers, so that I can mark key information for future review.
-
-#### Acceptance Criteria
-
-1. THE System SHALL allow a Student to select text within a Question text or an Answer option and apply a highlight with a chosen color code.
-2. THE System SHALL persist each Highlight as a document in the `UserHighlights` collection containing the fields: `student_id`, `question_id`, `text_segment`, `color_code`, and `offset` (character position of the highlighted text within the source string).
-3. THE `UserHighlights` collection SHALL have a Compound Index on `{ "student_id": 1, "question_id": 1 }` to optimize retrieval performance.
-4. WHEN a Question is rendered for a Student, THE System SHALL query the `UserHighlights` collection for all highlights matching the current `student_id` and `question_id` and overlay them on the rendered text.
-5. Highlights SHALL be private to each Student; THE System SHALL NOT return highlights belonging to one Student in any response to another Student.
-6. WHEN a Student removes a highlight, THE System SHALL delete the corresponding `UserHighlights` document from the database.

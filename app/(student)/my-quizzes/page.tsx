@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   FolderPlus, 
@@ -23,7 +23,8 @@ import {
   ArrowRightLeft,
   Loader2,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -126,7 +127,6 @@ function QuizActionsOverlay({
   isDeleting,
   isMoving,
   categories,
-  onDelete,
   onMove,
   onBack,
   onConfirmDelete,
@@ -135,7 +135,6 @@ function QuizActionsOverlay({
   isDeleting: boolean
   isMoving: boolean
   categories: Category[]
-  onDelete: (id: string) => void
   onMove: (quizId: string, categoryId: string) => Promise<unknown>
   onBack: () => void
   onConfirmDelete: () => void
@@ -144,72 +143,95 @@ function QuizActionsOverlay({
   const [moveCategoryId, setMoveCategoryId] = useState(currentCategoryId || '')
 
   return (
-    <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-10 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-10">Lựa chọn thao tác</h4>
-      <div className="w-full space-y-4">
-        {!quiz.is_saved_from_explore && (
+    <div className="absolute inset-0 bg-white/60 backdrop-blur-2xl z-20 flex flex-col items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-500 overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#5D7B6F]/10 blur-[80px] rounded-full pointer-events-none" />
+
+      {/* Header - Subtle & Professional */}
+      <div className="absolute top-4 left-6 flex items-center gap-3">
+        <div className="w-1.5 h-1.5 bg-[#5D7B6F] rounded-full animate-pulse" />
+        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] opacity-80">Management Panel</h4>
+      </div>
+
+      {/* Header - Subtle & Professional */}
+      <div className="absolute top-4 left-6 flex items-center gap-3">
+        <div className="w-1.5 h-1.5 bg-[#5D7B6F] rounded-full animate-pulse" />
+        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] opacity-80">Management Panel</h4>
+      </div>
+
+      {/* Main Action Bar */}
+      <div className="relative w-full max-w-3xl flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-2 px-4">
+        {!quiz.is_saved_from_explore ? (
           <>
+            {/* Edit Action */}
             <Button
-              onClick={() => {/* Implement edit navigation */}}
               variant="outline"
               asChild
-              className="w-full h-16 rounded-2xl border-none bg-gray-50 text-[#5D7B6F] font-black hover:bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/5 gap-3 transition-all"
+              className="h-12 px-6 rounded-full border-none bg-emerald-500 text-white font-black hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-500/20 gap-2.5 transition-all active:scale-95 group"
             >
               <Link href={`/create?id=${quiz._id}`}>
-                <Edit3 className="w-5 h-5" /> Chỉnh sửa bộ đề
+                <Edit3 className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
+                <span className="text-xs uppercase tracking-wider">Chỉnh sửa</span>
               </Link>
             </Button>
 
-            <div className="rounded-2xl border border-[#5D7B6F]/10 p-3 space-y-2 bg-[#F9F9F7]">
-              <p className="text-[10px] font-black text-[#5D7B6F] uppercase tracking-widest">Chuyển danh mục</p>
-              <div className="flex items-center gap-2">
-                <Select value={moveCategoryId} onValueChange={(val) => setMoveCategoryId(val)}>
-                  <SelectTrigger className="h-10 rounded-xl border-[#5D7B6F]/20 bg-white text-xs font-bold text-[#5D7B6F]">
-                    <SelectValue placeholder="Chọn danh mục" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {categories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    await onMove(quiz._id, moveCategoryId)
-                  }}
-                  disabled={isMoving || !moveCategoryId || moveCategoryId === (currentCategoryId || '')}
-                  className="h-10 rounded-xl bg-[#5D7B6F] hover:bg-[#4A6359] text-white px-3"
-                >
-                  {isMoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
-                </Button>
-              </div>
+            {/* Move Action */}
+            <div className="flex items-center gap-1.5 bg-slate-900/5 p-1 rounded-full border border-slate-900/5 backdrop-blur-sm shadow-inner group transition-all hover:bg-slate-900/10">
+              <Select value={moveCategoryId} onValueChange={(val) => setMoveCategoryId(val)}>
+                <SelectTrigger className="w-[140px] h-10 rounded-full border-none bg-transparent text-[11px] font-bold text-slate-600 focus:ring-0">
+                  <SelectValue placeholder="Move to..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-100 shadow-2xl p-1">
+                  {categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id} className="text-xs font-bold py-2.5 rounded-xl cursor-pointer">
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={async () => {
+                  await onMove(quiz._id, moveCategoryId)
+                }}
+                disabled={isMoving || !moveCategoryId || moveCategoryId === (currentCategoryId || '')}
+                className="h-10 w-10 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-md transition-all active:scale-90"
+              >
+                {isMoving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
+              </Button>
             </div>
           </>
-        )}
-
-        {quiz.is_saved_from_explore && (
-          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-[11px] font-bold text-amber-700">
-            Quiz đã lưu từ Explore không thể chuyển danh mục.
+        ) : (
+          /* Info Badge for Saved Quizzes */
+          <div className="flex items-center gap-3 bg-amber-500/10 px-5 py-2.5 rounded-full border border-amber-500/10 animate-in slide-in-from-left-4 duration-500">
+            <AlertCircle className="w-4 h-4 text-amber-600 opacity-60" />
+            <span className="text-[10px] font-black text-amber-700/80 uppercase tracking-widest">Saved from Explore</span>
           </div>
         )}
 
-        <Button
-          onClick={onConfirmDelete}
-          variant="outline"
-          disabled={isDeleting}
-          className="w-full h-16 rounded-2xl border-none bg-red-50 text-red-500 font-black hover:bg-red-100 gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Trash2 className="w-5 h-5" /> {isDeleting ? 'Bộ đề đang được xử lý...' : 'Xóa bài thi này'}
-        </Button>
-        <Button
-          onClick={onBack}
-          variant="ghost"
-          className="w-full h-12 rounded-2xl text-gray-400 font-black hover:bg-transparent"
-        >
-          Hủy bỏ
-        </Button>
+        {/* Divider - Hidden on small screens if wrapped */}
+        <div className="hidden sm:block w-px h-8 bg-slate-200 mx-2" />
+
+        {/* Delete & Cancel Group */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={onConfirmDelete}
+            variant="outline"
+            disabled={isDeleting}
+            className="h-12 px-6 rounded-full border-none bg-rose-500 text-white font-black hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-500/20 gap-2.5 transition-all active:scale-95 group"
+          >
+            <Trash2 className="w-4 h-4 group-hover:shake transition-transform" /> 
+            <span className="text-xs uppercase tracking-wider">{isDeleting ? 'Deleting...' : 'Xóa bài'}</span>
+          </Button>
+          
+          <Button
+            onClick={onBack}
+            variant="outline"
+            className="h-12 px-6 rounded-full border-2 border-slate-200 bg-white text-slate-500 font-black hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300 transition-all text-xs uppercase tracking-wider"
+          >
+            Hủy
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -296,7 +318,7 @@ function QuizCard({
   const categoryName = (quiz.category_id as any)?.name || 'Chưa phân loại'
 
   // Hide overlays when deleting
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDeleting) {
       setView('default')
       setShowDeleteDialog(false)
@@ -306,38 +328,38 @@ function QuizCard({
   return (
     <>
       <Card className="group relative w-full border-none shadow-lg shadow-[#5D7B6F]/5 rounded-[24px] overflow-hidden bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/10 transition-all duration-300">
-        <CardContent className="p-6 relative">
+        <CardContent className="p-4 sm:p-5 relative">
           
           {/* Main Content (Default View) */}
           <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
             <div className="flex items-center gap-6">
               {/* Left Section: Quiz Info */}
-              <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex-1 min-w-0 space-y-2">
                 {/* Category Badge */}
                 <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
                   {categoryName}
                 </Badge>
 
                 {/* Quiz Code */}
-                <div className="flex items-start gap-2">
-                  <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5">Mã</span>
-                  <h3 className="text-lg font-black text-[#5D7B6F] leading-tight break-words line-clamp-2" title={quiz.course_code}>
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0">Mã</span>
+                  <h3 className="text-sm sm:text-base font-black text-[#5D7B6F] leading-none truncate" title={quiz.course_code}>
                     {quiz.course_code}
                   </h3>
                 </div>
 
-                {/* Quiz Title */}
-                {quiz.title && (
-                  <p className="text-xs font-bold text-gray-600 leading-relaxed line-clamp-2" title={quiz.title}>
+                {/* Quiz Title - Only show if different from course code */}
+                {quiz.title && quiz.title !== quiz.course_code && (
+                  <p className="text-[11px] font-bold text-gray-400 leading-relaxed line-clamp-1" title={quiz.title}>
                     {quiz.title}
                   </p>
                 )}
-
+                
                 {/* Quiz Meta Info */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
-                    <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
-                      <BookOpen className="w-3 h-3" />
+                    <div className="w-5 h-5 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
+                      <BookOpen className="w-2.5 h-2.5" />
                     </div>
                     <span className="uppercase tracking-tighter">{quiz.questionCount} CÂU</span>
                   </div>
@@ -650,7 +672,7 @@ export default function MyQuizzesPage() {
   if (quizzesLoading || catsLoading) {
     return (
       <div className="min-h-screen bg-[#F9F9F7] pb-20">
-        <section className="max-w-7xl mx-auto px-4 pt-12">
+        <section className="w-full mx-auto px-4 pt-12">
           <div className="mb-8 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin" />
             <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Đang tải kho lưu trữ...</p>
@@ -668,7 +690,7 @@ export default function MyQuizzesPage() {
   return (
     <div className="min-h-screen bg-[#F9F9F7] pb-20">
       {/* Unified Header & Controls Section */}
-      <section className="max-w-7xl mx-auto px-4 pt-12">
+      <section className="w-full mx-auto px-4 pt-12">
         <Card className="rounded-[40px] border-none shadow-2xl shadow-[#5D7B6F]/10 overflow-hidden bg-white">
           <CardContent className="p-0">
             {/* Top Row: Title & Category Management */}
@@ -878,7 +900,7 @@ export default function MyQuizzesPage() {
       </section>
 
       {/* Quizzes Grid Section */}
-      <section className="max-w-7xl mx-auto px-4 mt-20">
+      <section className="w-full mx-auto px-4 mt-20">
         {filteredQuizzes.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-700">
             <div className="w-24 h-24 rounded-[40px] bg-white shadow-2xl flex items-center justify-center">

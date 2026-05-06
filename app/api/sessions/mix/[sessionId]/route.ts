@@ -32,7 +32,7 @@ export async function DELETE(
 
     const studentId = new mongoose.Types.ObjectId(payload.userId)
 
-    // Find the session — must belong to this user and be a temp session
+    // This is called when user clicks "Làm mới" to start a fresh mix quiz.
     const session = await QuizSession.findOneAndDelete({
       _id: new mongoose.Types.ObjectId(sessionId),
       student_id: studentId,

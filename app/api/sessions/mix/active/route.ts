@@ -8,6 +8,7 @@ import { Quiz } from '@/models/Quiz'
 /**
  * GET /api/sessions/mix/active
  * Check if the current user has an active temporary mix quiz session.
+ * Sessions no longer have a TTL — they persist until completed or manually deleted.
  */
 export async function GET(req: Request) {
   try {
@@ -21,14 +22,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
     }
 
-    const now = new Date()
     const studentId = new mongoose.Types.ObjectId(payload.userId)
 
+    // No expires_at filter — session lives until completed or deleted
     const activeSession = await QuizSession.findOne({
       student_id: studentId,
       is_temp: true,
       status: 'active',
-      expires_at: { $gt: now },
     })
       .sort({ started_at: -1 })
       .lean() as any
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
         quizId: activeSession.quiz_id,
         title: quiz?.title ?? 'Quiz Trộn',
         question_count: quiz?.questionCount ?? 0,
-        expires_at: activeSession.expires_at,
+        mode: activeSession.mode,
         status: activeSession.status,
       },
     })

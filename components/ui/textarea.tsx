@@ -25,7 +25,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     React.useEffect(() => {
       if (autoResize) adjustHeight()
-    }, [adjustHeight, props.value])
+    }, [adjustHeight, props.value, autoResize])
 
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
       if (autoResize) adjustHeight()

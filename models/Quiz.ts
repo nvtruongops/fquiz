@@ -13,7 +13,7 @@ const QuestionSchema = new Schema<IQuestion>(
     image_url: { type: String },
   },
   {
-    // Preserve _id on each embedded question — critical for highlight stability
+    // Preserve _id on each embedded question
     _id: true,
   }
 )
@@ -36,6 +36,12 @@ const QuizSchema = new Schema<IQuiz>(
     is_saved_from_explore: { type: Boolean, default: false },
     is_temp: { type: Boolean, default: false },
     expires_at: { type: Date, required: false },
+    mix_config: {
+      quiz_ids: [{ type: Schema.Types.ObjectId, ref: 'Quiz' }],
+      question_count: { type: Number },
+      mode: { type: String, enum: ['immediate', 'review'] },
+      category_id: { type: Schema.Types.ObjectId, ref: 'Category' },
+    },
   },
   { timestamps: true }
 )

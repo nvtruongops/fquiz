@@ -20,7 +20,6 @@ interface QuizSessionState {
 
   // Answer tracking (client-side mirror of DB state)
   answeredQuestions: Set<number>
-  highlightedQuestions: Set<number>
 
   // Immediate mode feedback
   lastAnswerResult: LastAnswerResult | null
@@ -34,7 +33,6 @@ interface QuizSessionState {
   navigateToQuestion: (index: number) => void
   restoreAnswers: (answered: Set<number>) => void
   markAnswered: (index: number) => void
-  markHighlighted: (index: number) => void
   optimisticallyMarkAnswered: (questionIndex: number) => void
   rollbackOptimisticAnswer: (questionIndex: number) => void
   confirmAnswer: (questionIndex: number) => void
@@ -60,7 +58,6 @@ export const useQuizSessionStore = create<QuizSessionState>()(
       currentQuestionIndex: 0,
       totalQuestions: 0,
       answeredQuestions: new Set(),
-      highlightedQuestions: new Set(),
       lastAnswerResult: null,
       pendingAnswerIndex: null,
 
@@ -72,7 +69,6 @@ export const useQuizSessionStore = create<QuizSessionState>()(
           totalQuestions: total,
           currentQuestionIndex: 0,
           answeredQuestions: new Set(),
-          highlightedQuestions: new Set(),
           lastAnswerResult: null,
           pendingAnswerIndex: null,
         }),
@@ -86,7 +82,6 @@ export const useQuizSessionStore = create<QuizSessionState>()(
           totalQuestions: total,
           currentQuestionIndex: currentIndex,
           answeredQuestions: new Set(answered),
-          highlightedQuestions: new Set(),
           lastAnswerResult: null,
           pendingAnswerIndex: null,
         }),
@@ -98,11 +93,6 @@ export const useQuizSessionStore = create<QuizSessionState>()(
       markAnswered: (index) =>
         set((state) => ({
           answeredQuestions: new Set(Array.from(state.answeredQuestions).concat(index)),
-        })),
-
-      markHighlighted: (index) =>
-        set((state) => ({
-          highlightedQuestions: new Set(Array.from(state.highlightedQuestions).concat(index)),
         })),
 
       optimisticallyMarkAnswered: (questionIndex) =>
@@ -130,7 +120,6 @@ export const useQuizSessionStore = create<QuizSessionState>()(
           currentQuestionIndex: 0,
           totalQuestions: 0,
           answeredQuestions: new Set(),
-          highlightedQuestions: new Set(),
           lastAnswerResult: null,
           pendingAnswerIndex: null,
         }),

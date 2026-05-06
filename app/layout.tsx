@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: 'FQuiz - Nền tảng ôn tập thông minh',
   description: 'Online Quiz Platform for students',
   icons: {
-    icon: 'https://res.cloudinary.com/nvtruongops/image/upload/v1775506955/fquiz/favicon.png',
+    icon: '/favicon.webp',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.webp',
   },
 }
 

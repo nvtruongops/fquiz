@@ -1,6 +1,4 @@
 import ExploreContent from '@/components/explore/ExploreContent'
-import Navbar from '@/components/Navbar'
-import { getServerUser } from '@/lib/get-server-user'
 
 export const metadata = {
   title: 'Khám phá Quiz | FQuiz',
@@ -8,11 +6,5 @@ export const metadata = {
 }
 
 export default async function ExplorePage() {
-  const initialUser = await getServerUser()
-  return (
-    <div className="min-h-screen bg-[#EAE7D6]">
-      <Navbar initialUser={initialUser} />
-      <ExploreContent />
-    </div>
-  )
+  return <ExploreContent />
 }

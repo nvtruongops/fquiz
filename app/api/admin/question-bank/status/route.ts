@@ -30,11 +30,13 @@ export async function GET(req: Request) {
     for (const category of categories) {
       const categoryId = String(category._id)
 
-      // Lấy tất cả quiz published trong môn này
+      // Lấy tất cả quiz published trong môn này (bỏ qua temp quiz và quiz private)
       const quizzes = await Quiz.find({
         category_id: categoryId,
         status: 'published',
+        is_public: true,
         is_saved_from_explore: { $ne: true },
+        is_temp: { $ne: true },
       })
         .select('_id course_code questions updatedAt')
         .lean()

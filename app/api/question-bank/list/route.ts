@@ -44,7 +44,8 @@ export async function GET(req: Request) {
     // Build query
     const query: any = { category_id }
     if (search) {
-      query.text = { $regex: search, $options: 'i' }
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      query.text = { $regex: escaped, $options: 'i' }
     }
 
     // Build sort

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { withCsrfHeaders } from '@/lib/csrf'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { QuizTimer } from '@/components/QuizTimer'
+import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
 
 interface QuestionFeedback {
   isCorrect: boolean
@@ -45,6 +46,7 @@ interface SessionData {
     started_at: string
     paused_at?: string | null
     total_paused_duration_ms?: number
+    is_temp?: boolean
   }
   question: SessionQuestion
 }
@@ -118,8 +120,16 @@ export default function QuizSessionMobilePage() {
   const [hydratedSessionId, setHydratedSessionId] = useState<string | null>(null)
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
-  const [preloadProgress, setPreloadProgress] = useState(0)
+  const sessionLoader = useSessionLoader()
+  const sessionLoaderStartedRef = useRef(false)
   const lastSyncedQuestionIndexRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!sessionLoaderStartedRef.current) {
+      sessionLoaderStartedRef.current = true
+      sessionLoader.open('Đang tải bộ câu hỏi...')
+    }
+  }, [sessionLoader])
 
   // Only render quiz when server data has been applied for THIS session
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
@@ -135,7 +145,7 @@ export default function QuizSessionMobilePage() {
     setFeedbackByQuestion({})
   }, [resolvedSessionId])
 
-  function reportSessionActivity(event: 'pause' | 'resume') {
+  const reportSessionActivity = useCallback((event: 'pause' | 'resume') => {
     if (!sessionId) return
     const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
@@ -146,7 +156,7 @@ export default function QuizSessionMobilePage() {
       body: payload,
       keepalive: true,
     })
-  }
+  }, [sessionId, currentQuestionIndex])
 
   // Preload all questions - check sessionStorage cache first (seeded by quiz detail page)
   const {
@@ -164,17 +174,15 @@ export default function QuizSessionMobilePage() {
           const parsed = JSON.parse(cached)
           if (parsed.questions?.length > 0) {
             sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
-            setPreloadProgress(100)
+            sessionLoader.complete()
             return parsed as PreloadedQuestions
           }
         }
       } catch {}
 
-      setPreloadProgress(10)
+      sessionLoader.setStatus('Đang tải bộ câu hỏi...')
       const data = await fetchAllQuestions(resolvedSessionId)
-      setPreloadProgress(60)
-      setPreloadProgress(90)
-      setPreloadProgress(100)
+      sessionLoader.advance(85, 'Đang xử lý câu hỏi...')
       return data
     },
     enabled: resolvedSessionId.length > 0,
@@ -318,7 +326,7 @@ export default function QuizSessionMobilePage() {
   useEffect(() => {
     if (!sessionId) return
     reportSessionActivity('resume')
-  }, [sessionId])
+  }, [sessionId, reportSessionActivity])
 
   useEffect(() => {
     if (activeData?.session.status === 'completed') {
@@ -366,7 +374,7 @@ export default function QuizSessionMobilePage() {
       globalThis.removeEventListener('pagehide', handlePageHide)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex])
+  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity])
 
   const submitMutation = useSubmitAnswer(resolvedSessionId)
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
@@ -482,7 +490,7 @@ export default function QuizSessionMobilePage() {
   function handleConfirmExitQuiz() {
     reportSessionActivity('pause')
     setExitConfirmOpen(false)
-    router.push(`/quiz/${quizId}`)
+    router.push(activeData?.session?.is_temp ? '/explore' : `/quiz/${quizId}`)
   }
 
   function handleNavigate(index: number) {
@@ -493,45 +501,16 @@ export default function QuizSessionMobilePage() {
     setQuestionMapOpen(false)
   }
 
-  // Show preloading screen with progress
-  if (isPreloading || isInitialLoading || !isPreloadSuccess || !isInitialSuccess || (!activeData && isLoading)) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-br from-[#EAE7D6]/30 to-white">
-        <div className="relative">
-          <div className="absolute inset-0 animate-ping rounded-full bg-[#5D7B6F]/20" />
-          <Loader2 className="relative h-12 w-12 animate-spin text-[#5D7B6F]" />
-        </div>
-        <p className="mt-6 text-sm font-bold uppercase tracking-wider text-[#5D7B6F]">
-          {isPreloading ? 'Đang tải bộ câu hỏi...' : 'Đang tải...'}
-        </p>
-        {isPreloading && (
-          <div className="mt-4 w-64 px-4">
-            <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-              <div 
-                className="h-full bg-gradient-to-r from-[#5D7B6F] to-[#A4C3A2] transition-all duration-300 ease-out"
-                style={{ width: `${preloadProgress}%` }}
-              />
-            </div>
-            <p className="mt-2 text-center text-xs text-gray-400">
-              {preloadProgress < 60 && 'Đang tải câu hỏi...'}
-              {preloadProgress >= 60 && preloadProgress < 90 && `Đã tải ${(preloadData as PreloadedQuestions | undefined)?.totalQuestions ?? '...'} câu hỏi`}
-              {preloadProgress >= 90 && 'Sẵn sàng!'}
-            </p>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   // Show error if preload failed
-  if (isPreloadError) {
+  if (isPreloadError || isInitialError) {
+    const displayError = activeError || (preloadData as any)
     return (
       <div className="flex h-screen items-center justify-center bg-[#F9F9F7] p-6">
         <div className="w-full max-w-md rounded-2xl border-2 border-gray-100 bg-white p-8 text-center shadow-xl">
           <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-          <h2 className="mb-2 text-xl font-black text-gray-900">Không thể tải bộ câu hỏi</h2>
+          <h2 className="mb-2 text-xl font-black text-gray-900">Lỗi phòng thi</h2>
           <p className="mb-6 text-sm text-gray-600">
-            Vui lòng kiểm tra kết nối mạng và thử lại
+            {(displayError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
           </p>
           <Button
             type="button"
@@ -545,22 +524,14 @@ export default function QuizSessionMobilePage() {
     )
   }
 
-  if (isInitialError || isError || !activeData) {
+  // Show preloading screen with progress — uses shared QuizLoadingOverlay
+  if (isPreloading || isInitialLoading || !activeData) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F9F9F7] p-6">
-        <div className="w-full max-w-md rounded-2xl border-2 border-gray-100 bg-white p-8 text-center shadow-xl">
-          <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-          <h2 className="mb-2 text-xl font-black text-gray-900">Lỗi phòng thi</h2>
-          <p className="mb-6 text-sm text-gray-600">{activeError?.message}</p>
-          <Button
-            type="button"
-            onClick={() => router.back()}
-            className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358]"
-          >
-            Quay lại
-          </Button>
-        </div>
-      </div>
+      <QuizLoadingOverlay
+        isOpen={true}
+        progress={sessionLoader.progress}
+        status={sessionLoader.status || 'Đang tải bộ câu hỏi...'}
+      />
     )
   }
 

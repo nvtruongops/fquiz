@@ -20,6 +20,19 @@ function sourceLabelFromType(sourceType: SourceType): string {
   return 'Từ Explore'
 }
 
+/**
+ * Extract display code from mix quiz title.
+ * "Quiz Trộn · MLN122_SP26_C1_FE + MLN122_SP26_C2_FE" → "MLN122_SP26_C1_FE + ..."
+ * Truncates to keep it readable.
+ */
+function mixQuizDisplayCode(title: string): string {
+  const prefix = 'Quiz Trộn · '
+  const raw = title.startsWith(prefix) ? title.slice(prefix.length) : title
+  // Truncate if too long (e.g. 5 quizzes)
+  if (raw.length > 40) return raw.slice(0, 37) + '...'
+  return raw
+}
+
 export async function GET(req: Request) {
   try {
     const payload = await verifyToken(req)
@@ -40,7 +53,7 @@ export async function GET(req: Request) {
       {
         $match: {
           student_id: studentId,
-          is_temp: { $ne: true },
+          // Hiện tất cả session: thường + mix quiz (active và completed)
         },
       },
       {
@@ -76,6 +89,7 @@ export async function GET(req: Request) {
           duration_minutes: { $round: [{ $divide: ['$duration_ms', 60000] }, 0] },
           flashcard_stats: 1,
           user_answers: 1,
+          is_temp: 1,
         },
       },
     ]) as Array<{
@@ -89,6 +103,7 @@ export async function GET(req: Request) {
       duration_minutes: number
       flashcard_stats?: any
       user_answers?: any[]
+      is_temp?: boolean
     }>
 
     const total = sessions.length
@@ -106,7 +121,7 @@ export async function GET(req: Request) {
     const quizzes = quizIds.length
       ? await Quiz.find(
           { _id: { $in: quizIds } },
-          { title: 1, questions: 1, created_by: 1, is_saved_from_explore: 1, original_quiz_id: 1, course_code: 1, category_id: 1 }
+          { title: 1, questions: 1, questionCount: 1, created_by: 1, is_saved_from_explore: 1, original_quiz_id: 1, course_code: 1, category_id: 1 }
         ).lean()
       : []
 
@@ -158,6 +173,82 @@ export async function GET(req: Request) {
 
     const history = pageItems.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any
+      const isMixQuiz = (item as any).is_temp === true
+
+      // For mix quiz sessions, the temp quiz may have been deleted after completion
+      if (isMixQuiz && !quiz) {
+        let answeredCount = 0
+        let correctCount = 0
+        if (Array.isArray(item.user_answers)) {
+          answeredCount = new Set(
+            item.user_answers
+              .map((a) => a.question_index)
+              .filter((idx) => Number.isInteger(idx) && idx >= 0)
+          ).size
+          correctCount = item.user_answers.filter((a) => a.is_correct).length
+        }
+        const totalQuestions = answeredCount || 0
+        return {
+          _id: item._id.toString(),
+          quiz_id: item.quiz_id.toString(),
+          quiz_title: 'Quiz Trộn',
+          quiz_code: 'TRỘN',
+          category_name: 'Quiz Trộn',
+          source_type: 'mix_quiz',
+          source_label: 'Quiz Trộn',
+          source_creator_name: null,
+          score: item.score,
+          total_questions: totalQuestions,
+          answered_count: answeredCount,
+          correct_count: correctCount,
+          mode: item.mode,
+          status: item.status,
+          completed_at: item.completed_at,
+          started_at: item.started_at,
+          duration_minutes: item.duration_minutes,
+          flashcard_stats: item.flashcard_stats,
+          is_mix: true,
+        }
+      }
+
+      // Mix quiz: quiz still exists — use title-derived code and fixed labels
+      if (isMixQuiz && quiz) {
+        const declaredCount = Number(quiz?.questionCount ?? 0)
+        const derivedCount = Array.isArray(quiz?.questions) ? quiz.questions.length : 0
+        const totalQuestions = declaredCount > 0 ? declaredCount : derivedCount
+        let answeredCount = 0
+        let correctCount = 0
+        if (Array.isArray(item.user_answers)) {
+          answeredCount = new Set(
+            item.user_answers
+              .map((a) => a.question_index)
+              .filter((idx) => Number.isInteger(idx) && idx >= 0)
+          ).size
+          correctCount = item.user_answers.filter((a) => a.is_correct).length
+        }
+        return {
+          _id: item._id.toString(),
+          quiz_id: item.quiz_id.toString(),
+          quiz_title: quiz.title ?? 'Quiz Trộn',
+          quiz_code: mixQuizDisplayCode(quiz.title ?? 'Quiz Trộn'),
+          category_name: 'Quiz Trộn',
+          source_type: 'mix_quiz',
+          source_label: 'Quiz Trộn',
+          source_creator_name: null,
+          score: item.score,
+          total_questions: totalQuestions,
+          answered_count: answeredCount,
+          correct_count: correctCount,
+          mode: item.mode,
+          status: item.status,
+          completed_at: item.completed_at,
+          started_at: item.started_at,
+          duration_minutes: item.duration_minutes,
+          flashcard_stats: item.flashcard_stats,
+          is_mix: true,
+        }
+      }
+
       const sourceType = inferSourceType(quiz, payload.userId)
       const sourceCreatorId = quiz?.is_saved_from_explore
         ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')

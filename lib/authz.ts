@@ -1,7 +1,7 @@
 import { Model, Types } from 'mongoose'
 import { JWTPayload } from './auth'
 
-export type ResourceType = 'quiz' | 'session' | 'highlight' | 'history'
+export type ResourceType = 'quiz' | 'session' | 'history'
 
 /**
  * Standard utility to authorize resource ownership.

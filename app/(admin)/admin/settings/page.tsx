@@ -119,7 +119,7 @@ export default function AdminSettingsPage() {
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'text-gray-600 hover:bg-[#EAE7D6] hover:text-[#5D7B6F]'}`}
             >
-              <ShieldAlert className="w-4 h-4" /> Bảo mật & Thi cử
+              <ShieldAlert className="w-4 h-4" /> Bảo mật &amp; Thi cử
             </button>
           </div>
 

@@ -114,11 +114,11 @@ export function useQuestionBankCheck({
   // Auto-check khi questions thay đổi (debounced)
   useEffect(() => {
     checkQuestions()
-  }, [debouncedQuestions, categoryId, enabled])
+  }, [debouncedQuestions, categoryId, enabled, checkQuestions])
 
-  const hasDifferentAnswerConflicts = result?.different_answer_conflicts ?? 0 > 0
-  const hasSameAnswerConflicts = result?.same_answer_conflicts ?? 0 > 0
-  const hasAnyConflicts = result?.conflicts_found ?? 0 > 0
+  const hasDifferentAnswerConflicts = (result?.different_answer_conflicts ?? 0) > 0
+  const hasSameAnswerConflicts = (result?.same_answer_conflicts ?? 0) > 0
+  const hasAnyConflicts = (result?.conflicts_found ?? 0) > 0
 
   return {
     checking,
