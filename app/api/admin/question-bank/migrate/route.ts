@@ -63,11 +63,13 @@ export async function POST(req: Request) {
 
     await connectDB()
 
-    // 1. Lấy tất cả quiz trong môn học
+    // 1. Lấy tất cả quiz trong môn học (bỏ qua temp quiz và quiz private)
     const quizzes = await Quiz.find({
       category_id,
       status: 'published',
+      is_public: true,
       is_saved_from_explore: { $ne: true },
+      is_temp: { $ne: true },
     })
       .select('_id course_code questions')
       .lean()

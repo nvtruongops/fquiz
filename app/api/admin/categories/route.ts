@@ -19,7 +19,8 @@ function buildCategoryMatchFilter(search?: string, typeParam?: 'public' | 'priva
   const filter: Record<string, unknown> = {}
 
   if (search) {
-    filter.name = { $regex: search, $options: 'i' }
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    filter.name = { $regex: escaped, $options: 'i' }
   }
 
   const effectiveType = typeParam || 'public'

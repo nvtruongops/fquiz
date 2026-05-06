@@ -17,6 +17,9 @@ export async function GET(req: Request) {
     const settings = await getSettings()
 
     // Sync maintenance-mode cookie với DB state khi GET
+    // Chỉ set cookie khi maintenance đang BẬT (để proxy dùng fast path).
+    // Khi maintenance TẮT: xóa cookie → proxy sẽ fallback về API check,
+    // đảm bảo user không bị "stuck" với cookie cũ khi admin bật maintenance.
     const response = NextResponse.json({ settings })
     if (settings.maintenance_mode) {
       response.cookies.set('maintenance-mode', '1', {
@@ -24,16 +27,11 @@ export async function GET(req: Request) {
         httpOnly: false,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 365,
+        maxAge: 30, // 30 giây - ngắn để tự expire khi admin tắt
       })
     } else {
-      response.cookies.set('maintenance-mode', '0', {
-        path: '/',
-        httpOnly: false,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 365,
-      })
+      // Xóa cookie khi maintenance tắt
+      response.cookies.delete('maintenance-mode')
     }
     return response
   } catch (err) {
@@ -89,6 +87,9 @@ export async function PUT(req: Request) {
     ).lean()
 
     // Sync maintenance-mode cookie với DB state
+    // Chỉ set cookie khi maintenance BẬT (fast path cho proxy).
+    // Khi tắt: xóa cookie → proxy fallback về API check,
+    // tránh user giữ cookie '0' cũ bypass maintenance khi admin bật lại.
     const response = NextResponse.json({ settings })
     if ('maintenance_mode' in updates) {
       if (updates.maintenance_mode === true) {
@@ -97,18 +98,11 @@ export async function PUT(req: Request) {
           httpOnly: false,
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          maxAge: 60 * 60 * 24 * 365,
+          maxAge: 30, // 30 giây - ngắn để tự expire
         })
       } else {
-        // Set '0' thay vì delete để proxy biết maintenance đã tắt
-        // (tránh proxy gọi API lại cho mỗi request)
-        response.cookies.set('maintenance-mode', '0', {
-          path: '/',
-          httpOnly: false,
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 60 * 60 * 24 * 365,
-        })
+        // Xóa cookie khi tắt maintenance
+        response.cookies.delete('maintenance-mode')
       }
     }
 

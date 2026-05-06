@@ -75,7 +75,10 @@ export async function POST(request: Request) {
     }
 
     // Case-insensitive username check
-    const existingUsername = await User.findOne({ username: { $regex: new RegExp(`^${username.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } })
+    const escapedUsername = username.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const existingUsername = await User.findOne({ 
+      username: { $regex: `^${escapedUsername}$`, $options: 'i' } 
+    })
     if (existingUsername) {
       return NextResponse.json({ error: 'Username đã được sử dụng' }, { status: 409 })
     }

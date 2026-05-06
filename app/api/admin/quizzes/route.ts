@@ -47,10 +47,11 @@ export async function GET(req: Request) {
     }
     if (categoryId) query.category_id = categoryId
     if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$and.push({
         $or: [
-          { title: { $regex: search, $options: 'i' } },
-          { course_code: { $regex: search, $options: 'i' } },
+          { title: { $regex: escaped, $options: 'i' } },
+          { course_code: { $regex: escaped, $options: 'i' } },
         ],
       })
     }

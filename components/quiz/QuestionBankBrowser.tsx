@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -46,13 +46,7 @@ export function QuestionBankBrowser({
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('popular')
 
-  useEffect(() => {
-    if (open && categoryId) {
-      fetchQuestions()
-    }
-  }, [open, categoryId, sortBy])
-
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(
@@ -74,7 +68,13 @@ export function QuestionBankBrowser({
     } finally {
       setLoading(false)
     }
-  }
+  }, [categoryId, sortBy, toast])
+
+  useEffect(() => {
+    if (open && categoryId) {
+      fetchQuestions()
+    }
+  }, [open, categoryId, fetchQuestions])
 
   const filteredQuestions = questions.filter((q) =>
     q.text.toLowerCase().includes(searchQuery.toLowerCase())

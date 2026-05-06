@@ -45,7 +45,7 @@ export default function PrivacyPage() {
             <li><strong>Không một ai</strong> (kể cả đội ngũ quản trị hay kỹ sư của FQuiz) có thể biết được mật khẩu dạng văn bản gốc của bạn.</li>
           </ul>
 
-          <h2 className="text-2xl font-bold mt-12 mb-4">3. Cookie & Phiên bản hệ thống (Sessions)</h2>
+          <h2 className="text-2xl font-bold mt-12 mb-4">3. Cookie &amp; Phiên bản hệ thống (Sessions)</h2>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
             <li>FQuiz sử dụng các token xác thực (JWT) được lưu trữ an toàn trong HTTP-only Cookies để duy trì trạng thái đăng nhập của bạn.</li>
             <li>Các cookies này chỉ dùng cho mục đích xác thực, không chạy các trình theo dõi quảng cáo chéo (cross-site tracking trackers).</li>

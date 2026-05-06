@@ -12,11 +12,12 @@ import {
   Zap,
   RotateCcw,
   Calendar,
-  Filter,
   Search,
   Loader2,
   GraduationCap,
-  Play
+  Play,
+  Shuffle,
+  RefreshCw
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ interface HistoryItem {
   started_at: string
   duration_minutes: number
   flashcard_stats?: any
+  is_mix?: boolean
 }
 
 interface HistoryResponse {
@@ -115,7 +117,7 @@ export default function HistoryPage() {
   }, [data?.history, search])
 
   return (
-    <main className="min-h-screen bg-[#F8F9FA] pb-20">
+    <main className="min-h-screen bg-[#F9F9F7] pb-20">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 py-10 md:py-16">
@@ -177,17 +179,24 @@ export default function HistoryPage() {
                         <div className="flex flex-col md:flex-row md:items-center gap-6 p-6">
                           <div className={cn(
                             "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
+                            item.is_mix ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" :
                             item.status === 'completed' ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
                           )}>
-                            {item.status === 'completed' ? <CheckCircle className="w-7 h-7" /> : <Play className="w-7 h-7" />}
+                            {item.is_mix ? <Shuffle className="w-7 h-7" /> : item.status === 'completed' ? <CheckCircle className="w-7 h-7" /> : <Play className="w-7 h-7" />}
                           </div>
                           
                           <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="text-lg font-black text-gray-900 truncate uppercase tracking-tight group-hover:text-[#5D7B6F] transition-colors">
                                 {item.quiz_code}
                               </h3>
                               <ModeBadge mode={item.mode} />
+                              {item.is_mix && (
+                                <Badge variant="secondary" className="bg-[#5D7B6F]/10 text-[#5D7B6F] border-none font-black text-[9px] uppercase rounded-full px-2 py-0.5">
+                                  <Shuffle className="w-2.5 h-2.5 mr-1" />
+                                  Quiz Trộn
+                                </Badge>
+                              )}
                               {item.status === 'active' && (
                                 <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none font-black text-[9px] uppercase">Đang làm</Badge>
                               )}
@@ -242,29 +251,50 @@ export default function HistoryPage() {
                                     {item.status === 'active' ? '--' : `${item.score}/10`}
                                   </p>
                                   <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
-                                    {item.correct_count}/{item.total_questions} CÂU ĐÚNG
+                                    {item.status === 'active'
+                                      ? `${item.answered_count}/${item.total_questions} ĐÃ LÀM`
+                                      : `${item.correct_count}/${item.total_questions} CÂU ĐÚNG`}
                                   </p>
                                 </>
                               )}
                             </div>
                             
                             <div className="flex items-center gap-2">
-                               <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl hover:bg-[#5D7B6F]/5 text-[#5D7B6F]" asChild>
+                              {/* Redo buttons */}
+                              <div className="hidden sm:flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  className="h-9 px-3 rounded-xl hover:bg-[#5D7B6F]/5 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest" 
+                                  asChild
+                                >
                                   <Link href={`/quiz/${item.quiz_id}`}>
-                                     <RotateCcw className="w-4 h-4" />
+                                    Làm lại
                                   </Link>
-                               </Button>
-                               <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg" asChild>
-                                  <Link href={
-                                    item.status === 'active'
-                                      ? item.mode === 'flashcard'
-                                        ? `/quiz/${item.quiz_id}/session/${item._id}/flashcard`
-                                        : `/quiz/${item.quiz_id}/session/${item._id}`
-                                      : `/history/${item.quiz_id}/${item._id}`
-                                  }>
-                                     <ChevronRight className="w-5 h-5" />
-                                  </Link>
-                               </Button>
+                                </Button>
+                                {item.is_mix && (
+                                  <Button 
+                                    variant="outline" 
+                                    className="h-9 px-3 rounded-xl border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all" 
+                                    asChild
+                                  >
+                                    <Link href={`/explore?tab=mix&mix_from=${item.quiz_id}`}>
+                                      Làm mới
+                                    </Link>
+                                  </Button>
+                                )}
+                              </div>
+
+                              <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg" asChild>
+                                <Link href={
+                                  item.status === 'active'
+                                    ? item.mode === 'flashcard'
+                                      ? `/quiz/${item.quiz_id}/session/${item._id}/flashcard`
+                                      : `/quiz/${item.quiz_id}/session/${item._id}`
+                                    : `/history/${item.quiz_id}/${item._id}`
+                                }>
+                                  <ChevronRight className="w-5 h-5" />
+                                </Link>
+                              </Button>
                             </div>
                           </div>
                         </div>

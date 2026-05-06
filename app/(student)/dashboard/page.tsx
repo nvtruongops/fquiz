@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { 
-  ArrowRight, 
+import { useRouter } from 'next/navigation'
+import {
+  ArrowRight,
   Zap,
   Compass,
   Loader2,
@@ -11,6 +12,9 @@ import {
   Play,
   BookOpen,
   Clock,
+  Shuffle,
+  RotateCcw,
+  RefreshCw,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +25,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [user, setUser] = useState<{ name: string } | null>(null)
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export default function DashboardPage() {
   }
 
   // Find incomplete sessions (active sessions)
-  const incompleteSessions = data?.recentActivities?.filter((a: any) => 
+  const incompleteSessions = data?.recentActivities?.filter((a: any) =>
     a.status === 'active' && !a.quizDeleted
   ) || []
 
@@ -56,9 +61,9 @@ export default function DashboardPage() {
   const primaryIncomplete = incompleteSessions[0]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FDFDFB] via-[#F9F9F7] to-[#EAE7D6]/30">
-      <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 space-y-8">
-        
+    <div className="min-h-screen bg-[#F9F9F7]">
+      <div className="w-full py-8 md:py-12 space-y-8">
+
         {/* ── Header ────────────────────────────────────────────────── */}
         <header className="space-y-3">
           <div className="flex items-center gap-2 text-[#5D7B6F]/60">
@@ -67,7 +72,7 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
             Chào {user?.name || 'bạn'}, <br className="md:hidden" />
-            hôm nay học gì nhỉ? 👋
+            hôm nay học gì nhỉ?
           </h1>
         </header>
 
@@ -79,7 +84,7 @@ export default function DashboardPage() {
               <div className="relative p-8 md:p-10">
                 {/* Background decoration */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                
+
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
                   {/* Icon */}
                   <div className="relative shrink-0">
@@ -97,7 +102,7 @@ export default function DashboardPage() {
                       <Clock className="w-3 h-3 text-orange-600" />
                       <span className="text-[10px] font-black text-orange-600 uppercase tracking-wider">Phiên học chưa hoàn thành</span>
                     </div>
-                    
+
                     <div>
                       <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight mb-2">
                         {primaryIncomplete.quizCode}
@@ -124,8 +129,8 @@ export default function DashboardPage() {
                           <Zap className="w-4 h-4 text-green-600" />
                         )}
                         <span className="text-xs font-bold text-gray-500 uppercase">
-                          {primaryIncomplete.mode === 'flashcard' ? 'Lật thẻ' : 
-                           primaryIncomplete.mode === 'review' ? 'Kiểm tra' : 'Luyện tập'}
+                          {primaryIncomplete.mode === 'flashcard' ? 'Lật thẻ' :
+                            primaryIncomplete.mode === 'review' ? 'Kiểm tra' : 'Luyện tập'}
                         </span>
                       </div>
                     </div>
@@ -170,7 +175,7 @@ export default function DashboardPage() {
               <div className="relative p-8 md:p-10">
                 {/* Background decoration */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                
+
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
                   {/* Icon */}
                   <div className="shrink-0">
@@ -184,11 +189,11 @@ export default function DashboardPage() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full">
                       <span className="text-[10px] font-black text-green-600 uppercase tracking-wider">Sẵn sàng học tập</span>
                     </div>
-                    
+
                     <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
                       Bắt đầu buổi học mới
                     </h2>
-                    
+
                     <p className="text-sm font-medium text-gray-500 max-w-lg">
                       Khám phá thư viện bộ đề hoặc tạo Quiz Trộn để kiểm tra kiến thức
                     </p>
@@ -248,28 +253,40 @@ export default function DashboardPage() {
                 const mode = (activity.mode ?? 'immediate') as keyof typeof modeConfig
                 const { icon: ModeIcon, bg, text, label } = modeConfig[mode] ?? modeConfig.immediate
 
+                // Mix quiz: if completed, allow redo by linking to quiz page
+                const href = activity.status === 'active'
+                  ? activity.mode === 'flashcard'
+                    ? `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}/flashcard`
+                    : `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}`
+                  : `/history/${activity.quizId}/${activity.id}`
+
+                // If user wants to "Làm lại" from history list, we usually go to the quiz page.
+                // However, the current Link wraps the whole card and goes to /history (the result).
+                // To support "Làm lại" directly from the dashboard, we might need a separate button.
+                // But for now, ensuring they can "Làm lại" from the history detail page is a big step.
+                // Let's refine the href to allow going to the quiz detail if we want a redo flow.
+
                 return (
-                  <Link
+                  <div
                     key={activity.id}
-                    href={activity.quizDeleted ? '#' : (
-                      activity.status === 'active'
-                        ? activity.mode === 'flashcard'
-                          ? `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}/flashcard`
-                          : `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}`
-                        : `/history/${activity.quizId}/${activity.id}`
-                    )}
+                    onClick={() => {
+                      if (!(activity.quizDeleted && !activity.isMix)) {
+                        router.push(href)
+                      }
+                    }}
                     className={cn(
-                      "block rounded-2xl bg-white border border-gray-100 p-5 transition-all hover:shadow-lg hover:border-[#5D7B6F]/20 hover:-translate-y-0.5",
-                      activity.quizDeleted && 'opacity-50 cursor-not-allowed hover:translate-y-0'
+                      "block rounded-2xl bg-white border border-gray-100 p-5 transition-all hover:shadow-lg hover:border-[#5D7B6F]/20 hover:-translate-y-0.5 cursor-pointer",
+                      activity.quizDeleted && !activity.isMix && 'opacity-50 cursor-not-allowed hover:translate-y-0'
                     )}
                   >
                     <div className="flex items-center gap-4">
                       {/* Icon */}
                       <div className={cn(
                         "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                        activity.status === 'active' ? "bg-orange-50 text-orange-500" : cn(bg, text)
+                        activity.isMix ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" :
+                          activity.status === 'active' ? "bg-orange-50 text-orange-500" : cn(bg, text)
                       )}>
-                        {activity.status === 'active' ? <Play className="w-6 h-6" /> : <ModeIcon className="w-6 h-6" />}
+                        {activity.isMix ? <Shuffle className="w-6 h-6" /> : activity.status === 'active' ? <Play className="w-6 h-6" /> : <ModeIcon className="w-6 h-6" />}
                       </div>
 
                       {/* Content */}
@@ -281,6 +298,11 @@ export default function DashboardPage() {
                           <span className={cn("text-[8px] font-black px-2 py-0.5 rounded-md uppercase", bg, text)}>
                             {label}
                           </span>
+                          {activity.isMix && (
+                            <span className="text-[8px] font-black bg-[#5D7B6F]/10 text-[#5D7B6F] px-2 py-0.5 rounded-md uppercase">
+                              Quiz Trộn
+                            </span>
+                          )}
                           {activity.status === 'active' && (
                             <span className="text-[8px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md uppercase">
                               Đang làm
@@ -320,13 +342,43 @@ export default function DashboardPage() {
                               {activity.status === 'active' ? '--' : `${activity.score}/10`}
                             </p>
                             <p className="text-[8px] font-black text-gray-400 uppercase">
-                              {activity.correctCount}/{activity.totalCount}
+                              {activity.status === 'active'
+                                ? `${activity.correctCount}/${activity.totalCount} ĐÃ LÀM`
+                                : `${activity.correctCount}/${activity.totalCount}`}
                             </p>
                           </div>
                         )}
                       </div>
+
+                      {/* Redo Action */}
+                      {!activity.quizDeleted && (
+                        <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0 ml-2">
+                          <Button
+                            variant="ghost"
+                            className="h-8 rounded-lg px-3 hover:bg-[#5D7B6F]/5 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Link href={`/quiz/${activity.quizId}`} title="Làm lại bộ đề này (Giữ nguyên câu hỏi)">
+                              Làm lại
+                            </Link>
+                          </Button>
+                          {activity.isMix && (
+                            <Button
+                              variant="outline"
+                              className="h-8 rounded-lg px-3 border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
+                              asChild
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Link href={`/explore?tab=mix&mix_from=${activity.quizId}`} title="Làm mới (Tạo bản trộn mới)">
+                                Làm mới
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </Link>
+                  </div>
                 )
               })
             )}

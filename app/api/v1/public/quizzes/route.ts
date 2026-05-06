@@ -42,9 +42,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { course_code: { $regex: search, $options: 'i' } }
+        { title: { $regex: escaped, $options: 'i' } },
+        { course_code: { $regex: escaped, $options: 'i' } }
       ]
     }
 

@@ -130,10 +130,9 @@ async function findCategoryForImport(
   userId: string
 ): Promise<{ found: boolean; categoryId?: string }> {
   const byId = Types.ObjectId.isValid(categoryToken)
-  const tokenRegex = new RegExp(`^${escapeRegex(categoryToken)}$`, 'i')
   const baseQuery: Record<string, unknown> = byId
     ? { _id: new Types.ObjectId(categoryToken) }
-    : { name: tokenRegex }
+    : { name: { $regex: `^${escapeRegex(categoryToken)}$`, $options: 'i' } }
 
   if (role === 'admin') {
     const found = await Category.findOne({

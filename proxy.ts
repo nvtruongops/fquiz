@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { connectDB } from '@/lib/mongodb'
+import { getSettings } from '@/models/SiteSettings'
+
+// proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/explore', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout'])
@@ -33,12 +37,15 @@ function applyCors(request: NextRequest, response: NextResponse) {
   if (!pathname.startsWith('/api/')) return response
 
   const origin = request.headers.get('origin')
-  if (origin && corsAllowedOrigins.has(origin)) {
-    response.headers.set('Access-Control-Allow-Origin', origin)
-    response.headers.append('Vary', 'Origin')
-    response.headers.set('Access-Control-Allow-Credentials', 'true')
-    response.headers.set('Access-Control-Allow-Methods', CORS_METHODS)
-    response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS)
+  if (origin) {
+    const allowedOrigin = Array.from(corsAllowedOrigins).find(o => o === origin)
+    if (allowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', allowedOrigin)
+      response.headers.append('Vary', 'Origin')
+      response.headers.set('Access-Control-Allow-Credentials', 'true')
+      response.headers.set('Access-Control-Allow-Methods', CORS_METHODS)
+      response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS)
+    }
   }
 
   return response
@@ -162,37 +169,24 @@ function enforceRoleRouting(pathname: string, role: string, request: NextRequest
   return null
 }
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const requestId = request.headers.get('x-request-id') || generateId()
-  const deployTarget = process.env.DEPLOY_TARGET
-
-  // Mobile detection and redirect for quiz session pages
+function handleMobileRedirect(request: NextRequest, pathname: string) {
   const quizSessionPattern = /^\/quiz\/[^/]+\/session\/[^/]+$/
   const isMobilePath = pathname.includes('/mobile')
-  
+
   if (quizSessionPattern.test(pathname) && !isMobilePath) {
     const userAgent = request.headers.get('user-agent') || ''
-    
-    // Detect mobile devices and tablets
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
-    
+
     if (isMobileDevice) {
       const url = request.nextUrl.clone()
       url.pathname = `${pathname}/mobile`
       return NextResponse.redirect(url)
     }
   }
+  return null
+}
 
-  if (pathname.startsWith('/api/') && request.method === 'OPTIONS') {
-    const preflight = new NextResponse(null, { status: 204 })
-    preflight.headers.set('x-request-id', requestId)
-    return applyCors(request, preflight)
-  }
-
-  // ── Maintenance Mode ──────────────────────────────────────────────────────
-  // Strategy: Cookie-first (fast), fallback to API (accurate for new users)
-  // Cookie 'maintenance-mode=1' được set bởi /api/admin/settings khi admin bật
+async function handleMaintenanceMode(request: NextRequest, pathname: string, requestId: string) {
   const isMaintenanceExempt =
     pathname.startsWith('/maintenance') ||
     pathname.startsWith('/login') ||
@@ -201,93 +195,69 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     /\.(png|jpg|jpeg|gif|svg|ico|webp|css|js)$/i.test(pathname)
 
-  if (!isMaintenanceExempt) {
-    let isMaintenanceOn = false
+  if (isMaintenanceExempt) return null
 
-    // Check cookie first (fast path - no DB call)
-    const maintenanceCookie = request.cookies.get('maintenance-mode')?.value
-    if (maintenanceCookie === '1') {
-      isMaintenanceOn = true
-    } else if (maintenanceCookie === undefined) {
-      // No cookie yet - check API (new user or cookie expired)
-      // Use absolute URL to avoid infinite loop
-      try {
-        const origin = request.nextUrl.origin
-        const settingsRes = await fetch(`${origin}/api/public/settings`, {
-          signal: AbortSignal.timeout(1500),
-          headers: { 'x-from-proxy': '1' },
-        })
-        if (settingsRes.ok) {
-          const data = await settingsRes.json()
-          isMaintenanceOn = data.maintenance_mode === true
-        }
-      } catch {
-        // Fail open - don't block if check fails
-      }
-    }
-    // maintenanceCookie === '0' → explicitly off, skip check
+  let isMaintenanceOn = false
+  const maintenanceCookie = request.cookies.get('maintenance-mode')?.value
 
-    if (isMaintenanceOn) {
-      const token =
-        request.cookies.get('auth-token')?.value ??
-        request.headers.get('Authorization')?.replace('Bearer ', '')
-
-      let isAdmin = false
-      if (token) {
-        const p = await verifyPayload(token)
-        isAdmin = p?.role === 'admin'
-      }
-
-      if (!isAdmin) {
-        if (pathname.startsWith('/api/')) {
-          return applyCors(request, NextResponse.json(
-            { error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
-            { status: 503, headers: { 'x-request-id': requestId } }
-          ))
-        }
-        // Redirect và set cookie để các request sau không cần gọi API
-        const redirectRes = NextResponse.redirect(new URL('/maintenance', request.url))
-        redirectRes.cookies.set('maintenance-mode', '1', {
-          path: '/',
-          httpOnly: false,
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 60,  // 60 giây - ngắn để tự refresh khi admin tắt maintenance
-        })
-        return redirectRes
-      }
+  if (maintenanceCookie === '1') {
+    isMaintenanceOn = true
+  } else {
+    try {
+      await connectDB()
+      const settings = await getSettings()
+      isMaintenanceOn = settings.maintenance_mode === true
+    } catch {
+      isMaintenanceOn = false
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // Split deployments by target: API project only serves /api/*,
-  // WEB project serves pages and keeps CSP report endpoint accessible.
-  if (deployTarget === 'api' && !pathname.startsWith('/api/')) {
-    const blockedResponse = NextResponse.json(
-      { error: 'Not Found' },
-      { status: 404, headers: { 'x-request-id': requestId } }
-    )
-    return applyCors(request, blockedResponse)
+  if (!isMaintenanceOn) return null
+
+  const token =
+    request.cookies.get('auth-token')?.value ??
+    request.headers.get('Authorization')?.replace('Bearer ', '')
+
+  let isAdmin = false
+  if (token) {
+    const p = await verifyPayload(token)
+    isAdmin = p?.role === 'admin'
   }
 
+  if (isAdmin) return null
+
+  if (pathname.startsWith('/api/')) {
+    return applyCors(request, NextResponse.json(
+      { error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
+      { status: 503, headers: { 'x-request-id': requestId } }
+    ))
+  }
+
+  const redirectRes = NextResponse.redirect(new URL('/maintenance', request.url))
+  redirectRes.cookies.set('maintenance-mode', '1', {
+    path: '/',
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30,
+  })
+  return redirectRes
+}
+
+function handleLegacyHistoryRedirect(request: NextRequest, pathname: string) {
   const legacyHistoryMatch = /^\/history\/([a-fA-F0-9]{24})$/.exec(pathname)
   const legacySessionId = request.nextUrl.searchParams.get('sessionId')
+
   if (legacyHistoryMatch && legacySessionId && /^[a-fA-F0-9]{24}$/.test(legacySessionId)) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = `/history/${legacyHistoryMatch[1]}/${legacySessionId}`
     redirectUrl.searchParams.delete('sessionId')
     return applyCors(request, NextResponse.redirect(redirectUrl))
   }
+  return null
+}
 
-  const response = NextResponse.next()
-  response.headers.set('x-request-id', requestId)
-  applyCors(request, response)
-
-  const csrfError = validateCsrf(request, pathname, requestId)
-  if (csrfError) return applyCors(request, csrfError)
-
-  ensureCsrfCookie(request, response)
-
+async function handleAuthAndRole(request: NextRequest, pathname: string, requestId: string, response: NextResponse) {
   if (isPublicRoute(pathname) || shouldSkipAuth(pathname)) {
     return response
   }
@@ -310,6 +280,42 @@ export async function proxy(request: NextRequest) {
   if (roleResponse) return applyCors(request, roleResponse)
 
   return applyCors(request, response)
+}
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const requestId = request.headers.get('x-request-id') || generateId()
+
+  const mobileRedirect = handleMobileRedirect(request, pathname)
+  if (mobileRedirect) return mobileRedirect
+
+  if (pathname.startsWith('/api/') && request.method === 'OPTIONS') {
+    const preflight = new NextResponse(null, { status: 204 })
+    preflight.headers.set('x-request-id', requestId)
+    return applyCors(request, preflight)
+  }
+
+  const maintenanceResponse = await handleMaintenanceMode(request, pathname, requestId)
+  if (maintenanceResponse) return maintenanceResponse
+
+  const deployTarget = process.env.DEPLOY_TARGET
+  if (deployTarget === 'api' && !pathname.startsWith('/api/')) {
+    return applyCors(request, NextResponse.json({ error: 'Not Found' }, { status: 404, headers: { 'x-request-id': requestId } }))
+  }
+
+  const legacyRedirect = handleLegacyHistoryRedirect(request, pathname)
+  if (legacyRedirect) return legacyRedirect
+
+  const response = NextResponse.next()
+  response.headers.set('x-request-id', requestId)
+  applyCors(request, response)
+
+  const csrfError = validateCsrf(request, pathname, requestId)
+  if (csrfError) return applyCors(request, csrfError)
+
+  ensureCsrfCookie(request, response)
+
+  return handleAuthAndRole(request, pathname, requestId, response)
 }
 
 export const config = {

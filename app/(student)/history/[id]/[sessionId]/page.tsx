@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -11,9 +10,11 @@ import {
   MinusCircle,
   Clock,
   BookOpen,
+  Shuffle,
 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { FlashcardReviewButton } from '@/components/quiz/FlashcardReviewButton'
+import { useState } from 'react'
 
 interface HistoryQuestion {
   _id: string
@@ -30,8 +31,10 @@ interface HistoryDetail {
   _id: string
   quiz_id: string
   quiz_title: string
-  source_type: 'self_created' | 'saved_explore' | 'explore_public'
+  source_type: 'self_created' | 'saved_explore' | 'explore_public' | 'mix_quiz'
   source_label: string
+  is_mix?: boolean
+  status?: 'active' | 'completed'
   mode: 'immediate' | 'review' | 'flashcard'
   score: number
   total_questions: number
@@ -60,32 +63,10 @@ interface HistoryDetail {
   active_started_at?: string | null
 }
 
-interface Highlight {
-  _id: string
-  question_id: string
-  color_code: string
-  text_segment: string
-  offset: number
-}
-
-const HIGHLIGHT_COLORS: { color: string; label: string }[] = [
-  { color: '#B0D4B8', label: 'Green' },
-  { color: '#D7F9FA', label: 'Cyan' },
-  { color: '#FFE082', label: 'Yellow' },
-  { color: '#EF9A9A', label: 'Red' },
-]
-
 async function fetchHistoryDetail(id: string, sessionId: string): Promise<HistoryDetail> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history/${id}?sessionId=${sessionId}`)
   if (!res.ok) throw new Error('Failed to fetch history detail')
   return res.json()
-}
-
-async function fetchHighlightsForQuestion(questionId: string): Promise<Highlight[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/highlights?question_id=${questionId}`)
-  if (!res.ok) return []
-  const data = await res.json()
-  return data.highlights ?? []
 }
 
 function formatDate(dateStr: string) {
@@ -115,49 +96,6 @@ function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
   )
 }
 
-function ColorFilterBar({
-  selected,
-  onChange,
-}: {
-  selected: string | null
-  onChange: (color: string | null) => void
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium" style={{ color: '#5D7B6F' }}>
-        Filter by highlight:
-      </span>
-      <button
-        onClick={() => onChange(null)}
-        className="px-3 py-1 rounded-full text-xs font-semibold border transition-all"
-        style={{
-          backgroundColor: selected === null ? '#5D7B6F' : '#fff',
-          color: selected === null ? '#fff' : '#5D7B6F',
-          borderColor: '#5D7B6F',
-        }}
-      >
-        All
-      </button>
-      {HIGHLIGHT_COLORS.map(({ color, label }) => (
-        <button
-          key={color}
-          onClick={() => onChange(selected === color ? null : color)}
-          title={label}
-          className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110"
-          style={{
-            backgroundColor: color,
-            borderColor: selected === color ? '#5D7B6F' : 'transparent',
-            outline: selected === color ? '2px solid #5D7B6F' : 'none',
-            outlineOffset: '2px',
-          }}
-          aria-label={`Filter by ${label}`}
-          aria-pressed={selected === color}
-        />
-      ))}
-    </div>
-  )
-}
-
 function FlashcardHistoryCard({
   question,
   index,
@@ -167,8 +105,6 @@ function FlashcardHistoryCard({
 }) {
   const [isFlipped, setIsFlipped] = useState(false)
   const { text, options, correct_answer, explanation, image_url, is_correct, submitted_answer } = question
-  
-  // Check if this question was answered (in flashcard mode, submitted_answer is -1 if answered)
   const wasAnswered = submitted_answer !== null && submitted_answer !== undefined
   
   return (
@@ -178,7 +114,6 @@ function FlashcardHistoryCard({
         onClick={() => setIsFlipped(!isFlipped)}
       >
         {!isFlipped ? (
-          // Front side - Question
           <div className="p-6 space-y-4 min-h-[200px] flex flex-col justify-center">
             <div className="flex items-start gap-3">
               <span
@@ -205,12 +140,6 @@ function FlashcardHistoryCard({
                   )}
                 </div>
               )}
-              {!wasAnswered && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
-                  <MinusCircle className="w-3 h-3" />
-                  Chưa trả lời
-                </span>
-              )}
             </div>
 
             {image_url && (
@@ -228,7 +157,6 @@ function FlashcardHistoryCard({
             </div>
           </div>
         ) : (
-          // Back side - Answer
           <div className="p-6 space-y-4 min-h-[200px]">
             <div className="flex items-center justify-between mb-4">
               <span
@@ -237,26 +165,6 @@ function FlashcardHistoryCard({
               >
                 {index + 1}
               </span>
-              <div className="flex items-center gap-2">
-                {wasAnswered ? (
-                  is_correct ? (
-                    <span className="flex items-center gap-1 text-sm font-semibold text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Đã biết
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-sm font-semibold text-red-600">
-                      <XCircle className="w-4 h-4" />
-                      Chưa biết
-                    </span>
-                  )
-                ) : (
-                  <span className="flex items-center gap-1 text-sm font-semibold text-gray-500">
-                    <MinusCircle className="w-4 h-4" />
-                    Chưa trả lời
-                  </span>
-                )}
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -285,9 +193,6 @@ function FlashcardHistoryCard({
                         {String.fromCharCode(65 + optIdx)}
                       </span>
                       <span className={`text-sm ${textClass} flex-1`}>{option}</span>
-                      {isCorrectOpt && (
-                        <span className="text-xs font-semibold text-green-700">✓ Đáp án đúng</span>
-                      )}
                     </div>
                   </div>
                 )
@@ -317,15 +222,12 @@ function FlashcardHistoryCard({
 function QuestionCard({
   question,
   index,
-  highlights,
 }: {
   question: HistoryQuestion
   index: number
-  highlights: Highlight[]
 }) {
   const { submitted_answer, correct_answer, is_correct, options, text, explanation, image_url } = question
   const notAnswered = submitted_answer === null || submitted_answer === undefined
-  const highlightColors = new Set(highlights.map((h) => h.color_code))
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
@@ -346,20 +248,8 @@ function QuestionCard({
               <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
             )}
             <span className="text-xs font-medium text-gray-500">
-              {notAnswered ? 'Not answered' : is_correct ? 'Correct' : 'Incorrect'}
+              {notAnswered ? 'Chưa trả lời' : is_correct ? 'Đúng' : 'Sai'}
             </span>
-            {highlightColors.size > 0 && (
-              <div className="flex items-center gap-1 ml-1">
-                {Array.from(highlightColors).map((c) => (
-                  <span
-                    key={c}
-                    className="w-3 h-3 rounded-full inline-block border border-gray-200"
-                    style={{ backgroundColor: c }}
-                    title={`Highlighted in ${c}`}
-                  />
-                ))}
-              </div>
-            )}
           </div>
           <p className="text-gray-800 font-medium leading-snug" style={{ overflowWrap: 'break-word', wordBreak: 'normal' }}>{text}</p>
         </div>
@@ -369,7 +259,7 @@ function QuestionCard({
         <div className="flex min-h-[180px] max-h-[360px] w-full items-center justify-center overflow-hidden rounded-lg bg-[#fafafa] border border-gray-100">
           <img
             src={image_url}
-            alt={`Question ${index + 1} illustration`}
+            alt={`Question ${index + 1}`}
             className="h-full max-h-[360px] w-full object-contain"
           />
         </div>
@@ -415,17 +305,17 @@ function QuestionCard({
                 <div className="mt-1.5 pl-8 flex items-center gap-2 flex-wrap">
                   {isCorrectOpt && (
                     <span className="text-xs font-semibold text-green-700">
-                      ✓ Correct
+                      ✓ Đáp án đúng
                     </span>
                   )}
                   {isWrongSubmission && (
                     <span className="text-xs font-semibold text-red-600">
-                      Your answer
+                      Đáp án của bạn
                     </span>
                   )}
                   {isSubmitted && is_correct && (
                     <span className="text-xs font-semibold text-green-700">
-                      Your answer ✓
+                      Đáp án của bạn ✓
                     </span>
                   )}
                 </div>
@@ -437,7 +327,7 @@ function QuestionCard({
 
       {notAnswered && (
         <div className="pl-10">
-          <p className="text-sm text-gray-400 italic">You did not answer this question.</p>
+          <p className="text-sm text-gray-400 italic">Bạn đã bỏ qua câu hỏi này.</p>
         </div>
       )}
 
@@ -446,7 +336,7 @@ function QuestionCard({
           className="ml-10 p-3 rounded-lg border text-sm text-gray-600 whitespace-pre-wrap"
           style={{ backgroundColor: '#D7F9FA33', borderColor: '#D7F9FA' }}
         >
-          <span className="font-semibold text-gray-700">Explanation: </span>
+          <span className="font-semibold text-gray-700">Giải thích: </span>
           {explanation}
         </div>
       )}
@@ -459,8 +349,6 @@ export default function HistoryAttemptDetailPage() {
   const id = params.id
   const sessionId = params.sessionId
 
-  const [colorFilter, setColorFilter] = useState<string | null>(null)
-
   const {
     data,
     isLoading,
@@ -468,28 +356,11 @@ export default function HistoryAttemptDetailPage() {
   } = useQuery<HistoryDetail>({
     queryKey: ['history', id, sessionId],
     queryFn: () => fetchHistoryDetail(id, sessionId),
-    staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60 * 24,
+    staleTime: 0,
+    gcTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
     enabled: !!id && !!sessionId,
   })
-
-  const questionIds = data?.questions.map((q) => q._id) ?? []
-  const highlightQueries = useQuery<Record<string, Highlight[]>>({
-    queryKey: ['history-highlights', id, sessionId, questionIds],
-    queryFn: async () => {
-      if (questionIds.length === 0) return {}
-      const results = await Promise.all(
-        questionIds.map((qId) =>
-          fetchHighlightsForQuestion(qId).then((hs) => ({ qId, hs }))
-        )
-      )
-      return Object.fromEntries(results.map(({ qId, hs }) => [qId, hs]))
-    },
-    enabled: questionIds.length > 0,
-    staleTime: 0,
-  })
-
-  const highlightMap: Record<string, Highlight[]> = highlightQueries.data ?? {}
 
   if (isLoading) {
     return (
@@ -515,13 +386,13 @@ export default function HistoryAttemptDetailPage() {
             style={{ color: '#5D7B6F' }}
           >
             <ArrowLeft size={16} />
-            Back to Attempts
+            Quay lại
           </Link>
           <div
             className="rounded-xl p-6 text-sm"
             style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}
           >
-            Failed to load session details. Please try again.
+            Không thể tải dữ liệu phòng thi. Vui lòng thử lại.
           </div>
         </div>
       </main>
@@ -531,26 +402,10 @@ export default function HistoryAttemptDetailPage() {
   const { quiz_title, mode, score, total_questions, completed_at, questions } = data
   const percentage = total_questions > 0 ? Math.round((score / total_questions) * 100) : 0
 
-  const visibleQuestions =
-    colorFilter === null
-      ? questions
-      : questions.filter((q) => {
-          const hs = highlightMap[q._id] ?? []
-          return hs.some((h) => h.color_code === colorFilter)
-        })
-
-  // Flashcard mode display
   if (mode === 'flashcard' && data.flashcard_stats) {
-    const flashcardPercentage = data.flashcard_stats.total_cards > 0 
-      ? Math.round((data.flashcard_stats.cards_known / data.flashcard_stats.total_cards) * 100) 
-      : 0
-    
     const answeredCount = data.flashcard_stats.cards_known + data.flashcard_stats.cards_unknown
     const unansweredCount = data.flashcard_stats.total_cards - answeredCount
     const hasActiveSession = data.has_active_session && data.active_session_id
-    
-    // Session này đã completed, không thể tiếp tục
-    // Chỉ có thể tiếp tục nếu có active session khác
     const canContinue = hasActiveSession
 
     return (
@@ -567,19 +422,16 @@ export default function HistoryAttemptDetailPage() {
             </Link>
 
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap sm:flex-nowrap">
-              {/* Nếu có active session khác -> CHỈ hiện nút Tiếp tục */}
               {canContinue ? (
                 <Link
                   href={`/quiz/${data.quiz_id}/session/${data.active_session_id}/flashcard`}
                   className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
                   style={{ backgroundColor: '#5D7B6F' }}
-                  title={`Tiếp tục session đang làm dở (${data.active_answered_count}/${data.active_total_count} câu)`}
                 >
                   Tiếp tục ({data.active_answered_count}/{data.active_total_count})
                 </Link>
               ) : (
                 <>
-                  {/* Nếu KHÔNG có active session -> hiện Ôn lại (nếu có) + Làm mới */}
                   {data.flashcard_stats.cards_unknown > 0 && (
                     <FlashcardReviewButton
                       sessionId={sessionId}
@@ -587,26 +439,34 @@ export default function HistoryAttemptDetailPage() {
                       unknownCount={data.flashcard_stats.cards_unknown}
                     />
                   )}
-                  <Link
-                    href={`/quiz/${data.quiz_id}`}
-                    className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
-                    style={{ backgroundColor: '#5D7B6F' }}
-                  >
-                    Làm mới
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/quiz/${data.quiz_id}`}
+                      className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
+                      style={{ backgroundColor: '#5D7B6F' }}
+                    >
+                      Làm lại
+                    </Link>
+                    {data.is_mix && (
+                      <Link
+                        href={`/explore?tab=mix&mix_from=${data.quiz_id}`}
+                        className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-[#5D7B6F] border border-[#5D7B6F] transition-colors hover:bg-[#5D7B6F] hover:text-white whitespace-nowrap"
+                      >
+                        Làm mới
+                      </Link>
+                    )}
+                  </div>
                 </>
               )}
             </div>
           </div>
 
-          {/* Thông báo có session đang làm dở - ngắn gọn */}
           {canContinue && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
                 <p className="text-xs text-blue-800">
                   <span className="font-bold">Lưu ý:</span> Bạn có một session flashcard khác đang làm dở ở câu {data.active_answered_count}/{data.active_total_count}. 
-                  Nhấn <span className="font-bold">"Tiếp tục"</span> để quay lại session đó.
                 </p>
               </div>
             </div>
@@ -619,11 +479,6 @@ export default function HistoryAttemptDetailPage() {
                   <h1 className="text-xl font-bold truncate" style={{ color: '#5D7B6F' }}>
                     {quiz_title ?? 'Untitled Quiz'}
                   </h1>
-                  {canContinue && (
-                    <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap">
-                      Session cũ
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <ModeBadge mode={mode} />
@@ -634,14 +489,6 @@ export default function HistoryAttemptDetailPage() {
                     <Clock size={12} />
                     {formatDate(completed_at)}
                   </span>
-                  <span className="rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                    Đã hoàn thành
-                  </span>
-                  {unansweredCount > 0 && (
-                    <span className="rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 text-[10px] font-semibold">
-                      {unansweredCount} thẻ bỏ qua
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -665,13 +512,9 @@ export default function HistoryAttemptDetailPage() {
               </div>
             </div>
 
-            <div className="text-xs font-semibold" style={{ color: '#5D7B6F' }}>
-              Tổng thời gian học của mã quiz này: {data.total_study_minutes} phút
-            </div>
-
             <div className="space-y-1">
               <div className="flex justify-between text-sm text-gray-500">
-                <span>Tỷ lệ biết (trong {answeredCount} thẻ đã trả lời)</span>
+                <span>Tỷ lệ biết</span>
                 <span className="font-semibold" style={{ color: '#5D7B6F' }}>
                   {answeredCount > 0 ? Math.round((data.flashcard_stats.cards_known / answeredCount) * 100) : 0}%
                 </span>
@@ -679,11 +522,7 @@ export default function HistoryAttemptDetailPage() {
               <Progress
                 value={answeredCount > 0 ? Math.round((data.flashcard_stats.cards_known / answeredCount) * 100) : 0}
                 className="h-2.5"
-                style={{ '--progress-foreground': '#5D7B6F' } as React.CSSProperties}
               />
-              <p className="text-xs text-gray-400 mt-1">
-                {data.flashcard_stats.cards_known} đã biết / {answeredCount} đã trả lời / {data.flashcard_stats.total_cards} tổng
-              </p>
             </div>
           </div>
 
@@ -691,19 +530,6 @@ export default function HistoryAttemptDetailPage() {
             <h2 className="text-lg font-bold mb-4" style={{ color: '#5D7B6F' }}>
               Danh sách thẻ ({data.flashcard_stats.total_cards} thẻ)
             </h2>
-            {unansweredCount > 0 && (
-              <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-sm text-orange-800">
-                  <span className="font-semibold"> Lưu ý:</span> Trong session này, bạn đã bỏ qua {unansweredCount} thẻ (không đánh dấu biết/chưa biết). 
-                  {data.flashcard_stats.cards_unknown > 0 ? (
-                    <> Nhấn <span className="font-bold">"Ôn lại {data.flashcard_stats.cards_unknown} câu chưa biết"</span> để ôn tập các câu đã đánh dấu chưa biết, hoặc </>
-                  ) : (
-                    <> </>
-                  )}
-                  nhấn <span className="font-bold">"Làm mới"</span> để bắt đầu lại từ đầu.
-                </p>
-              </div>
-            )}
             <div className="space-y-4">
               {questions.map((q, index) => (
                 <FlashcardHistoryCard
@@ -735,30 +561,77 @@ export default function HistoryAttemptDetailPage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/quiz/${data.quiz_id}`}
-              className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#5D7B6F' }}
-            >
-              Làm lại
-            </Link>
+            {data.is_mix ? (
+              data.status === 'active' ? (
+                <Link
+                  href={`/quiz/${data.quiz_id}/session/${data._id}`}
+                  className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#5D7B6F' }}
+                >
+                  Tiếp tục làm
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/quiz/${data.quiz_id}`}
+                    className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: '#5D7B6F' }}
+                  >
+                    Làm lại
+                  </Link>
+                  {data.is_mix && (
+                    <Link
+                      href={`/explore?tab=mix&mix_from=${data.quiz_id}`}
+                      className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-[#5D7B6F] border border-[#5D7B6F] transition-colors hover:bg-[#5D7B6F] hover:text-white"
+                    >
+                      Làm mới
+                    </Link>
+                  )}
+                </div>
+              )
+            ) : (
+              <Link
+                href={`/quiz/${data.quiz_id}`}
+                className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#5D7B6F' }}
+              >
+                Làm lại
+              </Link>
+            )}
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold truncate" style={{ color: '#5D7B6F' }}>
-                {quiz_title ?? 'Untitled Quiz'}
-              </h1>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                {data.is_mix && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-black bg-[#5D7B6F]/10 text-[#5D7B6F]">
+                    <Shuffle className="w-3 h-3" />
+                    Quiz Trộn
+                  </span>
+                )}
+                <h1 className="text-xl font-bold truncate" style={{ color: '#5D7B6F' }}>
+                  {data.is_mix
+                    ? (quiz_title.startsWith('Quiz Trộn · ') ? quiz_title.slice('Quiz Trộn · '.length) : quiz_title)
+                    : (quiz_title ?? 'Untitled Quiz')}
+                </h1>
+              </div>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <ModeBadge mode={mode} />
                 <span className="rounded-full bg-[#f2f2f2] px-2 py-0.5 text-[10px] font-semibold" style={{ color: '#5D7B6F' }}>
                   {data.source_label}
                 </span>
+                {data.status === 'active' && (
+                  <span className="rounded-full bg-orange-100 text-orange-600 px-2 py-0.5 text-[10px] font-black uppercase">
+                    Đang làm · {data.active_answered_count}/{data.active_total_count} câu
+                  </span>
+                )}
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <Clock size={12} />
-                  {formatDate(completed_at)}
+                  {data.status === 'active' && data.started_at
+                    ? formatDate(data.started_at)
+                    : formatDate(completed_at)}
                 </span>
               </div>
             </div>
@@ -767,7 +640,9 @@ export default function HistoryAttemptDetailPage() {
               style={{ backgroundColor: '#B0D4B8', color: '#5D7B6F' }}
             >
               <BookOpen size={18} />
-              {score} / {total_questions}
+              {data.status === 'active'
+                ? `${data.active_answered_count ?? 0} / ${total_questions}`
+                : `${score} / ${total_questions}`}
             </div>
           </div>
 
@@ -775,45 +650,33 @@ export default function HistoryAttemptDetailPage() {
             Tổng thời gian học của mã quiz này: {data.total_study_minutes} phút
           </div>
 
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>Score</span>
-              <span className="font-semibold" style={{ color: '#5D7B6F' }}>{percentage}%</span>
+          {data.status !== 'active' && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Điểm số</span>
+                <span className="font-semibold" style={{ color: '#5D7B6F' }}>{percentage}%</span>
+              </div>
+              <Progress
+                value={percentage}
+                className="h-2.5"
+              />
             </div>
-            <Progress
-              value={percentage}
-              className="h-2.5"
-              style={{ '--progress-foreground': '#5D7B6F' } as React.CSSProperties}
-            />
-          </div>
+          )}
         </div>
 
-
-        <div className="bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100">
-          <ColorFilterBar selected={colorFilter} onChange={setColorFilter} />
-        </div>
-
-        {visibleQuestions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 rounded-2xl bg-white">
-            <p className="text-base font-medium" style={{ color: '#5D7B6F' }}>
-              No questions with this highlight color.
+        {data.status === 'active' ? (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center space-y-3">
+            <p className="text-sm font-bold text-gray-500">
+              Phiên làm bài đang tiến hành — câu hỏi sẽ hiển thị sau khi hoàn thành.
             </p>
-            <button
-              onClick={() => setColorFilter(null)}
-              className="mt-3 text-sm underline"
-              style={{ color: '#A4C3A2' }}
-            >
-              Show all questions
-            </button>
           </div>
         ) : (
           <div className="space-y-4">
-            {visibleQuestions.map((q) => (
+            {questions.map((q, index) => (
               <QuestionCard
                 key={q._id}
                 question={q}
-                index={questions.indexOf(q)}
-                highlights={highlightMap[q._id] ?? []}
+                index={index}
               />
             ))}
           </div>

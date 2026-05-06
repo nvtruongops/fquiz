@@ -32,9 +32,7 @@ async function checkUserSession(userId: string, version?: number): Promise<boole
   const cached = userStatusCache.get(userId)
 
   if (cached && cached.expires > now) {
-    if (cached.status !== 'active') return false
-    if (version !== undefined && cached.version !== version) return false
-    return true
+    return cached.status === 'active' && (version === undefined || cached.version === version)
   }
 
   try {
@@ -49,10 +47,7 @@ async function checkUserSession(userId: string, version?: number): Promise<boole
       expires: now + CACHE_TTL
     })
 
-    if (user.status !== 'active') return false
-    if (version !== undefined && (user.token_version || 1) !== version) return false
-
-    return true
+    return user.status === 'active' && (version === undefined || (user.token_version || 1) === version)
   } catch (err) {
     console.error('[checkUserSession] DB Error:', err)
     return false // Fail closed on DB error

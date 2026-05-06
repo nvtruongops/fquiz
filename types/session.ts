@@ -37,3 +37,60 @@ export interface IQuizSession {
   total_paused_duration_ms?: number // Total time spent paused in milliseconds
   is_temp?: boolean
 }
+
+/**
+ * Feedback for a question after submission in a session
+ */
+export interface QuestionFeedback {
+  isCorrect: boolean
+  correctAnswer: number
+  correctAnswers?: number[]
+  explanation?: string
+}
+
+/**
+ * Representation of a question within a quiz session
+ */
+export interface SessionQuestion {
+  _id: string
+  text: string
+  options: string[]
+  answer_selection_count?: number
+  image_url?: string
+  correct_answer?: number | number[]
+  explanation?: string
+}
+
+/**
+ * Core session data from API for UI consumption
+ */
+export interface SessionData {
+  session: {
+    _id: string
+    mode: 'immediate' | 'review' | 'flashcard'
+    status: 'active' | 'completed'
+    current_question_index: number
+    user_answers: UserAnswer[]
+    score: number
+    totalQuestions: number
+    courseCode: string
+    categoryName: string
+    title: string
+    started_at: string
+    paused_at?: string | null
+    total_paused_duration_ms?: number
+    is_temp?: boolean
+  }
+  question: SessionQuestion
+}
+
+/**
+ * Preloaded batch of questions for a session
+ */
+export interface PreloadedQuestions {
+  sessionId: string
+  mode: 'immediate' | 'review' | 'flashcard'
+  status: 'active' | 'completed'
+  totalQuestions: number
+  questions: SessionQuestion[]
+}

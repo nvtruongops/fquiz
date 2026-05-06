@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -59,13 +59,7 @@ export function QuestionBankConflictResolver({
   const [updateAllQuizzes, setUpdateAllQuizzes] = useState(false)
   const [resolving, setResolving] = useState(false)
 
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchConflicts()
-    }
-  }, [selectedCategory])
-
-  const fetchConflicts = async () => {
+  const fetchConflicts = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(
@@ -85,7 +79,13 @@ export function QuestionBankConflictResolver({
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCategory, toast])
+
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchConflicts()
+    }
+  }, [selectedCategory, fetchConflicts])
 
   const handleResolve = async () => {
     if (!selectedConflict || !selectedCategory) return
@@ -221,7 +221,7 @@ export function QuestionBankConflictResolver({
           {/* Right: Conflict Detail & Resolution */}
           <Card>
             <CardHeader>
-              <CardTitle>Chi tiết & Giải quyết</CardTitle>
+              <CardTitle>Chi tiết &amp; Giải quyết</CardTitle>
             </CardHeader>
             <CardContent>
               {selectedConflict ? (

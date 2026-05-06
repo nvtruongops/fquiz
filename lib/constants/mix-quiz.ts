@@ -1,7 +1,7 @@
 export const MIX_QUIZ_MAX_SELECT = 5 // Tối đa 5 quiz được chọn
 export const MIX_QUIZ_MAX_QUESTIONS = 150 // Tối đa 150 câu
 export const MIX_QUIZ_QUESTION_OPTIONS = [30, 60, 90, 150] // Lựa chọn số câu
-export const MIX_QUIZ_TTL_HOURS = 2 // Thời gian sống quiz tạm (giờ)
+// TTL đã bỏ — session tồn tại đến khi hoàn thành hoặc user xóa thủ công
 export const MIX_QUIZ_COURSE_CODE_PREFIX = 'temp_' // Prefix course_code tạm
 export const MIX_QUIZ_MAX_CONCURRENT = 1 // Mỗi user chỉ được có 1 mix quiz active cùng lúc
 export const MIX_QUIZ_RATE_LIMIT_MAX = 5 // Tối đa 5 lần tạo / giờ / user

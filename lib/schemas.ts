@@ -221,24 +221,6 @@ export const SubmitAnswerSchema = z
     path: ['answer_indexes'],
   })
 
-export const CreateHighlightSchema = z.object({
-  question_id: z
-    .string()
-    .min(1, 'question_id is required')
-    .regex(/^[a-f0-9]{24}$/, 'question_id không hợp lệ'),
-  text_segment: z
-    .string()
-    .min(1, 'text_segment is required')
-    .max(500, 'text_segment tối đa 500 ký tự'),
-  color_code: z.enum(['#B0D4B8', '#D7F9FA', '#FFE082', '#EF9A9A'], {
-    message: 'color_code must be one of the 4 allowed colors',
-  }),
-  offset: z
-    .number()
-    .int('offset phải là số nguyên')
-    .min(0, 'offset must be a non-negative integer')
-    .max(10000, 'offset quá lớn'),
-})
 
 export const UpdateProfileSchema = z.object({
   profile_bio: z
@@ -433,7 +415,6 @@ export type SaveDraftQuizInput = z.infer<typeof SaveDraftQuizSchema>
 export type AdminCreateQuizInput = z.infer<typeof AdminCreateQuizSchema>
 export type AdminSaveDraftQuizInput = z.infer<typeof AdminSaveDraftQuizSchema>
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>
-export type CreateHighlightInput = z.infer<typeof CreateHighlightSchema>
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>
 export type UpdateStudentSettingsInput = z.infer<typeof UpdateStudentSettingsSchema>
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>

@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/FlashcardView'
 import { useFlashcardSession } from '@/hooks/useFlashcardSession'
 import MobileFlashcardSessionPage from './mobile/page'
-import { QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
+import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
@@ -65,6 +65,25 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   const router = useRouter()
   const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
     useFlashcardSession(sessionId)
+  const sessionLoader = useSessionLoader()
+  const sessionLoaderStartedRef = useRef(false)
+
+  // Start loader immediately on mount so animation begins from 0
+  useEffect(() => {
+    if (!sessionLoaderStartedRef.current) {
+      sessionLoaderStartedRef.current = true
+      sessionLoader.open('Đang chuẩn bị bộ câu hỏi...')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Advance to 100 when loading completes
+  useEffect(() => {
+    if (!isLoading && !isPreloading && session) {
+      sessionLoader.complete()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isPreloading, session])
 
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
   const flashcardRef = useRef<FlashcardViewRef>(null)
@@ -162,10 +181,10 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   // Skip loading screen if we already have session data (from cache/prefetch)
   if (isLoading && !session) {
     return (
-      <QuizLoadingOverlay 
-        isOpen={true} 
-        progress={isPreloading ? 45 : 99} 
-        status={isPreloading ? "Đang chuẩn bị bộ câu hỏi..." : "Đang tải phiên học..."} 
+      <QuizLoadingOverlay
+        isOpen={true}
+        progress={sessionLoader.progress}
+        status={sessionLoader.status || 'Đang chuẩn bị bộ câu hỏi...'}
       />
     )
   }

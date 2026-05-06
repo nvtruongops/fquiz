@@ -10,7 +10,6 @@ import { providerFactory } from '@/lib/rate-limit/provider'
 import {
   MIX_QUIZ_MAX_SELECT,
   MIX_QUIZ_MAX_QUESTIONS,
-  MIX_QUIZ_TTL_HOURS,
   MIX_QUIZ_RATE_LIMIT_MAX,
   MIX_QUIZ_RATE_LIMIT_WINDOW,
 } from '@/lib/constants/mix-quiz'
@@ -23,7 +22,9 @@ const CreateMixSessionSchema = z.object({
     .union([z.number(), z.string()])
     .transform((v) => Number(v))
     .pipe(z.number().int().min(1).max(MIX_QUIZ_MAX_QUESTIONS)),
+  // Chỉ 2 chế độ: luyện tập (immediate) hoặc kiểm tra (review)
   mode: z.enum(['immediate', 'review']).default('immediate'),
+  // Thứ tự câu hỏi: sequential (theo thứ tự) hoặc random (ngẫu nhiên)
   difficulty: z.enum(['sequential', 'random']).default('random'),
 })
 
@@ -33,14 +34,16 @@ const CreateMixSessionSchema = z.object({
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
   for (let i = shuffled.length - 1; i > 0; i--) {
+    /* eslint-disable security/detect-object-injection */
     const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    /* eslint-enable security/detect-object-injection */
   }
   return shuffled
 }
 
 /**
- * Generate a unique temp course_code with retry on duplicate key error.
+ * Generate a unique temp course_code.
  */
 async function generateTempCourseCode(): Promise<string> {
   return `TEMP_${crypto.randomBytes(4).toString('hex').toUpperCase()}`
@@ -49,12 +52,13 @@ async function generateTempCourseCode(): Promise<string> {
 // Mix quiz rate limiter: 5 per hour per user
 const mixRateLimiter = providerFactory.createProvider(
   MIX_QUIZ_RATE_LIMIT_MAX,
-  MIX_QUIZ_RATE_LIMIT_WINDOW * 1000 // convert seconds to ms
+  MIX_QUIZ_RATE_LIMIT_WINDOW * 1000
 )
 
 /**
  * POST /api/sessions/mix
  * Create a temporary mix quiz session from multiple public quizzes.
+ * Session persists until the user completes or manually deletes it (no TTL).
  */
 export async function POST(req: Request) {
   try {
@@ -106,11 +110,11 @@ export async function POST(req: Request) {
     const studentId = new mongoose.Types.ObjectId(payload.userId)
 
     // 4. Concurrent check — only 1 active temp session allowed
+    // Session is active if status='active' and is_temp=true (no TTL check needed)
     const existingSession = await QuizSession.findOne({
       student_id: studentId,
       is_temp: true,
       status: 'active',
-      expires_at: { $gt: now },
     })
       .sort({ started_at: -1 })
       .lean() as any
@@ -122,14 +126,29 @@ export async function POST(req: Request) {
           session: {
             sessionId: existingSession._id,
             quizId: existingSession.quiz_id,
-            expires_at: existingSession.expires_at,
           },
         },
         { status: 409 }
       )
     }
 
-    // 5. Load quizzes — only public + published
+    // 5. Cleanup — delete any existing COMPLETED temp quizzes and sessions for this student
+    // This ensures "Only 1 mix quiz" design is enforced even for completed ones.
+    const oldTempSessions = await QuizSession.find({
+      student_id: studentId,
+      is_temp: true,
+    }).select('quiz_id').lean()
+    
+    const oldQuizIds = oldTempSessions.map(s => s.quiz_id).filter(Boolean)
+    
+    if (oldTempSessions.length > 0) {
+      await Promise.all([
+        QuizSession.deleteMany({ _id: { $in: oldTempSessions.map(s => s._id) } }),
+        Quiz.deleteMany({ _id: { $in: oldQuizIds }, is_temp: true })
+      ])
+    }
+
+    // 6. Load quizzes — only public + published
     const quizObjectIds = quiz_ids.map((id) => new mongoose.Types.ObjectId(id))
     const quizzes = await Quiz.find({
       _id: { $in: quizObjectIds },
@@ -140,7 +159,6 @@ export async function POST(req: Request) {
       .select('title course_code questions category_id')
       .lean() as any[]
 
-    // Filter valid quizzes (must have questions)
     const validQuizzes = quizzes.filter((q) => q.questions && q.questions.length > 0)
 
     if (validQuizzes.length < 2) {
@@ -150,56 +168,71 @@ export async function POST(req: Request) {
       )
     }
 
-    // 6. Sample proportionally from each quiz, then shuffle the result
-    // Each quiz contributes floor(question_count / numQuizzes) questions.
-    // Remainder slots go to quizzes with the most questions (largest first).
-    // If a quiz has fewer questions than its quota, take all and redistribute surplus.
-    const numQuizzes = validQuizzes.length
+    // 6. Deduplicate questions across all selected quizzes before sampling.
+    // Priority key: question_id (content-based) if present, else _id string.
+    const seenKeys = new Set<string>()
+
+    function dedupKey(q: IQuestion): string {
+      return q.question_id ?? q._id.toString()
+    }
+
+    const uniquePoolsPerQuiz: IQuestion[][] = validQuizzes.map((quiz) => {
+      const pool: IQuestion[] = []
+      for (const q of quiz.questions as IQuestion[]) {
+        const key = dedupKey(q)
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key)
+          pool.push(q)
+        }
+      }
+      return pool
+    })
+
+    const deduplicatedQuizzes = uniquePoolsPerQuiz.filter((pool) => pool.length > 0)
+
+    if (deduplicatedQuizzes.length < 2) {
+      return NextResponse.json(
+        { error: 'Sau khi loại câu hỏi trùng, cần ít nhất 2 quiz có câu hỏi riêng biệt' },
+        { status: 400 }
+      )
+    }
+
+    // 7. Sample proportionally from each deduplicated pool (always random order)
+    const numQuizzes = deduplicatedQuizzes.length
     const baseQuota = Math.floor(question_count / numQuizzes)
     const remainder = question_count % numQuizzes
 
-    // Sort quizzes descending by question count to distribute remainder to largest first
-    const sorted = [...validQuizzes].sort((a, b) => b.questions.length - a.questions.length)
-    const quotas = sorted.map((q, i) => ({
-      quiz: q,
+    const sorted = [...deduplicatedQuizzes].sort((a, b) => b.length - a.length)
+    const quotas = sorted.map((pool, i) => ({
+      pool,
       quota: baseQuota + (i < remainder ? 1 : 0),
     }))
 
-    // First pass: collect what each quiz can provide
     let surplus = 0
-    const firstPass = quotas.map(({ quiz, quota }) => {
-      const available = (quiz.questions as IQuestion[]).length
-      if (available >= quota) {
-        return { questions: quiz.questions as IQuestion[], quota }
-      }
-      // Quiz has fewer questions than quota — take all, accumulate surplus
+    const firstPass = quotas.map(({ pool, quota }) => {
+      const available = pool.length
+      if (available >= quota) return { questions: pool, quota }
       surplus += quota - available
-      return { questions: quiz.questions as IQuestion[], quota: available }
+      return { questions: pool, quota: available }
     })
 
-    // Second pass: distribute surplus to quizzes that still have unused questions
     const sampled: IQuestion[] = []
     for (const pass of firstPass) {
-      const shuffledQuiz = shuffleArray(pass.questions)
+      const shuffledPool = shuffleArray(pass.questions)
       let take = pass.quota
       if (surplus > 0) {
-        const extra = Math.min(surplus, shuffledQuiz.length - take)
-        if (extra > 0) {
-          take += extra
-          surplus -= extra
-        }
+        const extra = Math.min(surplus, shuffledPool.length - take)
+        if (extra > 0) { take += extra; surplus -= extra }
       }
-      sampled.push(...shuffledQuiz.slice(0, take))
+      sampled.push(...shuffledPool.slice(0, take))
     }
 
-    // Final shuffle so questions from different quizzes are interleaved
     const finalSampled = shuffleArray(sampled)
     const actualCount = finalSampled.length
 
-    // 8. Create temp quiz
-    const expiresAt = new Date(Date.now() + MIX_QUIZ_TTL_HOURS * 60 * 60 * 1000)
+    // 8. Create temp quiz — no expires_at (persists until user completes/deletes)
     const quizTitles = validQuizzes.map((q) => q.course_code as string)
-    const titlePreview = quizTitles.slice(0, 3).join(' + ') + (quizTitles.length > 3 ? ` +${quizTitles.length - 3}` : '')
+    const titlePreview = quizTitles.join(' + ')
 
     let tempQuiz: any = null
     let retries = 0
@@ -215,16 +248,18 @@ export async function POST(req: Request) {
           is_public: false,
           is_temp: true,
           created_by: studentId,
-          expires_at: expiresAt,
           status: 'published',
+          mix_config: {
+            quiz_ids: quizObjectIds,
+            question_count: question_count,
+            mode: mode,
+            category_id: validQuizzes[0].category_id,
+          },
+          // No expires_at — temp quiz lives until session is completed/deleted
         })
         break
       } catch (err: any) {
-        if (err?.code === 11000 && retries < 1) {
-          // Duplicate course_code — retry once
-          retries++
-          continue
-        }
+        if (err?.code === 11000 && retries < 1) { retries++; continue }
         throw err
       }
     }
@@ -233,11 +268,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to create temporary quiz' }, { status: 500 })
     }
 
-    // 9. Create quiz session
-    const questionOrder =
-      difficulty === 'random'
-        ? shuffleArray(Array.from({ length: actualCount }, (_, i) => i))
-        : Array.from({ length: actualCount }, (_, i) => i)
+    // 9. Create quiz session — question order based on difficulty, no expires_at
+    const questionOrder = difficulty === 'random'
+      ? shuffleArray(Array.from({ length: actualCount }, (_, i) => i))
+      : Array.from({ length: actualCount }, (_, i) => i)
 
     const tempSession = await QuizSession.create({
       student_id: studentId,
@@ -250,7 +284,7 @@ export async function POST(req: Request) {
       questions_cache: finalSampled,
       score: 0,
       is_temp: true,
-      expires_at: expiresAt,
+      // No expires_at — session persists until completed or manually deleted
       started_at: now,
       last_activity_at: now,
     })
@@ -260,7 +294,6 @@ export async function POST(req: Request) {
         quizId: tempQuiz._id,
         sessionId: tempSession._id,
         actual_count: actualCount,
-        expires_at: expiresAt,
       },
       { status: 201 }
     )

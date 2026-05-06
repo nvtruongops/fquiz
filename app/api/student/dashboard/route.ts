@@ -22,6 +22,17 @@ function sourceLabelFromType(sourceType: SourceType): string {
   return 'Từ Explore'
 }
 
+/**
+ * Extract display code from mix quiz title.
+ * "Quiz Trộn · MLN122_SP26_C1_FE + MLN122_SP26_C2_FE" → "MLN122_SP26_C1_FE + ..."
+ */
+function mixQuizDisplayCode(title: string): string {
+  const prefix = 'Quiz Trộn · '
+  const raw = title.startsWith(prefix) ? title.slice(prefix.length) : title
+  if (raw.length > 40) return raw.slice(0, 37) + '...'
+  return raw
+}
+
 export async function GET(req: Request) {
   try {
     const payload = await verifyToken(req)
@@ -114,9 +125,14 @@ export async function GET(req: Request) {
       totalCorrectAnswers: 0,
     }
 
-    // 2. Fetch Recent Activities (Top 5 latest-by-quiz), including active quizzes.
+    // 2. Fetch Recent Activities — completed sessions (thường + mix quiz)
     const latestSessionIdsByQuiz = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'completed', is_temp: { $ne: true } } },
+      {
+        $match: {
+          student_id: userId,
+          status: 'completed',
+        },
+      },
       { $sort: { completed_at: -1 } },
       {
         $group: {
@@ -137,7 +153,7 @@ export async function GET(req: Request) {
       .lean()
 
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'active', is_temp: { $ne: true } } },
+      { $match: { student_id: userId, status: 'active' } },
       { $sort: { started_at: -1 } },
       {
         $group: {
@@ -160,7 +176,12 @@ export async function GET(req: Request) {
     // Build a set of ALL (quizId + mode_group) that have completed sessions — used to filter activeOnlyActivities
     // Query separately (no limit) so active sessions aren't incorrectly shown when a completed session exists outside top 10
     const allCompletedGroupsAgg = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'completed', is_temp: { $ne: true } } },
+      {
+        $match: {
+          student_id: userId,
+          status: 'completed',
+        },
+      },
       {
         $group: {
           _id: {
@@ -240,7 +261,64 @@ export async function GET(req: Request) {
     const completedActivities = recentActivitiesRaw.map((session: any) => {
       const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
       const quizMeta = quizMetaMap.get(quizId)
-      
+      const isMixQuiz = session.is_temp === true
+
+      // Mix quiz: temp quiz may have been deleted after session completed
+      if (isMixQuiz && (!session.quiz_id || typeof session.quiz_id === 'string' || !quizMeta)) {
+        const totalQuestions = session.user_answers?.length || 0
+        const correctCount = session.user_answers?.filter((a: any) => a.is_correct).length || 0
+        return {
+          id: session._id.toString(),
+          quizId,
+          quizTitle: 'Quiz Trộn',
+          quizCode: 'TRỘN',
+          categoryName: 'Quiz Trộn',
+          sourceType: 'mix_quiz',
+          sourceLabel: 'Quiz Trộn',
+          sourceCreatorName: null,
+          mode: session.mode as string,
+          status: 'completed' as const,
+          score: Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
+          maxScore: 10,
+          correctCount,
+          totalCount: totalQuestions,
+          activityAt: session.completed_at,
+          quizDeleted: false,
+          isMix: true,
+        }
+      }
+
+      // Mix quiz: temp quiz still exists
+      if (isMixQuiz && session.quiz_id && typeof session.quiz_id !== 'string') {
+        const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
+        const totalQuestions = Number(session.quiz_id?.questionCount ?? 0)
+        const correctCount = session.user_answers?.filter((a: any) => a.is_correct).length || 0
+        const answeredCount = new Set(
+          (session.user_answers ?? [])
+            .map((a: any) => a.question_index)
+            .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+        ).size
+        return {
+          id: session._id.toString(),
+          quizId,
+          quizTitle,
+          quizCode: mixQuizDisplayCode(quizTitle),
+          categoryName: 'Quiz Trộn',
+          sourceType: 'mix_quiz',
+          sourceLabel: 'Quiz Trộn',
+          sourceCreatorName: null,
+          mode: session.mode as string,
+          status: session.status as 'active' | 'completed',
+          score: Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
+          maxScore: 10,
+          correctCount,
+          totalCount: totalQuestions,
+          activityAt: session.completed_at ?? session.started_at,
+          quizDeleted: false,
+          isMix: true,
+        }
+      }
+
       // Nếu quiz bị xóa (không có quiz_id populated)
       if (!session.quiz_id || typeof session.quiz_id === 'string') {
         const totalQuestions = session.user_answers?.length || 0
@@ -304,6 +382,7 @@ export async function GET(req: Request) {
         totalCount: totalQuestions,
         activityAt: session.completed_at,
         quizDeleted: false,
+        isMix: isMixQuiz,
       }
     })
 
@@ -359,6 +438,38 @@ export async function GET(req: Request) {
       .map((session: any) => {
         const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
         const quizMeta = quizMetaMap.get(quizId)
+        const isMixQuiz = session.is_temp === true
+
+        // Mix quiz active session
+        if (isMixQuiz) {
+          const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
+          const totalQuestions = Number(session.quiz_id?.questionCount ?? 0)
+          const answeredCount = new Set(
+            (session.user_answers ?? [])
+              .map((a: any) => a.question_index)
+              .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+          ).size
+          return {
+            id: session._id.toString(),
+            quizId,
+            quizTitle,
+            quizCode: mixQuizDisplayCode(quizTitle),
+            categoryName: 'Quiz Trộn',
+            sourceType: 'mix_quiz',
+            sourceLabel: 'Quiz Trộn',
+            sourceCreatorName: null,
+            mode: session.mode as string,
+            status: 'active' as const,
+            score: 0,
+            maxScore: 10,
+            correctCount: answeredCount,
+            totalCount: totalQuestions,
+            activityAt: session.started_at,
+            quizDeleted: false,
+            isMix: true,
+          }
+        }
+
         const sourceType = inferSourceType(quizMeta, payload.userId)
         const sourceCreatorId = quizMeta?.is_saved_from_explore
           ? originalCreatorMap.get(quizMeta?.original_quiz_id?.toString?.() ?? '')

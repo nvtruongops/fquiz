@@ -29,151 +29,165 @@ function splitAnswerTokens(value: string): string[] {
     .filter(Boolean)
 }
 
-function parsePlainTextQuiz(content: string): ImportRawQuizPayload | null {
-  const lines = content
-    .replace(/\r/g, '')
-    .split('\n')
-  if (lines.every((line) => line.trim().length === 0)) return null
+interface ParserContext {
+  currentQuestion: Record<string, unknown> | null
+  questionCount: number
+  collectingExplanation: boolean
+  collectingQuestionText: boolean
+}
 
-  const quizMeta: Record<string, string> = {}
-  const questions: Array<Record<string, unknown>> = []
-  let currentQuestion: Record<string, unknown> | null = null
-  let questionCount = 0
-
-  const questionStartRegex = /^(câu|question)\s*(\d+)\s*:?$/i
-  const optionRegex = /^([A-Fa-f])\.\s*(.+)$/
-  const answerRegex = /^(đáp án|dap an|answer)\s*:\s*(.+)$/i
-  const explanationRegex = /^(mô tả|mo ta|explanation)\s*:\s*(.*)$/i
-  const questionTextRegex = /^(câu hỏi|cau hoi|question)\s*:\s*(.+)$/i
+function tryMatchMetadata(line: string, quizMeta: Record<string, string>): boolean {
   const categoryRegex = /^(category_id|category|môn học|mon hoc)\s*:\s*(.+)$/i
   const courseRegex = /^(course_code|quiz_code|quiz code|fquiz_code|fquiz code|mã quiz|ma quiz|mã đề|ma de)\s*:\s*(.+)$/i
   const descriptionRegex = /^(description|quiz_description|quiz description|mô tả quiz|mo ta quiz)\s*:\s*(.+)$/i
 
-  const flush = () => {
-    if (!currentQuestion) return
-    questions.push(currentQuestion)
-    currentQuestion = null
+  const catMatch = line.match(categoryRegex)
+  if (catMatch) {
+    quizMeta.category_id = catMatch[2].trim()
+    return true
+  }
+  const courseMatch = line.match(courseRegex)
+  if (courseMatch) {
+    quizMeta.course_code = courseMatch[2].trim()
+    return true
+  }
+  const descMatch = line.match(descriptionRegex)
+  if (descMatch) {
+    quizMeta.description = descMatch[2].trim()
+    return true
+  }
+  return false
+}
+
+function parsePlainTextQuiz(content: string): ImportRawQuizPayload | null {
+  const lines = content.replace(/\r/g, '').split('\n')
+  if (lines.every((line) => line.trim().length === 0)) return null
+
+  const quizMeta: Record<string, string> = {}
+  const questions: Array<Record<string, unknown>> = []
+  const context: ParserContext = {
+    currentQuestion: null,
+    questionCount: 0,
+    collectingExplanation: false,
+    collectingQuestionText: false,
   }
 
-  let collectingExplanation = false
-  let collectingQuestionText = false
+  const flush = () => {
+    if (context.currentQuestion) questions.push(context.currentQuestion)
+    context.currentQuestion = null
+  }
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
-    if (!line) {
-      if (currentQuestion && collectingExplanation) {
-        const wrapperKey = Object.keys(currentQuestion)[0]
-        const body = currentQuestion[wrapperKey] as Record<string, unknown>
-        const prev = typeof body.explanation === 'string' ? body.explanation : ''
-        body.explanation = prev ? `${prev}\n` : '\n'
-      } else if (currentQuestion && collectingQuestionText) {
-        const wrapperKey = Object.keys(currentQuestion)[0]
-        const body = currentQuestion[wrapperKey] as Record<string, unknown>
-        const prev = typeof body.question === 'string' ? body.question : ''
-        body.question = prev ? `${prev}\n` : '\n'
-      }
+    if (handleEmptyLine(line, context)) continue
+    if (handleQuestionStart(line, context, flush)) continue
+    if (tryMatchMetadata(line, quizMeta)) {
+      context.collectingExplanation = false
+      context.collectingQuestionText = false
       continue
     }
-
-    const questionStart = line.match(questionStartRegex)
-    if (questionStart) {
-      flush()
-      questionCount += 1
-      collectingExplanation = false
-      collectingQuestionText = false
-      currentQuestion = {
-        [`Câu ${questionStart[2] || questionCount}`]: {
-          question: '',
-          options: [],
-          correct_answer: [],
-        },
-      }
-      continue
-    }
-
-    const cat = line.match(categoryRegex)
-    if (cat) {
-      quizMeta.category_id = cat[2].trim()
-      collectingExplanation = false
-      collectingQuestionText = false
-      continue
-    }
-    const course = line.match(courseRegex)
-    if (course) {
-      quizMeta.course_code = course[2].trim()
-      collectingExplanation = false
-      collectingQuestionText = false
-      continue
-    }
-    const desc = line.match(descriptionRegex)
-    if (desc) {
-      quizMeta.description = desc[2].trim()
-      collectingExplanation = false
-      collectingQuestionText = false
-      continue
-    }
-
-    if (!currentQuestion) continue
-    const wrapperKey = Object.keys(currentQuestion)[0]
-    const body = currentQuestion[wrapperKey] as Record<string, unknown>
-
-    if (collectingExplanation) {
-      const prev = typeof body.explanation === 'string' ? body.explanation : ''
-      body.explanation = prev ? `${prev}\n${line}` : line
-      continue
-    }
-
-    const questionText = line.match(questionTextRegex)
-    if (questionText) {
-      body.question = questionText[2].trim()
-      collectingExplanation = false
-      collectingQuestionText = true
-      continue
-    }
-
-    const option = line.match(optionRegex)
-    if (option) {
-      const options = (body.options as string[]) ?? []
-      options.push(`[${option[1].toUpperCase()}]"${option[2].trim()}"`)
-      body.options = options
-      collectingExplanation = false
-      collectingQuestionText = false
-      continue
-    }
-
-    const answer = line.match(answerRegex)
-    if (answer) {
-      body.correct_answer = splitAnswerTokens(answer[2])
-      collectingExplanation = false
-      collectingQuestionText = false
-      continue
-    }
-
-    const explanation = line.match(explanationRegex)
-    if (explanation) {
-      const value = explanation[2].trim()
-      if (value) {
-        body.explanation = value
-      } else {
-        body.explanation = ''
-      }
-      collectingExplanation = true
-      collectingQuestionText = false
-      continue
-    }
-
-    if (collectingQuestionText) {
-      const prev = typeof body.question === 'string' ? body.question : ''
-      body.question = prev ? `${prev}\n${line}` : line
-      continue
-    }
+    if (handleQuestionBody(line, context)) continue
   }
 
   flush()
-  if (questions.length === 0) return null
+  return questions.length > 0 ? { quizMeta, questions } : null
+}
 
-  return {
-    quizMeta,
-    questions,
+function handleEmptyLine(line: string, context: ParserContext): boolean {
+  if (line) return false
+  if (context.currentQuestion) {
+    const body = getBody(context.currentQuestion)
+    if (context.collectingExplanation) {
+      body.explanation = (body.explanation as string || '') + '\n'
+    } else if (context.collectingQuestionText) {
+      body.question = (body.question as string || '') + '\n'
+    }
   }
+  return true
+}
+
+function handleQuestionStart(line: string, context: ParserContext, flush: () => void): boolean {
+  const questionStartRegex = /^(câu|question)\s*(\d+)\s*:?$/i
+  const match = line.match(questionStartRegex)
+  if (match) {
+    flush()
+    context.questionCount += 1
+    context.collectingExplanation = false
+    context.collectingQuestionText = false
+    context.currentQuestion = {
+      [`Câu ${match[2] || context.questionCount}`]: {
+        question: '',
+        options: [],
+        correct_answer: [],
+      },
+    }
+    return true
+  }
+  return false
+}
+
+function handleQuestionBody(line: string, context: ParserContext): boolean {
+  if (!context.currentQuestion) return false
+  const body = getBody(context.currentQuestion)
+
+  if (context.collectingExplanation && !line.match(/^(đáp án|dap an|answer|mô tả|mo ta|explanation|câu hỏi|cau hoi|question)\s*:/i)) {
+    body.explanation = (body.explanation as string || '') + (body.explanation ? '\n' : '') + line
+    return true
+  }
+
+  if (handleStaticMatches(line, body, context)) return true
+
+  if (context.collectingQuestionText) {
+    body.question = (body.question as string || '') + (body.question ? '\n' : '') + line
+    return true
+  }
+  return false
+}
+
+function handleStaticMatches(line: string, body: Record<string, unknown>, context: ParserContext): boolean {
+  const optionRegex = /^([A-Fa-f])\.\s*(.+)$/
+  const answerRegex = /^(đáp án|dap an|answer)\s*:\s*(.+)$/i
+  const explanationRegex = /^(mô tả|mo ta|explanation)\s*:\s*(.*)$/i
+  const questionTextRegex = /^(câu hỏi|cau hoi|question)\s*:\s*(.+)$/i
+
+  const qText = line.match(questionTextRegex)
+  if (qText) {
+    body.question = qText[2].trim()
+    context.collectingExplanation = false
+    context.collectingQuestionText = true
+    return true
+  }
+
+  const opt = line.match(optionRegex)
+  if (opt) {
+    const options = (body.options as string[]) ?? []
+    options.push(`[${opt[1].toUpperCase()}]"${opt[2].trim()}"`)
+    body.options = options
+    context.collectingExplanation = false
+    context.collectingQuestionText = false
+    return true
+  }
+
+  const ans = line.match(answerRegex)
+  if (ans) {
+    body.correct_answer = splitAnswerTokens(ans[2])
+    context.collectingExplanation = false
+    context.collectingQuestionText = false
+    return true
+  }
+
+  const exp = line.match(explanationRegex)
+  if (exp) {
+    body.explanation = exp[2].trim()
+    context.collectingExplanation = true
+    context.collectingQuestionText = false
+    return true
+  }
+
+  return false
+}
+
+function getBody(question: Record<string, unknown>): Record<string, unknown> {
+  const wrapperKey = Object.keys(question)[0]
+  return question[wrapperKey] as Record<string, unknown>
 }
