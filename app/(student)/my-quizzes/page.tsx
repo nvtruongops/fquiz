@@ -437,7 +437,6 @@ function QuizCard({
               isDeleting={isDeleting}
               isMoving={isMovingCategory}
               categories={categories}
-              onDelete={onDelete}
               onMove={async (quizId, categoryId) => {
                 await onMoveCategory(quizId, categoryId)
                 setView('default')
