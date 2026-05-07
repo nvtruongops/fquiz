@@ -44,6 +44,7 @@ interface UseQuestionBankCheckOptions {
   categoryId: string
   questions: QuestionInput[]
   enabled?: boolean
+  autoCheck?: boolean
   debounceMs?: number
 }
 
@@ -51,6 +52,7 @@ export function useQuestionBankCheck({
   categoryId,
   questions,
   enabled = true,
+  autoCheck = true,
   debounceMs = 1000,
 }: UseQuestionBankCheckOptions) {
   const [checking, setChecking] = useState(false)
@@ -113,8 +115,10 @@ export function useQuestionBankCheck({
 
   // Auto-check khi questions thay đổi (debounced)
   useEffect(() => {
-    checkQuestions()
-  }, [debouncedQuestions, categoryId, enabled, checkQuestions])
+    if (autoCheck) {
+      checkQuestions()
+    }
+  }, [debouncedQuestions, categoryId, enabled, checkQuestions, autoCheck])
 
   const hasDifferentAnswerConflicts = (result?.different_answer_conflicts ?? 0) > 0
   const hasSameAnswerConflicts = (result?.same_answer_conflicts ?? 0) > 0

@@ -114,7 +114,7 @@ export function EditorProgressHub({
                           </span>
                           <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
-                        <p className="text-xs font-medium leading-relaxed truncate">{err.message}</p>
+                        <p className="text-xs font-medium leading-relaxed">{err.message}</p>
                       </div>
                     </div>
                   </button>

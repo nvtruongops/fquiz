@@ -6,6 +6,7 @@ export type ValidationErrorCode =
   | 'MISSING_TITLE'
   | 'MISSING_CATEGORY'
   | 'MISSING_COURSE_CODE'
+  | 'INVALID_COURSE_CODE'
   | 'MISSING_TEXT'
   | 'NO_CORRECT_ANSWER'
   | 'TARGET_MISMATCH'
@@ -58,6 +59,8 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
   }
   if (!data.course_code?.trim()) {
     errors.push({ code: 'MISSING_COURSE_CODE', severity: 'error', message: 'Chưa nhập mã đề / Mã Quiz' })
+  } else if (!/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/.test(data.course_code.trim())) {
+    errors.push({ code: 'INVALID_COURSE_CODE', severity: 'error', message: 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)' })
   }
 
   // 2. Question Rules
