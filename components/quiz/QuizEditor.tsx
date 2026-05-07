@@ -128,6 +128,7 @@ export function QuizEditor({
       image_url: q.image_url,
     })),
     enabled: !isStudentMode && !!form.category_id,
+    autoCheck: false,
     debounceMs: 2000,
   })
   
@@ -317,7 +318,7 @@ export function QuizEditor({
   const handleSaveSuccess = useCallback(async (data: any, status: string, quiet: boolean) => {
     const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId
     if (savedId) setActiveQuizId(savedId)
-    if (data?.quiz?.status) setForm(prev => ({ ...prev, status: data.quiz.status }))
+    if (!quiet && data?.quiz?.status) setForm(prev => ({ ...prev, status: data.quiz.status }))
     setLastUpdatedAt(data.quiz.updatedAt)
     setLastSavedAt(new Date())
 
@@ -352,8 +353,14 @@ export function QuizEditor({
       const res = await fetch(url, { method: activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST', credentials: 'include', headers: withCsrfHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) })
       const data = await res.json()
       if (!res.ok) {
-        if (data.code === 'CONCURRENCY_ERROR') { setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.'); toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.') }
-        else { setError(extractApiErrorMessage(data.error)) }
+        if (!quiet) {
+          if (data.code === 'CONCURRENCY_ERROR') {
+            setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.')
+            toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
+          } else {
+            setError(extractApiErrorMessage(data.error))
+          }
+        }
         return
       }
       await handleSaveSuccess(data, status, quiet)
@@ -373,6 +380,12 @@ export function QuizEditor({
       scrollToQuestion(diagnostics.errors[0]?.questionIndex ?? 0)
       return
     }
+
+    // Trigger bank check manually before publishing
+    if (form.status === 'published' && !isStudentMode) {
+      await bankCheck.refetch()
+    }
+
     await doSave('published')
   }
 
@@ -501,6 +514,11 @@ export function QuizEditor({
       toast.success(`Đã áp dụng file: thêm ${addedCount} câu, ghi đè ${overwriteCount} câu trùng số.`)
     } else {
       toast.success(`Đã áp dụng file: thêm ${addedCount} câu.`)
+    }
+    
+    // Trigger bank check after import
+    if (!isStudentMode) {
+      bankCheck.refetch()
     }
   }
 
@@ -647,7 +665,7 @@ export function QuizEditor({
         onUpdateAll={handleUpdateAllQuizzes}
       />
 
-      {error && (
+      {error && !autosaving && (
         <div className="fixed bottom-8 left-8 right-8 lg:left-auto lg:right-8 lg:w-96 bg-red-50 border-2 border-red-200 p-4 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-8">
           <div className="flex gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
