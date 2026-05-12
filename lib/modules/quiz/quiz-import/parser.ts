@@ -107,9 +107,9 @@ function handleEmptyLine(line: string, context: ParserContext): boolean {
     } else if (context.collectingOptionIndex !== null) {
       const options = body.options as string[]
       const idx = context.collectingOptionIndex
-      const match = options[idx].match(/^(\[[A-Z]\])"(.*)"$/i)
+      const match = options[idx].match(/^(\[[A-Z]\])([\s\S]*)$/i)
       if (match) {
-        options[idx] = `${match[1]}"${match[2]}\n"`
+        options[idx] = `${match[1]}${match[2]}\n`
       }
     }
   }
@@ -156,11 +156,12 @@ function handleQuestionBody(line: string, context: ParserContext): boolean {
   if (context.collectingOptionIndex !== null) {
     const options = body.options as string[]
     const idx = context.collectingOptionIndex
-    const match = options[idx].match(/^(\[[A-Z]\])"(.*)"$/i)
+    const match = options[idx].match(/^(\[[A-Z]\])([\s\S]*)$/i)
     if (match) {
       const prefix = match[1]
       const content = match[2]
-      options[idx] = `${prefix}"${content}${content ? '\n' : ''}${line}"`
+      // Add newline before appending if not empty
+      options[idx] = `${prefix}${content}${content ? '\n' : ''}${line}`
     }
     return true
   }
@@ -185,7 +186,7 @@ function handleStaticMatches(line: string, body: Record<string, unknown>, contex
   const opt = line.match(optionRegex)
   if (opt) {
     const options = (body.options as string[]) ?? []
-    options.push(`[${opt[1].toUpperCase()}]"${opt[2].trim()}"`)
+    options.push(`[${opt[1].toUpperCase()}]${opt[2].trim()}`)
     body.options = options
     context.collectingExplanation = false
     context.collectingQuestionText = false

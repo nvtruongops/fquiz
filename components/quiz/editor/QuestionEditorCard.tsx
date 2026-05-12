@@ -119,11 +119,16 @@ export function QuestionEditorCard({
                     )}>
                       {OPTION_LABELS[oi]}
                     </div>
-                    <Input
+                    <Textarea
                       value={option}
                       onChange={(e) => updateOption(index, oi, e.target.value)}
                       placeholder={`Lựa chọn ${OPTION_LABELS[oi]}...`}
-                      className="border-none bg-transparent focus-visible:ring-0 text-sm h-9"
+                      className="border-none bg-transparent focus-visible:ring-0 text-sm py-2 min-h-[40px] resize-none overflow-hidden"
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = `${target.scrollHeight}px`;
+                      }}
                     />
                     <div className="flex items-center gap-1 pr-1">
                       <button
