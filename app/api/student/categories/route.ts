@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { Category } from '@/models/Category'
-import { Quiz } from '@/models/Quiz'
-import { connectDB } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { CreateCategoryRequestSchema, validateObjectId } from '@/lib/schemas'
+import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
+import { validateObjectId } from '@/lib/core/schemas/common'
 
 export async function GET(req: Request) {
   try {

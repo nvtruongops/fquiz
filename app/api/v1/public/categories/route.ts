@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { Category } from '@/models/Category'
-import { Quiz } from '@/models/Quiz'
-import '@/models/User' // Import to register the User schema
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import '@/lib/modules/auth/models/User' // Import to register the User schema
 import type { NextRequest } from 'next/server'
-import { checkPublicApiRateLimit } from '@/lib/rate-limit/public-api'
+import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
 export async function GET(request: NextRequest) {
   // Apply rate limiting

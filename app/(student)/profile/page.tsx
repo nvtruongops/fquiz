@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Mail, CalendarClock, Save, UserRound } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/lib/store/toast-store'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
+import { Input } from '@/components/shared/ui/input'
+import { Button } from '@/components/shared/ui/button'
+import { useToast } from '@/store/shared/toast-store'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 type ProfileResponse = {
   profile: {

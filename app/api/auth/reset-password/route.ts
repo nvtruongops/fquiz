@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { connectDB } from '@/lib/mongodb'
-import { User } from '@/models/User'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { User } from '@/lib/modules/auth/models/User'
 import { z } from 'zod'
 import crypto from 'node:crypto'
-import { rateLimiter } from '@/lib/rate-limit/provider'
-import { logSecurityEvent } from '@/lib/logger'
-import { hashVerificationCode, isValidVerificationCode } from '@/lib/verification-code'
+import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { hashVerificationCode, isValidVerificationCode } from '@/lib/modules/auth/verification-code'
 
 const TokenSchema = z.object({
   token: z.string().min(1),

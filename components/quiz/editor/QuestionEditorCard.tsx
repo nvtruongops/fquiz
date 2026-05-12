@@ -1,14 +1,14 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
+import { Textarea } from '@/components/shared/ui/textarea'
 import { Trash2, Plus, ImageIcon, Hash, ChevronUp, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react'
-import { ImageUpload } from '../ImageUpload'
-import { cn } from '@/lib/utils'
-import { QuestionForm } from '@/types/quiz'
+import { ImageUpload } from '@/components/quiz/ImageUpload'
+import { cn } from '@/lib/core/utils/utils'
+import { QuestionForm } from '@/lib/modules/quiz/types/quiz'
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
 

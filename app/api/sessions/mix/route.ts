@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import crypto from 'crypto'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { MongoIdSchema } from '@/lib/schemas'
-import { providerFactory } from '@/lib/rate-limit/provider'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { MongoIdSchema } from '@/lib/core/schemas/common'
+import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 import {
   MIX_QUIZ_MAX_SELECT,
   MIX_QUIZ_MAX_QUESTIONS,
   MIX_QUIZ_RATE_LIMIT_MAX,
   MIX_QUIZ_RATE_LIMIT_WINDOW,
-} from '@/lib/constants/mix-quiz'
+} from '@/lib/modules/quiz/constants/mix-quiz'
 import { z } from 'zod'
-import type { IQuestion } from '@/types/quiz'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import { publishJob } from '@/lib/core/queue/qstash'
 
 const CreateMixSessionSchema = z.object({
   quiz_ids: z.array(MongoIdSchema).min(2, 'Cần ít nhất 2 quiz').max(MIX_QUIZ_MAX_SELECT, `Tối đa ${MIX_QUIZ_MAX_SELECT} quiz`),
@@ -23,7 +24,7 @@ const CreateMixSessionSchema = z.object({
     .transform((v) => Number(v))
     .pipe(z.number().int().min(1).max(MIX_QUIZ_MAX_QUESTIONS)),
   // Chỉ 2 chế độ: luyện tập (immediate) hoặc kiểm tra (review)
-  mode: z.enum(['immediate', 'review']).default('immediate'),
+  mode: z.enum(['immediate', 'review', 'flashcard']).default('immediate'),
   // Thứ tự câu hỏi: sequential (theo thứ tự) hoặc random (ngẫu nhiên)
   difficulty: z.enum(['sequential', 'random']).default('random'),
 })
@@ -139,166 +140,105 @@ export async function POST(req: Request) {
       is_temp: true,
     }).select('quiz_id').lean()
     
-    const oldQuizIds = oldTempSessions.map(s => s.quiz_id).filter(Boolean)
+    const oldQuizIds = oldTempSessions.map(s => s.quiz_id).filter((id): id is mongoose.Types.ObjectId => Boolean(id))
     
     if (oldTempSessions.length > 0) {
       await Promise.all([
         QuizSession.deleteMany({ _id: { $in: oldTempSessions.map(s => s._id) } }),
-        Quiz.deleteMany({ _id: { $in: oldQuizIds }, is_temp: true })
+        Quiz.deleteMany({ _id: { $in: oldQuizIds }, is_temp: true } as any)
       ])
     }
 
-    // 6. Load quizzes — only public + published
-    const quizObjectIds = quiz_ids.map((id) => new mongoose.Types.ObjectId(id))
-    const quizzes = await Quiz.find({
-      _id: { $in: quizObjectIds },
-      is_public: true,
-      status: 'published',
-      is_temp: { $ne: true },
-    })
-      .select('title course_code questions category_id')
-      .lean() as any[]
-
-    const validQuizzes = quizzes.filter((q) => q.questions && q.questions.length > 0)
-
-    if (validQuizzes.length < 2) {
-      return NextResponse.json(
-        { error: 'Cần ít nhất 2 quiz hợp lệ (công khai, đã xuất bản và có câu hỏi)' },
-        { status: 400 }
-      )
-    }
-
-    // 6. Deduplicate questions across all selected quizzes before sampling.
-    // Priority key: question_id (content-based) if present, else _id string.
-    const seenKeys = new Set<string>()
-
-    function dedupKey(q: IQuestion): string {
-      return q.question_id ?? q._id.toString()
-    }
-
-    const uniquePoolsPerQuiz: IQuestion[][] = validQuizzes.map((quiz) => {
-      const pool: IQuestion[] = []
-      for (const q of quiz.questions as IQuestion[]) {
-        const key = dedupKey(q)
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key)
-          pool.push(q)
-        }
-      }
-      return pool
-    })
-
-    const deduplicatedQuizzes = uniquePoolsPerQuiz.filter((pool) => pool.length > 0)
-
-    if (deduplicatedQuizzes.length < 2) {
-      return NextResponse.json(
-        { error: 'Sau khi loại câu hỏi trùng, cần ít nhất 2 quiz có câu hỏi riêng biệt' },
-        { status: 400 }
-      )
-    }
-
-    // 7. Sample proportionally from each deduplicated pool (always random order)
-    const numQuizzes = deduplicatedQuizzes.length
-    const baseQuota = Math.floor(question_count / numQuizzes)
-    const remainder = question_count % numQuizzes
-
-    const sorted = [...deduplicatedQuizzes].sort((a, b) => b.length - a.length)
-    const quotas = sorted.map((pool, i) => ({
-      pool,
-      quota: baseQuota + (i < remainder ? 1 : 0),
-    }))
-
-    let surplus = 0
-    const firstPass = quotas.map(({ pool, quota }) => {
-      const available = pool.length
-      if (available >= quota) return { questions: pool, quota }
-      surplus += quota - available
-      return { questions: pool, quota: available }
-    })
-
-    const sampled: IQuestion[] = []
-    for (const pass of firstPass) {
-      const shuffledPool = shuffleArray(pass.questions)
-      let take = pass.quota
-      if (surplus > 0) {
-        const extra = Math.min(surplus, shuffledPool.length - take)
-        if (extra > 0) { take += extra; surplus -= extra }
-      }
-      sampled.push(...shuffledPool.slice(0, take))
-    }
-
-    const finalSampled = shuffleArray(sampled)
-    const actualCount = finalSampled.length
-
-    // 8. Create temp quiz — no expires_at (persists until user completes/deletes)
-    const quizTitles = validQuizzes.map((q) => q.course_code as string)
-    const titlePreview = quizTitles.join(' + ')
-
-    let tempQuiz: any = null
-    let retries = 0
-    while (retries < 2) {
-      try {
-        const courseCode = await generateTempCourseCode()
-        tempQuiz = await Quiz.create({
-          title: `Quiz Trộn · ${titlePreview}`,
-          course_code: courseCode,
-          category_id: validQuizzes[0].category_id,
-          questions: finalSampled,
-          questionCount: actualCount,
-          is_public: false,
-          is_temp: true,
-          created_by: studentId,
-          status: 'published',
-          mix_config: {
-            quiz_ids: quizObjectIds,
-            question_count: question_count,
-            mode: mode,
-            category_id: validQuizzes[0].category_id,
-          },
-          // No expires_at — temp quiz lives until session is completed/deleted
-        })
-        break
-      } catch (err: any) {
-        if (err?.code === 11000 && retries < 1) { retries++; continue }
-        throw err
-      }
-    }
-
-    if (!tempQuiz) {
-      return NextResponse.json({ error: 'Failed to create temporary quiz' }, { status: 500 })
-    }
-
-    // 9. Create quiz session — question order based on difficulty, no expires_at
-    const questionOrder = difficulty === 'random'
-      ? shuffleArray(Array.from({ length: actualCount }, (_, i) => i))
-      : Array.from({ length: actualCount }, (_, i) => i)
-
+    // 6. Create a placeholder session with status 'preparing'
+    console.log('Creating placeholder session...')
     const tempSession = await QuizSession.create({
       student_id: studentId,
-      quiz_id: tempQuiz._id,
       mode,
       difficulty,
-      status: 'active',
+      status: 'preparing',
       current_question_index: 0,
-      question_order: questionOrder,
-      questions_cache: finalSampled,
       score: 0,
       is_temp: true,
-      // No expires_at — session persists until completed or manually deleted
       started_at: now,
       last_activity_at: now,
     })
+    console.log('Placeholder session created:', tempSession._id)
+
+    // 7. Publish job to QStash
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    console.log(`Publishing mix-quiz job... URL: ${appUrl}/api/jobs/mix-quiz`)
+    
+    // Check if we can do a local bypass for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Dev] Local environment detected. Using direct handler call bypass...');
+      
+      // We import it dynamically to avoid any potential circular dependency issues at top level
+      // and only in dev mode.
+      import('../../jobs/mix-quiz/route').then(m => {
+        const mockReq = new Request(`${appUrl}/api/jobs/mix-quiz`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'upstash-signature': 'mock-signature-for-local-dev'
+          },
+          body: JSON.stringify({
+            sessionId: tempSession._id,
+            quiz_ids,
+            question_count,
+            mode,
+            difficulty,
+            studentId: payload.userId
+          })
+        });
+        
+        // Call handler without await to simulate background job
+        m.POST(mockReq)
+          .then(() => console.log('[Dev] Local job handler bypass completed.'))
+          .catch(err => console.error('[Dev] Local job handler bypass failed:', err));
+      }).catch(err => console.error('[Dev] Failed to import job handler:', err));
+      
+      return NextResponse.json(
+        {
+          sessionId: tempSession._id,
+          status: 'preparing',
+        },
+        { status: 201 }
+      )
+    }
+
+    const publishResult = await publishJob(`${appUrl}/api/jobs/mix-quiz`, {
+      sessionId: tempSession._id,
+      quiz_ids,
+      question_count,
+      mode,
+      difficulty,
+      studentId: payload.userId
+    })
+
+    if (!publishResult.success) {
+      console.error('Failed to publish job to QStash:', publishResult.error)
+      await QuizSession.deleteOne({ _id: tempSession._id })
+      return NextResponse.json({ 
+        error: 'Failed to queue background job', 
+        message: publishResult.error 
+      }, { status: 500 })
+    }
+    
+    console.log('Job published successfully:', publishResult.messageId)
 
     return NextResponse.json(
       {
-        quizId: tempQuiz._id,
         sessionId: tempSession._id,
-        actual_count: actualCount,
+        status: 'preparing',
       },
       { status: 201 }
     )
-  } catch (err) {
+  } catch (err: any) {
     console.error('POST /api/sessions/mix error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 })
   }
 }

@@ -8,10 +8,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+} from '@/components/shared/ui/dialog'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 
 interface ConflictQuestion {

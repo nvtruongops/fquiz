@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { XCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useQuizSessionStore } from '@/store/quiz-session.store'
-import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
-import QuizSessionMobilePage from './mobile/page'
+import { Button } from '@/components/shared/ui/button'
+import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
+import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
+import QuizSessionMobilePage from '@/app/quiz/[id]/session/[sessionId]/mobile/page'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
-import { withCsrfHeaders } from '@/lib/csrf'
-import { SessionData, PreloadedQuestions, QuestionFeedback, SessionQuestion } from '@/types/session'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { SessionData, PreloadedQuestions, QuestionFeedback, SessionQuestion } from '@/lib/modules/quiz/types/session'
 
 // Sub-components
 import { SessionLayout } from '@/components/quiz/session/SessionLayout'
@@ -63,6 +64,7 @@ export default function QuizSessionPage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!resolvedSessionId || resolvedSessionId === 'undefined') {
@@ -97,9 +99,17 @@ export default function QuizSessionPage() {
   useEffect(() => {
     if (!sessionLoaderStartedRef.current) {
       sessionLoaderStartedRef.current = true
+      
+      // Check if data is already pre-loaded in sessionStorage
+      const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
+      if (cached) {
+        // If cached, don't show the opening loader or show it very briefly
+        return
+      }
+      
       sessionLoader.open('Đang tải bộ câu hỏi...')
     }
-  }, [sessionLoader])
+  }, [sessionLoader, resolvedSessionId])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -133,6 +143,26 @@ export default function QuizSessionPage() {
   }, [sessionId, currentQuestionIndex])
 
   const {
+    data: initialData,
+    isLoading: isInitialLoading,
+    isError: isInitialError,
+    error: initialError,
+    isSuccess: isInitialSuccess,
+  } = useQuery<SessionData, Error>({
+    queryKey: ['sessions', resolvedSessionId, 'initial'],
+    queryFn: () => fetchSession(resolvedSessionId),
+    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchInterval: (query) => {
+      const data = query.state.data as SessionData | undefined
+      if (data?.session.status === 'preparing') return 2000 // Check every 2s
+      return false
+    }
+  })
+
+
+  const {
     data: preloadData,
     isLoading: isPreloading,
     isError: isPreloadError,
@@ -156,23 +186,18 @@ export default function QuizSessionPage() {
       sessionLoader.advance(85, 'Đang xử lý câu hỏi...')
       return data
     },
-    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
+    enabled: resolvedSessionId.length > 0 && 
+             resolvedSessionId !== 'undefined' && 
+             initialData?.session.status !== 'preparing',
     staleTime: Infinity,
   })
 
-  const {
-    data: initialData,
-    isLoading: isInitialLoading,
-    isError: isInitialError,
-    error: initialError,
-    isSuccess: isInitialSuccess,
-  } = useQuery<SessionData, Error>({
-    queryKey: ['sessions', resolvedSessionId, 'initial'],
-    queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
-    staleTime: 0,
-    refetchOnMount: 'always',
-  })
+  // Close loader when questions are successfully loaded
+  useEffect(() => {
+    if (isPreloadSuccess) {
+      sessionLoader.complete()
+    }
+  }, [isPreloadSuccess, sessionLoader])
 
   useEffect(() => {
     if (preloadData?.questions) setPreloadedQuestions(preloadData.questions)
@@ -302,6 +327,10 @@ export default function QuizSessionPage() {
   const submitMutation = useSubmitAnswer(resolvedSessionId)
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
     mutationFn: async () => {
+      // Show loading overlay when submitting
+      sessionLoader.open('Đang nộp bài và chấm điểm...')
+      sessionLoader.advance(50, 'Đang phân tích kết quả...')
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`, {
         method: 'POST',
         headers: withCsrfHeaders(),
@@ -315,9 +344,18 @@ export default function QuizSessionPage() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error ?? 'Không thể nộp bài')
       }
+      
+      sessionLoader.advance(95, 'Đang chuẩn bị bảng kết quả...')
       return res.json()
     },
-    onSuccess: () => router.push(`/quiz/${quizId}/result/${sessionId}`),
+    onSuccess: (data) => {
+      sessionLoader.complete()
+      setTimeout(() => router.push(`/quiz/${quizId}/result/${sessionId}`), 300)
+    },
+    onError: (err) => {
+      sessionLoader.close()
+      // ... toast error handled elsewhere or can be added here
+    }
   })
 
   function submitInImmediateMode(answerIndexes: number[]) {
@@ -380,8 +418,11 @@ export default function QuizSessionPage() {
     )
   }
 
-  if (isPreloading || isInitialLoading || !activeData) {
-    return <QuizLoadingOverlay isOpen={true} progress={sessionLoader.progress} status={sessionLoader.status || 'Đang tải bộ câu hỏi...'} />
+  if (isPreloading || isInitialLoading || !activeData || activeData.session.status === 'preparing') {
+    const statusMessage = activeData?.session.status === 'preparing' 
+      ? 'Đang trộn bộ đề, vui lòng chờ trong giây lát...' 
+      : (sessionLoader.status || 'Đang tải bộ câu hỏi...')
+    return <QuizLoadingOverlay isOpen={true} progress={activeData?.session.status === 'preparing' ? 45 : sessionLoader.progress} status={statusMessage} />
   }
 
   if (isMobile) return <QuizSessionMobilePage />
@@ -391,7 +432,13 @@ export default function QuizSessionPage() {
   const answeredCount = Math.max(answeredQuestions.size, new Set(session.user_answers.map(a => a.question_index)).size + (selectedOptions.length > 0 ? 1 : 0))
 
   return (
-    <SessionLayout
+    <>
+      <QuizLoadingOverlay 
+        isOpen={sessionLoader.isOpen} 
+        progress={sessionLoader.progress} 
+        status={sessionLoader.status} 
+      />
+      <SessionLayout
       sessionData={activeData}
       currentQuestionIndex={currentQuestionIndex}
       answeredCount={answeredCount}
@@ -401,6 +448,7 @@ export default function QuizSessionPage() {
       onSelectOption={handleSelectOption}
       onNavigate={navigateToQuestion}
       onSubmit={() => setConfirmOpen(true)}
+      onExit={() => setExitConfirmOpen(true)}
     >
       <QuestionDisplay
         question={question}
@@ -426,5 +474,6 @@ export default function QuizSessionPage() {
         onConfirmExit={() => { setExitConfirmOpen(false); reportSessionActivity('pause'); router.push(session.is_temp ? '/explore' : `/quiz/${resolvedQuizId}`); }}
       />
     </SessionLayout>
-  )
+  </>
+)
 }

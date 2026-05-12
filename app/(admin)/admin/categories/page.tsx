@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -12,13 +12,13 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@/components/shared/ui/dialog'
 import { Pencil, Trash2, Plus, Search } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/shared/ui/badge'
 
-import { useToast } from '@/lib/store/toast-store'
-import { normalizeSearchInput, sanitizeQueryParams } from '@/lib/client-validation'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { normalizeSearchInput, sanitizeQueryParams } from '@/lib/core/validation/client-validation'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 interface Category {
   _id: string

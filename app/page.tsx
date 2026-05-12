@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/layout/Navbar";
 import Link from "next/link";
 import {
   BookOpen,
@@ -7,8 +7,8 @@ import {
   Search,
   HelpCircle,
 } from "lucide-react";
-import { getServerUser } from "@/lib/get-server-user";
-import { StepItem, FAQItem } from "@/components/landing/LandingItems";
+import { getServerUser } from "@/lib/modules/auth/get-server-user";
+import { StepItem, FAQItem } from "@/components/shared/landing/LandingItems";
 
 export default async function LandingPage() {
   const initialUser = await getServerUser()

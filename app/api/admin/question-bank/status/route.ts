@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { Quiz } from '@/models/Quiz'
-import { QuestionBank } from '@/models/QuestionBank'
-import { Category } from '@/models/Category'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { Category } from '@/lib/modules/quiz/models/Category'
 
 /**
  * GET /api/admin/question-bank/status

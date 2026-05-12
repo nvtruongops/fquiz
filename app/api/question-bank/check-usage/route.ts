@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { QuestionBank } from '@/models/QuestionBank'
-import { generateQuestionId } from '@/lib/question-id-generator'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { z } from 'zod'
 
 const CheckUsageSchema = z.object({

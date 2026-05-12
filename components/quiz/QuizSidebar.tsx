@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/shared/ui/button'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/core/utils/utils'
 
 interface QuizSidebarProps {
   onSelectOption: (idx: number) => void
@@ -16,6 +16,7 @@ interface QuizSidebarProps {
   isSubmitted: boolean
   isPending: boolean
   answeredCount: number
+  onExit?: () => void
 }
 
 export default function QuizSidebar({
@@ -29,6 +30,7 @@ export default function QuizSidebar({
   isSubmitted,
   isPending,
   answeredCount,
+  onExit,
 }: Readonly<QuizSidebarProps>) {
   const options = Array.from({ length: Math.max(optionCount, 1) }, (_, i) => String.fromCodePoint(65 + i))
   const [focusedOption, setFocusedOption] = useState<number | null>(null)
@@ -133,8 +135,15 @@ export default function QuizSidebar({
           </div>
         </div>
 
-        {/* Submit - always at bottom */}
-        <div className="mt-auto border-t-2 border-[#101010] p-3 sm:p-4">
+        {/* Actions - always at bottom */}
+        <div className="mt-auto border-t-2 border-[#101010] p-3 sm:p-4 space-y-2">
+          <Button
+            type="button"
+            onClick={onExit}
+            className="h-auto w-full rounded-none border-2 border-[#111111] bg-white px-3 py-2 text-left text-[18px] font-bold text-red-600 hover:bg-red-50"
+          >
+            Thoát bài thi
+          </Button>
           <Button
             type="button"
             onClick={onSubmit}

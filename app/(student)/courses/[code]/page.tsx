@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import CourseQuizList from '@/components/student/CourseQuizList'
+import CourseQuizList from '@/components/quiz/CourseQuizList'
 
 export default async function CourseDetailPage({
   params,

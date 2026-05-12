@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
-import { verifyToken, signToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { User } from '@/models/User'
+import { verifyToken, signToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { User } from '@/lib/modules/auth/models/User'
 
 const REFRESH_THRESHOLD_SECONDS = 12 * 60 * 60 // Refresh if < 12h remaining
 

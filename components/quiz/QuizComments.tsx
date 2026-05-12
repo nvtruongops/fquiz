@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { MessageSquare, Send, Trash2, Loader2, Info } from 'lucide-react'
 import { UnauthorizedView } from '@/components/shared/UnauthorizedView'
 import Link from 'next/link'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/shared/ui/avatar'
+import { Textarea } from '@/components/shared/ui/textarea'
+import { Button } from '@/components/shared/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import {
@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/shared/ui/dialog'
 
 interface QuizComment {
   _id: string

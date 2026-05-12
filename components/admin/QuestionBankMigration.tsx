@@ -1,17 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/shared/ui/select'
 import {
   Scan,
   Upload,
@@ -19,8 +19,8 @@ import {
   Loader2,
   ArrowRight,
 } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
-import { getCsrfTokenFromCookie } from '@/lib/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 
 interface Category {
   _id: string

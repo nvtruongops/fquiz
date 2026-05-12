@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { User } from '@/models/User'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { User } from '@/lib/modules/auth/models/User'
 import { z } from 'zod'
-import { rateLimiter } from '@/lib/rate-limit/provider'
-import { logSecurityEvent } from '@/lib/logger'
-import { isMailConfigured, sendVerificationCodeMail } from '@/lib/mail'
-import { generateVerificationCode, hashVerificationCode, isValidVerificationCode } from '@/lib/verification-code'
+import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { isMailConfigured, enqueueMail } from '@/lib/core/mail/mail'
+import { generateVerificationCode, hashVerificationCode, isValidVerificationCode } from '@/lib/modules/auth/verification-code'
 
 const SendSchema = z.object({
   action: z.literal('send').optional(),
@@ -102,7 +102,7 @@ async function handleSend(
   }, `Password reset token generated for ${user.email}`)
 
   if (isMailConfigured()) {
-    await sendVerificationCodeMail({ to: user.email, code, purpose: 'reset-password' })
+    await enqueueMail('verification-code', { to: user.email, code, purpose: 'reset-password' })
     return NextResponse.json({ message: genericMessage })
   }
 

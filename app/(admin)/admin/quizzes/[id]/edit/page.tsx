@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
-import { connectDB } from '@/lib/mongodb'
-import { Category } from '@/models/Category'
-import { Quiz } from '@/models/Quiz'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
 
 type EditableQuestion = {

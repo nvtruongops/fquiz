@@ -2,15 +2,15 @@
 
 import { useState } from 'react'
 import { Map } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Card } from '@/components/shared/ui/card'
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/components/ui/drawer'
+} from '@/components/shared/ui/drawer'
 
 interface QuestionMapProps {
   totalQuestions: number

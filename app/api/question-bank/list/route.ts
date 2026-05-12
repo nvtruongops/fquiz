@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { QuestionBank } from '@/models/QuestionBank'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { z } from 'zod'
 
 const ListQuestionsSchema = z.object({

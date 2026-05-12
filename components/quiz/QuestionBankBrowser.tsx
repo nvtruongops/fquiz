@@ -7,13 +7,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@/components/shared/ui/dialog'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
+import { Badge } from '@/components/shared/ui/badge'
+import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { Search, Plus, TrendingUp, Loader2 } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
+import { useToast } from '@/store/shared/toast-store'
 
 interface QuestionBankItem {
   _id: string

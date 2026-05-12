@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { buildQuizImportPreview } from '@/lib/quiz-import'
-import { requireRole, verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { Category } from '@/models/Category'
+import { buildQuizImportPreview } from '@/lib/modules/quiz/quiz-import'
+import { requireRole, verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024

@@ -1,5 +1,5 @@
-import { connectDB } from '@/lib/mongodb'
-import { Category } from '@/models/Category'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { QuestionBankConflictResolver } from '@/components/admin/QuestionBankConflictResolver'
 
 async function getCategories() {

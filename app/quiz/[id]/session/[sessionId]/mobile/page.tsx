@@ -4,14 +4,14 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useQuizSessionStore } from '@/store/quiz-session.store'
-import { useSubmitAnswer } from '@/hooks/useSubmitAnswer'
-import { cn } from '@/lib/utils'
-import { withCsrfHeaders } from '@/lib/csrf'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { QuizTimer } from '@/components/QuizTimer'
+import { Button } from '@/components/shared/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
+import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
+import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
+import { cn } from '@/lib/core/utils/utils'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { ScrollArea } from '@/components/shared/ui/scroll-area'
+import { QuizTimer } from '@/components/quiz/QuizTimer'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
 
 interface QuestionFeedback {
@@ -189,6 +189,13 @@ export default function QuizSessionMobilePage() {
     staleTime: Infinity,
     gcTime: 1000 * 60 * 30,
   })
+
+  // Close loader when questions are successfully loaded
+  useEffect(() => {
+    if (isPreloadSuccess) {
+      sessionLoader.complete()
+    }
+  }, [isPreloadSuccess, sessionLoader])
 
   const {
     data: initialData,
@@ -379,6 +386,9 @@ export default function QuizSessionMobilePage() {
   const submitMutation = useSubmitAnswer(resolvedSessionId)
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
     mutationFn: async () => {
+      sessionLoader.open('Đang nộp bài và chấm điểm...')
+      sessionLoader.advance(50, 'Đang phân tích kết quả...')
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`, {
         method: 'POST',
         headers: withCsrfHeaders(),
@@ -387,11 +397,17 @@ export default function QuizSessionMobilePage() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error ?? 'Không thể nộp bài')
       }
+      
+      sessionLoader.advance(95, 'Đang chuẩn bị bảng kết quả...')
       return res.json()
     },
     onSuccess: () => {
-      router.push(`/quiz/${quizId}/result/${sessionId}`)
+      sessionLoader.complete()
+      setTimeout(() => router.push(`/quiz/${quizId}/result/${sessionId}`), 300)
     },
+    onError: () => {
+      sessionLoader.close()
+    }
   })
 
   function handleSubmit() {
@@ -564,10 +580,16 @@ export default function QuizSessionMobilePage() {
 
   return (
     <div className="flex h-screen flex-col bg-[#F9F9F7]">
+      <QuizLoadingOverlay 
+        isOpen={sessionLoader.isOpen} 
+        progress={sessionLoader.progress} 
+        status={sessionLoader.status} 
+      />
+      
       {/* Mobile Header */}
       <header className="sticky top-0 z-10 border-b-2 border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-2 py-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -581,19 +603,27 @@ export default function QuizSessionMobilePage() {
               <p className="text-sm font-black text-[#5D7B6F]">{session.courseCode}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <QuizTimer
-              startedAt={session.started_at}
-              pausedAt={session.paused_at}
-              totalPausedDurationMs={session.total_paused_duration_ms}
-              className="text-[#5D7B6F]"
-            />
-            <div className="text-right">
-              <p className="text-xs font-bold text-gray-400">Tiến độ</p>
-              <p className="text-sm font-black text-[#5D7B6F]">
-                {answeredCount}/{effectiveTotal}
+          
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end">
+              <QuizTimer
+                startedAt={session.started_at}
+                pausedAt={session.paused_at}
+                totalPausedDurationMs={session.total_paused_duration_ms}
+                className="text-[#5D7B6F] text-sm"
+              />
+              <p className="text-[10px] font-bold text-gray-400">
+                {answeredCount}/{effectiveTotal} câu
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExitConfirmOpen(true)}
+              className="h-10 w-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
+            >
+              <XCircle className="h-5 w-5" />
+            </Button>
           </div>
         </div>
         <div className="h-1 bg-gray-100">
@@ -719,7 +749,7 @@ export default function QuizSessionMobilePage() {
       </ScrollArea>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 border-t-2 border-gray-200 bg-white p-4 pb-8 md:pb-4 shadow-lg z-50">
+      <div className="fixed bottom-0 left-0 right-0 border-t-2 border-gray-200 bg-white p-2 pb-8 md:pb-4 shadow-lg z-50">
         <div className="flex items-center justify-between gap-3">
           {/* Back/Next buttons on the left */}
           <div className="flex items-center gap-2">

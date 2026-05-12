@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { BellRing, Globe2, Loader2, Save } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Switch } from '@/components/shared/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useToast } from '@/lib/store/toast-store'
-import { withCsrfHeaders } from '@/lib/csrf'
+} from '@/components/shared/ui/select'
+import { useToast } from '@/store/shared/toast-store'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 type SettingsResponse = {
   settings: {

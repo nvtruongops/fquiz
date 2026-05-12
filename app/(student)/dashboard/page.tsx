@@ -16,11 +16,11 @@ import {
   RotateCcw,
   RefreshCw,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/core/utils/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 

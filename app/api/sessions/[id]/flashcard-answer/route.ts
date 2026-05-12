@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { QuizSession } from '@/models/QuizSession'
-import { Quiz } from '@/models/Quiz'
-import { Category } from '@/models/Category'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { z } from 'zod'
 
 const FlashcardAnswerSchema = z.object({
@@ -52,6 +52,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     await connectDB()
     const session = await QuizSession.findById(id)
+    if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     const validationError = validateFlashcardSession(session, payload.userId)
     if (validationError) return NextResponse.json(validationError, { status: validationError.status })
 
@@ -62,7 +63,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     if (!session.flashcard_stats) session.flashcard_stats = { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 }
-    session.user_answers.push({ question_index: currentIndex, answer_index: -1, is_correct: knows, time_taken_ms: 0 })
+    session.user_answers.push({ question_index: currentIndex, answer_index: -1, is_correct: knows })
     if (knows) session.flashcard_stats.cards_known += 1; else session.flashcard_stats.cards_unknown += 1
 
     const nextIndex = currentIndex + 1

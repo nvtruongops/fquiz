@@ -3,7 +3,7 @@
 import React from 'react'
 import { ShieldCheck, Zap, Shuffle, AlignJustify, PlayCircle, Loader2, ChevronRight, AlertCircle, X } from 'lucide-react'
 import { UnauthorizedView } from '@/components/shared/UnauthorizedView'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/shared/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,14 +12,14 @@ import {
   DialogTrigger,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/shared/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/shared/ui/select'
 
 interface QuizActionCardProps {
   quizId: string
@@ -63,8 +63,8 @@ export function QuizActionCard({
   setAuthRequiredDialogOpen
 }: QuizActionCardProps) {
   return (
-    <div className="flex flex-col gap-6 lg:col-span-4 order-2 lg:order-none">
-      <div className="sticky top-10 space-y-5">
+    <div className="flex flex-col gap-6">
+      <div className="lg:sticky lg:top-10 space-y-5">
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
           <div className="mb-6 border-b border-gray-50 pb-5">
             <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#5D7B6F]">Tùy chọn học tập</h3>

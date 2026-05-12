@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import type { IQuestion } from '@/types/quiz'
-import type { UserAnswer } from '@/types/session'
-import { calculateScore, syncUniqueStudentCount } from '@/lib/quiz-engine'
-
-const MAX_COMPLETED_ATTEMPTS_PER_QUIZ = 10
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import type { UserAnswer } from '@/lib/modules/quiz/types/session'
+import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * POST /api/sessions/[id]/submit
- * Finalize an active session even when not all questions are answered.
- * Unanswered questions are counted as wrong because they are absent from user_answers.
+ * Finalize an active session and offload housekeeping to queue.
  */
 export async function POST(
   req: Request,
@@ -76,7 +73,6 @@ export async function POST(
           current_question_index: questions.length,
           completed_at: new Date(),
         },
-        // Keep completed results permanently; TTL should apply to active sessions only.
         $unset: {
           expires_at: 1,
         },
@@ -88,26 +84,18 @@ export async function POST(
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
 
-    // Keep only the latest N completed attempts per student+quiz to control DB growth.
-    const overflowAttempts = await QuizSession.find(
-      {
-        student_id: session.student_id,
-        quiz_id: session.quiz_id,
-        status: 'completed',
-      },
-      { _id: 1 }
-    )
-      .sort({ completed_at: -1, _id: -1 })
-      .skip(MAX_COMPLETED_ATTEMPTS_PER_QUIZ)
-      .lean()
-
-    if (overflowAttempts.length > 0) {
-      await QuizSession.deleteMany({
-        _id: { $in: overflowAttempts.map((attempt) => attempt._id) },
-      })
+    // --- HEAVY OPERATIONS OFFLOADED TO QUEUE ---
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    try {
+      const { publishJob } = await import('@/lib/core/queue/qstash')
+      publishJob(`${appUrl}/api/jobs/quiz-post-submit`, {
+        studentId: session.student_id,
+        quizId: session.quiz_id
+      }).catch(err => console.error('Failed to queue housekeeping:', err))
+    } catch (e) {
+      console.error('QStash module import failed:', e)
     }
-
-    await syncUniqueStudentCount(session.quiz_id)
+    // -------------------------------------------
 
     return NextResponse.json(
       {
@@ -119,9 +107,6 @@ export async function POST(
     )
   } catch (err) {
     console.error('POST /api/sessions/[id]/submit error:', err)
-    if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

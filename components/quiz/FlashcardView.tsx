@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/shared/ui/button'
+import { cn } from '@/lib/core/utils/utils'
 import { RotateCw, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface FlashcardViewProps {

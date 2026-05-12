@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { BookOpen, Sparkles } from 'lucide-react'
-import { verifySession } from '@/lib/dal'
+import { verifySession } from '@/lib/modules/auth/dal'
 
 export const dynamic = 'force-dynamic'
 

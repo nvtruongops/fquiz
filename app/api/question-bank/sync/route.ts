@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { syncQuizToQuestionBank } from '@/lib/question-bank-manager'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
 import { z } from 'zod'
 
 const SyncQuizSchema = z.object({

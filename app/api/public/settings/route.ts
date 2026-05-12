@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { getSettings } from '@/models/SiteSettings'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
 
 // Force nodejs runtime - NOT edge, vì dùng Mongoose
 export const runtime = 'nodejs'

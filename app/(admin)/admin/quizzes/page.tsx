@@ -3,17 +3,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Input } from '@/components/shared/ui/input'
+import { Switch } from '@/components/shared/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/shared/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -21,17 +21,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/shared/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/shared/ui/select'
 import { Plus, Pencil, Search, Filter, MoreVertical, Trash2, Loader2 } from 'lucide-react'
-import { invalidateHistoryForDeletedQuiz } from '@/lib/cache-invalidation'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { invalidateHistoryForDeletedQuiz } from '@/lib/core/utils/cache-invalidation'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 const PAGE_SIZE = 20
 

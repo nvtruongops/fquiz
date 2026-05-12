@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import logger from '@/lib/logger'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
 
 export async function GET(
@@ -51,7 +51,7 @@ export async function GET(
     const result = quizzes.map((q) => ({
       _id: q._id,
       title: q.title,
-      questionCount: q.questions.length,
+      questionCount: q.questions?.length ?? 0,
       bestScore: scoreMap.get(q._id.toString()) ?? null,
     }))
 

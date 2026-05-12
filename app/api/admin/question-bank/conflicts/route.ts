@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { Quiz } from '@/models/Quiz'
-import { QuestionBank } from '@/models/QuestionBank'
-import { generateQuestionId, getAnswerTexts } from '@/lib/question-id-generator'
+import mongoose from 'mongoose'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { generateQuestionId, getAnswerTexts } from '@/lib/modules/quiz/question-id-generator'
 import { z } from 'zod'
 
 const GetConflictsSchema = z.object({
@@ -57,105 +58,76 @@ export async function GET(req: Request) {
 
     await connectDB()
 
-    // Lấy tất cả quiz trong môn học (bỏ qua temp quiz và quiz private)
-    const quizzes = await Quiz.find({
-      category_id,
-      status: 'published',
-      is_public: true,
-      is_saved_from_explore: { $ne: true },
-      is_temp: { $ne: true },
-    })
-      .select('_id course_code questions')
-      .lean()
-
-    // Group câu hỏi theo question_id
-    const questionMap = new Map<
-      string,
+    // PIPELINE TỐI ƯU: Chạy trực tiếp dưới Database
+    const pipeline = [
       {
-        question_id: string
-        text: string
-        variants: Array<{
-          quiz_id: string
-          course_code: string
-          question_index: number
-          options: string[]
-          correct_answer: number[]
-          explanation?: string
-          image_url?: string
-        }>
-      }
-    >()
+        $match: {
+          category_id: new mongoose.Types.ObjectId(category_id),
+          status: 'published',
+          is_public: true,
+          is_temp: { $ne: true },
+          is_saved_from_explore: { $ne: true }
+        }
+      },
+      { $unwind: "$questions" },
+      {
+        $group: {
+          _id: "$questions.question_id",
+          text: { $first: "$questions.text" },
+          total_variants: { $sum: 1 },
+          variants: {
+            $push: {
+              quiz_id: "$_id",
+              course_code: "$course_code",
+              options: "$questions.options",
+              correct_answer: "$questions.correct_answer",
+              explanation: "$questions.explanation",
+              image_url: "$questions.image_url"
+            }
+          }
+        }
+      },
+      { $match: { total_variants: { $gt: 1 } } }
+    ]
 
-    for (const quiz of quizzes) {
-      if (!Array.isArray(quiz.questions)) continue
+    const results = await Quiz.aggregate(pipeline)
 
-      quiz.questions.forEach((q: any, index: number) => {
-        if (!q.text || !Array.isArray(q.options) || q.options.length < 2) return
-
-        const questionId = generateQuestionId({
-          text: q.text,
-          options: q.options,
-          correct_answer: q.correct_answer || [],
-        })
-
-        if (!questionMap.has(questionId)) {
-          questionMap.set(questionId, {
-            question_id: questionId,
-            text: q.text,
-            variants: [],
+    // Layer 2: Filter out false conflicts (same text answers)
+    // and format for UI
+    const conflicts = results.map(group => {
+      const answerGroups = new Map<string, any>()
+      
+      group.variants.forEach((v: any) => {
+        // Chuẩn hóa answer texts để so sánh
+        const answerKey = JSON.stringify(getAnswerTexts(v.options, v.correct_answer))
+        if (!answerGroups.has(answerKey)) {
+          answerGroups.set(answerKey, {
+            correct_answer: v.correct_answer,
+            answer_texts: JSON.parse(answerKey),
+            count: 0,
+            quizzes: [],
+            sample_variant: v
           })
         }
-
-        questionMap.get(questionId)!.variants.push({
-          quiz_id: String(quiz._id),
-          course_code: quiz.course_code,
-          question_index: index,
-          options: q.options,
-          correct_answer: q.correct_answer || [],
-          explanation: q.explanation,
-          image_url: q.image_url,
-        })
+        const g = answerGroups.get(answerKey)
+        g.count++
+        g.quizzes.push(v.course_code)
       })
-    }
 
-    // Lọc chỉ những câu có conflict (đáp án khác nhau theo TEXT)
-    const conflicts: any[] = []
-
-    questionMap.forEach((group) => {
-      // So sánh theo answer TEXTS để tránh false conflict khi options đổi thứ tự
-      const uniqueAnswerTexts = new Set(
-        group.variants.map((v) => JSON.stringify(getAnswerTexts(v.options, v.correct_answer)))
-      )
-
-      if (uniqueAnswerTexts.size > 1) {
-        // Group variants theo answer texts
-        const answerGroups = new Map<string, typeof group.variants>()
-
-        group.variants.forEach((variant) => {
-          const answerKey = JSON.stringify(getAnswerTexts(variant.options, variant.correct_answer))
-          if (!answerGroups.has(answerKey)) {
-            answerGroups.set(answerKey, [])
-          }
-          answerGroups.get(answerKey)!.push(variant)
-        })
-
-        conflicts.push({
-          question_id: group.question_id,
+      // Chỉ coi là conflict nếu có từ 2 nhóm đáp án khác nhau trở lên
+      if (answerGroups.size > 1) {
+        return {
+          question_id: group._id,
           text: group.text,
-          total_variants: group.variants.length,
-          answer_groups: Array.from(answerGroups.entries()).map(([answerKey, variants]) => ({
-            correct_answer: variants[0].correct_answer, // Giữ indices gốc để hiển thị
-            answer_texts: JSON.parse(answerKey),        // Thêm texts để dễ đọc
-            count: variants.length,
-            quizzes: variants.map((v) => v.course_code),
-            sample_variant: variants[0],
-          })),
-        })
+          total_variants: group.total_variants,
+          answer_groups: Array.from(answerGroups.values())
+        }
       }
-    })
+      return null
+    }).filter(Boolean)
 
-    // Sort by số lượng variants (nhiều nhất trước)
-    conflicts.sort((a, b) => b.total_variants - a.total_variants)
+    // Sort by volume
+    conflicts.sort((a: any, b: any) => b.total_variants - a.total_variants)
 
     return NextResponse.json({
       total_conflicts: conflicts.length,

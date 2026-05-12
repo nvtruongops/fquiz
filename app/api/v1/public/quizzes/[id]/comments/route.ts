@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { QuizComment } from '@/models/QuizComment'
-import { verifyToken } from '@/lib/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { QuizComment } from '@/lib/modules/quiz/models/QuizComment'
+import { verifyToken } from '@/lib/modules/auth/auth'
 import { Types } from 'mongoose'
-import '@/models/User' // Ensure User model is registered for populate
+import '@/lib/modules/auth/models/User' // Ensure User model is registered for populate
 
 export async function GET(
   req: Request,

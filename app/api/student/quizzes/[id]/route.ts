@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { connectDB } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { authorizeResource } from '@/lib/authz'
-import { logSecurityEvent } from '@/lib/logger'
-import { Category } from '@/models/Category'
+import { authorizeResource } from '@/lib/modules/auth/authz'
+import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { Category } from '@/lib/modules/quiz/models/Category'
 
 async function getAuthorizedQuiz(payload: any, id: string) {
   // 1. Fetch minimal quiz data
@@ -202,7 +202,7 @@ export async function PATCH(
     }
 
     quiz.category_id = new Types.ObjectId(category_id)
-    await quiz.save()
+    await (quiz as any).save()
 
     return NextResponse.json({ message: 'Quiz category updated successfully' })
   } catch (error) {

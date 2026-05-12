@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -12,14 +12,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/shared/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/shared/ui/select'
 import {
   Search,
   ShieldAlert,
@@ -30,9 +30,9 @@ import {
   CheckSquare,
   Loader2,
 } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
-import { normalizeSearchInput, clampPagination, sanitizeQueryParams } from '@/lib/client-validation'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { normalizeSearchInput, clampPagination, sanitizeQueryParams } from '@/lib/core/validation/client-validation'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 interface User {
   _id: string

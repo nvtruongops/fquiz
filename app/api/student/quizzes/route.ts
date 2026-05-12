@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { connectDB } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { Category } from '@/models/Category'
-import { CreateStudentQuizSchema, validateObjectId } from '@/lib/schemas'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { validateObjectId } from '@/lib/core/schemas/common'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()

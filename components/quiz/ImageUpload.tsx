@@ -1,10 +1,10 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/shared/ui/button'
 import { X, ImageIcon, AlertCircle, Link as LinkIcon } from 'lucide-react'
 import Image from 'next/image'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/shared/ui/input'
 
 interface ImageUploadProps {
   value: string

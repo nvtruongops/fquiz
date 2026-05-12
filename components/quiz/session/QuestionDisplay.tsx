@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { SessionQuestion, QuestionFeedback } from '@/types/session'
+import { cn } from '@/lib/core/utils/utils'
+import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
