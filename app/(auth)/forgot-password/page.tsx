@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Mail, ArrowLeft, Send, KeyRound } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
+import { useToast } from '@/store/shared/toast-store'
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast()

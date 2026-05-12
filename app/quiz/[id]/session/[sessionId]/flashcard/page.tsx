@@ -4,11 +4,11 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/FlashcardView'
-import { useFlashcardSession } from '@/hooks/useFlashcardSession'
-import MobileFlashcardSessionPage from './mobile/page'
+import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
+import MobileFlashcardSessionPage from '@/app/quiz/[id]/session/[sessionId]/flashcard/mobile/page'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Card } from '@/components/shared/ui/card'
 
 export default function FlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()

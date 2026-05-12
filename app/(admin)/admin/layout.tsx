@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { requireAdmin } from '@/lib/dal'
+import { requireAdmin } from '@/lib/modules/auth/dal'
 
 export const dynamic = 'force-dynamic'
 

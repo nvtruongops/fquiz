@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
-import { LoginSchema } from '@/lib/schemas'
-import { useToast } from '@/lib/store/toast-store'
+import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
+import { useToast } from '@/store/shared/toast-store'
 
 function LoginForm() {
   const router = useRouter()

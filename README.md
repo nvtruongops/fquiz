@@ -1,12 +1,11 @@
 # FQuiz - Quiz Platform
 
-A modern quiz platform built with Next.js, MongoDB, and Cloudinary.
+A modern quiz platform built with Next.js, MongoDB.
 
 ## Features
 
 - User authentication with JWT
 - Quiz creation and management
-- Image upload with Cloudinary
 - Email notifications
 - Admin dashboard
 - Student dashboard
@@ -15,7 +14,6 @@ A modern quiz platform built with Next.js, MongoDB, and Cloudinary.
 
 - Next.js 16
 - MongoDB with Mongoose
-- Cloudinary for image storage
 - Nodemailer for emails
 - Tailwind CSS
 

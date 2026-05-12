@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { QuizSession } from '@/models/QuizSession'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 
 interface ActivityBody {
   event?: 'pause' | 'resume'

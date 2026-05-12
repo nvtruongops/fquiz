@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
+import { Badge } from '@/components/shared/ui/badge'
+import { Button } from '@/components/shared/ui/button'
 import { Loader2, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/core/utils/utils'
 
 interface CategoryStatus {
   category_id: string

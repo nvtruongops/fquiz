@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { authorizeResource } from '@/lib/authz'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { authorizeResource } from '@/lib/modules/auth/authz'
 
 /**
  * GET /api/sessions/[id]/questions
@@ -36,7 +36,14 @@ export async function GET(
 
     const session = await authorizeResource(payload, id, QuizSession, 'session', 'student_id')
     
-    // Check if session is expired
+    // Handle 'preparing' status
+    if (session.status === 'preparing') {
+      return NextResponse.json({ 
+        error: 'Quiz is being prepared', 
+        status: 'preparing' 
+      }, { status: 202 })
+    }
+
     if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
       return NextResponse.json(
         { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },

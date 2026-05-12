@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { User } from '@/models/User'
-import { BulkUserActionSchema } from '@/lib/schemas'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { User } from '@/lib/modules/auth/models/User'
+import { BulkUserActionSchema } from '@/lib/modules/auth/schemas/user'
 
 /** POST — Bulk actions: delete or ban/unban multiple users */
 export async function POST(req: Request) {

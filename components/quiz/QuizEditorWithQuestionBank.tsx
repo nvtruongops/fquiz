@@ -6,13 +6,13 @@
  */
 
 import { useState, useEffect } from 'react'
-import { QuizEditor } from './QuizEditor'
-import { QuestionConflictModal } from './QuestionConflictModal'
-import { QuestionBankBrowser } from './QuestionBankBrowser'
-import { useQuestionBankCheck } from '@/hooks/useQuestionBankCheck'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { QuizEditor } from '@/components/quiz/QuizEditor'
+import { QuestionConflictModal } from '@/components/quiz/QuestionConflictModal'
+import { QuestionBankBrowser } from '@/components/quiz/QuestionBankBrowser'
+import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { Database, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 
 interface Category {

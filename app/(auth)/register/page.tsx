@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react'
-import { RegisterSchema } from '@/lib/schemas'
-import { useToast } from '@/lib/store/toast-store'
+import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
+import { useToast } from '@/store/shared/toast-store'
 
 export default function RegisterPage() {
   const router = useRouter()

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { Category } from '@/models/Category'
-import { connectDB } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { SaveQuizSchema } from '@/lib/schemas'
+import { SaveQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 
 export async function POST(req: Request) {
   try {

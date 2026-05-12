@@ -2,17 +2,17 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/shared/ui/badge'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
+import { Textarea } from '@/components/shared/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/shared/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -20,11 +20,11 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { withCsrfHeaders } from '@/lib/csrf'
+} from '@/components/shared/ui/dialog'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/core/utils/utils'
 
 interface Feedback {
   _id: string

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { Quiz } from '@/models/Quiz'
-import '@/models/User' // Import to register the User schema for populate
-import '@/models/Category' // Import to register the Category schema for populate
-import { checkPublicApiRateLimit } from '@/lib/rate-limit/public-api'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import '@/lib/modules/auth/models/User' // Import to register the User schema for populate
+import '@/lib/modules/quiz/models/Category' // Import to register the Category schema for populate
+import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
 export async function GET(request: NextRequest) {
   // Apply rate limiting

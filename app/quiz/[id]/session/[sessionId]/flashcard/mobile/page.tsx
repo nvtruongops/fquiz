@@ -3,10 +3,10 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp } from 'lucide-react'
-import { useFlashcardSession } from '@/hooks/useFlashcardSession'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
+import { Button } from '@/components/shared/ui/button'
+import { cn } from '@/lib/core/utils/utils'
+import { ScrollArea } from '@/components/shared/ui/scroll-area'
 
 interface SwipeState {
   startX: number

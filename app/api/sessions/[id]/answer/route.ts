@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { QuizSession } from '@/models/QuizSession'
-import { SubmitAnswerSchema } from '@/lib/schemas'
-import { processImmediateAnswer, processReviewAnswer } from '@/lib/quiz-engine'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { SubmitAnswerSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { processImmediateAnswer, processReviewAnswer } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * POST /api/sessions/[id]/answer

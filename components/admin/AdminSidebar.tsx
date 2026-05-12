@@ -9,8 +9,8 @@ import {
   LogOut, Users, Settings, MessageSquare, Menu, X,
   Database,
 } from 'lucide-react'
-import { clearAllUserCache } from '@/lib/cache-invalidation'
-import { cn } from '@/lib/utils'
+import { clearAllUserCache } from '@/lib/core/utils/cache-invalidation'
+import { cn } from '@/lib/core/utils/utils'
 
 const navItems = [
   { href: '/admin',                      label: 'Dashboard',           icon: LayoutDashboard, exact: true },

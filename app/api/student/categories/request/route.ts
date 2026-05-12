@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { Category } from '@/models/Category'
-import { connectDB } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { CreateCategoryRequestSchema } from '@/lib/schemas'
+import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
 
 export async function POST(req: Request) {
   try {

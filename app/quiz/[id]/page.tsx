@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
 
 // Sub-components
@@ -183,7 +183,21 @@ export default function QuizDetailPage() {
         startError.activeSession = data.activeSession
         throw startError
       }
-      return (await res.json()) as CreateSessionResponse
+      const sessionData = await res.json()
+      
+      // PRE-LOAD QUESTIONS BEFORE REDIRECTING
+      try {
+        startLoading('Đang chuẩn bị bộ câu hỏi...')
+        const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionData.sessionId}/questions`)
+        if (qRes.ok) {
+          const qData = await qRes.json()
+          sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
+        }
+      } catch (e) {
+        console.warn('Pre-load questions failed', e)
+      }
+      
+      return sessionData as CreateSessionResponse
     },
     onSuccess: (data) => {
       const nextSessionId = data.sessionId
@@ -284,23 +298,11 @@ export default function QuizDetailPage() {
       </div>
 
       <main className="relative z-10 flex flex-1 flex-col px-4 py-6 pb-28 md:pb-10">
-        <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-5 lg:grid-cols-12">
-          <div className="flex flex-col gap-5 lg:col-span-8">
-            <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
-            <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
-            <QuizComments 
-              quizId={resolvedQuizId}
-              comments={comments}
-              isLoading={isCommentsLoading}
-              currentUser={currentUser}
-              onPostComment={(c) => postCommentMutation.mutate(c)}
-              onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
-              isPosting={postCommentMutation.isPending}
-              isDeleting={deleteCommentMutation.isPending}
-              onAuthRequired={() => setAuthRequiredDialogOpen(true)}
-            />
-          </div>
+        <div className="mx-auto w-full max-w-3xl flex flex-col gap-6">
+          {/* 1. Header Information */}
+          <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
 
+          {/* 2. Play / Action Card (Moved up) */}
           <QuizActionCard 
             quizId={resolvedQuizId}
             selectedMode={selectedMode}
@@ -329,6 +331,22 @@ export default function QuizDetailPage() {
             currentUser={currentUser}
             authRequiredDialogOpen={authRequiredDialogOpen}
             setAuthRequiredDialogOpen={setAuthRequiredDialogOpen}
+          />
+
+          {/* 3. Stats Information */}
+          <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
+
+          {/* 4. Comments (At bottom) */}
+          <QuizComments 
+            quizId={resolvedQuizId}
+            comments={comments}
+            isLoading={isCommentsLoading}
+            currentUser={currentUser}
+            onPostComment={(c) => postCommentMutation.mutate(c)}
+            onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
+            isPosting={postCommentMutation.isPending}
+            isDeleting={deleteCommentMutation.isPending}
+            onAuthRequired={() => setAuthRequiredDialogOpen(true)}
           />
         </div>
       </main>

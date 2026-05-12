@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole, clearUserStatusCache } from '@/lib/auth'
-import { User } from '@/models/User'
-import { UpdateUserSchema, validateObjectId } from '@/lib/schemas'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole, clearUserStatusCache } from '@/lib/modules/auth/auth'
+import { User } from '@/lib/modules/auth/models/User'
+import { UpdateUserSchema } from '@/lib/modules/auth/schemas/user'
+import { validateObjectId } from '@/lib/core/schemas/common'
 
 const SENSITIVE_FIELDS = '-password_hash -reset_token -reset_token_expires'
 

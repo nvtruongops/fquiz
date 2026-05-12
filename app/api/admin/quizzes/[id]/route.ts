@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { Category } from '@/models/Category'
-import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/schemas'
-import { analyzeQuizCompleteness } from '@/lib/quiz-analyzer'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -77,7 +77,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const existingQuiz = await Quiz.findById(id)
     if (!existingQuiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    if (lastUpdatedAt && new Date(existingQuiz.updatedAt).getTime() !== new Date(lastUpdatedAt).getTime()) {
+    if (lastUpdatedAt && existingQuiz.updatedAt && new Date(existingQuiz.updatedAt).getTime() !== new Date(lastUpdatedAt).getTime()) {
       return NextResponse.json({ 
         error: 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng làm mới trang.',
         code: 'CONCURRENCY_ERROR' 
@@ -101,7 +101,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // 3. Atomic Update with Lock
     const quiz = await Quiz.findOneAndUpdate(
-      { _id: id, updatedAt: existingQuiz.updatedAt },
+      { _id: id, updatedAt: existingQuiz.updatedAt || { $exists: false } },
       {
         $set: {
           title: course_code.trim().toUpperCase(),

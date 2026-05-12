@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import mongoose from 'mongoose'
-import type { IQuestion } from '@/types/quiz'
-import { CreateSessionSchema } from '@/lib/schemas'
-import { syncUniqueStudentCount } from '@/lib/quiz-engine'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * Fisher-Yates shuffle algorithm for randomizing question order
@@ -166,7 +166,12 @@ export async function POST(req: Request) {
       expires_at: mode === 'flashcard' ? undefined : new Date(now.getTime() + 86400000), started_at: now, last_activity_at: now, total_paused_duration_ms: 0
     })
 
-    await syncUniqueStudentCount(effective.id)
+    // --- STATS SYNC OFFLOADED TO QUEUE ---
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const { publishJob } = await import('@/lib/core/queue/qstash')
+    publishJob(`${appUrl}/api/jobs/quiz-stats-sync`, { quizId: effective.id })
+      .catch(err => console.error('Failed to queue stats sync:', err))
+    // --------------------------------------
     return NextResponse.json({ sessionId: session._id, mode: session.mode, difficulty: session.difficulty, totalQuestions: effective.questions.length }, { status: 201 })
   } catch (err) {
     console.error('POST /api/sessions error:', err)

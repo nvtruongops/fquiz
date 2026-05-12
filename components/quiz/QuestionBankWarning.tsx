@@ -8,12 +8,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+} from '@/components/shared/ui/dialog'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { Loader2 } from 'lucide-react'
-import { getCsrfTokenFromCookie } from '@/lib/csrf'
+import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 
 interface QuestionBankWarningProps {
   open: boolean

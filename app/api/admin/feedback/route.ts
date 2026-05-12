@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { Feedback } from '@/models/Feedback'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { Feedback } from '@/lib/modules/auth/models/Feedback'
 
 export async function GET(req: Request) {
   try {

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Feedback } from '@/models/Feedback'
-import { User } from '@/models/User'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Feedback } from '@/lib/modules/auth/models/Feedback'
+import { User } from '@/lib/modules/auth/models/User'
 
 // Whitelist: chỉ giữ ký tự an toàn, loại bỏ mọi tag HTML và control characters
 function sanitizeText(v: string): string {

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/shared/ui/card'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
 import { SlidersHorizontal, ShieldAlert, KeyRound, Globe, Save, Loader2 } from 'lucide-react'
-import { useToast } from '@/lib/store/toast-store'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 interface Settings {
   _id: string

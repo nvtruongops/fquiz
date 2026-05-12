@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { Category } from '@/models/Category'
-import { Quiz } from '@/models/Quiz'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
 function isPublicCategory(category: any): boolean {
   if (!category) return false

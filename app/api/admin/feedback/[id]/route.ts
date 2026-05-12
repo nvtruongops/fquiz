@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { z } from 'zod'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { Feedback } from '@/models/Feedback'
-import { isMailConfigured } from '@/lib/mail'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { Feedback } from '@/lib/modules/auth/models/Feedback'
+import { isMailConfigured } from '@/lib/core/mail/mail'
 import nodemailer from 'nodemailer'
 
 const UpdateSchema = z.object({

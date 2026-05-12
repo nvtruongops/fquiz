@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/shared/ui/button'
 import { RefreshCw, Loader2 } from 'lucide-react'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 interface FlashcardReviewButtonProps {
   sessionId: string

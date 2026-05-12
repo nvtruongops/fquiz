@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import { Category } from '@/models/Category'
-import { authorizeResource } from '@/lib/authz'
-import { SessionQuestionQuerySchema } from '@/lib/schemas'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { authorizeResource } from '@/lib/modules/auth/authz'
+import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 
 /**
  * GET /api/sessions/[id]
@@ -35,6 +35,27 @@ export async function GET(
     await connectDB()
 
     const session = await authorizeResource(payload, id, QuizSession, 'session', 'student_id')
+
+    // Handle 'preparing' status — quiz might not be created yet
+    if (session.status === 'preparing') {
+      return NextResponse.json({
+        session: {
+          _id: session._id,
+          mode: session.mode,
+          status: 'preparing',
+          current_question_index: 0,
+          totalQuestions: 0,
+          user_answers: [],
+          courseCode: 'Đang chuẩn bị...',
+          categoryName: 'Đang chuẩn bị...',
+          title: 'Đang chuẩn bị bộ đề...',
+          started_at: session.started_at,
+          is_temp: true,
+        },
+        question: null,
+      }, { status: 200 })
+    }
+
     if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
       return NextResponse.json(
         { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
@@ -79,12 +100,13 @@ export async function GET(
             totalQuestions: sessionTotalQuestions,
             user_answers: session.user_answers,
             courseCode: quiz.course_code,
-            categoryName: category?.name || 'Chưa phân loại',
+            categoryName: (category as any)?.name || 'Chưa phân loại',
             title: quiz.title,
             started_at: session.started_at,
             paused_at: session.paused_at,
             total_paused_duration_ms: session.total_paused_duration_ms,
             is_temp: Boolean(session.is_temp),
+            quiz_id: session.quiz_id,
             ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
           },
           question: null,
@@ -137,12 +159,13 @@ export async function GET(
           totalQuestions: sessionTotalQuestions,
           user_answers: session.user_answers,
           courseCode: quiz.course_code,
-          categoryName: category?.name || 'Chưa phân loại',
+          categoryName: (category as any)?.name || 'Chưa phân loại',
           title: quiz.title,
           started_at: session.started_at,
           paused_at: session.paused_at,
           total_paused_duration_ms: session.total_paused_duration_ms,
           is_temp: Boolean(session.is_temp),
+          quiz_id: session.quiz_id,
           ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
         },
         question,

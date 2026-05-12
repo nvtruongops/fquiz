@@ -3,8 +3,8 @@
 import React from 'react'
 import QuizHeader from '@/components/quiz/QuizHeader'
 import QuizSidebar from '@/components/quiz/QuizSidebar'
-import { QuizTimer } from '@/components/QuizTimer'
-import { SessionData } from '@/types/session'
+import { QuizTimer } from '@/components/quiz/QuizTimer'
+import { SessionData } from '@/lib/modules/quiz/types/session'
 
 interface SessionLayoutProps {
   sessionData: SessionData
@@ -17,6 +17,7 @@ interface SessionLayoutProps {
   onSelectOption: (idx: number) => void
   onNavigate: (idx: number) => void
   onSubmit: () => void
+  onExit: () => void
 }
 
 export function SessionLayout({
@@ -29,7 +30,8 @@ export function SessionLayout({
   children,
   onSelectOption,
   onNavigate,
-  onSubmit
+  onSubmit,
+  onExit
 }: SessionLayoutProps) {
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
@@ -57,6 +59,7 @@ export function SessionLayout({
             onSelectOption={onSelectOption}
             onNavigate={onNavigate}
             onSubmit={onSubmit}
+            onExit={onExit}
             currentIndex={currentQuestionIndex}
             totalQuestions={effectiveTotal}
             selectedOptions={selectedOptions}

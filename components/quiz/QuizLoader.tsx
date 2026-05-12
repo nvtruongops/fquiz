@@ -71,6 +71,16 @@ export function useSessionLoader() {
     return () => clearInterval(interval)
   }, [isOpen, progress])
 
+  // Auto-close when reaching 100%
+  useEffect(() => {
+    if (progress >= 100 && isOpen) {
+      const timer = setTimeout(() => {
+        setIsOpen(false)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [progress, isOpen])
+
   const open = useCallback((initialStatus: string) => {
     setProgress(0)
     setStatus(initialStatus)

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { connectDB } from '@/lib/mongodb'
-import { User } from '@/models/User'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { User } from '@/lib/modules/auth/models/User'
 
 export const dynamic = 'force-dynamic'
 

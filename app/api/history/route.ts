@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { QuizSession } from '@/models/QuizSession'
-import { Quiz } from '@/models/Quiz'
-import { Category } from '@/models/Category'
-import { User } from '@/models/User'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { User } from '@/lib/modules/auth/models/User'
 
 type SourceType = 'self_created' | 'saved_explore' | 'explore_public'
 

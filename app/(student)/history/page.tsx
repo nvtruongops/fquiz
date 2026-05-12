@@ -19,11 +19,11 @@ import {
   Shuffle,
   RefreshCw
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/shared/ui/button'
+import { Badge } from '@/components/shared/ui/badge'
+import { Input } from '@/components/shared/ui/input'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { cn } from '@/lib/core/utils/utils'
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 

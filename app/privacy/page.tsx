@@ -1,30 +1,16 @@
-import Link from 'next/link'
-import { BookOpen, ArrowLeft } from 'lucide-react'
+import { verifySession } from '@/lib/modules/auth/dal'
+import BaseLayout from '@/components/layout/BaseLayout'
 
 export const metadata = {
   title: 'Chính sách bảo mật - FQuiz',
 }
 
-export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-[#EAE7D6] text-gray-900 selection:bg-[#B0D4B8] selection:text-[#5D7B6F]">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-[#EAE7D6]/80 backdrop-blur-md border-b border-[#A4C3A2]/30 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-[#5D7B6F] flex items-center justify-center transition-transform group-hover:scale-105">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-[#5D7B6F] text-xl tracking-tight">FQuiz</span>
-          </Link>
-          <Link href="/" className="text-sm font-semibold text-gray-500 hover:text-[#5D7B6F] transition-colors flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Về trang chủ
-          </Link>
-        </div>
-      </nav>
+export default async function PrivacyPage() {
+  const user = await verifySession()
 
-      {/* Content */}
-      <main className="max-w-3xl mx-auto px-6 py-16 sm:py-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+  return (
+    <BaseLayout user={user}>
+      <main className="animate-in fade-in slide-in-from-bottom-4 duration-700">
         <p className="text-sm font-bold tracking-widest text-[#5D7B6F] uppercase mb-4">Cam kết Data</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-8">Chính sách bảo mật</h1>
         
@@ -57,11 +43,6 @@ export default function PrivacyPage() {
           </p>
         </div>
       </main>
-
-      {/* Footer minimal */}
-      <footer className="border-t border-[#A4C3A2]/20 bg-white/20 py-8 px-6 text-center">
-        <p className="text-gray-500 text-sm font-medium">© {new Date().getFullYear()} FQuiz. Tất cả quyền được bảo lưu.</p>
-      </footer>
-    </div>
+    </BaseLayout>
   )
 }

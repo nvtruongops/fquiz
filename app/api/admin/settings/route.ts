@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken, requireRole } from '@/lib/auth'
-import { SiteSettings, getSettings } from '@/models/SiteSettings'
-import { UpdateSiteSettingsSchema } from '@/lib/schemas'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { SiteSettings, getSettings } from '@/lib/modules/auth/models/SiteSettings'
+import { UpdateSiteSettingsSchema } from '@/lib/modules/auth/schemas/user'
 
 export const dynamic = 'force-dynamic'
 

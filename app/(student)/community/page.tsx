@@ -11,10 +11,10 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
-import { withCsrfHeaders } from '@/lib/csrf'
+import { Button } from '@/components/shared/ui/button'
+import { Textarea } from '@/components/shared/ui/textarea'
+import { cn } from '@/lib/core/utils/utils'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 const FEEDBACK_TYPES = [
   { value: 'bug',     label: 'Báo lỗi',          icon: Bug },

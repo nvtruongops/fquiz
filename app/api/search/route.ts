@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { Category } from '@/models/Category'
-import { rateLimiter } from '@/lib/rate-limit/provider'
-import { logSecurityEvent } from '@/lib/logger'
-import { PaginationQuerySchema } from '@/lib/schemas'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { PaginationQuerySchema } from '@/lib/core/schemas/common'
 import { z } from 'zod'
 
 // Escape special regex characters to prevent ReDoS / injection

@@ -1,18 +1,18 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
+import { Input } from '@/components/shared/ui/input'
+import { Textarea } from '@/components/shared/ui/textarea'
 import { AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Category, QuizFormData } from '@/types/quiz'
+import { cn } from '@/lib/core/utils/utils'
+import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 import { Plus, Check, X, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { withCsrfHeaders } from '@/lib/csrf'
-import { useToast } from '@/lib/store/toast-store'
-import { Button } from '@/components/ui/button'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
+import { Button } from '@/components/shared/ui/button'
 
 interface EditorMetadataFormProps {
   form: QuizFormData

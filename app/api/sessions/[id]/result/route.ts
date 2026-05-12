@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import { QuizSession } from '@/models/QuizSession'
-import type { IQuestion } from '@/types/quiz'
-import type { UserAnswer } from '@/types/session'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 
 /**
  * GET /api/sessions/[id]/result

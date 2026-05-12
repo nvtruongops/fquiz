@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
-import { Quiz } from '@/models/Quiz'
-import logger from '@/lib/logger'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import logger from '@/lib/core/utils/logger'
 
 export async function GET(req: Request) {
   const payload = await verifyToken(req)

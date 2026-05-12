@@ -2,11 +2,11 @@
 
 import * as React from 'react'
 import { AlertCircle, CheckCircle2, Loader2, Upload } from 'lucide-react'
-import { withCsrfHeaders } from '@/lib/csrf'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { Button } from '@/components/shared/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
+import { Input } from '@/components/shared/ui/input'
+import { Badge } from '@/components/shared/ui/badge'
 
 const CLOUDINARY_SAMPLE_JSON_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711290/fquiz/import-samples/quiz-valid-json'
 const CLOUDINARY_SAMPLE_TXT_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711738/fquiz/import-samples/quiz-valid-txt'

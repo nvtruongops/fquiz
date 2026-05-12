@@ -12,7 +12,7 @@ import {
   BookOpen,
   Shuffle,
 } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/components/shared/ui/progress'
 import { FlashcardReviewButton } from '@/components/quiz/FlashcardReviewButton'
 import { useState } from 'react'
 

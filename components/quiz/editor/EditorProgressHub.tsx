@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Card } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card } from '@/components/shared/ui/card'
+import { Progress } from '@/components/shared/ui/progress'
+import { Badge } from '@/components/shared/ui/badge'
+import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { LayoutDashboard, Loader2, CheckCircle2, AlertTriangle, AlertCircle, ChevronRight, History } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/core/utils/utils'
 
 interface DiagnosticError {
   code: string

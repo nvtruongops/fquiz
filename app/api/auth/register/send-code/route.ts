@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { connectDB } from '@/lib/mongodb'
-import { User } from '@/models/User'
-import { EmailVerification } from '@/models/EmailVerification'
-import { rateLimiter } from '@/lib/rate-limit/provider'
-import { logSecurityEvent } from '@/lib/logger'
-import { generateVerificationCode, hashVerificationCode } from '@/lib/verification-code'
-import { isMailConfigured, sendVerificationCodeMail } from '@/lib/mail'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { User } from '@/lib/modules/auth/models/User'
+import { EmailVerification } from '@/lib/modules/auth/models/EmailVerification'
+import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { generateVerificationCode, hashVerificationCode } from '@/lib/modules/auth/verification-code'
+import { isMailConfigured, enqueueMail } from '@/lib/core/mail/mail'
 
 const Schema = z.object({ email: z.email().max(254) })
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     )
 
     if (isMailConfigured()) {
-      await sendVerificationCodeMail({ to: email, code, purpose: 'register' })
+      await enqueueMail('verification-code', { to: email, code, purpose: 'register' })
     }
 
     logSecurityEvent('register_code_sent', {

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
-import { connectDB } from '@/lib/mongodb'
-import { getSettings } from '@/models/SiteSettings'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
+import { 
+  AUTH_COOKIE_NAME, 
+  CSRF_COOKIE_NAME, 
+  MAINTENANCE_COOKIE_NAME,
+  COOKIE_MAX_AGE
+} from '@/lib/core/constants'
 
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
@@ -117,7 +123,7 @@ function validateCsrf(request: NextRequest, pathname: string, requestId: string)
 
   if (!isMutation || isExempt) return null
 
-  const csrfCookie = request.cookies.get('csrf-token')?.value
+  const csrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value
   const csrfHeader = request.headers.get('x-csrf-token')
 
   if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
@@ -128,8 +134,8 @@ function validateCsrf(request: NextRequest, pathname: string, requestId: string)
 }
 
 function ensureCsrfCookie(request: NextRequest, response: NextResponse) {
-  if (!request.cookies.has('csrf-token')) {
-    response.cookies.set('csrf-token', generateId(), {
+  if (!request.cookies.has(CSRF_COOKIE_NAME)) {
+    response.cookies.set(CSRF_COOKIE_NAME, generateId(), {
       path: '/',
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
@@ -198,7 +204,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
   if (isMaintenanceExempt) return null
 
   let isMaintenanceOn = false
-  const maintenanceCookie = request.cookies.get('maintenance-mode')?.value
+  const maintenanceCookie = request.cookies.get(MAINTENANCE_COOKIE_NAME)?.value
 
   if (maintenanceCookie === '1') {
     isMaintenanceOn = true
@@ -215,7 +221,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
   if (!isMaintenanceOn) return null
 
   const token =
-    request.cookies.get('auth-token')?.value ??
+    request.cookies.get(AUTH_COOKIE_NAME)?.value ??
     request.headers.get('Authorization')?.replace('Bearer ', '')
 
   let isAdmin = false
@@ -234,7 +240,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
   }
 
   const redirectRes = NextResponse.redirect(new URL('/maintenance', request.url))
-  redirectRes.cookies.set('maintenance-mode', '1', {
+  redirectRes.cookies.set(MAINTENANCE_COOKIE_NAME, '1', {
     path: '/',
     httpOnly: false,
     sameSite: 'lax',
@@ -263,7 +269,7 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
   }
 
   const token =
-    request.cookies.get('auth-token')?.value ??
+    request.cookies.get(AUTH_COOKIE_NAME)?.value ??
     request.headers.get('Authorization')?.replace('Bearer ', '')
 
   if (!token) {

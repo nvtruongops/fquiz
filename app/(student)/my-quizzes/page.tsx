@@ -27,22 +27,22 @@ import {
   X
 } from 'lucide-react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/shared/ui/button'
+import { Card, CardContent } from '@/components/shared/ui/card'
+import { Input } from '@/components/shared/ui/input'
 import { 
   Dialog, 
   DialogContent, 
   DialogDescription,
   DialogTitle, 
   DialogTrigger
-} from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/lib/store/toast-store'
-import { cn } from '@/lib/utils'
-import { useDebounce } from '@/hooks/useDebounce'
-import { withCsrfHeaders } from '@/lib/csrf'
+} from '@/components/shared/ui/dialog'
+import { Badge } from '@/components/shared/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
+import { useToast } from '@/store/shared/toast-store'
+import { cn } from '@/lib/core/utils/utils'
+import { useDebounce } from '@/hooks/shared/useDebounce'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 interface Category {
   _id: string
