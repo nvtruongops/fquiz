@@ -30,7 +30,7 @@ export default function QuizLayoutClient({ initialUser, children }: QuizLayoutCl
     <div className="min-h-screen flex flex-col bg-[#F9F9F7]">
       <Navbar initialUser={initialUser} />
       <main className="flex-1 w-full pt-4 pb-28 md:pb-8 overflow-x-hidden">
-        <div className="w-[92%] md:w-[60%] mx-auto transition-all duration-300">
+        <div className="w-full mx-auto transition-all duration-300">
           {children}
         </div>
       </main>

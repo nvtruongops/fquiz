@@ -13,7 +13,7 @@ export default function BaseLayout({
   children,
   user,
   showNavbar = true,
-  containerWidth = "w-[92%] md:w-[60%]"
+  containerWidth = "w-full"
 }: BaseLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[#F9F9F7]">
@@ -27,7 +27,7 @@ export default function BaseLayout({
         />
       )}
       <main className="flex-1 w-full pt-4 pb-28 md:pb-8 overflow-x-hidden">
-        <div className={`${containerWidth} mx-auto`}>
+        <div className="w-full mx-auto">
           {children}
         </div>
       </main>

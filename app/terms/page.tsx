@@ -1,5 +1,5 @@
 import { verifySession } from '@/lib/modules/auth/dal'
-import BaseLayout from '@/components/layout/BaseLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 export const metadata = {
   title: 'Điều khoản sử dụng - FQuiz',
@@ -9,7 +9,7 @@ export default async function TermsPage() {
   const user = await verifySession()
 
   return (
-    <BaseLayout user={user}>
+    <AppLayout user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
       <main className="animate-in fade-in slide-in-from-bottom-4 duration-700">
         <p className="text-sm font-bold tracking-widest text-[#5D7B6F] uppercase mb-4">Pháp lý</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-8">Điều khoản sử dụng</h1>
@@ -47,6 +47,6 @@ export default async function TermsPage() {
           </p>
         </div>
       </main>
-    </BaseLayout>
+    </AppLayout>
   )
 }

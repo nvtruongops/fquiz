@@ -1,7 +1,7 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/modules/auth/dal'
-import BaseLayout from '@/components/layout/BaseLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,8 +18,8 @@ export default async function StudentLayout({
   }
 
   return (
-    <BaseLayout user={user}>
+    <AppLayout user={{ name: user.username, role: user.role, avatarUrl: user.avatarUrl }}>
       {children}
-    </BaseLayout>
+    </AppLayout>
   )
 }

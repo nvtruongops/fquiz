@@ -54,6 +54,24 @@ async function checkUserSession(userId: string, version?: number): Promise<boole
   }
 }
 
+/**
+ * Decrypt and verify JWT token using multiple possible secrets (rotation support)
+ */
+export async function decrypt(token: string): Promise<JWTPayload | null> {
+  const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_PREV].filter(Boolean) as string[]
+  
+  for (const secretStr of secrets) {
+    try {
+      const secret = new TextEncoder().encode(secretStr)
+      const { payload } = await jwtVerify(token, secret)
+      return payload as unknown as JWTPayload
+    } catch (err) {
+      continue
+    }
+  }
+  return null
+}
+
 export async function verifyToken(req: Request): Promise<JWTPayload | null> {
   // Prefer cookie, fall back to Authorization Bearer header
   const cookieHeader = req.headers.get('Cookie') || req.headers.get('cookie') || ''
@@ -70,44 +88,31 @@ export async function verifyToken(req: Request): Promise<JWTPayload | null> {
 
   if (!token) return null
 
-  const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_PREV].filter(Boolean) as string[]
+  const jwtPayload = await decrypt(token)
+  if (!jwtPayload) return null
 
-  let lastError: any = null
-
-  for (const secretStr of secrets) {
-    try {
-      const secret = new TextEncoder().encode(secretStr)
-      const { payload } = await jwtVerify(token, secret)
-      const jwtPayload = payload as unknown as JWTPayload
-
-      // Enforce session revocation and status check
-      const isValid = await checkUserSession(jwtPayload.userId, jwtPayload.v)
-      if (!isValid) {
-        logSecurityEvent('token_revoked_or_invalid', {
-          request_id: req.headers.get('x-request-id') || 'unknown',
-          user_id: jwtPayload.userId,
-          route: new URL(req.url).pathname,
-          outcome: 'failure'
-        }, 'JWT version mismatch or user inactive')
-        return null
-      }
-
-      return jwtPayload
-    } catch (err) {
-      lastError = err
-      continue
+  try {
+    // Enforce session revocation and status check
+    const isValid = await checkUserSession(jwtPayload.userId, jwtPayload.v)
+    if (!isValid) {
+      logSecurityEvent('token_revoked_or_invalid', {
+        request_id: req.headers.get('x-request-id') || 'unknown',
+        user_id: jwtPayload.userId,
+        route: new URL(req.url).pathname,
+        outcome: 'failure'
+      }, 'JWT version mismatch or user inactive')
+      return null
     }
-  }
 
-  if (lastError) {
+    return jwtPayload
+  } catch (err) {
     const requestId = req.headers.get('x-request-id') || 'unknown'
     logJWTVerificationFailed(
       { request_id: requestId, route: new URL(req.url).pathname, outcome: 'failure' },
-      lastError instanceof Error ? lastError.message : 'Unknown error'
+      err instanceof Error ? err.message : 'Unknown error'
     )
+    return null
   }
-
-  return null
 }
 
 export async function signToken(userId: string, role: string, v: number = 1, meta?: { username?: string; avatarUrl?: string }): Promise<string> {

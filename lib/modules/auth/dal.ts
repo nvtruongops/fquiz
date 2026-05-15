@@ -9,7 +9,7 @@
 
 import { cache } from 'react'
 import { cookies } from 'next/headers'
-import { jwtVerify } from 'jose'
+import { decrypt } from '@/lib/modules/auth/auth'
 import {  connectDB  } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 
@@ -32,9 +32,9 @@ export const verifySession = cache(async (): Promise<SessionUser | null> => {
     
     if (!token) return null
 
-    // Verify JWT
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET)
-    const { payload } = await jwtVerify(token, secret)
+    // Verify JWT with rotation support
+    const payload = await decrypt(token)
+    if (!payload) return null
     
     const userId = payload.userId as string
     if (!userId) return null

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { BookOpen, Sparkles } from 'lucide-react'
+import { BookOpen, Sparkles, ArrowLeft } from 'lucide-react'
 import { verifySession } from '@/lib/modules/auth/dal'
 
 export const dynamic = 'force-dynamic'
@@ -13,33 +13,51 @@ export default async function AuthLayout({ children }: Readonly<{ children: Reac
   }
 
   return (
-    <div className="h-[100dvh] bg-[#EAE7D6] relative overflow-hidden flex flex-col items-center justify-center px-3 py-3 sm:px-5 sm:py-4 [@media(max-height:860px)]:justify-start [@media(max-height:860px)]:pt-3">
-      {/* Decorative Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#A4C3A2]/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D7F9FA]/30 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* Brand Header */}
-      <div className="relative z-10 mb-4 sm:mb-5 animate-in fade-in slide-in-from-top-4 duration-700 [@media(max-height:860px)]:mb-3">
-        <Link href="/" className="flex flex-col items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-[#5D7B6F] flex items-center justify-center shadow-xl shadow-[#5D7B6F]/20 group-hover:scale-110 transition-transform">
-            <BookOpen className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-black text-[#5D7B6F] text-xl tracking-tight">FQuiz</span>
+    <div className="min-h-screen bg-[#F9F9F7] relative overflow-hidden flex flex-col items-center justify-center px-4 py-8">
+      {/* Floating Back to Home Button */}
+      <div className="absolute top-6 left-6 z-50">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-gray-100 shadow-sm text-gray-500 hover:text-slate-900 transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 font-bold text-xs uppercase tracking-wider"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Trang chủ
         </Link>
       </div>
 
-      {/* Form Container */}
-      <div className="relative z-10 w-full max-w-[460px] animate-in fade-in zoom-in-95 duration-700 [@media(max-height:860px)]:origin-top [@media(max-height:860px)]:scale-[0.94] [@media(max-height:760px)]:scale-[0.9]">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#5D7B6F]/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#A4C3A2]/10 blur-[120px] rounded-full" />
+      </div>
+
+      {/* Brand Header with 3D Effect */}
+      <div className="relative z-10 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        <Link href="/" className="flex flex-col items-center gap-3 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#5D7B6F]/20 rounded-2xl translate-y-1.5 transition-transform group-hover:translate-y-2" />
+            <div className="relative w-14 h-14 rounded-2xl bg-[#5D7B6F] flex items-center justify-center shadow-xl group-hover:-translate-y-0.5 transition-all">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="text-center">
+            <span className="font-black text-[#5D7B6F] text-2xl tracking-tighter block">FQuiz</span>
+            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Hệ thống luyện thi</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Form Container - Enhanced 3D Glassmorphism */}
+      <div className="relative z-10 w-full max-w-[480px] animate-in fade-in zoom-in-95 duration-700">
+        <div className="absolute inset-0 bg-[#5D7B6F]/5 blur-3xl -z-10 rounded-full scale-150 opacity-50" />
         {children}
       </div>
 
       {/* Footer Decoration */}
-      <div className="relative z-10 mt-4 sm:mt-5 flex items-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] opacity-50 [@media(max-height:860px)]:hidden">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>FQuiz Platform</span>
+      <div className="relative z-10 mt-10 flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
+        <Sparkles className="w-4 h-4" />
+        <span>Tương lai trong tầm tay</span>
       </div>
     </div>
   )
 }
-
-
