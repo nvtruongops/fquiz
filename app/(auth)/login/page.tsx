@@ -94,8 +94,11 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full">
-      <div className="bg-white rounded-3xl shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/20 p-6 sm:p-7">
+    <div className="w-full relative group">
+      {/* Professional Multi-layered Shadow */}
+      <div className="absolute inset-0 bg-slate-900/5 rounded-[40px] translate-y-2 blur-2xl -z-10 opacity-60" />
+      
+      <div className="relative bg-white rounded-[40px] border border-gray-100 p-8 sm:p-12 shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all duration-500 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
         <div className="mb-7 text-center sm:text-left">
           <h1 className="text-2xl sm:text-[28px] font-extrabold text-gray-900 tracking-tight">Đăng nhập</h1>
           <p className="text-gray-500 mt-1.5 text-sm font-medium">Chào mừng bạn quay lại với hệ thống FQuiz</p>

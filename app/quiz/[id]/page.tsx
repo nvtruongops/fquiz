@@ -297,57 +297,85 @@ export default function QuizDetailPage() {
         <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-[#A4C3A2]/5 blur-[100px]" />
       </div>
 
-      <main className="relative z-10 flex flex-1 flex-col px-4 py-6 pb-28 md:pb-10">
-        <div className="mx-auto w-full max-w-3xl flex flex-col gap-6">
-          {/* 1. Header Information */}
-          <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
+      <main className="relative z-10 flex flex-1 flex-col px-6 py-8 pb-32 md:pb-16">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Header & Comments Column (Mobile order 1 & 3) */}
+          <div className="lg:col-span-8 flex flex-col gap-8 order-1 lg:order-1">
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm">
+              <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
+            </div>
 
-          {/* 2. Play / Action Card (Moved up) */}
-          <QuizActionCard 
-            quizId={resolvedQuizId}
-            selectedMode={selectedMode}
-            selectedDifficulty={selectedDifficulty}
-            onModeChange={setSelectedMode}
-            onDifficultyChange={setSelectedDifficulty}
-            onStart={handleStart}
-            isStarting={startSessionMutation.isPending}
-            modeSelectOpen={modeSelectOpen}
-            setModeSelectOpen={setModeSelectOpen}
-            resumeDialogOpen={resumeDialogOpen}
-            setResumeDialogOpen={setResumeDialogOpen}
-            activeSessionInfo={activeSessionInfo}
-            onContinue={() => {
-              setResumeDialogOpen(false)
-              startLoading('Đang kết nối lại...')
-              startSessionMutation.mutate({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'continue' })
-            }}
-            onRestart={() => {
-              setResumeDialogOpen(false)
-              startLoading('Đang làm mới...')
-              startSessionMutation.mutateAsync({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'restart' })
-                .then(() => startSessionMutation.mutate({ mode: selectedMode, difficulty: selectedDifficulty }))
-            }}
-            onCloseResumeDialog={() => { setResumeDialogOpen(false); setModeSelectOpen(true); }}
-            currentUser={currentUser}
-            authRequiredDialogOpen={authRequiredDialogOpen}
-            setAuthRequiredDialogOpen={setAuthRequiredDialogOpen}
-          />
+            {/* Hidden on mobile, shown on desktop here to keep side-by-side */}
+            <div className="hidden lg:block bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-sm">
+              <QuizComments 
+                quizId={resolvedQuizId}
+                comments={comments}
+                isLoading={isCommentsLoading}
+                currentUser={currentUser}
+                onPostComment={(c) => postCommentMutation.mutate(c)}
+                onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
+                isPosting={postCommentMutation.isPending}
+                isDeleting={deleteCommentMutation.isPending}
+                onAuthRequired={() => setAuthRequiredDialogOpen(true)}
+              />
+            </div>
+          </div>
 
-          {/* 3. Stats Information */}
-          <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
+          {/* Action Card & Stats Column (Mobile order 2 & 4) */}
+          <div className="lg:col-span-4 flex flex-col gap-8 lg:sticky lg:top-28 order-2 lg:order-2">
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm">
+              <QuizActionCard 
+                quizId={resolvedQuizId}
+                selectedMode={selectedMode}
+                selectedDifficulty={selectedDifficulty}
+                onModeChange={setSelectedMode}
+                onDifficultyChange={setSelectedDifficulty}
+                onStart={handleStart}
+                isStarting={startSessionMutation.isPending}
+                modeSelectOpen={modeSelectOpen}
+                setModeSelectOpen={setModeSelectOpen}
+                resumeDialogOpen={resumeDialogOpen}
+                setResumeDialogOpen={setResumeDialogOpen}
+                activeSessionInfo={activeSessionInfo}
+                onContinue={() => {
+                  setResumeDialogOpen(false)
+                  startLoading('Đang kết nối lại...')
+                  startSessionMutation.mutate({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'continue' })
+                }}
+                onRestart={() => {
+                  setResumeDialogOpen(false)
+                  startLoading('Đang làm mới...')
+                  startSessionMutation.mutateAsync({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'restart' })
+                    .then(() => startSessionMutation.mutate({ mode: selectedMode, difficulty: selectedDifficulty }))
+                }}
+                onCloseResumeDialog={() => { setResumeDialogOpen(false); setModeSelectOpen(true); }}
+                currentUser={currentUser}
+                authRequiredDialogOpen={authRequiredDialogOpen}
+                setAuthRequiredDialogOpen={setAuthRequiredDialogOpen}
+              />
+            </div>
 
-          {/* 4. Comments (At bottom) */}
-          <QuizComments 
-            quizId={resolvedQuizId}
-            comments={comments}
-            isLoading={isCommentsLoading}
-            currentUser={currentUser}
-            onPostComment={(c) => postCommentMutation.mutate(c)}
-            onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
-            isPosting={postCommentMutation.isPending}
-            isDeleting={deleteCommentMutation.isPending}
-            onAuthRequired={() => setAuthRequiredDialogOpen(true)}
-          />
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm overflow-hidden order-4">
+              <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
+            </div>
+          </div>
+
+          {/* Comments for Mobile Only (order 3) */}
+          <div className="lg:hidden order-3 bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-sm">
+            <QuizComments 
+              quizId={resolvedQuizId}
+              comments={comments}
+              isLoading={isCommentsLoading}
+              currentUser={currentUser}
+              onPostComment={(c) => postCommentMutation.mutate(c)}
+              onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
+              isPosting={postCommentMutation.isPending}
+              isDeleting={deleteCommentMutation.isPending}
+              onAuthRequired={() => setAuthRequiredDialogOpen(true)}
+            />
+          </div>
+
         </div>
       </main>
     </div>

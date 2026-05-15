@@ -81,8 +81,11 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white rounded-2xl shadow-sm border border-[#A4C3A2]/30 p-8">
+    <div className="w-full relative group">
+      {/* 3D Depth Layer */}
+      <div className="absolute inset-0 bg-[#5D7B6F]/10 rounded-[32px] translate-y-3 blur-md transition-all duration-500 group-hover:translate-y-4" />
+      
+      <div className="relative bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 sm:p-10 transition-all duration-500">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Đặt lại mật khẩu</h1>
           <p className="text-sm text-gray-500 mt-1">Nhập mật khẩu mới cho tài khoản của bạn.</p>

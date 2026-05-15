@@ -61,8 +61,8 @@ export default function DashboardPage() {
   const primaryIncomplete = incompleteSessions[0]
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7]">
-      <div className="w-full py-8 md:py-12 space-y-8">
+    <div className="min-h-screen bg-[#F9F9F7] px-6 md:px-10">
+      <div className="w-full py-10 space-y-12">
 
         {/* ── Header ────────────────────────────────────────────────── */}
         <header className="space-y-3">
@@ -279,83 +279,88 @@ export default function DashboardPage() {
                       activity.quizDeleted && !activity.isMix && 'opacity-50 cursor-not-allowed hover:translate-y-0'
                     )}
                   >
-                    <div className="flex items-center gap-4">
-                      {/* Icon */}
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                        activity.isMix ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" :
-                          activity.status === 'active' ? "bg-orange-50 text-orange-500" : cn(bg, text)
-                      )}>
-                        {activity.isMix ? <Shuffle className="w-6 h-6" /> : activity.status === 'active' ? <Play className="w-6 h-6" /> : <ModeIcon className="w-6 h-6" />}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-black text-gray-900 text-sm truncate uppercase tracking-tight">
-                            {activity.quizCode}
-                          </h3>
-                          <span className={cn("text-[8px] font-black px-2 py-0.5 rounded-md uppercase", bg, text)}>
-                            {label}
-                          </span>
-                          {activity.isMix && (
-                            <span className="text-[8px] font-black bg-[#5D7B6F]/10 text-[#5D7B6F] px-2 py-0.5 rounded-md uppercase">
-                              Quiz Trộn
-                            </span>
-                          )}
-                          {activity.status === 'active' && (
-                            <span className="text-[8px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md uppercase">
-                              Đang làm
-                            </span>
-                          )}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      {/* Top Row / Desktop Left: Icon + Content */}
+                      <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
+                        {/* Icon */}
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                          activity.isMix ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" :
+                            activity.status === 'active' ? "bg-orange-50 text-orange-500" : cn(bg, text)
+                        )}>
+                          {activity.isMix ? <Shuffle className="w-6 h-6" /> : activity.status === 'active' ? <Play className="w-6 h-6" /> : <ModeIcon className="w-6 h-6" />}
                         </div>
-                        <p className="text-xs text-gray-500 truncate">
-                          {activity.categoryName} • {formatDistanceToNow(new Date(activity.activityAt), { addSuffix: true, locale: vi })}
-                        </p>
-                      </div>
 
-                      {/* Score */}
-                      <div className="text-right shrink-0">
-                        {mode === 'flashcard' ? (
-                          activity.status === 'active' ? (
-                            <div>
-                              <p className="text-lg font-black text-gray-300">--</p>
-                              <p className="text-[8px] font-black text-gray-400 uppercase">
-                                {activity.correctCount}/{activity.totalCount}
-                              </p>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                            <h3 className="font-black text-gray-900 text-sm uppercase tracking-tight truncate max-w-[150px] sm:max-w-none">
+                              {activity.quizCode}
+                            </h3>
+                            <div className="flex flex-wrap gap-1">
+                              <span className={cn("text-[8px] font-black px-2 py-0.5 rounded-md uppercase", bg, text)}>
+                                {label}
+                              </span>
+                              {activity.isMix && (
+                                <span className="text-[8px] font-black bg-[#5D7B6F]/10 text-[#5D7B6F] px-2 py-0.5 rounded-md uppercase">
+                                  Mix
+                                </span>
+                              )}
+                              {activity.status === 'active' && (
+                                <span className="text-[8px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md uppercase">
+                                  Đang làm
+                                </span>
+                              )}
                             </div>
+                          </div>
+                          <p className="text-[10px] text-gray-500 truncate">
+                            {activity.categoryName} • {formatDistanceToNow(new Date(activity.activityAt), { addSuffix: true, locale: vi })}
+                          </p>
+                        </div>
+
+                        {/* Score (Mobile Right / Desktop Middle) */}
+                        <div className="text-right shrink-0">
+                          {mode === 'flashcard' ? (
+                            activity.status === 'active' ? (
+                              <div>
+                                <p className="text-lg font-black text-gray-300">--</p>
+                                <p className="text-[8px] font-black text-gray-400 uppercase">
+                                  {activity.correctCount}/{activity.totalCount}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-lg font-black text-purple-600">
+                                  {activity.correctCount}
+                                  <span className="text-xs text-purple-400">/{activity.totalCount}</span>
+                                </p>
+                                <p className="text-[8px] font-black text-gray-400 uppercase">Đã biết</p>
+                              </div>
+                            )
                           ) : (
                             <div>
-                              <p className="text-lg font-black text-purple-600">
-                                {activity.correctCount}
-                                <span className="text-xs text-purple-400">/{activity.totalCount}</span>
+                              <p className={cn(
+                                "text-lg font-black",
+                                activity.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
+                              )}>
+                                {activity.status === 'active' ? '--' : `${activity.score}/10`}
                               </p>
-                              <p className="text-[8px] font-black text-gray-400 uppercase">Đã biết</p>
+                              <p className="text-[8px] font-black text-gray-400 uppercase">
+                                {activity.status === 'active'
+                                  ? `${activity.correctCount}/${activity.totalCount}`
+                                  : `${activity.correctCount}/${activity.totalCount}`}
+                              </p>
                             </div>
-                          )
-                        ) : (
-                          <div>
-                            <p className={cn(
-                              "text-lg font-black",
-                              activity.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
-                            )}>
-                              {activity.status === 'active' ? '--' : `${activity.score}/10`}
-                            </p>
-                            <p className="text-[8px] font-black text-gray-400 uppercase">
-                              {activity.status === 'active'
-                                ? `${activity.correctCount}/${activity.totalCount} ĐÃ LÀM`
-                                : `${activity.correctCount}/${activity.totalCount}`}
-                            </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
-                      {/* Redo Action */}
+                      {/* Bottom Row / Desktop Right: Buttons */}
                       {!activity.quizDeleted && (
-                        <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0 ml-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-none border-gray-50">
                           <Button
                             variant="ghost"
-                            className="h-8 rounded-lg px-3 hover:bg-[#5D7B6F]/5 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="flex-1 sm:flex-none h-9 rounded-xl px-4 hover:bg-[#5D7B6F]/5 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
                             asChild
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -366,7 +371,7 @@ export default function DashboardPage() {
                           {activity.isMix && (
                             <Button
                               variant="outline"
-                              className="h-8 rounded-lg px-3 border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
+                              className="flex-1 sm:flex-none h-9 rounded-xl px-4 border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all"
                               asChild
                               onClick={(e) => e.stopPropagation()}
                             >

@@ -15,10 +15,34 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi">
-      <body className="antialiased square-ui">
+    <html lang="vi" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const originalError = console.error;
+                console.error = function(...args) {
+                  if (
+                    args[0] && 
+                    typeof args[0] === 'string' && 
+                    (args[0].includes('Hydration') || args[0].includes('did not match')) &&
+                    (args.some(arg => typeof arg === 'string' && (arg.includes('bis_skin_checked') || arg.includes('bis_register') || arg.includes('extension'))))
+                  ) {
+                    return;
+                  }
+                  originalError.apply(console, args);
+                };
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="antialiased square-ui min-h-screen bg-[#F0F0EB]" suppressHydrationWarning>
         <QueryProvider>
-          {children}
+          <div className="mx-auto w-[94%] xl:w-[92%] min-h-screen flex flex-col bg-white relative shadow-[0_0_120px_rgba(0,0,0,0.06)] border-x border-gray-100">
+            {children}
+          </div>
           <ToastProvider />
         </QueryProvider>
       </body>

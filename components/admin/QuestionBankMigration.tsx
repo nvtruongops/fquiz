@@ -342,19 +342,19 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           )}
 
           {/* Conflict Details */}
-          {scanResult.conflict_details.length > 0 && (
+          {(scanResult.conflict_details?.length ?? 0) > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Chi tiết Conflicts ({scanResult.conflicts})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                  {scanResult.conflict_details.slice(0, 10).map((conflict, idx) => (
+                  {scanResult.conflict_details?.slice(0, 10).map((conflict, idx) => (
                     <ConflictPreview key={idx} conflict={conflict} />
                   ))}
-                  {scanResult.conflict_details.length > 10 && (
+                  {(scanResult.conflict_details?.length ?? 0) > 10 && (
                     <p className="text-sm text-gray-500 text-center py-2">
-                      ... và {scanResult.conflict_details.length - 10} conflicts khác
+                      ... và {(scanResult.conflict_details?.length ?? 0) - 10} conflicts khác
                     </p>
                   )}
                 </div>

@@ -358,7 +358,7 @@ export default function ExploreContent() {
   const selectedCategoryName = categories.find(c => c.id === selectedCategoryId)?.name
 
   return (
-    <div className="w-full py-6 pb-28 md:pb-20 space-y-8 animate-in fade-in duration-500">
+    <div className="w-full py-6 pb-28 md:pb-20 px-6 md:px-10 space-y-8 animate-in fade-in duration-500">
       
       {/* Dynamic Header & Search Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 bg-white/50 backdrop-blur-xl p-6 rounded-[32px] border border-white shadow-xl shadow-slate-200/50">
