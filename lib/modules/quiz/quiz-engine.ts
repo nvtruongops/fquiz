@@ -79,7 +79,7 @@ function hasAnsweredAllQuestions(userAnswers: UserAnswer[], totalQuestions: numb
 export async function processImmediateAnswer(
   session: IQuizSession,
   submittedAnswerIndexes: number[],
-  questionIndexInput?: number
+  forcedQuestionIndex?: number
 ): Promise<ImmediateAnswerResult> {
   try {
     await connectDB()
@@ -97,7 +97,7 @@ export async function processImmediateAnswer(
     }
 
     const questionIndex =
-      typeof questionIndexInput === 'number' ? questionIndexInput : session.current_question_index
+      typeof forcedQuestionIndex === 'number' ? forcedQuestionIndex : session.current_question_index
     
     // Use question_order to get the actual question index
     const questionOrder = session.question_order || Array.from({ length: questions.length }, (_, i) => i)
@@ -162,7 +162,7 @@ export async function processImmediateAnswer(
 export async function processReviewAnswer(
   session: IQuizSession,
   submittedAnswerIndexes: number[],
-  questionIndexInput?: number
+  forcedQuestionIndex?: number
 ): Promise<ReviewAnswerResult> {
   try {
     await connectDB()
@@ -180,7 +180,7 @@ export async function processReviewAnswer(
     }
 
     const questionIndex =
-      typeof questionIndexInput === 'number' ? questionIndexInput : session.current_question_index
+      typeof forcedQuestionIndex === 'number' ? forcedQuestionIndex : session.current_question_index
     
     // Use question_order to get the actual question index
     const questionOrder = session.question_order || Array.from({ length: questions.length }, (_, i) => i)

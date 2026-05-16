@@ -78,13 +78,21 @@ export async function POST(
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
 
+    // [SECURITY FIX]: Prevent re-answering a question that already has an answer in the session
+    // This is critical for immediate mode where the answer is revealed.
+    const targetIndex = typeof question_index === 'number' ? question_index : session.current_question_index
+    const alreadyAnswered = session.user_answers.some(a => a.question_index === targetIndex)
+    if (alreadyAnswered) {
+      return NextResponse.json({ error: 'Câu hỏi này đã được ghi nhận câu trả lời.' }, { status: 400 })
+    }
+
     // Delegate to quiz engine based on mode
     if (session.mode === 'immediate') {
-      const result = await processImmediateAnswer(session, submittedAnswerIndexes, question_index)
+      const result = await processImmediateAnswer(session, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     } else {
       // review mode
-      const result = await processReviewAnswer(session, submittedAnswerIndexes, question_index)
+      const result = await processReviewAnswer(session, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     }
   } catch (err) {
