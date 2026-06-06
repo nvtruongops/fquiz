@@ -1,6 +1,8 @@
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Điều khoản sử dụng - FQuiz',
 }
