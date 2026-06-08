@@ -70,6 +70,12 @@ export async function GET(req: Request) {
         }
       },
       { $unwind: "$questions" },
+      // Bỏ qua câu hỏi thiếu question_id → tránh gom lộn xộn vào 1 group
+      {
+        $match: {
+          "questions.question_id": { $nin: [null, ""] }
+        }
+      },
       {
         $group: {
           _id: "$questions.question_id",
