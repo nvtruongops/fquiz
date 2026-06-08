@@ -109,7 +109,7 @@ export default function QuizSessionPage() {
       
       sessionLoader.open('Đang tải bộ câu hỏi...')
     }
-  }, [sessionLoader, resolvedSessionId])
+  }, [resolvedSessionId])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
