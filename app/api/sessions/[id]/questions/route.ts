@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { authorizeResource } from '@/lib/modules/auth/authz'
 
 /**
@@ -51,7 +52,7 @@ export async function GET(
       )
     }
 
-    const quiz = await Quiz.findById(session.quiz_id).select('questions').lean()
+    const quiz = await Quiz.findById(session.quiz_id).select('questions category_id').lean()
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
@@ -63,9 +64,27 @@ export async function GET(
     // Get question order (use existing or create sequential)
     const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
 
-    // For immediate mode or completed sessions: include correct_answer and explanation
-    // For review mode (active): exclude correct_answer and explanation
-    const questions = questionOrder.map((originalIndex: number) => {
+    // Batch lookup usage_count from QuestionBank
+    const questionIds = questionOrder.map((i: number) => quiz.questions[i]?.question_id).filter(Boolean)
+    const usageMap = new Map<string, number>()
+    if (questionIds.length > 0 && quiz.category_id) {
+      const bankDocs = await QuestionBank.find({
+        category_id: quiz.category_id,
+        question_id: { $in: questionIds },
+      }).select('question_id usage_count').lean()
+      for (const doc of bankDocs) {
+        usageMap.set(doc.question_id, doc.usage_count)
+      }
+    }
+
+    // Set of display indexes that have already been answered by the student
+    const answeredDisplayIndexes = new Set(
+      (session.user_answers || []).map((ua: any) => ua.question_index)
+    )
+
+    // For immediate mode (only already answered) or completed/flashcard sessions: include correct_answer and explanation
+    // Otherwise: exclude correct_answer and explanation
+    const questions = questionOrder.map((originalIndex: number, displayIndex: number) => {
       const q = quiz.questions[originalIndex]
       const baseQuestion = {
         _id: q._id,
@@ -77,17 +96,24 @@ export async function GET(
         ...(q.image_url ? { image_url: q.image_url } : {}),
       }
 
-      // Include answers for immediate mode, completed sessions, or flashcard mode
-      if (isImmediateMode || isCompleted || isFlashcardMode) {
+      const isQuestionAnswered = answeredDisplayIndexes.has(displayIndex)
+
+      const questionWithUsage = {
+        ...baseQuestion,
+        usage_count: q.question_id ? (usageMap.get(q.question_id) ?? 0) : 0,
+      }
+
+      // Include answers for immediate mode (only if already answered), completed sessions, or flashcard mode
+      if (isCompleted || isFlashcardMode || (isImmediateMode && isQuestionAnswered)) {
         return {
-          ...baseQuestion,
+          ...questionWithUsage,
           correct_answer: q.correct_answer,
           explanation: q.explanation,
         }
       }
 
-      // Review mode (active): exclude answers
-      return baseQuestion
+      // Review mode (active) or unanswered immediate questions: exclude answers
+      return questionWithUsage
     })
 
     return NextResponse.json(
