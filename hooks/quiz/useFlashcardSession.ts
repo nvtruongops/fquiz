@@ -105,7 +105,7 @@ export function useFlashcardSession(sessionId: string) {
       }
       return res.json()
     },
-    onMutate: async ({ knows }) => {
+    onMutate: async ({ knows, questionIndex }) => {
       // Cancel outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: ['flashcard-session', sessionId] })
 
@@ -114,16 +114,20 @@ export function useFlashcardSession(sessionId: string) {
 
       // Optimistically update the session index and stats
       if (previousData) {
+        const isUpdatingPrevious = questionIndex < previousData.session.current_question_index
+        
+        // We don't optimistically update stats for previous answers to keep it simple,
+        // but we do advance the index if it's a new answer.
         queryClient.setQueryData(['flashcard-session', sessionId], {
           ...previousData,
           session: {
             ...previousData.session,
-            current_question_index: previousData.session.current_question_index + 1,
-            flashcard_stats: previousData.session.flashcard_stats ? {
+            current_question_index: isUpdatingPrevious ? previousData.session.current_question_index : previousData.session.current_question_index + 1,
+            flashcard_stats: previousData.session.flashcard_stats && !isUpdatingPrevious ? {
               ...previousData.session.flashcard_stats,
               cards_known: previousData.session.flashcard_stats.cards_known + (knows ? 1 : 0),
               cards_unknown: previousData.session.flashcard_stats.cards_unknown + (knows ? 0 : 1),
-            } : undefined
+            } : previousData.session.flashcard_stats
           }
         })
       }
@@ -153,6 +157,7 @@ export function useFlashcardSession(sessionId: string) {
   // Get current question from preloaded pool if available, otherwise fallback to session-provided question
   const currentQuestion = allQuestionsData?.questions?.[data?.session?.current_question_index ?? -1] ?? data?.question
 
+  // We expose a way to override the display index for local history navigation
   return {
     session: data?.session,
     question: currentQuestion,

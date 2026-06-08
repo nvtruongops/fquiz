@@ -40,14 +40,23 @@ export default function ForgotPasswordPage() {
       })
       const data = await res.json().catch(() => ({}))
 
-      if (res.status === 429 && typeof data.retryAfterSec === 'number') {
-        setRetryAfterSec(data.retryAfterSec)
-        toast.error(`Bạn vừa gửi mã, vui lòng thử lại sau ${data.retryAfterSec}s`)
-        return
-      }
+      if (!res.ok) {
+        if (res.status === 429) {
+          if (typeof data.retryAfterSec === 'number') {
+            setRetryAfterSec(data.retryAfterSec)
+            toast.error(`Bạn vừa gửi mã, vui lòng thử lại sau ${data.retryAfterSec}s`)
+          } else {
+            toast.error('Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút.')
+          }
+          return
+        }
 
-      if (res.status >= 500) {
-        toast.error('Hệ thống đang bận, vui lòng thử lại sau.')
+        if (res.status >= 500) {
+          toast.error('Hệ thống đang bận, vui lòng thử lại sau.')
+          return
+        }
+
+        toast.error(typeof data.error === 'string' ? data.error : 'Không thể gửi mã xác thực')
         return
       }
 

@@ -6,6 +6,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { authorizeResource } from '@/lib/modules/auth/authz'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 /**
  * GET /api/sessions/[id]/questions
@@ -64,7 +65,20 @@ export async function GET(
     // Get question order (use existing or create sequential)
     const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
 
-    // Batch lookup usage_count from QuestionBank
+    // Đảm bảo mọi câu hỏi đều có question_id (tự sinh nếu thiếu)
+    let hasMissingId = false
+    for (const q of quiz.questions) {
+      if (!q.question_id) {
+        q.question_id = generateQuestionId(q)
+        hasMissingId = true
+      }
+    }
+    // Tự động repair DB nếu có câu thiếu question_id
+    if (hasMissingId) {
+      await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: quiz.questions } })
+    }
+
+    // Batch lookup usage_count từ QuestionBank
     const questionIds = questionOrder.map((i: number) => quiz.questions[i]?.question_id).filter(Boolean)
     const usageMap = new Map<string, number>()
     if (questionIds.length > 0 && quiz.category_id) {
@@ -100,7 +114,7 @@ export async function GET(
 
       const questionWithUsage = {
         ...baseQuestion,
-        usage_count: q.question_id ? (usageMap.get(q.question_id) ?? 0) : 0,
+        usage_count: usageMap.get(q.question_id!) ?? 0,
       }
 
       // Include answers for immediate mode (only if already answered), completed sessions, or flashcard mode

@@ -32,6 +32,7 @@ import { cn } from '@/lib/core/utils/utils'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { MIX_QUIZ_MAX_SELECT, MIX_QUIZ_QUESTION_OPTIONS } from '@/lib/modules/quiz/constants/mix-quiz'
 import { useToast } from '@/store/shared/toast-store'
+import { formatStudyDuration } from '@/lib/core/utils/format'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,13 +68,6 @@ function formatResetTime(resetMs: number): string {
   if (diff <= 0) return '0 phút'
   const minutes = Math.ceil(diff / (1000 * 60))
   return `${minutes} phút`
-}
-
-function formatStudyDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} phút`
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  return m === 0 ? `${h} giờ` : `${h} giờ ${m} phút`
 }
 
 // ── API calls ──────────────────────────────────────────────────────────────

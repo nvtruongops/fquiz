@@ -1,6 +1,13 @@
 import mongoose from 'mongoose'
 import logger from '@/lib/core/utils/logger'
 
+// Pre-register all Mongoose Models to prevent MissingSchemaError during population in Next.js Serverless Routes
+import '@/lib/modules/auth/models/User'
+import '@/lib/modules/quiz/models/Category'
+import '@/lib/modules/quiz/models/Quiz'
+import '@/lib/modules/quiz/models/QuizSession'
+import '@/lib/modules/quiz/models/QuizComment'
+
 const MONGODB_URI = process.env.MONGODB_URI!
 
 if (!MONGODB_URI) {

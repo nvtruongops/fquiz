@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
+import { useAuth } from '@/hooks/auth/useAuth'
+import { API_ROUTES } from '@/lib/core/constants/api-routes'
 
 // Sub-components
 import { QuizDetailHeader } from '@/components/quiz/QuizDetailHeader'
@@ -49,7 +51,7 @@ type StartSessionError = Error & { status?: number; code?: string; activeSession
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
   // Always try the student API first because `auth-token` is httpOnly and cannot be read via document.cookie
   try {
-    const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/${id}`)
+    const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.QUIZZES(id)}`)
     
     if (studentRes.ok) {
       const data = await studentRes.json()
@@ -86,7 +88,7 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
     // Network errors or 401/404 fall through to public API
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/quizzes/${id}`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.PUBLIC.QUIZ_DETAIL(id)}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
     const error = new Error(data.error || 'Không thể tải thông tin đề thi.') as QuizDetailApiError
@@ -99,24 +101,16 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
   const response = await res.json()
   const publicQuiz = response.data
   return {
-    _id: publicQuiz._id,
+    _id: publicQuiz.id,
     title: publicQuiz.title,
     description: publicQuiz.description || '',
-    category_id: { name: publicQuiz.category_id?.name || 'Chung' },
+    category_id: { name: publicQuiz.categoryName || 'Chung' },
     course_code: publicQuiz.course_code,
     num_questions: publicQuiz.questionCount || 0,
     num_attempts: publicQuiz.studentCount || 0,
-    created_at: publicQuiz.created_at || publicQuiz.createdAt,
+    created_at: publicQuiz.createdAt,
     is_temp: publicQuiz.is_temp,
   }
-}
-
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
-  return null
 }
 
 export default function QuizDetailPage() {
@@ -148,20 +142,13 @@ export default function QuizDetailPage() {
     enabled: resolvedQuizId.length > 0,
   })
 
-  const { data: currentUser, isLoading: isUserLoading } = useQuery({
-    queryKey: ['current-user'],
-    queryFn: async () => {
-      const res = await fetch('/api/auth/me')
-      if (!res.ok) return null
-      const data = await res.json()
-      return data.user || data
-    },
-  })
+  const { data: authData, isLoading: isUserLoading } = useAuth()
+  const currentUser = authData?.user ?? null
 
   const { data: activeSessionData } = useQuery({
     queryKey: ['active-session', quizId],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions?quiz_id=${quizId}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}?quiz_id=${quizId}`)
       if (!res.ok) return { assessmentSession: null, learningSession: null }
       return res.json()
     },
@@ -170,7 +157,7 @@ export default function QuizDetailPage() {
 
   const startSessionMutation = useMutation({
     mutationFn: async ({ mode, difficulty, action }: any) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}`, {
         method: 'POST',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quiz_id: quizId, mode, difficulty, ...(action ? { action } : {}) }),
@@ -188,7 +175,7 @@ export default function QuizDetailPage() {
       // PRE-LOAD QUESTIONS BEFORE REDIRECTING
       try {
         startLoading('Đang chuẩn bị bộ câu hỏi...')
-        const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionData.sessionId}/questions`)
+        const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`)
         if (qRes.ok) {
           const qData = await qRes.json()
           sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
@@ -225,7 +212,7 @@ export default function QuizDetailPage() {
   const { data: comments = [], isLoading: isCommentsLoading } = useQuery({
     queryKey: ['quiz-comments', quizId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/public/quizzes/${quizId}/comments`)
+      const res = await fetch(API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId))
       if (!res.ok) throw new Error('Failed to fetch comments')
       return res.json()
     },
@@ -235,9 +222,9 @@ export default function QuizDetailPage() {
 
   const postCommentMutation = useMutation({
     mutationFn: async (content: string) => {
-      const res = await fetch(`/api/v1/public/quizzes/${quizId}/comments`, {
+      const res = await fetch(API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCookie('csrf-token') || '' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ content }),
       })
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to post comment')
@@ -252,9 +239,9 @@ export default function QuizDetailPage() {
 
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      const res = await fetch(`/api/v1/public/quizzes/${quizId}/comments?commentId=${commentId}`, {
+      const res = await fetch(`${API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId)}?commentId=${commentId}`, {
         method: 'DELETE',
-        headers: { 'x-csrf-token': getCookie('csrf-token') || '' },
+        headers: withCsrfHeaders(),
       })
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to delete comment')
     },

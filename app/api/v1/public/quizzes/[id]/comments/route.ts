@@ -3,7 +3,6 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizComment } from '@/lib/modules/quiz/models/QuizComment'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { Types } from 'mongoose'
-import '@/lib/modules/auth/models/User' // Ensure User model is registered for populate
 
 export async function GET(
   req: Request,
@@ -69,7 +68,7 @@ export async function POST(
       quiz_id: new Types.ObjectId(id),
       user_id: new Types.ObjectId(payload.userId),
       created_at: { $gt: new Date(Date.now() - 30 * 1000) }
-    })
+    }).lean()
 
     if (lastComment) {
       return NextResponse.json({ 
@@ -112,7 +111,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 })
     }
 
-    const comment = await QuizComment.findById(commentId)
+    const comment = await QuizComment.findById(commentId).lean()
     if (!comment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
     }

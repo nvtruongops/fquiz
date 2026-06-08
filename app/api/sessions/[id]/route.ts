@@ -126,8 +126,17 @@ export async function GET(
     // Exception: flashcard mode always needs correct_answer and explanation
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'
+    const isImmediateMode = session.mode === 'immediate'
 
-    const question = (isCompleted || isFlashcardMode)
+    // Check if the current question index has already been answered by the student
+    const answeredDisplayIndexes = new Set(
+      (session.user_answers || []).map((ua: any) => ua.question_index)
+    )
+    const isQuestionAnswered = answeredDisplayIndexes.has(currentIndex)
+
+    const shouldShowAnswers = isCompleted || isFlashcardMode || (isImmediateMode && isQuestionAnswered)
+
+    const question = shouldShowAnswers
       ? {
           _id: rawQuestion._id,
           text: rawQuestion.text,

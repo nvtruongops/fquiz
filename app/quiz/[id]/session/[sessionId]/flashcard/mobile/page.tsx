@@ -2,15 +2,18 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp, ChevronDown, Sparkles } from 'lucide-react'
 import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
 import { Button } from '@/components/shared/ui/button'
+import { Switch } from '@/components/shared/ui/switch'
 import { cn } from '@/lib/core/utils/utils'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 
 interface SwipeState {
   startX: number
+  startY: number
   currentX: number
+  currentY: number
   isDragging: boolean
 }
 
@@ -19,7 +22,10 @@ function MobileFlashcardView({
   questionNumber,
   totalQuestions,
   onAnswer,
+  onBack,
+  onForward,
   isLoading = false,
+  enableAnimation = true,
 }: {
   question: {
     _id: string
@@ -32,20 +38,25 @@ function MobileFlashcardView({
   questionNumber: number
   totalQuestions: number
   onAnswer: (knows: boolean) => void
+  onBack: () => void
+  onForward?: () => void
   isLoading?: boolean
+  enableAnimation?: boolean
 }) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showExplanation, setShowExplanation] = useState(false)
   const [swipeState, setSwipeState] = useState<SwipeState>({
     startX: 0,
+    startY: 0,
     currentX: 0,
+    currentY: 0,
     isDragging: false,
   })
 
   useEffect(() => {
     setIsFlipped(false)
     setShowExplanation(false)
-    setSwipeState({ startX: 0, currentX: 0, isDragging: false })
+    setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
   }, [question._id, questionNumber])
 
   const correctAnswers = useMemo(() => 
@@ -57,26 +68,51 @@ function MobileFlashcardView({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isLoading) return
-    setSwipeState({ startX: e.touches[0].clientX, currentX: e.touches[0].clientX, isDragging: true })
+    setSwipeState({ 
+      startX: e.touches[0].clientX, 
+      startY: e.touches[0].clientY,
+      currentX: e.touches[0].clientX, 
+      currentY: e.touches[0].clientY,
+      isDragging: true 
+    })
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swipeState.isDragging || isLoading) return
-    setSwipeState((prev) => ({ ...prev, currentX: e.touches[0].clientX }))
+    setSwipeState((prev) => ({ 
+      ...prev, 
+      currentX: e.touches[0].clientX,
+      currentY: e.touches[0].clientY
+    }))
   }
 
   const handleTouchEnd = () => {
     if (!swipeState.isDragging || isLoading) return
-    const diff = swipeState.currentX - swipeState.startX
+    const diffX = swipeState.currentX - swipeState.startX
+    const diffY = swipeState.currentY - swipeState.startY
     const threshold = 60
-    if (isFlipped && Math.abs(diff) > threshold) {
+
+    // Check for vertical swipe down to go back
+    if (diffY > threshold && Math.abs(diffY) > Math.abs(diffX)) {
+      if ('vibrate' in navigator) navigator.vibrate(40)
+      onBack()
+    } 
+    // Check for vertical swipe up to go forward
+    else if (diffY < -threshold && Math.abs(diffY) > Math.abs(diffX)) {
+      if ('vibrate' in navigator) navigator.vibrate(40)
+      if (onForward) onForward()
+    }
+    // Check for horizontal swipe to answer - works on both question and answer sides
+    else if (Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY)) {
       if ('vibrate' in navigator) navigator.vibrate(40)
       setIsFlipped(false)
-      setSwipeState({ startX: 0, currentX: 0, isDragging: false })
-      if (diff > 0) onAnswer(false)
+      setShowExplanation(false)
+      setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
+      if (diffX > 0) onAnswer(false)
       else onAnswer(true)
+      return
     }
-    setSwipeState({ startX: 0, currentX: 0, isDragging: false })
+    setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
   }
 
   const handleTap = (e: React.MouseEvent) => {
@@ -88,7 +124,10 @@ function MobileFlashcardView({
   }
 
   const swipeOffset = swipeState.isDragging ? swipeState.currentX - swipeState.startX : 0
-  const swipeOpacity = 1 - Math.abs(swipeOffset) / 500
+  const swipeOffsetY = swipeState.isDragging ? swipeState.currentY - swipeState.startY : 0
+  const isHorizontalSwipe = Math.abs(swipeOffset) > Math.abs(swipeOffsetY)
+  const swipeOpacity = 1 - (isHorizontalSwipe ? Math.abs(swipeOffset) : Math.abs(swipeOffsetY)) / 500
+  const transformOrigin = isHorizontalSwipe ? 'center center' : (swipeOffsetY > 0 ? 'top center' : 'bottom center')
   
   const totalChars = question.text.length + question.options.reduce((a, b) => a + b.length, 0)
   
@@ -108,6 +147,122 @@ function MobileFlashcardView({
     return 'text-[14px]'
   }
 
+  if (!enableAnimation) {
+    return (
+      <div className="w-full h-full flex flex-col bg-[#F9F9F7] select-none touch-none overflow-hidden overscroll-none">
+        <div 
+          className="flex-1 flex flex-col p-3 sm:p-5 overflow-hidden relative"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div 
+            className="flex-1 bg-white rounded-[2rem] p-5 sm:p-7 flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden"
+            style={{
+              transform: `translate(${swipeOffset}px, ${swipeOffsetY}px) rotateZ(${isHorizontalSwipe ? swipeOffset / 30 : 0}deg) rotateX(${!isHorizontalSwipe ? swipeOffsetY / 10 : 0}deg) scale(${!isHorizontalSwipe ? 1 - Math.abs(swipeOffsetY) / 2000 : 1})`,
+              transformOrigin,
+              opacity: swipeOpacity,
+              transition: swipeState.isDragging ? 'none' : 'transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s',
+            }}
+          >
+            <ScrollArea className="flex-1 w-full h-full pr-1">
+              <div className="flex flex-col min-h-full space-y-4 pb-8">
+                {question.image_url && (
+                  <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
+                )}
+                
+                <h2 className={cn("font-bold text-gray-900 text-center leading-snug tracking-tight px-1", getQuestionFontSize())}>
+                  {question.text}
+                </h2>
+
+                <div className="space-y-2 pt-2">
+                  {question.options.map((option, idx) => {
+                    const isCorrect = question.correct_answer?.includes(idx)
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          if (!isFlipped) setIsFlipped(true)
+                        }}
+                        className={cn(
+                          "p-3 rounded-xl border flex items-center gap-3 transition-colors",
+                          isFlipped && isCorrect 
+                            ? "bg-green-50 border-green-500/50" 
+                            : "bg-gray-50/50 border-gray-100"
+                        )}
+                      >
+                        <span className={cn(
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black shadow-sm border",
+                          isFlipped && isCorrect ? "bg-green-500 text-white border-green-600" : "bg-white text-[#5D7B6F] border-gray-100"
+                        )}>
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                        <span className={cn(
+                          "font-medium leading-tight flex-1", 
+                          getOptionFontSize(),
+                          isFlipped && isCorrect ? "text-green-800" : "text-gray-700"
+                        )}>
+                          {option}
+                        </span>
+                        {isFlipped && isCorrect && <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {isFlipped && question.explanation && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Button 
+                      onClick={(e) => { e.stopPropagation(); setShowExplanation(!showExplanation); }}
+                      variant="ghost" 
+                      className="w-full h-10 px-4 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 flex justify-between items-center"
+                    >
+                      <div className="flex items-center">
+                        <Lightbulb className="mr-2 h-3.5 w-3.5" />
+                        Giải thích chi tiết
+                      </div>
+                      {showExplanation ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                    
+                    {showExplanation && (
+                      <div className="mt-2 p-4 bg-blue-50/50 rounded-xl border border-blue-100/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <p className={cn("text-slate-700 leading-relaxed", question.explanation.length > 300 ? "text-[12px]" : "text-[14px]")}>
+                          {question.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {isFlipped && (
+              <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(false); }} disabled={isLoading} variant="outline" className="flex-1 h-14 rounded-2xl bg-red-50 border-red-100 text-red-600 font-black uppercase tracking-wider text-[10px]">
+                  <XCircle className="mr-2 h-4 w-4" strokeWidth={2.5} /> Chưa biết
+                </Button>
+                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(true); }} disabled={isLoading} className="flex-1 h-14 rounded-2xl bg-green-600 text-white font-black uppercase tracking-wider text-[10px] shadow-lg shadow-green-200">
+                  <CheckCircle2 className="mr-2 h-4 w-4" strokeWidth={2.5} /> Đã biết
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {swipeState.isDragging && isHorizontalSwipe && (
+            <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
+              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
+                <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
+              </div>
+              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
+                <XCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full h-full flex flex-col bg-[#F9F9F7] select-none touch-none overflow-hidden overscroll-none">
       {/* Card Area - Full Height minus merged header */}
@@ -115,7 +270,8 @@ function MobileFlashcardView({
         <div
           className="relative w-full h-full max-h-[85vh]"
           style={{
-            transform: `translateX(${swipeOffset}px) rotate(${swipeOffset / 30}deg)`,
+            transform: `translate(${swipeOffset}px, ${swipeOffsetY}px) rotateZ(${isHorizontalSwipe ? swipeOffset / 30 : 0}deg) rotateX(${!isHorizontalSwipe ? swipeOffsetY / 10 : 0}deg) scale(${!isHorizontalSwipe ? 1 - Math.abs(swipeOffsetY) / 2000 : 1})`,
+            transformOrigin,
             opacity: swipeOpacity,
             transition: swipeState.isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s',
           }}
@@ -229,7 +385,7 @@ function MobileFlashcardView({
           </div>
         </div>
 
-        {swipeState.isDragging && isFlipped && (
+        {swipeState.isDragging && isHorizontalSwipe && (
           <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
             <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
               <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
@@ -252,8 +408,13 @@ export default function MobileFlashcardSessionPage() {
   const resolvedQuizId = Array.isArray(rawQuizId) ? rawQuizId[0] : rawQuizId ?? ''
   const resolvedSessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId ?? ''
 
-  const { session, question, isLoading, error, submitAnswer, isSubmitting } = useFlashcardSession(resolvedSessionId)
+  const { session, allQuestions, isLoading, error, submitAnswer, isSubmitting } = useFlashcardSession(resolvedSessionId)
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
+  const [displayIndex, setDisplayIndex] = useState<number | null>(null)
+  const [enableAnimation, setEnableAnimation] = useState(true)
+
+  const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
+  const question = allQuestions?.[actualIndex]
 
   useEffect(() => {
     if (session?.flashcard_stats) setStats({ known: session.flashcard_stats.cards_known, unknown: session.flashcard_stats.cards_unknown, total: session.flashcard_stats.total_cards })
@@ -265,7 +426,24 @@ export default function MobileFlashcardSessionPage() {
 
   const handleAnswer = (knows: boolean) => {
     if (!session || !question) return
-    submitAnswer({ knows, questionIndex: session.current_question_index }, { onSuccess: (data) => setStats(data.stats) })
+    submitAnswer({ knows, questionIndex: actualIndex }, { 
+      onSuccess: (data) => {
+        setStats(data.stats)
+        if (displayIndex !== null) setDisplayIndex(null)
+      } 
+    })
+  }
+
+  const handleBack = () => {
+    if (actualIndex > 0) {
+      setDisplayIndex(actualIndex - 1)
+    }
+  }
+
+  const handleForward = () => {
+    if (actualIndex < (session?.current_question_index ?? 0)) {
+      setDisplayIndex(actualIndex + 1)
+    }
   }
 
   if (isLoading) return (
@@ -292,6 +470,14 @@ export default function MobileFlashcardSessionPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className={`w-3.5 h-3.5 ${enableAnimation ? 'text-amber-500' : 'text-gray-300'}`} />
+              <Switch 
+                checked={enableAnimation} 
+                onCheckedChange={setEnableAnimation} 
+                className="scale-[0.6] origin-right data-[state=checked]:bg-amber-500"
+              />
+            </div>
             <div className="flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-1">
                 <span className="text-[12px] font-black text-green-600">{stats.known}</span>
@@ -312,16 +498,25 @@ export default function MobileFlashcardSessionPage() {
         {/* Progress Bar Integrated into Header */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-[#5D7B6F] transition-all duration-700" style={{ width: `${(session.current_question_index + 1) / session.totalQuestions * 100}%` }} />
+            <div className="h-full bg-[#5D7B6F] transition-all duration-700" style={{ width: `${(actualIndex + 1) / session.totalQuestions * 100}%` }} />
           </div>
           <span className="text-[8px] font-black text-gray-400 whitespace-nowrap uppercase tracking-widest">
-            {session.current_question_index + 1} / {session.totalQuestions}
+            {actualIndex + 1} / {session.totalQuestions}
           </span>
         </div>
       </div>
 
       <div className="flex-1 relative overflow-hidden">
-        <MobileFlashcardView question={question} questionNumber={session.current_question_index + 1} totalQuestions={session.totalQuestions} onAnswer={handleAnswer} isLoading={isSubmitting} />
+        <MobileFlashcardView 
+          question={question} 
+          questionNumber={actualIndex + 1} 
+          totalQuestions={session.totalQuestions} 
+          onAnswer={handleAnswer} 
+          onBack={handleBack} 
+          onForward={handleForward}
+          isLoading={isSubmitting} 
+          enableAnimation={enableAnimation}
+        />
       </div>
     </div>
   )

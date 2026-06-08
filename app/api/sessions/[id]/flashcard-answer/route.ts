@@ -58,11 +58,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { knows, question_index } = parsed.data
     const currentIndex = question_index ?? session.current_question_index
+    
+    if (!session.flashcard_stats) session.flashcard_stats = { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 }
+
+    // Check if we are updating a previous answer
     if (question_index !== undefined && question_index < session.current_question_index) {
+      const existingAnswer = session.user_answers.find(a => a.question_index === question_index)
+      if (existingAnswer) {
+        if (existingAnswer.is_correct !== knows) {
+          // Revert old stats
+          if (existingAnswer.is_correct) session.flashcard_stats.cards_known -= 1; else session.flashcard_stats.cards_unknown -= 1
+          // Apply new stats
+          if (knows) session.flashcard_stats.cards_known += 1; else session.flashcard_stats.cards_unknown += 1
+          existingAnswer.is_correct = knows
+          await session.save()
+        }
+      }
       return NextResponse.json({ success: true, knows, isLastQuestion: false, nextQuestionIndex: session.current_question_index, stats: { total: session.flashcard_stats?.total_cards, known: session.flashcard_stats?.cards_known, unknown: session.flashcard_stats?.cards_unknown } })
     }
 
-    if (!session.flashcard_stats) session.flashcard_stats = { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 }
     session.user_answers.push({ question_index: currentIndex, answer_index: -1, is_correct: knows })
     if (knows) session.flashcard_stats.cards_known += 1; else session.flashcard_stats.cards_unknown += 1
 
