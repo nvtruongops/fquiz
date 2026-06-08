@@ -9,6 +9,7 @@ import { UserDropdown } from '@/components/layout/UserDropdown'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { LayoutDashboard, Library, Compass, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 const navLinks = [
   { name: 'Tổng quan', href: '/dashboard', icon: LayoutDashboard },
@@ -24,29 +25,17 @@ interface NavbarProps {
 export default function Navbar({ initialUser }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [user, setUser] = useState<{ name: string; role: string; avatarUrl?: string } | null>(initialUser ?? null)
   const pathname = usePathname()
+
+  const { data: authData } = useAuth()
+  
+  // Reuse query-cached user, falling back to minimal initialUser decoded from cookie
+  const user = authData ? authData.user : initialUser
 
   useEffect(() => {
     setMounted(true)
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
-    
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
-      .then(async (res) => {
-        if (res.status === 403) {
-          const data = await res.json()
-          if (data.banned) {
-            globalThis.location.href = '/login?reason=account_banned'
-          }
-          return
-        }
-        if (!res.ok) return
-        const data = (await res.json()) as { user?: { name: string; role: string; avatarUrl?: string } | null }
-        setUser(data.user ?? null)
-      })
-      .catch(() => {})
-
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 

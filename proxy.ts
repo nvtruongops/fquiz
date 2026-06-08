@@ -13,7 +13,7 @@ import {
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/explore', '/api/security/csp-report'])
-const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout'])
+const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout', '/api/jobs/mail'])
 const STUDENT_PATHS = ['/dashboard', '/courses', '/quiz', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -114,7 +114,8 @@ function isPublicRoute(pathname: string) {
 function shouldSkipAuth(pathname: string) {
   return pathname.startsWith('/api/v1/public/') || 
          pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
-         pathname.startsWith('/api/auth/')
+         pathname.startsWith('/api/auth/') ||
+         pathname === '/api/jobs/mail'
 }
 
 function validateCsrf(request: NextRequest, pathname: string, requestId: string) {

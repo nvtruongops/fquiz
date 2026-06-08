@@ -15,9 +15,11 @@ export async function POST(req: Request) {
   }
 
   const bodyText = await req.text();
+  const isLocalMockSignature =
+    process.env.NODE_ENV === 'development' && signature === 'mock-signature-for-local-dev'
   
-  // Skip verification if keys are not set (for initial setup/dev)
-  if (process.env.QSTASH_CURRENT_SIGNING_KEY) {
+  // Skip verification if keys are not set (for initial setup/dev) or local QStash simulation is used.
+  if (process.env.QSTASH_CURRENT_SIGNING_KEY && !isLocalMockSignature) {
     const isValid = await qstashReceiver.verify({
       signature,
       body: bodyText,

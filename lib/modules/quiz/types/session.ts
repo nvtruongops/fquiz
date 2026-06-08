@@ -59,6 +59,7 @@ export interface SessionQuestion {
   image_url?: string
   correct_answer?: number | number[]
   explanation?: string
+  usage_count?: number
 }
 
 /**

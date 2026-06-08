@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/core/db/mongodb';
 import { Quiz } from '@/lib/modules/quiz/models/Quiz';
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession';
 import { qstashReceiver } from '@/lib/core/queue/qstash';
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator';
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz';
 
 /**
@@ -85,6 +86,15 @@ export async function POST(req: Request) {
       }
       return pool;
     });
+
+    // Đảm bảo mọi question đều có question_id trước khi trộn
+    for (const pool of uniquePoolsPerQuiz) {
+      for (const q of pool) {
+        if (!q.question_id) {
+          q.question_id = generateQuestionId(q);
+        }
+      }
+    }
 
     const deduplicatedQuizzes = uniquePoolsPerQuiz.filter((pool) => pool.length > 0);
 

@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
+import { API_ROUTES } from '@/lib/core/constants/api-routes'
+import { formatStudyDuration } from '@/lib/core/utils/format'
 import {
   Search, Users, Clock3, Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp,
   Pin, PinOff, Shuffle, SearchCode, BookOpen, Loader2, ChevronLeft, ChevronRight,
@@ -19,6 +21,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import MixQuizTab from '@/components/quiz/MixQuizTab'
 import { CategorySidebar } from '@/components/quiz/CategorySidebar'
 import { QuizDisplayArea } from '@/components/quiz/QuizDisplayArea'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -46,29 +49,22 @@ interface QuizMeta {
 
 const PAGE_SIZE = 12 // Increased page size for wider layout
 
-function formatStudyDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`
-  const hours = Math.floor(minutes / 60)
-  const rem = minutes % 60
-  return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`
-}
-
 // ── API ────────────────────────────────────────────────────────────────────
 
 async function fetchCategories(): Promise<{ data: Category[] }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/categories`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.PUBLIC.CATEGORIES}`)
   if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
 }
 
 async function fetchPinnedCategories(): Promise<{ pinnedCategories: string[] }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-categories`)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.PINNED_CATEGORIES}`)
   if (!res.ok) return { pinnedCategories: [] }
   return res.json()
 }
 
 async function togglePinCategory(categoryId: string): Promise<{ pinned: boolean; pinnedCategories: string[]; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-categories`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.PINNED_CATEGORIES}`, {
     method: 'POST',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ categoryId }),
@@ -91,7 +87,7 @@ async function fetchQuizzes(params: {
   p.set('sort', 'popular')
   if (params.limit) p.set('limit', String(params.limit))
   if (params.offset) p.set('offset', String(params.offset))
-  const endpoint = params.isLoggedIn ? '/api/v1/explore/quizzes' : '/api/v1/public/quizzes'
+  const endpoint = params.isLoggedIn ? API_ROUTES.STUDENT.EXPLORE_QUIZZES : API_ROUTES.PUBLIC.QUIZZES
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${endpoint}?${p}`)
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
@@ -178,7 +174,7 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
                   </div>
                   <p className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider opacity-60">
                     <Clock3 className="h-2.5 w-2.5" />
-                    {formatStudyDuration(totalStudyMinutes)}
+                    {formatStudyDuration(totalStudyMinutes, true)}
                   </p>
                 </div>
               </div>
@@ -287,7 +283,10 @@ function SearchResults({ search, isLoggedIn }: { search: string; isLoggedIn: boo
 export default function ExploreContent() {
   const [search, setSearch] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [user, setUser] = useState<{ id: string } | null | undefined>(undefined)
+  
+  const { data: authData, isLoading: authLoading } = useAuth()
+  const user = authLoading ? undefined : (authData?.user ?? null)
+
   const [activeTab, setActiveTab] = useState<'explore' | 'mix'>('explore')
   const debouncedSearch = useDebounce(search, 300)
   const { toast } = useToast()
@@ -301,12 +300,6 @@ export default function ExploreContent() {
     if (tab === 'mix') setActiveTab('mix')
     else setActiveTab('explore')
   }, [searchParams])
-
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`)
-      .then(res => res.ok ? res.json().then(d => setUser(d.user)) : setUser(null))
-      .catch(() => setUser(null))
-  }, [])
 
   const { data: catData, isLoading: catsLoading } = useQuery({
     queryKey: ['public', 'categories'],

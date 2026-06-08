@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import '@/lib/modules/auth/models/User' // Import to register the User schema for populate
-import '@/lib/modules/quiz/models/Category' // Import to register the Category schema for populate
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
 export async function GET(

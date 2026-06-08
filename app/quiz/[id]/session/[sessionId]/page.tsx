@@ -362,22 +362,19 @@ export default function QuizSessionPage() {
     if (!activeData?.session || submittedRef.current) return
     submittedRef.current = true
     setSubmitted(true)
-    if (currentQuestion?.correct_answer !== undefined) {
-      const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
-        ? [...new Set(currentQuestion.correct_answer)].sort((a, b) => a - b)
-        : [currentQuestion.correct_answer as number]
-      const submittedSorted = [...new Set(answerIndexes)].sort((a, b) => a - b)
-      const isCorrect = submittedSorted.length === correctAnswerIndexes.length && submittedSorted.every((v, i) => v === correctAnswerIndexes[i])
-      const feedback: QuestionFeedback = {
-        isCorrect,
-        correctAnswer: correctAnswerIndexes[0],
-        correctAnswers: correctAnswerIndexes,
-        explanation: currentQuestion.explanation,
-      }
-      setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
-      setLastAnswerResult(feedback)
-    }
+
     submitMutation.mutate({ questionIndex: currentQuestionIndex, answerIndexes }, {
+      onSuccess: (data) => {
+        if ('isCorrect' in data) {
+          const feedback: QuestionFeedback = {
+            isCorrect: data.isCorrect,
+            correctAnswer: data.correctAnswer,
+            correctAnswers: data.correctAnswers ?? [data.correctAnswer],
+            explanation: data.explanation,
+          }
+          setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
+        }
+      },
       onError: () => {
         submittedRef.current = false
         setSubmitted(false)

@@ -102,8 +102,23 @@ async function handleSend(
   }, `Password reset token generated for ${user.email}`)
 
   if (isMailConfigured()) {
-    await enqueueMail('verification-code', { to: user.email, code, purpose: 'reset-password' })
-    return NextResponse.json({ message: genericMessage })
+    try {
+      await enqueueMail('verification-code', { to: user.email, code, purpose: 'reset-password' })
+      return NextResponse.json({ message: genericMessage })
+    } catch (mailErr) {
+      logSecurityEvent('forgot_password_mail_error', {
+        request_id: requestId,
+        user_id: user._id.toString(),
+        route,
+        outcome: 'error',
+        ip,
+        err: mailErr instanceof Error ? mailErr.message : 'Unknown mail error',
+      }, 'Failed to send verification email')
+      // Vẫn trả về success message để không tiết lộ email có tồn tại hay không,
+      // nhưng trong thực tế email chưa được gửi. Hoặc có thể trả về lỗi 500.
+      // Ở đây ta throw để catch block bên ngoài xử lý và trả về 500.
+      throw mailErr
+    }
   }
 
   if (process.env.NODE_ENV === 'development') {
@@ -136,12 +151,14 @@ export async function POST(request: Request) {
 
     return handleSend(body, requestId, ip, route)
   } catch (err) {
+    console.error('[Forgot Password Error]:', err)
     logSecurityEvent('forgot_password_error', {
       request_id: requestId,
       route,
       outcome: 'error',
       ip,
       err: err instanceof Error ? err.message : 'Unknown',
+      stack: err instanceof Error ? err.stack : undefined,
     }, 'Forgot password handler error')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

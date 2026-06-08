@@ -4,6 +4,7 @@ import React from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/core/utils/utils'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
+import { UsageBadge } from '@/components/quiz/UsageBadge'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
@@ -60,6 +61,12 @@ export function QuestionDisplay({
                   className="h-full max-h-[420px] w-full object-contain"
                 />
               </div>
+            </div>
+          )}
+
+          {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
+            <div className="mt-3">
+              <UsageBadge count={question.usage_count ?? 0} />
             </div>
           )}
 

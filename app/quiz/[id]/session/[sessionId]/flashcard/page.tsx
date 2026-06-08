@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/FlashcardView'
 import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
 import MobileFlashcardSessionPage from '@/app/quiz/[id]/session/[sessionId]/flashcard/mobile/page'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
 import { Button } from '@/components/shared/ui/button'
 import { Card } from '@/components/shared/ui/card'
+import { Switch } from '@/components/shared/ui/switch'
 
 export default function FlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -63,10 +64,14 @@ export default function FlashcardSessionPage() {
 
 function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessionId: string }) {
   const router = useRouter()
-  const { session, question, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
+  const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
     useFlashcardSession(sessionId)
   const sessionLoader = useSessionLoader()
   const sessionLoaderStartedRef = useRef(false)
+
+  const [displayIndex, setDisplayIndex] = useState<number | null>(null)
+  const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
+  const question = allQuestions?.[actualIndex]
 
   // Start loader immediately on mount so animation begins from 0
   useEffect(() => {
@@ -86,6 +91,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   }, [isLoading, isPreloading, session])
 
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
+  const [enableAnimation, setEnableAnimation] = useState(true)
   const flashcardRef = useRef<FlashcardViewRef>(null)
 
   // Lock submissions to prevent multi-hit logic
@@ -112,7 +118,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   // Reset submit lock whenever question index changes
   useEffect(() => {
     submittedRef.current = false
-  }, [session?.current_question_index])
+  }, [actualIndex])
 
   const handleAnswer = useCallback((knows: boolean) => {
     // Prevent double clicking / concurrent key mashing
@@ -120,11 +126,15 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
     submittedRef.current = true
 
     submitAnswer(
-      { knows, questionIndex: session.current_question_index },
+      { knows, questionIndex: actualIndex },
       {
         onSuccess: (data) => {
           // Update local stats immediately for better UX
           setStats(data.stats)
+          // If we were viewing a previous question, jump back to the latest question
+          if (displayIndex !== null) {
+            setDisplayIndex(null)
+          }
         },
         onError: () => {
           // Unlock if failed to allow retry
@@ -132,16 +142,46 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
         }
       }
     )
-  }, [session, question, submitAnswer])
+  }, [session, question, submitAnswer, actualIndex, displayIndex])
 
   const handleExit = () => {
     router.push(`/dashboard`)
+  }
+
+  const handleBack = () => {
+    if (actualIndex > 0) {
+      setDisplayIndex(actualIndex - 1)
+    }
+  }
+
+  const handleForward = () => {
+    if (actualIndex < (session?.current_question_index ?? 0)) {
+      setDisplayIndex(actualIndex + 1)
+    }
   }
 
   const handleBackgroundClick = () => {
     if (flashcardRef.current && !isSubmitting) {
       flashcardRef.current.flip()
     }
+  }
+
+  // Mouse swipe logic
+  const [swipeState, setSwipeState] = useState({ startX: 0, isDragging: false })
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setSwipeState({ startX: e.clientX, isDragging: true })
+  }
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!swipeState.isDragging) return
+    const diff = e.clientX - swipeState.startX
+    if (diff > 100 && actualIndex > 0) {
+      handleBack()
+    } else if (diff < -100 && actualIndex < (session?.current_question_index ?? 0)) {
+      handleForward()
+    }
+    setSwipeState({ startX: 0, isDragging: false })
   }
 
   // Keyboard shortcuts
@@ -224,7 +264,12 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   }
 
   return (
-    <div className="h-[100dvh] bg-background py-2 md:py-6 flex flex-col overflow-hidden" onClick={handleBackgroundClick}>
+    <div 
+      className="h-[100dvh] bg-background py-2 md:py-6 flex flex-col overflow-hidden" 
+      onClick={handleBackgroundClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+    >
       {/* Compact Header Card */}
       <div className="container mx-auto px-4 mb-2 md:mb-4 flex-none" onClick={(e) => e.stopPropagation()}>
         <Card className="p-3">
@@ -242,30 +287,48 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
               </div>
             </div>
 
-            {/* Center: Stats (6 cols) */}
+            {/* Center: Stats & Navigation (6 cols) */}
             <div className="col-span-12 sm:col-span-6 flex items-center justify-center gap-4">
-              <div className="text-center">
-                <p className="text-xl font-bold">{stats.total}</p>
-                <p className="text-[10px] text-muted-foreground">Tổng</p>
+              <Button variant="outline" size="icon" onClick={handleBack} disabled={actualIndex === 0} className="h-8 w-8 rounded-full">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center gap-4 px-4">
+                <div className="text-center">
+                  <p className="text-xl font-bold">{stats.total}</p>
+                  <p className="text-[10px] text-muted-foreground">Tổng</p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div className="text-center">
+                  <p className="text-xl font-bold text-green-600">{stats.known}</p>
+                  <p className="text-[10px] text-muted-foreground">Biết</p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div className="text-center">
+                  <p className="text-xl font-bold text-red-600">{stats.unknown}</p>
+                  <p className="text-[10px] text-muted-foreground">Chưa biết</p>
+                </div>
               </div>
-              <div className="h-8 w-px bg-border" />
-              <div className="text-center">
-                <p className="text-xl font-bold text-green-600">{stats.known}</p>
-                <p className="text-[10px] text-muted-foreground">Biết</p>
-              </div>
-              <div className="h-8 w-px bg-border" />
-              <div className="text-center">
-                <p className="text-xl font-bold text-red-600">{stats.unknown}</p>
-                <p className="text-[10px] text-muted-foreground">Chưa biết</p>
-              </div>
+
+              <Button variant="outline" size="icon" onClick={handleForward} disabled={actualIndex >= (session?.current_question_index ?? 0)} className="h-8 w-8 rounded-full">
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Right: Progress & Exit (3 cols) */}
             <div className="col-span-12 sm:col-span-3 flex items-center justify-end gap-3">
+              <div className="flex items-center gap-2 mr-2">
+                <Sparkles className={`w-4 h-4 ${enableAnimation ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <Switch 
+                  checked={enableAnimation} 
+                  onCheckedChange={setEnableAnimation} 
+                  className="scale-75 data-[state=checked]:bg-amber-500"
+                />
+              </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground">Tiến độ</p>
                 <p className="font-semibold text-xs">
-                  Câu {session.current_question_index + 1}/{session.totalQuestions}
+                  Câu {actualIndex + 1}/{session.totalQuestions}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleExit} className="h-8 text-xs px-3">
@@ -282,10 +345,11 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
           <FlashcardView
             ref={flashcardRef}
             question={question}
-            questionNumber={session.current_question_index + 1}
+            questionNumber={actualIndex + 1}
             totalQuestions={session.totalQuestions}
             onAnswer={handleAnswer}
             isLoading={isSubmitting}
+            enableAnimation={enableAnimation}
           />
         </div>
       </div>

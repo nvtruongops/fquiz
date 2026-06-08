@@ -23,21 +23,18 @@ import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/core/utils/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { useAuth } from '@/hooks/auth/useAuth'
+import { API_ROUTES } from '@/lib/core/constants/api-routes'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<{ name: string } | null>(null)
-
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/me`).then(res => {
-      if (res.ok) res.json().then(data => setUser(data.user))
-    })
-  }, [])
+  const { data: authData } = useAuth()
+  const user = authData?.user ?? null
 
   const { data, isLoading } = useQuery({
     queryKey: ['student', 'dashboard'],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/dashboard`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.DASHBOARD}`)
       if (!res.ok) throw new Error('Failed to fetch dashboard data')
       return res.json()
     }

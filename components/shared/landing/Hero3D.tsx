@@ -3,8 +3,12 @@
 import { motion, Variants } from "framer-motion";
 import { ArrowRight, Search, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import Scene3D from "./Scene3D";
 import React from "react";
+import dynamic from "next/dynamic";
+
+const Scene3D = dynamic(() => import("./Scene3D"), {
+  ssr: false,
+});
 
 export default function Hero3D() {
   const containerVariants: Variants = {

@@ -7,6 +7,7 @@ import { Types } from 'mongoose'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { validateObjectId } from '@/lib/core/schemas/common'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()
@@ -274,6 +275,7 @@ export async function POST(req: Request) {
         correct_answer: q.correct_answer || [],
         explanation: q.explanation || '',
         image_url: finalImageUrl || '',
+        question_id: generateQuestionId(q),
       }
     })
 
