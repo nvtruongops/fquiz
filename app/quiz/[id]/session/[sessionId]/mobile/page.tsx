@@ -129,7 +129,7 @@ export default function QuizSessionMobilePage() {
       sessionLoaderStartedRef.current = true
       sessionLoader.open('Đang tải bộ câu hỏi...')
     }
-  }, [sessionLoader])
+  }, [resolvedSessionId])
 
   // Only render quiz when server data has been applied for THIS session
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId

@@ -27,13 +27,13 @@ export function QuizTimer({
       // If paused, calculate time up to pause point
       if (pausedAt) {
         const pauseTime = new Date(pausedAt).getTime()
-        const elapsed = pauseTime - startTime - totalPausedDurationMs
+        const elapsed = Math.max(0, pauseTime - startTime - totalPausedDurationMs)
         setElapsedSeconds(Math.floor(elapsed / 1000))
         return
       }
       
       // Active: calculate current elapsed time minus paused duration
-      const elapsed = now - startTime - totalPausedDurationMs
+      const elapsed = Math.max(0, now - startTime - totalPausedDurationMs)
       setElapsedSeconds(Math.floor(elapsed / 1000))
     }
 
