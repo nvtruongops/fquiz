@@ -6,6 +6,7 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -93,6 +94,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
       return {
         ...q,
+        question_id: q.question_id || generateQuestionId(q), // ✅ Generate if missing
         image_url: finalImageUrl || '',
       }
     })
