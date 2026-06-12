@@ -48,6 +48,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const { category_id, course_code, questions, status, description } = parsed.data
+    const normalizedCourseCode = course_code.trim().toUpperCase()
 
     const category = await Category.findOne({
       _id: category_id,
@@ -107,10 +108,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       { _id: id, updatedAt: existingQuiz.updatedAt || { $exists: false } },
       {
         $set: {
-          title: course_code.trim().toUpperCase(),
+          title: normalizedCourseCode,
           description,
           category_id,
-          course_code,
+          course_code: normalizedCourseCode,
           questions: processedQuestions,
           questionCount: processedQuestions.length,
           status,
@@ -127,7 +128,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     // If the course_code changed, rename it in the question bank tracking so the
     // old code doesn't linger as orphan usage (root-cause of inflated counts).
     const oldCode = (existingQuiz.course_code || '').trim().toUpperCase()
-    const newCode = course_code.trim().toUpperCase()
+    const newCode = normalizedCourseCode
     if (oldCode && oldCode !== newCode) {
       try {
         await renameQuizCodeInBank(category_id, oldCode, newCode)

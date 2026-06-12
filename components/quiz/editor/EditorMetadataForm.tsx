@@ -182,8 +182,9 @@ export function EditorMetadataForm({
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Mã môn / Mã đề</label>
                 <Input
-                  placeholder="Ví dụ: MLN131, CS101..."
+                  placeholder="Ví dụ: MLN 131: DE-01"
                   value={form.course_code}
+                  maxLength={150}
                   onChange={(e) => setForm(p => ({ ...p, course_code: e.target.value }))}
                   className="h-12 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold text-[#5D7B6F]"
                 />

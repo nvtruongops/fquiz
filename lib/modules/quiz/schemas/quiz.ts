@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { stripHtml, MongoIdSchema } from '@/lib/core/schemas/common'
 
+export const COURSE_CODE_MAX_LENGTH = 150
+export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Mã môn / Mã đề tối đa ${COURSE_CODE_MAX_LENGTH} ký tự`
+export const COURSE_CODE_ALLOWED_MESSAGE = 'Mã môn / Mã đề chỉ được chứa chữ cái, số, dấu cách, dấu gạch dưới (_), dấu hai chấm (:) và dấu gạch ngang (-)'
+export const COURSE_CODE_PATTERN = /^[a-zA-Z0-9_ :ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ-]+$/
+
 export const QuestionSchema = z.object({
   question_id: z.string().optional(), // Auto-generated content-based ID
   text: z
@@ -106,8 +111,8 @@ export const CreateQuizSchema = z.object({
     .string()
     .trim()
     .min(1, 'Mã đề / Mã Quiz không được để trống')
-    .max(50, 'Mã đề tối đa 50 ký tự')
-    .regex(/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+    .max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+    .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z
     .array(QuestionSchema)
     .min(1, 'Cần ít nhất một câu hỏi')
@@ -119,8 +124,8 @@ export const CreateQuizSchema = z.object({
 export const SaveDraftQuizSchema = z.object({
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
   category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50)
-    .regex(/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+    .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z.array(DraftQuestionSchema).min(1).max(150),
   status: z.literal('draft'),
 })
@@ -142,8 +147,8 @@ export const AdminCreateQuizSchema = z.object({
     .string()
     .trim()
     .min(1, 'Mã đề / Mã Quiz không được để trống')
-    .max(50, 'Mã đề tối đa 50 ký tự')
-    .regex(/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+    .max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+    .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z
     .array(QuestionSchema)
     .min(1, 'Cần ít nhất một câu hỏi'),
@@ -154,8 +159,8 @@ export const AdminCreateQuizSchema = z.object({
 export const AdminSaveDraftQuizSchema = z.object({
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
   category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50)
-    .regex(/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+    .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z.array(DraftQuestionSchema).min(1),
   status: z.literal('draft'),
 })
@@ -175,8 +180,8 @@ export const SubmitAnswerSchema = z
   })
 
 export const CreateStudentQuizSchema = z.object({
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(50, 'Mã đề tối đa 50 ký tự')
-    .regex(/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/, 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)'),
+  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+    .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   category_id: MongoIdSchema,
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
   questions: z.array(QuestionSchema).min(1, 'Cần ít nhất một câu hỏi').max(150, 'Tối đa 150 câu hỏi'),

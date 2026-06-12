@@ -4,11 +4,16 @@ import { verifyToken } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import {
+  COURSE_CODE_ALLOWED_MESSAGE,
+  COURSE_CODE_MAX_LENGTH,
+  COURSE_CODE_PATTERN,
+} from '@/lib/modules/quiz/schemas/quiz'
 import { z } from 'zod'
 
 const AutoSyncSchema = z.object({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  course_code: z.string(),
+  course_code: z.string().trim().min(1).max(COURSE_CODE_MAX_LENGTH).regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   quiz_id: z.string().optional(),
   questions: z.array(z.object({
     text: z.string(),
