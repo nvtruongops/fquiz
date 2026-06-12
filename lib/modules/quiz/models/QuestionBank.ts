@@ -22,7 +22,8 @@ export interface IQuestionBank {
   
   // Usage tracking
   usage_count: number                   // Số lần được dùng
-  used_in_quizzes: string[]            // Danh sách course_code đã dùng
+  used_in_quizzes: string[]            // Danh sách course_code đã dùng (legacy)
+  used_in_quiz_ids: Types.ObjectId[]   // Danh sách quiz_id để tracking chính xác
   
   // Conflict detection
   has_conflicts: boolean                // Có mâu thuẫn với câu khác không
@@ -52,6 +53,7 @@ const QuestionBankSchema = new Schema<IQuestionBank>(
     
     usage_count: { type: Number, default: 0 },
     used_in_quizzes: { type: [String], default: [] },
+    used_in_quiz_ids: [{ type: Schema.Types.ObjectId, ref: 'Quiz' }],
     
     has_conflicts: { type: Boolean, default: false },
     conflict_notes: { type: String },

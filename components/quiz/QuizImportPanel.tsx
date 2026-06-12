@@ -63,11 +63,24 @@ interface BankCheckResult {
       questionIndex: number
       conflictType: 'different_answer'
       message: string
+      question?: {
+        text: string
+        options: string[]
+        correct_answer: number[]
+      }
       existingQuestion?: {
         correct_answer: number[]
+        options?: string[]
         used_in_quizzes: string[]
         usage_count: number
       }
+      answerVariants?: Array<{
+        correct_answer: number[]
+        answer_texts: string[]
+        count: number
+        quizzes: string[]
+        options: string[]
+      }>
     }>
   }
   summary: string
@@ -92,6 +105,13 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
   const [preview, setPreview] = React.useState<ImportPreviewResponse | null>(null)
   const [bankCheck, setBankCheck] = React.useState<BankCheckResult | null>(null)
   const [checkingBank, setCheckingBank] = React.useState(false)
+  // Per-conflict resolution: which answer the admin picked (and which bank variant).
+  const [conflictChoice, setConflictChoice] = React.useState<
+    Record<number, { source: 'current' | 'bank'; variantIdx: number }>
+  >({})
+  const [applying, setApplying] = React.useState(false)
+  const [confirmingConflicts, setConfirmingConflicts] = React.useState(false)
+  const [conflictsConfirmed, setConflictsConfirmed] = React.useState(false)
 
   const createFileSnapshot = React.useCallback(async (source: File) => {
     const buffer = await source.arrayBuffer()
@@ -134,6 +154,9 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
     setLoading(true)
     setError('')
     setBankCheck(null)
+    setConflictChoice({})
+    setConfirmingConflicts(false)
+    setConflictsConfirmed(false)
     onProcessingStateChange?.(true)
     try {
       const form = new FormData()
@@ -225,6 +248,123 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
     }
   }
 
+  // Apply preview to form. Any required bank sync is handled once by the
+  // explicit confirmation button before this runs.
+  const handleApply = async () => {
+    if (!preview) return
+    const quiz = preview.normalizedQuiz
+    const diffConflicts = bankCheck?.conflicts.different_answer ?? []
+
+    if (diffConflicts.length === 0) {
+      onApply(quiz)
+      return
+    }
+
+    if (!conflictsConfirmed) {
+      setError('Vui lòng bấm "Xác nhận lựa chọn đáp án" trước khi áp dụng quiz vào form.')
+      return
+    }
+
+    setApplying(true)
+    try {
+      // Clone questions so we can rewrite resolved answers before applying.
+      const questions = quiz.questions.map((q) => ({ ...q, options: [...q.options], correct_answer: [...q.correct_answer] }))
+
+      for (const c of diffConflicts) {
+        const choice = conflictChoice[c.questionIndex] ?? { source: 'current', variantIdx: 0 }
+        if (choice.source === 'bank') {
+          // Use the canonical bank answer → rewrite this imported question.
+          // Map by answer TEXT (bank indices reference bank option order).
+          const fallbackVariants = c.answerVariants ?? []
+          const fallbackVariant = fallbackVariants[choice.variantIdx] ?? fallbackVariants[0]
+          const variant = c.existingQuestion
+            ? {
+                correct_answer: c.existingQuestion.correct_answer,
+                options: c.existingQuestion.options ?? questions[c.questionIndex]?.options ?? [],
+              }
+            : fallbackVariant
+          const fileQ = questions[c.questionIndex]
+          if (variant && fileQ) {
+            const answerTexts = variant.correct_answer
+              .map((i) => (variant.options[i] ?? '').trim().toLowerCase())
+            const remapped = fileQ.options
+              .map((opt, idx) => ({ idx, t: opt.trim().toLowerCase() }))
+              .filter((o) => answerTexts.includes(o.t))
+              .map((o) => o.idx)
+            // Fall back to bank indices only if texts didn't resolve.
+            fileQ.correct_answer = remapped.length > 0 ? remapped : variant.correct_answer
+          }
+        }
+      }
+
+      onApply({ ...quiz, questions })
+    } catch (err) {
+      console.error('Apply with conflict resolution failed:', err)
+      setError('Không thể áp dụng đáp án đã chọn. Vui lòng thử lại.')
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  const handleConfirmConflictChoices = async () => {
+    if (!preview || !bankCheck || bankCheck.different_answer_conflicts === 0) return
+
+    setConfirmingConflicts(true)
+    setError('')
+    try {
+      for (const c of bankCheck.conflicts.different_answer) {
+        const choice = conflictChoice[c.questionIndex] ?? { source: 'current', variantIdx: 0 }
+        if (choice.source !== 'current') continue
+
+        const fileQ = preview.normalizedQuiz.questions[c.questionIndex]
+        if (!fileQ) continue
+        if (!categoryId) throw new Error('Vui lòng chọn môn học trước khi đồng bộ đáp án.')
+
+        const res = await fetch('/api/question-bank/sync-update', {
+          method: 'POST',
+          headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
+          body: JSON.stringify({
+            category_id: categoryId,
+            old_question_id: '',
+            new_question: {
+              text: fileQ.text,
+              options: fileQ.options,
+              correct_answer: fileQ.correct_answer,
+            },
+          }),
+        })
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null)
+          throw new Error(
+            typeof data?.error === 'string'
+              ? data.error
+              : 'Không thể đồng bộ đáp án vào ngân hàng câu hỏi.'
+          )
+        }
+      }
+
+      setConflictsConfirmed(true)
+    } catch (err) {
+      setConflictsConfirmed(false)
+      setError(err instanceof Error ? err.message : 'Không thể đồng bộ đáp án. Vui lòng thử lại.')
+    } finally {
+      setConfirmingConflicts(false)
+    }
+  }
+
+  const handleConflictChoiceChange = (
+    questionIndex: number,
+    choice: { source: 'current' | 'bank'; variantIdx: number }
+  ) => {
+    setConflictChoice((prev) => ({
+      ...prev,
+      [questionIndex]: choice,
+    }))
+    setConflictsConfirmed(false)
+  }
+
   return (
     <Card id="quiz-import-panel" className="bg-white border-[#A4C3A2]">
       <CardHeader className="pb-3">
@@ -254,6 +394,9 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
               setPreparingFile(false)
               setPreview(null)
               setBankCheck(null)
+              setConflictChoice({})
+              setConfirmingConflicts(false)
+              setConflictsConfirmed(false)
               setError('')
               onValidationStateChange?.(false)
               onPreviewDiagnosticsChange?.([])
@@ -334,16 +477,161 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
             )}
 
             {bankCheck && bankCheck.different_answer_conflicts > 0 && (
-              <div className="bg-red-50 border border-red-300 rounded-md p-3">
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 text-xs">
-                    <p className="font-bold text-red-900 mb-1">
-                       {bankCheck.different_answer_conflicts} câu hỏi có mâu thuẫn đáp án!
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 text-xs">
+                    <p className="font-bold text-sm text-red-900 mb-0.5">
+                      {bankCheck.different_answer_conflicts} câu hỏi có mâu thuẫn đáp án
                     </p>
-                    <p className="text-red-700">
-                      Cùng câu hỏi + cùng options nhưng đáp án khác trong ngân hàng.
+                    <p className="text-red-700 leading-relaxed mb-3">
+                      Cùng câu hỏi + cùng options nhưng đáp án khác với ngân hàng.
+                      Chọn đáp án đúng rồi bấm <span className="font-semibold">&quot;Xác nhận lựa chọn đáp án&quot;</span> để đồng bộ.
                     </p>
+
+                    <div className="space-y-3">
+                      {bankCheck.conflicts.different_answer.map((c) => {
+                        const q = c.question
+                        const importedLines = q
+                          ? c.question!.correct_answer.map(
+                              (i) => `${String.fromCharCode(65 + i)}. ${q.options[i] ?? ''}`
+                            )
+                          : []
+                        const variants = c.existingQuestion
+                          ? [
+                              {
+                                correct_answer: c.existingQuestion.correct_answer,
+                                options: c.existingQuestion.options ?? q?.options ?? [],
+                                quizzes: c.existingQuestion.used_in_quizzes,
+                                count: c.existingQuestion.usage_count,
+                                answer_texts: [],
+                              },
+                            ]
+                          : c.answerVariants ?? []
+
+                        return (
+                          <div
+                            key={c.questionIndex}
+                            className="rounded-lg border border-red-200 bg-white overflow-hidden"
+                          >
+                            {/* Question header */}
+                            <div className="bg-red-100/60 px-3 py-2 border-b border-red-200">
+                              <p className="font-semibold text-red-900 leading-snug">
+                                <span className="inline-flex items-center justify-center rounded bg-red-600 text-white px-1.5 py-0.5 mr-1.5 text-[10px] font-bold align-middle">
+                                  Câu {c.questionIndex + 1}
+                                </span>
+                                {q?.text ?? ''}
+                              </p>
+                            </div>
+
+                            {/* Selectable side-by-side answer comparison */}
+                            {(() => {
+                              const chosen = conflictChoice[c.questionIndex] ?? { source: 'current', variantIdx: 0 }
+                              const currentSelected = chosen.source === 'current'
+                              return (
+                                <>
+                                  <p className="px-3 pt-2 text-[11px] text-gray-500">
+                                    Chọn đáp án đúng để đồng bộ (mặc định: giữ đáp án trong file):
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
+                                    {/* Current (from file) */}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleConflictChoiceChange(c.questionIndex, { source: 'current', variantIdx: 0 })
+                                      }
+                                      className={`text-left rounded-lg border-2 p-3 transition-all ${
+                                        currentSelected
+                                          ? 'border-blue-500 bg-blue-50'
+                                          : 'border-gray-200 bg-white hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <p className="font-semibold text-blue-700 mb-1.5 flex items-center gap-1.5">
+                                        <span
+                                          className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                                            currentSelected ? 'border-blue-500' : 'border-gray-300'
+                                          }`}
+                                        >
+                                          {currentSelected && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                                        </span>
+                                        Đáp án trong file (hiện tại)
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {importedLines.length > 0 ? (
+                                          importedLines.map((line, li) => (
+                                            <li
+                                              key={li}
+                                              className="text-gray-800 bg-blue-50 rounded px-2 py-1 leading-snug break-words"
+                                            >
+                                              {line}
+                                            </li>
+                                          ))
+                                        ) : (
+                                          <li className="text-gray-400 italic">(không xác định)</li>
+                                        )}
+                                      </ul>
+                                    </button>
+
+                                    {/* Bank variant(s) */}
+                                    {variants.map((v, vi) => {
+                                      const lines = v.correct_answer.map(
+                                        (i) => `${String.fromCharCode(65 + i)}. ${v.options[i] ?? ''}`
+                                      )
+                                      const bankSelected = chosen.source === 'bank' && chosen.variantIdx === vi
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={vi}
+                                          onClick={() =>
+                                            handleConflictChoiceChange(c.questionIndex, { source: 'bank', variantIdx: vi })
+                                          }
+                                          className={`text-left rounded-lg border-2 p-3 transition-all ${
+                                            bankSelected
+                                              ? 'border-amber-500 bg-amber-50'
+                                              : 'border-gray-200 bg-white hover:border-gray-300'
+                                          }`}
+                                        >
+                                          <p className="font-semibold text-amber-700 mb-1.5 flex items-center gap-1.5 flex-wrap">
+                                            <span
+                                              className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                                                bankSelected ? 'border-amber-500' : 'border-gray-300'
+                                              }`}
+                                            >
+                                              {bankSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                                            </span>
+                                            Đáp án trong ngân hàng
+                                            {v.quizzes.length > 0 && (
+                                              <span className="font-normal text-gray-500">
+                                                (mã: {v.quizzes.slice(0, 5).join(', ')}
+                                                {v.quizzes.length > 5 ? ` +${v.quizzes.length - 5}` : ''})
+                                              </span>
+                                            )}
+                                          </p>
+                                          <ul className="space-y-1">
+                                            {lines.length > 0 ? (
+                                              lines.map((line, li) => (
+                                                <li
+                                                  key={li}
+                                                  className="text-gray-800 bg-amber-50 rounded px-2 py-1 leading-snug break-words"
+                                                >
+                                                  {line}
+                                                </li>
+                                              ))
+                                            ) : (
+                                              <li className="text-gray-400 italic">(không xác định)</li>
+                                            )}
+                                          </ul>
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                </>
+                              )
+                            })()}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -392,14 +680,46 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
               ))}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
+              {bankCheck && bankCheck.different_answer_conflicts > 0 && (
+                <Button
+                  type="button"
+                  variant={conflictsConfirmed ? 'outline' : 'default'}
+                  onClick={() => void handleConfirmConflictChoices()}
+                  disabled={!preview.isValid || applying || confirmingConflicts || conflictsConfirmed}
+                  className={conflictsConfirmed ? '' : 'bg-blue-600 hover:bg-blue-700'}
+                >
+                  {confirmingConflicts ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang đồng bộ...
+                    </span>
+                  ) : conflictsConfirmed ? (
+                    'Đã xác nhận lựa chọn'
+                  ) : (
+                    'Xác nhận lựa chọn đáp án'
+                  )}
+                </Button>
+              )}
               <Button
                 type="button"
-                onClick={() => onApply(preview.normalizedQuiz)}
-                disabled={!preview.isValid}
+                onClick={() => void handleApply()}
+                disabled={
+                  !preview.isValid ||
+                  applying ||
+                  confirmingConflicts ||
+                  Boolean(bankCheck && bankCheck.different_answer_conflicts > 0 && !conflictsConfirmed)
+                }
                 className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90"
               >
-                Áp dụng vào form
+                {applying ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang áp dụng...
+                  </span>
+                ) : (
+                  'Áp dụng vào form'
+                )}
               </Button>
             </div>
           </div>

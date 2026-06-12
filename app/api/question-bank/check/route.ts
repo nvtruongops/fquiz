@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { checkQuestionsInBank } from '@/lib/modules/quiz/question-bank-manager'
+import { generateQuestionId, getAnswerTexts } from '@/lib/modules/quiz/question-id-generator'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { z } from 'zod'
 
 const CheckQuestionsSchema = z.object({
@@ -44,15 +47,87 @@ export async function POST(req: Request) {
     // Kiểm tra tất cả câu hỏi
     const conflicts = await checkQuestionsInBank(category_id, questions)
 
-    // Phân loại conflicts
+    // Phân loại conflicts + gom nhóm variants cho từng conflict
     const sameAnswerConflicts: any[] = []
     const differentAnswerConflicts: any[] = []
 
+    const categoryObjectId = new mongoose.Types.ObjectId(category_id)
+    const conflictQuestionIds = new Map<number, string>()
+
+    conflicts.forEach((_conflict, index) => {
+      conflictQuestionIds.set(index, generateQuestionId(questions[index]))
+    })
+
+    // Lấy tất cả quiz variants cho các câu hỏi conflict
+    const quizzes = await Quiz.find({
+      category_id: categoryObjectId,
+      is_temp: { $ne: true },
+      is_saved_from_explore: { $ne: true },
+    })
+      .select('course_code questions')
+      .lean()
+
+    const answerVariantsByQuestionId = new Map<string, Array<{
+      correct_answer: number[]
+      answer_texts: string[]
+      count: number
+      quizzes: string[]
+      options: string[]
+    }>>()
+
+    // Gom nhóm từng variant theo question text (không dùng question_id vì options có thể khác thứ tự)
+    for (const quiz of quizzes) {
+      if (!Array.isArray(quiz.questions)) continue
+      for (const q of quiz.questions as any[]) {
+        if (!q.text || !Array.isArray(q.options)) continue
+        const qText = q.text.trim().toLowerCase().replace(/\s+/g, ' ')
+        const qInput = questions.find(qi => qi.text.trim().toLowerCase().replace(/\s+/g, ' ') === qText)
+        if (!qInput) continue
+
+        const qid = generateQuestionId({
+          text: q.text,
+          options: q.options,
+        })
+        // Check if this question matches any conflict
+        let matchesConflict = false
+        for (const [, conflictQid] of conflictQuestionIds) {
+          if (conflictQid === qid) { matchesConflict = true; break }
+        }
+        if (!matchesConflict) continue
+
+        const answerKey = JSON.stringify(getAnswerTexts(q.options, q.correct_answer || []))
+        if (!answerVariantsByQuestionId.has(qid)) {
+          answerVariantsByQuestionId.set(qid, [])
+        }
+        const variants = answerVariantsByQuestionId.get(qid)!
+
+        const existingVariant = variants.find(v => JSON.stringify(v.answer_texts.sort()) === JSON.stringify(getAnswerTexts(q.options, q.correct_answer || []).sort()))
+        if (existingVariant) {
+          existingVariant.count++
+          if (!existingVariant.quizzes.includes(quiz.course_code)) {
+            existingVariant.quizzes.push(quiz.course_code)
+          }
+        } else {
+          variants.push({
+            correct_answer: q.correct_answer || [],
+            answer_texts: getAnswerTexts(q.options, q.correct_answer || []),
+            count: 1,
+            quizzes: [quiz.course_code],
+            options: q.options,
+          })
+        }
+      }
+    }
+
     conflicts.forEach((conflict, index) => {
+      const qid = conflictQuestionIds.get(index) || ''
+      const answerVariants = answerVariantsByQuestionId.get(qid) || []
+
       const conflictData = {
         questionIndex: index,
         question: questions[index],
-        ...conflict
+        ...conflict,
+        answerVariants: answerVariants.length > 0 ? answerVariants : undefined,
       }
 
       if (conflict.conflictType === 'same_answer') {

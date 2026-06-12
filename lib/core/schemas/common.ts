@@ -21,14 +21,14 @@ export const PaginationQuerySchema = z.object({
 }).strict()
 
 export const SearchQuerySchema = z.object({
-  search: z.string().trim().max(200).optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID').optional(),
   sort: z.enum(['newest', 'oldest', 'popular']).default('newest'),
 }).strict()
 
 export const PublicQuizzesQuerySchema = PaginationQuerySchema.extend({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID').optional(),
-  search: z.string().trim().max(200).optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
   sort: z.enum(['newest', 'oldest', 'popular']).default('newest'),
 }).strict()
 
@@ -41,17 +41,17 @@ export const SessionQuestionQuerySchema = z.object({
 
 export const QuizListQuerySchema = PaginationQuerySchema.extend({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID').optional(),
-  search: z.string().trim().max(200).optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
 }).strict()
 
 export const UserListQuerySchema = PaginationQuerySchema.extend({
-  search: z.string().trim().max(200).optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
   role: z.enum(['student', 'admin', '']).optional(),
   status: z.enum(['active', 'banned', '']).optional(),
 }).strict()
 
 export const CategoryListQuerySchema = z.object({
-  search: z.string().trim().max(200).optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
   min_quizzes: z.coerce.number().int().min(0).max(1000).default(0),
   type: z.enum(['public', 'private', '']).optional(),
   status: z.enum(['pending', 'approved', 'rejected', '']).optional(),

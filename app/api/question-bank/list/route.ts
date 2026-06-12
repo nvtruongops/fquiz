@@ -5,10 +5,10 @@ import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { z } from 'zod'
 
 const ListQuestionsSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  category_id: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid category ID'),
   sort: z.enum(['popular', 'recent']).optional().default('popular'),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
-  search: z.string().optional(),
+  search: z.preprocess(v => v === null ? undefined : v, z.string().optional()),
 })
 
 /**
@@ -31,6 +31,7 @@ export async function GET(req: Request) {
     })
 
     if (!parsed.success) {
+      console.error('List questions validation error:', parsed.error.issues)
       return NextResponse.json({
         error: 'Validation failed',
         details: parsed.error.issues,

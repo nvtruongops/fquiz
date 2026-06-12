@@ -5,12 +5,10 @@
  * Sử dụng component này thay vì QuizEditor trực tiếp
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
-import { QuestionConflictModal } from '@/components/quiz/QuestionConflictModal'
-import { QuestionBankBrowser } from '@/components/quiz/QuestionBankBrowser'
+import { QuestionConflictModal, type ResolvedAnswer } from '@/components/quiz/QuestionConflictModal'
 import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
-import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { Database, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
@@ -35,9 +33,27 @@ interface QuizEditorWithQuestionBankProps {
 
 export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProps) {
   const [showConflictModal, setShowConflictModal] = useState(false)
-  const [showBankBrowser, setShowBankBrowser] = useState(false)
   const [conflictData, setConflictData] = useState<any>(null)
-  const [formData, setFormData] = useState<any>(null)
+  // Bridge: QuizEditor registers a handler so the parent can apply resolved
+  // answers to the form and re-submit after the admin resolves conflicts.
+  const applyResolutionsRef = useRef<
+    ((resolutions: ResolvedAnswer[]) => void) | null
+  >(null)
+
+  // Derive formData from props.initialData so useQuestionBankCheck runs immediately
+  const [formData, setFormData] = useState<any>(() => {
+    if (props.initialData) {
+      return {
+        category_id: props.initialData.category_id || '',
+        questions: (props.initialData.questions || []).map((q: any) => ({
+          text: q.text,
+          options: q.options,
+          correct_answer: q.correct_answers || q.correct_answer || [],
+        })),
+      }
+    }
+    return null
+  })
 
   // Real-time check question bank
   const {
@@ -57,37 +73,33 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
   const handleBeforeSubmit = (data: any) => {
     setFormData(data)
 
-    if (hasDifferentAnswerConflicts && result) {
-      // Có mâu thuẫn đáp án - hiển thị modal
+    if (hasDifferentAnswerConflicts && result && result.different_answer_conflicts > 0) {
       setConflictData({
         conflicts: result.conflicts,
         totalConflicts: result.different_answer_conflicts,
       })
       setShowConflictModal(true)
-      return false // Block submission
+      return false
     }
 
-    return true // Allow submission
+    return true
   }
 
-  const handleConflictResolve = (action: 'edit' | 'skip' | 'force') => {
+  const handleConflictResolve = (
+    action: 'edit' | 'skip' | 'force',
+    resolutions?: ResolvedAnswer[]
+  ) => {
     setShowConflictModal(false)
 
     if (action === 'edit') {
-      // User sẽ tự sửa trong form
+      // Admin sẽ tự sửa đáp án trong form
       return
     }
 
-    if (action === 'force') {
-      // Force submit (bỏ qua cảnh báo)
-      // TODO: Implement force submit
-      console.log('Force submit with conflicts')
-    }
-
-    if (action === 'skip') {
-      // Continue với câu hỏi đã tồn tại
-      // TODO: Implement skip
-      console.log('Skip and continue')
+    if (action === 'force' || action === 'skip') {
+      // Apply the chosen answers to the form, then re-submit (skipping the
+      // conflict gate since conflicts are now resolved).
+      applyResolutionsRef.current?.(resolutions ?? [])
     }
   }
 
@@ -149,18 +161,6 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
                     'Chưa có câu hỏi nào'
                   )}
                 </AlertDescription>
-
-                <div className="mt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={() => setShowBankBrowser(true)}
-                  >
-                    <Database className="h-3 w-3 mr-1" />
-                    Duyệt ngân hàng
-                  </Button>
-                </div>
               </div>
             </div>
           </Alert>
@@ -170,7 +170,19 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
       {/* Original QuizEditor */}
       <QuizEditor
         {...props}
-        // TODO: Inject beforeSubmit handler
+        onBeforeSubmit={handleBeforeSubmit}
+        registerApplyResolutions={(fn) => {
+          applyResolutionsRef.current = fn
+        }}
+        onServerConflict={(conflicts) => {
+          // Server rejected the save due to an answer conflict — open the
+          // resolution modal so the admin can pick the correct answer to sync.
+          setConflictData({
+            conflicts,
+            totalConflicts: conflicts?.different_answer?.length ?? 0,
+          })
+          setShowConflictModal(true)
+        }}
       />
 
       {/* Conflict Modal */}
@@ -181,19 +193,9 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
           conflicts={conflictData.conflicts}
           totalConflicts={conflictData.totalConflicts}
           onResolve={handleConflictResolve}
+          categoryId={formData?.category_id || ''}
         />
       )}
-
-      {/* Question Bank Browser */}
-      <QuestionBankBrowser
-        open={showBankBrowser}
-        onOpenChange={setShowBankBrowser}
-        categoryId={formData?.category_id || ''}
-        onSelectQuestion={(question) => {
-          // TODO: Add question to form
-          console.log('Selected question:', question)
-        }}
-      />
     </div>
   )
 }

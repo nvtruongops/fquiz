@@ -47,7 +47,14 @@ export async function POST(req: Request) {
 
     await connectDB()
 
-    // Generate new question ID
+    // Nếu old_question_id rỗng, tìm bằng question_id từ new_question (text + options không đổi)
+    const effectiveOldId = old_question_id || generateQuestionId({
+      text: new_question.text,
+      options: new_question.options,
+      correct_answer: new_question.correct_answer,
+    })
+
+    // Generate new question ID (same as old when text+options unchanged)
     const newQuestionId = generateQuestionId({
       text: new_question.text,
       options: new_question.options,
@@ -57,7 +64,7 @@ export async function POST(req: Request) {
     // Get old question from bank
     const oldQuestion = await QuestionBank.findOne({
       category_id,
-      question_id: old_question_id,
+      question_id: effectiveOldId,
     })
 
     if (!oldQuestion) {
@@ -72,12 +79,15 @@ export async function POST(req: Request) {
     let updatedQuizCount = 0
     const errors: string[] = []
 
+    const usedInQuizIds: string[] = []
+
     for (const courseCode of usedInQuizzes) {
       try {
         const quiz = await Quiz.findOne({
           course_code: courseCode,
           category_id,
         })
+        if (quiz) usedInQuizIds.push(String(quiz._id))
 
         if (!quiz || !Array.isArray(quiz.questions)) continue
 
@@ -93,7 +103,7 @@ export async function POST(req: Request) {
             correct_answer: q.correct_answer || [],
           })
 
-          if (qId === old_question_id) {
+          if (qId === effectiveOldId) {
             // Update question
             q.text = new_question.text
             q.options = new_question.options
@@ -114,25 +124,43 @@ export async function POST(req: Request) {
     }
 
     // Update Question Bank
-    // Always delete old and create new because question_id changes when content changes
-    await QuestionBank.deleteOne({
-      category_id,
-      question_id: old_question_id,
-    })
+    if (effectiveOldId === newQuestionId && oldQuestion) {
+      // Same question_id (only correct_answer changed) → update in place
+      await QuestionBank.updateOne(
+        { _id: oldQuestion._id },
+        {
+          $set: {
+            text: new_question.text,
+            options: new_question.options,
+            correct_answer: new_question.correct_answer,
+            explanation: new_question.explanation || oldQuestion.explanation,
+            image_url: new_question.image_url || oldQuestion.image_url,
+            has_conflicts: false,
+          },
+        }
+      )
+    } else {
+      // Question_id changed (text or options modified) → delete and recreate
+      await QuestionBank.deleteOne({
+        category_id,
+        question_id: effectiveOldId,
+      })
 
-    await QuestionBank.create({
-      category_id,
-      question_id: newQuestionId,
-      text: new_question.text,
-      options: new_question.options,
-      correct_answer: new_question.correct_answer,
-      explanation: new_question.explanation,
-      image_url: new_question.image_url,
-      created_by: payload.userId,
-      usage_count: usedInQuizzes.length,
-      used_in_quizzes: usedInQuizzes,
-      has_conflicts: false,
-    })
+      await QuestionBank.create({
+        category_id,
+        question_id: newQuestionId,
+        text: new_question.text,
+        options: new_question.options,
+        correct_answer: new_question.correct_answer,
+        explanation: new_question.explanation,
+        image_url: new_question.image_url,
+        created_by: payload.userId,
+        usage_count: usedInQuizIds.length > 0 ? usedInQuizIds.length : usedInQuizzes.length,
+        used_in_quizzes: usedInQuizzes,
+        used_in_quiz_ids: usedInQuizIds.length > 0 ? usedInQuizIds : [],
+        has_conflicts: false,
+      })
+    }
 
     return NextResponse.json({
       success: true,

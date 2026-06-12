@@ -57,7 +57,9 @@ export function QuestionBankBrowser({
       )
 
       if (!response.ok) {
-        throw new Error('Failed to fetch questions')
+        const errorBody = await response.text()
+        console.error('Question bank list error:', response.status, errorBody)
+        throw new Error(`Failed to fetch questions (${response.status})`)
       }
 
       const data = await response.json()
