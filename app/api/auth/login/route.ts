@@ -90,7 +90,16 @@ export async function POST(request: Request) {
       ip
     }, `User ${user.username} logged in successfully`)
 
-    const response = NextResponse.json({ token, role: user.role }, { status: 200 })
+    const response = NextResponse.json({
+      token,
+      role: user.role,
+      user: {
+        _id: user._id.toString(),
+        name: user.username,
+        role: user.role,
+        avatarUrl: user.avatar_url || '',
+      },
+    }, { status: 200 })
 
     const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
 

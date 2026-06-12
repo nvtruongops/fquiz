@@ -16,7 +16,7 @@ export interface AuthResponse {
   banned?: boolean
 }
 
-export function useAuth() {
+export function useAuth(initialData?: AuthResponse) {
   return useQuery<AuthResponse, Error>({
     queryKey: ['auth-user'],
     queryFn: async () => {
@@ -37,6 +37,7 @@ export function useAuth() {
 
       return res.json()
     },
+    initialData,
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes (user session info changes very infrequently)
     refetchOnWindowFocus: false, // Avoid redundant fetches when switching tabs
   })
