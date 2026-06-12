@@ -27,10 +27,10 @@ export default function Navbar({ initialUser }: NavbarProps) {
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
 
-  const { data: authData } = useAuth()
+  const { data: authData } = useAuth(initialUser ? { user: initialUser } : undefined)
   
-  // Reuse query-cached user, falling back to minimal initialUser decoded from cookie
-  const user = authData ? authData.user : initialUser
+  // Never let a stale cached guest response override server-confirmed session data.
+  const user = authData?.user ?? initialUser
 
   useEffect(() => {
     setMounted(true)

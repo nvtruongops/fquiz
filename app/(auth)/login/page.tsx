@@ -2,13 +2,16 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
+import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
 
 function LoginForm() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const [identifier, setIdentifier] = useState('')
@@ -61,7 +64,7 @@ function LoginForm() {
         credentials: 'include',
         body: JSON.stringify({ identifier, password }),
       })
-      const data = (await res.json().catch(() => ({}))) as { error?: string; role?: string }
+      const data = (await res.json().catch(() => ({}))) as { error?: string; role?: string; user?: AuthUser }
 
       if (!res.ok) {
         if (res.status === 403) {
@@ -84,6 +87,11 @@ function LoginForm() {
       }
 
       toast.success('Đăng nhập thành công! Đang chuyển hướng...')
+      if (data.user) {
+        queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
+      } else {
+        await queryClient.invalidateQueries({ queryKey: ['auth-user'] })
+      }
       router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
       router.refresh()
     } catch {
