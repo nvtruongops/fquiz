@@ -83,6 +83,13 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  // Strip console.* from production bundles (both client and server) to avoid
+  // leaking internal state/IDs in the browser console. Keep error/warn so real
+  // failures remain observable. Server-side structured logging uses pino (stdout),
+  // which is unaffected by this.
+  compiler: {
+    removeConsole: isProduction ? { exclude: ['error', 'warn'] } : false,
+  },
   images: {
     remotePatterns: allowedDomains.map((domain) => ({
       protocol: 'https',

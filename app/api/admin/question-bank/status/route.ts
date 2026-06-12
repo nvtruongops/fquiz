@@ -43,15 +43,19 @@ export async function GET(req: Request) {
 
       if (quizzes.length === 0) continue // Bỏ qua môn không có quiz
 
-      // Lấy danh sách course_codes đã có trong ngân hàng
+      // Lấy danh sách course_codes và quiz_ids đã có trong ngân hàng
       const bankEntries = await QuestionBank.find({ category_id: categoryId })
-        .select('used_in_quizzes')
+        .select('used_in_quizzes used_in_quiz_ids')
         .lean()
 
-      // Tập hợp tất cả course_codes đã được migration
+      // Tập hợp tất cả course_codes đã được migration (legacy)
       const migratedCourseCodes = new Set<string>()
-      bankEntries.forEach(entry => {
-        entry.used_in_quizzes.forEach((code: string) => migratedCourseCodes.add(code))
+      // Tập hợp tất cả quiz_ids đã được migration (chính xác)
+      const migratedQuizIds = new Set<string>()
+
+      bankEntries.forEach((entry: any) => {
+        ;(entry.used_in_quizzes || []).forEach((code: string) => migratedCourseCodes.add(code))
+        ;(entry.used_in_quiz_ids || []).forEach((id: any) => migratedQuizIds.add(String(id)))
       })
 
       const totalQuizzes = quizzes.length
@@ -62,7 +66,8 @@ export async function GET(req: Request) {
       const migrated: string[] = []
 
       quizzes.forEach(quiz => {
-        if (migratedCourseCodes.has(quiz.course_code)) {
+        const quizIdStr = String(quiz._id)
+        if (migratedQuizIds.has(quizIdStr) || migratedCourseCodes.has(quiz.course_code)) {
           migrated.push(quiz.course_code)
         } else {
           notMigrated.push(quiz.course_code)

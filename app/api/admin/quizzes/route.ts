@@ -226,7 +226,8 @@ export async function POST(req: Request) {
           category_id,
           normalizedCourseCode,
           questions,
-          userPayload.userId
+          userPayload.userId,
+          quizId
         )
       } catch (syncError) {
         console.error('Failed to sync to question bank:', syncError)

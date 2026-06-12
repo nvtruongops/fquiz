@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { z } from 'zod'
 
 const SyncQuizSchema = z.object({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
   course_code: z.string().min(1).max(50),
+  quiz_id: z.string().optional(),
   questions: z.array(z.object({
     text: z.string().min(1),
     options: z.array(z.string()).min(2),
@@ -38,16 +40,28 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    const { category_id, course_code, questions } = parsed.data
+    const { category_id, course_code, quiz_id, questions } = parsed.data
 
     await connectDB()
+
+    // Tìm quiz_id nếu không được cung cấp
+    let resolvedQuizId = quiz_id
+    if (!resolvedQuizId) {
+      const quiz = await Quiz.findOne({ course_code, category_id })
+        .select('_id')
+        .lean()
+      if (quiz) {
+        resolvedQuizId = String(quiz._id)
+      }
+    }
 
     // Đồng bộ vào ngân hàng
     const result = await syncQuizToQuestionBank(
       category_id,
       course_code,
       questions,
-      payload.userId
+      payload.userId,
+      resolvedQuizId
     )
 
     return NextResponse.json({

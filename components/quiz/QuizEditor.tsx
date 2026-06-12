@@ -40,6 +40,13 @@ interface Props {
   cancelPath?: string
   allowDraft?: boolean
   enableAutosave?: boolean
+  onBeforeSubmit?: (data: any) => boolean | undefined
+  // Parent registers a handler to apply resolved conflict answers + force-save.
+  registerApplyResolutions?: (
+    fn: (resolutions: Array<{ questionIndex: number; correct_answer: number[]; options: string[] }>) => void
+  ) => void
+  // Called when the server rejects a save due to a question-bank answer conflict.
+  onServerConflict?: (conflicts: any) => void
 }
 
 function emptyQuestion(): QuestionForm {
@@ -63,11 +70,17 @@ export function QuizEditor({
   cancelPath,
   allowDraft,
   enableAutosave,
+  onBeforeSubmit,
+  registerApplyResolutions,
+  onServerConflict,
 }: Props) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const [activeQuizId, setActiveQuizId] = useState<string | undefined>(quizId)
+  const DRAFT_KEY = 'quiz_editor_draft_id'
+  const [activeQuizId, setActiveQuizId] = useState<string | undefined>(() => {
+    return quizId || (typeof window !== 'undefined' ? sessionStorage.getItem(DRAFT_KEY) ?? undefined : undefined)
+  })
 
   const isStudentMode = mode === 'student'
   const canSaveDraft = allowDraft ?? !isStudentMode
@@ -104,6 +117,10 @@ export function QuizEditor({
   const [autosaving, setAutosaving] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>((initialData as any)?.updatedAt ?? null)
+  // Mirror lastUpdatedAt in a ref so doSave always sends the CURRENT value,
+  // even when it awaited an in-flight autosave that just refreshed it.
+  // Reading the state directly here would send a stale timestamp → 409.
+  const lastUpdatedAtRef = useRef<string | null>((initialData as any)?.updatedAt ?? null)
   const [hasImportBlockingErrors, setHasImportBlockingErrors] = useState(false)
   const [importPreviewErrors, setImportPreviewErrors] = useState<Array<{ code: string; message: string; questionIndex?: number }>>([])
   const [showImportPanel, setShowImportPanel] = useState(false)
@@ -148,6 +165,15 @@ export function QuizEditor({
   const debouncedForm = useDebounce(form, 3000)
   const isFirstLoad = useRef(true)
   const autosaveInFlightRef = useRef(false)
+  const autosaveResolveRef = useRef<(() => void) | null>(null)
+  const formSnapshotRef = useRef(form)
+  // When admin resolves conflicts, we apply answers then force a publish-save.
+  // The flag defers the save until `form` state has actually updated.
+  const forceSaveAfterResolveRef = useRef(false)
+  // Serialized signature of the last content we autosaved — prevents the
+  // autosave effect from re-firing when only `lastUpdatedAt` (and therefore
+  // the `doSave`/`handleAutosave` identities) changed after a successful save.
+  const lastSavedSignatureRef = useRef<string | null>(null)
 
   
   const pendingQuestionData = useMemo(() => {
@@ -290,7 +316,6 @@ export function QuizEditor({
     }
     setPendingQuestionUpdate(null)
     clearUsageInfo()
-    toast.success('Đã cập nhật tất cả quiz thành công!')
   }
 
   function effectiveOptions(q: QuestionForm): string[] {
@@ -309,22 +334,31 @@ export function QuizEditor({
         body: JSON.stringify({
           category_id: form.category_id,
           course_code: form.course_code,
+          quiz_id: quizId || undefined,
           questions: form.questions.map(q => ({ text: q.text, options: q.options, correct_answer: q.correct_answers, explanation: q.explanation, image_url: q.image_url })),
         }),
       })
-    } catch (e) { console.log('Auto-sync failed:', e) }
+    } catch (e) {
+      console.error('Auto-sync failed:', e)
+    }
   }, [isStudentMode, form.category_id, form.course_code, form.questions])
 
   const handleSaveSuccess = useCallback(async (data: any, status: string, quiet: boolean) => {
     const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId
     if (savedId) setActiveQuizId(savedId)
     if (!quiet && data?.quiz?.status) setForm(prev => ({ ...prev, status: data.quiz.status }))
-    setLastUpdatedAt(data.quiz.updatedAt)
+    setLastUpdatedAt(data?.quiz?.updatedAt ?? null)
+    lastUpdatedAtRef.current = data?.quiz?.updatedAt ?? null
     setLastSavedAt(new Date())
+
+    if (savedId && !quizId) {
+      sessionStorage.setItem(DRAFT_KEY, savedId)
+    }
 
     if (!quiet) {
       if (savedId) await invalidateHistoryForQuiz(queryClient, savedId)
       if (status === 'published') {
+        sessionStorage.removeItem(DRAFT_KEY)
         toast.success(isStudentMode ? 'Đã tạo quiz thành công!' : 'Đã công khai quiz thành công!')
         router.push(effectiveRedirectOnPublish)
         router.refresh()
@@ -332,17 +366,20 @@ export function QuizEditor({
         toast.success('Đã lưu bản nháp')
       }
     }
-  }, [activeQuizId, isStudentMode, effectiveRedirectOnPublish, queryClient, router, toast])
+  }, [activeQuizId, isStudentMode, effectiveRedirectOnPublish, queryClient, router, toast, quizId])
 
   const doSave = useCallback(async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
     if (!quiet && autosaveInFlightRef.current) {
-      await new Promise<void>(res => { const i = setInterval(() => { if (!autosaveInFlightRef.current) { clearInterval(i); res() } }, 100) })
+      await new Promise<void>(res => { autosaveResolveRef.current = res })
     }
     if (!quiet) setSaving(true)
     setError('')
     const status = isStudentMode ? 'published' : (overrideStatus ?? form.status)
+    // Read from the ref AFTER awaiting any in-flight autosave above, so we send
+    // the freshest updatedAt the server returned — not the stale closure value.
+    const currentLastUpdatedAt = lastUpdatedAtRef.current
     const payload = {
-      description: form.description.trim(), category_id: form.category_id, course_code: form.course_code.trim().toUpperCase() || 'GENERAL', status, lastUpdatedAt,
+      description: form.description.trim(), category_id: form.category_id, course_code: form.course_code.trim().toUpperCase() || 'GENERAL', status, lastUpdatedAt: currentLastUpdatedAt,
       questions: form.questions.map(q => {
         const opts = effectiveOptions(q)
         return { text: q.text.trim(), options: opts.map(o => o.trim()), correct_answer: q.correct_answers.filter(a => a < opts.length), ...(q.explanation.trim() ? { explanation: q.explanation.trim() } : {}), ...(q.image_url.trim() ? { image_url: q.image_url.trim() } : {}) }
@@ -357,17 +394,31 @@ export function QuizEditor({
           if (data.code === 'CONCURRENCY_ERROR') {
             setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.')
             toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
+          } else if (data.error === 'question_bank_conflict' && data.conflicts) {
+            // Server detected an answer conflict against the bank. Surface it
+            // through the resolution modal instead of a cryptic error code.
+            onServerConflict?.(data.conflicts)
+            setError(
+              data.message ||
+                'Phát hiện câu hỏi mâu thuẫn đáp án với ngân hàng. Vui lòng chọn đáp án đúng để đồng bộ.'
+            )
           } else {
             setError(extractApiErrorMessage(data.error))
           }
         }
         return
       }
+      const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId || quizId || ''
       await handleSaveSuccess(data, status, quiet)
-      await syncToQuestionBank(activeQuizId || '', status)
-    } catch { if (!quiet) setError('Lỗi kết nối. Vui lòng thử lại.') }
-    finally { if (!quiet) setSaving(false) }
-  }, [isStudentMode, form, lastUpdatedAt, activeQuizId, effectiveUpdateEndpointBuilder, effectiveCreateEndpoint, handleSaveSuccess, syncToQuestionBank, toast])
+      if (savedId) {
+        await syncToQuestionBank(savedId, status)
+      }
+    } catch {
+      if (!quiet) setError('Lỗi kết nối. Vui lòng thử lại.')
+    } finally {
+      if (!quiet) setSaving(false)
+    }
+  }, [isStudentMode, form, activeQuizId, effectiveUpdateEndpointBuilder, effectiveCreateEndpoint, handleSaveSuccess, syncToQuestionBank, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -381,9 +432,16 @@ export function QuizEditor({
       return
     }
 
-    // Trigger bank check manually before publishing
-    if (form.status === 'published' && !isStudentMode) {
-      await bankCheck.refetch()
+    if (onBeforeSubmit) {
+      const canProceed = onBeforeSubmit({
+        category_id: form.category_id,
+        questions: form.questions.map(q => ({
+          text: q.text,
+          options: q.options,
+          correct_answer: q.correct_answers,
+        })),
+      })
+      if (canProceed === false) return
     }
 
     await doSave('published')
@@ -401,27 +459,101 @@ export function QuizEditor({
   const handleAutosave = useCallback(async () => {
     if (autosaveInFlightRef.current) return
     autosaveInFlightRef.current = true
+    formSnapshotRef.current = form
+    // Capture the exact content being saved so we can mark it as persisted.
+    const savedSignature = JSON.stringify({
+      description: form.description,
+      category_id: form.category_id,
+      course_code: form.course_code,
+      status: form.status,
+      questions: form.questions,
+    })
     setAutosaving(true)
     try {
-      await doSave(activeQuizId ? form.status : 'draft', true)
+      await doSave('draft', true)
+      // Mark this content as saved AFTER success — gates the autosave effect
+      // so the post-save setLastUpdatedAt re-render doesn't re-trigger a save.
+      lastSavedSignatureRef.current = savedSignature
     } finally {
       setAutosaving(false)
       autosaveInFlightRef.current = false
+      autosaveResolveRef.current?.()
+      autosaveResolveRef.current = null
     }
-  }, [activeQuizId, form.status, doSave])
+  }, [form, doSave])
 
   useEffect(() => {
     if (!autosaveEnabled) return
+    // Do NOT autosave (and thus auto-create) a brand-new quiz. A new quiz is
+    // only persisted when the admin explicitly presses "Lưu nháp" / "Công khai".
+    // Autosave only applies to an already-existing quiz being edited.
+    if (!activeQuizId) return
     if (isFirstLoad.current) {
       isFirstLoad.current = false
+      // Seed the signature so an unchanged form loaded from server isn't re-saved
+      lastSavedSignatureRef.current = JSON.stringify({
+        description: debouncedForm.description,
+        category_id: debouncedForm.category_id,
+        course_code: debouncedForm.course_code,
+        status: debouncedForm.status,
+        questions: debouncedForm.questions,
+      })
       return
     }
     if (isImportProcessing) return
 
     if (debouncedForm.category_id && debouncedForm.course_code) {
-       handleAutosave()
+      const signature = JSON.stringify({
+        description: debouncedForm.description,
+        category_id: debouncedForm.category_id,
+        course_code: debouncedForm.course_code,
+        status: debouncedForm.status,
+        questions: debouncedForm.questions,
+      })
+      // Only autosave when the content actually changed since the last save.
+      // This breaks the loop where setLastUpdatedAt → doSave/handleAutosave
+      // get new identities and re-trigger this effect without any edit.
+      if (signature === lastSavedSignatureRef.current) return
+      lastSavedSignatureRef.current = signature
+      handleAutosave()
     }
-  }, [debouncedForm, isImportProcessing, autosaveEnabled, handleAutosave])
+  }, [debouncedForm, isImportProcessing, autosaveEnabled, handleAutosave, activeQuizId])
+
+  // Register a handler so the conflict modal (via parent) can apply the admin's
+  // chosen answers into the form, then trigger a publish-save.
+  useEffect(() => {
+    if (!registerApplyResolutions) return
+    registerApplyResolutions((resolutions) => {
+      if (resolutions.length > 0) {
+        setForm((prev) => {
+          const questions = [...prev.questions]
+          for (const r of resolutions) {
+            const q = questions[r.questionIndex]
+            if (!q) continue
+            questions[r.questionIndex] = {
+              ...q,
+              options: r.options.length > 0 ? r.options : q.options,
+              correct_answers: r.correct_answer,
+            }
+          }
+          return { ...prev, questions }
+        })
+        // Defer the save until `form` state reflects the applied answers.
+        forceSaveAfterResolveRef.current = true
+      } else {
+        // No form mutation needed (e.g. same-answer skip) → save right away.
+        doSave('published')
+      }
+    })
+  }, [registerApplyResolutions, doSave])
+
+  // Fire the deferred publish-save once the resolved answers are in `form`.
+  useEffect(() => {
+    if (!forceSaveAfterResolveRef.current) return
+    forceSaveAfterResolveRef.current = false
+    doSave('published')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form])
 
   const scrollToQuestion = (idx: number) => {
     const el = document.getElementById(`q-card-${idx}`)
@@ -516,10 +648,6 @@ export function QuizEditor({
       toast.success(`Đã áp dụng file: thêm ${addedCount} câu.`)
     }
     
-    // Trigger bank check after import
-    if (!isStudentMode) {
-      bankCheck.refetch()
-    }
   }
 
   return (

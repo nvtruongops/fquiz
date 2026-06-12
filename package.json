@@ -19,7 +19,9 @@
     "migrate:preserve-results": "tsx --env-file=.env.local scripts/migrate-preserve-completed-session-results.ts",
     "migrate:preserve-results:dry-run": "tsx --env-file=.env.local scripts/migrate-preserve-completed-session-results.ts --dry-run",
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
-    "cleanup:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts --apply"
+    "cleanup:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts --apply",
+    "audit:answer-conflicts": "tsx --env-file=.env.local scripts/audit-answer-conflicts.ts",
+    "reconcile:question-bank": "tsx --env-file=.env.local scripts/reconcile-question-bank.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",

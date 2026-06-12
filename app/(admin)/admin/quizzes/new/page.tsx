@@ -1,6 +1,6 @@
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
-import { QuizEditor } from '@/components/quiz/QuizEditor'
+import { QuizEditorWithQuestionBank } from '@/components/quiz/QuizEditorWithQuestionBank'
 
 async function getCategories() {
   await connectDB()
@@ -10,5 +10,5 @@ async function getCategories() {
 export default async function AdminNewQuizPage() {
   const categories = await getCategories()
   const serialized = categories.map((c) => ({ _id: String(c._id), name: c.name }))
-  return <QuizEditor categories={serialized} />
+  return <QuizEditorWithQuestionBank categories={serialized} />
 }

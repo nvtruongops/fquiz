@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { z } from 'zod'
 
 const AnalyticsSchema = z.object({
@@ -74,8 +75,42 @@ export async function GET(req: Request) {
         .sort({ usage_count: -1, created_at: -1 })
         .skip(skip)
         .limit(per_page)
-        .select('text options correct_answer usage_count used_in_quizzes')
+        .select('text options correct_answer usage_count used_in_quizzes used_in_quiz_ids')
         .lean()
+
+      // Populate quiz course_codes from used_in_quiz_ids if available
+      const allQuizIds = questions
+        .flatMap((q: any) => q.used_in_quiz_ids || [])
+        .filter(Boolean)
+      const quizMap = new Map<string, string>()
+
+      if (allQuizIds.length > 0) {
+        const quizzes = await Quiz.find({ _id: { $in: allQuizIds } })
+          .select('course_code')
+          .lean()
+        quizzes.forEach((qz: any) => {
+          quizMap.set(String(qz._id), qz.course_code)
+        })
+      }
+
+      questions = questions.map((q: any) => {
+        let resolvedCodes: string[]
+
+        if (q.used_in_quiz_ids && q.used_in_quiz_ids.length > 0) {
+          resolvedCodes = q.used_in_quiz_ids
+            .map((id: any) => quizMap.get(String(id)))
+            .filter(Boolean)
+          resolvedCodes = [...new Set(resolvedCodes)]
+        } else {
+          resolvedCodes = q.used_in_quizzes || []
+        }
+
+        return {
+          ...q,
+          used_in_quizzes: resolvedCodes,
+          usage_count: resolvedCodes.length,
+        }
+      })
     }
 
     return NextResponse.json({

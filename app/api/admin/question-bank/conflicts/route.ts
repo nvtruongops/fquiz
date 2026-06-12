@@ -18,7 +18,7 @@ const ResolveConflictSchema = z.object({
   selected_variant: z.object({
     quiz_id: z.string(),
     course_code: z.string(),
-    question_index: z.number(),
+    question_index: z.number().optional(),
     options: z.array(z.string()),
     correct_answer: z.array(z.number()),
     explanation: z.string().optional(),

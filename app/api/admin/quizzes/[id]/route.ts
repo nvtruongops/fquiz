@@ -7,6 +7,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { removeQuizFromBank, renameQuizCodeInBank } from '@/lib/modules/quiz/question-bank-manager'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -116,11 +117,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           is_public: status === 'published',
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     )
 
     if (!quiz) {
        return NextResponse.json({ error: 'Xung đột dữ liệu. Vui lòng thử lại.' }, { status: 409 })
+    }
+
+    // If the course_code changed, rename it in the question bank tracking so the
+    // old code doesn't linger as orphan usage (root-cause of inflated counts).
+    const oldCode = (existingQuiz.course_code || '').trim().toUpperCase()
+    const newCode = course_code.trim().toUpperCase()
+    if (oldCode && oldCode !== newCode) {
+      try {
+        await renameQuizCodeInBank(category_id, oldCode, newCode)
+      } catch (renameError) {
+        console.error('Failed to rename quiz code in question bank:', renameError)
+      }
     }
 
     // Count affected completed sessions for FE warning
@@ -173,7 +186,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const quiz = await Quiz.findOneAndUpdate(
       query,
       { status, is_public: status === 'published' },
-      { new: true }
+      { returnDocument: 'after' }
     )
     if (!quiz) return NextResponse.json({ error: 'Xung đột dữ liệu hoặc Quiz không tồn tại' }, { status: 409 })
 
@@ -194,11 +207,22 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     await connectDB()
     
-    // 1. Delete from DB
-    const quiz = await Quiz.findByIdAndDelete(id)
+    // 1. Get quiz info before deleting
+    const quiz = await Quiz.findById(id).select('category_id course_code').lean()
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    // No Cloudinary cleanup needed anymore
+    const categoryId = String(quiz.category_id)
+    const courseCode = quiz.course_code
+
+    // 2. Remove from question bank tracking
+    try {
+      await removeQuizFromBank(categoryId, courseCode, id)
+    } catch (cleanupError) {
+      console.error('Failed to cleanup question bank:', cleanupError)
+    }
+
+    // 3. Delete quiz
+    await Quiz.findByIdAndDelete(id)
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
