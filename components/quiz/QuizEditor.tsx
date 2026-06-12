@@ -333,7 +333,7 @@ export function QuizEditor({
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           category_id: form.category_id,
-          course_code: form.course_code,
+          course_code: form.course_code.trim().toUpperCase(),
           quiz_id: quizId || undefined,
           questions: form.questions.map(q => ({ text: q.text, options: q.options, correct_answer: q.correct_answers, explanation: q.explanation, image_url: q.image_url })),
         }),

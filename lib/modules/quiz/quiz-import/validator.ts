@@ -1,4 +1,10 @@
 import { validateObjectId } from '@/lib/core/schemas/common'
+import {
+  COURSE_CODE_ALLOWED_MESSAGE,
+  COURSE_CODE_MAX_LENGTH,
+  COURSE_CODE_MAX_LENGTH_MESSAGE,
+  COURSE_CODE_PATTERN,
+} from '@/lib/modules/quiz/schemas/quiz'
 import { checkDuplicateQuestions } from '@/lib/modules/quiz/quiz-import/duplicate-checker'
 import type {
   ImportDiagnostic,
@@ -81,8 +87,10 @@ function validateTopLevel(raw: ImportRawQuizPayload, diagnostics: ImportDiagnost
 function validateMetadata(raw: ImportRawQuizPayload, normalized: NormalizedQuiz, diagnostics: ImportDiagnostic[]) {
   if (!normalized.course_code) {
     diagnostics.push(diagnostic('warning', 'MISSING_COURSE_CODE', 'Thiếu Fquiz code (quizMeta.course_code) - có thể nhập thủ công trong form trước khi lưu', { field: 'quizMeta.course_code' }))
-  } else if (!/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/.test(normalized.course_code)) {
-    diagnostics.push(diagnostic('error', 'INVALID_COURSE_CODE', 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)', { field: 'quizMeta.course_code' }))
+  } else if (normalized.course_code.length > COURSE_CODE_MAX_LENGTH) {
+    diagnostics.push(diagnostic('error', 'COURSE_CODE_TOO_LONG', COURSE_CODE_MAX_LENGTH_MESSAGE, { field: 'quizMeta.course_code' }))
+  } else if (!COURSE_CODE_PATTERN.test(normalized.course_code)) {
+    diagnostics.push(diagnostic('error', 'INVALID_COURSE_CODE', COURSE_CODE_ALLOWED_MESSAGE, { field: 'quizMeta.course_code' }))
   }
   if (!normalized.category_id) {
     diagnostics.push(diagnostic('warning', 'MISSING_CATEGORY_ID', 'Thiếu category_id - có thể chọn môn học trong form trước khi lưu', { field: 'quizMeta.category_id' }))

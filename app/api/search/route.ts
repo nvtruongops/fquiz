@@ -6,6 +6,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { PaginationQuerySchema } from '@/lib/core/schemas/common'
+import { COURSE_CODE_MAX_LENGTH } from '@/lib/modules/quiz/schemas/quiz'
 import { z } from 'zod'
 
 // Escape special regex characters to prevent ReDoS / injection
@@ -16,7 +17,7 @@ function escapeRegex(str: string): string {
 // Search-specific query schema
 const SearchQueryParamsSchema = PaginationQuerySchema.extend({
   category: z.string().trim().max(100).optional(),
-  course_code: z.string().trim().max(50).optional(),
+  course_code: z.string().trim().max(COURSE_CODE_MAX_LENGTH).optional(),
 })
 
 export async function GET(req: Request) {

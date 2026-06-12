@@ -1,4 +1,10 @@
-import { CreateQuizInput } from '@/lib/modules/quiz/schemas/quiz'
+import {
+  COURSE_CODE_ALLOWED_MESSAGE,
+  COURSE_CODE_MAX_LENGTH,
+  COURSE_CODE_MAX_LENGTH_MESSAGE,
+  COURSE_CODE_PATTERN,
+  type CreateQuizInput,
+} from '@/lib/modules/quiz/schemas/quiz'
 
 export type ValidationErrorSeverity = 'error' | 'warning'
 
@@ -59,8 +65,10 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
   }
   if (!data.course_code?.trim()) {
     errors.push({ code: 'MISSING_COURSE_CODE', severity: 'error', message: 'Chưa nhập mã đề / Mã Quiz' })
-  } else if (!/^[a-zA-Z0-9_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$/.test(data.course_code.trim())) {
-    errors.push({ code: 'INVALID_COURSE_CODE', severity: 'error', message: 'Mã đề chỉ được chứa chữ cái, số và dấu gạch dưới (_)' })
+  } else if (data.course_code.trim().length > COURSE_CODE_MAX_LENGTH) {
+    errors.push({ code: 'INVALID_COURSE_CODE', severity: 'error', message: COURSE_CODE_MAX_LENGTH_MESSAGE })
+  } else if (!COURSE_CODE_PATTERN.test(data.course_code.trim())) {
+    errors.push({ code: 'INVALID_COURSE_CODE', severity: 'error', message: COURSE_CODE_ALLOWED_MESSAGE })
   }
 
   // 2. Question Rules
