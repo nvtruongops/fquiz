@@ -8,8 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui
 import { Input } from '@/components/shared/ui/input'
 import { Badge } from '@/components/shared/ui/badge'
 
-const CLOUDINARY_SAMPLE_JSON_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711290/fquiz/import-samples/quiz-valid-json'
-const CLOUDINARY_SAMPLE_TXT_URL = 'https://res.cloudinary.com/nvtruongops/raw/upload/v1775711738/fquiz/import-samples/quiz-valid-txt'
+function getSampleUrl(type: 'json' | 'txt'): string {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
+  const filename = type === 'json' ? 'quiz-valid.json' : 'quiz-valid.txt'
+  return `${base}/samples/${filename}`
+}
 
 export interface ImportedQuestion {
   text: string
@@ -122,7 +125,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
   }, [])
 
   const handleDownloadSample = async (type: 'json' | 'txt') => {
-    const url = type === 'json' ? CLOUDINARY_SAMPLE_JSON_URL : CLOUDINARY_SAMPLE_TXT_URL
+    const url = getSampleUrl(type)
     const filename = type === 'json' ? 'quiz-valid.json' : 'quiz-valid.txt'
 
     setDownloading(type)
