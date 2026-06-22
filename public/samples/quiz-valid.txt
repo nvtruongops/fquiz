@@ -1,0 +1,30 @@
+course_code: FQUIZ-001
+category_id: your-category-id-here
+description: Bài quiz mẫu - Mô tả về bộ câu hỏi này
+
+Câu 1:
+Câu hỏi: Nội dung của câu hỏi số 1 là gì?
+A. Đây là đáp án A
+B. Đây là đáp án B
+C. Đây là đáp án C
+D. Đây là đáp án D
+Đáp án: A
+Mô tả: Giải thích: Đáp án A đúng vì đây là lựa chọn chính xác nhất.
+
+Câu 2:
+Câu hỏi: Nội dung của câu hỏi số 2 là gì? (câu hỏi có nhiều đáp án đúng)
+A. Đáp án A
+B. Đáp án B (đúng)
+C. Đáp án C (đúng)
+D. Đáp án D
+Đáp án: B, C
+Mô tả: Giải thích: Cả B và C đều là đáp án đúng.
+
+Câu 3:
+Câu hỏi: Nội dung của câu hỏi số 3 là gì?
+A. Lựa chọn 1
+B. Lựa chọn 2
+C. Lựa chọn 3
+D. Lựa chọn 4
+Đáp án: D
+Mô tả: Giải thích: Lựa chọn 4 là đáp án đúng vì nó phù hợp nhất với yêu cầu.
