@@ -105,10 +105,35 @@ export const POST = withAuth(async (req: Request, { payload }) => {
           })
 
           if (qId === effectiveOldId) {
-            // Update question
+            // Update question text
             q.text = new_question.text
-            q.options = new_question.options
-            q.correct_answer = new_question.correct_answer
+
+            if (effectiveOldId === newQuestionId) {
+              // Only correct_answer changed. Keep original options order in other quizzes, map correct_answer by text.
+              const selectedAnswerTexts = new_question.correct_answer
+                .map((idx: number) => new_question.options[idx]?.trim().toLowerCase().replace(/\s+/g, ' '))
+                .filter(Boolean)
+
+              const newCorrectAnswer = q.options
+                .map((opt: string, idx: number) => {
+                  const optNorm = opt.trim().toLowerCase().replace(/\s+/g, ' ')
+                  return selectedAnswerTexts.includes(optNorm) ? idx : -1
+                })
+                .filter((idx: number) => idx !== -1)
+
+              if (newCorrectAnswer.length > 0) {
+                q.correct_answer = newCorrectAnswer
+              } else {
+                // Fallback in case of mismatch
+                q.options = new_question.options
+                q.correct_answer = new_question.correct_answer
+              }
+            } else {
+              // Text or options changed. Update everything.
+              q.options = new_question.options
+              q.correct_answer = new_question.correct_answer
+            }
+
             if (new_question.explanation) q.explanation = new_question.explanation
             if (new_question.image_url) q.image_url = new_question.image_url
             hasChanges = true
@@ -174,4 +199,4 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     console.error('Error syncing update:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['admin'] })

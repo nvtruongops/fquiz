@@ -125,4 +125,4 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     console.error('Error fetching analytics:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['admin'] })
