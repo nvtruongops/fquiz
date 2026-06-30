@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -77,6 +77,17 @@ export function QuestionConflictModal({
   )
   const [selections, setSelections] = useState<Record<number, 'current' | 'bank'>>({})
   const [syncing, setSyncing] = useState(false)
+
+  // Initialize selections to 'current' for different conflicts when they change
+  useEffect(() => {
+    if (conflicts?.different_answer) {
+      const initial: Record<number, 'current' | 'bank'> = {}
+      conflicts.different_answer.forEach((c) => {
+        initial[c.questionIndex] = 'current'
+      })
+      setSelections(initial)
+    }
+  }, [conflicts])
 
   const hasDifferentAnswers = conflicts.different_answer.length > 0
   const hasSameAnswers = conflicts.same_answer.length > 0

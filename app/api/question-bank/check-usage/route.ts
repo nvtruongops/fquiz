@@ -75,4 +75,4 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     console.error('Error checking question usage:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['admin'] })
