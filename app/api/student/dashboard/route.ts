@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -33,13 +34,8 @@ function mixQuizDisplayCode(title: string): string {
   return raw
 }
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     await connectDB()
     const userId = new Types.ObjectId(payload.userId)
 
@@ -535,4 +531,4 @@ export async function GET(req: Request) {
     console.error('Dashboard Stats API Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

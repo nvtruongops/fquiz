@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/shared/ui/input'
 import { Textarea } from '@/components/shared/ui/textarea'
 import { AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 import { Plus, Check, X, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

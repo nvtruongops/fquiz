@@ -3,90 +3,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CheckCircle2, Loader2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
-import { QuizTimer } from '@/components/quiz/QuizTimer'
-import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
-
-interface QuestionFeedback {
-  isCorrect: boolean
-  correctAnswer: number
-  correctAnswers?: number[]
-  explanation?: string
-}
-
-interface SessionQuestion {
-  _id: string
-  text: string
-  options: string[]
-  answer_selection_count?: number
-  image_url?: string
-  correct_answer?: number | number[]
-  explanation?: string
-}
-
-interface SessionData {
-  session: {
-    _id: string
-    mode: 'immediate' | 'review'
-    status: 'active' | 'completed'
-    current_question_index: number
-    user_answers: Array<{ question_index: number; answer_index: number; answer_indexes?: number[]; is_correct: boolean }>
-    score: number
-    totalQuestions: number
-    courseCode: string
-    categoryName: string
-    title: string
-    started_at: string
-    paused_at?: string | null
-    total_paused_duration_ms?: number
-    is_temp?: boolean
-  }
-  question: SessionQuestion
-}
-
-interface PreloadedQuestions {
-  sessionId: string
-  mode: 'immediate' | 'review'
-  status: 'active' | 'completed'
-  totalQuestions: number
-  questions: SessionQuestion[]
-}
-
-type SessionApiError = Error & {
-  status?: number
-  code?: string
-}
-
-async function fetchSession(sessionId: string): Promise<SessionData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
-    const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
-    apiError.status = res.status
-    apiError.code = err.code
-    throw apiError
-  }
-  return res.json()
-}
-
-async function fetchAllQuestions(sessionId: string): Promise<PreloadedQuestions> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
-    const apiError = new Error(err.error ?? 'Failed to load questions') as SessionApiError
-    apiError.status = res.status
-    apiError.code = err.code
-    throw apiError
-  }
-  return res.json()
-}
+import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
+import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
+import { SessionData, PreloadedQuestions, QuestionFeedback, SessionQuestion } from '@/lib/modules/quiz/types/session'
+import { computeQuestionFeedback } from '@/lib/modules/quiz/feedback-utils'
+import { fetchSession, fetchAllQuestions, type SessionApiError } from '@/lib/modules/quiz/session-api'
 
 export default function QuizSessionMobilePage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -121,15 +50,7 @@ export default function QuizSessionMobilePage() {
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const sessionLoader = useSessionLoader()
-  const sessionLoaderStartedRef = useRef(false)
   const lastSyncedQuestionIndexRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!sessionLoaderStartedRef.current) {
-      sessionLoaderStartedRef.current = true
-      sessionLoader.open('Đang tải bộ câu hỏi...')
-    }
-  }, [resolvedSessionId])
 
   // Only render quiz when server data has been applied for THIS session
   const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
@@ -158,58 +79,51 @@ export default function QuizSessionMobilePage() {
     })
   }, [sessionId, currentQuestionIndex])
 
+  // Initial session query — must be declared before preload since preload's
+  // enabled condition references initialData.
+  const {
+    data: initialData,
+    isLoading: isInitialLoading,
+    isFetching: isInitialFetching,
+    isError: isInitialError,
+    error: initialError,
+  } = useQuery<SessionData, Error>({
+    queryKey: ['sessions', resolvedSessionId, 'initial'],
+    queryFn: () => fetchSession(resolvedSessionId),
+    enabled: resolvedSessionId.length > 0,
+    staleTime: 30_000,
+    refetchOnMount: 'always',
+    refetchInterval: (query) => {
+      const data = query.state.data as SessionData | undefined
+      if (data?.session.status === 'preparing') return 2000 // Check every 2s
+      return false
+    },
+  })
+
   // Preload all questions - check sessionStorage cache first (seeded by quiz detail page)
   const {
     data: preloadData,
     isLoading: isPreloading,
     isError: isPreloadError,
-    isSuccess: isPreloadSuccess,
   } = useQuery<PreloadedQuestions, Error>({
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
-      // Check sessionStorage for pre-seeded data from create session response
       try {
         const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
         if (cached) {
           const parsed = JSON.parse(cached)
           if (parsed.questions?.length > 0) {
             sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
-            sessionLoader.complete()
             return parsed as PreloadedQuestions
           }
         }
       } catch {}
-
-      sessionLoader.setStatus('Đang tải bộ câu hỏi...')
-      const data = await fetchAllQuestions(resolvedSessionId)
-      sessionLoader.advance(85, 'Đang xử lý câu hỏi...')
-      return data
+      return fetchAllQuestions(resolvedSessionId)
     },
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 &&
+             resolvedSessionId !== 'undefined' &&
+             initialData?.session.status !== 'preparing',
     staleTime: Infinity,
-    gcTime: 1000 * 60 * 30,
-  })
-
-  // Close loader when questions are successfully loaded
-  useEffect(() => {
-    if (isPreloadSuccess) {
-      sessionLoader.complete()
-    }
-  }, [isPreloadSuccess, sessionLoader])
-
-  const {
-    data: initialData,
-    isLoading: isInitialLoading,
-    isError: isInitialError,
-    error: initialError,
-    isSuccess: isInitialSuccess,
-  } = useQuery<SessionData, Error>({
-    queryKey: ['sessions', resolvedSessionId, 'initial'],
-    queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0,
-    staleTime: 0,
-    gcTime: 0, // Never cache - always fetch fresh to get correct current_question_index
-    refetchOnMount: 'always',
   })
 
   // Store preloaded questions when available
@@ -246,7 +160,8 @@ export default function QuizSessionMobilePage() {
   }, [activeError, quizId, router])
 
   useEffect(() => {
-    if (!initialData || isHydratedFromServer) return
+    // Wait until server data is settled (not mid-refetch) before hydrating the store.
+    if (!initialData || isHydratedFromServer || isInitialFetching) return
 
     const serverAnsweredSet = new Set<number>(
       initialData.session.user_answers.map((a) => a.question_index)
@@ -263,7 +178,7 @@ export default function QuizSessionMobilePage() {
     )
     setIsHydratedFromServer(true)
     setHydratedSessionId(resolvedSessionId)
-  }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
+  }, [initialData, isHydratedFromServer, isInitialFetching, resolvedQuizId, resolvedSessionId, resumeSession])
 
   useEffect(() => {
     if (!activeData?.session) return
@@ -423,30 +338,37 @@ export default function QuizSessionMobilePage() {
     submittedRef.current = true
     setSubmitted(true)
 
-    // Compute feedback instantly from preloaded questions (no need to wait for API)
-    if (currentQuestion?.correct_answer !== undefined) {
-      const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
-        ? [...new Set(currentQuestion.correct_answer)].sort((a, b) => a - b)
-        : [currentQuestion.correct_answer as number]
-      const submittedSorted = [...new Set(answerIndexes)].sort((a, b) => a - b)
-      const isCorrect =
-        submittedSorted.length === correctAnswerIndexes.length &&
-        submittedSorted.every((v, i) => v === correctAnswerIndexes[i])
-
-      const feedback: QuestionFeedback = {
-        isCorrect,
-        correctAnswer: correctAnswerIndexes[0],
-        correctAnswers: correctAnswerIndexes,
-        explanation: currentQuestion.explanation,
-      }
+    // Compute feedback locally from preloaded questions when possible (best-effort:
+    // only works when sessionStorage seeded the data with correct_answer included).
+    const feedback = computeQuestionFeedback(
+      currentQuestion?.correct_answer,
+      answerIndexes,
+      currentQuestion?.explanation,
+    )
+    if (feedback) {
       setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
       setLastAnswerResult(feedback)
     }
 
-    // Fire-and-forget API call to persist answer
+    // Fire API call to persist answer. The onSuccess populates feedbackByQuestion
+    // from the server response so that navigating back to this question later
+    // restores the correct feedback display.
     submitMutation.mutate(
       { questionIndex: currentQuestionIndex, answerIndexes },
       {
+        onSuccess: (data) => {
+          if ('isCorrect' in data) {
+            setFeedbackByQuestion((prev) => ({
+              ...prev,
+              [currentQuestionIndex]: {
+                isCorrect: data.isCorrect,
+                correctAnswer: data.correctAnswer,
+                correctAnswers: data.correctAnswers ?? [data.correctAnswer],
+                explanation: data.explanation,
+              },
+            }))
+          }
+        },
         onError: () => {
           submittedRef.current = false
           setSubmitted(false)
@@ -540,23 +462,16 @@ export default function QuizSessionMobilePage() {
     )
   }
 
-  // Show preloading screen with progress — uses shared QuizLoadingOverlay
-  if (isPreloading || isInitialLoading || !activeData) {
+  // Single unified loading state — covers both data loading and hydration
+  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+
+  if (isStillLoading) {
     return (
       <QuizLoadingOverlay
         isOpen={true}
-        progress={sessionLoader.progress}
-        status={sessionLoader.status || 'Đang tải bộ câu hỏi...'}
+        progress={!isReadyToRender ? 95 : 60}
+        status={!isReadyToRender ? 'Sẵn sàng...' : 'Đang tải bộ câu hỏi...'}
       />
-    )
-  }
-
-  // Wait for server hydration before rendering to avoid showing wrong question index
-  if (!isReadyToRender) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#F9F9F7]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5D7B6F]" />
-      </div>
     )
   }
 

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { User } from '@/lib/modules/auth/models/User'
 import { Category } from '@/lib/modules/quiz/models/Category'
@@ -13,12 +14,8 @@ import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     const { searchParams } = new URL(req.url)
     
     const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
@@ -91,17 +88,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ quizzes, total, page })
   } catch (err) {
     console.error('Error fetching quizzes:', err)
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-  }
 }
+}, { roles: ['admin'] })
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const userPayload = await verifyToken(req)
-    if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(userPayload, 'admin')
-
     await connectDB()
     const body = await req.json()
     const isDraft = body.status === 'draft'
@@ -131,7 +123,7 @@ export async function POST(req: Request) {
     }
 
     const existingOwnedQuiz = await Quiz.findOne({
-      created_by: new mongoose.Types.ObjectId(userPayload.userId),
+      created_by: new mongoose.Types.ObjectId(payload.userId),
       is_saved_from_explore: { $ne: true },
       course_code: normalizedCourseCode,
     })
@@ -213,7 +205,7 @@ export async function POST(req: Request) {
       category_id,
       course_code: normalizedCourseCode,
       questions: processedQuestions,
-      created_by: userPayload.userId,
+      created_by: payload.userId,
       status: status || 'published',
       is_public: (status || 'published') === 'published',
     })
@@ -226,7 +218,7 @@ export async function POST(req: Request) {
           category_id,
           normalizedCourseCode,
           questions,
-          userPayload.userId,
+          payload.userId,
           quizId
         )
       } catch (syncError) {
@@ -243,10 +235,9 @@ export async function POST(req: Request) {
     }, { status: 201 })
   } catch (err) {
     console.error('Quiz creation error:', err)
-    if (err instanceof Response) return err
     if ((err as { code?: number }).code === 11000) {
       return NextResponse.json({ error: 'Mã quiz đã tồn tại trong kho quiz của bạn.' }, { status: 409 })
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

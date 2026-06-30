@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { SiteSettings, getSettings } from '@/lib/modules/auth/models/SiteSettings'
 import { UpdateSiteSettingsSchema } from '@/lib/modules/auth/schemas/user'
 
 export const dynamic = 'force-dynamic'
 
 /** GET — Retrieve current site settings (auto-creates default if none exist) */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     const settings = await getSettings()
 
@@ -35,18 +32,13 @@ export async function GET(req: Request) {
     }
     return response
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })
 
 /** PUT — Update site settings */
-export async function PUT(req: Request) {
+export const PUT = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     
     let body: unknown
@@ -108,7 +100,6 @@ export async function PUT(req: Request) {
 
     return response
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })

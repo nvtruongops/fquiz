@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
@@ -28,7 +29,7 @@ const CleanupSchema = z.object({
  * mode=scan:   Quét câu hỏi trong môn học, thống kê conflicts
  * mode=migrate: Migrate câu hỏi vào QuestionBank
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload || payload.role !== 'admin') {
@@ -296,4 +297,4 @@ export async function POST(req: Request) {
     console.error('Migration error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

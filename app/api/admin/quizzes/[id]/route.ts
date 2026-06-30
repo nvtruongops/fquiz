@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
@@ -9,13 +10,12 @@ import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { removeQuizFromBank, renameQuizCodeInBank } from '@/lib/modules/quiz/question-bank-manager'
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     const quiz = await Quiz.findById(id).lean()
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
@@ -23,18 +23,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // Admin gets full quiz including correct_answer
     return NextResponse.json({ quiz })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const userPayload = await verifyToken(req)
-    if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(userPayload, 'admin')
-
     await connectDB()
     const body = await req.json()
     const { lastUpdatedAt } = body // Client sends the last known updatedAt
@@ -146,18 +144,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ quiz, affectedSessionCount })
   } catch (err) {
     console.error('Quiz update error:', err)
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const userPayload = await verifyToken(req)
-    if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(userPayload, 'admin')
-
     const body = await req.json()
     const { status, lastUpdatedAt } = body
     if (!status || !['published', 'draft'].includes(status)) {
@@ -194,18 +190,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ quiz })
   } catch (err) {
     console.error('Quiz patch error:', err)
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const userPayload = await verifyToken(req)
-    if (!userPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(userPayload, 'admin')
-
     await connectDB()
     
     // 1. Get quiz info before deleting
@@ -228,7 +222,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
     console.error('Quiz deletion error:', err)
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

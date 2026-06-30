@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/shared/ui/card'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
 import { Hash, Plus, Trash2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface EditorControlPanelProps {
   targetInput: string

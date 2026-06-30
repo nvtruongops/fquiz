@@ -8,54 +8,18 @@ import { Button } from '@/components/shared/ui/button'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
 import QuizSessionMobilePage from '@/app/quiz/[id]/session/[sessionId]/mobile/page'
-import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/QuizLoader'
+import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
 import { SessionData, PreloadedQuestions, QuestionFeedback, SessionQuestion } from '@/lib/modules/quiz/types/session'
+import { computeQuestionFeedback } from '@/lib/modules/quiz/feedback-utils'
 
 // Sub-components
 import { SessionLayout } from '@/components/quiz/session/SessionLayout'
 import { QuestionDisplay } from '@/components/quiz/session/QuestionDisplay'
 import { SessionModals } from '@/components/quiz/session/SessionModals'
 
-type SessionApiError = Error & {
-  status?: number
-  code?: string
-}
-
-async function fetchSession(sessionId: string): Promise<SessionData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`)
-  if (!res.ok) {
-    if (res.status === 401) {
-      const currentUrl = window.location.pathname + window.location.search
-      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
-      throw new Error('Session expired. Redirecting to login...')
-    }
-    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
-    const apiError = new Error(err.error ?? 'Failed to load session') as SessionApiError
-    apiError.status = res.status
-    apiError.code = err.code
-    throw apiError
-  }
-  return res.json()
-}
-
-async function fetchAllQuestions(sessionId: string): Promise<PreloadedQuestions> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
-  if (!res.ok) {
-    if (res.status === 401) {
-      const currentUrl = window.location.pathname + window.location.search
-      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
-      throw new Error('Session expired. Redirecting to login...')
-    }
-    const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
-    const apiError = new Error(err.error ?? 'Failed to load questions') as SessionApiError
-    apiError.status = res.status
-    apiError.code = err.code
-    throw apiError
-  }
-  return res.json()
-}
+import { fetchSession, fetchAllQuestions, type SessionApiError } from '@/lib/modules/quiz/session-api'
 
 export default function QuizSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -64,14 +28,62 @@ export default function QuizSessionPage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
   const router = useRouter()
-  const { toast } = useToast()
 
+  // Early redirect for invalid session IDs
   useEffect(() => {
     if (!resolvedSessionId || resolvedSessionId === 'undefined') {
       if (resolvedQuizId) router.replace(`/quiz/${resolvedQuizId}`)
       else router.replace('/explore')
     }
   }, [resolvedSessionId, resolvedQuizId, router])
+
+  const [isMobile, setIsMobile] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Avoid rendering heavy desktop hooks on mobile — the mobile page
+  // runs its own independent set of queries and effects.
+  if (isMobile === null) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F9F9F7]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#5D7B6F] border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (isMobile) return <QuizSessionMobilePage />
+
+  return (
+    <DesktopSessionContent
+      quizId={quizId ?? ''}
+      sessionId={sessionId ?? ''}
+      resolvedQuizId={resolvedQuizId}
+      resolvedSessionId={resolvedSessionId}
+      setIsMobile={setIsMobile}
+    />
+  )
+}
+
+function DesktopSessionContent({
+  quizId,
+  sessionId,
+  resolvedQuizId,
+  resolvedSessionId,
+  setIsMobile,
+}: {
+  quizId: string
+  sessionId: string
+  resolvedQuizId: string
+  resolvedSessionId: string
+  setIsMobile: (v: boolean) => void
+}) {
+  const router = useRouter()
+  const { toast } = useToast()
 
   const {
     currentQuestionIndex,
@@ -82,7 +94,6 @@ export default function QuizSessionPage() {
     setLastAnswerResult,
   } = useQuizSessionStore()
 
-  const [isMobile, setIsMobile] = useState(false)
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
   const submittedRef = useRef(false)
@@ -93,23 +104,7 @@ export default function QuizSessionPage() {
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const sessionLoader = useSessionLoader()
-  const sessionLoaderStartedRef = useRef(false)
   const lastSyncedQuestionIndexRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!sessionLoaderStartedRef.current) {
-      sessionLoaderStartedRef.current = true
-      
-      // Check if data is already pre-loaded in sessionStorage
-      const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
-      if (cached) {
-        // If cached, don't show the opening loader or show it very briefly
-        return
-      }
-      
-      sessionLoader.open('Đang tải bộ câu hỏi...')
-    }
-  }, [resolvedSessionId])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -145,14 +140,14 @@ export default function QuizSessionPage() {
   const {
     data: initialData,
     isLoading: isInitialLoading,
+    isFetching: isInitialFetching,
     isError: isInitialError,
     error: initialError,
-    isSuccess: isInitialSuccess,
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: () => fetchSession(resolvedSessionId),
     enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
-    staleTime: 0,
+    staleTime: 30_000,
     refetchOnMount: 'always',
     refetchInterval: (query) => {
       const data = query.state.data as SessionData | undefined
@@ -166,7 +161,6 @@ export default function QuizSessionPage() {
     data: preloadData,
     isLoading: isPreloading,
     isError: isPreloadError,
-    isSuccess: isPreloadSuccess,
   } = useQuery<PreloadedQuestions, Error>({
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
@@ -176,28 +170,16 @@ export default function QuizSessionPage() {
           const parsed = JSON.parse(cached)
           if (parsed.questions?.length > 0) {
             sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
-            sessionLoader.complete()
             return parsed as PreloadedQuestions
           }
         }
       } catch {}
-      sessionLoader.setStatus('Đang tải bộ câu hỏi...')
-      const data = await fetchAllQuestions(resolvedSessionId)
-      sessionLoader.advance(85, 'Đang xử lý câu hỏi...')
-      return data
+      return fetchAllQuestions(resolvedSessionId)
     },
-    enabled: resolvedSessionId.length > 0 && 
-             resolvedSessionId !== 'undefined' && 
-             initialData?.session.status !== 'preparing',
+    enabled: resolvedSessionId.length > 0 &&
+             resolvedSessionId !== 'undefined',
     staleTime: Infinity,
   })
-
-  // Close loader when questions are successfully loaded
-  useEffect(() => {
-    if (isPreloadSuccess) {
-      sessionLoader.complete()
-    }
-  }, [isPreloadSuccess, sessionLoader])
 
   useEffect(() => {
     if (preloadData?.questions) setPreloadedQuestions(preloadData.questions)
@@ -223,7 +205,11 @@ export default function QuizSessionPage() {
   }, [initialError, quizId, router])
 
   useEffect(() => {
-    if (!initialData || isHydratedFromServer) return
+    // Wait until server data is settled (not mid-refetch) before hydrating the store.
+    // This prevents stale cached data from overwriting the store on remount within the
+    // staleTime window — refetchOnMount ensures a background refetch, and isInitialFetching
+    // blocks hydration until that refetch settles.
+    if (!initialData || isHydratedFromServer || isInitialFetching) return
     const serverAnsweredSet = new Set<number>(
       initialData.session.user_answers.map((a) => a.question_index)
     )
@@ -237,7 +223,7 @@ export default function QuizSessionPage() {
     )
     setIsHydratedFromServer(true)
     setHydratedSessionId(resolvedSessionId)
-  }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
+  }, [initialData, isHydratedFromServer, isInitialFetching, resolvedQuizId, resolvedSessionId, resumeSession])
 
   useEffect(() => {
     if (!activeData?.session) return
@@ -324,7 +310,7 @@ export default function QuizSessionPage() {
     }
   }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity])
 
-  const submitMutation = useSubmitAnswer(resolvedSessionId)
+  const { mutate: submitAnswer, isPending: isSubmitting } = useSubmitAnswer(resolvedSessionId)
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
     mutationFn: async () => {
       // Show loading overlay when submitting
@@ -363,16 +349,36 @@ export default function QuizSessionPage() {
     submittedRef.current = true
     setSubmitted(true)
 
-    submitMutation.mutate({ questionIndex: currentQuestionIndex, answerIndexes }, {
+    // Compute feedback locally from preloaded questions when possible (best-effort:
+    // only works when sessionStorage seeded the data with correct_answer included).
+    const questionData = preloadedQuestions?.[currentQuestionIndex]
+    const feedback = computeQuestionFeedback(
+      questionData?.correct_answer,
+      answerIndexes,
+      questionData?.explanation,
+    )
+    if (feedback) {
+      setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
+      setLastAnswerResult(feedback)
+    }
+
+    // Fire API call to persist answer. The onSuccess populates feedbackByQuestion
+    // from the server response so that navigating back to this question later
+    // restores the correct feedback display (preloaded data strips correct_answer
+    // for unanswered questions, so the client-side computation above is a best-effort
+    // optimization that only fires when sessionStorage seeded the data).
+    submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes }, {
       onSuccess: (data) => {
         if ('isCorrect' in data) {
-          const feedback: QuestionFeedback = {
-            isCorrect: data.isCorrect,
-            correctAnswer: data.correctAnswer,
-            correctAnswers: data.correctAnswers ?? [data.correctAnswer],
-            explanation: data.explanation,
-          }
-          setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
+          setFeedbackByQuestion((prev) => ({
+            ...prev,
+            [currentQuestionIndex]: {
+              isCorrect: data.isCorrect,
+              correctAnswer: data.correctAnswer,
+              correctAnswers: data.correctAnswers ?? [data.correctAnswer],
+              explanation: data.explanation,
+            },
+          }))
         }
       },
       onError: () => {
@@ -382,8 +388,8 @@ export default function QuizSessionPage() {
     })
   }
 
-  function handleSelectOption(idx: number) {
-    if (!activeData?.session || submitted || submitMutation.isPending) return
+  const handleSelectOption = useCallback((idx: number) => {
+    if (!activeData?.session || submitted || isSubmitting) return
     const required = Math.max(activeData.question.answer_selection_count ?? 1, 1)
     const exists = selectedOptions.includes(idx)
     let nextSelections: number[]
@@ -396,9 +402,15 @@ export default function QuizSessionPage() {
     setSelectedOptions(nextSelections)
     if (nextSelections.length === required) {
       if (activeData.session.mode === 'immediate') submitInImmediateMode(nextSelections)
-      else submitMutation.mutate({ questionIndex: currentQuestionIndex, answerIndexes: nextSelections })
+      else submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes: nextSelections })
     }
-  }
+  }, [activeData?.session, activeData?.question, submitted, isSubmitting, selectedOptions, currentQuestionIndex, submitAnswer])
+
+  // Stable callbacks for React.memo-wrapped children. setState dispatchers are
+  // referentially stable across renders, so these useCallback wrappers create
+  // function references that never change.
+  const handleSubmit = useCallback(() => setConfirmOpen(true), [])
+  const handleExit = useCallback(() => setExitConfirmOpen(true), [])
 
   if (isPreloadError || isInitialError) {
     return (
@@ -415,15 +427,17 @@ export default function QuizSessionPage() {
     )
   }
 
-  if (isPreloading || isInitialLoading || !activeData || activeData.session.status === 'preparing') {
-    const statusMessage = activeData?.session.status === 'preparing' 
-      ? 'Đang trộn bộ đề, vui lòng chờ trong giây lát...' 
-      : (sessionLoader.status || 'Đang tải bộ câu hỏi...')
-    return <QuizLoadingOverlay isOpen={true} progress={activeData?.session.status === 'preparing' ? 45 : sessionLoader.progress} status={statusMessage} />
-  }
+  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData.session.status === 'preparing'
 
-  if (isMobile) return <QuizSessionMobilePage />
-  if (!isReadyToRender) return <QuizLoadingOverlay isOpen={true} progress={95} status="Sẵn sàng..." />
+  if (isStillLoading) {
+    const statusMessage = activeData?.session.status === 'preparing'
+      ? 'Đang trộn bộ đề, vui lòng chờ trong giây lát...'
+      : (!isReadyToRender ? 'Sẵn sàng...' : 'Đang tải bộ câu hỏi...')
+    const progressValue = activeData?.session.status === 'preparing'
+      ? 45
+      : (!isReadyToRender ? 95 : 60)
+    return <QuizLoadingOverlay isOpen={true} progress={progressValue} status={statusMessage} />
+  }
 
   const { session, question } = activeData
   const answeredCount = Math.max(answeredQuestions.size, new Set(session.user_answers.map(a => a.question_index)).size + (selectedOptions.length > 0 ? 1 : 0))
@@ -441,11 +455,11 @@ export default function QuizSessionPage() {
       answeredCount={answeredCount}
       selectedOptions={selectedOptions}
       submitted={submitted}
-      isPending={submitMutation.isPending || finalizeMutation.isPending}
+      isPending={isSubmitting || finalizeMutation.isPending}
       onSelectOption={handleSelectOption}
       onNavigate={navigateToQuestion}
-      onSubmit={() => setConfirmOpen(true)}
-      onExit={() => setExitConfirmOpen(true)}
+      onSubmit={handleSubmit}
+      onExit={handleExit}
     >
       <QuestionDisplay
         question={question}
@@ -456,7 +470,7 @@ export default function QuizSessionPage() {
         showImmediateFeedback={session.mode === 'immediate' && submitted && lastAnswerResult !== null}
         lastAnswerResult={lastAnswerResult}
         onSelectOption={handleSelectOption}
-        isPending={submitMutation.isPending || finalizeMutation.isPending}
+        isPending={isSubmitting || finalizeMutation.isPending}
         sessionMode={session.mode}
       />
       <SessionModals
@@ -474,3 +488,8 @@ export default function QuizSessionPage() {
   </>
 )
 }
+
+// Note: QuizSessionPage (above) handles isMobile detection and delegates to
+// either QuizSessionMobilePage or DesktopSessionContent. DesktopSessionContent
+// only mounts on desktop, avoiding wasted hooks/network calls on mobile.
+

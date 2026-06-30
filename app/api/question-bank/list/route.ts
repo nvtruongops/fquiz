@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { z } from 'zod'
@@ -15,7 +16,7 @@ const ListQuestionsSchema = z.object({
  * GET /api/question-bank/list
  * Lấy danh sách câu hỏi từ ngân hàng môn học
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload) {
@@ -67,4 +68,4 @@ export async function GET(req: Request) {
     console.error('Error listing question bank:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { Loader2, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface CategoryStatus {
   category_id: string

@@ -6,8 +6,8 @@ import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
 import { Textarea } from '@/components/shared/ui/textarea'
 import { Trash2, Plus, ImageIcon, Hash, ChevronUp, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react'
-import { ImageUpload } from '@/components/quiz/ImageUpload'
-import { cn } from '@/lib/core/utils/utils'
+import { ImageUpload } from '@/components/quiz/shared/ImageUpload'
+import { cn } from '@/lib/core/utils/cn'
 import { QuestionForm } from '@/lib/modules/quiz/types/quiz'
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']

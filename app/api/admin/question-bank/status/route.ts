@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
@@ -11,7 +12,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
  * - Môn chưa có câu hỏi nào trong ngân hàng
  * - Môn đã có nhưng có quiz mới chưa được migration
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload || payload.role !== 'admin') {
@@ -110,4 +111,4 @@ export async function GET(req: Request) {
     console.error('Error fetching question bank status:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizComment } from '@/lib/modules/quiz/models/QuizComment'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Types } from 'mongoose'
 
-export async function GET(
+export const GET = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
     const { id } = await params
@@ -25,21 +26,17 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching comments:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function POST(
+export const POST = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const { id } = await params
+
+        const { id } = await params
     
     if (!id || !Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
@@ -90,13 +87,13 @@ export async function POST(
   } catch (error) {
     console.error('Error posting comment:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
     const payload = await verifyToken(req)
@@ -128,4 +125,4 @@ export async function DELETE(
     console.error('Error deleting comment:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

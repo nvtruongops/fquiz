@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
@@ -20,7 +21,7 @@ const SearchQueryParamsSchema = PaginationQuerySchema.extend({
   course_code: z.string().trim().max(COURSE_CODE_MAX_LENGTH).optional(),
 })
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   const requestId = req.headers.get('x-request-id') || 'unknown'
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
   const route = '/api/search'
@@ -104,4 +105,4 @@ export async function GET(req: Request) {
     }, 'GET /api/search failed')
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['student'] })

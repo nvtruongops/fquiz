@@ -16,7 +16,7 @@ interface SessionModalsProps {
   onConfirmExit: () => void
 }
 
-export function SessionModals({
+export const SessionModals = React.memo(function SessionModals({
   confirmOpen,
   setConfirmOpen,
   exitConfirmOpen,
@@ -87,4 +87,4 @@ export function SessionModals({
       </Dialog>
     </>
   )
-}
+})

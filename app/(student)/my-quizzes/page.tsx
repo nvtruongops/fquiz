@@ -40,7 +40,7 @@ import {
 import { Badge } from '@/components/shared/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
 import { useToast } from '@/store/shared/toast-store'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { useDebounce } from '@/hooks/shared/useDebounce'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 

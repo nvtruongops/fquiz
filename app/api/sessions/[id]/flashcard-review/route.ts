@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 
 /**
@@ -9,19 +10,11 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
  * Resets the current flashcard session to only include unknown cards.
  * Instead of creating a new session, we reuse the same session to keep history clean.
  */
-export async function POST(
+export const POST = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (payload.role !== 'student') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const { id } = await params
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -113,4 +106,4 @@ export async function POST(
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

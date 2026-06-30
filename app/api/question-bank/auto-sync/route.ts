@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
@@ -30,7 +31,7 @@ const AutoSyncSchema = z.object({
  * - Xóa câu cũ không còn dùng
  * - Thêm/update câu mới
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload) {
@@ -183,4 +184,4 @@ export async function POST(req: Request) {
     console.error('Error auto-syncing:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

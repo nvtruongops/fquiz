@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { BookOpen, Search, AlertCircle, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface QuizDisplayAreaProps {
   isLoading: boolean

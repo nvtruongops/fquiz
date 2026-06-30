@@ -3,7 +3,7 @@
 import React from 'react'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface AppLayoutProps {
   children: React.ReactNode

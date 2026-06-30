@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@/lib/core/utils/utils"
+import { cn } from "@/lib/core/utils/cn"
 
 const Avatar = React.forwardRef<
   HTMLDivElement,

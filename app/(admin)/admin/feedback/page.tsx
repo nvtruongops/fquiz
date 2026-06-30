@@ -24,7 +24,7 @@ import {
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface Feedback {
   _id: string

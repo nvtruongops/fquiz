@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { buildQuizImportPreview } from '@/lib/modules/quiz/quiz-import'
-import { requireRole, verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
@@ -49,16 +50,8 @@ async function parseRequestPayload(req: Request): Promise<unknown> {
   return textBody
 }
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (payload.role !== 'admin' && payload.role !== 'student') {
-      requireRole(payload, 'admin')
-    }
-
     const input = await parseRequestPayload(req)
     const preview = buildQuizImportPreview(input)
     await connectDB()
@@ -118,7 +111,7 @@ export async function POST(req: Request) {
     console.error('Quiz import preview error:', err)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin', 'student'] })
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

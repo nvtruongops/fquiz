@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
@@ -9,7 +10,7 @@ import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
  * POST /api/admin/question-bank/regenerate-ids
  * Super Migration Tool: Tính toán lại toàn bộ mã ID, chuẩn hóa mã môn và đồng bộ số lượng.
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload || payload.role !== 'admin') {
@@ -85,4 +86,4 @@ export async function POST(req: Request) {
     console.error('Super Migration Tool Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

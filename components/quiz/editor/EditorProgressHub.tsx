@@ -6,7 +6,7 @@ import { Progress } from '@/components/shared/ui/progress'
 import { Badge } from '@/components/shared/ui/badge'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { LayoutDashboard, Loader2, CheckCircle2, AlertTriangle, AlertCircle, ChevronRight, History } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface DiagnosticError {
   code: string

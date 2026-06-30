@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
@@ -14,10 +15,6 @@ function isPublicCategory(category: any): boolean {
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     const body = await req.json()
     const { name } = body
@@ -55,7 +52,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     return NextResponse.json({ category })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
 }
@@ -63,10 +59,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
 
     const category = await Category.findById(id).lean()
@@ -90,7 +82,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
 }

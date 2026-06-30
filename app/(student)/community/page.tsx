@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Textarea } from '@/components/shared/ui/textarea'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
 const FEEDBACK_TYPES = [

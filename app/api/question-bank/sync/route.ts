@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -28,7 +29,7 @@ const SyncQuizSchema = z.object({
  * Đồng bộ câu hỏi của quiz vào ngân hàng môn học
  * Tự động bỏ qua câu hỏi có mâu thuẫn đáp án
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload) {
@@ -84,4 +85,4 @@ export async function POST(req: Request) {
     console.error('Error syncing to question bank:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

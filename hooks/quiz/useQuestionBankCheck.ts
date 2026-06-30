@@ -7,7 +7,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 interface QuestionInput {
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   explanation?: string
   image_url?: string
 }
@@ -19,7 +19,7 @@ interface ConflictInfo {
     _id: string
     text: string
     options: string[]
-    correct_answer: number[]
+    correct_answer: number | number[]
     explanation?: string
     used_in_quizzes: string[]
     usage_count: number

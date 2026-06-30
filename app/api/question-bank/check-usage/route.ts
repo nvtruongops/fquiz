@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
@@ -18,7 +19,7 @@ const CheckUsageSchema = z.object({
  * POST /api/question-bank/check-usage
  * Kiểm tra câu hỏi có trong Question Bank và đang được dùng ở đâu
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload) {
@@ -74,4 +75,4 @@ export async function POST(req: Request) {
     console.error('Error checking question usage:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

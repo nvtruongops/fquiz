@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { connectDB } from '@/lib/core/db/mongodb'
@@ -165,14 +166,9 @@ function mapQuizzesForResponse(
   })
 }
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
 
@@ -210,17 +206,12 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Error fetching student quizzes:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     let body: unknown
     try {
       body = await req.json()
@@ -300,4 +291,4 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

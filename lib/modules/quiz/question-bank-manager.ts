@@ -2,10 +2,14 @@ import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
 import type { Types } from 'mongoose'
 
+function ensureArray(answers: number | number[]): number[] {
+  return Array.isArray(answers) ? answers : [answers]
+}
+
 export interface QuestionInput {
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   explanation?: string
   image_url?: string
 }
@@ -14,7 +18,7 @@ export interface ExistingQuestionInfo {
   _id: string
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   explanation?: string
   used_in_quizzes: string[]
   used_in_quiz_ids: string[]
@@ -95,8 +99,8 @@ export async function checkQuestionInBank(
     existingQuestion: existingInfo,
     conflictType: 'different_answer',
     message: ` MÂU THUẪN: Câu hỏi tương tự đã tồn tại nhưng có đáp án khác!\n` +
-             `Đáp án hiện tại: ${question.correct_answer.map((i: number) => question.options[i] || `[${i}]`).join(', ')}\n` +
-             `Đáp án trong ngân hàng: ${existing.correct_answer.map((i: number) => existing.options[i] || `[${i}]`).join(', ')}\n` +
+             `Đáp án hiện tại: ${ensureArray(question.correct_answer).map((i: number) => question.options[i] || `[${i}]`).join(', ')}\n` +
+             `Đáp án trong ngân hàng: ${ensureArray(existing.correct_answer).map((i: number) => existing.options[i] || `[${i}]`).join(', ')}\n` +
              `${formatUsedInQuizzes(existingInfo)}`
   }
 }

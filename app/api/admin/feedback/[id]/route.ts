@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { z } from 'zod'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 import { isMailConfigured } from '@/lib/core/mail/mail'
 import nodemailer from 'nodemailer'
@@ -24,15 +25,11 @@ function createTransporter() {
   return nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
 }
 
-export async function PATCH(
+export const PATCH = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     const { id } = await params
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
@@ -62,18 +59,14 @@ export async function PATCH(
   } catch (err) {
     console.error('PATCH /api/admin/feedback/[id] error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+}, { roles: ['admin'] })
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     const { id } = await params
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
@@ -85,18 +78,14 @@ export async function DELETE(
   } catch (err) {
     console.error('DELETE /api/admin/feedback/[id] error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+}, { roles: ['admin'] })
 
-export async function POST(
+export const POST = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     const { id } = await params
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
@@ -158,4 +147,4 @@ export async function POST(
     console.error('POST /api/admin/feedback/[id] reply error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

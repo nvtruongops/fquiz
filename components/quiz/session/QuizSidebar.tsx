@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface QuizSidebarProps {
   onSelectOption: (idx: number) => void
@@ -19,7 +19,7 @@ interface QuizSidebarProps {
   onExit?: () => void
 }
 
-export default function QuizSidebar({
+const QuizSidebar = React.memo(function QuizSidebar({
   onSelectOption,
   onNavigate,
   onSubmit,
@@ -34,6 +34,11 @@ export default function QuizSidebar({
 }: Readonly<QuizSidebarProps>) {
   const options = Array.from({ length: Math.max(optionCount, 1) }, (_, i) => String.fromCodePoint(65 + i))
   const [focusedOption, setFocusedOption] = useState<number | null>(null)
+
+  // Ref to stabilize the callback — avoids re-attaching the keyboard listener
+  // on every render when the parent's handleSelectOption reference changes.
+  const onSelectOptionRef = useRef(onSelectOption)
+  onSelectOptionRef.current = onSelectOption
 
   // Keyboard navigation: ← → for Back/Next, ↑↓ for options, Enter to select
   useEffect(() => {
@@ -63,14 +68,14 @@ export default function QuizSidebar({
           break
         case 'Enter':
           if (focusedOption !== null && !isSubmitted) {
-            onSelectOption(focusedOption)
+            onSelectOptionRef.current(focusedOption)
           }
           break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentIndex, totalQuestions, onNavigate, options.length, focusedOption, isSubmitted, onSelectOption])
+  }, [currentIndex, totalQuestions, onNavigate, options.length, focusedOption, isSubmitted])
 
   // Reset focused option when question changes
   useEffect(() => {
@@ -160,4 +165,6 @@ export default function QuizSidebar({
       </div>
     </aside>
   )
-}
+})
+
+export default QuizSidebar

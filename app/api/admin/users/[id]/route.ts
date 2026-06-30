@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole, clearUserStatusCache } from '@/lib/modules/auth/auth'
+import { verifyToken, clearUserStatusCache, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { User } from '@/lib/modules/auth/models/User'
 import { UpdateUserSchema } from '@/lib/modules/auth/schemas/user'
 import { validateObjectId } from '@/lib/core/schemas/common'
@@ -8,13 +9,12 @@ import { validateObjectId } from '@/lib/core/schemas/common'
 const SENSITIVE_FIELDS = '-password_hash -reset_token -reset_token_expires'
 
 /** PUT — Update user role or status (ban/unban) */
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     
     let body: unknown
@@ -61,19 +61,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     
     return NextResponse.json({ user })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })
 
 /** DELETE — Delete a single user. Admin cannot delete themselves. */
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     const { id } = await params
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     if (id === payload.userId) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 403 })
     }
@@ -83,7 +81,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })

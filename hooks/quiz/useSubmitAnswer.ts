@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useToast } from '@/store/shared/toast-store'
@@ -74,11 +75,21 @@ export function useSubmitAnswer(sessionId: string) {
     confirmAnswer,
     setLastAnswerResult,
   } = useQuizSessionStore()
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup pending invalidation timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   return useMutation<SubmitAnswerResponse, Error, SubmitAnswerVariables, { questionIndex: number }>({
     mutationFn: ({ questionIndex, answerIndexes }) => submitAnswer(sessionId, questionIndex, answerIndexes),
 
     onMutate: async ({ questionIndex }) => {
+      // Clear any pending invalidation from a previous answer to avoid stacking timers
+      if (timerRef.current) clearTimeout(timerRef.current)
       optimisticallyMarkAnswered(questionIndex)
       return { questionIndex }
     },
@@ -94,9 +105,15 @@ export function useSubmitAnswer(sessionId: string) {
           explanation: data.explanation,
         })
       }
-      
-      // Always invalidate to keep user_answers in sync for navigation
-      queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+
+      // Defer session invalidation to avoid blocking the answer feedback display.
+      // The feedback is already set locally; invalidation runs in the background
+      // to keep user_answers in sync for navigation without delaying the UI.
+      // Timer is stored in a ref so it can be cleared on next mutation or unmount.
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+      }, 500)
     },
 
     onError: (error, _variables, context) => {

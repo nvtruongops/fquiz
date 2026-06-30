@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { UpdateProfileSchema } from '@/lib/modules/auth/schemas/user'
@@ -11,12 +12,7 @@ function resolveAvatarUrl(user: { avatar_url?: string | null; avatarUrl?: string
   return user.avatar_url ?? user.avatarUrl ?? ''
 }
 
-export async function GET(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const user = await User.findById(payload.userId).lean() as {
@@ -53,14 +49,9 @@ export async function GET(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })
 
-export async function PATCH(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     const body = await req.json()
     if (Object.hasOwn(body, 'username')) {
@@ -138,4 +129,4 @@ export async function PATCH(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

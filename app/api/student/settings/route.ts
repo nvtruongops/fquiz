@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { UpdateStudentSettingsSchema } from '@/lib/modules/auth/schemas/user'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const user = await User.findById(payload.userId)
@@ -40,14 +36,9 @@ export async function GET(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })
 
-export async function PATCH(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     const body = await req.json()
     const parsed = UpdateStudentSettingsSchema.safeParse(body)
@@ -101,4 +92,4 @@ export async function PATCH(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

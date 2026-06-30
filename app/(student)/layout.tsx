@@ -1,9 +1,14 @@
+import type { Metadata } from 'next'
 import React from 'react'
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function StudentLayout({
   children,

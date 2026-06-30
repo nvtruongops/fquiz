@@ -10,7 +10,7 @@ import {
   Database,
 } from 'lucide-react'
 import { clearAllUserCache } from '@/lib/core/utils/cache-invalidation'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 const navItems = [
   { href: '/admin',                      label: 'Dashboard',           icon: LayoutDashboard, exact: true },

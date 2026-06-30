@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import crypto from 'crypto'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { MongoIdSchema } from '@/lib/core/schemas/common'
@@ -61,14 +62,9 @@ const mixRateLimiter = providerFactory.createProvider(
  * Create a temporary mix quiz session from multiple public quizzes.
  * Session persists until the user completes or manually deletes it (no TTL).
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    // 1. Auth
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-    // 2. Parse body
+    // Parse body
     let body: unknown
     try {
       body = await req.json()
@@ -241,4 +237,4 @@ export async function POST(req: Request) {
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

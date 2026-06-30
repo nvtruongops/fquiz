@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
@@ -13,19 +14,11 @@ import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
  * Returns the current question and submitted answers for a quiz session.
  * Requirements: 13.2, 13.3, 12.3
  */
-export async function GET(
+export const GET = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (payload.role !== 'student') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const { id } = await params
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -188,4 +181,4 @@ export async function GET(
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

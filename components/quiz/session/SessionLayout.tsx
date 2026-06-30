@@ -1,9 +1,9 @@
 'use client'
 
 import React from 'react'
-import QuizHeader from '@/components/quiz/QuizHeader'
-import QuizSidebar from '@/components/quiz/QuizSidebar'
-import { QuizTimer } from '@/components/quiz/QuizTimer'
+import QuizHeader from '@/components/quiz/session/QuizHeader'
+import QuizSidebar from '@/components/quiz/session/QuizSidebar'
+import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { SessionData } from '@/lib/modules/quiz/types/session'
 
 interface SessionLayoutProps {
@@ -20,7 +20,7 @@ interface SessionLayoutProps {
   onExit: () => void
 }
 
-export function SessionLayout({
+export const SessionLayout = React.memo(function SessionLayout({
   sessionData,
   currentQuestionIndex,
   answeredCount,
@@ -76,4 +76,4 @@ export function SessionLayout({
       </div>
     </div>
   )
-}
+})
