@@ -23,7 +23,7 @@ import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { Input } from '@/components/shared/ui/input'
 import { Card, CardContent } from '@/components/shared/ui/card'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
@@ -248,7 +248,9 @@ export default function HistoryPage() {
                                     "text-3xl font-black leading-none tracking-tighter",
                                     item.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
                                   )}>
-                                    {item.status === 'active' ? '--' : `${item.score}/10`}
+                                    {item.status === 'active'
+  ? '--'
+  : `${Math.min(10, Math.max(0, (item.score / Math.max(item.total_questions, 1)) * 10)).toFixed(1)}/10`}
                                   </p>
                                   <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
                                     {item.status === 'active'

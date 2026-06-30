@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -15,7 +16,7 @@ const AnalyticsSchema = z.object({
  * GET /api/question-bank/analytics
  * Thống kê ngân hàng câu hỏi
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const payload = await verifyToken(req)
     if (!payload) {
@@ -124,4 +125,4 @@ export async function GET(req: Request) {
     console.error('Error fetching analytics:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

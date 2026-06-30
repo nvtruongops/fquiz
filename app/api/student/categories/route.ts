@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { connectDB } from '@/lib/core/db/mongodb'
@@ -7,14 +8,9 @@ import { Types } from 'mongoose'
 import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
 import { validateObjectId } from '@/lib/core/schemas/common'
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const userId = new Types.ObjectId(payload.userId)
 
     // 1. Danh mục cá nhân + thống kê số quiz tự tạo vs quiz lưu Explore
@@ -87,17 +83,12 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     let body: unknown
     try {
       body = await req.json()
@@ -140,17 +131,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tên danh mục đã tồn tại.' }, { status: 400 })
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function PATCH(req: Request) {
+export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     let body: unknown
     try {
       body = await req.json()
@@ -190,17 +176,12 @@ export async function PATCH(req: Request) {
   } catch (error) {
     console.error('Error updating category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function DELETE(req: Request) {
+export const DELETE = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
     
@@ -233,4 +214,4 @@ export async function DELETE(req: Request) {
     console.error('Error deleting category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

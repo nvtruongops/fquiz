@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { User } from '@/lib/modules/auth/models/User'
 import { BulkUserActionSchema } from '@/lib/modules/auth/schemas/user'
 
 /** POST — Bulk actions: delete or ban/unban multiple users */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     
     let body: unknown
@@ -60,7 +57,6 @@ export async function POST(req: Request) {
       affected: result.modifiedCount ?? result.deletedCount ?? 0,
     })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })

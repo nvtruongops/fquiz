@@ -6,7 +6,7 @@ import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 interface Question {
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   explanation?: string
   image_url?: string
 }

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@/lib/core/utils/utils"
+import { cn } from "@/lib/core/utils/cn"
 
 export interface TextareaProps extends React.ComponentProps<"textarea"> {
   autoResize?: boolean

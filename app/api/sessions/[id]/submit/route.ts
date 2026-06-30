@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
@@ -12,19 +13,11 @@ import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
  * POST /api/sessions/[id]/submit
  * Finalize an active session and offload housekeeping to queue.
  */
-export async function POST(
+export const POST = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (payload.role !== 'student') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const { id } = await params
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
@@ -57,7 +50,7 @@ export async function POST(
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
-    const questions = (quiz.questions ?? []) as IQuestion[]
+    const questions = (session.questions_cache?.length ? session.questions_cache : (quiz.questions ?? [])) as IQuestion[]
     const userAnswers = (session.user_answers ?? []) as UserAnswer[]
     const score = calculateScore(userAnswers, questions, session.question_order)
 
@@ -109,4 +102,4 @@ export async function POST(
     console.error('POST /api/sessions/[id]/submit error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

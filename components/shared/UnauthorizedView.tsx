@@ -4,7 +4,7 @@ import React from 'react'
 import { Lock, UserPlus, ArrowRight, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import Link from 'next/link'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 
 interface UnauthorizedViewProps {
   title?: string

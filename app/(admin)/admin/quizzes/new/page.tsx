@@ -1,6 +1,6 @@
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
-import { QuizEditorWithQuestionBank } from '@/components/quiz/QuizEditorWithQuestionBank'
+import { QuizEditorWithQuestionBank } from '@/components/quiz/question-bank/QuizEditorWithQuestionBank'
 
 async function getCategories() {
   await connectDB()

@@ -5,7 +5,7 @@ interface FlashcardQuestion {
   _id: string
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   explanation?: string
   image_url?: string
 }

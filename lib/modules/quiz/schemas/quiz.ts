@@ -27,8 +27,7 @@ export const QuestionSchema = z.object({
     .optional()
     .default([]),
   correct_answer: z
-    .array(z.number().int().min(0, 'Chỉ số đáp án phải >= 0'))
-    .min(1, 'Phải có ít nhất 1 đáp án đúng')
+    .union([z.number().int().min(0, 'Chỉ số đáp án phải >= 0'), z.array(z.number().int().min(0, 'Chỉ số đáp án phải >= 0'))])
     .optional()
     .default([]),
   explanation: z
@@ -68,7 +67,8 @@ export const QuestionSchema = z.object({
 }).refine(
   (data) => {
     if (data.correct_answer && data.options) {
-      return data.correct_answer.every((idx) => idx < data.options!.length)
+      const answers = Array.isArray(data.correct_answer) ? data.correct_answer : [data.correct_answer]
+      return answers.every((idx: number) => idx < data.options!.length)
     }
     return true
   },

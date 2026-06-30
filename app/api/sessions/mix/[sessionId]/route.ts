@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
@@ -10,15 +11,11 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
  * Immediately delete a temporary mix quiz session and its associated temp quiz.
  * Called when user clicks "Thoát & Xóa Quiz" on the result page, or when creating a new mix quiz.
  */
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ sessionId: string }> }
-) {
+  { params, payload }: { params: Promise<{ sessionId: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
     const { sessionId } = await params
     if (!mongoose.Types.ObjectId.isValid(sessionId)) {
       return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 })
@@ -57,4 +54,4 @@ export async function DELETE(
     console.error('DELETE /api/sessions/mix/[sessionId] error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

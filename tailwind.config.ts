@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 import tailwindcssAnimate from 'tailwindcss-animate'
 
 const config: Config = {
@@ -19,6 +20,9 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         primary: '#5D7B6F',
         success: '#A4C3A2',

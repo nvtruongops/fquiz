@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 import { User } from '@/lib/modules/auth/models/User'
 
@@ -28,12 +29,8 @@ const CreateFeedbackSchema = z.object({
 const RATE_LIMIT = 3
 const RATE_WINDOW_MS = 60 * 60 * 1000
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
     let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -81,4 +78,4 @@ export async function POST(req: Request) {
     console.error('POST /api/feedback error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

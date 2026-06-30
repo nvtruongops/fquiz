@@ -5,7 +5,7 @@ export interface IQuestion {
   question_id?: string      // Optional: Content-based unique ID for deduplication
   text: string
   options: string[]
-  correct_answer: number[]  // array to support multi-answer questions
+  correct_answer: number | number[]  // single for backward compat, array for multi-answer
   explanation?: string
   image_url?: string
 }

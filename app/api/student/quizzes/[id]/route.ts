@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { connectDB } from '@/lib/core/db/mongodb'
@@ -60,12 +61,12 @@ async function validateOriginalStatus(quiz: any) {
   return true
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { id } = await params
     if (!id || !Types.ObjectId.isValid(id)) return NextResponse.json({ error: 'Invalid quiz ID format' }, { status: 400 })
 
@@ -119,18 +120,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   } catch (error) {
     console.error('Error fetching student quiz detail:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { id } = await params
     const quiz = await authorizeResource(payload, id, Quiz, 'quiz', 'created_by')
 
@@ -147,20 +145,15 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting student quiz:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
 }
+}, { roles: ['student'] })
 
-export async function PATCH(
+export const PATCH = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { id } = await params
     if (!id || !Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
@@ -209,4 +202,4 @@ export async function PATCH(
     console.error('Error moving student quiz category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

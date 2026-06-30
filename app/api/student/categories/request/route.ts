@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
 import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const payload = await verifyToken(req)
@@ -43,4 +44,4 @@ export async function POST(req: Request) {
   } catch (error: any) {
     return NextResponse.json({ error: 'Không thể gửi yêu cầu lúc này.' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
 import { SaveQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (payload?.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     let body: unknown
     try {
       body = await req.json()
@@ -121,4 +117,4 @@ export async function POST(req: Request) {
     console.error('Error saving quiz shortcut:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

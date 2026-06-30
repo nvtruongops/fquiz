@@ -13,7 +13,7 @@ import {
   Shuffle,
 } from 'lucide-react'
 import { Progress } from '@/components/shared/ui/progress'
-import { FlashcardReviewButton } from '@/components/quiz/FlashcardReviewButton'
+import { FlashcardReviewButton } from '@/components/quiz/shared/FlashcardReviewButton'
 import { useState } from 'react'
 
 interface HistoryQuestion {

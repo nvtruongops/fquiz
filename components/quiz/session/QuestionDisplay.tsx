@@ -2,9 +2,9 @@
 
 import React from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
-import { UsageBadge } from '@/components/quiz/UsageBadge'
+import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
@@ -19,7 +19,7 @@ interface QuestionDisplayProps {
   sessionMode: 'immediate' | 'review' | 'flashcard'
 }
 
-export function QuestionDisplay({
+export const QuestionDisplay = React.memo(function QuestionDisplay({
   question,
   currentIndex,
   totalQuestions,
@@ -131,4 +131,4 @@ export function QuestionDisplay({
       )}
     </div>
   )
-}
+})

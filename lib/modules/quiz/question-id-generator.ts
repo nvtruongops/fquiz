@@ -1,5 +1,9 @@
 import crypto from 'crypto'
 
+function ensureArray(answers: number | number[]): number[] {
+  return Array.isArray(answers) ? answers : [answers]
+}
+
 /**
  * CHIẾN LƯỢC HASH TỐI ƯU: text + sorted options
  * 
@@ -23,7 +27,7 @@ import crypto from 'crypto'
 export function generateQuestionId(question: {
   text: string
   options: string[]
-  correct_answer?: number[]
+  correct_answer?: number | number[]
 }): string {
   const normalizedText = question.text.trim().toLowerCase().replace(/\s+/g, ' ')
   
@@ -52,16 +56,16 @@ export function generateQuestionId(question: {
  * Quiz B: options=["Sai","Đúng","Không biết"], answer=[1] → answer text = "Đúng"
  * → CÙNG đáp án (không conflict) ✅
  */
-export function getAnswerTexts(options: string[], answerIndices: number[]): string[] {
-  return answerIndices
+export function getAnswerTexts(options: string[], answerIndices: number | number[]): string[] {
+  return ensureArray(answerIndices)
     .map(idx => options[idx]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
     .filter(Boolean)
     .sort()
 }
 
 export function areAnswersSame(
-  q1: { options: string[]; correct_answer: number[] },
-  q2: { options: string[]; correct_answer: number[] }
+  q1: { options: string[]; correct_answer: number | number[] },
+  q2: { options: string[]; correct_answer: number | number[] }
 ): boolean {
   const texts1 = getAnswerTexts(q1.options, q1.correct_answer)
   const texts2 = getAnswerTexts(q2.options, q2.correct_answer)
@@ -74,8 +78,8 @@ export function areAnswersSame(
  * Check if two questions are duplicates based on content
  */
 export function areQuestionsDuplicate(
-  q1: { text: string; options: string[]; correct_answer: number[] },
-  q2: { text: string; options: string[]; correct_answer: number[] }
+  q1: { text: string; options: string[]; correct_answer: number | number[] },
+  q2: { text: string; options: string[]; correct_answer: number | number[] }
 ): boolean {
   return generateQuestionId(q1) === generateQuestionId(q2)
 }
@@ -85,7 +89,7 @@ export function areQuestionsDuplicate(
  * Returns map of question_id -> array of indices
  */
 export function findDuplicateQuestions(
-  questions: Array<{ text: string; options: string[]; correct_answer: number[] }>
+  questions: Array<{ text: string; options: string[]; correct_answer: number | number[] }>
 ): Map<string, number[]> {
   const idToIndices = new Map<string, number[]>()
   

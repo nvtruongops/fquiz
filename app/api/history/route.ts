@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
@@ -33,12 +34,8 @@ function mixQuizDisplayCode(title: string): string {
   return raw
 }
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
     const { searchParams } = new URL(req.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
@@ -303,4 +300,4 @@ export async function GET(req: Request) {
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

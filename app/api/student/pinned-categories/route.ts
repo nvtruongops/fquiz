@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 
@@ -15,12 +16,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ pinnedCategories: user?.pinned_categories ?? [] })
 }
 
-export async function POST(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const POST = withAuth(async (req: Request, { payload }) => {
   const { categoryId } = await req.json().catch(() => ({}))
   if (!categoryId) return NextResponse.json({ error: 'categoryId required' }, { status: 400 })
 
@@ -41,4 +37,4 @@ export async function POST(req: Request) {
   // Pin
   await User.updateOne({ _id: payload.userId }, { $addToSet: { pinned_categories: categoryId } })
   return NextResponse.json({ pinned: true, pinnedCategories: [...current, categoryId] })
-}
+}, { roles: ['student'] })

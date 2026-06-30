@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status') || ''
     const type = searchParams.get('type') || ''
@@ -32,4 +29,4 @@ export async function GET(req: Request) {
     console.error('GET /api/admin/feedback error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

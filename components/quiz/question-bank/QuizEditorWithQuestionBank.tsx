@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
-import { QuestionConflictModal, type ResolvedAnswer } from '@/components/quiz/QuestionConflictModal'
+import { QuestionConflictModal, type ResolvedAnswer } from '@/components/quiz/question-bank/QuestionConflictModal'
 import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
 import { Badge } from '@/components/shared/ui/badge'
 import { Alert, AlertDescription } from '@/components/shared/ui/alert'

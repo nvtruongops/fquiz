@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
 
-export async function GET(
+export const GET = withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ code: string }> }
-) {
-  const payload = await verifyToken(req)
-  if (!payload || payload.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+  { params, payload }: { params: Promise<{ code: string }>; payload: JWTPayload }
+) => {
   const { code } = await params
 
   try {
@@ -60,4 +56,4 @@ export async function GET(
     logger.error({ err }, `GET /api/courses/${code}/quizzes failed`)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['student'] })

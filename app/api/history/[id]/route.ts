@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
@@ -75,11 +76,11 @@ async function handleActivePath(quiz: any, activeSession: any, payload: any) {
   })
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload || payload.role !== 'student') return NextResponse.json({ error: payload ? 'Forbidden' : 'Unauthorized' }, { status: payload ? 403 : 401 })
-
     const { id } = await params
     if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
 
@@ -155,4 +156,4 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     console.error('GET /api/history/[id] error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

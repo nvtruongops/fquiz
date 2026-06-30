@@ -137,16 +137,17 @@ function getCandidateQuestion(source: any): ImportRawQuestion {
 }
 
 function validateAnswers(question: any, index: number, diagnostics: ImportDiagnostic[]) {
-  if (question.correct_answer.length === 0) {
+  const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
+  if (answers.length === 0) {
     diagnostics.push(diagnostic('error', 'MISSING_CORRECT_ANSWER', 'Chưa có đáp án đúng', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 
-  if (question.correct_answer.some((answerIndex: number) => answerIndex >= question.options.length)) {
+  if (answers.some((answerIndex: number) => answerIndex >= question.options.length)) {
     diagnostics.push(diagnostic('error', 'CORRECT_ANSWER_OUT_OF_RANGE', 'Chỉ số đáp án đúng vượt quá số lượng options', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 
-  const uniqueAnswers = new Set(question.correct_answer)
-  if (uniqueAnswers.size !== question.correct_answer.length) {
+  const uniqueAnswers = new Set(answers)
+  if (uniqueAnswers.size !== answers.length) {
     diagnostics.push(diagnostic('error', 'DUPLICATE_CORRECT_ANSWER', 'Đáp án đúng bị trùng lặp (ví dụ: C, C)', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 }

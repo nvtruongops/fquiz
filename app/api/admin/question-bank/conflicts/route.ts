@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
@@ -31,17 +32,8 @@ const ResolveConflictSchema = z.object({
  * GET /api/admin/question-bank/conflicts
  * Lấy danh sách câu hỏi có conflict trong môn học
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    if (payload.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const { searchParams } = new URL(req.url)
     const parsed = GetConflictsSchema.safeParse({
       category_id: searchParams.get('category_id'),
@@ -143,23 +135,14 @@ export async function GET(req: Request) {
     console.error('Error fetching conflicts:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })
 
 /**
  * POST /api/admin/question-bank/conflicts
  * Giải quyết conflict bằng cách chọn 1 variant làm chuẩn
  */
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    if (payload.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await req.json()
     const parsed = ResolveConflictSchema.safeParse(body)
 
@@ -263,4 +246,4 @@ export async function POST(req: Request) {
     console.error('Error resolving conflict:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}
+}, { roles: ['admin'] })

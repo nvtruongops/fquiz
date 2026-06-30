@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, requireRole } from '@/lib/modules/auth/auth'
+import { verifyToken } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { User } from '@/lib/modules/auth/models/User'
 import { UserListQuerySchema } from '@/lib/core/schemas/common'
 
@@ -8,12 +9,8 @@ export const dynamic = 'force-dynamic'
 
 const SENSITIVE_FIELDS = '-password_hash -reset_token -reset_token_expires'
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    requireRole(payload, 'admin')
-
     await connectDB()
     const { searchParams } = new URL(req.url)
     
@@ -67,7 +64,6 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(total / limit),
     })
   } catch (err) {
-    if (err instanceof Response) return err
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })

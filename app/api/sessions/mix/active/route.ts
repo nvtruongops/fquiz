@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
+import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
@@ -10,12 +11,8 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
  * Check if the current user has an active temporary mix quiz session.
  * Sessions no longer have a TTL — they persist until completed or manually deleted.
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (payload.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
     try {
       await connectDB()
     } catch {
@@ -56,4 +53,4 @@ export async function GET(req: Request) {
     console.error('GET /api/sessions/mix/active error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })

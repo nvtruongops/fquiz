@@ -26,7 +26,7 @@ export interface NormalizedQuestion {
   question_id?: string      // Content-based unique ID for deduplication
   text: string
   options: string[]
-  correct_answer: number[]
+  correct_answer: number | number[]
   question_no?: number
   explanation?: string
   image_url?: string

@@ -6,16 +6,16 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
-import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/QuizLoader'
+import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/shared/QuizLoader'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { API_ROUTES } from '@/lib/core/constants/api-routes'
 
 // Sub-components
-import { QuizDetailHeader } from '@/components/quiz/QuizDetailHeader'
-import { QuizStats } from '@/components/quiz/QuizStats'
-import { QuizComments } from '@/components/quiz/QuizComments'
-import { QuizActionCard } from '@/components/quiz/QuizActionCard'
-import { QuizDetailErrorView } from '@/components/quiz/QuizDetailErrorView'
+import { QuizDetailHeader } from '@/components/quiz/detail/QuizDetailHeader'
+import { QuizStats } from '@/components/quiz/detail/QuizStats'
+import { QuizComments } from '@/components/quiz/detail/QuizComments'
+import { QuizActionCard } from '@/components/quiz/detail/QuizActionCard'
+import { QuizDetailErrorView } from '@/components/quiz/detail/QuizDetailErrorView'
 
 interface QuizDetail {
   _id: string

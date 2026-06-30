@@ -6,7 +6,7 @@ import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp, ChevronDown, Spar
 import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
 import { Button } from '@/components/shared/ui/button'
 import { Switch } from '@/components/shared/ui/switch'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 
 interface SwipeState {
@@ -31,7 +31,7 @@ function MobileFlashcardView({
     _id: string
     text: string
     options: string[]
-    correct_answer: number[]
+    correct_answer: number | number[]
     explanation?: string
     image_url?: string
   }
@@ -59,12 +59,12 @@ function MobileFlashcardView({
     setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
   }, [question._id, questionNumber])
 
-  const correctAnswers = useMemo(() => 
-    (question.correct_answer || [])
-      .map((idx) => question.options?.[idx])
-      .filter(Boolean),
-    [question]
-  )
+  const correctAnswers = useMemo(() => {
+    const answerIndices = Array.isArray(question.correct_answer) ? question.correct_answer : question.correct_answer != null ? [question.correct_answer] : []
+    return answerIndices
+      .map((idx: number) => question.options?.[idx])
+      .filter(Boolean) as string[]
+  }, [question])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isLoading) return
@@ -177,7 +177,8 @@ function MobileFlashcardView({
 
                 <div className="space-y-2 pt-2">
                   {question.options.map((option, idx) => {
-                    const isCorrect = question.correct_answer?.includes(idx)
+                    const answers = Array.isArray(question.correct_answer) ? question.correct_answer : question.correct_answer != null ? [question.correct_answer] : []
+                    const isCorrect = answers.includes(idx)
                     return (
                       <div 
                         key={idx} 

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { Search, BookOpen, Pin, PinOff, ChevronRight, Hash } from 'lucide-react'
 import { Input } from '@/components/shared/ui/input'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 
 interface Category {

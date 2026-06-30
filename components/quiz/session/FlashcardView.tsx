@@ -2,16 +2,16 @@
 
 import { useState, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react'
 import { Button } from '@/components/shared/ui/button'
-import { cn } from '@/lib/core/utils/utils'
+import { cn } from '@/lib/core/utils/cn'
 import { RotateCw, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import { UsageBadge } from '@/components/quiz/UsageBadge'
+import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 
 interface FlashcardViewProps {
   question: {
     _id: string
     text: string
     options: string[]
-    correct_answer: number[]
+    correct_answer: number | number[]
     explanation?: string
     image_url?: string
     usage_count?: number
@@ -84,9 +84,10 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   }
 
   // Get correct answer text - with safety checks
-  const correctAnswers = (question.correct_answer || [])
-    .map((idx) => question.options?.[idx])
-    .filter(Boolean)
+  const answerIndices = Array.isArray(question.correct_answer) ? question.correct_answer : question.correct_answer != null ? [question.correct_answer] : []
+  const correctAnswers = answerIndices
+    .map((idx: number) => question.options?.[idx])
+    .filter(Boolean) as string[]
 
   // Calculate total content length for auto-scaling
   const questionLength = question.text.length
@@ -180,7 +181,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 </h2>
                 <div className={cn("w-full", getOptionSpacing())}>
                   {(question.options || []).map((option, idx) => {
-                    const isCorrect = question.correct_answer?.includes(idx)
+                    const isCorrect = answerIndices.includes(idx)
                     return (
                       <div
                         key={idx}
@@ -451,7 +452,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                       correctAnswers.map((answer, idx) => (
                         <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30">
                           <span className="font-bold text-green-600">
-                            {String.fromCharCode(65 + (question.correct_answer?.[idx] ?? idx))}.
+                            {String.fromCharCode(65 + (answerIndices[idx] ?? idx))}.
                           </span>
                           <p className="text-base font-medium whitespace-pre-wrap text-slate-800 dark:text-slate-200 leading-relaxed">
                             {answer}

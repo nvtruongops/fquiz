@@ -11,7 +11,7 @@ interface QuizHeaderProps {
   children?: React.ReactNode
 }
 
-export default function QuizHeader({
+const QuizHeader = React.memo(function QuizHeader({
   categoryName,
   courseCode,
   totalQuestions,
@@ -47,4 +47,6 @@ export default function QuizHeader({
       </div>
     </header>
   )
-}
+})
+
+export default QuizHeader

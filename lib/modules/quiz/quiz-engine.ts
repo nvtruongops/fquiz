@@ -111,7 +111,7 @@ export async function processImmediateAnswer(
     const correctAnswerIndexes = normalizeIndexes(
       Array.isArray(question.correct_answer)
         ? question.correct_answer
-        : [question.correct_answer as unknown as number]
+        : [question.correct_answer]
     )
 
     const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
@@ -194,7 +194,7 @@ export async function processReviewAnswer(
     const correctAnswerIndexes = normalizeIndexes(
       Array.isArray(question.correct_answer)
         ? question.correct_answer
-        : [question.correct_answer as unknown as number]
+        : [question.correct_answer]
     )
 
     const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
@@ -277,7 +277,7 @@ export function calculateScore(
     const correctAnswerIndexes = normalizeIndexes(
       Array.isArray(question.correct_answer)
         ? question.correct_answer
-        : [question.correct_answer as unknown as number]
+        : [question.correct_answer]
     )
     const submittedIndexes = normalizeIndexes(
       answer.answer_indexes && answer.answer_indexes.length > 0

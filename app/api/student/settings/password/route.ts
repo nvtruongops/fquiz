@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { verifyToken, clearUserStatusCache } from '@/lib/modules/auth/auth'
+import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 
@@ -19,12 +20,7 @@ const ChangePasswordSchema = z.object({
   path: ['newPassword'],
 })
 
-export async function PATCH(req: Request) {
-  const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     let body: unknown
     try { body = await req.json() } catch {
@@ -63,4 +59,4 @@ export async function PATCH(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, { roles: ['student'] })
