@@ -84,26 +84,33 @@ export async function processImmediateAnswer(
   try {
     await connectDB()
 
-    // Use cached questions if available, otherwise fetch from DB
-    let questions: IQuestion[]
-    if (session.questions_cache && session.questions_cache.length > 0) {
-      questions = session.questions_cache
-    } else {
-      const quiz = await Quiz.findById(session.quiz_id).lean()
-      if (!quiz) {
-        throw new Error('Quiz not found')
-      }
-      questions = quiz.questions as IQuestion[]
-    }
-
     const questionIndex =
       typeof forcedQuestionIndex === 'number' ? forcedQuestionIndex : session.current_question_index
     
-    // Use question_order to get the actual question index
-    const questionOrder = session.question_order || Array.from({ length: questions.length }, (_, i) => i)
+    let questionOrder = session.question_order
+    if (!questionOrder || questionOrder.length === 0) {
+      const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id').lean()
+      if (!quizMeta) throw new Error('Quiz not found')
+      questionOrder = Array.from({ length: quizMeta.questions.length as number }, (_, i) => i)
+    }
+
     const actualQuestionIndex = questionOrder[questionIndex]
-    const question = questions[actualQuestionIndex]
     
+    let question: IQuestion
+    let totalQuestions = questionOrder.length
+
+    // Use cached questions if available, otherwise fetch exactly 1 question from DB using $slice
+    if (session.questions_cache && session.questions_cache.length > 0) {
+      question = session.questions_cache[actualQuestionIndex] as IQuestion
+      totalQuestions = session.questions_cache.length
+    } else {
+      const quiz = await Quiz.findById(session.quiz_id, { questions: { $slice: [actualQuestionIndex, 1] } }).lean()
+      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
+      }
+      question = quiz.questions[0] as IQuestion
+    }
+
     if (!question) {
       throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
     }
@@ -125,9 +132,19 @@ export async function processImmediateAnswer(
     }
 
     const nextIndex = questionIndex + 1
-    const isLastQuestion = nextIndex >= questions.length
+    const isLastQuestion = nextIndex >= totalQuestions
     const updatedAnswers = upsertAnswer(session.user_answers, userAnswer)
-    const score = calculateScore(updatedAnswers, questions, session.question_order)
+    
+    // Calculate score. Note: calculateScore historically took all questions, but here we can't afford to load all.
+    // However, immediate mode tracks score. To properly calculate score, we don't recalculate everything.
+    // Instead we can increment it if correct. Wait, calculateScore was doing a full recalculation!
+    // For immediate mode, if this answer is newly correct, we can just use the running score or recalculate.
+    // Let's just increment score if this is a new correct answer, but we need to handle changing answers.
+    const previousAnswer = session.user_answers.find(a => a.question_index === questionIndex)
+    let scoreDelta = 0
+    if (isCorrect && (!previousAnswer || !previousAnswer.is_correct)) scoreDelta = 1
+    else if (!isCorrect && previousAnswer && previousAnswer.is_correct) scoreDelta = -1
+    const score = (session.score || 0) + scoreDelta
 
     // Immediate mode only records answers and running score.
     // The session is completed only when user explicitly confirms submit.
@@ -167,26 +184,33 @@ export async function processReviewAnswer(
   try {
     await connectDB()
 
-    // Use cached questions if available, otherwise fetch from DB
-    let questions: IQuestion[]
-    if (session.questions_cache && session.questions_cache.length > 0) {
-      questions = session.questions_cache
-    } else {
-      const quiz = await Quiz.findById(session.quiz_id).lean()
-      if (!quiz) {
-        throw new Error('Quiz not found')
-      }
-      questions = quiz.questions as IQuestion[]
-    }
-
     const questionIndex =
       typeof forcedQuestionIndex === 'number' ? forcedQuestionIndex : session.current_question_index
     
-    // Use question_order to get the actual question index
-    const questionOrder = session.question_order || Array.from({ length: questions.length }, (_, i) => i)
+    let questionOrder = session.question_order
+    if (!questionOrder || questionOrder.length === 0) {
+      const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id').lean()
+      if (!quizMeta) throw new Error('Quiz not found')
+      questionOrder = Array.from({ length: quizMeta.questions.length as number }, (_, i) => i)
+    }
+
     const actualQuestionIndex = questionOrder[questionIndex]
-    const question = questions[actualQuestionIndex]
     
+    let question: IQuestion
+    let totalQuestions = questionOrder.length
+
+    // Use cached questions if available, otherwise fetch exactly 1 question from DB using $slice
+    if (session.questions_cache && session.questions_cache.length > 0) {
+      question = session.questions_cache[actualQuestionIndex] as IQuestion
+      totalQuestions = session.questions_cache.length
+    } else {
+      const quiz = await Quiz.findById(session.quiz_id, { questions: { $slice: [actualQuestionIndex, 1] } }).lean()
+      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
+      }
+      question = quiz.questions[0] as IQuestion
+    }
+
     if (!question) {
       throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
     }
@@ -208,7 +232,7 @@ export async function processReviewAnswer(
     }
 
     const nextIndex = questionIndex + 1
-    const isLastQuestion = nextIndex >= questions.length
+    const isLastQuestion = nextIndex >= totalQuestions
     const updatedAnswers = upsertAnswer(session.user_answers, userAnswer)
 
     if (!isLastQuestion) {
@@ -224,7 +248,15 @@ export async function processReviewAnswer(
 
       // Return next question with correct_answer and explanation stripped (Req 12.1, 12.3)
       const nextActualQuestionIndex = questionOrder[nextIndex]
-      const nextQuestion = questions[nextActualQuestionIndex]
+      
+      let nextQuestion: IQuestion
+      if (session.questions_cache && session.questions_cache.length > 0) {
+        nextQuestion = session.questions_cache[nextActualQuestionIndex] as IQuestion
+      } else {
+        const nextQuiz = await Quiz.findById(session.quiz_id, { questions: { $slice: [nextActualQuestionIndex, 1] } }).lean()
+        nextQuestion = nextQuiz!.questions[0] as IQuestion
+      }
+
       const safeQuestion = {
         _id: nextQuestion._id,
         text: nextQuestion.text,
@@ -237,7 +269,12 @@ export async function processReviewAnswer(
 
     // Last question — persist answer and running score.
     // In review mode, session completion only happens via explicit submit confirmation.
-    const score = calculateScore(updatedAnswers, questions, session.question_order)
+    // Calculate running score optimally:
+    const previousAnswer = session.user_answers.find(a => a.question_index === questionIndex)
+    let scoreDelta = 0
+    if (isCorrect && (!previousAnswer || !previousAnswer.is_correct)) scoreDelta = 1
+    else if (!isCorrect && previousAnswer && previousAnswer.is_correct) scoreDelta = -1
+    const score = (session.score || 0) + scoreDelta
     await QuizSession.findByIdAndUpdate(session._id, {
       $set: {
         user_answers: updatedAnswers,

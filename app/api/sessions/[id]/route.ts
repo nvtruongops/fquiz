@@ -56,12 +56,16 @@ export const GET = withAuth(async (
       )
     }
 
-    const quiz = await Quiz.findById(session.quiz_id).populate('category_id').lean()
-    if (!quiz) {
-      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
+    let questionOrder = session.question_order
+    let sessionTotalQuestions = questionOrder?.length || 0
+
+    if (!questionOrder || questionOrder.length === 0) {
+      const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id').lean()
+      if (!quizMeta) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
+      questionOrder = Array.from({ length: quizMeta.questions.length as number }, (_, i) => i)
+      sessionTotalQuestions = quizMeta.questions.length
     }
 
-    const category = quiz.category_id
     const requestUrl = new URL(req.url)
     const queryParsed = SessionQuestionQuerySchema.safeParse(
       Object.fromEntries(requestUrl.searchParams.entries())
@@ -77,12 +81,11 @@ export const GET = withAuth(async (
 
     const currentIndex = queryParsed.data.question_index ?? session.current_question_index
 
-    // Use question_order to get the actual question index
-    const questionOrder = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
-    const sessionTotalQuestions = questionOrder.length
-
     // If session is completed or currentIndex is out of bounds, return session info without question
     if (currentIndex < 0 || currentIndex >= sessionTotalQuestions) {
+      const quizMeta = await Quiz.findById(session.quiz_id).select('course_code title category_id').populate('category_id').lean()
+      if (!quizMeta) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
+      
       return NextResponse.json(
         {
           session: {
@@ -92,9 +95,9 @@ export const GET = withAuth(async (
             current_question_index: session.current_question_index,
             totalQuestions: sessionTotalQuestions,
             user_answers: session.user_answers,
-            courseCode: quiz.course_code,
-            categoryName: (category as any)?.name || 'Chưa phân loại',
-            title: quiz.title,
+            courseCode: quizMeta.course_code,
+            categoryName: (quizMeta.category_id as any)?.name || 'Chưa phân loại',
+            title: quizMeta.title,
             started_at: session.started_at,
             paused_at: session.paused_at,
             total_paused_duration_ms: session.total_paused_duration_ms,
@@ -109,11 +112,19 @@ export const GET = withAuth(async (
     }
 
     const actualQuestionIndex = questionOrder[currentIndex]
-    const rawQuestion = quiz.questions[actualQuestionIndex]
+    
+    // Fetch only the specific question + metadata
+    const quiz = await Quiz.findById(
+      session.quiz_id,
+      { course_code: 1, title: 1, category_id: 1, questions: { $slice: [actualQuestionIndex, 1] } }
+    ).populate('category_id').lean()
 
-    if (!rawQuestion) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
     }
+
+    const category = quiz.category_id
+    const rawQuestion = quiz.questions[0]
 
     // Req 12.3: exclude correct_answer and explanation when session is not completed
     // Exception: flashcard mode always needs correct_answer and explanation
@@ -122,10 +133,9 @@ export const GET = withAuth(async (
     const isImmediateMode = session.mode === 'immediate'
 
     // Check if the current question index has already been answered by the student
-    const answeredDisplayIndexes = new Set(
-      (session.user_answers || []).map((ua: any) => ua.question_index)
+    const isQuestionAnswered = (session.user_answers || []).some(
+      (ua: any) => ua.question_index === currentIndex
     )
-    const isQuestionAnswered = answeredDisplayIndexes.has(currentIndex)
 
     const shouldShowAnswers = isCompleted || isFlashcardMode || (isImmediateMode && isQuestionAnswered)
 

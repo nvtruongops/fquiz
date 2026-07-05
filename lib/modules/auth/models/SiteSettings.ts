@@ -17,11 +17,23 @@ export const SiteSettings =
   mongoose.models.SiteSettings ??
   mongoose.model<ISiteSettings>('SiteSettings', SiteSettingsSchema)
 
+let cachedSettings: ISiteSettings | null = null
+let cacheTimestamp = 0
+const CACHE_TTL = 60 * 1000 // 60 seconds
+
 /** Get or create the singleton settings document */
 export async function getSettings(): Promise<ISiteSettings> {
+  const now = Date.now()
+  if (cachedSettings && now - cacheTimestamp < CACHE_TTL) {
+    return cachedSettings
+  }
+
   let settings = await SiteSettings.findOne().lean()
   if (!settings) {
     settings = await SiteSettings.create({})
   }
-  return settings as ISiteSettings
+  
+  cachedSettings = settings as ISiteSettings
+  cacheTimestamp = now
+  return cachedSettings
 }

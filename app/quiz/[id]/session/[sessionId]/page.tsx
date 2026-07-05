@@ -455,7 +455,7 @@ function DesktopSessionContent({
       answeredCount={answeredCount}
       selectedOptions={selectedOptions}
       submitted={submitted}
-      isPending={isSubmitting || finalizeMutation.isPending}
+      isPending={finalizeMutation.isPending}
       onSelectOption={handleSelectOption}
       onNavigate={navigateToQuestion}
       onSubmit={handleSubmit}
@@ -470,7 +470,7 @@ function DesktopSessionContent({
         showImmediateFeedback={session.mode === 'immediate' && submitted && lastAnswerResult !== null}
         lastAnswerResult={lastAnswerResult}
         onSelectOption={handleSelectOption}
-        isPending={isSubmitting || finalizeMutation.isPending}
+        isPending={finalizeMutation.isPending}
         sessionMode={session.mode}
       />
       <SessionModals
