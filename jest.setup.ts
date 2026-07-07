@@ -4,7 +4,7 @@
  */
 
 // Mock logger to prevent "logSecurityEvent is not a function" errors
-jest.mock('./lib/logger', () => ({
+jest.mock('./lib/core/utils/logger', () => ({
   logSecurityEvent: jest.fn(),
   logRateLimitTriggered: jest.fn(),
   logJWTVerificationFailed: jest.fn(),

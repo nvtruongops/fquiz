@@ -1,7 +1,8 @@
 import { jwtVerify, SignJWT } from 'jose'
-import {  connectDB  } from '@/lib/core/db/mongodb'
+import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { logJWTVerificationFailed, logSecurityEvent } from '@/lib/core/utils/logger'
+import { JWT_EXPIRY } from '@/lib/core/constants'
 
 export interface JWTPayload {
   userId: string
@@ -120,7 +121,7 @@ export async function signToken(userId: string, role: string, v: number = 1, met
   return new SignJWT({ userId, role, v, username: meta?.username ?? '', avatarUrl: meta?.avatarUrl ?? '' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('24h')
+    .setExpirationTime(JWT_EXPIRY)
     .sign(secret)
 }
 

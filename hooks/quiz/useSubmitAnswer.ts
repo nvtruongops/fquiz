@@ -6,6 +6,17 @@ import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
+class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string | undefined,
+    message: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
 interface SubmitAnswerVariables {
   questionIndex: number
   answerIndexes: number[]
@@ -58,8 +69,8 @@ async function submitAnswer(
       throw new Error('Session expired. Redirecting to login...')
     }
 
-    const error = await res.json().catch(() => ({})) as { message?: string; error?: string }
-    throw new Error(error.error || error.message || 'Failed to submit answer')
+    const error = await res.json().catch(() => ({})) as { message?: string; error?: string; code?: string }
+    throw new ApiError(res.status, error.code, error.error || error.message || 'Failed to submit answer')
   }
 
   return res.json()

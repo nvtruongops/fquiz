@@ -134,12 +134,13 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
       if (!res.ok) throw new Error('DOWNLOAD_FAILED')
       const blob = await res.blob()
       const objectUrl = URL.createObjectURL(blob)
+      if (!objectUrl.startsWith('blob:')) {
+        throw new Error('Security check failed')
+      }
       const link = document.createElement('a')
       link.href = objectUrl
       link.download = filename
-      document.body.appendChild(link)
       link.click()
-      link.remove()
       URL.revokeObjectURL(objectUrl)
     } catch {
       setError('Không thể tải file mẫu. Vui lòng thử lại.')

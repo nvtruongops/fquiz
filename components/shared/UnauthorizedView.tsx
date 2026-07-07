@@ -19,6 +19,18 @@ export function UnauthorizedView({
   redirectUrl = "/login",
   className
 }: UnauthorizedViewProps) {
+  let safeRedirectPath = ''
+  if (typeof window !== 'undefined') {
+    const rawPath = window.location.pathname
+    if (/^[a-zA-Z0-9_\-\/]+$/.test(rawPath)) {
+      safeRedirectPath = encodeURIComponent(rawPath)
+    }
+  }
+
+  const isSafeRedirectUrl = redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')
+  const safeRedirectUrl = isSafeRedirectUrl ? redirectUrl : '/login'
+  const targetHref = `${safeRedirectUrl}?redirect=${safeRedirectPath}`
+
   return (
     <div className={cn(
       "flex flex-col items-center justify-center p-10 rounded-[32px] bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-center relative overflow-hidden group transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.06)]",
@@ -47,7 +59,7 @@ export function UnauthorizedView({
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
-          <Link href={`${redirectUrl}?redirect=${typeof window !== 'undefined' ? window.location.pathname : ''}`} className="w-full sm:w-auto">
+          <Link href={targetHref} className="w-full sm:w-auto">
             <Button className="w-full sm:w-auto bg-[#5D7B6F] h-12 px-8 text-xs font-black uppercase tracking-[0.2em] text-white rounded-2xl shadow-lg shadow-[#5D7B6F]/20 hover:bg-[#4a6358] hover:translate-y-[-2px] active:translate-y-0 transition-all">
               Đăng nhập ngay
               <ArrowRight className="ml-2 h-4 w-4" />

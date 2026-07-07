@@ -251,7 +251,15 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
                 {/* Image */}
                 {q.image_url && (
                   <div className="mb-4 flex justify-center rounded-xl bg-gray-50 p-2">
-                    <img src={q.image_url} alt="Question" className="max-h-64 object-contain rounded-lg" />
+                    <img
+                      src={
+                        /^(https?:\/\/|\/|data:image\/)/i.test(q.image_url) && !/javascript:/i.test(q.image_url)
+                          ? q.image_url
+                          : ''
+                      }
+                      alt="Question"
+                      className="max-h-64 object-contain rounded-lg"
+                    />
                   </div>
                 )}
 

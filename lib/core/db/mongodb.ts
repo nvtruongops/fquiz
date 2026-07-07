@@ -27,6 +27,7 @@ import '@/lib/modules/quiz/models/Category'
 import '@/lib/modules/quiz/models/Quiz'
 import '@/lib/modules/quiz/models/QuizSession'
 import '@/lib/modules/quiz/models/QuizComment'
+import '@/lib/modules/community/models/Post'
 
 const MONGODB_URI = process.env.MONGODB_URI!
 

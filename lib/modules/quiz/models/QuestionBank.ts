@@ -75,6 +75,10 @@ QuestionBankSchema.index({ text: 'text' })
 // Index để tìm câu hỏi phổ biến
 QuestionBankSchema.index({ category_id: 1, usage_count: -1 })
 
+// Index for tracking quiz usages
+QuestionBankSchema.index({ used_in_quiz_ids: 1 })
+QuestionBankSchema.index({ used_in_quizzes: 1 })
+
 export const QuestionBank = 
   mongoose.models.QuestionBank ?? 
   mongoose.model<IQuestionBank>('QuestionBank', QuestionBankSchema)
