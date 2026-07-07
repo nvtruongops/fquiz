@@ -1,63 +1,81 @@
+'use client'
+
+import React from 'react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { BookOpen, Sparkles, ArrowLeft } from 'lucide-react'
-import { verifySession } from '@/lib/modules/auth/dal'
+import { motion } from 'framer-motion'
+import { cn } from '@/lib/core/utils/cn'
 
-export const dynamic = 'force-dynamic'
-
-export default async function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // If already logged in, redirect to dashboard
-  const user = await verifySession()
-  if (user) {
-    redirect(user.role === 'admin' ? '/admin' : '/dashboard')
-  }
+export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  const isRegister = pathname === '/register'
 
   return (
     <div className="min-h-screen bg-[#F9F9F7] relative overflow-hidden flex flex-col items-center justify-center px-4 py-8">
       {/* Floating Back to Home Button */}
-      <div className="absolute top-6 left-6 z-50">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-gray-100 shadow-sm text-gray-500 hover:text-slate-900 transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 font-bold text-xs uppercase tracking-wider"
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="absolute top-6 left-6 z-50"
+      >
+        <button 
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-slate-500 hover:text-slate-900 transition-all hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:translate-y-0 font-bold text-xs tracking-wider"
         >
           <ArrowLeft className="w-4 h-4" />
-          Trang chủ
-        </Link>
+          Quay lại trang chủ
+        </button>
+      </motion.div>
+
+      {/* Animated Aurora Background */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1], 
+            opacity: [0.3, 0.5, 0.3],
+            rotate: [0, 90, 0] 
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-gradient-to-br from-[#5D7B6F]/20 to-transparent blur-[140px] rounded-full mix-blend-multiply" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.1, 1], 
+            opacity: [0.2, 0.4, 0.2],
+            rotate: [0, -90, 0] 
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[60%] bg-gradient-to-tl from-[#A4C3A2]/30 to-transparent blur-[120px] rounded-full mix-blend-multiply" 
+        />
       </div>
 
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#5D7B6F]/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#A4C3A2]/10 blur-[120px] rounded-full" />
-      </div>
+      <div className="relative z-10 flex flex-col items-center w-full">
 
-      {/* Brand Header with 3D Effect */}
-      <div className="relative z-10 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-        <Link href="/" className="flex flex-col items-center gap-3 group">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[#5D7B6F]/20 rounded-2xl translate-y-1.5 transition-transform group-hover:translate-y-2" />
-            <div className="relative w-14 h-14 rounded-2xl bg-[#5D7B6F] flex items-center justify-center shadow-xl group-hover:-translate-y-0.5 transition-all">
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
-          </div>
-          <div className="text-center">
-            <span className="font-black text-[#5D7B6F] text-2xl tracking-tighter block">FQuiz</span>
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Hệ thống luyện thi</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Form Container - Enhanced 3D Glassmorphism */}
-      <div className="relative z-10 w-full max-w-[480px] animate-in fade-in zoom-in-95 duration-700">
-        <div className="absolute inset-0 bg-[#5D7B6F]/5 blur-3xl -z-10 rounded-full scale-150 opacity-50" />
-        {children}
+        {/* Form Container */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, type: "spring", stiffness: 300, damping: 25 }}
+          className={cn("w-full relative transition-all duration-300", isRegister ? "max-w-[700px]" : "max-w-[440px]")}
+        >
+          {children}
+        </motion.div>
       </div>
 
       {/* Footer Decoration */}
-      <div className="relative z-10 mt-10 flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        transition={{ duration: 1, delay: 0.5 }}
+        className="relative z-10 mt-12 flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]"
+      >
         <Sparkles className="w-4 h-4" />
-        <span>Tương lai trong tầm tay</span>
-      </div>
+        <span>Học tập thông minh</span>
+      </motion.div>
     </div>
   )
 }

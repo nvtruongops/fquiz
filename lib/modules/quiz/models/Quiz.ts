@@ -5,10 +5,33 @@ import '@/lib/modules/quiz/models/Category'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
-    question_id: { type: String, required: false }, // Content-based unique ID
-    text: { type: String, required: false },
-    options: { type: [String], required: false, default: [] },
-    correct_answer: { type: [Number], required: false, default: [] },
+    question_id: { type: String, required: false }, // Content-based unique ID (generated in pre-save hook)
+    text: { 
+      type: String, 
+      required: true,
+      minlength: [1, 'Câu hỏi không được để trống'],
+      maxlength: [10000, 'Câu hỏi tối đa 10000 ký tự']
+    },
+    options: { 
+      type: [String], 
+      required: true,
+      validate: {
+        validator: function(v: string[]) {
+          return v.length >= 2;
+        },
+        message: 'Cần ít nhất 2 lựa chọn'
+      }
+    },
+    correct_answer: { 
+      type: [Number], 
+      required: true,
+      validate: {
+        validator: function(v: number[]) {
+          return v.length >= 1;
+        },
+        message: 'Cần ít nhất 1 đáp án đúng'
+      }
+    },
     explanation: { type: String },
     image_url: { type: String },
   },

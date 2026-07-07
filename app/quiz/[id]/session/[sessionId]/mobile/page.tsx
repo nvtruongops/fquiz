@@ -573,7 +573,11 @@ export default function QuizSessionMobilePage() {
             {question.image_url && (
               <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
                 <img
-                  src={question.image_url}
+                  src={
+                    /^(https?:\/\/|\/|data:image\/)/i.test(question.image_url) && !/javascript:/i.test(question.image_url)
+                      ? question.image_url
+                      : ''
+                  }
                   alt="Minh họa câu hỏi"
                   className="h-auto w-full object-contain"
                 />

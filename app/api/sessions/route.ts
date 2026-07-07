@@ -8,6 +8,7 @@ import mongoose from 'mongoose'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
+import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 
 /**
  * Fisher-Yates shuffle algorithm for randomizing question order
@@ -118,8 +119,25 @@ function handleSessionConflicts(session: any, questions: any[], action: string |
   return NextResponse.json({ error: `Bạn có một bài ${group === 'learning' ? 'lật thẻ' : 'quiz'} chưa hoàn thành.`, code: 'ACTIVE_SESSION_EXISTS', activeSession: { sessionId: session._id, mode: session.mode, difficulty: session.difficulty, current_question_index: session.current_question_index, totalQuestions: questions.length, answeredCount: answered, started_at: session.started_at } }, { status: 409 })
 }
 
+const sessionLimiter = providerFactory.createProvider(10, 60 * 1000)
+
 export const POST = withAuth(async (req, { payload }) => {
   try {
+    const rateLimitResult = await sessionLimiter.check(payload.userId)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many session creation requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString()
+          }
+        }
+      )
+    }
+
     const body = await req.json().catch(() => null)
     const parsed = CreateSessionSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })

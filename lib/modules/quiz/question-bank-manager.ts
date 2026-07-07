@@ -1,10 +1,7 @@
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
+import { ensureArray } from '@/lib/core/utils/array-utils'
 import type { Types } from 'mongoose'
-
-function ensureArray(answers: number | number[]): number[] {
-  return Array.isArray(answers) ? answers : [answers]
-}
 
 export interface QuestionInput {
   text: string
@@ -37,10 +34,13 @@ function formatUsedInQuizzes(existing: {
   used_in_quiz_ids?: string[]
   usage_count: number
 }): string {
-  const codes = existing.used_in_quizzes.length > 0
-    ? existing.used_in_quizzes
-    : []
-  if (codes.length === 0) return `Đã được dùng trong ${existing.usage_count} quiz`
+  const codes = existing.used_in_quizzes || []
+  if (codes.length === 0) {
+    // Fallback to quiz_ids if codes are empty
+    const ids = (existing.used_in_quiz_ids || []).map((id: any) => String(id).substring(0, 8))
+    if (ids.length === 0) return `Chưa được dùng trong quiz nào`
+    return `Đã dùng trong ${ids.length} quiz (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? '...' : ''})`
+  }
   const display = codes.slice(0, 3).join(', ')
   return codes.length > 3
     ? `${display}... (+${codes.length - 3} khác)`
@@ -99,8 +99,10 @@ export async function checkQuestionInBank(
     existingQuestion: existingInfo,
     conflictType: 'different_answer',
     message: ` MÂU THUẪN: Câu hỏi tương tự đã tồn tại nhưng có đáp án khác!\n` +
-             `Đáp án hiện tại: ${ensureArray(question.correct_answer).map((i: number) => question.options[i] || `[${i}]`).join(', ')}\n` +
-             `Đáp án trong ngân hàng: ${ensureArray(existing.correct_answer).map((i: number) => existing.options[i] || `[${i}]`).join(', ')}\n` +
+             /* eslint-disable-next-line security/detect-object-injection */
+             `Đáp án hiện tại: ${ensureArray(question.correct_answer).map((i: number) => question.options[i] || ('[' + i + ']')).join(', ')}\n` +
+             /* eslint-disable-next-line security/detect-object-injection */
+             `Đáp án trong ngân hàng: ${ensureArray(existing.correct_answer).map((i: number) => existing.options[i] || ('[' + i + ']')).join(', ')}\n` +
              `${formatUsedInQuizzes(existingInfo)}`
   }
 }

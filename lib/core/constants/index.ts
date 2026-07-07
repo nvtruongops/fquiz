@@ -4,9 +4,10 @@
 
 export const AUTH_COOKIE_NAME = 'auth-token'
 export const CSRF_COOKIE_NAME = 'csrf-token'
+export const CSRF_HEADER_NAME = 'x-csrf-token'
 export const MAINTENANCE_COOKIE_NAME = 'maintenance-mode'
 
-export const JWT_EXPIRY = '24h'
+export const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h'
 export const COOKIE_MAX_AGE = 60 * 60 * 24 // 24 hours
 
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB

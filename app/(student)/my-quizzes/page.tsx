@@ -2,14 +2,14 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { 
-  FolderPlus, 
-  Plus, 
-  MoreVertical, 
-  FileText, 
-  Globe, 
-  Lock, 
-  Trash2, 
+import {
+  FolderPlus,
+  Plus,
+  MoreVertical,
+  FileText,
+  Globe,
+  Lock,
+  Trash2,
   Edit3,
   Library,
   BookOpen,
@@ -30,11 +30,11 @@ import Link from 'next/link'
 import { Button } from '@/components/shared/ui/button'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { Input } from '@/components/shared/ui/input'
-import { 
-  Dialog, 
-  DialogContent, 
+import {
+  Dialog,
+  DialogContent,
   DialogDescription,
-  DialogTitle, 
+  DialogTitle,
   DialogTrigger
 } from '@/components/shared/ui/dialog'
 import { Badge } from '@/components/shared/ui/badge'
@@ -220,10 +220,10 @@ function QuizActionsOverlay({
             disabled={isDeleting}
             className="h-12 px-6 rounded-full border-none bg-rose-500 text-white font-black hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-500/20 gap-2.5 transition-all active:scale-95 group"
           >
-            <Trash2 className="w-4 h-4 group-hover:shake transition-transform" /> 
+            <Trash2 className="w-4 h-4 group-hover:shake transition-transform" />
             <span className="text-xs uppercase tracking-wider">{isDeleting ? 'Deleting...' : 'Xóa bài'}</span>
           </Button>
-          
+
           <Button
             onClick={onBack}
             variant="outline"
@@ -252,16 +252,16 @@ function QuizDeleteConfirmDialog({
 }>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden">
         <div className="p-8 flex flex-col items-center justify-center">
           <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-8 shadow-inner">
             <AlertTriangle className="w-10 h-10 text-red-500" />
           </div>
-          
+
           <DialogTitle className="text-xl font-black text-gray-900 mb-2 text-center">
             Xác nhận xóa?
           </DialogTitle>
-          
+
           <DialogDescription className="text-[11px] font-bold text-gray-400 text-center mb-10 px-6 leading-relaxed uppercase tracking-widest opacity-80">
             Bộ đề này sẽ bị gỡ bỏ vĩnh viễn khỏi kho lưu trữ của bạn.
           </DialogDescription>
@@ -327,9 +327,9 @@ function QuizCard({
 
   return (
     <>
-      <Card className="group relative w-full border-none shadow-lg shadow-[#5D7B6F]/5 rounded-[24px] overflow-hidden bg-white hover:shadow-xl hover:shadow-[#5D7B6F]/10 transition-all duration-300">
+      <Card className="group relative w-full border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_40px_rgba(93,123,111,0.08)] transition-all duration-300">
         <CardContent className="p-4 sm:p-5 relative">
-          
+
           {/* Main Content (Default View) */}
           <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
             <div className="flex items-center gap-6">
@@ -354,7 +354,7 @@ function QuizCard({
                     {quiz.title}
                   </p>
                 )}
-                
+
                 {/* Quiz Meta Info */}
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
@@ -392,7 +392,7 @@ function QuizCard({
 
               {/* Right Section: Actions */}
               <div className="flex items-center gap-3 shrink-0">
-                <Button 
+                <Button
                   asChild={!isSourceLocked}
                   disabled={isSourceLocked}
                   className={cn(
@@ -415,9 +415,9 @@ function QuizCard({
                   )}
                 </Button>
 
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setView('actions')}
                   disabled={isDeleting}
                   className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-gray-100 text-gray-400 group-hover:text-[#5D7B6F] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -491,7 +491,7 @@ function QuizCardSkeleton() {
 export default function MyQuizzesPage() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'personal' | 'saved'>('personal')
   const [search, setSearch] = useState('')
@@ -538,11 +538,11 @@ export default function MyQuizzesPage() {
     return allLocalQuizzes.filter((quiz: Quiz) => {
       const isCorrectTab = activeTab === 'saved' ? quiz.is_saved_from_explore : !quiz.is_saved_from_explore
       if (!isCorrectTab) return false
-      
-      const searchMatch = !debouncedSearch || 
+
+      const searchMatch = !debouncedSearch ||
         quiz.course_code.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         quiz.title.toLowerCase().includes(debouncedSearch.toLowerCase())
-        
+
       return searchMatch
     })
   }, [allLocalQuizzes, activeTab, debouncedSearch])
@@ -626,7 +626,7 @@ export default function MyQuizzesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
-      toast.success('Category deleted')
+      toast.success('Danh mục đã xóa')
     },
     onError: (err: any) => toast.error(err.message)
   })
@@ -687,13 +687,19 @@ export default function MyQuizzesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] pb-20">
+    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden pb-20">
+      {/* Animated Background Mesh */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-br from-[#5D7B6F]/10 to-transparent blur-[120px] rounded-full mix-blend-multiply" />
+        <div className="absolute bottom-[20%] left-[5%] w-[30%] h-[30%] bg-gradient-to-tr from-[#A4C3A2]/20 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
+      </div>
+
       {/* Unified Header & Controls Section */}
-      <section className="w-full mx-auto px-4 pt-12">
-        <Card className="rounded-[40px] border-none shadow-2xl shadow-[#5D7B6F]/10 overflow-hidden bg-white">
+      <section className="w-full mx-auto px-4 pt-12 relative z-10">
+        <Card className="rounded-[40px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
           <CardContent className="p-0">
             {/* Top Row: Title & Category Management */}
-            <div className="px-8 py-6 md:px-12 md:py-6 flex flex-col md:flex-row items-center justify-between gap-8 bg-white border-b border-gray-50">
+            <div className="px-8 py-6 md:px-12 md:py-6 flex flex-col md:flex-row items-center justify-between gap-8 border-b border-white/50">
               <div className="space-y-1 text-center md:text-left">
                 <h1 className="text-3xl font-black text-[#5D7B6F] flex items-center justify-center md:justify-start gap-3">
                   <Library className="w-9 h-9 text-[#A4C3A2]" /> Bộ đề của tôi
@@ -703,8 +709,8 @@ export default function MyQuizzesPage() {
                 </p>
               </div>
 
-              <Dialog 
-                open={isManageCategoriesOpen} 
+              <Dialog
+                open={isManageCategoriesOpen}
                 onOpenChange={(open) => {
                   setIsManageCategoriesOpen(open)
                   if (!open) {
@@ -714,133 +720,133 @@ export default function MyQuizzesPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                   <Button className="bg-gray-50 hover:bg-white text-[#5D7B6F] rounded-2xl py-6 px-8 font-black border border-[#5D7B6F]/5 hover:border-[#5D7B6F]/20 shadow-xl shadow-[#5D7B6F]/5 transition-all active:scale-95 flex items-center gap-3">
-                      <Settings2 className="w-5 h-5 text-[#A4C3A2]" />
-                      Quản lý danh mục
-                   </Button>
+                  <Button className="bg-gray-50 hover:bg-white text-[#5D7B6F] rounded-2xl py-6 px-8 font-black border border-[#5D7B6F]/5 hover:border-[#5D7B6F]/20 shadow-xl shadow-[#5D7B6F]/5 transition-all active:scale-95 flex items-center gap-3">
+                    <Settings2 className="w-5 h-5 text-[#A4C3A2]" />
+                    Quản lý danh mục
+                  </Button>
                 </DialogTrigger>
-                <DialogContent className="rounded-[32px] border-none shadow-2xl p-0 overflow-hidden w-[calc(100vw-2rem)] sm:max-w-md">
-                   <div className="px-6 py-6 sm:px-8 sm:py-8 bg-[#5D7B6F] text-white space-y-2">
-                      <DialogTitle className="text-xl sm:text-2xl font-black flex items-center gap-3">
-                         <FolderTree className="w-5 h-5 sm:w-6 sm:h-6" /> Danh mục của bạn
-                      </DialogTitle>
-                     <DialogDescription className="sr-only">
+                <DialogContent className="rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden w-[calc(100vw-2rem)] sm:max-w-md">
+                  <div className="px-6 py-6 sm:px-8 sm:py-8 bg-[#5D7B6F] text-white space-y-2">
+                    <DialogTitle className="text-xl sm:text-2xl font-black flex items-center gap-3">
+                      <FolderTree className="w-5 h-5 sm:w-6 sm:h-6" /> Danh mục của bạn
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
                       Tạo, sửa, xóa danh mục cá nhân và xem số lượng quiz tự tạo hoặc quiz đã lưu trong từng danh mục.
-                     </DialogDescription>
-                      <p className="text-[10px] sm:text-xs font-bold opacity-70 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
-                   </div>
-                   
-                   <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
-                      {privateCategoryCount < 5 && (
-                        <div className="flex gap-2 items-center">
-                          <Input 
-                            placeholder="Tên danh mục mới..." 
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
-                            className="h-14 rounded-xl border-[#5D7B6F]/10 font-bold text-sm flex-1"
-                          />
-                          <Button 
-                            onClick={() => newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
-                            disabled={createCatMutation.isPending || !newCategoryName.trim()}
-                            className="bg-[#5D7B6F] hover:bg-[#4a6358] h-14 w-14 rounded-xl shrink-0 disabled:opacity-50"
-                          >
-                             {createCatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6" />}
-                          </Button>
-                        </div>
-                      )}
+                    </DialogDescription>
+                    <p className="text-[10px] sm:text-xs font-bold opacity-70 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
+                  </div>
 
-                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-                        {privateCategories.map((cat: any) => {
-                          const isConfirming = confirmDeleteCatId === cat._id
-                          return (
-                            <div key={cat._id} className="group flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#5D7B6F]/10 transition-all">
-                              {editingCategoryId === cat._id ? (
-                                <div className="flex-1 flex gap-2">
-                                  <Input 
-                                    autoFocus 
-                                    value={editingCategoryName}
-                                    onChange={(e) => setEditingCategoryName(e.target.value)}
-                                    className="h-9 text-xs font-bold"
-                                  />
-                                  <Button size="sm" onClick={() => updateCatMutation.mutate({ id: cat._id, name: editingCategoryName })}>Lưu</Button>
+                  <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
+                    {privateCategoryCount < 5 && (
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Tên danh mục mới..."
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
+                          className="h-14 rounded-xl border-[#5D7B6F]/10 font-bold text-sm flex-1"
+                        />
+                        <Button
+                          onClick={() => newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
+                          disabled={createCatMutation.isPending || !newCategoryName.trim()}
+                          className="bg-[#5D7B6F] hover:bg-[#4a6358] h-14 w-14 rounded-xl shrink-0 disabled:opacity-50"
+                        >
+                          {createCatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6" />}
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                      {privateCategories.map((cat: any) => {
+                        const isConfirming = confirmDeleteCatId === cat._id
+                        return (
+                          <div key={cat._id} className="group flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#5D7B6F]/10 transition-all">
+                            {editingCategoryId === cat._id ? (
+                              <div className="flex-1 flex gap-2">
+                                <Input
+                                  autoFocus
+                                  value={editingCategoryName}
+                                  onChange={(e) => setEditingCategoryName(e.target.value)}
+                                  className="h-9 text-xs font-bold"
+                                />
+                                <Button size="sm" onClick={() => updateCatMutation.mutate({ id: cat._id, name: editingCategoryName })}>Lưu</Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <span className="text-sm font-black text-[#5D7B6F]">{cat.name}</span>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                  Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0}
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                              {isConfirming ? (
+                                <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-red-100 animate-in fade-in slide-in-from-right-2 duration-200">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setConfirmDeleteCatId(null)}
+                                    className="h-7 px-2 text-[10px] font-black text-gray-400 hover:bg-transparent"
+                                  >
+                                    Hủy
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => deleteCatMutation.mutate(cat._id)}
+                                    className="h-7 px-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black rounded-lg transition-all active:scale-95"
+                                  >
+                                    {deleteCatMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xác nhận xóa'}
+                                  </Button>
                                 </div>
                               ) : (
-                                <div className="space-y-0.5">
-                                  <span className="text-sm font-black text-[#5D7B6F]">{cat.name}</span>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                    Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0}
-                                  </p>
-                                </div>
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 rounded-lg"
+                                    onClick={() => {
+                                      setEditingCategoryId(cat._id)
+                                      setEditingCategoryName(cat.name)
+                                    }}
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-gray-400" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-red-500"
+                                    onClick={() => setConfirmDeleteCatId(cat._id)}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </>
                               )}
-                              
-                              <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                {isConfirming ? (
-                                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-red-100 animate-in fade-in slide-in-from-right-2 duration-200">
-                                   <Button 
-                                     size="sm" 
-                                     variant="ghost" 
-                                     onClick={() => setConfirmDeleteCatId(null)}
-                                     className="h-7 px-2 text-[10px] font-black text-gray-400 hover:bg-transparent"
-                                   >
-                                     Hủy
-                                   </Button>
-                                   <Button 
-                                     size="sm" 
-                                     onClick={() => deleteCatMutation.mutate(cat._id)}
-                                     className="h-7 px-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black rounded-lg transition-all active:scale-95"
-                                   >
-                                     {deleteCatMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xác nhận xóa'}
-                                   </Button>
-                                  </div>
-                                ) : (
-                                   <>
-                                     <Button 
-                                       variant="ghost" 
-                                       size="icon" 
-                                       className="w-8 h-8 rounded-lg"
-                                       onClick={() => {
-                                         setEditingCategoryId(cat._id)
-                                         setEditingCategoryName(cat.name)
-                                       }}
-                                     >
-                                        <Edit3 className="w-3.5 h-3.5 text-gray-400" />
-                                     </Button>
-                                     <Button 
-                                       variant="ghost" 
-                                       size="icon" 
-                                       className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-red-500"
-                                       onClick={() => setConfirmDeleteCatId(cat._id)}
-                                     >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                     </Button>
-                                   </>
-                                 )}
-                              </div>
                             </div>
-                          )
-                        })}
-                      </div>
-                   </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
 
             {/* Bottom Section: Search & Filters */}
-            <div className="px-8 py-8 md:px-12 md:py-8 space-y-6 bg-gray-50/30">
+            <div className="px-8 py-8 md:px-12 md:py-8 space-y-6">
               <div className="relative group">
-                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-[#5D7B6F] transition-colors" />
-                 <Input 
-                   placeholder="Tìm nhanh theo Mã đề, Tên bộ đề hoặc Danh mục..."
-                   value={search}
-                   onChange={(e) => setSearch(e.target.value)}
-                   className="h-16 pl-16 pr-8 rounded-[24px] border-2 border-[#5D7B6F]/20 bg-white shadow-inner font-bold text-[#5D7B6F] text-lg focus:ring-4 focus:ring-[#5D7B6F]/10 focus:border-[#5D7B6F]/40 transition-all"
-                 />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-[#5D7B6F] transition-colors" />
+                <Input
+                  placeholder="Tìm nhanh theo Mã đề, Tên bộ đề hoặc Danh mục..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-16 pl-16 pr-8 rounded-[24px] border-2 border-[#5D7B6F]/20 bg-white shadow-inner font-bold text-[#5D7B6F] text-lg focus:ring-4 focus:ring-[#5D7B6F]/10 focus:border-[#5D7B6F]/40 transition-all"
+                />
               </div>
 
               <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                 <div className="flex p-1.5 bg-white rounded-2xl w-full lg:w-fit shadow-sm border border-gray-100 min-w-0">
-                  <button 
+                  <button
                     onClick={() => setActiveTab('personal')}
                     className={cn(
                       "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
@@ -853,7 +859,7 @@ export default function MyQuizzesPage() {
                       {ownQuizTotal}
                     </Badge>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveTab('saved')}
                     className={cn(
                       "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
@@ -877,19 +883,19 @@ export default function MyQuizzesPage() {
                       <SelectItem value="all" className="font-black text-xs pl-10 pr-4 py-2.5">Tất cả danh mục</SelectItem>
                       {categories.map((cat: any) => (
                         <SelectItem key={cat._id} value={cat._id} className="font-bold text-xs pl-10 pr-4 py-2.5">
-                           {cat.name} (Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0})
+                          {cat.name} (Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
 
-                  <Button 
-                     asChild
-                     className="w-full sm:w-auto bg-[#5D7B6F] hover:bg-[#4A6359] text-white h-14 px-10 rounded-2xl font-black shadow-xl shadow-[#5D7B6F]/20 flex items-center gap-3 transition-all active:scale-95"
+                  <Button
+                    asChild
+                    className="w-full sm:w-auto bg-[#5D7B6F] hover:bg-[#4A6359] text-white h-14 px-10 rounded-2xl font-black shadow-xl shadow-[#5D7B6F]/20 flex items-center gap-3 transition-all active:scale-95"
                   >
-                     <Link href="/create">
-                        <Plus className="w-6 h-6" /> Tạo bài thi mới
-                     </Link>
+                    <Link href="/create">
+                      <Plus className="w-6 h-6" /> Tạo bài thi mới
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -899,15 +905,15 @@ export default function MyQuizzesPage() {
       </section>
 
       {/* Quizzes Grid Section */}
-      <section className="w-full mx-auto px-4 mt-20">
+      <section className="w-full mx-auto px-4 mt-20 relative z-10">
         {filteredQuizzes.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-700">
             <div className="w-24 h-24 rounded-[40px] bg-white shadow-2xl flex items-center justify-center">
-               <FileText className="w-10 h-10 text-gray-200" />
+              <FileText className="w-10 h-10 text-gray-200" />
             </div>
             <div className="space-y-1">
-               <p className="text-lg font-black text-gray-300 uppercase tracking-widest">Không có bộ đề nào</p>
-               <p className="text-sm font-bold text-gray-400">Hãy thử đổi bộ lọc hoặc tạo đề thi mới ngay nhé!</p>
+              <p className="text-lg font-black text-gray-300 uppercase tracking-widest">Không có bộ đề nào</p>
+              <p className="text-sm font-bold text-gray-400">Hãy thử đổi bộ lọc hoặc tạo đề thi mới ngay nhé!</p>
             </div>
           </div>
         ) : (

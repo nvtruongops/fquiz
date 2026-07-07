@@ -52,7 +52,9 @@ export const POST = withAuth(async (
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
 
     await connectDB()
-    const session = await QuizSession.findById(id)
+    
+    // First read for validation (lean for performance)
+    const session = await QuizSession.findById(id).lean()
     if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     const validationError = validateFlashcardSession(session, payload.userId)
     if (validationError) return NextResponse.json(validationError, { status: validationError.status })
@@ -60,46 +62,104 @@ export const POST = withAuth(async (
     const { knows, question_index } = parsed.data
     const currentIndex = question_index ?? session.current_question_index
     
-    if (!session.flashcard_stats) session.flashcard_stats = { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 }
+    // Initialize flashcard_stats if missing (should be set on session creation, but defensive)
+    if (!session.flashcard_stats) {
+      await QuizSession.findByIdAndUpdate(id, {
+        $set: { flashcard_stats: { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 } }
+      })
+    }
 
     // Check if we are updating a previous answer
     if (question_index !== undefined && question_index < session.current_question_index) {
-      const existingAnswer = session.user_answers.find(a => a.question_index === question_index)
-      if (existingAnswer) {
-        if (existingAnswer.is_correct !== knows) {
-          // Revert old stats
-          if (existingAnswer.is_correct) session.flashcard_stats.cards_known -= 1; else session.flashcard_stats.cards_unknown -= 1
-          // Apply new stats
-          if (knows) session.flashcard_stats.cards_known += 1; else session.flashcard_stats.cards_unknown += 1
-          existingAnswer.is_correct = knows
-          await session.save()
-        }
+      // [SECURITY FIX]: Atomic update with $elemMatch to prevent race condition
+      // Only update if is_correct differs from knows (prevents redundant updates)
+      const statsDelta = knows ? { cards_known: 1, cards_unknown: -1 } : { cards_known: -1, cards_unknown: 1 }
+      const updated = await QuizSession.findOneAndUpdate(
+        { 
+          _id: id,
+          user_answers: { 
+            $elemMatch: { 
+              question_index: question_index, 
+              is_correct: { $ne: knows } 
+            } 
+          }
+        },
+        {
+          $set: { 'user_answers.$.is_correct': knows },
+          $inc: {
+            'flashcard_stats.cards_known': statsDelta.cards_known,
+            'flashcard_stats.cards_unknown': statsDelta.cards_unknown
+          }
+        },
+        { new: true }
+      ).lean()
+      
+      if (updated) {
+        // Successfully updated
+        return NextResponse.json({ 
+          success: true, knows, isLastQuestion: false, nextQuestionIndex: updated.current_question_index, 
+          stats: { total: updated.flashcard_stats?.total_cards, known: updated.flashcard_stats?.cards_known, unknown: updated.flashcard_stats?.cards_unknown } 
+        })
       }
-      return NextResponse.json({ success: true, knows, isLastQuestion: false, nextQuestionIndex: session.current_question_index, stats: { total: session.flashcard_stats?.total_cards, known: session.flashcard_stats?.cards_known, unknown: session.flashcard_stats?.cards_unknown } })
+      
+      // No match: either answer doesn't exist or is_correct already equals knows
+      // Fetch current state to return accurate data
+      const freshSession = await QuizSession.findById(id).lean()
+      if (!freshSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+      
+      const existingAnswer = freshSession.user_answers.find(a => a.question_index === question_index)
+      if (!existingAnswer) {
+        return NextResponse.json({ error: 'Answer not found for this question index' }, { status: 404 })
+      }
+      
+      return NextResponse.json({ 
+        success: true, knows: existingAnswer.is_correct, isLastQuestion: false, nextQuestionIndex: freshSession.current_question_index, 
+        stats: { total: freshSession.flashcard_stats?.total_cards, known: freshSession.flashcard_stats?.cards_known, unknown: freshSession.flashcard_stats?.cards_unknown } 
+      })
     }
 
-    session.user_answers.push({ question_index: currentIndex, answer_index: -1, is_correct: knows })
-    if (knows) session.flashcard_stats.cards_known += 1; else session.flashcard_stats.cards_unknown += 1
-
+    // [SECURITY FIX]: Atomic update to prevent TOCTOU race condition for new answers
     const nextIndex = currentIndex + 1
     const isLast = nextIndex >= session.question_order.length
-    session.current_question_index = nextIndex
-    session.last_activity_at = new Date()
-    if (isLast) { session.status = 'completed'; session.completed_at = new Date(); session.expires_at = undefined }
-    await session.save()
+    
+    const updated = await QuizSession.findOneAndUpdate(
+      {
+        _id: id,
+        status: 'active',
+        'user_answers.question_index': { $ne: currentIndex }
+      },
+      {
+        $push: { user_answers: { question_index: currentIndex, answer_index: -1, is_correct: knows } },
+        $set: {
+          current_question_index: nextIndex,
+          last_activity_at: new Date(),
+          ...(isLast ? { status: 'completed', completed_at: new Date(), expires_at: null } : {})
+        },
+        $inc: {
+          'flashcard_stats.cards_known': knows ? 1 : 0,
+          'flashcard_stats.cards_unknown': knows ? 0 : 1
+        }
+      },
+      { new: true }
+    )
 
-    const quiz = await Quiz.findById(session.quiz_id).populate('category_id', 'name').select('title course_code questions category_id').lean() as any
-    const nextQ = (!isLast && quiz) ? getNextQuestion(quiz, session, nextIndex) : null
+    if (!updated) {
+      return NextResponse.json({ error: 'This flashcard has already been answered or session is not active' }, { status: 400 })
+    }
+
+    // Fetch quiz data for response
+    const quiz = await Quiz.findById(updated.quiz_id).populate('category_id', 'name').select('title course_code questions category_id').lean() as any
+    const nextQ = (!isLast && quiz) ? getNextQuestion(quiz, updated, nextIndex) : null
 
     return NextResponse.json({
       success: true, knows, isLastQuestion: isLast, nextQuestionIndex: isLast ? null : nextIndex,
-      stats: { total: session.flashcard_stats.total_cards, known: session.flashcard_stats.cards_known, unknown: session.flashcard_stats.cards_unknown },
+      stats: { total: updated.flashcard_stats?.total_cards ?? 0, known: updated.flashcard_stats?.cards_known ?? 0, unknown: updated.flashcard_stats?.cards_unknown ?? 0 },
       updatedData: quiz ? {
         session: {
-          _id: session._id, mode: session.mode, status: session.status, current_question_index: session.current_question_index,
-          totalQuestions: session.question_order?.length || quiz.questions.length, user_answers: session.user_answers,
+          _id: updated._id, mode: updated.mode, status: updated.status, current_question_index: updated.current_question_index,
+          totalQuestions: updated.question_order?.length || quiz.questions.length, user_answers: updated.user_answers,
           courseCode: quiz.course_code, categoryName: (quiz.category_id as any)?.name || 'Chưa phân loại', title: quiz.title,
-          started_at: session.started_at, paused_at: session.paused_at, total_paused_duration_ms: session.total_paused_duration_ms, flashcard_stats: session.flashcard_stats,
+          started_at: updated.started_at, paused_at: updated.paused_at, total_paused_duration_ms: updated.total_paused_duration_ms, flashcard_stats: updated.flashcard_stats,
         },
         question: nextQ
       } : undefined

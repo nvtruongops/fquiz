@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react'
 import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/core/utils/cn'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -132,10 +134,10 @@ export default function RegisterPage() {
   const passwordStrength = (() => {
     const p = form.password
     if (!p) return null
-    if (p.length < 8) return { label: 'Quá ngắn', color: 'bg-red-400', width: 'w-1/4' }
-    if (p.length < 10) return { label: 'Yếu', color: 'bg-orange-400', width: 'w-2/4' }
-    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Trung bình', color: 'bg-yellow-400', width: 'w-3/4' }
-    return { label: 'Mạnh', color: 'bg-[#A4C3A2]', width: 'w-full' }
+    if (p.length < 8) return { label: 'Quá ngắn', color: 'bg-red-400', level: 1 }
+    if (p.length < 10) return { label: 'Yếu', color: 'bg-orange-400', level: 2 }
+    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Trung bình', color: 'bg-yellow-400', level: 3 }
+    return { label: 'Mạnh', color: 'bg-[#166534]', level: 4 } // Success foreground from ui-colors.md
   })()
 
   let sendCodeLabel = 'Gửi mã'
@@ -144,53 +146,83 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="w-full text-center py-4">
-        <div className="bg-white rounded-3xl shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/20 p-7">
-          <div className="w-16 h-16 rounded-full bg-[#A4C3A2]/20 flex items-center justify-center mx-auto mb-4 animate-in zoom-in-50 duration-500">
-            <ShieldCheck className="w-8 h-8 text-[#5D7B6F]" />
+      <div className="w-full text-center py-8">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] shadow-xl border border-white/60 p-10"
+        >
+          <div className="w-20 h-20 rounded-full bg-[#B0D4B8]/50 flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <ShieldCheck className="w-10 h-10 text-[#166534]" />
           </div>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-2">Đăng ký thành công!</h2>
-          <p className="text-gray-500 font-medium">Chào mừng bạn mới. Đang chuẩn bị cho bạn đăng nhập…</p>
-          <div className="mt-6 flex justify-center">
-            <Loader2 className="w-6 h-6 text-[#5D7B6F] animate-spin" />
+          <h2 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">Đăng ký thành công!</h2>
+          <p className="text-slate-500 font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
+          <div className="mt-8 flex justify-center">
+            <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin drop-shadow-sm" />
           </div>
-        </div>
+        </motion.div>
       </div>
     )
   }
 
+  const inputClasses = (error?: string) => cn(
+    "w-full rounded-2xl border-2 px-4 py-3 text-[14px] outline-none transition-all duration-300 font-medium",
+    error 
+      ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
+      : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+  )
+
+  const ErrorMsg = ({ msg }: { msg?: string }) => (
+    <AnimatePresence>
+      {msg && (
+        <motion.p 
+          initial={{ opacity: 0, height: 0, marginTop: 0 }}
+          animate={{ opacity: 1, height: 'auto', marginTop: 4 }}
+          exit={{ opacity: 0, height: 0, marginTop: 0 }}
+          className="text-[#dc2626] text-xs font-bold ml-1"
+        >
+          {msg}
+        </motion.p>
+      )}
+    </AnimatePresence>
+  )
+
   return (
     <div className="w-full relative group">
-      {/* Professional Multi-layered Shadow */}
-      <div className="absolute inset-0 bg-slate-900/5 rounded-[40px] translate-y-2 blur-2xl -z-10 opacity-60" />
+      {/* Glow behind the card */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white rounded-[40px] border border-gray-100 p-8 sm:p-12 shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all duration-500 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-        <div className="mb-4 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[27px] font-extrabold text-gray-900 tracking-tight">Tạo tài khoản</h1>
-          <p className="text-gray-500 mt-1 text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
+      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+        {/* Top inner highlight */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
+
+        <div className="mb-6 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-[32px] font-black text-slate-800 tracking-tight leading-tight">Tạo tài khoản</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="space-y-4">
           {/* Username */}
-          <div className="space-y-1.5">
-            <label htmlFor="username" className="text-[13px] font-semibold text-gray-700 ml-1">
-              Username
+          <div className="space-y-1">
+            <label htmlFor="username" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              Tên đăng nhập
             </label>
             <div className="relative">
               <input
                 id="username" name="username" type="text" autoComplete="username"
                 value={form.username} onChange={handleChange}
                 placeholder="nguyen_van_a"
-                className={`w-full rounded-2xl border-2 px-3.5 py-2.5 text-[14px] outline-none transition-all duration-200
-                  ${errors.username ? 'border-red-100 bg-red-50 focus:border-red-400' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={inputClasses(errors.username)}
               />
             </div>
-            {errors.username && <p className="text-red-500 text-[11px] font-medium ml-1">{errors.username}</p>}
+            <ErrorMsg msg={errors.username} />
           </div>
 
           {/* Email */}
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-[13px] font-semibold text-gray-700 ml-1">
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Email
             </label>
             <div className="relative flex gap-2">
@@ -198,29 +230,36 @@ export default function RegisterPage() {
                 id="email" name="email" type="email" autoComplete="email"
                 value={form.email} onChange={handleChange}
                 placeholder="you@email.com"
-                className={`w-full rounded-2xl border-2 px-3.5 py-2.5 text-[14px] outline-none transition-all duration-200
-                  ${errors.email ? 'border-red-100 bg-red-50 focus:border-red-400' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={inputClasses(errors.email)}
               />
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="shrink-0 rounded-2xl border-2 border-[#5D7B6F]/20 px-3 py-2.5 text-[13px] font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-4 py-2 text-sm font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed w-[110px] flex justify-center items-center"
               >
-                {sendCodeLabel}
-              </button>
+                {sendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : sendCodeLabel}
+              </motion.button>
             </div>
-            {errors.email && <p className="text-red-500 text-[11px] font-medium ml-1">{errors.email}</p>}
-            {retryAfterSec !== null && (
-              <p className="text-[11px] font-medium text-amber-600 ml-1">Vui lòng thử lại sau {retryAfterSec} giây.</p>
-            )}
-            {devCode && (
-              <p className="text-[11px] font-medium text-[#5D7B6F] ml-1">Mã test (dev): {devCode}</p>
-            )}
+            <ErrorMsg msg={errors.email} />
+            <AnimatePresence>
+              {retryAfterSec !== null && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#d97706] ml-1 mt-1">
+                  Vui lòng thử lại sau {retryAfterSec} giây.
+                </motion.p>
+              )}
+              {devCode && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#5D7B6F] ml-1 mt-1">
+                  Mã test (dev): {devCode}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="verificationCode" className="text-[13px] font-semibold text-gray-700 ml-1">
+          {/* Verification Code */}
+          <div className="space-y-1">
+            <label htmlFor="verificationCode" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Mã xác thực
             </label>
             <div className="relative">
@@ -233,16 +272,21 @@ export default function RegisterPage() {
                 value={form.verificationCode}
                 onChange={handleChange}
                 placeholder="Nhập mã 6 chữ số"
-                className={`w-full rounded-2xl border-2 px-3.5 py-2.5 text-[14px] outline-none transition-all duration-200 placeholder:tracking-normal ${form.verificationCode ? 'tracking-[0.12em]' : 'tracking-normal'}
-                  ${errors.verificationCode ? 'border-red-100 bg-red-50 focus:border-red-400' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={cn(
+                  inputClasses(errors.verificationCode),
+                  "placeholder:tracking-normal font-mono",
+                  form.verificationCode ? "tracking-[0.2em] text-lg py-2.5" : "tracking-normal"
+                )}
               />
             </div>
-            {errors.verificationCode && <p className="text-red-500 text-[11px] font-medium ml-1">{errors.verificationCode}</p>}
+            <ErrorMsg msg={errors.verificationCode} />
           </div>
 
+            </div>
+            <div className="space-y-4 flex flex-col justify-end">
           {/* Password */}
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-[13px] font-semibold text-gray-700 ml-1">
+          <div className="space-y-1">
+            <label htmlFor="password" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Mật khẩu
             </label>
             <div className="relative">
@@ -252,31 +296,50 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={form.password} onChange={handleChange}
                 placeholder="Tối thiểu 8 ký tự"
-                className={`w-full rounded-2xl border-2 px-3.5 py-2.5 pr-10 text-[14px] outline-none transition-all duration-200
-                  ${errors.password ? 'border-red-100 bg-red-50 focus:border-red-400' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={cn(inputClasses(errors.password), "pr-10")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5D7B6F]"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            {passwordStrength && (
-              <div className="px-1 pt-1 animate-in fade-in duration-300">
-                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-500 ${passwordStrength.color} ${passwordStrength.width}`} />
-                </div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1.5 ml-0.5">{passwordStrength.label}</p>
-              </div>
-            )}
-            {errors.password && <p className="text-red-500 text-[11px] font-medium ml-1">{errors.password}</p>}
+            
+            {/* Segmented Password Strength */}
+            <AnimatePresence>
+              {passwordStrength && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }} 
+                  animate={{ opacity: 1, height: 'auto' }} 
+                  exit={{ opacity: 0, height: 0 }}
+                  className="px-1 pt-2 pb-1 overflow-hidden"
+                >
+                  <div className="flex gap-1.5 h-1.5 w-full">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: passwordStrength.level >= level ? '100%' : '0%' }}
+                          transition={{ duration: 0.3 }}
+                          className={cn("h-full rounded-full", passwordStrength.color)} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2 ml-1">
+                    Mức độ: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <ErrorMsg msg={errors.password} />
           </div>
 
           {/* Confirm Password */}
-          <div className="space-y-1.5">
-            <label htmlFor="confirmPassword" className="text-[13px] font-semibold text-gray-700 ml-1">
+          <div className="space-y-1">
+            <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Xác nhận mật khẩu
             </label>
             <div className="relative">
@@ -286,40 +349,48 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={form.confirmPassword} onChange={handleChange}
                 placeholder="Nhập lại mật khẩu"
-                className={`w-full rounded-2xl border-2 px-3.5 py-2.5 text-[14px] outline-none transition-all duration-200
-                  ${errors.confirmPassword ? 'border-red-100 bg-red-50 focus:border-red-400' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}
-                  ${form.confirmPassword && form.confirmPassword === form.password ? '!border-[#A4C3A2]' : ''}`}
+                className={cn(
+                  inputClasses(errors.confirmPassword),
+                  form.confirmPassword && form.confirmPassword === form.password ? '!border-[#166534] !bg-[#B0D4B8]/10' : ''
+                )}
               />
-              {form.confirmPassword && form.confirmPassword === form.password && (
-                <CheckCircle className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5D7B6F] animate-in zoom-in" />
-              )}
+              <AnimatePresence>
+                {form.confirmPassword && form.confirmPassword === form.password && (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <CheckCircle className="w-5 h-5 text-[#166534]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            {errors.confirmPassword && <p className="text-red-500 text-[11px] font-medium ml-1">{errors.confirmPassword}</p>}
+            <ErrorMsg msg={errors.confirmPassword} />
+          </div>
+            </div>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold py-3 rounded-2xl transition-all duration-300 shadow-lg shadow-[#5D7B6F]/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-1"
+            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-6"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" />
             ) : (
               <>
-                <span>Đăng ký tài khoản</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="tracking-wide drop-shadow-sm">Đăng ký tài khoản</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
               </>
             )}
-          </button>
+          </motion.button>
         </form>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-center text-gray-500 font-medium">
+        <div className="mt-6 pt-5 border-t border-slate-200/50">
+          <p className="text-center text-slate-500 font-medium text-sm">
             Bạn đã có tài khoản rồi?{' '}
             <Link 
               href={`/login${getCallbackUrl() ? `?redirect=${encodeURIComponent(getCallbackUrl()!)}` : ''}`}
-              className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4"
+              className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
             >
               Đăng nhập ngay
             </Link>
@@ -329,5 +400,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-

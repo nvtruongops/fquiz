@@ -9,6 +9,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { validateObjectId } from '@/lib/core/schemas/common'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()
@@ -166,8 +167,25 @@ function mapQuizzesForResponse(
   })
 }
 
+const quizLimiter = providerFactory.createProvider(5, 60 * 1000)
+
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
+    const rateLimitResult = await quizLimiter.check(payload.userId)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many quiz creation requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString()
+          }
+        }
+      )
+    }
+
     await connectDB()
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')

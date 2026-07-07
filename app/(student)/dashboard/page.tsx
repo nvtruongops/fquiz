@@ -58,8 +58,14 @@ export default function DashboardPage() {
   const primaryIncomplete = incompleteSessions[0]
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] px-6 md:px-10">
-      <div className="w-full py-10 space-y-12">
+    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden">
+      {/* Animated Background Mesh */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-br from-[#5D7B6F]/10 to-transparent blur-[120px] rounded-full mix-blend-multiply" />
+        <div className="absolute bottom-[20%] left-[5%] w-[30%] h-[30%] bg-gradient-to-tr from-[#A4C3A2]/20 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
+      </div>
+
+      <div className="px-6 md:px-10 w-full py-10 space-y-12 relative z-10">
 
         {/* ── Header ────────────────────────────────────────────────── */}
         <header className="space-y-3">
@@ -76,7 +82,7 @@ export default function DashboardPage() {
         {/* ── Main Action Card ────────────────────────────────────────────────── */}
         {primaryIncomplete ? (
           // Has incomplete session - Show continue card
-          <Card className="rounded-3xl border-none bg-white shadow-2xl shadow-[#5D7B6F]/10 overflow-hidden group relative">
+          <Card className="rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.12)] transition-all duration-500 overflow-hidden group relative">
             <CardContent className="p-0">
               <div className="relative p-8 md:p-10">
                 {/* Background decoration */}
@@ -167,7 +173,7 @@ export default function DashboardPage() {
           </Card>
         ) : (
           // No incomplete session - Show explore card
-          <Card className="rounded-3xl border-none bg-white shadow-2xl shadow-[#5D7B6F]/10 overflow-hidden group relative">
+          <Card className="rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.12)] transition-all duration-500 overflow-hidden group relative">
             <CardContent className="p-0">
               <div className="relative p-8 md:p-10">
                 {/* Background decoration */}
@@ -229,7 +235,7 @@ export default function DashboardPage() {
 
           <div className="space-y-3">
             {!data?.recentActivities || data.recentActivities.length === 0 ? (
-              <Card className="rounded-2xl border-2 border-dashed border-gray-200 bg-white/50">
+              <Card className="rounded-[32px] border border-white/80 bg-white/50 backdrop-blur-xl shadow-sm">
                 <CardContent className="p-12 flex flex-col items-center text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
                     <Calendar className="w-8 h-8 text-gray-300" />
@@ -272,7 +278,7 @@ export default function DashboardPage() {
                       }
                     }}
                     className={cn(
-                      "block rounded-2xl bg-white border border-gray-100 p-5 transition-all hover:shadow-lg hover:border-[#5D7B6F]/20 hover:-translate-y-0.5 cursor-pointer",
+                      "block rounded-3xl bg-white/70 backdrop-blur-xl border border-white/80 p-5 transition-all shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(93,123,111,0.08)] hover:-translate-y-1 cursor-pointer",
                       activity.quizDeleted && !activity.isMix && 'opacity-50 cursor-not-allowed hover:translate-y-0'
                     )}
                   >

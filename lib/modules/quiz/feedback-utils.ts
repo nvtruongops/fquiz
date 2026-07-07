@@ -1,4 +1,5 @@
 import type { QuestionFeedback } from './types/session'
+import { normalizeIndexes, isExactArrayMatch } from '@/lib/core/utils/array-utils'
 
 /**
  * Compute answer feedback from question data and submitted answer indexes.
@@ -16,12 +17,10 @@ export function computeQuestionFeedback(
   if (correctAnswer === undefined) return null
 
   const correctAnswerIndexes = Array.isArray(correctAnswer)
-    ? [...new Set(correctAnswer)].sort((a, b) => a - b)
+    ? normalizeIndexes(correctAnswer)
     : [correctAnswer as number]
-  const submittedSorted = [...new Set(answerIndexes)].sort((a, b) => a - b)
-  const isCorrect =
-    submittedSorted.length === correctAnswerIndexes.length &&
-    submittedSorted.every((v, i) => v === correctAnswerIndexes[i])
+  const submittedSorted = normalizeIndexes(answerIndexes)
+  const isCorrect = isExactArrayMatch(submittedSorted, correctAnswerIndexes)
 
   return {
     isCorrect,

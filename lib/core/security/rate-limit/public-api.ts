@@ -113,9 +113,18 @@ class PublicApiRateLimiter {
           errorMessage: err instanceof Error ? err.message : 'Unknown error',
           errorType: err instanceof Error ? err.constructor.name : typeof err
         },
-        'Public API rate limiter error - allowing request'
+        'Public API rate limiter error'
       )
-      // On error, allow the request (fail open)
+      // On error, fail-closed in production to prevent abuse during database outages.
+      // In development, fail-open so the developer can work without MongoDB running.
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          success: false,
+          limit,
+          remaining: 0,
+          reset: bucketEnd,
+        }
+      }
       return {
         success: true,
         limit,

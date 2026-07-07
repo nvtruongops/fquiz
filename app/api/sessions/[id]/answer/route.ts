@@ -71,21 +71,33 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
 
-    // [SECURITY FIX]: Prevent re-answering a question that already has an answer in the session
-    // This is critical for immediate mode where the answer is revealed.
+    // [SECURITY FIX]: Use atomic update to prevent TOCTOU race condition
     const targetIndex = typeof question_index === 'number' ? question_index : session.current_question_index
-    const alreadyAnswered = session.user_answers.some(a => a.question_index === targetIndex)
-    if (alreadyAnswered) {
+
+    // Atomic: update only if this question hasn't been answered yet
+    const updated = await QuizSession.findOneAndUpdate(
+      { _id: id, 'user_answers.question_index': { $ne: targetIndex } },
+      { $push: { user_answers: { question_index: targetIndex, answer_index: submittedAnswerIndexes[0], is_correct: false } } },
+      { new: true }
+    ).lean()
+
+    if (!updated) {
       return NextResponse.json({ error: 'Câu hỏi này đã được ghi nhận câu trả lời.' }, { status: 400 })
     }
 
+    // Reload session with full data for quiz engine
+    const freshSession = await QuizSession.findById(id)
+    if (!freshSession) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+    }
+
     // Delegate to quiz engine based on mode
-    if (session.mode === 'immediate') {
-      const result = await processImmediateAnswer(session, submittedAnswerIndexes, targetIndex)
+    if (freshSession.mode === 'immediate') {
+      const result = await processImmediateAnswer(freshSession, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     } else {
       // review mode
-      const result = await processReviewAnswer(session, submittedAnswerIndexes, targetIndex)
+      const result = await processReviewAnswer(freshSession, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     }
   } catch (err) {

@@ -25,10 +25,15 @@ export function PublicQuizCard({ quiz }: { quiz: any }) {
 
             <div className="mt-auto pt-5 border-t border-slate-200/60">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-5">
                   <div className="flex flex-col">
-                    <span className="text-[17px] font-black text-[#5D7B6F] leading-none">{quiz.questions?.length || 0}</span>
+                    <span className="text-[17px] font-black text-[#5D7B6F] leading-none">{quiz.questions?.length || quiz.questionCount || 0}</span>
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-1">Câu hỏi</span>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200/80"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[17px] font-black text-[#5D7B6F] leading-none">{quiz.studentCount || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-1">Lượt làm</span>
                   </div>
                 </div>
                 

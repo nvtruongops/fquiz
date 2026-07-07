@@ -1,8 +1,9 @@
 import crypto from 'crypto'
-
-function ensureArray(answers: number | number[]): number[] {
-  return Array.isArray(answers) ? answers : [answers]
-}
+import {
+  ensureArray,
+  getAnswerTexts,
+  areAnswersSame,
+} from '@/lib/core/utils/array-utils'
 
 /**
  * CHIẾN LƯỢC HASH TỐI ƯU: text + sorted options
@@ -15,7 +16,7 @@ function ensureArray(answers: number | number[]): number[] {
  * 2. Hash(text + answers):
  *    - Câu hỏi giống, đáp án [A,B] vs [A] → KHÁC ID → bỏ sót conflict ❌
  * 
- * 3. Hash(text + sorted_options) ← CHỌN CÁCH NÀY:
+ * 3. Hash(text + sorted_options) ← CHỌI CÁCH NÀY:
  *    - Câu hỏi giống, options giống, answers khác → CÙNG ID → phát hiện conflict ✅
  *    - Câu hỏi giống, options khác → KHÁC ID → coi là câu hỏi khác ✅ (hợp lý vì options là một phần của câu hỏi)
  *    - Thứ tự options không quan trọng (sort trước khi hash) ✅
@@ -56,23 +57,7 @@ export function generateQuestionId(question: {
  * Quiz B: options=["Sai","Đúng","Không biết"], answer=[1] → answer text = "Đúng"
  * → CÙNG đáp án (không conflict) ✅
  */
-export function getAnswerTexts(options: string[], answerIndices: number | number[]): string[] {
-  return ensureArray(answerIndices)
-    .map(idx => options[idx]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
-    .filter(Boolean)
-    .sort()
-}
-
-export function areAnswersSame(
-  q1: { options: string[]; correct_answer: number | number[] },
-  q2: { options: string[]; correct_answer: number | number[] }
-): boolean {
-  const texts1 = getAnswerTexts(q1.options, q1.correct_answer)
-  const texts2 = getAnswerTexts(q2.options, q2.correct_answer)
-  
-  if (texts1.length !== texts2.length) return false
-  return texts1.every((t, i) => t === texts2[i])
-}
+export { getAnswerTexts, areAnswersSame }
 
 /**
  * Check if two questions are duplicates based on content

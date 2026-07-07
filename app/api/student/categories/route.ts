@@ -83,7 +83,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const POST = withAuth(async (req: Request, { payload }) => {
@@ -108,7 +108,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     const { name } = parsed.data
 
     // Check limit of 5
-    const count = await Category.countDocuments({ 
+    const count = await Category.countDocuments({
       owner_id: new Types.ObjectId(payload.userId),
       type: 'private'
     })
@@ -131,7 +131,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'Tên danh mục đã tồn tại.' }, { status: 400 })
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const PATCH = withAuth(async (req: Request, { payload }) => {
@@ -145,7 +145,7 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
     }
 
     const { id, name } = body as { id?: string; name?: string }
-    
+
     if (!id || !name) {
       return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 })
     }
@@ -176,7 +176,7 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
   } catch (error) {
     console.error('Error updating category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const DELETE = withAuth(async (req: Request, { payload }) => {
@@ -184,7 +184,7 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
     await connectDB()
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
-    
+
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
@@ -197,19 +197,19 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
     // Check if category has quizzes
     const quizCount = await Quiz.countDocuments({ category_id: new Types.ObjectId(id) })
     if (quizCount > 0) {
-      return NextResponse.json({ 
-        error: `Không thể xóa: Danh mục này đang chứa ${quizCount} mã đề. Hãy di chuyển hoặc xóa các mã đề trước.` 
+      return NextResponse.json({
+        error: `Không thể xóa: Danh mục này đang chứa ${quizCount} mã đề. Hãy di chuyển hoặc xóa các mã đề trước.`
       }, { status: 400 })
     }
 
-    const category = await Category.findOneAndDelete({ 
-      _id: new Types.ObjectId(id), 
-      owner_id: new Types.ObjectId(payload.userId) 
+    const category = await Category.findOneAndDelete({
+      _id: new Types.ObjectId(id),
+      owner_id: new Types.ObjectId(payload.userId)
     })
 
     if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
 
-    return NextResponse.json({ message: 'Category deleted successfully' })
+    return NextResponse.json({ message: 'Danh mục đã xóa successfully' })
   } catch (error) {
     console.error('Error deleting category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -8,6 +8,8 @@ import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/core/utils/cn'
 
 function LoginForm() {
   const router = useRouter()
@@ -103,22 +105,25 @@ function LoginForm() {
 
   return (
     <div className="w-full relative group">
-      {/* Professional Multi-layered Shadow */}
-      <div className="absolute inset-0 bg-slate-900/5 rounded-[40px] translate-y-2 blur-2xl -z-10 opacity-60" />
+      {/* Glow behind the card */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white rounded-[40px] border border-gray-100 p-8 sm:p-12 shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all duration-500 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-        <div className="mb-7 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[28px] font-extrabold text-gray-900 tracking-tight">Đăng nhập</h1>
-          <p className="text-gray-500 mt-1.5 text-sm font-medium">Chào mừng bạn quay lại với hệ thống FQuiz</p>
+      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+        {/* Top inner highlight */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
+
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-[32px] font-black text-slate-800 tracking-tight leading-tight">Đăng nhập</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">Chào mừng bạn quay lại với FQuiz</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4.5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Identifier Field */}
-          <div className="space-y-2">
-            <label htmlFor="identifier" className="text-sm font-semibold text-gray-700 ml-1">
+          <div className="space-y-1.5">
+            <label htmlFor="identifier" className="text-sm font-bold text-slate-700 ml-1">
               Email hoặc Tên đăng nhập
             </label>
-            <div className="relative group">
+            <div className="relative">
               <input
                 id="identifier"
                 type="text"
@@ -126,28 +131,39 @@ function LoginForm() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="VD: you@example.com"
-                className={`w-full rounded-2xl border-2 px-4 py-3 text-[15px] outline-none transition-all duration-200
-                  ${errors.identifier 
-                    ? 'border-red-200 bg-red-50 focus:border-red-400' 
-                    : 'border-gray-100 bg-gray-50/50 hover:border-gray-100 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={cn(
+                  "w-full rounded-2xl border-2 px-4 py-3.5 text-[15px] outline-none transition-all duration-300 font-medium",
+                  errors.identifier 
+                    ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
+                    : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+                )}
               />
             </div>
-            {errors.identifier && (
-              <p className="text-red-500 text-xs font-medium ml-1 animate-in fade-in slide-in-from-left-1">{errors.identifier}</p>
-            )}
+            <AnimatePresence>
+              {errors.identifier && (
+                <motion.p 
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 6 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="text-[#dc2626] text-xs font-bold ml-1"
+                >
+                  {errors.identifier}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Password Field */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between ml-1">
-              <label htmlFor="password" className="text-sm font-semibold text-gray-700">
+              <label htmlFor="password" className="text-sm font-bold text-slate-700">
                 Mật khẩu
               </label>
-              <Link href="/forgot-password" className="text-xs font-bold text-[#5D7B6F] hover:text-[#4a6358] transition-colors">
+              <Link href="/forgot-password" className="text-xs font-black text-[#5D7B6F] hover:text-[#4a6358] transition-colors">
                 Quên mật khẩu?
               </Link>
             </div>
-            <div className="relative group">
+            <div className="relative">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -155,51 +171,63 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Nhập mật khẩu của bạn"
-                className={`w-full rounded-2xl border-2 px-4 py-3 pr-12 text-[15px] outline-none transition-all duration-200
-                  ${errors.password 
-                    ? 'border-red-200 bg-red-50 focus:border-red-400' 
-                    : 'border-gray-100 bg-gray-50/50 hover:border-gray-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10'}`}
+                className={cn(
+                  "w-full rounded-2xl border-2 px-4 py-3.5 pr-12 text-[15px] outline-none transition-all duration-300 font-medium",
+                  errors.password 
+                    ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
+                    : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+                )}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5D7B6F] transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-red-500 text-xs font-medium ml-1 animate-in fade-in slide-in-from-left-1">{errors.password}</p>
-            )}
+            <AnimatePresence>
+              {errors.password && (
+                <motion.p 
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 6 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="text-[#dc2626] text-xs font-bold ml-1"
+                >
+                  {errors.password}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Submit Button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-[#5D7B6F]/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-1"
+            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-4"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" />
             ) : (
               <>
-                <span>Đăng nhập</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="tracking-wide drop-shadow-sm">Đăng nhập</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
               </>
             )}
-          </button>
+          </motion.button>
         </form>
 
         {/* Footer Link */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <p className="text-center text-gray-500 font-medium">
+        <div className="mt-8 pt-6 border-t border-slate-200/50">
+          <p className="text-center text-slate-500 font-medium text-sm">
             Bạn chưa có tài khoản?{' '}
             <Link 
               href={callbackUrl ? `/register?redirect=${encodeURIComponent(callbackUrl)}` : '/register'}
-              className="text-[#5D7B6F] font-bold hover:underline decoration-2 underline-offset-4"
+              className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
             >
               Đăng ký miễn phí
             </Link>
@@ -213,16 +241,17 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="w-full">
-        <div className="bg-white rounded-3xl shadow-xl shadow-[#5D7B6F]/5 border border-[#A4C3A2]/20 p-6 sm:p-7">
-          <div className="mb-7 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-gray-900 tracking-tight">Đăng nhập</h1>
-            <p className="text-gray-500 mt-1.5 text-sm font-medium">Chào mừng bạn quay lại với hệ thống FQuiz</p>
+      <div className="w-full relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/10 to-[#A4C3A2]/10 rounded-[2.5rem] blur-xl opacity-60" />
+        <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-lg">
+          <div className="mb-8 text-center sm:text-left">
+            <div className="h-8 w-40 bg-slate-200/50 animate-pulse rounded-lg mb-4" />
+            <div className="h-4 w-60 bg-slate-200/50 animate-pulse rounded-md" />
           </div>
-          <div className="space-y-4 animate-pulse">
-            <div className="h-12 bg-gray-100 rounded-2xl" />
-            <div className="h-12 bg-gray-100 rounded-2xl" />
-            <div className="h-12 bg-[#5D7B6F]/20 rounded-2xl" />
+          <div className="space-y-6">
+            <div className="h-14 bg-slate-100/50 animate-pulse rounded-2xl" />
+            <div className="h-14 bg-slate-100/50 animate-pulse rounded-2xl" />
+            <div className="h-14 bg-[#5D7B6F]/20 animate-pulse rounded-2xl mt-4" />
           </div>
         </div>
       </div>

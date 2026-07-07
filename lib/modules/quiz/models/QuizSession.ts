@@ -70,6 +70,8 @@ const QuizSessionSchema = new Schema<IQuizSession>(
 
 // TTL index — MongoDB auto-deletes expired sessions
 QuizSessionSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 })
+// TTL index — auto-cleanup old sessions and their questions_cache (7 days)
+QuizSessionSchema.index({ started_at: 1 }, { expireAfterSeconds: 604800 })
 // Compound index for student session lookups
 QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
 // Compound index for mix quiz concurrent check

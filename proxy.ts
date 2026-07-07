@@ -5,7 +5,8 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
 import { 
   AUTH_COOKIE_NAME, 
-  CSRF_COOKIE_NAME, 
+  CSRF_COOKIE_NAME,
+  CSRF_HEADER_NAME,
   MAINTENANCE_COOKIE_NAME,
   COOKIE_MAX_AGE
 } from '@/lib/core/constants'
@@ -17,7 +18,7 @@ const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register',
 const STUDENT_PATHS = ['/dashboard', '/courses', '/quiz', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-const CORS_HEADERS = 'Content-Type, Authorization, x-csrf-token'
+const CORS_HEADERS = `Content-Type, Authorization, ${CSRF_HEADER_NAME}`
 
 function toOrigin(value: string) {
   const input = String(value || '').trim()
@@ -64,8 +65,8 @@ function getSecrets(): Uint8Array[] {
   return secrets
 }
 
-function generateId(length = 32) {
-  const array = new Uint8Array(length / 2)
+function generateId(byteLength = 16) {
+  const array = new Uint8Array(byteLength)
   crypto.getRandomValues(array)
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -91,9 +92,17 @@ function createCsrfErrorResponse(requestId: string) {
   })
 }
 
+function isValidRedirectPath(path: string): boolean {
+  if (!path.startsWith('/')) return false
+  if (path.startsWith('//')) return false
+  if (path.includes('%2F') || path.includes('%2f') || path.toLowerCase().includes('%2f')) return false
+  return true
+}
+
 function redirectToLogin(request: NextRequest, pathname: string) {
   const loginUrl = new URL('/login', request.url)
-  loginUrl.searchParams.set('callbackUrl', pathname)
+  const safePath = isValidRedirectPath(pathname) ? pathname : '/dashboard'
+  loginUrl.searchParams.set('callbackUrl', safePath)
   return NextResponse.redirect(loginUrl)
 }
 
@@ -140,8 +149,9 @@ function ensureCsrfCookie(request: NextRequest, response: NextResponse) {
     response.cookies.set(CSRF_COOKIE_NAME, generateId(), {
       path: '/',
       sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       httpOnly: false,
+      maxAge: COOKIE_MAX_AGE,
     })
   }
 }

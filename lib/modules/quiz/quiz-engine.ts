@@ -3,6 +3,7 @@ import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { normalizeIndexes, isExactArrayMatch } from '@/lib/core/utils/array-utils'
 
 export interface ImmediateAnswerResult {
   isCorrect: boolean
@@ -33,18 +34,6 @@ export async function syncUniqueStudentCount(quizId: any): Promise<void> {
     { _id: quizId },
     { $set: { studentCount: uniqueStudents.length } }
   )
-}
-
-function normalizeIndexes(values: number[]): number[] {
-  return [...new Set(values)].sort((a, b) => a - b)
-}
-
-function isExactAnswerSetMatch(submitted: number[], correct: number[]): boolean {
-  if (submitted.length !== correct.length) return false
-  for (let i = 0; i < submitted.length; i += 1) {
-    if (submitted[i] !== correct[i]) return false
-  }
-  return true
 }
 
 function upsertAnswer(userAnswers: UserAnswer[], incoming: UserAnswer): UserAnswer[] {
@@ -122,7 +111,7 @@ export async function processImmediateAnswer(
     )
 
     const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
-    const isCorrect = isExactAnswerSetMatch(submittedIndexes, correctAnswerIndexes)
+    const isCorrect = isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
 
     const userAnswer: UserAnswer = {
       question_index: questionIndex,
@@ -222,7 +211,7 @@ export async function processReviewAnswer(
     )
 
     const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
-    const isCorrect = isExactAnswerSetMatch(submittedIndexes, correctAnswerIndexes)
+    const isCorrect = isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
 
     const userAnswer: UserAnswer = {
       question_index: questionIndex,
@@ -322,7 +311,7 @@ export function calculateScore(
         : [answer.answer_index]
     )
 
-    if (isExactAnswerSetMatch(submittedIndexes, correctAnswerIndexes)) {
+    if (isExactArrayMatch(submittedIndexes, correctAnswerIndexes)) {
       score++
     }
   }
@@ -332,17 +321,43 @@ export function calculateScore(
 /**
  * Atomic session completion using findOneAndUpdate with $ne condition
  * to prevent race conditions.
- * Returns true if session was successfully completed, false if already completed (409).
- * Requirements: 13.6
+ *
+ * SECURITY: The final score is recalculated server-side from the persisted
+ * answers and the authoritative question set (cached or fetched from DB).
+ * No client-supplied score, answers, or currentQuestionIndex is accepted.
+ * This prevents score/answer manipulation via direct API calls.
+ *
+ * Returns true if session was successfully completed, false if already completed
+ * or not found. Requirements: 13.6
  */
-export async function atomicCompleteSession(
-  sessionId: string,
-  score: number,
-  userAnswers: UserAnswer[],
-  currentQuestionIndex: number
-): Promise<boolean> {
+export async function atomicCompleteSession(sessionId: string): Promise<boolean> {
   try {
     await connectDB()
+
+    const session = await QuizSession.findById(sessionId).lean()
+    if (!session) {
+      return false
+    }
+
+    if (session.status === 'completed') {
+      return false
+    }
+
+    // Resolve authoritative question set: prefer cached copy, fallback to quiz document.
+    const questions = (session.questions_cache && session.questions_cache.length > 0)
+      ? (session.questions_cache as IQuestion[])
+      : await resolveQuestionsFromQuiz(
+          session.quiz_id as unknown as import('mongoose').Types.ObjectId,
+          session.question_order
+        )
+
+    if (!questions || questions.length === 0) {
+      throw new Error('No questions available to finalize session score')
+    }
+
+    const userAnswers = (session.user_answers ?? []) as UserAnswer[]
+    const score = calculateScore(userAnswers, questions, session.question_order)
+    const currentQuestionIndex = questions.length
 
     const result = await QuizSession.findOneAndUpdate(
       {
@@ -353,7 +368,6 @@ export async function atomicCompleteSession(
         $set: {
           status: 'completed',
           score,
-          user_answers: userAnswers,
           current_question_index: currentQuestionIndex,
           completed_at: new Date(),
         },
@@ -365,11 +379,35 @@ export async function atomicCompleteSession(
       { new: true }
     )
 
-    // If result is null, the session was already completed
+    // If result is null, the session was already completed by a concurrent request
     return result !== null
   } catch (err) {
     throw new Error(
       `atomicCompleteSession failed: ${(err as Error).message}`
     )
   }
+}
+
+/**
+ * Resolve the full ordered question set from a Quiz document.
+ * Used as a fallback when the session question cache is not populated.
+ */
+async function resolveQuestionsFromQuiz(
+  quizId: import('mongoose').Types.ObjectId,
+  questionOrder?: number[]
+): Promise<IQuestion[]> {
+  const quiz = await Quiz.findById(quizId).lean()
+  if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+    return []
+  }
+
+  const questions = quiz.questions as IQuestion[]
+
+  if (!questionOrder || questionOrder.length === 0) {
+    return questions
+  }
+
+  return questionOrder
+    .map((displayIndex) => questions[displayIndex])
+    .filter((q): q is IQuestion => Boolean(q))
 }

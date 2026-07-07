@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -12,7 +12,7 @@ function isPublicCategory(category: any): boolean {
   return category.type == null && category.owner_id == null
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id } = await params
     await connectDB()
@@ -21,6 +21,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid category id' }, { status: 400 })
     }
 
     const duplicate = await Category.findOne({
@@ -52,13 +56,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     return NextResponse.json({ category })
   } catch (err) {
+    console.error('PUT /api/admin/categories/[id] error:', err)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withAuth(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id } = await params
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid category id' }, { status: 400 })
+    }
+
     await connectDB()
 
     const category = await Category.findById(id).lean()
@@ -82,6 +92,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {
+    console.error('DELETE /api/admin/categories/[id] error:', err)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
-}
+}, { roles: ['admin'] })
