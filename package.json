@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint app components lib hooks store",
     "test": "jest",
+    "push": "tsx scripts/autopush.ts",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "test:performance": "tsx --env-file=.env.local scripts/test-quiz-performance.ts",
