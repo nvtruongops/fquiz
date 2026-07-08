@@ -8,6 +8,9 @@ import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
+import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
+import { EMAIL_REGEX } from '@/lib/core/schemas/common'
+
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -39,10 +42,11 @@ export default function RegisterPage() {
   }
 
   async function handleSendCode() {
-    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!form.email || !EMAIL_REGEX.test(form.email)) {
       setErrors((prev) => ({ ...prev, email: 'Vui lòng nhập email hợp lệ trước khi gửi mã' }))
       return
     }
+
 
     setSendingCode(true)
     setRetryAfterSec(null)
@@ -243,18 +247,7 @@ export default function RegisterPage() {
               </motion.button>
             </div>
             <ErrorMsg msg={errors.email} />
-            <AnimatePresence>
-              {retryAfterSec !== null && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#d97706] ml-1 mt-1">
-                  Vui lòng thử lại sau {retryAfterSec} giây.
-                </motion.p>
-              )}
-              {devCode && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#5D7B6F] ml-1 mt-1">
-                  Mã test (dev): {devCode}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
           {/* Verification Code */}

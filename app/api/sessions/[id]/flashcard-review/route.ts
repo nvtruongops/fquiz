@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
+import { secureShuffle } from '@/lib/core/utils/shuffle'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
-import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 
 /**
  * POST /api/sessions/[id]/flashcard-review
@@ -16,21 +15,10 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
+    const validation = await validateQuizSessionRequest(id, payload, { lean: false })
+    if (!validation.isValid) return validation.response
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
-    }
-
-    await connectDB()
-
-    const session = await QuizSession.findById(id)
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    }
-
-    if (session.student_id.toString() !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const session = validation.session
 
     if (session.mode !== 'flashcard' || session.status !== 'completed') {
       return NextResponse.json(
@@ -63,8 +51,8 @@ export const POST = withAuth(async (
       ? unknownQuizIndices
       : originalQuestionOrder
 
-    // Shuffle for better learning
-    questionOrderForReview = [...questionOrderForReview].sort(() => Math.random() - 0.5)
+    // Shuffle for better learning using a secure Fisher-Yates shuffle
+    questionOrderForReview = secureShuffle(questionOrderForReview)
 
     const unknownCount = questionOrderForReview.length
     const nextRound = (session.flashcard_stats.current_round || 1) + 1

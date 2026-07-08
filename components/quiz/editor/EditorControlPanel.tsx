@@ -40,11 +40,12 @@ export function EditorControlPanel({
     <Card className="bg-white border-none shadow-xl shadow-[#5D7B6F]/5 rounded-[32px] overflow-hidden ring-1 ring-gray-100">
       <CardContent className="p-5 space-y-4">
         <div className="space-y-2">
-          <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 block">Số lượng câu hỏi</label>
+          <label htmlFor="question-count-input" className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 block">Số lượng câu hỏi</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
+                id="question-count-input"
                 type="number"
                 value={targetInput}
                 onChange={(e) => setTargetInput(e.target.value)}

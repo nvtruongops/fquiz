@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/core/db/mongodb'
-import { verifySession } from '@/lib/modules/auth/dal'
+import { validatePostRequest } from '@/lib/modules/community/utils'
 import { Post } from '@/lib/modules/community/models/Post'
-import mongoose from 'mongoose'
 
 export async function DELETE(
   req: Request,
@@ -10,22 +8,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const validation = await validatePostRequest(id)
+    if (!validation.isValid) return validation.response
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid post id' }, { status: 400 })
-    }
-
-    const session = await verifySession()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    await connectDB()
-
-    const post = await Post.findById(id)
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
-    }
+    const { post, session } = validation
 
     // Allow author or admin to delete
     if (post.authorId.toString() !== session.userId && session.role !== 'admin') {

@@ -9,7 +9,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const courses: string[] = await Quiz.distinct('course_code')
-    courses.sort()
+    courses.sort((a, b) => a.localeCompare(b))
     return NextResponse.json({ courses })
   } catch (err) {
     logger.error({ err }, 'GET /api/courses failed')

@@ -9,20 +9,7 @@ import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
-
-/**
- * Fisher-Yates shuffle algorithm for randomizing question order
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    /* eslint-disable security/detect-object-injection */
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    /* eslint-enable security/detect-object-injection */
-  }
-  return shuffled
-}
+import { secureShuffle } from '@/lib/core/utils/shuffle'
 
 export const GET = withAuth(async (req, { payload }) => {
   try {
@@ -173,7 +160,7 @@ export const POST = withAuth(async (req, { payload }) => {
     await QuizSession.deleteMany({ student_id: studentId, quiz_id: effective.id, mode: { $in: groupModes } })
 
     const now = new Date()
-    const questionOrder = difficulty === 'random' ? shuffleArray([...Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)
+    const questionOrder = difficulty === 'random' ? secureShuffle([...new Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)
     // Cache questions to avoid repeated Quiz DB fetches during answer processing
     const questionsCache = effective.questions.map((q: any) => ({
       _id: q._id,

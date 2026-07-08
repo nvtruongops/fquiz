@@ -9,7 +9,7 @@ export const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 
 // Strip HTML tags to prevent XSS in stored text fields
-export const stripHtml = (val: string) => val.replace(/<[^>]*>/g, '')
+export const stripHtml = (val: string) => val.replace(/<[^>]{0,1000}>/g, '')
 
 // ============================================
 // QUERY PARAMS SCHEMAS

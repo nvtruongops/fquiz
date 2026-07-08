@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp, ChevronDown, Sparkles } from 'lucide-react'
-import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
+import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
+
 import { Button } from '@/components/shared/ui/button'
 import { Switch } from '@/components/shared/ui/switch'
 import { cn } from '@/lib/core/utils/cn'
@@ -15,6 +16,29 @@ interface SwipeState {
   currentX: number
   currentY: number
   isDragging: boolean
+}
+
+function SwipeIndicator({
+  isDragging,
+  isHorizontalSwipe,
+  swipeOffset,
+}: {
+  isDragging: boolean
+  isHorizontalSwipe: boolean
+  swipeOffset: number
+}) {
+  if (!isDragging || !isHorizontalSwipe) return null
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
+      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
+        <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
+      </div>
+      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
+        <XCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
+      </div>
+    </div>
+  )
 }
 
 function MobileFlashcardView({
@@ -185,6 +209,14 @@ function MobileFlashcardView({
                         onClick={() => {
                           if (!isFlipped) setIsFlipped(true)
                         }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            if (!isFlipped) setIsFlipped(true)
+                          }
+                        }}
                         className={cn(
                           "p-3 rounded-xl border flex items-center gap-3 transition-colors",
                           isFlipped && isCorrect 
@@ -196,7 +228,7 @@ function MobileFlashcardView({
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black shadow-sm border",
                           isFlipped && isCorrect ? "bg-green-500 text-white border-green-600" : "bg-white text-[#5D7B6F] border-gray-100"
                         )}>
-                          {String.fromCharCode(65 + idx)}
+                          {String.fromCodePoint(65 + idx)}
                         </span>
                         <span className={cn(
                           "font-medium leading-tight flex-1", 
@@ -249,16 +281,7 @@ function MobileFlashcardView({
             )}
           </div>
 
-          {swipeState.isDragging && isHorizontalSwipe && (
-            <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
-              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
-                <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
-              </div>
-              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
-                <XCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
-              </div>
-            </div>
-          )}
+          <SwipeIndicator isDragging={swipeState.isDragging} isHorizontalSwipe={isHorizontalSwipe} swipeOffset={swipeOffset} />
         </div>
       </div>
     )
@@ -280,6 +303,14 @@ function MobileFlashcardView({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleTap}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleTap(e as any)
+            }
+          }}
         >
           <div
             className="relative w-full h-full transition-transform duration-700 ease-in-out"
@@ -301,7 +332,7 @@ function MobileFlashcardView({
                     {question.options.map((option, idx) => (
                       <div key={idx} className="p-2.5 bg-gray-50/50 rounded-xl border border-gray-100 flex items-center gap-3">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-white text-[9px] font-black text-[#5D7B6F] shadow-sm border border-gray-100">
-                          {String.fromCharCode(65 + idx)}
+                          {String.fromCodePoint(65 + idx)}
                         </span>
                         <span className={cn("text-gray-700 font-medium leading-tight", getOptionFontSize())}>{option}</span>
                       </div>
@@ -386,16 +417,7 @@ function MobileFlashcardView({
           </div>
         </div>
 
-        {swipeState.isDragging && isHorizontalSwipe && (
-          <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
-            <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
-              <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
-            </div>
-            <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
-              <XCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
-            </div>
-          </div>
-        )}
+        <SwipeIndicator isDragging={swipeState.isDragging} isHorizontalSwipe={isHorizontalSwipe} swipeOffset={swipeOffset} />
       </div>
     </div>
   )
@@ -409,21 +431,23 @@ export default function MobileFlashcardSessionPage() {
   const resolvedQuizId = Array.isArray(rawQuizId) ? rawQuizId[0] : rawQuizId ?? ''
   const resolvedSessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId ?? ''
 
-  const { session, allQuestions, isLoading, error, submitAnswer, isSubmitting } = useFlashcardSession(resolvedSessionId)
-  const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
-  const [displayIndex, setDisplayIndex] = useState<number | null>(null)
-  const [enableAnimation, setEnableAnimation] = useState(true)
-
-  const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
-  const question = allQuestions?.[actualIndex]
-
-  useEffect(() => {
-    if (session?.flashcard_stats) setStats({ known: session.flashcard_stats.cards_known, unknown: session.flashcard_stats.cards_unknown, total: session.flashcard_stats.total_cards })
-  }, [session])
-
-  useEffect(() => {
-    if (session?.status === 'completed') router.push(`/quiz/${resolvedQuizId}/result/${resolvedSessionId}`)
-  }, [session?.status, resolvedQuizId, resolvedSessionId, router])
+  const {
+    session,
+    question,
+    isLoading,
+    error,
+    submitAnswer,
+    isSubmitting,
+    stats,
+    setStats,
+    displayIndex,
+    setDisplayIndex,
+    enableAnimation,
+    setEnableAnimation,
+    actualIndex,
+    handleBack,
+    handleForward,
+  } = useFlashcardSessionState(resolvedSessionId, resolvedQuizId)
 
   const handleAnswer = (knows: boolean) => {
     if (!session || !question) return
@@ -435,17 +459,6 @@ export default function MobileFlashcardSessionPage() {
     })
   }
 
-  const handleBack = () => {
-    if (actualIndex > 0) {
-      setDisplayIndex(actualIndex - 1)
-    }
-  }
-
-  const handleForward = () => {
-    if (actualIndex < (session?.current_question_index ?? 0)) {
-      setDisplayIndex(actualIndex + 1)
-    }
-  }
 
   if (isLoading) return (
     <div className="h-[100dvh] flex items-center justify-center bg-[#F9F9F7]">

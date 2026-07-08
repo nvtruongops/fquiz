@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'popular'
     const categoryId = searchParams.get('category_id')
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.parseInt(searchParams.get('limit') || '20', 10)
+    const offset = Number.parseInt(searchParams.get('offset') || '0', 10)
 
     const query: Record<string, unknown> = {
       is_public: true,

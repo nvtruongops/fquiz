@@ -6,6 +6,9 @@ import { Loader2, Mail, ArrowLeft, Send, KeyRound } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
+import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
+import { EMAIL_REGEX } from '@/lib/core/schemas/common'
+
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast()
@@ -25,10 +28,11 @@ export default function ForgotPasswordPage() {
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || !EMAIL_REGEX.test(email)) {
       toast.error('Vui lòng nhập đúng định dạng email')
       return
     }
+
 
     setSendingCode(true)
     setRetryAfterSec(null)
@@ -209,18 +213,7 @@ export default function ForgotPasswordPage() {
                 className={cn(inputClasses, verified && "opacity-60 cursor-not-allowed bg-slate-50")}
               />
             </div>
-            <AnimatePresence>
-              {retryAfterSec !== null && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#d97706] ml-1 mt-1">
-                  Vui lòng thử lại sau {retryAfterSec} giây.
-                </motion.p>
-              )}
-              {devCode && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[11px] font-bold text-[#5D7B6F] ml-1 mt-1">
-                  Mã test (dev): {devCode}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
           {!codeSent && (

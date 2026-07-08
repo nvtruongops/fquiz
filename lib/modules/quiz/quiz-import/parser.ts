@@ -38,30 +38,52 @@ interface ParserContext {
 }
 
 function tryMatchMetadata(line: string, quizMeta: Record<string, string>): boolean {
-  const categoryRegex = /^(category_id|category|môn học|mon hoc)\s*:\s*(.+)$/i
-  const courseRegex = /^(course_code|quiz_code|quiz code|fquiz_code|fquiz code|mã quiz|ma quiz|mã đề|ma de)\s*:\s*(.+)$/i
-  const descriptionRegex = /^(description|quiz_description|quiz description|mô tả quiz|mo ta quiz)\s*:\s*(.+)$/i
+  const colonIndex = line.indexOf(':')
+  if (colonIndex === -1) return false
 
-  const catMatch = line.match(categoryRegex)
-  if (catMatch) {
-    quizMeta.category_id = catMatch[2].trim()
+  const key = line.substring(0, colonIndex).trim().toLowerCase()
+  const value = line.substring(colonIndex + 1).trim()
+
+  const categoryKeys = ['category_id', 'category', 'môn học', 'mon hoc']
+  const courseKeys = [
+    'course_code',
+    'quiz_code',
+    'quiz code',
+    'fquiz_code',
+    'fquiz code',
+    'mã quiz',
+    'ma quiz',
+    'mã đề',
+    'ma de',
+  ]
+  const descriptionKeys = [
+    'description',
+    'quiz_description',
+    'quiz description',
+    'mô tả quiz',
+    'mo ta quiz',
+  ]
+
+  if (categoryKeys.includes(key)) {
+    if (!value) return false
+    quizMeta.category_id = value
     return true
   }
-  const courseMatch = line.match(courseRegex)
-  if (courseMatch) {
-    quizMeta.course_code = courseMatch[2].trim()
+  if (courseKeys.includes(key)) {
+    if (!value) return false
+    quizMeta.course_code = value
     return true
   }
-  const descMatch = line.match(descriptionRegex)
-  if (descMatch) {
-    quizMeta.description = descMatch[2].trim()
+  if (descriptionKeys.includes(key)) {
+    if (!value) return false
+    quizMeta.description = value
     return true
   }
   return false
 }
 
 function parsePlainTextQuiz(content: string): ImportRawQuizPayload | null {
-  const lines = content.replace(/\r/g, '').split('\n')
+  const lines = content.replaceAll('\r', '').split('\n')
   if (lines.every((line) => line.trim().length === 0)) return null
 
   const quizMeta: Record<string, string> = {}
@@ -168,48 +190,67 @@ function handleQuestionBody(line: string, context: ParserContext): boolean {
   return false
 }
 
-function handleStaticMatches(line: string, body: Record<string, unknown>, context: ParserContext): boolean {
-  const optionRegex = /^([A-Fa-f])\.\s*(.*)$/
-  const answerRegex = /^(đáp án|dap an|answer)\s*:\s*(.+)$/i
-  const explanationRegex = /^(mô tả|mo ta|explanation)\s*:\s*(.*)$/i
-  const questionTextRegex = /^(câu hỏi|cau hoi|question)\s*:\s*(.+)$/i
+function tryMatchOption(line: string, body: Record<string, unknown>, context: ParserContext): boolean {
+  if (line.length >= 2 && line[1] === '.') {
+    const firstChar = line[0].toUpperCase()
+    if (firstChar >= 'A' && firstChar <= 'F') {
+      const optContent = line.substring(2).trim()
+      const options = (body.options as string[]) ?? []
+      options.push(`[${firstChar}]${optContent}`)
+      body.options = options
+      context.collectingExplanation = false
+      context.collectingQuestionText = false
+      context.collectingOptionIndex = options.length - 1
+      return true
+    }
+  }
+  return false
+}
 
-  const qText = line.match(questionTextRegex)
-  if (qText) {
-    body.question = qText[2].trim()
+function tryMatchQuestionProperties(
+  key: string,
+  value: string,
+  body: Record<string, unknown>,
+  context: ParserContext
+): boolean {
+  if (['câu hỏi', 'cau hoi', 'question'].includes(key)) {
+    if (!value) return false
+    body.question = value
     context.collectingExplanation = false
     context.collectingQuestionText = true
     context.collectingOptionIndex = null
     return true
   }
 
-  const opt = line.match(optionRegex)
-  if (opt) {
-    const options = (body.options as string[]) ?? []
-    options.push(`[${opt[1].toUpperCase()}]${opt[2].trim()}`)
-    body.options = options
-    context.collectingExplanation = false
-    context.collectingQuestionText = false
-    context.collectingOptionIndex = options.length - 1
-    return true
-  }
-
-  const ans = line.match(answerRegex)
-  if (ans) {
-    body.correct_answer = splitAnswerTokens(ans[2])
+  if (['đáp án', 'dap an', 'answer'].includes(key)) {
+    if (!value) return false
+    body.correct_answer = splitAnswerTokens(value)
     context.collectingExplanation = false
     context.collectingQuestionText = false
     context.collectingOptionIndex = null
     return true
   }
 
-  const exp = line.match(explanationRegex)
-  if (exp) {
-    body.explanation = exp[2].trim()
+  if (['mô tả', 'mo ta', 'explanation'].includes(key)) {
+    if (!value) return false
+    body.explanation = value
     context.collectingExplanation = true
     context.collectingQuestionText = false
     context.collectingOptionIndex = null
     return true
+  }
+
+  return false
+}
+
+function handleStaticMatches(line: string, body: Record<string, unknown>, context: ParserContext): boolean {
+  if (tryMatchOption(line, body, context)) return true
+
+  const colonIndex = line.indexOf(':')
+  if (colonIndex !== -1) {
+    const key = line.substring(0, colonIndex).trim().toLowerCase()
+    const value = line.substring(colonIndex + 1).trim()
+    if (tryMatchQuestionProperties(key, value, body, context)) return true
   }
 
   return false

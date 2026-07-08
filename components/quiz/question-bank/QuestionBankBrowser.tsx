@@ -204,7 +204,7 @@ function QuestionCard({
                   : 'bg-gray-50 border-gray-200'
               }`}
             >
-              {String.fromCharCode(65 + idx)}. {option}
+              {String.fromCodePoint(65 + idx)}. {option}
             </div>
           )
         })}

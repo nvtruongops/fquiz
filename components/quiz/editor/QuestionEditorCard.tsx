@@ -78,8 +78,9 @@ export function QuestionEditorCard({
           {/* Question Text & Image */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1 space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Nội dung câu hỏi</label>
+              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Nội dung câu hỏi</label>
               <Textarea
+                id={`question-text-${index}`}
                 placeholder="Nhập câu hỏi tại đây..."
                 value={question.text}
                 onChange={(e) => updateQuestion(index, 'text', e.target.value)}
@@ -87,7 +88,7 @@ export function QuestionEditorCard({
               />
             </div>
             <div className="w-full md:w-[240px] shrink-0">
-              <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Hình ảnh minh họa</label>
+              <span className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Hình ảnh minh họa</span>
               <ImageUpload
                 value={question.image_url}
                 onChange={(url) => updateQuestion(index, 'image_url', url)}
@@ -99,7 +100,7 @@ export function QuestionEditorCard({
           {/* Options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Các lựa chọn trả lời</label>
+              <span className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Các lựa chọn trả lời</span>
               <span className="text-[10px] font-bold text-gray-400">Chọn tích xanh cho đáp án đúng (có thể chọn nhiều)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -169,8 +170,9 @@ export function QuestionEditorCard({
 
           {/* Explanation */}
           <div className="pt-4 border-t border-gray-100">
-            <label className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Giải thích đáp án</label>
+            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Giải thích đáp án</label>
             <Textarea
+              id={`question-explanation-${index}`}
               placeholder="Tại sao đáp án này lại đúng? Giải thích giúp người học hiểu rõ hơn..."
               value={question.explanation}
               onChange={(e) => updateQuestion(index, 'explanation', e.target.value)}

@@ -53,8 +53,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
       
       category_id = parsed.data.category_id
-      page = parsed.data.page ? parseInt(parsed.data.page) : 1
-      per_page = parsed.data.per_page ? parseInt(parsed.data.per_page) : 100
+      page = parsed.data.page ? Number.parseInt(parsed.data.page, 10) : 1
+      per_page = parsed.data.per_page ? Number.parseInt(parsed.data.per_page, 10) : 100
     }
 
     await connectDB()

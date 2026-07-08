@@ -298,7 +298,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
                           isSubmittedAnswer ? 'border-red-300 bg-white text-red-500' :
                           'border-gray-200 bg-white text-gray-400'
                         }`}>
-                          {String.fromCharCode(65 + optIdx)}
+                          {String.fromCodePoint(65 + optIdx)}
                         </span>
                         <span className={`text-sm ${textColor} flex-1 font-medium`}>{option}</span>
                         {indicator}

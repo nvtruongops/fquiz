@@ -36,6 +36,7 @@ export interface IQuizSession {
   paused_at?: Date
   total_paused_duration_ms?: number // Total time spent paused in milliseconds
   is_temp?: boolean
+  answer_version?: number
 }
 
 /**

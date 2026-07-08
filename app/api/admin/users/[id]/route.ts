@@ -32,30 +32,35 @@ export const PUT = withAuth(async (
       )
     }
 
-    const updates: Record<string, unknown> = {}
-    if (parsed.data.role) updates.role = parsed.data.role
+    const updateDoc: any = {}
+    if (parsed.data.role) {
+      updateDoc.role = parsed.data.role
+      updateDoc.$inc = { token_version: 1 } // Invalidate existing sessions
+    }
     if (parsed.data.status) {
-      updates.status = parsed.data.status
+      updateDoc.status = parsed.data.status
       if (parsed.data.status === 'banned') {
-        updates.ban_reason = parsed.data.ban_reason ?? 'manual'
+        updateDoc.ban_reason = parsed.data.ban_reason ?? 'manual'
+        if (!updateDoc.$inc) updateDoc.$inc = {}
+        updateDoc.$inc.token_version = 1 // Also invalidate on ban
       } else {
-        updates.ban_reason = null
-        updates.sharing_violations = 0
+        updateDoc.ban_reason = null
+        updateDoc.sharing_violations = 0
       }
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updateDoc).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    const user = await User.findByIdAndUpdate(id, updates, { new: true })
+    const user = await User.findByIdAndUpdate(id, updateDoc, { new: true })
       .select(SENSITIVE_FIELDS)
       .lean()
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
     
     // Clear cache immediately when status changes
-    if (updates.status) {
+    if (updateDoc.status) {
       clearUserStatusCache(id)
     }
     

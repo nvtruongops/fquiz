@@ -38,7 +38,13 @@ export const maskEmail = (email: string) => {
 // Helper to mask IP for PII redaction
 export const maskIP = (ip: string) => {
   if (!ip) return ip
-  return ip.replace(/\d+\.\d+$/, 'x.x')
+  const parts = ip.split('.')
+  if (parts.length >= 2) {
+    parts[parts.length - 2] = 'x'
+    parts[parts.length - 1] = 'x'
+    return parts.join('.')
+  }
+  return ip
 }
 
 export const logSecurityEvent = (event: string, ctx: SecurityEventContext, message: string) => {

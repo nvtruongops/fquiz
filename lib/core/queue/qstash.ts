@@ -70,3 +70,31 @@ export async function publishJob(destination: string, body: any, delay?: number)
     return { success: false, error: error.message || error };
   }
 }
+
+/**
+ * Verifies QStash signature for background job endpoints.
+ */
+export async function verifyQStashRequest(
+  req: Request
+): Promise<{ isValid: boolean; bodyText: string; status: number; error?: string }> {
+  const signature = req.headers.get("upstash-signature");
+  if (!signature) {
+    return { isValid: false, bodyText: '', status: 401, error: 'Missing signature' };
+  }
+
+  const isLocalMock = signature === 'mock-signature-for-local-dev' && process.env.NODE_ENV === 'development';
+  const bodyText = await req.text();
+
+  if (process.env.NODE_ENV === 'production' && !process.env.QSTASH_CURRENT_SIGNING_KEY) {
+    return { isValid: false, bodyText, status: 500, error: 'Signing key not configured' };
+  }
+
+  if (!isLocalMock) {
+    const isValid = await qstashReceiver.verify({ signature, body: bodyText });
+    if (!isValid) {
+      return { isValid: false, bodyText, status: 401, error: 'Invalid signature' };
+    }
+  }
+
+  return { isValid: true, bodyText, status: 200 };
+}

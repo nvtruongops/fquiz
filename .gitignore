@@ -71,3 +71,9 @@ public/uploads/
 .codegraph/
 codegraph.mcp.json
 
+# Scripts
+scripts/.env.local
+.scannerwork/
+
+
+

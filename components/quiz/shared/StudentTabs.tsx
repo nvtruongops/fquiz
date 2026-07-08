@@ -19,7 +19,7 @@ const tabs = [
   { name: 'Cá nhân', href: '/profile', icon: User },
   { name: 'Bộ đề của tôi', href: '/my-quizzes', icon: Library },
   { name: 'Tạo bộ đề', href: '/create', icon: PlusCircle },
-  { name: 'Khám phá', href: '/explore', icon: Compass },
+  { name: 'Khám phá', href: '/', icon: Compass },
   { name: 'Lịch sử', href: '/history', icon: History },
   { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]
@@ -32,7 +32,9 @@ export default function StudentTabs() {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center overflow-x-auto no-scrollbar gap-1 md:gap-4 py-1">
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href || pathname?.startsWith(tab.href + '/')
+            const isActive = tab.href === '/'
+              ? pathname === '/' || pathname?.startsWith('/courses/')
+              : pathname === tab.href || pathname?.startsWith(tab.href + '/')
             const Icon = tab.icon
             
             return (

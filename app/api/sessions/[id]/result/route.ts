@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 
@@ -19,22 +17,10 @@ export const GET = withAuth(async (
 ) => {
   try {
     const { id } = await params
+    const validation = await validateQuizSessionRequest(id, payload, { checkExpired: false })
+    if (!validation.isValid) return validation.response
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
-    }
-
-    await connectDB()
-
-    const session = await QuizSession.findById(id).lean()
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    }
-
-    // Verify session belongs to the requesting student
-    if (session.student_id.toString() !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const session = validation.session
 
     // Req 12.4: return 403 if session is not completed
     if (session.status !== 'completed') {

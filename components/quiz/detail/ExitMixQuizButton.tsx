@@ -16,7 +16,7 @@ export default function ExitMixQuizButton({ sessionId }: ExitMixQuizButtonProps)
   const handleExit = () => {
     setLoading(true)
     // Session đã completed — giữ lại trong lịch sử, chỉ redirect về explore
-    router.push('/explore')
+    router.push('/')
   }
 
   return (

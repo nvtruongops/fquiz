@@ -65,6 +65,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Mã xác thực đã hết hạn hoặc không tồn tại' }, { status: 400 })
     }
 
+    if (codeRecord.attempts >= 5) {
+      return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+    }
+
     const expectedHash = hashVerificationCode(verificationCode)
     if (codeRecord.code_hash !== expectedHash) {
       await EmailVerification.updateOne(
@@ -75,17 +79,17 @@ export async function POST(request: Request) {
     }
 
     // Case-insensitive username check
-    const escapedUsername = username.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const existingUsername = await User.findOne({ 
-      username: { $regex: `^${escapedUsername}$`, $options: 'i' } 
+      username_lower: username.toLowerCase().trim() 
     })
     if (existingUsername) {
       return NextResponse.json({ error: 'Username đã được sử dụng' }, { status: 409 })
     }
 
-    const password_hash = await bcrypt.hash(password, 10)
+    const password_hash = await bcrypt.hash(password, 12)
     const newUser = await User.create({ 
       username: username.trim(), 
+      username_lower: username.toLowerCase().trim(),
       email: normalizedEmail, 
       password_hash, 
       role: 'student',

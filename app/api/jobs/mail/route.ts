@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { qstashReceiver } from '@/lib/core/queue/qstash';
+import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 import { sendResetPasswordMail, sendVerificationCodeMail } from '@/lib/core/mail/mail';
 
 export const runtime = 'nodejs';
@@ -9,29 +9,13 @@ export const runtime = 'nodejs';
  */
 export async function POST(req: Request) {
   // 1. Verify QStash Signature (Security)
-  const signature = req.headers.get("upstash-signature");
-  if (!signature) {
-    return new Response("Missing signature", { status: 401 });
-  }
-
-  const bodyText = await req.text();
-  const isLocalMockSignature =
-    process.env.NODE_ENV === 'development' && signature === 'mock-signature-for-local-dev'
-  
-  // Skip verification if keys are not set (for initial setup/dev) or local QStash simulation is used.
-  if (process.env.QSTASH_CURRENT_SIGNING_KEY && !isLocalMockSignature) {
-    const isValid = await qstashReceiver.verify({
-      signature,
-      body: bodyText,
-    });
-
-    if (!isValid) {
-      return new Response("Invalid signature", { status: 401 });
-    }
+  const verification = await verifyQStashRequest(req);
+  if (!verification.isValid) {
+    return new Response(verification.error ?? 'Unauthorized', { status: verification.status });
   }
 
   try {
-    const job = JSON.parse(bodyText);
+    const job = JSON.parse(verification.bodyText);
     const { type, data } = job;
 
     console.log(`Processing email job: ${type} for ${data.to}`);

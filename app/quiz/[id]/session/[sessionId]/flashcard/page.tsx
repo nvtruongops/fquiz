@@ -4,7 +4,8 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/session/FlashcardView'
-import { useFlashcardSession } from '@/hooks/quiz/useFlashcardSession'
+import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
+
 import MobileFlashcardSessionPage from '@/app/quiz/[id]/session/[sessionId]/flashcard/mobile/page'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { Button } from '@/components/shared/ui/button'
@@ -64,14 +65,27 @@ export default function FlashcardSessionPage() {
 
 function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessionId: string }) {
   const router = useRouter()
-  const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting } = 
-    useFlashcardSession(sessionId)
+  const {
+    session,
+    question,
+    isLoading,
+    isPreloading,
+    error,
+    submitAnswer,
+    isSubmitting,
+    stats,
+    setStats,
+    displayIndex,
+    setDisplayIndex,
+    enableAnimation,
+    setEnableAnimation,
+    actualIndex,
+    handleBack,
+    handleForward,
+  } = useFlashcardSessionState(sessionId, quizId)
+
   const sessionLoader = useSessionLoader()
   const sessionLoaderStartedRef = useRef(false)
-
-  const [displayIndex, setDisplayIndex] = useState<number | null>(null)
-  const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
-  const question = allQuestions?.[actualIndex]
 
   // Start loader immediately on mount so animation begins from 0
   useEffect(() => {
@@ -90,30 +104,10 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isPreloading, session])
 
-  const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
-  const [enableAnimation, setEnableAnimation] = useState(true)
   const flashcardRef = useRef<FlashcardViewRef>(null)
 
   // Lock submissions to prevent multi-hit logic
   const submittedRef = useRef(false)
-
-  // Update stats from session
-  useEffect(() => {
-    if (session?.flashcard_stats) {
-      setStats({
-        known: session.flashcard_stats.cards_known,
-        unknown: session.flashcard_stats.cards_unknown,
-        total: session.flashcard_stats.total_cards,
-      })
-    }
-  }, [session])
-
-  // Redirect to result page when completed
-  useEffect(() => {
-    if (session?.status === 'completed') {
-      router.push(`/quiz/${quizId}/result/${sessionId}`)
-    }
-  }, [session?.status, quizId, sessionId, router])
 
   // Reset submit lock whenever question index changes
   useEffect(() => {
@@ -142,22 +136,10 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
         }
       }
     )
-  }, [session, question, submitAnswer, actualIndex, displayIndex])
+  }, [session, question, submitAnswer, actualIndex, displayIndex, setStats, setDisplayIndex])
 
   const handleExit = () => {
     router.push(`/dashboard`)
-  }
-
-  const handleBack = () => {
-    if (actualIndex > 0) {
-      setDisplayIndex(actualIndex - 1)
-    }
-  }
-
-  const handleForward = () => {
-    if (actualIndex < (session?.current_question_index ?? 0)) {
-      setDisplayIndex(actualIndex + 1)
-    }
   }
 
   const handleBackgroundClick = () => {
@@ -207,7 +189,6 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
       // 2 = knows
       if (e.key === '2') {
         handleAnswer(true)
-        return
       }
     }
 
@@ -265,13 +246,20 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
 
   return (
     <div 
+      role="none"
       className="h-[100dvh] bg-background py-2 md:py-6 flex flex-col overflow-hidden" 
       onClick={handleBackgroundClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleBackgroundClick()
+        }
+      }}
     >
       {/* Compact Header Card */}
-      <div className="container mx-auto px-4 mb-2 md:mb-4 flex-none" onClick={(e) => e.stopPropagation()}>
+      <div role="none" className="container mx-auto px-4 mb-2 md:mb-4 flex-none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <Card className="p-3">
           <div className="grid grid-cols-12 gap-3 items-center">
             {/* Left: Quiz Info (3 cols) */}
@@ -340,7 +328,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
       </div>
 
       {/* Flashcard */}
-      <div className="container mx-auto flex-1 min-h-0 px-2 sm:px-4 pb-2 md:pb-0" onClick={(e) => e.stopPropagation()}>
+      <div role="none" className="container mx-auto flex-1 min-h-0 px-2 sm:px-4 pb-2 md:pb-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <div className="w-full h-full">
           <FlashcardView
             ref={flashcardRef}

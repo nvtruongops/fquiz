@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { SessionData, SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { computeQuestionFeedback } from '@/lib/modules/quiz/feedback-utils'
@@ -38,14 +38,53 @@ export function useSessionAnswerSync({
   const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
   const lastSyncedQuestionIndexRef = useRef<number | null>(null)
 
-  // Answer-sync effect — restore state when navigating between questions
-  // (This large effect is intentionally kept inline because it depends on
-  //  component-local state that varies between desktop and mobile UIs.)
-  // Note: the sync effect remains in the page component for now as it
-  // references component-scoped state. Full extraction would require
-  // hoisting more state into the hook.
+  // Keep a ref of feedbackByQuestion so the effect can read it without re-triggering
+  const feedbackByQuestionRef = useRef(feedbackByQuestion)
+  feedbackByQuestionRef.current = feedbackByQuestion
 
-  function submitInImmediateMode(answerIndexes: number[]) {
+  // Keep refs for unstable dependencies to avoid re-triggering the effect
+  const activeDataRef = useRef(activeData)
+  activeDataRef.current = activeData
+  const setLastAnswerResultRef = useRef(setLastAnswerResult)
+  setLastAnswerResultRef.current = setLastAnswerResult
+
+  // Answer-sync effect — restore state when navigating between questions
+  // Only depends on currentQuestionIndex and currentQuestion identity
+  useEffect(() => {
+    const data = activeDataRef.current
+    if (!data?.session) return
+
+    // Guard: skip if already synced for this question index
+    if (lastSyncedQuestionIndexRef.current === currentQuestionIndex) return
+    lastSyncedQuestionIndexRef.current = currentQuestionIndex
+
+    const state = getRestoredAnswerState(data, currentQuestionIndex, currentQuestion, feedbackByQuestionRef.current)
+
+    if (state.hasAnswer) {
+      setSelectedOptions(state.restored)
+      setSubmitted(state.submitted)
+      submittedRef.current = state.submitted
+      if (state.feedback) {
+        setFeedbackByQuestion((prev) => {
+          const existing = prev[currentQuestionIndex]
+          if (existing && existing.isCorrect === state.feedback!.isCorrect && existing.correctAnswer === state.feedback!.correctAnswer) return prev
+          return { ...prev, [currentQuestionIndex]: state.feedback! }
+        })
+      }
+      setLastAnswerResultRef.current(state.feedback)
+    } else if (state.useLocalFeedback) {
+      setSubmitted(true)
+      submittedRef.current = true
+      setLastAnswerResultRef.current(state.feedback)
+    } else {
+      setSelectedOptions([])
+      setSubmitted(false)
+      submittedRef.current = false
+      setLastAnswerResultRef.current(null)
+    }
+  }, [currentQuestionIndex, currentQuestion])
+
+  const submitInImmediateMode = useCallback((answerIndexes: number[]) => {
     if (!activeData?.session || submittedRef.current) return
     submittedRef.current = true
     setSubmitted(true)
@@ -79,7 +118,7 @@ export function useSessionAnswerSync({
         setSubmitted(false)
       },
     })
-  }
+  }, [activeData?.session, currentQuestionIndex, preloadedQuestions, setLastAnswerResult, submitAnswer])
 
   const handleSelectOption = useCallback((idx: number) => {
     if (!activeData?.session || submitted || isSubmitting) return
@@ -97,7 +136,7 @@ export function useSessionAnswerSync({
       if (activeData.session.mode === 'immediate') submitInImmediateMode(nextSelections)
       else submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes: nextSelections })
     }
-  }, [activeData?.session, activeData?.question, submitted, isSubmitting, selectedOptions, currentQuestionIndex, submitAnswer])
+  }, [activeData?.session, activeData?.question, submitted, isSubmitting, selectedOptions, currentQuestionIndex, submitAnswer, submitInImmediateMode])
 
   return {
     selectedOptions,
@@ -106,5 +145,56 @@ export function useSessionAnswerSync({
     feedbackByQuestion,
     submitInImmediateMode,
     handleSelectOption,
+  }
+}
+
+function getRestoredAnswerState(
+  activeData: any,
+  currentQuestionIndex: number,
+  currentQuestion: any,
+  feedbackByQuestion: Record<number, QuestionFeedback>,
+) {
+  const existing = activeData?.session?.user_answers.find((a: any) => a.question_index === currentQuestionIndex)
+  if (existing) {
+    const restored = existing.answer_indexes && existing.answer_indexes.length > 0
+      ? existing.answer_indexes : [existing.answer_index]
+    const isImmediate = activeData.session.mode === 'immediate'
+    let feedback = isImmediate ? feedbackByQuestion[currentQuestionIndex] : undefined
+    if (isImmediate && !feedback && currentQuestion?.correct_answer !== undefined) {
+      const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
+        ? currentQuestion.correct_answer : [currentQuestion.correct_answer]
+      feedback = {
+        isCorrect: existing.is_correct,
+        correctAnswer: correctAnswerIndexes[0],
+        correctAnswers: correctAnswerIndexes,
+        explanation: currentQuestion.explanation,
+      }
+    }
+    return {
+      hasAnswer: true,
+      restored,
+      submitted: isImmediate,
+      feedback: feedback ?? null,
+      useLocalFeedback: false,
+    }
+  }
+
+  const localFeedback = activeData?.session?.mode === 'immediate' ? feedbackByQuestion[currentQuestionIndex] : undefined
+  if (localFeedback) {
+    return {
+      hasAnswer: false,
+      restored: [],
+      submitted: true,
+      feedback: localFeedback,
+      useLocalFeedback: true,
+    }
+  }
+
+  return {
+    hasAnswer: false,
+    restored: [],
+    submitted: false,
+    feedback: null,
+    useLocalFeedback: false,
   }
 }

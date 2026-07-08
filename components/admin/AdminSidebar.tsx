@@ -122,6 +122,12 @@ export function AdminSidebar() {
         <div
           className="md:hidden fixed inset-0 z-30 bg-black/40"
           onClick={() => setMobileOpen(false)}
+          role="presentation"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+              setMobileOpen(false)
+            }
+          }}
         />
       )}
 

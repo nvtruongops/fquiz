@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -7,6 +6,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
 import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
 import { validateObjectId } from '@/lib/core/schemas/common'
+import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
@@ -89,20 +89,13 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
 
     // Validate with schema
     const parsed = CreateCategoryRequestSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: parsed.error.issues },
-        { status: 400 }
-      )
+      return validationErrorResponse(parsed.error)
     }
 
     const { name } = parsed.data
@@ -137,12 +130,8 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
 
     const { id, name } = body as { id?: string; name?: string }
 

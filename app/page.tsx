@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
@@ -20,9 +21,29 @@ export const revalidate = 60
 async function getCategories() {
   await connectDB()
   const cats = await Category.find({ type: 'public', status: 'approved' }).sort({ name: 1 }).lean()
+  
+  const catIds = cats.map(c => c._id)
+  const quizCounts = await Quiz.aggregate([
+    {
+      $match: {
+        category_id: { $in: catIds },
+        status: 'published'
+      }
+    },
+    {
+      $group: {
+        _id: '$category_id',
+        count: { $sum: 1 }
+      }
+    }
+  ])
+  
+  const countMap = new Map(quizCounts.map(item => [item._id.toString(), item.count]))
+
   return cats.map((c: any) => ({
     id: c._id.toString(),
-    name: c.name
+    name: c.name,
+    quizCount: countMap.get(c._id.toString()) ?? 0
   }))
 }
 

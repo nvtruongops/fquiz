@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/core/db/mongodb'
-import { verifySession } from '@/lib/modules/auth/dal'
-import { Post } from '@/lib/modules/community/models/Post'
+import { validatePostRequest } from '@/lib/modules/community/utils'
 import mongoose from 'mongoose'
 
 export async function POST(
@@ -10,20 +8,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid post id' }, { status: 400 })
-    }
-    const session = await verifySession()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const validation = await validatePostRequest(id)
+    if (!validation.isValid) return validation.response
 
-    await connectDB()
-
-    const post = await Post.findById(id)
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
-    }
+    const { post, session } = validation
 
     const userIdStr = session.userId.toString()
     const likeIndex = post.likes.findIndex((id: mongoose.Types.ObjectId) => id.toString() === userIdStr)

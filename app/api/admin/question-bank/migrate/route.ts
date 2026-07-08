@@ -113,7 +113,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
           const answerTexts = v.correct_answer
             .map((i: number) => v.options[i]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
             .filter(Boolean)
-            .sort()
+            .sort((a, b) => a.localeCompare(b))
             .join('||')
           if (!answerGroups.has(answerTexts)) {
             answerGroups.set(answerTexts, [])

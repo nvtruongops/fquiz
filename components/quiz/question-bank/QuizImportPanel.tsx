@@ -498,7 +498,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
                         const q = c.question
                         const importedLines = q
                           ? c.question!.correct_answer.map(
-                              (i) => `${String.fromCharCode(65 + i)}. ${q.options[i] ?? ''}`
+                              (i) => `${String.fromCodePoint(65 + i)}. ${q.options[i] ?? ''}`
                             )
                           : []
                         const variants = c.existingQuestion
@@ -558,7 +558,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
                                         >
                                           {currentSelected && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
                                         </span>
-                                        Đáp án trong file (hiện tại)
+                                        <span>Đáp án trong file (hiện tại)</span>
                                       </p>
                                       <ul className="space-y-1">
                                         {importedLines.length > 0 ? (
@@ -579,7 +579,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
                                     {/* Bank variant(s) */}
                                     {variants.map((v, vi) => {
                                       const lines = v.correct_answer.map(
-                                        (i) => `${String.fromCharCode(65 + i)}. ${v.options[i] ?? ''}`
+                                        (i) => `${String.fromCodePoint(65 + i)}. ${v.options[i] ?? ''}`
                                       )
                                       const bankSelected = chosen.source === 'bank' && chosen.variantIdx === vi
                                       return (

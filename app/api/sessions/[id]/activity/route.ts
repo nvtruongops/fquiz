@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 
 interface ActivityBody {
   event?: 'pause' | 'resume'
@@ -16,30 +15,16 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
-    }
+    const validation = await validateQuizSessionRequest(id, payload)
+    if (!validation.isValid) return validation.response
+
+    const session = validation.session
 
     let body: ActivityBody = {}
     try {
       body = (await req.json()) as ActivityBody
     } catch {
       body = {}
-    }
-
-    await connectDB()
-
-    const session = await QuizSession.findById(id).lean()
-    if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    if (session.student_id.toString() !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-      return NextResponse.json(
-        { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
-        { status: 410 }
-      )
     }
 
     if (session.status !== 'active') {

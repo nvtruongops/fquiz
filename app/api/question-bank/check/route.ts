@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
+import { validationErrorResponse } from '@/lib/core/api-helpers'
 import { checkQuestionsInBank } from '@/lib/modules/quiz/question-bank-manager'
 import { generateQuestionId, getAnswerTexts } from '@/lib/modules/quiz/question-id-generator'
+import { CheckQuestionsSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { z } from 'zod'
 
-const CheckQuestionsSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  questions: z.array(z.object({
-    text: z.string().min(1),
-    options: z.array(z.string()).min(2),
-    correct_answer: z.array(z.number().int().min(0)),
-    explanation: z.string().optional(),
-    image_url: z.string().optional(),
-  })).min(1)
-})
 
 /**
  * POST /api/question-bank/check
@@ -26,19 +16,11 @@ const CheckQuestionsSchema = z.object({
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await req.json()
     const parsed = CheckQuestionsSchema.safeParse(body)
-    
+
     if (!parsed.success) {
-      return NextResponse.json({ 
-        error: 'Validation failed', 
-        details: parsed.error.issues 
-      }, { status: 400 })
+      return validationErrorResponse(parsed.error)
     }
 
     const { category_id, questions } = parsed.data

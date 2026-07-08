@@ -324,7 +324,7 @@ export default function AdminFeedbackPage() {
       if (statusFilter !== 'all' && fb.status !== statusFilter) return false
       if (typeFilter !== 'all' && fb.type !== typeFilter) return false
       if (timeFilter !== 'all') {
-        const days = parseInt(timeFilter)
+        const days = Number.parseInt(timeFilter, 10)
         if (!isAfter(new Date(fb.created_at), subDays(new Date(), days))) return false
       }
       if (search.trim()) {
@@ -397,9 +397,9 @@ export default function AdminFeedbackPage() {
           <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
             {/* Bậc 1: Lọc theo lý do (type) */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
                 1. LỌC THEO LÝ DO
-              </label>
+              </span>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full max-w-md rounded-lg h-9 font-medium text-sm border">
                   <SelectValue />
@@ -417,9 +417,9 @@ export default function AdminFeedbackPage() {
             {/* Bậc 2: Lọc theo thời gian + trạng thái */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+                <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
                   2. LỌC THEO THỜI GIAN
-                </label>
+                </span>
                 <Select value={timeFilter} onValueChange={setTimeFilter}>
                   <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border">
                     <SelectValue />
@@ -435,9 +435,9 @@ export default function AdminFeedbackPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+                <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
                   LỌC THEO TRẠNG THÁI
-                </label>
+                </span>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border">
                     <SelectValue />
@@ -454,9 +454,9 @@ export default function AdminFeedbackPage() {
 
             {/* Bậc 3: Tìm kiếm */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
                 3. TÌM KIẾM
-              </label>
+              </span>
               <div className="relative">
                 <Input
                   value={search}

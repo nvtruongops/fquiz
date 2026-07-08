@@ -231,7 +231,7 @@ export default function AdminSettingsPage() {
                           min={3}
                           max={50}
                           value={formState.anti_sharing_max_violations ?? 10}
-                          onChange={(e) => setFormState((s) => ({ ...s, anti_sharing_max_violations: parseInt(e.target.value) || 10 }))}
+                          onChange={(e) => setFormState((s) => ({ ...s, anti_sharing_max_violations: Number.parseInt(e.target.value, 10) || 10 }))}
                           className="w-32 border-amber-200 focus:border-amber-500 focus:ring-amber-500/20 rounded-xl"
                         />
                         <p className="text-xs text-amber-600">

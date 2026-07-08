@@ -52,7 +52,7 @@ interface Props {
 function emptyQuestion(): QuestionForm {
   return {
     text: '',
-    options: Array(DEFAULT_OPTION_COUNT).fill(''),
+    options: new Array(DEFAULT_OPTION_COUNT).fill(''),
     correct_answers: [],
     explanation: '',
     image_url: '',
@@ -191,7 +191,7 @@ export function QuizEditor({
 
   function applyTargetCount(raw: string) {
     const maxCount = isStudentMode ? 150 : 9999
-    const n = Math.max(1, Math.min(maxCount, parseInt(raw) || 1))
+    const n = Math.max(1, Math.min(maxCount, Number.parseInt(raw, 10) || 1))
     setTargetCount(n)
     setTargetInput(String(n))
     setForm((prev) => {

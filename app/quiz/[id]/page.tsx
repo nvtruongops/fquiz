@@ -123,7 +123,7 @@ export default function QuizDetailPage() {
   const { toast } = useToast()
   
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
-  const [modeSelectOpen, setModeSelectOpen] = useState(false)
+  const [modeSelectOpen, setModeSelectOpen] = useState(() => searchParams.get('selectMode') === 'true')
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
   const [authRequiredDialogOpen, setAuthRequiredDialogOpen] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'immediate' | 'review' | 'flashcard'>('immediate')
@@ -132,8 +132,12 @@ export default function QuizDetailPage() {
   const { loadingOverlay, startLoading, completeLoading, stopLoading } = useQuizLoader()
 
   useEffect(() => {
-    if (searchParams.get('reason') !== 'session_expired') return
-    toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
+    if (searchParams.get('reason') === 'session_expired') {
+      toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
+    }
+    if (searchParams.get('selectMode') === 'true') {
+      setModeSelectOpen(true)
+    }
   }, [searchParams, toast])
 
   const { data: quiz, isLoading, isError, error } = useQuery({
@@ -150,6 +154,16 @@ export default function QuizDetailPage() {
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}?quiz_id=${quizId}`)
       if (!res.ok) return { assessmentSession: null, learningSession: null }
+      return res.json()
+    },
+    enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
+  })
+
+  const { data: historyData } = useQuery({
+    queryKey: ['quiz-history-detail', quizId],
+    queryFn: async () => {
+      const res = await fetch(`/api/history/${resolvedQuizId}`)
+      if (!res.ok) return null
       return res.json()
     },
     enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
@@ -340,6 +354,8 @@ export default function QuizDetailPage() {
                 currentUser={currentUser}
                 authRequiredDialogOpen={authRequiredDialogOpen}
                 setAuthRequiredDialogOpen={setAuthRequiredDialogOpen}
+                hasHistory={Boolean(historyData?.completed_at)}
+                latestSessionId={historyData?.attempts?.[0]?.session_id ?? historyData?._id}
               />
             </div>
 

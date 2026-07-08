@@ -2,6 +2,7 @@ import mongoose, { Schema } from 'mongoose'
 import type { IQuiz, IQuestion } from '@/lib/modules/quiz/types/quiz'
 // Import Category to ensure it's registered before Quiz uses it in populate
 import '@/lib/modules/quiz/models/Category'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
@@ -27,9 +28,12 @@ const QuestionSchema = new Schema<IQuestion>(
       required: true,
       validate: {
         validator: function(v: number[]) {
-          return v.length >= 1;
+          if (v.length < 1) return false
+          // @ts-ignore - this refers to question subdoc
+          const optionsLength = this.options?.length ?? 0
+          return v.every(i => i >= 0 && i < optionsLength)
         },
-        message: 'Cần ít nhất 1 đáp án đúng'
+        message: 'correct_answer indices must be within options range'
       }
     },
     explanation: { type: String },
@@ -94,7 +98,6 @@ QuizSchema.pre('validate', function () {
 QuizSchema.pre('save', function () {
   if (this.questions && this.questions.length > 0) {
     this.questionCount = this.questions.length
-    const { generateQuestionId } = require('@/lib/modules/quiz/question-id-generator')
     this.questions.forEach((q: any) => {
       if (!q.question_id && q.text && q.options) {
         q.question_id = generateQuestionId({
@@ -107,8 +110,8 @@ QuizSchema.pre('save', function () {
   }
 })
 
-if (mongoose.models.Quiz) {
+if (process.env.NODE_ENV === 'development' && mongoose.models.Quiz) {
   delete mongoose.models.Quiz;
 }
 
-export const Quiz = mongoose.model<IQuiz>('Quiz', QuizSchema);
+export const Quiz = mongoose.models.Quiz ?? mongoose.model<IQuiz>('Quiz', QuizSchema);

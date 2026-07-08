@@ -118,7 +118,7 @@ export function QuestionConflictModal({
     const userAnswerTexts = JSON.stringify(
       conflict.question.correct_answer
         .map((i) => (conflict.question.options[i] ?? '').trim().toLowerCase())
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
     )
 
     if (conflict.answerVariants && conflict.answerVariants.length > 0) {
@@ -126,7 +126,7 @@ export function QuestionConflictModal({
         const variantAnswerTexts = JSON.stringify(
           variant.correct_answer
             .map((i) => (variant.options[i] ?? '').trim().toLowerCase())
-            .sort()
+            .sort((a, b) => a.localeCompare(b))
         )
         const sameAsUser = variantAnswerTexts === userAnswerTexts
         if (!sameAsUser) {
@@ -366,7 +366,7 @@ export function QuestionConflictModal({
                                         choice.id.startsWith('current') ? 'bg-blue-100/60' : 'bg-green-100/60'
                                       }`}
                                     >
-                                      {String.fromCharCode(65 + i)}. {choice.options[i] ?? ''}
+                                      {String.fromCodePoint(65 + i)}. {choice.options[i] ?? ''}
                                     </li>
                                   ))}
                                 </ul>

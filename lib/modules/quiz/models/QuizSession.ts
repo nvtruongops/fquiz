@@ -64,22 +64,29 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     paused_at: { type: Date },
     total_paused_duration_ms: { type: Number, default: 0 },
     is_temp: { type: Boolean, default: false },
+    answer_version: { type: Number, default: 1 },
   },
   { timestamps: false }
 )
 
 // TTL index — MongoDB auto-deletes expired sessions
 QuizSessionSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 })
-// TTL index — auto-cleanup old sessions and their questions_cache (7 days)
-QuizSessionSchema.index({ started_at: 1 }, { expireAfterSeconds: 604800 })
+// TTL index – auto-cleanup old sessions and their questions_cache (7 days) for non-completed sessions
+QuizSessionSchema.index(
+  { started_at: 1 },
+  { 
+    expireAfterSeconds: 604800,
+    partialFilterExpression: { status: { $in: ['preparing', 'active', 'paused'] } }
+  }
+)
 // Compound index for student session lookups
 QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
 // Compound index for mix quiz concurrent check
 QuizSessionSchema.index({ student_id: 1, is_temp: 1, expires_at: 1 })
 
 // Clear model if already exists to ensure schema updates (like 'preparing' status) are picked up in dev
-if (mongoose.models.QuizSession) {
+if (process.env.NODE_ENV === 'development' && mongoose.models.QuizSession) {
   delete mongoose.models.QuizSession;
 }
 
-export const QuizSession = mongoose.model<IQuizSession>('QuizSession', QuizSessionSchema);
+export const QuizSession = mongoose.models.QuizSession ?? mongoose.model<IQuizSession>('QuizSession', QuizSessionSchema);

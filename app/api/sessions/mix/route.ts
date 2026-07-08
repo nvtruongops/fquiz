@@ -30,19 +30,7 @@ const CreateMixSessionSchema = z.object({
   difficulty: z.enum(['sequential', 'random']).default('random'),
 })
 
-/**
- * Fisher-Yates shuffle
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    /* eslint-disable security/detect-object-injection */
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    /* eslint-enable security/detect-object-injection */
-  }
-  return shuffled
-}
+
 
 /**
  * Generate a unique temp course_code.

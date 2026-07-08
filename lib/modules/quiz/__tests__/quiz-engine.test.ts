@@ -21,12 +21,18 @@ jest.mock('../models/Quiz', () => ({
   },
 }))
 
+let mockSessionForFind: any = null
+
 jest.mock('../models/QuizSession', () => ({
   QuizSession: {
     distinct: jest.fn(),
-    findById: jest.fn(),
+    findById: jest.fn().mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockImplementation(() => Promise.resolve(mockSessionForFind)),
+    })),
     findByIdAndUpdate: jest.fn(),
     findOneAndUpdate: jest.fn(),
+    updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
   },
 }))
 
@@ -94,11 +100,13 @@ describe('Quiz Engine', () => {
         question_order: [0, 1],
         user_answers: [],
         score: 0,
+        answer_version: 1,
         questions_cache: [
           { _id: 'q1', text: 'Q1', options: ['A', 'B'], correct_answer: 0, explanation: 'Exp 1' },
           { _id: 'q2', text: 'Q2', options: ['C', 'D'], correct_answer: [1], explanation: 'Exp 2' },
         ],
       }
+      mockSessionForFind = mockSession
     })
 
     it('should process a correct immediate answer and return feedback', async () => {
@@ -108,13 +116,14 @@ describe('Quiz Engine', () => {
       expect(result.correctAnswer).toBe(0)
       expect(result.explanation).toBe('Exp 1')
 
-      expect(QuizSession.findByIdAndUpdate).toHaveBeenCalledWith(
-        'session-123',
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        { _id: 'session-123', answer_version: 1 },
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
             score: 1,
           }),
+          $inc: { answer_version: 1 },
         })
       )
     })
@@ -125,13 +134,39 @@ describe('Quiz Engine', () => {
       expect(result.isCorrect).toBe(false)
       expect(result.correctAnswer).toBe(0)
 
-      expect(QuizSession.findByIdAndUpdate).toHaveBeenCalledWith(
-        'session-123',
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        { _id: 'session-123', answer_version: 1 },
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
             score: 0,
           }),
+          $inc: { answer_version: 1 },
+        })
+      )
+    })
+
+    it('should handle session with missing answer_version (pre-deploy session)', async () => {
+      const sessionWithoutVersion = {
+        ...mockSession,
+        answer_version: undefined,
+      }
+      mockSessionForFind = sessionWithoutVersion
+
+      const result = await processImmediateAnswer(sessionWithoutVersion, [0])
+
+      expect(result.isCorrect).toBe(true)
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        {
+          _id: 'session-123',
+          $or: [{ answer_version: 1 }, { answer_version: { $exists: false } }],
+        },
+        expect.objectContaining({
+          $set: expect.objectContaining({
+            current_question_index: 1,
+            score: 1,
+          }),
+          $inc: { answer_version: 1 },
         })
       )
     })
@@ -148,11 +183,13 @@ describe('Quiz Engine', () => {
         question_order: [0, 1],
         user_answers: [],
         score: 0,
+        answer_version: 1,
         questions_cache: [
           { _id: 'q1', text: 'Q1', options: ['A', 'B'], correct_answer: 0, explanation: 'Exp 1' },
           { _id: 'q2', text: 'Q2', options: ['C', 'D'], correct_answer: [1], explanation: 'Exp 2' },
         ],
       }
+      mockSessionForFind = mockSession
     })
 
     it('should save answer and return next question stripped of correct answer and explanation', async () => {
@@ -163,12 +200,13 @@ describe('Quiz Engine', () => {
       expect((result.nextQuestion as any).explanation).toBeUndefined()
       expect(result.nextQuestion?.text).toBe('Q2')
 
-      expect(QuizSession.findByIdAndUpdate).toHaveBeenCalledWith(
-        'session-123',
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        { _id: 'session-123', answer_version: 1 },
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
           }),
+          $inc: { answer_version: 1 },
         })
       )
     })
@@ -185,13 +223,14 @@ describe('Quiz Engine', () => {
       expect(result.completed).toBe(false)
       expect(result.score).toBe(2)
 
-      expect(QuizSession.findByIdAndUpdate).toHaveBeenCalledWith(
-        'session-123',
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        { _id: 'session-123', answer_version: 1 },
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
             score: 2,
           }),
+          $inc: { answer_version: 1 },
         })
       )
     })

@@ -43,6 +43,7 @@ import { useToast } from '@/store/shared/toast-store'
 import { cn } from '@/lib/core/utils/cn'
 import { useDebounce } from '@/hooks/shared/useDebounce'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useCreateCategory } from '@/hooks/quiz/useCreateCategory'
 
 interface Category {
   _id: string
@@ -569,27 +570,8 @@ export default function MyQuizzesPage() {
     }
   })
 
-  // 5. Category Mutations
-  const createCatMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`, {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ name })
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(err.error || 'Không thể tạo danh mục')
-      }
-      return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
-      setNewCategoryName('')
-      toast.success('Category created successfully')
-    },
-    onError: (err: any) => toast.error(err.message)
-  })
+  // 5. Category Mutations (using shared hook)
+  const createCatMutation = useCreateCategory()
 
   const updateCatMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string, name: string }) => {

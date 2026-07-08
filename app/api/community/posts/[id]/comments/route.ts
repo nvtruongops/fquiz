@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/core/db/mongodb'
-import { verifySession } from '@/lib/modules/auth/dal'
-import { Post } from '@/lib/modules/community/models/Post'
+import { validatePostRequest } from '@/lib/modules/community/utils'
 import mongoose from 'mongoose'
 import { z } from 'zod'
 import DOMPurify from 'isomorphic-dompurify'
@@ -17,14 +15,10 @@ export async function POST(
   try {
     const { id } = await params
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid post id' }, { status: 400 })
-    }
+    const validation = await validatePostRequest(id)
+    if (!validation.isValid) return validation.response
 
-    const session = await verifySession()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { post, session } = validation
 
     const body = await req.json().catch(() => null)
     if (!body) {
@@ -41,13 +35,6 @@ export async function POST(
 
     const { content } = parsed.data
     const cleanContent = DOMPurify.sanitize(content)
-
-    await connectDB()
-
-    const post = await Post.findById(id)
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
-    }
 
     const newComment = {
       authorId: new mongoose.Types.ObjectId(session.userId),

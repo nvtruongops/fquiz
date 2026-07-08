@@ -216,3 +216,30 @@ export type AdminSaveDraftQuizInput = z.infer<typeof AdminSaveDraftQuizSchema>
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>
 export type CreateStudentQuizInput = z.infer<typeof CreateStudentQuizSchema>
 export type CreateSessionInput = z.infer<typeof CreateSessionSchema>
+
+// ============================================
+// QUESTION BANK INPUT SCHEMA
+// Lenient schema for question bank sync/check endpoints
+// ============================================
+export const QuestionInputSchema = z.object({
+  text: z.string().min(1),
+  options: z.array(z.string()).min(2),
+  correct_answer: z.array(z.number().int().min(0)),
+  explanation: z.string().optional(),
+  image_url: z.string().optional(),
+})
+
+export type QuestionBankInput = z.infer<typeof QuestionInputSchema>
+
+export const SyncQuizSchema = z.object({
+  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  course_code: z.string().trim().min(1).max(COURSE_CODE_MAX_LENGTH).regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
+  quiz_id: z.string().optional(),
+  questions: z.array(QuestionInputSchema).min(1)
+})
+
+export const CheckQuestionsSchema = z.object({
+  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  questions: z.array(QuestionInputSchema).min(1)
+})
+

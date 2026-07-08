@@ -66,7 +66,9 @@ export async function POST(request: Request) {
     }
 
     // Record login log
-    LoginLog.create({ user_id: user._id, ip, user_agent: userAgent }).catch(() => {})
+    LoginLog.create({ user_id: user._id, ip, user_agent: userAgent }).catch((logErr) =>
+      console.warn('[LoginLog] Failed to record login:', logErr)
+    )
 
     // Anti-sharing detection (Simplified for now)
     try {
