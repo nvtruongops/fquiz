@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
 import { z } from 'zod'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 import { isMailConfigured } from '@/lib/core/mail/mail'
 import nodemailer from 'nodemailer'
+import { validationErrorResponse, parseJsonBody, invalidIdResponse } from '@/lib/core/api-helpers'
 
 const UpdateSchema = z.object({
   status: z.enum(['pending', 'reviewed', 'resolved']),
@@ -31,18 +31,15 @@ export const PATCH = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
-    }
+    const idCheck = invalidIdResponse(id)
+    if (idCheck) return idCheck
 
-    let body: unknown
-    try { body = await req.json() } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-    }
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
 
     const parsed = UpdateSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+      return validationErrorResponse(parsed.error)
     }
 
     await connectDB()
@@ -68,9 +65,8 @@ export const DELETE = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
-    }
+    const idCheck = invalidIdResponse(id)
+    if (idCheck) return idCheck
 
     await connectDB()
     await Feedback.findByIdAndDelete(id)
@@ -87,18 +83,15 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
-    }
+    const idCheck = invalidIdResponse(id)
+    if (idCheck) return idCheck
 
-    let body: unknown
-    try { body = await req.json() } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-    }
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
 
     const parsed = ReplySchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+      return validationErrorResponse(parsed.error)
     }
 
     await connectDB()
@@ -127,7 +120,7 @@ export const POST = withAuth(async (
           <p>Xin chào <strong>${feedback.username}</strong>,</p>
           <p>Chúng tôi đã nhận được góp ý <strong>${TYPE_VI[feedback.type] ?? feedback.type}</strong> của bạn và xin gửi phản hồi:</p>
           <blockquote style="border-left:3px solid #5D7B6F;padding:12px 16px;background:#f9fafb;border-radius:4px;margin:16px 0">
-            ${parsed.data.reply_message.replace(/\n/g, '<br>')}
+            ${parsed.data.reply_message.replaceAll('\n', '<br>')}
           </blockquote>
           <p>Cảm ơn bạn đã đồng hành cùng FQuiz!</p>
           <p style="color:#6b7280;font-size:13px">— Đội ngũ FQuiz</p>

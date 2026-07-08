@@ -160,7 +160,7 @@ export default function HistoryPage() {
             <h3 className="text-xl font-black text-gray-800">Trống trơn!</h3>
             <p className="text-sm font-bold text-gray-400 mt-2">Bạn chưa có hoạt động nào phù hợp với tìm kiếm.</p>
             <Button asChild className="mt-8 bg-[#5D7B6F] rounded-xl px-8 h-12">
-               <Link href="/explore">Bắt đầu học ngay</Link>
+               <Link href="/">Bắt đầu học ngay</Link>
             </Button>
           </div>
         ) : (
@@ -279,7 +279,7 @@ export default function HistoryPage() {
                                     className="h-9 px-3 rounded-xl border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all" 
                                     asChild
                                   >
-                                    <Link href={`/explore?tab=mix&mix_from=${item.quiz_id}`}>
+                                    <Link href={`/?tab=mix&mix_from=${item.quiz_id}`}>
                                       Làm mới
                                     </Link>
                                   </Button>

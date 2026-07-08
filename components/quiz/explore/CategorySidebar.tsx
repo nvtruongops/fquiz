@@ -53,6 +53,14 @@ export function CategorySidebar({
             : "hover:bg-[#5D7B6F]/5 text-slate-600 hover:text-[#5D7B6F]"
         )}
         onClick={() => onSelect(cat.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onSelect(cat.id)
+          }
+        }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className={cn(

@@ -54,17 +54,11 @@ const QuizSidebar = React.memo(function QuizSidebar({
           break
         case 'ArrowUp':
           e.preventDefault()
-          setFocusedOption(prev => {
-            const next = prev === null ? options.length - 1 : Math.max(0, prev - 1)
-            return next
-          })
+          setFocusedOption(prev => prev === null ? options.length - 1 : Math.max(0, prev - 1))
           break
         case 'ArrowDown':
           e.preventDefault()
-          setFocusedOption(prev => {
-            const next = prev === null ? 0 : Math.min(options.length - 1, prev + 1)
-            return next
-          })
+          setFocusedOption(prev => prev === null ? 0 : Math.min(options.length - 1, prev + 1))
           break
         case 'Enter':
           if (focusedOption !== null && !isSubmitted) {

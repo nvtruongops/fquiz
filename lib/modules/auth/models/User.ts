@@ -12,6 +12,7 @@ const UserSchema = new Schema<IUser>(
       maxlength: 15,
       match: /^\w+$/,
     },
+    username_lower: { type: String, required: true, unique: true, lowercase: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password_hash: { type: String, required: true },
     avatar_url: { type: String, default: null },
@@ -28,6 +29,7 @@ const UserSchema = new Schema<IUser>(
     created_at: { type: Date, default: Date.now },
     reset_token: { type: String, default: null },
     reset_token_expires: { type: Date, default: null },
+    reset_token_attempts: { type: Number, default: 0 },
     token_version: { type: Number, required: true, default: 1 },
     pinned_categories: { type: [String], default: [] },
   },
@@ -35,7 +37,7 @@ const UserSchema = new Schema<IUser>(
 )
 
 const existingUserModel = mongoose.models.User
-if (existingUserModel && !existingUserModel.schema.path('token_version')) {
+if (process.env.NODE_ENV === 'development' && existingUserModel && !existingUserModel.schema.path('token_version')) {
   delete mongoose.models.User
 }
 

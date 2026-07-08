@@ -29,15 +29,49 @@ export function withCsrfHeaders(headers: Record<string, string> = {}): Record<st
  * Returns true if both strings are equal, false otherwise.
  * Uses XOR-based comparison to avoid early-exit timing leaks.
  */
-function safeCompare(a: string | null | undefined, b: string | null | undefined): boolean {
+export function safeCompare(a: string | null | undefined, b: string | null | undefined): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false
   if (a.length !== b.length) return false
 
   let result = 0
   for (let i = 0; i < a.length; i += 1) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+    result |= (a.codePointAt(i) || 0) ^ (b.codePointAt(i) || 0)
   }
   return result === 0
+}
+
+function isValidOrigin(origin: string, siteUrl: string): boolean {
+  try {
+    const originObj = new URL(origin)
+    return originObj.origin === siteUrl
+  } catch {
+    return false
+  }
+}
+
+function isValidReferer(referer: string, siteUrl: string): boolean {
+  try {
+    const refererObj = new URL(referer)
+    return refererObj.origin === siteUrl
+  } catch {
+    return false
+  }
+}
+
+function getCsrfCookie(request: Request): string | undefined {
+  const cookieHeader = request.headers.get('cookie')
+  if (!cookieHeader) return undefined
+  
+  const row = cookieHeader.split('; ').find((row) => row.startsWith(`${CSRF_COOKIE_NAME}=`))
+  if (!row) return undefined
+
+  return row.split('=').slice(1).join('=')
+}
+
+function csrfWarn(message: string): void {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(message)
+  }
 }
 
 /**
@@ -61,42 +95,29 @@ export function validateCsrfRequest(request: Request): boolean {
   const siteUrl = `${protocol}://${host}`
 
   // Layer 1 (mandatory): CSRF token (double-submit cookie pattern)
-  const csrfCookie = request.headers.get('cookie')
-    ?.split('; ')
-    .find((row) => row.startsWith(`${CSRF_COOKIE_NAME}=`))
-    ?.split('=')
-    .slice(1)
-    .join('=')
+  const csrfCookie = getCsrfCookie(request)
 
   const csrfHeader = request.headers.get(CSRF_HEADER_NAME)
 
   if (!csrfCookie || !csrfHeader) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('[CSRF] Missing CSRF cookie or header')
-    }
+    csrfWarn('[CSRF] Missing CSRF cookie or header')
     return false
   }
 
   if (!safeCompare(csrfCookie, csrfHeader)) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('[CSRF] CSRF token mismatch')
-    }
+    csrfWarn('[CSRF] CSRF token mismatch')
     return false
   }
 
   // Layer 2: Origin check (defense in depth)
-  if (origin && !origin.startsWith(siteUrl)) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[CSRF] Origin mismatch: ${origin} vs ${siteUrl}`)
-    }
+  if (origin && !isValidOrigin(origin, siteUrl)) {
+    csrfWarn(`[CSRF] Origin mismatch: ${origin} vs ${siteUrl}`)
     return false
   }
 
   // Layer 3: Referer check (fallback when Origin is not sent)
-  if (!origin && referer && !referer.startsWith(siteUrl)) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[CSRF] Referer mismatch: ${referer} vs ${siteUrl}`)
-    }
+  if (!origin && referer && !isValidReferer(referer, siteUrl)) {
+    csrfWarn(`[CSRF] Referer mismatch: ${referer} vs ${siteUrl}`)
     return false
   }
 

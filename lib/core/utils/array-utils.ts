@@ -58,7 +58,7 @@ export function getAnswerTexts(options: string[], answerIndices: number | number
   return ensureArray(answerIndices)
     .map(idx => options[idx]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
     .filter(Boolean)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
 }
 
 /**

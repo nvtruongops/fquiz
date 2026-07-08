@@ -22,6 +22,7 @@ interface UseQuizSessionQueriesResult {
 
 export function useQuizSessionQueries(
   resolvedSessionId: string,
+  currentQuestionIndex: number,
 ): UseQuizSessionQueriesResult {
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
 
@@ -74,11 +75,7 @@ export function useQuizSessionQueries(
   }, [preloadData])
 
   const clampedQuestionIndex = Math.min(
-    Math.max(
-      // currentQuestionIndex from store is handled by caller
-      0,
-      0,
-    ),
+    Math.max(currentQuestionIndex, 0),
     Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0),
   )
 

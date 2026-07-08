@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/core/db/mongodb';
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession';
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine';
-import { qstashReceiver } from '@/lib/core/queue/qstash';
+import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 
 const MAX_COMPLETED_ATTEMPTS_PER_QUIZ = 10;
 
@@ -12,21 +12,13 @@ const MAX_COMPLETED_ATTEMPTS_PER_QUIZ = 10;
  */
 export async function POST(req: Request) {
   // 1. Verify QStash Signature (Security)
-  const signature = req.headers.get("upstash-signature");
-  if (!signature) return new Response("Missing signature", { status: 401 });
-
-  // Allow local development mock signature
-  const isLocalMock = signature === 'mock-signature-for-local-dev' && process.env.NODE_ENV === 'development';
-
-  const bodyText = await req.text();
-  
-  if (process.env.QSTASH_CURRENT_SIGNING_KEY && !isLocalMock) {
-    const isValid = await qstashReceiver.verify({ signature, body: bodyText });
-    if (!isValid) return new Response("Invalid signature", { status: 401 });
+  const verification = await verifyQStashRequest(req);
+  if (!verification.isValid) {
+    return new Response(verification.error ?? 'Unauthorized', { status: verification.status });
   }
 
   try {
-    const { studentId, quizId } = JSON.parse(bodyText);
+    const { studentId, quizId } = JSON.parse(verification.bodyText);
 
     await connectDB();
 

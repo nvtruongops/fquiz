@@ -152,7 +152,7 @@ export default function DashboardPage() {
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="rounded-2xl px-6 h-12 font-black border-2 border-gray-200 hover:border-[#5D7B6F] hover:bg-[#5D7B6F]/5 transition-all">
-                      <Link href="/explore">
+                      <Link href="/">
                         <Compass className="w-4 h-4 mr-2" />
                         Làm quiz mới
                       </Link>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                   {/* Action Button */}
                   <div className="w-full md:w-auto">
                     <Button asChild className="w-full md:w-auto rounded-2xl px-8 h-12 bg-[#5D7B6F] hover:bg-[#4a6358] font-black text-white shadow-xl shadow-[#5D7B6F]/20 transition-all hover:scale-105">
-                      <Link href="/explore">
+                      <Link href="/">
                         <Compass className="w-4 h-4 mr-2" />
                         Khám phá ngay
                       </Link>
@@ -275,6 +275,16 @@ export default function DashboardPage() {
                     onClick={() => {
                       if (!(activity.quizDeleted && !activity.isMix)) {
                         router.push(href)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        if (!(activity.quizDeleted && !activity.isMix)) {
+                          router.push(href)
+                        }
                       }
                     }}
                     className={cn(
@@ -350,8 +360,8 @@ export default function DashboardPage() {
                               </p>
                               <p className="text-[8px] font-black text-gray-400 uppercase">
                                 {activity.status === 'active'
-                                  ? `${activity.correctCount}/${activity.totalCount}`
-                                  : `${activity.correctCount}/${activity.totalCount}`}
+                                  ? `Tiến độ: ${activity.correctCount}/${activity.totalCount}`
+                                  : `Số câu đúng: ${activity.correctCount}/${activity.totalCount}`}
                               </p>
                             </div>
                           )}
@@ -378,7 +388,7 @@ export default function DashboardPage() {
                               asChild
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <Link href={`/explore?tab=mix&mix_from=${activity.quizId}`} title="Làm mới (Tạo bản trộn mới)">
+                              <Link href={`/?tab=mix&mix_from=${activity.quizId}`} title="Làm mới (Tạo bản trộn mới)">
                                 Làm mới
                               </Link>
                             </Button>

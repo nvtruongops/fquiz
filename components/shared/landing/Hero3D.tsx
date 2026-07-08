@@ -51,7 +51,7 @@ export default function Hero3D() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A4C3A2] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#5D7B6F]"></span>
           </span>
-          Nền tảng ôn luyện thông minh thế hệ mới
+          <span>Nền tảng ôn luyện thông minh thế hệ mới</span>
         </motion.div>
 
         {/* Title */}
@@ -88,7 +88,7 @@ export default function Hero3D() {
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           </Link>
           <Link
-            href="/explore"
+            href="/"
             className="inline-flex items-center justify-center gap-4 bg-white/50 backdrop-blur-xl text-[#5D7B6F] font-black px-12 py-6 rounded-2xl transition-all border-2 border-white/40 shadow-2xl hover:bg-white/80 hover:-translate-y-2 active:scale-95 text-lg"
           >
             <Search className="w-6 h-6" />

@@ -112,6 +112,14 @@ function FlashcardHistoryCard({
       <div
         className="bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer transition-all hover:shadow-md"
         onClick={() => setIsFlipped(!isFlipped)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsFlipped(!isFlipped)
+          }
+        }}
       >
         {!isFlipped ? (
           <div className="p-6 space-y-4 min-h-[200px] flex flex-col justify-center">
@@ -190,7 +198,7 @@ function FlashcardHistoryCard({
                           color: isCorrectOpt ? '#166534' : '#6b7280',
                         }}
                       >
-                        {String.fromCharCode(65 + optIdx)}
+                        {String.fromCodePoint(65 + optIdx)}
                       </span>
                       <span className={`text-sm ${textClass} flex-1`}>{option}</span>
                     </div>

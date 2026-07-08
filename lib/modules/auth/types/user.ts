@@ -3,6 +3,7 @@ import { Types } from 'mongoose'
 export interface IUser {
   _id: Types.ObjectId
   username: string
+  username_lower: string
   email: string
   password_hash: string
   avatar_url?: string | null
@@ -19,6 +20,7 @@ export interface IUser {
   created_at: Date
   reset_token?: string
   reset_token_expires?: Date
+  reset_token_attempts?: number
   token_version?: number
   pinned_categories?: string[]
 }

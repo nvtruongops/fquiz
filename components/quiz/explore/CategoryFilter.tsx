@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 interface CategoryItem {
   id: string
   name: string
+  quizCount?: number
 }
 
 export default function CategoryFilter({ initialCategories }: { initialCategories: CategoryItem[] }) {
@@ -63,11 +64,11 @@ export default function CategoryFilter({ initialCategories }: { initialCategorie
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 px-2 sm:px-0"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 sm:px-0"
         >
           {filtered.map((cat) => (
             <motion.div key={cat.id} variants={item}>
-              <Link href={`/explore/${encodeURIComponent(cat.name.toLowerCase())}`} className="block h-full outline-none">
+              <Link href={`/courses/${encodeURIComponent(cat.name.toLowerCase())}`} className="block h-full outline-none">
                 <Card
                   className="h-28 sm:h-36 flex items-center justify-center cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(93,123,111,0.2)] border border-white/80 hover:border-[#5D7B6F]/40 bg-gradient-to-b from-white/70 to-white/40 hover:from-white/90 hover:to-white/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl overflow-hidden group relative"
                 >
@@ -82,6 +83,11 @@ export default function CategoryFilter({ initialCategories }: { initialCategorie
                     >
                       {cat.name.toUpperCase()}
                     </span>
+                    {typeof cat.quizCount === 'number' && (
+                      <span className="text-[10px] sm:text-xs font-black text-slate-400/80 group-hover:text-[#5D7B6F]/70 transition-colors uppercase tracking-wider">
+                        {cat.quizCount} đề thi
+                      </span>
+                    )}
                   </CardContent>
                 </Card>
               </Link>

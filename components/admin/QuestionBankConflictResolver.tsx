@@ -331,6 +331,14 @@ function ConflictCard({
   return (
     <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
           ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500'
@@ -378,6 +386,14 @@ function VariantCard({
   return (
     <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
           ? 'bg-green-50 border-green-300 ring-2 ring-green-500'
@@ -409,7 +425,7 @@ function VariantCard({
               <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                 isCorrect ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
-                {String.fromCharCode(65 + idx)}
+                {String.fromCodePoint(65 + idx)}
               </span>
               <span className="flex-1">{option}</span>
               {isCorrect && <span className="text-green-600 text-xs font-bold">✓</span>}

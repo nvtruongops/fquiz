@@ -187,18 +187,30 @@ const LOAD_THRESHOLD = 8
 
 // ── MixQuizForm ────────────────────────────────────────────────────────────
 
-function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, sessionId: string) => void }) {
+function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId: string, sessionId: string) => void; embedded?: boolean }) {
+  // When embedded in a course page, the category is pre-selected via URL params.
+  // Steps are renumbered: skip Step 1 (category), so Step 2→1, Step 3→2, Step 4→3.
+  const stepOffset = embedded ? 0 : 1
   const { toast } = useToast()
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+  const searchParams = useSearchParams()
+  const categoryIdParam = searchParams.get('categoryId')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(() => categoryIdParam ?? '')
   const [selectedQuizIds, setSelectedQuizIds] = useState<Set<string>>(new Set())
   const [questionCount, setQuestionCount] = useState<number | null>(null)
   const [mode, setMode] = useState<'immediate' | 'review' | null>(null)
   const [rateLimitReset, setRateLimitReset] = useState<number | null>(null)
   const [rateLimitMsg, setRateLimitMsg] = useState<string | null>(null)
   const [poolWarning, setPoolWarning] = useState<string | null>(null)
-  const searchParams = useSearchParams()
   const mixFrom = searchParams.get('mix_from')
   const [isPreloading, setIsPreloading] = useState(false)
+
+  // Sync selectedCategoryId if categoryIdParam changes
+  useEffect(() => {
+    if (categoryIdParam) {
+      setSelectedCategoryId(categoryIdParam)
+      setSelectedQuizIds(new Set())
+    }
+  }, [categoryIdParam])
 
   const { data: catData, isLoading: catsLoading } = useQuery({
     queryKey: ['mix', 'categories'],
@@ -366,41 +378,43 @@ function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, 
         </div>
       )}
 
-      {/* Step 1 — Category */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">1</div>
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chọn danh mục kiến thức</h2>
-        </div>
-        {catsLoading || isPreloading ? (
-          <div className="h-14 rounded-2xl bg-slate-100 animate-pulse flex items-center px-4 text-xs font-bold text-slate-400">
-            {isPreloading ? 'Đang khôi phục cấu hình...' : 'Đang tải danh mục...'}
+      {/* Step 1 — Category (hidden when embedded in course page) */}
+      {!embedded && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">1</div>
+            <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chọn danh mục kiến thức</h2>
           </div>
-        ) : (
-          <Select
-            value={selectedCategoryId}
-            onValueChange={(val) => { setSelectedCategoryId(val); setSelectedQuizIds(new Set()) }}
-          >
-            <SelectTrigger className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-slate-700 font-bold shadow-sm transition-all hover:border-[#5D7B6F]/50 focus:ring-0">
-              <SelectValue placeholder="Duyệt qua các danh mục câu hỏi..." />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-2 border-slate-100 shadow-2xl">
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id} className="py-3 font-bold text-slate-600 hover:text-[#5D7B6F]">
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </section>
+          {catsLoading || isPreloading ? (
+            <div className="h-14 rounded-2xl bg-slate-100 animate-pulse flex items-center px-4 text-xs font-bold text-slate-400">
+              {isPreloading ? 'Đang khôi phục cấu hình...' : 'Đang tải danh mục...'}
+            </div>
+          ) : (
+            <Select
+              value={selectedCategoryId}
+              onValueChange={(val) => { setSelectedCategoryId(val); setSelectedQuizIds(new Set()) }}
+            >
+              <SelectTrigger className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-slate-700 font-bold shadow-sm transition-all hover:border-[#5D7B6F]/50 focus:ring-0">
+                <SelectValue placeholder="Duyệt qua các danh mục câu hỏi..." />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-2 border-slate-100 shadow-2xl">
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id} className="py-3 font-bold text-slate-600 hover:text-[#5D7B6F]">
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </section>
+      )}
 
       {/* Step 2 — Quiz selection */}
       {selectedCategoryId && (
         <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">2</div>
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 1}</div>
               <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chọn quiz muốn trộn (2-5 bộ)</h2>
             </div>
             <Badge variant="outline" className={cn(
@@ -437,6 +451,14 @@ function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, 
                     <React.Fragment key={quiz.id}>
                       <div
                         onClick={() => !isDisabled && toggleQuiz(quiz.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            if (!isDisabled) toggleQuiz(quiz.id)
+                          }
+                        }}
                         className={cn(
                           'relative group w-full flex items-center gap-4 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer',
                           isSelected
@@ -503,7 +525,7 @@ function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, 
           {/* Step 3 — Question count */}
           <section className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">3</div>
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 2}</div>
               <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Số lượng câu muốn làm</h2>
             </div>
             <div className="flex gap-3 flex-wrap">
@@ -527,7 +549,7 @@ function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, 
           {/* Step 4 — Mode: luyện tập hoặc kiểm tra (thứ tự luôn ngẫu nhiên) */}
           <section className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">4</div>
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 3}</div>
               <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chế độ làm bài</h2>
             </div>
 
@@ -641,7 +663,7 @@ function MixQuizForm({ onSessionCreated }: { onSessionCreated: (quizId: string, 
 
 // ── MixQuizTab (main export) ───────────────────────────────────────────────
 
-export default function MixQuizTab() {
+export default function MixQuizTab({ embedded }: { embedded?: boolean } = {}) {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [isDeletingOld, setIsDeletingOld] = useState(false)
@@ -701,16 +723,18 @@ export default function MixQuizTab() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Shuffle className="w-6 h-6 text-[#5D7B6F]" />
-          <h2 className="text-2xl font-black text-gray-900">Trộn Quiz</h2>
+      {/* Header — hidden when embedded in course page */}
+      {!embedded && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Shuffle className="w-6 h-6 text-[#5D7B6F]" />
+            <h2 className="text-2xl font-black text-gray-900">Trộn Quiz</h2>
+          </div>
+          <p className="text-gray-500 font-medium text-sm">
+            Chọn tối đa {MIX_QUIZ_MAX_SELECT} quiz công khai, gộp câu hỏi và làm ngay.
+          </p>
         </div>
-        <p className="text-gray-500 font-medium text-sm">
-          Chọn tối đa {MIX_QUIZ_MAX_SELECT} quiz công khai, gộp câu hỏi và làm ngay.
-        </p>
-      </div>
+      )}
 
       {hasActive && activeSession ? (
         <ActiveSessionBanner
@@ -720,7 +744,7 @@ export default function MixQuizTab() {
           isDeleting={isDeletingOld}
         />
       ) : (
-        <MixQuizForm onSessionCreated={handleSessionCreated} />
+        <MixQuizForm onSessionCreated={handleSessionCreated} embedded={embedded} />
       )}
     </div>
   )

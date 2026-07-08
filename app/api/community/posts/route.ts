@@ -40,8 +40,8 @@ export async function GET(req: Request) {
       }, { status: 400 })
     }
     
-    const page = parsed.data.page ? parseInt(parsed.data.page, 10) : 1
-    const limit = Math.min(parsed.data.limit ? parseInt(parsed.data.limit, 10) : 10, 100)
+    const page = parsed.data.page ? Number.parseInt(parsed.data.page, 10) : 1
+    const limit = Math.min(parsed.data.limit ? Number.parseInt(parsed.data.limit, 10) : 10, 100)
     const skip = (page - 1) * limit
     const search = parsed.data.search
 

@@ -25,6 +25,14 @@ export function FAQItem({ question, answer }: { question: string; answer: string
   return (
     <div 
       onClick={() => setIsOpen(!isOpen)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setIsOpen(!isOpen)
+        }
+      }}
       className={cn(
         "group bg-white/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border-2 transition-all duration-300 cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.02)]",
         isOpen ? "border-[#5D7B6F]/30 bg-white/90 shadow-md" : "border-white/80 hover:border-[#5D7B6F]/20 hover:bg-white/80"

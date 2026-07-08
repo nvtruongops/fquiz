@@ -1,44 +1,24 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { Category } from '@/lib/modules/quiz/models/Category'
-import { User } from '@/lib/modules/auth/models/User'
-
-type SourceType = 'self_created' | 'saved_explore' | 'explore_public'
-
-function inferSourceType(quiz: any, studentUserId: string): SourceType {
-  if (quiz?.is_saved_from_explore) return 'saved_explore'
-  if (quiz?.created_by?.toString?.() === studentUserId) return 'self_created'
-  return 'explore_public'
-}
-
-function sourceLabelFromType(sourceType: SourceType): string {
-  if (sourceType === 'self_created') return 'Tự tạo'
-  return 'Từ Explore'
-}
-
-/**
- * Extract display code from mix quiz title.
- * "Quiz Trộn · MLN122_SP26_C1_FE + MLN122_SP26_C2_FE" → "MLN122_SP26_C1_FE + ..."
- * Truncates to keep it readable.
- */
-function mixQuizDisplayCode(title: string): string {
-  const prefix = 'Quiz Trộn · '
-  const raw = title.startsWith(prefix) ? title.slice(prefix.length) : title
-  // Truncate if too long (e.g. 5 quizzes)
-  if (raw.length > 40) return raw.slice(0, 37) + '...'
-  return raw
-}
+import {
+  inferSourceType,
+  sourceLabelFromType,
+  mixQuizDisplayCode,
+  buildOriginalCreatorMap,
+  buildCategoryNameMap,
+  buildCreatorNameMap,
+  resolveSourceCreatorId,
+} from '@/lib/modules/quiz/quiz-source-utils'
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const { searchParams } = new URL(req.url)
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get('limit') || '20', 10) || 20))
     try {
       await connectDB()
     } catch {
@@ -124,49 +104,11 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     const quizMap = new Map((quizzes as any[]).map((q) => [q._id.toString(), q]))
 
-    const originalSourceIds = Array.from(
-      new Set(
-        (quizzes as any[])
-          .filter((quiz) => quiz?.is_saved_from_explore && quiz?.original_quiz_id)
-          .map((quiz) => quiz.original_quiz_id.toString())
-      )
-    ).map((id) => new mongoose.Types.ObjectId(id))
-
-    const originalSources = originalSourceIds.length
-      ? await Quiz.find({ _id: { $in: originalSourceIds } }, { created_by: 1 }).lean()
-      : []
-    const originalCreatorMap = new Map((originalSources as any[]).map((q) => [q._id.toString(), q.created_by?.toString?.() ?? null]))
-
-    const categoryIds = Array.from(
-      new Set(
-        (quizzes as any[])
-          .map((quiz) => quiz?.category_id?.toString?.() ?? null)
-          .filter((id): id is string => Boolean(id))
-      )
-    ).map((id) => new mongoose.Types.ObjectId(id))
-
-    const categories = categoryIds.length
-      ? await Category.find({ _id: { $in: categoryIds } }, { name: 1 }).lean()
-      : []
-    const categoryNameMap = new Map((categories as any[]).map((category) => [category._id.toString(), category.name]))
-
-    const sourceCreatorIds = Array.from(
-      new Set(
-        (quizzes as any[])
-          .map((quiz) => {
-            if (quiz?.is_saved_from_explore && quiz?.original_quiz_id) {
-              return originalCreatorMap.get(quiz.original_quiz_id.toString()) ?? null
-            }
-            return quiz?.created_by?.toString?.() ?? null
-          })
-          .filter((id): id is string => Boolean(id))
-      )
-    ).map((id) => new mongoose.Types.ObjectId(id))
-
-    const sourceCreators = sourceCreatorIds.length
-      ? await User.find({ _id: { $in: sourceCreatorIds } }, { username: 1 }).lean()
-      : []
-    const creatorNameMap = new Map((sourceCreators as any[]).map((u) => [u._id.toString(), u.username]))
+    const originalCreatorMap = await buildOriginalCreatorMap(quizzes as any[])
+    const categoryNameMap = await buildCategoryNameMap(
+      (quizzes as any[]).map((quiz) => quiz?.category_id?.toString?.() ?? null)
+    )
+    const creatorNameMap = await buildCreatorNameMap(quizzes as any[], originalCreatorMap)
 
     const history = pageItems.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any
@@ -247,9 +189,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
 
       const sourceType = inferSourceType(quiz, payload.userId)
-      const sourceCreatorId = quiz?.is_saved_from_explore
-        ? originalCreatorMap.get(quiz?.original_quiz_id?.toString?.() ?? '')
-        : quiz?.created_by?.toString?.()
+      const sourceCreatorId = resolveSourceCreatorId(quiz, originalCreatorMap)
 
       const declaredCount = Number(quiz?.questionCount ?? 0)
       const derivedFromQuestions = Array.isArray(quiz?.questions)

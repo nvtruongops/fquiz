@@ -36,16 +36,24 @@ async function handleVerify(body: unknown, ip: string) {
     return NextResponse.json({ error: 'Mã xác thực không hợp lệ' }, { status: 400 })
   }
 
-  const user = await User.findOne({ email }).select('_id reset_token reset_token_expires').lean()
+  const user = await User.findOne({ email }).select('_id reset_token reset_token_expires reset_token_attempts').lean()
   const isExpired = !user?.reset_token_expires || new Date(user.reset_token_expires) <= new Date()
   if (!user?.reset_token || isExpired) {
     return NextResponse.json({ error: 'Mã xác thực đã hết hạn hoặc không tồn tại' }, { status: 400 })
   }
 
+  if ((user.reset_token_attempts || 0) >= 5) {
+    return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+  }
+
   const codeHash = hashVerificationCode(code)
   if (user.reset_token !== codeHash) {
+    await User.updateOne({ _id: user._id }, { $inc: { reset_token_attempts: 1 } })
     return NextResponse.json({ error: 'Mã xác thực không đúng' }, { status: 400 })
   }
+
+  // On success, reset attempts
+  await User.updateOne({ _id: user._id }, { $set: { reset_token_attempts: 0 } })
 
   return NextResponse.json({ message: 'Code verified', verified: true }, { status: 200 })
 }
@@ -90,7 +98,7 @@ async function handleSend(
 
   await User.updateOne(
     { _id: user._id },
-    { reset_token: hashedCode, reset_token_expires: expires }
+    { reset_token: hashedCode, reset_token_expires: expires, reset_token_attempts: 0 }
   )
 
   logSecurityEvent('password_reset_requested', {

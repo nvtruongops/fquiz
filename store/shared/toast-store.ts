@@ -18,11 +18,13 @@ interface ToastStore {
   removeToast: (id: string) => void
 }
 
+let toastIdCounter = 0
+
 export const useToast = create<ToastStore>((set) => ({
   toasts: [],
   toast: {
     success: (message: string) => {
-      const id = Math.random().toString(36).substring(2, 9)
+      const id = `toast-${toastIdCounter++}`
       set((state) => ({
         toasts: [...state.toasts, { id, message, type: 'success' }],
       }))
@@ -33,7 +35,7 @@ export const useToast = create<ToastStore>((set) => ({
       }, 5000)
     },
     error: (error: any) => {
-      const id = Math.random().toString(36).substring(2, 9)
+      const id = `toast-${toastIdCounter++}`
       const message = typeof error === 'string' ? error : error?.message || 'Có lỗi xảy ra, vui lòng thử lại'
       set((state) => ({
         toasts: [...state.toasts, { id, message, type: 'error' }],
@@ -45,7 +47,7 @@ export const useToast = create<ToastStore>((set) => ({
       }, 5000)
     },
     info: (message: string) => {
-      const id = Math.random().toString(36).substring(2, 9)
+      const id = `toast-${toastIdCounter++}`
       set((state) => ({
         toasts: [...state.toasts, { id, message, type: 'info' }],
       }))

@@ -5,14 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
 import { Input } from '@/components/shared/ui/input'
 import { Textarea } from '@/components/shared/ui/textarea'
+import { Button } from '@/components/shared/ui/button'
 import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 import { Plus, Check, X, Loader2 } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { withCsrfHeaders } from '@/lib/core/security/csrf'
-import { useToast } from '@/store/shared/toast-store'
-import { Button } from '@/components/shared/ui/button'
+import { useCreateCategory } from '@/hooks/quiz/useCreateCategory'
 
 interface EditorMetadataFormProps {
   form: QuizFormData
@@ -27,32 +25,15 @@ export function EditorMetadataForm({
   categories, 
   isStudentMode 
 }: EditorMetadataFormProps) {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
   const [isCreating, setIsCreating] = React.useState(false)
   const [newCatName, setNewCatName] = React.useState('')
 
-  const createCatMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`, {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ name })
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(err.error || 'Không thể tạo danh mục')
-      }
-      return res.json()
-    },
+  const createCatMutation = useCreateCategory({
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
       setForm(p => ({ ...p, category_id: data.category._id }))
       setIsCreating(false)
       setNewCatName('')
-      toast.success('Đã tạo môn học mới')
     },
-    onError: (err: any) => toast.error(err.message)
   })
 
   const handleCreate = () => {
@@ -180,8 +161,9 @@ export function EditorMetadataForm({
           <CardContent className="pt-8 px-6 sm:px-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Mã môn / Mã đề</label>
+                <label htmlFor="course-code-input" className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Mã môn / Mã đề</label>
                 <Input
+                  id="course-code-input"
                   placeholder="Ví dụ: MLN 131: DE-01"
                   value={form.course_code}
                   maxLength={150}
@@ -190,7 +172,7 @@ export function EditorMetadataForm({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Chế độ hiển thị</label>
+                <span className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider block">Chế độ hiển thị</span>
                 <Select
                   value={isStudentMode ? 'private' : form.status}
                   onValueChange={(v: any) => setForm(p => ({ ...p, status: v }))}
@@ -213,8 +195,9 @@ export function EditorMetadataForm({
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[#5D7B6F]">Mô tả bộ đề (Tùy chọn)</label>
+              <label htmlFor="description-textarea" className="text-sm font-bold text-[#5D7B6F]">Mô tả bộ đề (Tùy chọn)</label>
               <Textarea
+                id="description-textarea"
                 placeholder="Nhập mô tả ngắn gọn về bộ đề thi này..."
                 value={form.description}
                 onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
@@ -19,31 +18,10 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
-    }
+    const validation = await validateQuizSessionRequest(id, payload, { checkCompleted: true })
+    if (!validation.isValid) return validation.response
 
-    await connectDB()
-
-    const session = await QuizSession.findById(id).lean()
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    }
-
-    if (session.student_id.toString() !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-      return NextResponse.json(
-        { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
-        { status: 410 }
-      )
-    }
-
-    if (session.status === 'completed') {
-      return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
-    }
+    const session = validation.session
 
     const quiz = await Quiz.findById(session.quiz_id).lean()
     if (!quiz) {

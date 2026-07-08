@@ -107,7 +107,7 @@ export const POST = withAuth(async (
       const freshSession = await QuizSession.findById(id).lean()
       if (!freshSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
       
-      const existingAnswer = freshSession.user_answers.find(a => a.question_index === question_index)
+      const existingAnswer = freshSession.user_answers.find((a: any) => a.question_index === question_index)
       if (!existingAnswer) {
         return NextResponse.json({ error: 'Answer not found for this question index' }, { status: 404 })
       }

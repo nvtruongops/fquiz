@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { Category } from '@/lib/modules/quiz/models/Category'
-import { authorizeResource } from '@/lib/modules/auth/authz'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 
 /**
@@ -20,14 +16,10 @@ export const GET = withAuth(async (
 ) => {
   try {
     const { id } = await params
+    const validation = await validateQuizSessionRequest(id, payload)
+    if (!validation.isValid) return validation.response
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
-    }
-
-    await connectDB()
-
-    const session = await authorizeResource(payload, id, QuizSession, 'session', 'student_id')
+    const session = validation.session
 
     // Handle 'preparing' status — quiz might not be created yet
     if (session.status === 'preparing') {
@@ -47,13 +39,6 @@ export const GET = withAuth(async (
         },
         question: null,
       }, { status: 200 })
-    }
-
-    if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-      return NextResponse.json(
-        { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
-        { status: 410 }
-      )
     }
 
     let questionOrder = session.question_order

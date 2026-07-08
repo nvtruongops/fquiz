@@ -1,8 +1,9 @@
 'use client'
 
 import React from 'react'
-import { ShieldCheck, Zap, Shuffle, AlignJustify, PlayCircle, Loader2, ChevronRight, AlertCircle, X } from 'lucide-react'
+import { ShieldCheck, Zap, Shuffle, AlignJustify, PlayCircle, Loader2, ChevronRight, AlertCircle, X, History } from 'lucide-react'
 import { UnauthorizedView } from '@/components/shared/UnauthorizedView'
+import Link from 'next/link'
 import { Button } from '@/components/shared/ui/button'
 import {
   Dialog,
@@ -40,6 +41,8 @@ interface QuizActionCardProps {
   currentUser: any
   authRequiredDialogOpen: boolean
   setAuthRequiredDialogOpen: (open: boolean) => void
+  hasHistory?: boolean
+  latestSessionId?: string
 }
 
 export function QuizActionCard({
@@ -60,7 +63,9 @@ export function QuizActionCard({
   onCloseResumeDialog,
   currentUser,
   authRequiredDialogOpen,
-  setAuthRequiredDialogOpen
+  setAuthRequiredDialogOpen,
+  hasHistory,
+  latestSessionId
 }: QuizActionCardProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -126,7 +131,7 @@ export function QuizActionCard({
               
               <div className="p-8 space-y-8">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5D7B6F]">Chế độ thi</label>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5D7B6F]">Chế độ thi</span>
                   <Select value={selectedMode} onValueChange={(v: any) => onModeChange(v)}>
                     <SelectTrigger className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 font-bold text-gray-700 focus:ring-[#5D7B6F]/20">
                       <SelectValue placeholder="Chọn chế độ" />
@@ -151,7 +156,7 @@ export function QuizActionCard({
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5D7B6F]">Thứ tự câu hỏi</label>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5D7B6F]">Thứ tự câu hỏi</span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => onDifficultyChange('sequential')}
@@ -197,6 +202,19 @@ export function QuizActionCard({
               </div>
             </DialogContent>
           </Dialog>
+
+          {hasHistory && latestSessionId && (
+            <Button
+              variant="outline"
+              className="w-full h-16 rounded-2xl border-2 border-[#5D7B6F]/20 font-black uppercase tracking-[0.1em] text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/40 transition-all"
+              asChild
+            >
+              <Link href={`/history/${quizId}/${latestSessionId}`}>
+                <History className="h-5 w-5 mr-2" />
+                Xem lịch sử trước đó
+              </Link>
+            </Button>
+          )}
 
           <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
             <DialogContent className="max-w-md rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">

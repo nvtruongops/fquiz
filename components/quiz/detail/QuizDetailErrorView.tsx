@@ -58,7 +58,7 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
           ) : status === 403 ? (
             <>
               <Button asChild className="bg-[#5D7B6F] py-6 text-white">
-                <Link href="/explore">Khám phá bộ đề</Link>
+                <Link href="/">Khám phá bộ đề</Link>
               </Button>
               <Button asChild variant="outline" className="py-6">
                 <Link href="/my-quizzes">Bộ đề của tôi</Link>

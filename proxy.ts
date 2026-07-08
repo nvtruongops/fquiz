@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
+import { safeCompare } from '@/lib/core/security/csrf'
 import { 
   AUTH_COOKIE_NAME, 
   CSRF_COOKIE_NAME,
@@ -13,9 +14,9 @@ import {
 
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/explore', '/api/security/csp-report'])
+const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout', '/api/jobs/mail'])
-const STUDENT_PATHS = ['/dashboard', '/courses', '/quiz', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings']
+const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
 const CORS_HEADERS = `Content-Type, Authorization, ${CSRF_HEADER_NAME}`
@@ -116,9 +117,10 @@ function getUnauthorizedOrRedirect(pathname: string, request: NextRequest, reque
 function isPublicRoute(pathname: string) {
   // Allow viewing quiz detail page without auth (but starting quiz requires auth)
   const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9]+$/.test(pathname)
-  const isPublicExplore = pathname.startsWith('/explore/')
+  // Allow browsing course listing and detail pages without auth
+  const isPublicCourse = pathname.startsWith('/courses')
   const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(pathname)
-  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isPublicExplore || isStaticAsset
+  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isPublicCourse || isStaticAsset
 }
 
 function shouldSkipAuth(pathname: string) {
@@ -137,7 +139,7 @@ function validateCsrf(request: NextRequest, pathname: string, requestId: string)
   const csrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value
   const csrfHeader = request.headers.get('x-csrf-token')
 
-  if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+  if (!csrfCookie || !csrfHeader || !safeCompare(csrfCookie, csrfHeader)) {
     return createCsrfErrorResponse(requestId)
   }
 

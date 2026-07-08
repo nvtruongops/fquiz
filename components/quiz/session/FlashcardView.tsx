@@ -188,6 +188,14 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                         onClick={() => {
                           if (!isFlipped) setIsFlipped(true)
                         }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            if (!isFlipped) setIsFlipped(true)
+                          }
+                        }}
                         className={cn(
                           "rounded-xl text-left border transition-all shadow-sm cursor-pointer",
                           getOptionPadding(),
@@ -201,7 +209,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                             "flex-none flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs",
                             isFlipped && isCorrect ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
                           )}>
-                            {String.fromCharCode(65 + idx)}
+                            {String.fromCodePoint(65 + idx)}
                           </span>
                           <span className={cn(
                             "whitespace-pre-wrap flex-1", 
@@ -345,6 +353,14 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
       <div 
         className="perspective-1000 flex-1 min-h-0 animate-in fade-in duration-300"
         onClick={handleFlip}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleFlip()
+          }
+        }}
       >
         <div
           className={cn(
@@ -400,7 +416,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                     >
                       <div className="flex items-start gap-3">
                         <span className="flex-none flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
-                          {String.fromCharCode(65 + idx)}
+                          {String.fromCodePoint(65 + idx)}
                         </span>
                         <span className={cn("whitespace-pre-wrap flex-1 text-slate-700 dark:text-slate-300", getOptionFontSize())}>
                           {option}
@@ -433,8 +449,10 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               <div className="flex-1 flex flex-col justify-center space-y-6">
                 {/* Correct answer - Modernized */}
                 <div 
+                  role="none"
                   className="p-6 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border-2 border-green-500/30 relative overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
                 >
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <CheckCircle className="w-16 h-16 text-green-500" />
@@ -452,7 +470,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                       correctAnswers.map((answer, idx) => (
                         <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30">
                           <span className="font-bold text-green-600">
-                            {String.fromCharCode(65 + (answerIndices[idx] ?? idx))}.
+                            {String.fromCodePoint(65 + (answerIndices[idx] ?? idx))}.
                           </span>
                           <p className="text-base font-medium whitespace-pre-wrap text-slate-800 dark:text-slate-200 leading-relaxed">
                             {answer}
@@ -474,7 +492,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
 
                 {/* Explanation Dropdown - Modernized */}
                 {question.explanation && (
-                  <div onClick={(e) => e.stopPropagation()} className="animate-in fade-in slide-in-from-top-2 duration-500">
+                  <div role="none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="animate-in fade-in slide-in-from-top-2 duration-500">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -524,7 +542,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               </div>
 
               {/* Self-assessment buttons - Premium look */}
-              <div className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center" onClick={(e) => e.stopPropagation()}>
+              <div role="none" className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                 <Button
                   size="lg"
                   variant="outline"
@@ -559,7 +577,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
       </div>
 
       {/* Keyboard shortcuts hint - More elegant */}
-      <div className="mt-6 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4 border border-slate-200/50 dark:border-slate-700/50" onClick={(e) => e.stopPropagation()}>
+      <div role="none" className="mt-6 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4 border border-slate-200/50 dark:border-slate-700/50" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1">
           <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono uppercase">Space</kbd>
           <span>Lật thẻ</span>

@@ -332,8 +332,9 @@ export default function CommunityPage() {
                       <DialogTitle className="text-2xl font-black text-slate-800 mb-4">Tạo bài đăng mới</DialogTitle>
                       <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tiêu đề</label>
+                        <label htmlFor="post-title" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tiêu đề</label>
                         <Input 
+                          id="post-title"
                           placeholder="Tiêu đề câu hỏi hoặc chủ đề..." 
                           value={postTitle}
                           onChange={(e) => setPostTitle(e.target.value)}
@@ -341,8 +342,9 @@ export default function CommunityPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nội dung</label>
+                        <label htmlFor="post-content" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nội dung</label>
                         <Textarea 
+                          id="post-content"
                           placeholder="Mô tả chi tiết nội dung bạn muốn chia sẻ..." 
                           value={postContent}
                           onChange={(e) => setPostContent(e.target.value)}
@@ -350,8 +352,9 @@ export default function CommunityPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tags (cách nhau bởi dấu phẩy)</label>
+                        <label htmlFor="post-tags" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tags (cách nhau bởi dấu phẩy)</label>
                         <Input 
+                          id="post-tags"
                           placeholder="VD: Toán rời rạc, Tìm nhóm học..." 
                           value={postTags}
                           onChange={(e) => setPostTags(e.target.value)}
@@ -387,6 +390,14 @@ export default function CommunityPage() {
                       <div 
                         key={p._id} 
                         onClick={() => setSelectedPost(p)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedPost(p);
+                          }
+                        }}
                         className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer group hover:-translate-y-0.5"
                       >
                         <div className="flex items-start justify-between mb-3">
@@ -510,9 +521,9 @@ export default function CommunityPage() {
             <form onSubmit={handleFeedbackSubmit} className="space-y-5">
               {/* Type selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
                   Phân loại
-                </label>
+                </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {FEEDBACK_TYPES.map(({ value, label, icon: Icon }) => (
                     <button
@@ -543,10 +554,11 @@ export default function CommunityPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-1.5 pt-2">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      <label htmlFor="feedback-reason" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
                         Lý do
                       </label>
                       <Textarea
+                        id="feedback-reason"
                         value={reason}
                         onChange={(e) => { setReason(e.target.value.slice(0, 200)); setError('') }}
                         placeholder="Cho chúng tôi biết lý do cụ thể..."
@@ -562,10 +574,11 @@ export default function CommunityPage() {
 
               {/* Message Input */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <label htmlFor="feedback-detail" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   Chi tiết
                 </label>
                 <Textarea
+                  id="feedback-detail"
                   value={message}
                   onChange={(e) => { setMessage(e.target.value.slice(0, 1000)); setError('') }}
                   placeholder="Mô tả chi tiết góp ý của bạn..."

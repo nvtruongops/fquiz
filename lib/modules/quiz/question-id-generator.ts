@@ -35,7 +35,7 @@ export function generateQuestionId(question: {
   // Sort options để thứ tự không quan trọng
   const normalizedOptions = question.options
     .map(o => o.trim().toLowerCase().replace(/\s+/g, ' '))
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
   
   const content = JSON.stringify({
     text: normalizedText,

@@ -53,14 +53,25 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Mã xác thực không hợp lệ' }, { status: 400 })
       }
 
+      const tempUser = await User.findOne({ email: normalizedEmail }).select('_id reset_token reset_token_expires reset_token_attempts')
+      if (!tempUser) {
+        return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 })
+      }
+
+      if ((tempUser.reset_token_attempts || 0) >= 5) {
+        return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+      }
+
       const codeHash = hashVerificationCode(parsed.data.code.trim())
       password = parsed.data.password
 
-      user = await User.findOne({
-        email: normalizedEmail,
-        reset_token: codeHash,
-        reset_token_expires: { $gt: new Date() },
-      })
+      const isExpired = !tempUser.reset_token_expires || new Date(tempUser.reset_token_expires) <= new Date()
+      if (tempUser.reset_token !== codeHash || isExpired) {
+        await User.updateOne({ _id: tempUser._id }, { $inc: { reset_token_attempts: 1 } })
+        return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 })
+      }
+
+      user = tempUser
     } else {
       const parsed = TokenSchema.safeParse(body)
       if (!parsed.success) {
@@ -80,7 +91,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 })
     }
 
-    const password_hash = await bcrypt.hash(password, 10)
+    const password_hash = await bcrypt.hash(password, 12)
 
     // Revoke token immediately and update password
     await User.updateOne(
@@ -89,6 +100,7 @@ export async function POST(request: Request) {
         password_hash, 
         reset_token: null, 
         reset_token_expires: null,
+        reset_token_attempts: 0,
         $inc: { token_version: 1 } // Invalidate all existing sessions on password reset
       }
     )

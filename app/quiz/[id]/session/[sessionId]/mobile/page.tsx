@@ -2,20 +2,22 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
 import { cn } from '@/lib/core/utils/cn'
-import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
-import { SessionData, PreloadedQuestions, QuestionFeedback, SessionQuestion } from '@/lib/modules/quiz/types/session'
-import { computeQuestionFeedback } from '@/lib/modules/quiz/feedback-utils'
-import { fetchSession, fetchAllQuestions, type SessionApiError } from '@/lib/modules/quiz/session-api'
+import { type SessionApiError } from '@/lib/modules/quiz/session-api'
+import { useQuizSessionQueries } from '@/hooks/quiz/useQuizSessionQueries'
+import { useSessionAnswerSync } from '@/hooks/quiz/useSessionAnswerSync'
+import { useSessionActivityTracking } from '@/hooks/quiz/useSessionActivityTracking'
+import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
+import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
+
 
 export default function QuizSessionMobilePage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -39,380 +41,69 @@ export default function QuizSessionMobilePage() {
     setLastAnswerResult,
   } = useQuizSessionStore()
 
-  const [selectedOptions, setSelectedOptions] = useState<number[]>([])
-  const [submitted, setSubmitted] = useState(false)
-  const submittedRef = useRef(false) // Synchronous guard to prevent double-submit on fast clicks
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
-  const [isHydratedFromServer, setIsHydratedFromServer] = useState(false)
-  const [hydratedSessionId, setHydratedSessionId] = useState<string | null>(null)
-  const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
-  const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
   const sessionLoader = useSessionLoader()
-  const lastSyncedQuestionIndexRef = useRef<number | null>(null)
 
-  // Only render quiz when server data has been applied for THIS session
-  const isReadyToRender = isHydratedFromServer && hydratedSessionId === resolvedSessionId
-
-  // Reset hydration when sessionId changes so we always wait for fresh server data
-  useEffect(() => {
-    setIsHydratedFromServer(false)
-    setHydratedSessionId(null)
-    setSelectedOptions([])
-    setSubmitted(false)
-    submittedRef.current = false
-    lastSyncedQuestionIndexRef.current = null
-    setFeedbackByQuestion({})
-  }, [resolvedSessionId])
-
-  const reportSessionActivity = useCallback((event: 'pause' | 'resume') => {
-    if (!sessionId) return
-    const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
-
-    void fetch(url, {
-      method: 'POST',
-      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-      body: payload,
-      keepalive: true,
-    })
-  }, [sessionId, currentQuestionIndex])
-
-  // Initial session query — must be declared before preload since preload's
-  // enabled condition references initialData.
   const {
-    data: initialData,
-    isLoading: isInitialLoading,
-    isFetching: isInitialFetching,
-    isError: isInitialError,
-    error: initialError,
-  } = useQuery<SessionData, Error>({
-    queryKey: ['sessions', resolvedSessionId, 'initial'],
-    queryFn: () => fetchSession(resolvedSessionId),
-    enabled: resolvedSessionId.length > 0,
-    staleTime: 30_000,
-    refetchOnMount: 'always',
-    refetchInterval: (query) => {
-      const data = query.state.data as SessionData | undefined
-      if (data?.session.status === 'preparing') return 2000 // Check every 2s
-      return false
-    },
+    initialData,
+    isInitialLoading,
+    isInitialFetching,
+    isInitialError,
+    initialError,
+    activeData,
+    currentQuestion,
+    preloadedQuestions,
+    isPreloading,
+    isPreloadError,
+  } = useQuizSessionQueries(resolvedSessionId, currentQuestionIndex)
+
+  const { isReadyToRender, isHydratedFromServer } = useSessionHydration({
+    resolvedSessionId,
+    resolvedQuizId,
+    quizId: resolvedQuizId,
+    sessionId: resolvedSessionId,
+    initialData,
+    isInitialFetching,
+    initialError,
   })
 
-  // Preload all questions - check sessionStorage cache first (seeded by quiz detail page)
-  const {
-    data: preloadData,
-    isLoading: isPreloading,
-    isError: isPreloadError,
-  } = useQuery<PreloadedQuestions, Error>({
-    queryKey: ['sessions', resolvedSessionId, 'all-questions'],
-    queryFn: async () => {
-      try {
-        const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          if (parsed.questions?.length > 0) {
-            sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
-            return parsed as PreloadedQuestions
-          }
-        }
-      } catch {}
-      return fetchAllQuestions(resolvedSessionId)
-    },
-    enabled: resolvedSessionId.length > 0 &&
-             resolvedSessionId !== 'undefined' &&
-             initialData?.session.status !== 'preparing',
-    staleTime: Infinity,
+  const { finalizeMutation } = useSessionFinalize({
+    sessionId: resolvedSessionId,
+    quizId: resolvedQuizId,
   })
-
-  // Store preloaded questions when available
-  useEffect(() => {
-    if (preloadData?.questions) {
-      setPreloadedQuestions(preloadData.questions)
-    }
-  }, [preloadData])
-
-  const clampedQuestionIndex = Math.min(
-    Math.max(currentQuestionIndex, 0),
-    Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0)
-  )
-
-  // Use preloaded questions instead of fetching individually
-  const currentQuestion = preloadedQuestions?.[clampedQuestionIndex]
-
-  // Construct session data from preloaded questions and initial session data
-  const activeData: SessionData | undefined = initialData && currentQuestion ? {
-    session: initialData.session,
-    question: currentQuestion,
-  } : initialData
-
-  const activeError = initialError
-  const isLoading = isInitialLoading
-  const isError = isInitialError
-
-  useEffect(() => {
-    const err = activeError as SessionApiError | undefined
-    if (!quizId || !err) return
-    if (err.code !== 'SESSION_EXPIRED' && err.status !== 410) return
-
-    router.replace(`/quiz/${quizId}?reason=session_expired`)
-  }, [activeError, quizId, router])
-
-  useEffect(() => {
-    // Wait until server data is settled (not mid-refetch) before hydrating the store.
-    if (!initialData || isHydratedFromServer || isInitialFetching) return
-
-    const serverAnsweredSet = new Set<number>(
-      initialData.session.user_answers.map((a) => a.question_index)
-    )
-
-    // Single atomic update - no flash between states
-    resumeSession(
-      resolvedSessionId,
-      resolvedQuizId,
-      initialData.session.mode,
-      initialData.session.totalQuestions,
-      initialData.session.current_question_index,
-      serverAnsweredSet
-    )
-    setIsHydratedFromServer(true)
-    setHydratedSessionId(resolvedSessionId)
-  }, [initialData, isHydratedFromServer, isInitialFetching, resolvedQuizId, resolvedSessionId, resumeSession])
-
-  useEffect(() => {
-    if (!activeData?.session) return
-
-    const previousQuestionIndex = lastSyncedQuestionIndexRef.current
-    const isSameQuestionRender = previousQuestionIndex === currentQuestionIndex
-
-    const existing = activeData.session.user_answers.find((a) => a.question_index === currentQuestionIndex)
-    if (existing) {
-      const restored = existing.answer_indexes && existing.answer_indexes.length > 0
-        ? existing.answer_indexes
-        : [existing.answer_index]
-      setSelectedOptions(restored)
-      setSubmitted(activeData.session.mode === 'immediate')
-      submittedRef.current = activeData.session.mode === 'immediate'
-
-      if (activeData.session.mode === 'immediate') {
-        // Try to get feedback from cache first
-        let feedback = feedbackByQuestion[currentQuestionIndex]
-        
-        // If not in cache, reconstruct from preloaded question data
-        if (!feedback && currentQuestion?.correct_answer !== undefined) {
-          const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
-            ? currentQuestion.correct_answer
-            : [currentQuestion.correct_answer]
-          
-          feedback = {
-            isCorrect: existing.is_correct,
-            correctAnswer: correctAnswerIndexes[0],
-            correctAnswers: correctAnswerIndexes,
-            explanation: currentQuestion.explanation,
-          }
-          
-          // Cache it for future navigation
-          setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback! }))
-        }
-        
-        setLastAnswerResult(feedback ?? null)
-      }
-      lastSyncedQuestionIndexRef.current = currentQuestionIndex
-    } else {
-      const localImmediateFeedback =
-        activeData.session.mode === 'immediate'
-          ? feedbackByQuestion[currentQuestionIndex]
-          : undefined
-
-      if (localImmediateFeedback) {
-        setSubmitted(true)
-        submittedRef.current = true
-        setLastAnswerResult(localImmediateFeedback)
-        lastSyncedQuestionIndexRef.current = currentQuestionIndex
-        return
-      }
-
-      if (isSameQuestionRender) {
-        return
-      }
-
-      setSelectedOptions([])
-      setSubmitted(false)
-      submittedRef.current = false
-      setLastAnswerResult(null)
-      lastSyncedQuestionIndexRef.current = currentQuestionIndex
-    }
-  }, [activeData?.session, currentQuestionIndex, feedbackByQuestion, currentQuestion, setLastAnswerResult])
-
-  useEffect(() => {
-    if (!sessionId) return
-    reportSessionActivity('resume')
-  }, [sessionId, reportSessionActivity])
-
-  useEffect(() => {
-    if (activeData?.session.status === 'completed') {
-      router.push(`/quiz/${quizId}/result/${sessionId}`)
-    }
-  }, [activeData?.session.status, quizId, router, sessionId])
-
-  const shouldWarnBeforeLeave = Boolean(activeData?.session && activeData.session.status !== 'completed')
-
-  useEffect(() => {
-    if (!shouldWarnBeforeLeave || !sessionId) return
-
-    const guardState = { quizSessionGuard: sessionId }
-    globalThis.history.pushState(guardState, '', globalThis.location.href)
-
-    const handlePopState = () => {
-      setExitConfirmOpen(true)
-      globalThis.history.pushState(guardState, '', globalThis.location.href)
-    }
-
-    globalThis.addEventListener('popstate', handlePopState)
-    return () => globalThis.removeEventListener('popstate', handlePopState)
-  }, [sessionId, shouldWarnBeforeLeave])
-
-  useEffect(() => {
-    if (!shouldWarnBeforeLeave) return
-
-    const handlePageHide = () => {
-      reportSessionActivity('pause')
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        reportSessionActivity('pause')
-      } else if (document.visibilityState === 'visible') {
-        // Resume when user comes back to the tab
-        reportSessionActivity('resume')
-      }
-    }
-
-    globalThis.addEventListener('pagehide', handlePageHide)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      globalThis.removeEventListener('pagehide', handlePageHide)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity])
 
   const submitMutation = useSubmitAnswer(resolvedSessionId)
-  const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
-    mutationFn: async () => {
-      sessionLoader.open('Đang nộp bài và chấm điểm...')
-      sessionLoader.advance(50, 'Đang phân tích kết quả...')
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`, {
-        method: 'POST',
-        headers: withCsrfHeaders(),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error ?? 'Không thể nộp bài')
-      }
-      
-      sessionLoader.advance(95, 'Đang chuẩn bị bảng kết quả...')
-      return res.json()
-    },
-    onSuccess: () => {
-      sessionLoader.complete()
-      setTimeout(() => router.push(`/quiz/${quizId}/result/${sessionId}`), 300)
-    },
-    onError: () => {
-      sessionLoader.close()
-    }
+  const {
+    selectedOptions,
+    setSelectedOptions,
+    submitted,
+    feedbackByQuestion,
+    handleSelectOption,
+  } = useSessionAnswerSync({
+    activeData,
+    currentQuestionIndex,
+    currentQuestion,
+    preloadedQuestions,
+    submitAnswer: submitMutation.mutate,
+    isSubmitting: submitMutation.isPending,
+  })
+
+  const {
+    exitConfirmOpen,
+    setExitConfirmOpen,
+    reportSessionActivity,
+  } = useSessionActivityTracking({
+    sessionId: resolvedSessionId,
+    currentQuestionIndex,
+    activeData,
+    resolvedQuizId,
   })
 
   function handleSubmit() {
     if (!activeData?.session) return
     setConfirmOpen(true)
-  }
-
-  function submitInImmediateMode(answerIndexes: number[]) {
-    if (!activeData?.session) return
-    if (activeData.session.mode !== 'immediate') return
-    // Use ref for synchronous guard - prevents double-submit on fast clicks
-    if (submittedRef.current) return
-    submittedRef.current = true
-    setSubmitted(true)
-
-    // Compute feedback locally from preloaded questions when possible (best-effort:
-    // only works when sessionStorage seeded the data with correct_answer included).
-    const feedback = computeQuestionFeedback(
-      currentQuestion?.correct_answer,
-      answerIndexes,
-      currentQuestion?.explanation,
-    )
-    if (feedback) {
-      setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
-      setLastAnswerResult(feedback)
-    }
-
-    // Fire API call to persist answer. The onSuccess populates feedbackByQuestion
-    // from the server response so that navigating back to this question later
-    // restores the correct feedback display.
-    submitMutation.mutate(
-      { questionIndex: currentQuestionIndex, answerIndexes },
-      {
-        onSuccess: (data) => {
-          if ('isCorrect' in data) {
-            setFeedbackByQuestion((prev) => ({
-              ...prev,
-              [currentQuestionIndex]: {
-                isCorrect: data.isCorrect,
-                correctAnswer: data.correctAnswer,
-                correctAnswers: data.correctAnswers ?? [data.correctAnswer],
-                explanation: data.explanation,
-              },
-            }))
-          }
-        },
-        onError: () => {
-          submittedRef.current = false
-          setSubmitted(false)
-        },
-      }
-    )
-  }
-
-  function handleSelectOption(idx: number) {
-    if (!activeData?.session) return
-    if (submitted || submitMutation.isPending) return
-
-    const exists = selectedOptions.includes(idx)
-    let nextSelections: number[]
-
-    if (requiredSelectionCount === 1 && activeData.session.mode === 'review') {
-      nextSelections = [idx]
-    } else if (exists) {
-      nextSelections = selectedOptions.filter((v) => v !== idx)
-    } else if (selectedOptions.length >= requiredSelectionCount) {
-      nextSelections = selectedOptions
-    } else {
-      nextSelections = [...selectedOptions, idx].sort((a, b) => a - b)
-    }
-
-    const hasChanged =
-      nextSelections.length !== selectedOptions.length ||
-      nextSelections.some((value, index) => value !== selectedOptions[index])
-
-    if (!hasChanged) return
-
-    setSelectedOptions(nextSelections)
-
-    // Auto-submit when user has selected the required number of answers
-    if (nextSelections.length === requiredSelectionCount) {
-      if (activeData.session.mode === 'immediate') {
-        submitInImmediateMode(nextSelections)
-      } else {
-        submitMutation.mutate({
-          questionIndex: currentQuestionIndex,
-          answerIndexes: nextSelections,
-        })
-      }
-    }
   }
 
   function handleConfirmSubmit() {
@@ -428,11 +119,12 @@ export default function QuizSessionMobilePage() {
   function handleConfirmExitQuiz() {
     reportSessionActivity('pause')
     setExitConfirmOpen(false)
-    router.push(activeData?.session?.is_temp ? '/explore' : `/quiz/${quizId}`)
+    router.push(activeData?.session?.is_temp ? '/' : `/quiz/${resolvedQuizId}`)
   }
 
   function handleNavigate(index: number) {
     if (!isHydratedFromServer) return
+    const effectiveTotal = activeData?.session.totalQuestions || 0
     if (index < 0 || index >= effectiveTotal) return
     
     navigateToQuestion(index)
@@ -441,18 +133,17 @@ export default function QuizSessionMobilePage() {
 
   // Show error if preload failed
   if (isPreloadError || isInitialError) {
-    const displayError = activeError || (preloadData as any)
     return (
       <div className="flex h-screen items-center justify-center bg-[#F9F9F7] p-6">
         <div className="w-full max-w-md rounded-2xl border-2 border-gray-100 bg-white p-8 text-center shadow-xl">
           <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
           <h2 className="mb-2 text-xl font-black text-gray-900">Lỗi phòng thi</h2>
           <p className="mb-6 text-sm text-gray-600">
-            {(displayError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
+            {(initialError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
           </p>
           <Button
             type="button"
-            onClick={() => router.push(`/quiz/${quizId}`)}
+            onClick={() => router.push(`/quiz/${resolvedQuizId}`)}
             className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358]"
           >
             Quay lại

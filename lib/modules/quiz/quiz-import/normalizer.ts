@@ -1,4 +1,5 @@
 import type { ImportRawQuestion, ImportRawQuizPayload, NormalizedQuestion, NormalizedQuiz } from '@/lib/modules/quiz/quiz-import/types'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -24,7 +25,7 @@ function parseAnswerToken(value: unknown): number {
   const raw = normalizeString(value).replace(/^\[|\]$/g, '').trim()
   if (!raw) return Number.NaN
   if (/^\d+$/.test(raw)) return Number(raw)
-  if (/^[A-Za-z]$/.test(raw)) return raw.toUpperCase().charCodeAt(0) - 65
+  if (/^[A-Za-z]$/.test(raw)) return raw.toUpperCase().codePointAt(0)! - 65
   return Number.NaN
 }
 
@@ -111,8 +112,6 @@ export function normalizeImportedQuiz(raw: ImportRawQuizPayload): NormalizedQuiz
 
   // Add question_id to each question for deduplication
   const questionsWithIds = questions.map(q => {
-    // Import generateQuestionId at the top of the file
-    const { generateQuestionId } = require('@/lib/modules/quiz/question-id-generator')
     return {
       ...q,
       question_id: generateQuestionId({

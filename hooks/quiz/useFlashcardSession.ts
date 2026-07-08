@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
@@ -170,3 +172,63 @@ export function useFlashcardSession(sessionId: string) {
     isSubmitting: answerMutation.isPending,
   }
 }
+
+export function useFlashcardSessionState(sessionId: string, quizId: string) {
+  const router = useRouter()
+  const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting } = useFlashcardSession(sessionId)
+  const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
+  const [displayIndex, setDisplayIndex] = useState<number | null>(null)
+  const [enableAnimation, setEnableAnimation] = useState(true)
+
+  const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
+  const question = allQuestions?.[actualIndex]
+
+  useEffect(() => {
+    if (session?.flashcard_stats) {
+      setStats({
+        known: session.flashcard_stats.cards_known,
+        unknown: session.flashcard_stats.cards_unknown,
+        total: session.flashcard_stats.total_cards,
+      })
+    }
+  }, [session])
+
+  useEffect(() => {
+    if (session?.status === 'completed') {
+      router.push(`/quiz/${quizId}/result/${sessionId}`)
+    }
+  }, [session?.status, quizId, sessionId, router])
+
+  const handleBack = () => {
+    if (actualIndex > 0) {
+      setDisplayIndex(actualIndex - 1)
+    }
+  }
+
+  const handleForward = () => {
+    if (actualIndex < (session?.current_question_index ?? 0)) {
+      setDisplayIndex(actualIndex + 1)
+    }
+  }
+
+  return {
+    session,
+    question,
+    allQuestions,
+    isLoading,
+    isPreloading,
+    error,
+    submitAnswer,
+    isSubmitting,
+    stats,
+    setStats,
+    displayIndex,
+    setDisplayIndex,
+    enableAnimation,
+    setEnableAnimation,
+    actualIndex,
+    handleBack,
+    handleForward,
+  }
+}
+

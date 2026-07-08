@@ -4,21 +4,10 @@ import crypto from 'crypto';
 import { connectDB } from '@/lib/core/db/mongodb';
 import { Quiz } from '@/lib/modules/quiz/models/Quiz';
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession';
-import { qstashReceiver } from '@/lib/core/queue/qstash';
+import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator';
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz';
-
-/**
- * Fisher-Yates shuffle
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
+import { secureShuffle } from '@/lib/core/utils/shuffle';
 
 /**
  * Generate a unique temp course_code.
@@ -36,21 +25,13 @@ export const maxDuration = 60;   // Allow more time if needed on Vercel
  */
 export async function POST(req: Request) {
   // 1. Verify QStash Signature (Security)
-  const signature = req.headers.get("upstash-signature");
-  if (!signature) return new Response("Missing signature", { status: 401 });
-
-  // Allow local development mock signature
-  const isLocalMock = signature === 'mock-signature-for-local-dev' && process.env.NODE_ENV === 'development';
-
-  const bodyText = await req.text();
-  
-  if (process.env.QSTASH_CURRENT_SIGNING_KEY && !isLocalMock) {
-    const isValid = await qstashReceiver.verify({ signature, body: bodyText });
-    if (!isValid) return new Response("Invalid signature", { status: 401 });
+  const verification = await verifyQStashRequest(req);
+  if (!verification.isValid) {
+    return new Response(verification.error ?? 'Unauthorized', { status: verification.status });
   }
 
   try {
-    const payload = JSON.parse(bodyText);
+    const payload = JSON.parse(verification.bodyText);
     const { sessionId, quiz_ids, question_count, mode, difficulty, studentId } = payload;
 
     await connectDB();
@@ -119,7 +100,7 @@ export async function POST(req: Request) {
 
     const sampled: IQuestion[] = [];
     for (const pass of firstPass) {
-      const shuffledPool = shuffleArray(pass.questions);
+      const shuffledPool = secureShuffle(pass.questions);
       let take = pass.quota;
       if (surplus > 0) {
         const extra = Math.min(surplus, shuffledPool.length - take);
@@ -128,7 +109,7 @@ export async function POST(req: Request) {
       sampled.push(...shuffledPool.slice(0, take));
     }
 
-    const finalSampled = shuffleArray(sampled);
+    const finalSampled = secureShuffle(sampled);
     const actualCount = finalSampled.length;
 
     // Create temp quiz
@@ -169,7 +150,7 @@ export async function POST(req: Request) {
 
     // Update session
     const questionOrder = difficulty === 'random'
-      ? shuffleArray(Array.from({ length: actualCount }, (_, i) => i))
+      ? secureShuffle(Array.from({ length: actualCount }, (_, i) => i))
       : Array.from({ length: actualCount }, (_, i) => i);
 
     await QuizSession.updateOne(

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
@@ -10,6 +9,7 @@ import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { validateObjectId } from '@/lib/core/schemas/common'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
+import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()
@@ -230,20 +230,13 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
 
     // Validate with schema
     const parsed = CreateStudentQuizSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: parsed.error.issues },
-        { status: 400 }
-      )
+      return validationErrorResponse(parsed.error)
     }
 
     const { course_code, category_id, questions, description } = parsed.data

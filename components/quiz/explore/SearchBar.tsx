@@ -190,7 +190,7 @@ export default function SearchBar() {
                     {quiz.questionCount} questions
                   </span>
                   <Link
-                    href={`/quiz/${quiz._id}/mode`}
+                    href={`/quiz/${quiz._id}`}
                     className="px-4 py-1.5 rounded-md text-sm font-medium text-white transition-opacity hover:opacity-90"
                     style={{ backgroundColor: '#5D7B6F' }}
                   >

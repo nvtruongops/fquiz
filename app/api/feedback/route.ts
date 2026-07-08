@@ -9,7 +9,7 @@ import { User } from '@/lib/modules/auth/models/User'
 // Whitelist: chỉ giữ ký tự an toàn, loại bỏ mọi tag HTML và control characters
 function sanitizeText(v: string): string {
   return v
-    .replace(/<[^>]*>/g, '')           // strip HTML tags
+    .replace(/<[^>]{0,1000}>/g, '')           // strip HTML tags
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars (giữ \n \r \t)
     .trim()
 }

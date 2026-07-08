@@ -314,7 +314,7 @@ function QuestionItem({
                   }`}
                 >
                   <span className="font-bold mr-2">
-                    {String.fromCharCode(65 + idx)}.
+                    {String.fromCodePoint(65 + idx)}.
                   </span>
                   {option}
                   {isCorrect && (

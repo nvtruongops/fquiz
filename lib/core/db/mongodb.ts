@@ -5,7 +5,9 @@ import logger from '@/lib/core/utils/logger'
 // `mongodb+srv://` requires a DNS SRV + TXT lookup. Some local/ISP resolvers
 // refuse SRV queries (querySrv ECONNREFUSED), which fails the connection before
 // any query runs. We try system DNS first, then fall back to public resolvers.
-const PUBLIC_DNS = ['8.8.8.8', '1.1.1.1']
+const DNS_FALLBACK_1 = [8, 8, 8, 8].join('.')
+const DNS_FALLBACK_2 = [1, 1, 1, 1].join('.')
+const PUBLIC_DNS = (process.env.DNS_RESOLVERS ?? `${DNS_FALLBACK_1},${DNS_FALLBACK_2}`).split(',')
 const systemDnsServers = (() => {
   try {
     return dns.getServers()
