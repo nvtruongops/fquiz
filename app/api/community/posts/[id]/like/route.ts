@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { validatePostRequest } from '@/lib/modules/community/utils'
+import { Post } from '@/lib/modules/community/models/Post'
 import mongoose from 'mongoose'
 
 export async function POST(
@@ -13,22 +14,41 @@ export async function POST(
 
     const { post, session } = validation
 
-    const userIdStr = session.userId.toString()
-    const likeIndex = post.likes.findIndex((id: mongoose.Types.ObjectId) => id.toString() === userIdStr)
+    const userIdObj = new mongoose.Types.ObjectId(session.userId)
 
-    if (likeIndex === -1) {
-      // Like
-      post.likes.push(new mongoose.Types.ObjectId(session.userId))
-    } else {
-      // Unlike
-      post.likes.splice(likeIndex, 1)
+    // Use atomic $addToSet / $pull to prevent race conditions
+    // First try to remove (unlike)
+    const unliked = await Post.findByIdAndUpdate(
+      id,
+      { $pull: { likes: userIdObj } },
+      { new: true }
+    )
+
+    if (!unliked) {
+      // If we get here, the post was already deleted concurrently
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
     }
 
-    await post.save()
+    const wasRemoved = unliked.likes.length < (post.likes?.length || 0)
 
-    return NextResponse.json({ 
-      liked: likeIndex === -1,
-      likesCount: post.likes.length 
+    if (wasRemoved) {
+      // Successfully unliked
+      return NextResponse.json({
+        liked: false,
+        likesCount: unliked.likes.length
+      })
+    }
+
+    // User hadn't liked → add like
+    const liked = await Post.findByIdAndUpdate(
+      id,
+      { $addToSet: { likes: userIdObj } },
+      { new: true }
+    )
+
+    return NextResponse.json({
+      liked: true,
+      likesCount: liked?.likes?.length ?? (post.likes?.length || 0) + 1
     })
   } catch (error: any) {
     console.error('Toggle like error:', error)

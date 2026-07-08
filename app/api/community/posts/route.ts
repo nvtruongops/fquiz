@@ -28,9 +28,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     
     const parsed = SearchParamsSchema.safeParse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      search: searchParams.get('search') || undefined,
     })
     
     if (!parsed.success) {
@@ -40,9 +40,9 @@ export async function GET(req: Request) {
       }, { status: 400 })
     }
     
-    const page = parsed.data.page ? Number.parseInt(parsed.data.page, 10) : 1
-    const limit = Math.min(parsed.data.limit ? Number.parseInt(parsed.data.limit, 10) : 10, 100)
-    const skip = (page - 1) * limit
+    const page = Math.max(1, parsed.data.page ? Number.parseInt(parsed.data.page, 10) : 1)
+    const limit = Math.max(1, Math.min(parsed.data.limit ? Number.parseInt(parsed.data.limit, 10) : 10, 100))
+    const skip = Math.min((page - 1) * limit, 10000)
     const search = parsed.data.search
 
     let query: any = {}

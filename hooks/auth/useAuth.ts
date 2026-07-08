@@ -20,7 +20,9 @@ export function useAuth(initialData?: AuthResponse) {
   return useQuery<AuthResponse, Error>({
     queryKey: ['auth-user'],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.AUTH.ME}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.AUTH.ME}`, {
+        credentials: 'include',
+      })
       
       if (res.status === 403) {
         const data = await res.json().catch(() => ({}))
