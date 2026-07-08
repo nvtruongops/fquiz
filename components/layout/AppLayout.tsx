@@ -7,7 +7,7 @@ import { cn } from '@/lib/core/utils/cn'
 
 interface AppLayoutProps {
   children: React.ReactNode
-  user?: { name: string; role: string; avatarUrl?: string } | null
+  user?: { _id?: string; name: string; role: string; avatarUrl?: string } | null
   showNavbar?: boolean
   className?: string
 }
@@ -45,6 +45,7 @@ export default function AppLayout({
       {showNavbar && (
         <Navbar 
           initialUser={user ? { 
+            _id: user._id,
             name: user.name, 
             role: user.role, 
             avatarUrl: user.avatarUrl 

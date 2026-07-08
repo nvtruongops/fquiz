@@ -18,7 +18,7 @@ const navLinks = [
 ]
 
 interface NavbarProps {
-  initialUser?: { name: string; role: string; avatarUrl?: string } | null
+  initialUser?: { _id?: string; name: string; role: string; avatarUrl?: string } | null
 }
 
 export default function Navbar({ initialUser }: NavbarProps) {

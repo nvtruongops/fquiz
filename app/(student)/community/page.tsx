@@ -4,13 +4,13 @@ import React, { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Sparkles, Bug, Lightbulb, BookOpen, MessageCircle, Send, CheckCircle2,
-  Loader2, Heart, MessageSquare, Clock, MoreHorizontal, Plus, X, Search, Trash2
+  Loader2, Heart, MessageSquare, Clock, Plus, X, Search, Trash2,
+  ChevronDown, ChevronUp
 } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Textarea } from '@/components/shared/ui/textarea'
 import { Input } from '@/components/shared/ui/input'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/shared/ui/dialog'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/shared/ui/dropdown-menu'
 import { cn } from '@/lib/core/utils/cn'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -31,7 +31,7 @@ const RATE_LIMIT = 3
 const RATE_WINDOW_MS = 60 * 60 * 1000
 
 export default function CommunityPage() {
-  const { data: authData } = useAuth()
+  const { data: authData, isLoading: isAuthLoading } = useAuth()
   const userId = authData?.user?._id
   const queryClient = useQueryClient()
 
@@ -67,32 +67,50 @@ export default function CommunityPage() {
   const [postContent, setPostContent] = useState('')
   const [postTags, setPostTags] = useState('')
 
-  const [selectedPost, setSelectedPost] = useState<any>(null)
   const [commentContent, setCommentContent] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const postsPerPage = 10
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null)
+
+  // Delete confirmation state (thay th? confirm() dialog)
+  const [confirmingDeletePostId, setConfirmingDeletePostId] = useState<string | null>(null)
+  const [confirmingDeleteCommentId, setConfirmingDeleteCommentId] = useState<string | null>(null)
 
   // Debounce search
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
+      setCurrentPage(1) // Reset page on new search
     }, 500)
     return () => clearTimeout(timer)
   }, [searchQuery])
 
   // Queries
   const { data: postsData, isLoading: isLoadingPosts } = useQuery({
-    queryKey: ['community', 'posts', debouncedSearch],
+    queryKey: ['community', 'posts', debouncedSearch, currentPage],
     queryFn: async () => {
+      const params = new URLSearchParams()
+      if (debouncedSearch) params.set('search', debouncedSearch)
+      params.set('page', String(currentPage))
+      params.set('limit', String(postsPerPage))
       let url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/community/posts`
-      if (debouncedSearch) {
-        url += `?search=${encodeURIComponent(debouncedSearch)}`
-      }
+      const qs = params.toString()
+      if (qs) url += `?${qs}`
       const res = await fetch(url, { credentials: 'include' })
       if (!res.ok) throw new Error('Failed to fetch posts')
       return res.json()
     }
   })
+
+  const loadMorePosts = () => {
+    if (postsData?.pagination && currentPage < postsData.pagination.totalPages) {
+      setCurrentPage(prev => prev + 1)
+    }
+  }
+
+  const hasMorePosts = postsData?.pagination ? currentPage < postsData.pagination.totalPages : false
 
   // Mutations
   const createPostMutation = useMutation({
@@ -129,9 +147,6 @@ export default function CommunityPage() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['community', 'posts'] })
-      if (selectedPost && selectedPost._id === variables.postId) {
-        setSelectedPost({ ...selectedPost, comments: [...selectedPost.comments, data.comment] })
-      }
       setCommentContent('')
     }
   })
@@ -204,12 +219,6 @@ export default function CommunityPage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['community', 'posts'] })
-      if (selectedPost && selectedPost._id === variables.postId) {
-         setSelectedPost({
-           ...selectedPost,
-           comments: selectedPost.comments.filter((c: any) => c._id !== variables.commentId)
-         })
-      }
     }
   })
 
@@ -322,6 +331,9 @@ export default function CommunityPage() {
                     <Lightbulb className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Góp ý</span>
                   </Button>
                   
+                  {isAuthLoading ? (
+                    <div className="h-10 w-36 bg-slate-200/50 rounded-xl animate-pulse shrink-0" />
+                  ) : userId ? (
                   <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                     <DialogTrigger asChild>
                       <Button className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl shadow-lg shadow-[#5D7B6F]/20 font-black px-4 sm:px-6 shrink-0 h-10">
@@ -371,6 +383,11 @@ export default function CommunityPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                ) : (
+                  <a href="/login" className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl shadow-lg shadow-[#5D7B6F]/20 font-black px-4 sm:px-6 shrink-0 h-10 inline-flex items-center justify-center text-sm transition-colors">
+                    <Plus className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Đăng câu hỏi</span>
+                  </a>
+                )}
               </div>
             </div>
 
@@ -389,13 +406,13 @@ export default function CommunityPage() {
                     return (
                       <div 
                         key={p._id} 
-                        onClick={() => setSelectedPost(p)}
+                        onClick={() => setExpandedPostId(expandedPostId === p._id ? null : p._id)}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            setSelectedPost(p);
+                            setExpandedPostId(expandedPostId === p._id ? null : p._id);
                           }
                         }}
                         className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer group hover:-translate-y-0.5"
@@ -409,30 +426,51 @@ export default function CommunityPage() {
                             ))}
                           </div>
                           {userId && (String(p.authorId) === String(userId) || authData?.user?.role === 'admin') && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button 
-                                  onClick={(e) => e.stopPropagation()} 
-                                  className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-all shadow-sm"
-                                >
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                                <DropdownMenuItem 
-                                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer font-medium"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (confirm('Bạn có chắc chắn muốn xóa bài đăng này không?')) {
-                                      deletePostMutation.mutate(p._id)
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Xóa bài đăng
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="relative flex items-center">
+                              <AnimatePresence>
+                                {confirmingDeletePostId === p._id ? (
+                                  <motion.div
+                                    initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                                    animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
+                                    exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                                    className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap"
+                                  >
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        deletePostMutation.mutate(p._id)
+                                        setConfirmingDeletePostId(null)
+                                      }}
+                                      disabled={deletePostMutation.isPending}
+                                      className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shrink-0"
+                                    >
+                                      {deletePostMutation.isPending ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : 'Xóa'}
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setConfirmingDeletePostId(null)
+                                      }}
+                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors shrink-0"
+                                    >
+                                      Hủy
+                                    </button>
+                                  </motion.div>
+                                ) : null}
+                              </AnimatePresence>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setConfirmingDeletePostId(p._id)
+                                }}
+                                title="Xóa bài đăng"
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
                         </div>
                         <h3 className="text-xl font-black text-slate-800 mb-2 group-hover:text-[#5D7B6F] transition-colors">{p.title}</h3>
@@ -453,12 +491,17 @@ export default function CommunityPage() {
                           
                           <div className="flex items-center gap-4">
                             <motion.button 
-                              whileTap={{ scale: 0.8 }}
+                              whileTap={userId ? { scale: 0.8 } : {}}
                               animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
                               onClick={(e) => {
                                 e.stopPropagation()
+                                if (!userId) {
+                                  window.location.href = '/login'
+                                  return
+                                }
                                 toggleLikeMutation.mutate(p._id)
                               }}
+                              title={userId ? (isLiked ? 'Bỏ thích' : 'Thích') : 'Đăng nhập để thích'}
                               className={cn("flex items-center gap-1.5 transition-colors p-1 rounded-lg", isLiked ? "text-red-500 bg-red-50" : "text-slate-400 hover:bg-slate-50")}
                             >
                               <motion.div 
@@ -473,19 +516,125 @@ export default function CommunityPage() {
                               <MessageSquare className="w-4 h-4" />
                               <span className="text-xs font-bold">{p.comments?.length || 0}</span>
                             </div>
+                            <div className="flex items-center gap-1 text-slate-400 p-1">
+                              {expandedPostId === p._id ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        {/* Inline Expanded Section */}
+                        <AnimatePresence>
+                          {expandedPostId === p._id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
+                                <p className="text-slate-700 font-medium leading-relaxed whitespace-pre-wrap text-base">{p.content}</p>
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Bình luận ({p.comments?.length || 0})</h4>
+                                  {p.comments?.length === 0 ? (
+                                    <p className="text-slate-400 font-medium text-center py-3 text-sm">Chưa có bình luận nào.</p>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      {p.comments?.map((comment: any) => (
+                                        <div key={comment._id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 group/comment relative">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-[10px] shadow-sm">
+                                                {comment.authorName.charAt(0).toUpperCase()}
+                                              </div>
+                                              <div>
+                                                <p className="text-xs font-bold text-slate-700">{comment.authorName}</p>
+                                                <span className="text-[10px] text-slate-400 font-medium">{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <p className="text-slate-600 font-medium text-sm whitespace-pre-wrap">{comment.content}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Comment Input */}
+                                <div className="pt-2">
+                                  {isAuthLoading ? (
+                                    <div className="h-10 bg-slate-100 rounded-xl animate-pulse" />
+                                  ) : userId ? (
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={commentContent}
+                                        onChange={(e) => setCommentContent(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && !e.shiftKey && commentContent.trim()) {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            createCommentMutation.mutate({ postId: p._id, content: commentContent })
+                                            setCommentContent('')
+                                          }
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        placeholder="Viết bình luận..."
+                                        className="flex-1 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-[#5D7B6F]/30"
+                                      />
+                                      <Button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          createCommentMutation.mutate({ postId: p._id, content: commentContent })
+                                          setCommentContent('')
+                                        }}
+                                        disabled={!commentContent.trim() || createCommentMutation.isPending}
+                                        className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl px-6 font-black shrink-0"
+                                      >
+                                        {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <a href="/login" className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-bold text-[#5D7B6F] bg-[#5D7B6F]/5 hover:bg-[#5D7B6F]/10 rounded-xl transition-colors">
+                                      Đăng nhập để bình luận
+                                    </a>
+                                  )}
+                                </div>
+
+                                <button onClick={(e) => { e.stopPropagation(); setExpandedPostId(null) }} className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors mx-auto pt-2">
+                                  <ChevronUp className="w-3.5 h-3.5" /> Thu nhỏ
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )
                   })}
                 </div>
               )}
               
-              <div className="text-center pt-4">
-                <Button variant="outline" className="rounded-full px-6 bg-white/50 border-white/80 text-[#5D7B6F] font-black hover:bg-white transition-all shadow-sm">
-                  Tải thêm câu hỏi
-                </Button>
-              </div>
+              {hasMorePosts && (
+                <div className="text-center pt-4">
+                  <Button 
+                    onClick={loadMorePosts}
+                    disabled={isLoadingPosts}
+                    variant="outline" 
+                    className="rounded-full px-6 bg-white/50 border-white/80 text-[#5D7B6F] font-black hover:bg-white transition-all shadow-sm"
+                  >
+                    {isLoadingPosts ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Đang tải...
+                      </>
+                    ) : (
+                      'Tải thêm câu hỏi'
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
 
       </div>
@@ -496,7 +645,7 @@ export default function CommunityPage() {
       <Dialog open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen}>
         <DialogContent aria-describedby={undefined} className="sm:max-w-2xl rounded-[32px] p-8 border border-white/80 bg-white/90 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)]">
           <DialogTitle className="text-2xl font-black text-slate-800 mb-2">Góp ý phát triển</DialogTitle>
-          <p className="text-sm font-medium text-slate-500 mb-6">Mọi ý kiến đóng góp của bạn đều giúp FQuiz hoàn thiện hơn mỗi ngày.</p>
+          <p className="text-sm font-medium text-slate-500 mb-6">Mỗi ý kiến đóng góp của bạn đều giúp FQuiz hoàn thiện hơn mỗi ngày.</p>
           
           {success ? (
             <div className="flex flex-col items-center justify-center text-center space-y-6 py-12">
@@ -618,141 +767,6 @@ export default function CommunityPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Post Detail Modal */}
-      <Dialog open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
-        <DialogContent aria-describedby={undefined} className="sm:max-w-2xl rounded-[32px] p-0 border border-white/80 bg-white/90 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[85vh]">
-          {selectedPost && (
-            <>
-              {/* Header */}
-              <div className="p-6 md:p-8 border-b border-gray-100 bg-white/50 shrink-0">
-                <div className="flex gap-2 mb-4 flex-wrap">
-                  {selectedPost.tags?.map((tag: string) => (
-                    <span key={tag} className="px-3 py-1 bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest rounded-lg">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <DialogTitle className="text-2xl font-black text-slate-800 mb-4">{selectedPost.title}</DialogTitle>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                      {selectedPost.authorName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">{selectedPost.authorName}</p>
-                      <p className="text-[11px] font-medium text-slate-400">
-                        {formatDistanceToNow(new Date(selectedPost.createdAt), { addSuffix: true, locale: vi })}
-                      </p>
-                    </div>
-                  </div>
-                  {(String(selectedPost.authorId) === String(userId) || authData?.user?.role === 'admin') && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all shadow-sm">
-                          <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                        <DropdownMenuItem 
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer font-medium"
-                          onClick={() => {
-                            if (confirm('Bạn có chắc chắn muốn xóa bài đăng này không?')) {
-                              deletePostMutation.mutate(selectedPost._id)
-                              setSelectedPost(null)
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Xóa bài đăng
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 md:p-8 overflow-y-auto bg-gray-50/30 flex-1">
-                <p className="text-slate-700 font-medium leading-relaxed whitespace-pre-wrap mb-10 text-lg">
-                  {selectedPost.content}
-                </p>
-
-                <div className="space-y-6">
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest border-b border-gray-200 pb-2">
-                    Bình luận ({selectedPost.comments?.length || 0})
-                  </h4>
-                  
-                  {selectedPost.comments?.length === 0 ? (
-                    <p className="text-slate-400 font-medium text-center py-4">Chưa có bình luận nào.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {selectedPost.comments?.map((comment: any, idx: number) => (
-                        <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 group relative">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-700 text-sm">{comment.authorName}</span>
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
-                              </span>
-                            </div>
-                            {(String(comment.authorId) === String(userId) || String(selectedPost.authorId) === String(userId) || authData?.user?.role === 'admin') && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg p-1.5 transition-colors shadow-sm">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                                  <DropdownMenuItem 
-                                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer font-medium"
-                                    onClick={() => {
-                                      if (confirm('Bạn có chắc chắn muốn xóa bình luận này không?')) {
-                                        deleteCommentMutation.mutate({ postId: selectedPost._id, commentId: comment._id })
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Xóa bình luận
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                          <p className="text-slate-600 font-medium text-sm whitespace-pre-wrap">{comment.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer / Input */}
-              <div className="p-4 bg-white border-t border-gray-100 shrink-0">
-                <div className="flex gap-2">
-                  <Input 
-                    value={commentContent}
-                    onChange={(e) => setCommentContent(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && commentContent.trim()) {
-                        createCommentMutation.mutate({ postId: selectedPost._id, content: commentContent })
-                      }
-                    }}
-                    placeholder="Viết bình luận..."
-                    className="flex-1 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-[#5D7B6F]/30"
-                  />
-                  <Button 
-                    onClick={() => createCommentMutation.mutate({ postId: selectedPost._id, content: commentContent })}
-                    disabled={!commentContent.trim() || createCommentMutation.isPending}
-                    className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl px-6 font-black shrink-0"
-                  >
-                    {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

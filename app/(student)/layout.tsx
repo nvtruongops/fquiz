@@ -23,7 +23,7 @@ export default async function StudentLayout({
   }
 
   return (
-    <AppLayout user={{ name: user.username, role: user.role, avatarUrl: user.avatarUrl }}>
+    <AppLayout user={{ _id: user.userId, name: user.username, role: user.role, avatarUrl: user.avatarUrl }}>
       {children}
     </AppLayout>
   )

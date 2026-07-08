@@ -44,8 +44,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    post.comments = post.comments.filter((c: any) => c._id.toString() !== commentId)
-    await post.save()
+    // Use atomic $pull to prevent race conditions
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      { $pull: { comments: { _id: new mongoose.Types.ObjectId(commentId) } } },
+      { new: true }
+    )
+
+    if (!updatedPost) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    }
 
     return NextResponse.json({ message: 'Comment deleted successfully' })
   } catch (error: any) {

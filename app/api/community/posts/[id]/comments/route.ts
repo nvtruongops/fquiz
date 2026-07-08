@@ -3,6 +3,7 @@ import { validatePostRequest } from '@/lib/modules/community/utils'
 import mongoose from 'mongoose'
 import { z } from 'zod'
 import DOMPurify from 'isomorphic-dompurify'
+import { Post } from '@/lib/modules/community/models/Post'
 
 const CreateCommentSchema = z.object({
   content: z.string().min(1, 'Content is required').max(5000, 'Content must be less than 5000 characters'),
@@ -39,14 +40,23 @@ export async function POST(
     const newComment = {
       authorId: new mongoose.Types.ObjectId(session.userId),
       authorName: session.username,
-      content,
+      content: cleanContent,
       createdAt: new Date()
     }
 
-    post.comments.push(newComment as any)
-    await post.save()
+    // Use atomic $push to prevent race conditions
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      { $push: { comments: newComment } },
+      { new: true }
+    )
 
-    return NextResponse.json({ comment: post.comments[post.comments.length - 1] }, { status: 201 })
+    if (!updatedPost) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    }
+
+    const savedComment = updatedPost.comments[updatedPost.comments.length - 1]
+    return NextResponse.json({ comment: savedComment }, { status: 201 })
   } catch (error: any) {
     console.error('Create comment error:', error)
     return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 })
