@@ -4,7 +4,6 @@ import { verifySession } from '@/lib/modules/auth/dal'
 import { Post } from '@/lib/modules/community/models/Post'
 import mongoose from 'mongoose'
 import { z } from 'zod'
-import DOMPurify from 'isomorphic-dompurify'
 
 const SearchParamsSchema = z.object({
   page: z.string().optional(),
@@ -22,24 +21,30 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+function getErrorDetails(error: unknown): string | undefined {
+  if (process.env.NODE_ENV === 'production') return undefined
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
 export async function GET(req: Request) {
   try {
     await connectDB()
     const { searchParams } = new URL(req.url)
-    
+
     const parsed = SearchParamsSchema.safeParse({
       page: searchParams.get('page') || undefined,
       limit: searchParams.get('limit') || undefined,
       search: searchParams.get('search') || undefined,
     })
-    
+
     if (!parsed.success) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Invalid query parameters',
         details: parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`)
       }, { status: 400 })
     }
-    
+
     const page = Math.max(1, parsed.data.page ? Number.parseInt(parsed.data.page, 10) : 1)
     const limit = Math.max(1, Math.min(parsed.data.limit ? Number.parseInt(parsed.data.limit, 10) : 10, 100))
     const skip = Math.min((page - 1) * limit, 10000)
@@ -57,13 +62,14 @@ export async function GET(req: Request) {
       }
     }
 
-    const posts = await Post.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
-
-    const total = await Post.countDocuments(query)
+    const [posts, total] = await Promise.all([
+      Post.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Post.countDocuments(query)
+    ])
 
     return NextResponse.json({
       posts,
@@ -76,7 +82,10 @@ export async function GET(req: Request) {
     })
   } catch (error: any) {
     console.error('Fetch posts error:', error)
-    return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 })
+    return NextResponse.json({
+      error: 'Failed to fetch posts',
+      details: getErrorDetails(error)
+    }, { status: 500 })
   }
 }
 
@@ -94,7 +103,7 @@ export async function POST(req: Request) {
 
     const parsed = CreatePostSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Validation failed',
         details: parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`)
       }, { status: 400 })
@@ -102,6 +111,7 @@ export async function POST(req: Request) {
 
     const { title, content, tags } = parsed.data
 
+    const { default: DOMPurify } = await import('isomorphic-dompurify')
     const cleanTitle = DOMPurify.sanitize(title)
     const cleanContent = DOMPurify.sanitize(content)
 
@@ -120,6 +130,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ post }, { status: 201 })
   } catch (error: any) {
     console.error('Create post error:', error)
-    return NextResponse.json({ error: 'Failed to create post' }, { status: 500 })
+    return NextResponse.json({
+      error: 'Failed to create post',
+      details: getErrorDetails(error)
+    }, { status: 500 })
   }
 }

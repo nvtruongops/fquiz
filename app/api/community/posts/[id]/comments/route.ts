@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { validatePostRequest } from '@/lib/modules/community/utils'
 import mongoose from 'mongoose'
 import { z } from 'zod'
-import DOMPurify from 'isomorphic-dompurify'
 import { Post } from '@/lib/modules/community/models/Post'
 
 const CreateCommentSchema = z.object({
@@ -35,6 +34,8 @@ export async function POST(
     }
 
     const { content } = parsed.data
+
+    const { default: DOMPurify } = await import('isomorphic-dompurify')
     const cleanContent = DOMPurify.sanitize(content)
 
     const newComment = {
@@ -44,7 +45,6 @@ export async function POST(
       createdAt: new Date()
     }
 
-    // Use atomic $push to prevent race conditions
     const updatedPost = await Post.findByIdAndUpdate(
       id,
       { $push: { comments: newComment } },
@@ -59,6 +59,9 @@ export async function POST(
     return NextResponse.json({ comment: savedComment }, { status: 201 })
   } catch (error: any) {
     console.error('Create comment error:', error)
-    return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Failed to create comment',
+      details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    }, { status: 500 })
   }
 }
