@@ -39,5 +39,7 @@ const PostSchema = new Schema<IPost>({
 
 // Add text index for search
 PostSchema.index({ title: 'text', tags: 'text' })
+// Support sorting by newest first
+PostSchema.index({ createdAt: -1 })
 
 export const Post = mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema)

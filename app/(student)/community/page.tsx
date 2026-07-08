@@ -101,7 +101,9 @@ export default function CommunityPage() {
       const res = await fetch(url, { credentials: 'include' })
       if (!res.ok) throw new Error('Failed to fetch posts')
       return res.json()
-    }
+    },
+    retry: 1,
+    retryDelay: 1000,
   })
 
   const loadMorePosts = () => {
