@@ -97,11 +97,3 @@ export async function requireAdmin(): Promise<SessionUser> {
   
   return user
 }
-
-/**
- * Check if user is authenticated (doesn't throw)
- */
-export async function isAuthenticated(): Promise<boolean> {
-  const user = await verifySession()
-  return user !== null
-}
