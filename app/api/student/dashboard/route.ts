@@ -203,8 +203,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       .filter((id): id is string => Boolean(id))
     const categoryNameMap = await buildCategoryNameMap(sessionCategoryIds)
 
-    const originalCreatorMap = await buildOriginalCreatorMap(quizDocs as any[])
-    const creatorNameMap = await buildCreatorNameMap(quizDocs as any[], originalCreatorMap, new UserService())
+    const originalCreatorMap = await buildOriginalCreatorMap(quizDocs)
+    const creatorNameMap = await buildCreatorNameMap(quizDocs, originalCreatorMap, new UserService())
 
     const completedActivities = recentActivitiesRaw.map((session: any) =>
       mapSessionToActivity(session, payload.userId, quizMetaMap, categoryNameMap, originalCreatorMap, creatorNameMap)

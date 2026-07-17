@@ -2,10 +2,13 @@ import mongoose from 'mongoose'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import type { IUserService } from '@/lib/modules/quiz/services/IUserService'
+import type { IQuiz } from '@/lib/modules/quiz/types/quiz'
 
 export type SourceType = 'self_created' | 'saved_explore' | 'explore_public'
 
-export function inferSourceType(quiz: any, studentUserId: string): SourceType {
+type QuizSourceProjection = Pick<IQuiz, '_id' | 'created_by' | 'is_saved_from_explore' | 'original_quiz_id'>
+
+export function inferSourceType(quiz: QuizSourceProjection, studentUserId: string): SourceType {
   if (quiz?.is_saved_from_explore) return 'saved_explore'
   if (quiz?.created_by?.toString?.() === studentUserId) return 'self_created'
   return 'explore_public'
@@ -32,12 +35,12 @@ export function mixQuizDisplayCode(title: string): string {
  * Fetch original-source creators for quizzes saved from Explore.
  * Returns a map of originalQuizId → creator userId.
  */
-export async function buildOriginalCreatorMap(quizzes: any[]): Promise<Map<string, string | null>> {
+export async function buildOriginalCreatorMap(quizzes: QuizSourceProjection[]): Promise<Map<string, string | null>> {
   const originalSourceIds = Array.from(
     new Set(
       quizzes
-        .filter((quiz) => quiz?.is_saved_from_explore && quiz?.original_quiz_id)
-        .map((quiz) => quiz.original_quiz_id.toString())
+        .filter((q) => !!(q.is_saved_from_explore && q.original_quiz_id))
+        .map((q) => (q.original_quiz_id as mongoose.Types.ObjectId).toString())
     )
   ).map((id) => new mongoose.Types.ObjectId(id))
 
@@ -45,7 +48,7 @@ export async function buildOriginalCreatorMap(quizzes: any[]): Promise<Map<strin
 
   const originalSources = await Quiz.find({ _id: { $in: originalSourceIds } }, { created_by: 1 }).lean()
   return new Map(
-    (originalSources as any[]).map((q) => [q._id.toString(), q.created_by?.toString?.() ?? null])
+    originalSources.map((q) => [q._id.toString(), q.created_by?.toString?.() ?? null])
   )
 }
 
@@ -57,7 +60,7 @@ export async function buildCategoryNameMap(categoryIds: string[]): Promise<Map<s
   if (ids.length === 0) return new Map()
 
   const categories = await Category.find({ _id: { $in: ids } }, { name: 1 }).lean()
-  return new Map((categories as any[]).map((category) => [category._id.toString(), category.name]))
+  return new Map(categories.map((category) => [category._id.toString(), category.name]))
 }
 
 /**
@@ -65,7 +68,7 @@ export async function buildCategoryNameMap(categoryIds: string[]): Promise<Map<s
  * Requires the originalCreatorMap to resolve saved-from-explore creators.
  */
 export async function buildCreatorNameMap(
-  quizzes: any[],
+  quizzes: QuizSourceProjection[],
   originalCreatorMap: Map<string, string | null>,
   userService: IUserService
 ): Promise<Map<string, string>> {
@@ -91,7 +94,7 @@ export async function buildCreatorNameMap(
  * Resolve the source creator userId for a single quiz.
  */
 export function resolveSourceCreatorId(
-  quiz: any,
+  quiz: QuizSourceProjection,
   originalCreatorMap: Map<string, string | null>
 ): string | null {
   if (quiz?.is_saved_from_explore) {
