@@ -13,6 +13,7 @@ import {
   buildCreatorNameMap,
   resolveSourceCreatorId,
 } from '@/lib/modules/quiz/quiz-source-utils'
+import { UserService } from '@/lib/modules/auth/services/UserService'
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
@@ -108,7 +109,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const categoryNameMap = await buildCategoryNameMap(
       (quizzes as any[]).map((quiz) => quiz?.category_id?.toString?.() ?? null)
     )
-    const creatorNameMap = await buildCreatorNameMap(quizzes as any[], originalCreatorMap)
+    const creatorNameMap = await buildCreatorNameMap(quizzes as any[], originalCreatorMap, new UserService())
 
     const history = pageItems.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any

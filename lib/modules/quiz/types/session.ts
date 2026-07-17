@@ -26,6 +26,7 @@ export interface IQuizSession {
   user_answers: UserAnswer[]
   current_question_index: number
   question_order: number[] // Array of original question indices in shuffled order
+  question_ids: Types.ObjectId[] // Phase 1: Ordered array of standalone Question ObjectIds
   questions_cache?: IQuestion[] // Cached questions to avoid DB query on every answer
   score: number
   flashcard_stats?: FlashcardStats // Statistics for flashcard mode

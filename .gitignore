@@ -57,6 +57,7 @@ tmp/
 temp/
 .cache/
 *.tmp
+tsconfig.tsbuildinfo
 
 # Uploads and generated user content
 uploads/
@@ -70,6 +71,10 @@ public/uploads/
 # CodeGraph
 .codegraph/
 codegraph.mcp.json
+
+# Task documents & migration scripts (sensitive internal docs & exec scripts)
+task/
+scripts/
 
 # Scripts
 scripts/.env.local

@@ -26,7 +26,7 @@ const config: Config = {
     '**/*.test.ts',
     '**/*.test.tsx',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/.kilo/'],
   transformIgnorePatterns: [
     '/node_modules/(?!(jose)/)',
   ],

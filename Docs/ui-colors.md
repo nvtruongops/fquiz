@@ -1,5 +1,7 @@
 # FQuiz UI Color Palette
 
+
+
 ## Core Brand
 - Primary: #5D7B6F
 - Primary hover: #4A6359
