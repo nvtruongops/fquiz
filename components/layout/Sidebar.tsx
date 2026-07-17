@@ -24,7 +24,7 @@ const sections: Section[] = [
     id: 'study', title: 'Study',
     items: [
       { label: 'Lộ trình', href: '/roadmap', icon: Map, soon: true },
-      { label: 'Flashcards', href: '/flashcards', icon: Layers, soon: true },
+      { label: 'Flashcards', href: '/flashcards', icon: Layers },
       { label: 'AI Assistant', href: '/ai', icon: Bot, soon: true },
     ],
   },
@@ -40,7 +40,7 @@ const sections: Section[] = [
     id: 'analytics', title: 'Analytics',
     items: [
       { label: 'Tổng quan', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Tiến độ', href: '/analytics', icon: TrendingUp, soon: true },
+      { label: 'Tiến độ', href: '/analytics', icon: TrendingUp },
     ],
   },
 ]
