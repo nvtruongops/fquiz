@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import '@/lib/modules/auth/models/User' // Import to register the User schema for populate
-import '@/lib/modules/quiz/models/Category' // Import to register the Category schema for populate
+import { User } from '@/lib/modules/auth/models/User'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
 export async function GET(request: NextRequest) {
-  // Apply rate limiting
   const rateLimitResponse = await checkPublicApiRateLimit(request)
   if (rateLimitResponse) return rateLimitResponse
 
   try {
-    // Connect to database with timeout handling
     try {
       await connectDB()
     } catch (dbError) {
       console.error('Database connection error:', dbError)
       return NextResponse.json(
-        { 
+        {
           error: 'Database connection failed',
           message: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -32,11 +30,11 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get('limit') || '20', 10)
     const offset = Number.parseInt(searchParams.get('offset') || '0', 10)
 
-    const query: Record<string, unknown> = { 
+    const query: Record<string, unknown> = {
       is_public: true,
       status: 'published'
     }
-    
+
     if (categoryId) {
       query.category_id = categoryId
     }
@@ -56,41 +54,61 @@ export async function GET(request: NextRequest) {
 
     const quizzes = await Quiz.find(query)
       .select('title description category_id course_code questionCount studentCount created_by created_at')
-      .populate('created_by', 'username')
-      .populate('category_id', 'name')
       .sort(sortOption)
       .skip(offset)
       .limit(limit)
       .lean()
 
+    // Application-level joins: batch fetch creators + categories
+    const creatorIds = [...new Set(quizzes.map(q => q.created_by?.toString()).filter(Boolean))] as string[]
+    const categoryIds = [...new Set(quizzes.map(q => q.category_id?.toString()).filter(Boolean))] as string[]
+
+    const [creators, categories] = await Promise.all([
+      creatorIds.length > 0
+        ? User.find({ _id: { $in: creatorIds } }).select('username').lean()
+        : Promise.resolve([]),
+      categoryIds.length > 0
+        ? Category.find({ _id: { $in: categoryIds } }).select('name').lean()
+        : Promise.resolve([]),
+    ])
+
+    const creatorMap = new Map(creators.map(c => [c._id.toString(), c]))
+    const categoryMap = new Map(categories.map(c => [c._id.toString(), c]))
+
     const response = NextResponse.json({
-      data: quizzes.map((quiz: any) => ({
-        id: quiz._id.toString(),
-        title: quiz.title,
-        course_code: quiz.course_code,
-        source_type: 'explore_public' as const,
-        source_label: 'Thư viện công khai',
-        source_creator_name: quiz.created_by?.username || null,
-        questionCount: quiz.questionCount,
-        studentCount: quiz.studentCount || 0,
-        categoryId: quiz.category_id?._id?.toString() || '',
-        categoryName: quiz.category_id?.name || 'Chưa phân loại',
-        latestCorrectCount: null,
-        latestTotalCount: null,
-        latestScoreOnTen: null,
-        totalStudyMinutes: null,
-      })),
+      data: quizzes.map((quiz) => {
+        const creatorId = quiz.created_by?.toString() ?? ''
+        const catId = quiz.category_id?.toString() ?? ''
+        const creator = creatorMap.get(creatorId) as { username?: string } | undefined
+        const category = categoryMap.get(catId) as { name?: string } | undefined
+
+        return {
+          id: quiz._id.toString(),
+          title: quiz.title,
+          course_code: quiz.course_code,
+          source_type: 'explore_public' as const,
+          source_label: 'Thư viện công khai',
+          source_creator_name: creator?.username ?? null,
+          questionCount: quiz.questionCount,
+          studentCount: quiz.studentCount || 0,
+          categoryId: catId,
+          categoryName: category?.name ?? 'Chưa phân loại',
+          latestCorrectCount: null,
+          latestTotalCount: null,
+          latestScoreOnTen: null,
+          totalStudyMinutes: null,
+        }
+      }),
     })
 
-    // Add cache headers for public data
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-    
+
     return response
   } catch (error) {
     console.error('Error fetching quizzes:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch quizzes',
         message: error instanceof Error ? error.message : 'Unknown error',
         type: error instanceof Error ? error.constructor.name : typeof error
