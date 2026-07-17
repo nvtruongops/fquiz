@@ -101,16 +101,6 @@ export async function sendVerificationCodeMail({ to, code, purpose }: SendVerifi
   })
 }
 
-export async function verifyMailTransport(): Promise<void> {
-  if (!isMailConfigured()) return
-  try {
-    const transporter = createTransporter()
-    await transporter.verify()
-  } catch (err) {
-    logger.warn({ err }, 'Mail transporter verification failed')
-  }
-}
-
 /**
  * Enqueue a mail job to QStash for background processing
  */

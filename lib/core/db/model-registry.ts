@@ -19,8 +19,3 @@ export async function bootstrapModels(): Promise<void> {
     await register()
   }
 }
-
-/** Kiểm tra model đã được đăng ký trong registry (dùng cho test) */
-export function getRegistrySize(): number {
-  return registry.length
-}
