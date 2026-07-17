@@ -51,7 +51,10 @@ const QuizSchema = new Schema<IQuiz>(
     description: { type: String, default: '' },
     category_id: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     course_code: { type: String, required: true },
+    // Legacy: embedded questions (kept for backward compatibility – Double-Write Phase 1)
     questions: { type: [QuestionSchema], required: false, default: [] },
+    // New: references to standalone Question documents (Phase 1+)
+    question_refs: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
     questionCount: { type: Number, default: 0 },
     studentCount: { type: Number, default: 0 },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -63,6 +66,9 @@ const QuizSchema = new Schema<IQuiz>(
     is_saved_from_explore: { type: Boolean, default: false },
     is_temp: { type: Boolean, default: false },
     expires_at: { type: Date, required: false },
+    // Learning Links (Phase 2 – Double-Write, optional)
+    course_id: { type: Schema.Types.ObjectId, default: null },
+    language_id: { type: Schema.Types.ObjectId, default: null },
     mix_config: {
       quiz_ids: [{ type: Schema.Types.ObjectId, ref: 'Quiz' }],
       question_count: { type: Number },

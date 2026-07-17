@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạo và quản lý bộ câu hỏi theo danh mục và mã môn học, đồng thời cho phép sinh viên/học sinh đăng ký, đăng nhập và làm bài kiểm tra trực tuyến. Hệ thống hỗ trợ hai chế độ làm quiz: hiện đáp án ngay sau mỗi câu hoặc hiện đáp án sau khi hoàn thành toàn bộ bài. Frontend và Backend được triển khai trên Vercel, sử dụng MongoDB Atlas làm cơ sở dữ liệu.
+Hệ thống Quiz Trực Tuyến (FQuiz) là một nền tảng web cho phép Admin tạo và quản lý bộ câu hỏi theo danh mục và mã môn học, đồng thời cho phép sinh viên/học sinh đăng ký, đăng nhập và làm bài kiểm tra trực tuyến. Hệ thống hỗ trợ **ba chế độ làm quiz**: Immediate (hiện đáp án ngay), Review (hiện đáp án cuối bài), và Flashcard (lật thẻ học). Ngoài ra còn có Mix Quiz (trộn câu hỏi từ nhiều bộ đề), Ngân hàng câu hỏi (Question Bank), và tính năng Cộng đồng (thảo luận, góp ý). Frontend và Backend được triển khai trên Vercel, sử dụng MongoDB Atlas làm cơ sở dữ liệu.
 
 ## Tech Stack Decisions
 
@@ -46,6 +46,16 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 - **Race Condition**: Tình huống hai request đồng thời tác động lên cùng một tài nguyên (Quiz_Session) dẫn đến trạng thái không nhất quán.
 - **CoolorsPalette**: Bộ mã màu hexadecimal được dùng làm hướng dẫn thiết kế cho giao diện hệ thống, hướng tới phong cách chuyên nghiệp, nhẹ nhàng và tập trung. Bao gồm: #5D7B6F (Deep Sage Green), #A4C3A2 (Mint Sage Green), #B0D4B8 (Light Sage Green), #EAE7D6 (Cream White), #D7F9FA (Very Light Cyan).
 - **Question Map**: Lưới điều hướng và trạng thái trong một Quiz Session, hiển thị tất cả câu hỏi cùng trạng thái hoàn thành (đã trả lời, chưa trả lời) và cho phép Student nhảy trực tiếp đến bất kỳ câu hỏi nào.
+- **Flashcard_Mode**: Chế độ học với thẻ lật (flip card), hiển thị câu hỏi ở mặt trước và đáp án/giải thích ở mặt sau với hiệu ứng 3D — không tính điểm, phục vụ mục đích ôn tập.
+- **Mix_Quiz**: Tính năng cho phép Student tạo quiz tùy chỉnh bằng cách trộn câu hỏi từ nhiều bộ đề khác nhau, hỗ trợ cả 3 chế độ.
+- **Question_Bank**: Ngân hàng câu hỏi tái sử dụng — Admin có thể tạo câu hỏi độc lập và dùng lại trong nhiều Quiz khác nhau.
+- **Community**: Trang cộng đồng (`/community`) cho phép người dùng thảo luận, bình luận quiz, và gửi góp ý phát triển.
+- **Email_Verification**: Quy trình xác thực email khi đăng ký tài khoản qua link xác nhận gửi về email, sử dụng Nodemailer + QStash.
+- **Password_Reset**: Quy trình đặt lại mật khẩu qua email khi quên mật khẩu, token có hiệu lực 1 giờ, tự động vô hiệu hóa tất cả JWT cũ.
+- **Public_Access**: Quyền truy cập công khai không cần đăng nhập — cho phép người dùng chưa xác thực duyệt quiz trên trang `/explore`.
+- **QStash**: Dịch vụ message queue của Upstash dùng để xử lý background jobs (gửi email, đồng bộ thống kê, dọn dẹp session tạm) trong môi trường Serverless.
+- **Cloudinary**: Dịch vụ lưu trữ ảnh đám mây, dùng để upload và lưu ảnh câu hỏi, trả về URL thay vì lưu binary trong database.
+
 
 ---
 
@@ -277,3 +287,102 @@ Hệ thống Quiz Trực Tuyến là một nền tảng web cho phép Admin tạ
 2. THE UI SHALL provide a "Question Map" feature available in all quiz sessions, allowing Students to view a status grid of all questions (answered, unanswered) and navigate directly to any question by clicking on it.
 3. IN Immediate_Mode, THE System SHALL clearly indicate correct and incorrect answers with distinct visual cues (green for correct, red for incorrect) alongside the correct answer explanation after each submission.
 4. IN Review_Mode, THE final results view SHALL present a detailed breakdown for each question, including the question text, all answer options, the submitted answer, the correct answer, and the explanation.
+
+## Expanded Requirements (Đã triển khai từ bản gốc)
+
+> Các requirement bên dưới phản ánh các tính năng đã được phát triển thêm sau bản đặc tả gốc,
+> đưa FQuiz từ phiên bản quiz 2 chế độ lên nền tảng học tập đa năng với 3 chế độ + cộng đồng.
+
+---
+
+### Requirement 18: Chế độ Flashcard (Student)
+
+**User Story:** As a Student, I want to study with flashcards that flip to reveal the answer, so that I can memorize concepts in a low-pressure, self-paced environment.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide a **Flashcard Mode** in addition to Immediate_Mode and Review_Mode.
+2. WHEN a Student selects Flashcard Mode, THE System SHALL display the question on the front of a card with a 3D flip animation revealing the correct answer and explanation on the back.
+3. THE Flashcard UI SHALL support navigation between flashcards (Previous/Next) and a progress indicator showing current card position.
+4. THE Flashcard session SHALL NOT be scored — it serves as a study tool, not an assessment.
+5. WHEN a Student completes all flashcards, THE System SHALL display a summary with option to restart or return to dashboard.
+
+---
+
+### Requirement 19: Mix Quiz (Student)
+
+**User Story:** As a Student, I want to create a custom quiz by mixing questions from multiple existing quizzes, so that I can practice a broader range of topics in one session.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide a Mix Quiz feature allowing Students to select multiple quizzes and specify the number of questions to pull from each.
+2. WHEN a Student creates a Mix Quiz, THE System SHALL generate a temporary quiz session drawing random questions from the selected sources.
+3. THE Mix Quiz SHALL support all three modes: Immediate, Review, and Flashcard.
+4. THE Mix Quiz session SHALL be ephemeral — temporary data SHALL be automatically cleaned up after session completion via QStash background job.
+
+---
+
+### Requirement 20: Ngân hàng Câu hỏi — Question Bank (Admin)
+
+**User Story:** As an Admin, I want to maintain a reusable question bank, so that I can quickly compose new quizzes without re-entering questions.
+
+#### Acceptance Criteria
+
+1. THE Quiz_Manager SHALL provide a QuestionBank collection storing individual questions independently from Quizzes.
+2. WHEN an Admin creates a Quiz, THE Quiz_Manager SHALL allow selecting questions from the QuestionBank or creating new ad-hoc questions.
+3. THE QuestionBank SHALL include an audit system detecting answer conflicts (duplicate questions with different correct answers).
+4. THE System SHALL provide reconciliation scripts (`audit:answer-conflicts`, `reconcile:question-bank`) to maintain data integrity between QuestionBank and Quizzes.
+
+---
+
+### Requirement 21: Tính năng Cộng đồng (Community)
+
+**User Story:** As a Student or Admin, I want to discuss quizzes, give feedback, and interact with other users, so that the platform fosters collaborative learning.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide a **Community page** (`/community`) accessible to all authenticated users.
+2. THE Community SHALL support **quiz comments** — Students can leave comments on specific quizzes.
+3. THE Community SHALL support **feedback submission** — users can send suggestions and bug reports to the Admin team.
+4. WHEN an Admin replies to feedback, THE System SHALL send an email notification to the original submitter via Nodemailer.
+5. THE Community page SHALL display recent discussions and platform announcements.
+
+---
+
+### Requirement 22: Xác thực Email (Auth_Service)
+
+**User Story:** As a Student, I want my email to be verified upon registration, so that the platform maintains a community of real users.
+
+#### Acceptance Criteria
+
+1. WHEN a Student registers a new account, THE Auth_Service SHALL generate an email verification token and send a verification link to the Student's email via Nodemailer + QStash.
+2. THE email verification token SHALL expire after 24 hours from issuance.
+3. WHEN a Student clicks the verification link, THE Auth_Service SHALL mark the email as verified and activate the account.
+4. IF an unverified account attempts to access restricted features, THEN THE System SHALL redirect to a verification prompt.
+
+---
+
+### Requirement 23: Đặt lại Mật khẩu (Auth_Service)
+
+**User Story:** As a Student or Admin, I want to reset my password if I forget it, so that I can regain access to my account.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide a "Forgot Password" flow accessible from the login page.
+2. WHEN a user submits their registered email, THE Auth_Service SHALL generate a password reset token and email a reset link via QStash.
+3. THE password reset token SHALL expire after 1 hour from issuance.
+4. WHEN a user submits a new password via the reset link, THE Auth_Service SHALL hash it with Bcrypt and update the user record, also incrementing `token_version` to invalidate all existing JWT tokens.
+
+---
+
+### Requirement 24: Public Access & Trang Khám Phá (Explore)
+
+**User Story:** As an unauthenticated visitor, I want to browse available quizzes, so that I can preview the platform before deciding to register.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide a public **Explore page** (`/explore`) accessible without authentication.
+2. THE Explore page SHALL display all public quizzes with their titles, category, course code, and question count.
+3. WHEN a public visitor clicks on a quiz, THE System SHALL prompt them to register or log in before starting a session.
+4. THE System SHALL expose a `/api/public/settings` endpoint returning platform metadata (app name, maintenance mode) without authentication.
+

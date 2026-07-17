@@ -1,9 +1,10 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IQuizSession, UserAnswer, FlashcardStats } from '@/lib/modules/quiz/types/session'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
-// Import referenced models to ensure they're registered
+// Import referenced models to ensure they're registered (Loose Coupling: only for registration, not for populate)
 import '@/lib/modules/auth/models/User'
 import '@/lib/modules/quiz/models/Quiz'
+import '@/lib/modules/quiz/models/Question'
 
 const UserAnswerSchema = new Schema<UserAnswer>(
   {
@@ -52,6 +53,8 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     user_answers: { type: [UserAnswerSchema], default: [] },
     current_question_index: { type: Number, required: true, default: 0 },
     question_order: { type: [Number], required: true, default: [] },
+    // Phase 1: Standalone Question refs (ordered to match question_order)
+    question_ids: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
     questions_cache: { type: [QuestionCacheSchema], required: false },
     score: { type: Number, required: true, default: 0 },
     flashcard_stats: { type: FlashcardStatsSchema, required: false },

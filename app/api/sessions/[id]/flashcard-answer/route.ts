@@ -6,6 +6,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
+import { Question } from '@/lib/modules/quiz/models/Question'
 import { z } from 'zod'
 
 const FlashcardAnswerSchema = z.object({
@@ -28,13 +29,41 @@ function validateFlashcardSession(session: any, userId: string) {
   return null
 }
 
-function getNextQuestion(quiz: any, session: any, nextIndex: number) {
-  const order = session.question_order || Array.from({ length: quiz.questions.length }, (_, i) => i)
-  const raw = quiz.questions[order[nextIndex]]
+async function resolveQuestion(
+  quiz: any,
+  index: number
+): Promise<any | null> {
+  // New: resolve from question_refs
+  if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > index) {
+    const refId = quiz.question_refs[index]
+    const q = await Question.findById(refId)
+      .select('text options correct_answer explanation image_url')
+      .lean()
+    if (q) return q
+  }
+
+  // Legacy fallback: embedded questions
+  if (Array.isArray(quiz.questions) && quiz.questions.length > index) {
+    return quiz.questions[index]
+  }
+
+  return null
+}
+
+async function getNextQuestion(quiz: any, session: any, nextIndex: number) {
+  const order = session.question_order || Array.from({ length: quiz.question_refs?.length || quiz.questions?.length || 0 }, (_, i) => i)
+  const actualIndex = order[nextIndex] !== undefined ? order[nextIndex] : nextIndex
+  const raw = await resolveQuestion(quiz, actualIndex)
   if (!raw) return null
   return {
-    _id: raw._id, text: raw.text, options: raw.options, correct_answer: raw.correct_answer, explanation: raw.explanation,
-    answer_selection_count: Array.isArray(raw.correct_answer) ? Math.min(Math.max(raw.correct_answer.length, 1), raw.options.length) : 1,
+    _id: raw._id,
+    text: raw.text,
+    options: raw.options,
+    correct_answer: raw.correct_answer,
+    explanation: raw.explanation,
+    answer_selection_count: Array.isArray(raw.correct_answer)
+      ? Math.min(Math.max(raw.correct_answer.length, 1), raw.options.length)
+      : 1,
     ...(raw.image_url ? { image_url: raw.image_url } : {}),
   }
 }
@@ -147,9 +176,13 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'This flashcard has already been answered or session is not active' }, { status: 400 })
     }
 
-    // Fetch quiz data for response
-    const quiz = await Quiz.findById(updated.quiz_id).populate('category_id', 'name').select('title course_code questions category_id').lean() as any
-    const nextQ = (!isLast && quiz) ? getNextQuestion(quiz, updated, nextIndex) : null
+    // Fetch quiz data for response — application-level join for category
+    const quiz = await Quiz.findById(updated.quiz_id)
+      .select('title course_code questions question_refs category_id').lean() as any
+    const categoryName = quiz?.category_id
+      ? ((await Category.findById(quiz.category_id).select('name').lean()) as any)?.name || 'Chưa phân loại'
+      : 'Chưa phân loại'
+    const nextQ = (!isLast && quiz) ? await getNextQuestion(quiz, updated, nextIndex) : null
 
     return NextResponse.json({
       success: true, knows, isLastQuestion: isLast, nextQuestionIndex: isLast ? null : nextIndex,
@@ -158,7 +191,7 @@ export const POST = withAuth(async (
         session: {
           _id: updated._id, mode: updated.mode, status: updated.status, current_question_index: updated.current_question_index,
           totalQuestions: updated.question_order?.length || quiz.questions.length, user_answers: updated.user_answers,
-          courseCode: quiz.course_code, categoryName: (quiz.category_id as any)?.name || 'Chưa phân loại', title: quiz.title,
+          courseCode: quiz.course_code, categoryName, title: quiz.title,
           started_at: updated.started_at, paused_at: updated.paused_at, total_paused_duration_ms: updated.total_paused_duration_ms, flashcard_stats: updated.flashcard_stats,
         },
         question: nextQ

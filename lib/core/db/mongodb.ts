@@ -23,13 +23,16 @@ function isSrvDnsError(err: unknown): boolean {
   )
 }
 
-// Pre-register all Mongoose Models to prevent MissingSchemaError during population in Next.js Serverless Routes
-import '@/lib/modules/auth/models/User'
-import '@/lib/modules/quiz/models/Category'
-import '@/lib/modules/quiz/models/Quiz'
-import '@/lib/modules/quiz/models/QuizSession'
-import '@/lib/modules/quiz/models/QuizComment'
-import '@/lib/modules/community/models/Post'
+// Pre-register models via bootstrap to prevent MissingSchemaError in Next.js Serverless Routes.
+// Mỗi module tự đăng ký model qua registerModel() trong file index.ts của module.
+import { bootstrapModels } from '@/lib/core/db/model-registry'
+
+// Each module's index.ts auto-registers its models on import
+import '@/lib/modules/auth'
+import '@/lib/modules/quiz'
+import '@/lib/modules/community'
+import '@/lib/modules/learning'
+import '@/lib/modules/ai'
 
 const MONGODB_URI = process.env.MONGODB_URI!
 
@@ -89,7 +92,9 @@ export async function connectDB(): Promise<typeof mongoose> {
         }
         throw err
       })
-      .then((m) => {
+      .then(async (m) => {
+        // Ensure all models are registered before any query runs
+        await bootstrapModels()
         logger.info('MongoDB connected')
         cached.conn = m
         return m

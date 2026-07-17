@@ -13,6 +13,7 @@ import {
   buildCreatorNameMap,
   resolveSourceCreatorId,
 } from '@/lib/modules/quiz/quiz-source-utils'
+import { UserService } from '@/lib/modules/auth/services/UserService'
 
 export const dynamic = 'force-dynamic'
 
@@ -183,13 +184,18 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       )
     ).map((id) => new Types.ObjectId(id))
 
-    const quizDocs = uniqueQuizIds.length
-      ? await Quiz.find(
-          { _id: { $in: uniqueQuizIds } },
-          { category_id: 1, created_by: 1, is_saved_from_explore: 1, original_quiz_id: 1, course_code: 1 }
-        ).lean()
-      : []
-    const quizMetaMap = new Map((quizDocs as any[]).map((quiz) => [quiz._id.toString(), quiz]))
+    const quizDocs: any[] = []
+    const seenQuizIds = new Set<string>()
+    for (const session of allRecentSessions) {
+      if (session.quiz_id && typeof session.quiz_id === 'object') {
+        const qId = session.quiz_id._id.toString()
+        if (!seenQuizIds.has(qId)) {
+          seenQuizIds.add(qId)
+          quizDocs.push(session.quiz_id)
+        }
+      }
+    }
+    const quizMetaMap = new Map(quizDocs.map((quiz) => [quiz._id.toString(), quiz]))
 
     // Lấy category IDs từ populated data
     const sessionCategoryIds = [...recentActivitiesRaw, ...activeActivitiesRaw]
@@ -198,7 +204,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const categoryNameMap = await buildCategoryNameMap(sessionCategoryIds)
 
     const originalCreatorMap = await buildOriginalCreatorMap(quizDocs as any[])
-    const creatorNameMap = await buildCreatorNameMap(quizDocs as any[], originalCreatorMap)
+    const creatorNameMap = await buildCreatorNameMap(quizDocs as any[], originalCreatorMap, new UserService())
 
     const completedActivities = recentActivitiesRaw.map((session: any) =>
       mapSessionToActivity(session, payload.userId, quizMetaMap, categoryNameMap, originalCreatorMap, creatorNameMap)

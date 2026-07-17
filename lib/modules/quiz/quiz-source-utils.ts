@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
-import { User } from '@/lib/modules/auth/models/User'
+import type { IUserService } from '@/lib/modules/quiz/services/IUserService'
 
 export type SourceType = 'self_created' | 'saved_explore' | 'explore_public'
 
@@ -66,7 +66,8 @@ export async function buildCategoryNameMap(categoryIds: string[]): Promise<Map<s
  */
 export async function buildCreatorNameMap(
   quizzes: any[],
-  originalCreatorMap: Map<string, string | null>
+  originalCreatorMap: Map<string, string | null>,
+  userService: IUserService
 ): Promise<Map<string, string>> {
   const sourceCreatorIds = Array.from(
     new Set(
@@ -79,12 +80,11 @@ export async function buildCreatorNameMap(
         })
         .filter((id): id is string => Boolean(id))
     )
-  ).map((id) => new mongoose.Types.ObjectId(id))
+  )
 
   if (sourceCreatorIds.length === 0) return new Map()
 
-  const sourceCreators = await User.find({ _id: { $in: sourceCreatorIds } }, { username: 1 }).lean()
-  return new Map((sourceCreators as any[]).map((u) => [u._id.toString(), u.username]))
+  return userService.getUsernames(sourceCreatorIds)
 }
 
 /**
