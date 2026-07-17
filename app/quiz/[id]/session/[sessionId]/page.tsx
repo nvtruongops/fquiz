@@ -217,6 +217,7 @@ function DesktopSessionContent({
         answeredCount={answeredCount}
         totalQuestions={session.totalQuestions}
         isPending={finalizeMutation.isPending}
+        enableAnimation={enableAnimation}
         onConfirmSubmit={() => { setConfirmOpen(false); finalizeMutation.mutate(); }}
         onConfirmExit={() => { setExitConfirmOpen(false); reportSessionActivity('pause'); router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`); }}
       />
