@@ -23,7 +23,7 @@ const sections: Section[] = [
   {
     id: 'study', title: 'Study',
     items: [
-      { label: 'Lộ trình', href: '/roadmap', icon: Map, soon: true },
+      { label: 'Lộ trình', href: '/roadmap', icon: Map },
       { label: 'Flashcards', href: '/flashcards', icon: Layers },
       { label: 'AI Assistant', href: '/ai', icon: Bot, soon: true },
     ],

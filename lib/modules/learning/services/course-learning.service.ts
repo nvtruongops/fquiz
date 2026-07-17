@@ -67,4 +67,61 @@ export class CourseLearningService {
     await this.cache.set(cacheKey, structure, 300, ['course', `course:${courseId}`, `user:${userId}`])
     return structure
   }
+
+  /** Lấy roadmap tree với trạng thái khóa/mở dựa trên prerequisites */
+  async getRoadmap(userId: string, courseId: string): Promise<CourseStructure & { roadmap: Array<{ moduleId: string; moduleTitle: string; lessons: Array<{ lessonId: string; title: string; order: number; status: 'locked' | 'available' | 'completed' | 'in_progress'; prerequisitesCompleted: boolean; completedPrerequisites: string[]; missingPrerequisites: string[] }> }> } | null> {
+    const structure = await this.getCourseStructure(userId, courseId)
+    if (!structure) return null
+
+    const completedLessonIds = new Set<string>()
+    for (const mod of structure.modules) {
+      for (const entry of mod.lessons) {
+        const lessonId = (entry.lesson as Record<string, unknown>)._id as string
+        if (entry.progress?.completedAt && lessonId) {
+          completedLessonIds.add(lessonId)
+        }
+      }
+    }
+
+    const roadmap = structure.modules.map((mod) => {
+      const modData = mod.module as Record<string, unknown>
+      const moduleId = modData._id as string ?? ''
+      const moduleTitle = (modData.title as string) ?? ''
+
+      const lessons = mod.lessons.map((entry) => {
+        const lesson = entry.lesson as Record<string, unknown>
+        const lessonId = lesson._id as string ?? ''
+        const prereqs = (lesson.prerequisites ?? []) as string[]
+        const completedPrerequisites = prereqs.filter((p: string) => completedLessonIds.has(p))
+        const missingPrerequisites = prereqs.filter((p: string) => !completedLessonIds.has(p))
+
+        let status: 'locked' | 'available' | 'completed' | 'in_progress' = 'available'
+
+        if (entry.progress?.completedAt) {
+          status = 'completed'
+        } else if (entry.progress && entry.progress.masteryLevel > 0) {
+          status = 'in_progress'
+        } else if (missingPrerequisites.length > 0) {
+          status = 'locked'
+        }
+
+        return {
+          lessonId,
+          title: (lesson.title as string) ?? '',
+          order: (lesson.order as number) ?? 0,
+          status,
+          prerequisitesCompleted: missingPrerequisites.length === 0,
+          completedPrerequisites,
+          missingPrerequisites,
+        }
+      })
+
+      return { moduleId, moduleTitle, lessons }
+    })
+
+    return {
+      ...structure,
+      roadmap,
+    }
+  }
 }
