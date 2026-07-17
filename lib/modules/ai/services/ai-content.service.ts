@@ -7,7 +7,7 @@ import { AIAsset } from '@/lib/modules/ai/models/AIAsset'
 import { promptRegistry } from '@/lib/modules/ai/prompts/registry'
 import type { PromptType } from '@/lib/modules/ai/prompts/registry'
 import type { AIGenerationType } from '@/lib/modules/ai/types/ai-types'
-import { eventBus } from '@/lib/modules/learning/events/learning-events'
+import { eventBus } from '@/lib/core/events/event-bus'
 
 export interface AIContentRequest {
   type: AIGenerationType

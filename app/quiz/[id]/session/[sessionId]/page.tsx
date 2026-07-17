@@ -49,6 +49,8 @@ export default function QuizSessionPage() {
   )
 }
 
+import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
+
 function DesktopSessionContent({
   quizId,
   sessionId,
@@ -63,6 +65,7 @@ function DesktopSessionContent({
   setIsMobile: (v: boolean) => void
 }) {
   const router = useRouter()
+  const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
   const {
     currentQuestionIndex,
@@ -186,6 +189,8 @@ function DesktopSessionContent({
       selectedOptions={selectedOptions}
       submitted={submitted}
       isPending={finalizeMutation.isPending}
+      enableAnimation={enableAnimation}
+      onToggleAnimation={setEnableAnimation}
       onSelectOption={handleSelectOption}
       onNavigate={navigateToQuestion}
       onSubmit={handleSubmit}
@@ -202,6 +207,7 @@ function DesktopSessionContent({
         onSelectOption={handleSelectOption}
         isPending={finalizeMutation.isPending}
         sessionMode={session.mode}
+        enableAnimation={enableAnimation}
       />
       <SessionModals
         confirmOpen={confirmOpen}
