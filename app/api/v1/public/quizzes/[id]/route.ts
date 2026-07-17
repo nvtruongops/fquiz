@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { User } from '@/lib/modules/auth/models/User'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
 export async function GET(
@@ -8,11 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Apply rate limiting (with error handling inside)
     const rateLimitResponse = await checkPublicApiRateLimit(request)
     if (rateLimitResponse) return rateLimitResponse
 
-    // Connect to database with timeout handling
     try {
       await connectDB()
     } catch (dbError) {
@@ -28,7 +28,6 @@ export async function GET(
 
     const { id } = await params
     
-    // Validate ObjectId format
     if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
       return NextResponse.json(
         { error: 'Invalid quiz ID format' },
@@ -38,8 +37,6 @@ export async function GET(
 
     const quiz = await Quiz.findById(id)
       .select('title description category_id course_code questionCount studentCount created_by created_at is_public status')
-      .populate('created_by', 'username')
-      .populate('category_id', 'name')
       .lean()
 
     if (!quiz) {
@@ -49,29 +46,34 @@ export async function GET(
       )
     }
 
-    // Check if quiz is public and published
-    const quizAny = quiz as any
-    if (!quizAny.is_public || quizAny.status !== 'published') {
+    if (!quiz.is_public || quiz.status !== 'published') {
       return NextResponse.json(
         { error: 'This quiz is not publicly accessible' },
         { status: 403 }
       )
     }
 
+    // Application-level join for creator + category
+    const [creator] = quiz.created_by
+      ? await User.find({ _id: quiz.created_by }).select('username').lean()
+      : []
+    const [category] = quiz.category_id
+      ? await Category.find({ _id: quiz.category_id }).select('name').lean()
+      : []
+
     const response = NextResponse.json({
       data: {
-        id: quizAny._id.toString(),
-        title: quizAny.title,
-        description: quizAny.description || '',
-        categoryName: quizAny.category_id?.name || 'Chưa phân loại',
-        course_code: quizAny.course_code,
-        questionCount: quizAny.questionCount,
-        studentCount: quizAny.studentCount || 0,
-        createdAt: quizAny.created_at,
+        id: quiz._id.toString(),
+        title: quiz.title,
+        description: quiz.description || '',
+        categoryName: (category as { name?: string } | undefined)?.name || 'Chưa phân loại',
+        course_code: quiz.course_code,
+        questionCount: quiz.questionCount,
+        studentCount: quiz.studentCount || 0,
+        createdAt: quiz.created_at,
       },
     })
 
-    // Add cache headers for public data
     response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300')
     
     return response
