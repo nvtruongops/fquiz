@@ -3,7 +3,7 @@ import { Types } from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyQStashRequest } from '@/lib/core/queue/qstash'
 import { AIAsset } from '@/lib/modules/ai/models/AIAsset'
-import { eventBus } from '@/lib/modules/learning/events/learning-events'
+import { eventBus } from '@/lib/core/events/event-bus'
 
 /**
  * POST /api/jobs/ai-generator

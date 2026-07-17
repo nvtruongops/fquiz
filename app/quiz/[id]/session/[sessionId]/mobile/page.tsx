@@ -19,6 +19,10 @@ import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 
 
+import { Sparkles } from 'lucide-react'
+import { Switch } from '@/components/shared/ui/switch'
+import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
+
 export default function QuizSessionMobilePage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
   const rawQuizId = params?.id
@@ -28,6 +32,7 @@ export default function QuizSessionMobilePage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
   const router = useRouter()
+  const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
   const {
     sessionId: storeSessionId,
@@ -211,6 +216,14 @@ export default function QuizSessionMobilePage() {
           </div>
           
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full mr-1">
+              <Sparkles className={`w-3.5 h-3.5 ${enableAnimation ? 'text-amber-500 animate-pulse' : 'text-gray-300'}`} />
+              <Switch 
+                checked={enableAnimation} 
+                onCheckedChange={setEnableAnimation} 
+                className="scale-75 data-[state=checked]:bg-amber-500"
+              />
+            </div>
             <div className="flex flex-col items-end">
               <QuizTimer
                 startedAt={session.started_at}
@@ -242,7 +255,7 @@ export default function QuizSessionMobilePage() {
 
       {/* Main Content */}
       <ScrollArea className="flex-1">
-        <div className="space-y-6 p-4 pb-24">
+        <div key={question._id || effectiveIndex} className={cn("space-y-6 p-4 pb-24", enableAnimation && "animate-in fade-in slide-in-from-bottom-2 duration-300")}>
           {/* Question Number */}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-black text-gray-900">
@@ -256,7 +269,7 @@ export default function QuizSessionMobilePage() {
           </div>
 
           {/* Question Text */}
-          <div className="rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-sm">
+          <div className={cn("rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-sm", enableAnimation && "transition-all duration-300 shadow-md")}>
             <p className="whitespace-pre-wrap text-base leading-relaxed text-gray-900">
               {question.text}
             </p>
@@ -270,7 +283,7 @@ export default function QuizSessionMobilePage() {
                       : ''
                   }
                   alt="Minh họa câu hỏi"
-                  className="h-auto w-full object-contain"
+                  className={cn("h-auto w-full object-contain", enableAnimation && "transition-transform duration-500 hover:scale-102")}
                 />
               </div>
             )}
@@ -290,9 +303,10 @@ export default function QuizSessionMobilePage() {
                   disabled={submitted}
                   className={cn(
                     'w-full rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98]',
+                    enableAnimation && 'duration-200 shadow-sm hover:shadow-md',
                     isCorrect && 'border-green-500 bg-green-50',
                     isWrongSelected && 'border-red-500 bg-red-50',
-                    !isCorrect && !isWrongSelected && isSelected && 'border-[#5D7B6F] bg-[#5D7B6F]/5',
+                    !isCorrect && !isWrongSelected && isSelected && 'border-[#5D7B6F] bg-[#5D7B6F]/5 ring-2 ring-[#5D7B6F]/20',
                     !isCorrect && !isWrongSelected && !isSelected && 'border-gray-200 bg-white hover:border-[#A4C3A2]',
                     submitted && 'cursor-not-allowed opacity-60'
                   )}
