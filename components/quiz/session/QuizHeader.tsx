@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import { Sparkles } from 'lucide-react'
+import { Switch } from '@/components/shared/ui/switch'
 
 interface QuizHeaderProps {
   categoryName: string
@@ -8,6 +10,8 @@ interface QuizHeaderProps {
   totalQuestions: number
   currentIndex: number
   answeredCount: number
+  enableAnimation?: boolean
+  onToggleAnimation?: (enabled: boolean) => void
   children?: React.ReactNode
 }
 
@@ -17,6 +21,8 @@ const QuizHeader = React.memo(function QuizHeader({
   totalQuestions,
   currentIndex,
   answeredCount,
+  enableAnimation = true,
+  onToggleAnimation,
   children
 }: Readonly<QuizHeaderProps>) {
   const safeTotal = totalQuestions > 0 ? totalQuestions : 1
@@ -34,13 +40,26 @@ const QuizHeader = React.memo(function QuizHeader({
             <p className="text-[12px] text-[#2f6f31]">
               There are {totalQuestions || 0} questions, and your progress of answering is {progressPercent}% ({answeredCount}/{totalQuestions || 0}) - current question: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}
             </p>
-            {children && <div className="shrink-0">{children}</div>}
+            <div className="flex items-center gap-3 shrink-0">
+              {onToggleAnimation && (
+                <div className="flex items-center gap-1.5 bg-white/70 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-sm" title="Bật/Tắt hiệu ứng giao diện">
+                  <Sparkles className={`w-3.5 h-3.5 ${enableAnimation ? 'text-amber-500 animate-pulse' : 'text-slate-400'}`} />
+                  <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 hidden sm:inline">Hiệu ứng</span>
+                  <Switch 
+                    checked={enableAnimation} 
+                    onCheckedChange={onToggleAnimation} 
+                    className="scale-75 data-[state=checked]:bg-amber-500"
+                  />
+                </div>
+              )}
+              {children}
+            </div>
           </div>
           <div className="mt-1 border border-[#c8c8c8] bg-white p-[2px]">
             <progress
               value={progressPercent}
               max={100}
-              className="h-3 w-full overflow-hidden [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:bg-[#22b14c] [&::-moz-progress-bar]:bg-[#22b14c]"
+              className={`h-3 w-full overflow-hidden transition-all ${enableAnimation ? 'duration-500' : ''} [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:bg-[#22b14c] [&::-moz-progress-bar]:bg-[#22b14c]`}
             />
           </div>
         </div>

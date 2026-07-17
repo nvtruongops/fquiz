@@ -105,11 +105,11 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     const quizMap = new Map((quizzes as any[]).map((q) => [q._id.toString(), q]))
 
-    const originalCreatorMap = await buildOriginalCreatorMap(quizzes as any[])
+    const originalCreatorMap = await buildOriginalCreatorMap(quizzes)
     const categoryNameMap = await buildCategoryNameMap(
-      (quizzes as any[]).map((quiz) => quiz?.category_id?.toString?.() ?? null)
+      quizzes.map((quiz) => quiz?.category_id?.toString?.() ?? null)
     )
-    const creatorNameMap = await buildCreatorNameMap(quizzes as any[], originalCreatorMap, new UserService())
+    const creatorNameMap = await buildCreatorNameMap(quizzes, originalCreatorMap, new UserService())
 
     const history = pageItems.map((item) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any

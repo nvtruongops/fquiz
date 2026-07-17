@@ -173,12 +173,14 @@ export function useFlashcardSession(sessionId: string) {
   }
 }
 
+import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
+
 export function useFlashcardSessionState(sessionId: string, quizId: string) {
   const router = useRouter()
   const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting } = useFlashcardSession(sessionId)
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
   const [displayIndex, setDisplayIndex] = useState<number | null>(null)
-  const [enableAnimation, setEnableAnimation] = useState(true)
+  const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
   const actualIndex = displayIndex !== null ? displayIndex : (session?.current_question_index ?? 0)
   const question = allQuestions?.[actualIndex]

@@ -13,6 +13,8 @@ interface SessionLayoutProps {
   selectedOptions: number[]
   submitted: boolean
   isPending: boolean
+  enableAnimation?: boolean
+  onToggleAnimation?: (enabled: boolean) => void
   children: React.ReactNode
   onSelectOption: (idx: number) => void
   onNavigate: (idx: number) => void
@@ -27,6 +29,8 @@ export const SessionLayout = React.memo(function SessionLayout({
   selectedOptions,
   submitted,
   isPending,
+  enableAnimation = true,
+  onToggleAnimation,
   children,
   onSelectOption,
   onNavigate,
@@ -45,6 +49,8 @@ export const SessionLayout = React.memo(function SessionLayout({
           totalQuestions={effectiveTotal}
           currentIndex={currentQuestionIndex}
           answeredCount={answeredCount}
+          enableAnimation={enableAnimation}
+          onToggleAnimation={onToggleAnimation}
         >
           <QuizTimer
             startedAt={session.started_at}
