@@ -27,6 +27,10 @@ export class LearningProgressService {
     return this.progressRepo.getMasteryStats(userId, loType)
   }
 
+  async getDetailedAnalytics(userId: string) {
+    return this.progressRepo.getDetailedAnalytics(userId)
+  }
+
   async recordReview(userId: string, review: ReviewResult, strategy: LearningStrategy): Promise<ILearningProgress> {
     const existing = await this.progressRepo.findByUserAndLO(
       userId, review.learningObjectId, review.loType, review.version
