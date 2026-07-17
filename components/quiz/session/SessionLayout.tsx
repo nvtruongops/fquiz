@@ -40,8 +40,19 @@ export const SessionLayout = React.memo(function SessionLayout({
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
 
+  const answeredSet = React.useMemo(() => {
+    const set = new Set<number>()
+    session.user_answers?.forEach((ans) => {
+      if (typeof ans.question_index === 'number') set.add(ans.question_index)
+    })
+    if (selectedOptions.length > 0) {
+      set.add(currentQuestionIndex)
+    }
+    return set
+  }, [session.user_answers, selectedOptions, currentQuestionIndex])
+
   return (
-    <div className="quiz-scroll h-screen overflow-auto bg-[#ececec] font-sans">
+    <div className={enableAnimation ? "quiz-scroll h-screen overflow-auto bg-slate-100 dark:bg-slate-950 font-sans" : "quiz-scroll h-screen overflow-auto bg-[#ececec] font-sans"}>
       <div className="flex min-h-full min-w-[820px] flex-col">
         <QuizHeader
           categoryName={session.categoryName}
@@ -56,7 +67,7 @@ export const SessionLayout = React.memo(function SessionLayout({
             startedAt={session.started_at}
             pausedAt={session.paused_at}
             totalPausedDurationMs={session.total_paused_duration_ms}
-            className="text-[#5D7B6F]"
+            className={enableAnimation ? "text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20" : "text-[#5D7B6F]"}
           />
         </QuizHeader>
 
@@ -73,9 +84,11 @@ export const SessionLayout = React.memo(function SessionLayout({
             isSubmitted={submitted}
             isPending={isPending}
             answeredCount={answeredCount}
+            enableAnimation={enableAnimation}
+            answeredSet={answeredSet}
           />
 
-          <main className="min-w-0 flex-1 border-l-2 border-[#101010] bg-[#ececec]">
+          <main className={enableAnimation ? "min-w-0 flex-1 bg-slate-50/50 dark:bg-slate-900/50" : "min-w-0 flex-1 border-l-2 border-[#101010] bg-[#ececec]"}>
             {children}
           </main>
         </div>

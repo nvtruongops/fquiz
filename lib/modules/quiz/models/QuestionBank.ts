@@ -30,6 +30,8 @@ export interface IQuestionBank {
   conflict_notes?: string               // Ghi chú về mâu thuẫn
 }
 
+export type QuestionBankDoc = IQuestionBank
+
 const QuestionBankSchema = new Schema<IQuestionBank>(
   {
     category_id: { 
