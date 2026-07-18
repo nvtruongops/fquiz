@@ -142,7 +142,7 @@ export default function DashboardPage() {
                 Tóm tắt hai dịch vụ cốt lõi
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* AI English Learning Card */}
                 <Link
                   href="/roadmap"
@@ -228,6 +228,36 @@ export default function DashboardPage() {
                     </div>
                     <div className="pt-2 flex items-center gap-1 text-xs font-black text-blue-600">
                       <span>Vào bộ đề</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Explore Categories & Exams Card */}
+                <Link
+                  href="/explore"
+                  className="group relative rounded-[28px] p-6 bg-gradient-to-br from-purple-50/90 via-white/80 to-purple-50/50 backdrop-blur-2xl border border-purple-100/80 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
+                        <Compass className="w-6 h-6" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-purple-600 bg-white px-3 py-1 rounded-full shadow-sm border border-purple-100">
+                        Explore
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-purple-600 transition-colors">
+                        Khám phá Môn học
+                      </h3>
+                      <p className="text-xs font-medium text-slate-500 mt-1">
+                        Thư viện đề thi trắc nghiệm chia theo chuyên ngành & môn học.
+                      </p>
+                    </div>
+                    <div className="pt-2 flex items-center gap-1 text-xs font-black text-purple-600">
+                      <span>Khám phá ngay</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>

@@ -276,18 +276,6 @@ export default function Navbar({ initialUser }: NavbarProps) {
                     <History className="w-3.5 h-3.5 text-purple-400" />
                     Lịch sử làm bài
                   </Link>
-                  <Link
-                    href="/dashboard"
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-                      pathname === '/dashboard'
-                        ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-                    )}
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 text-emerald-400" />
-                    Bảng điều khiển
-                  </Link>
                 </>
               ) : null}
             </div>
@@ -389,16 +377,6 @@ export default function Navbar({ initialUser }: NavbarProps) {
                 )}
               >
                 <History className="w-4 h-4 text-purple-500" /> Lịch sử làm bài
-              </Link>
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
-                  pathname === '/dashboard' ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50"
-                )}
-              >
-                <LayoutDashboard className="w-4 h-4 text-emerald-600" /> Bảng điều khiển
               </Link>
             </div>
           </div>

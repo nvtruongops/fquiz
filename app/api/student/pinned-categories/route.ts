@@ -8,7 +8,7 @@ const MAX_PINS = 5
 
 export async function GET(req: Request) {
   const payload = await verifyToken(req)
-  if (payload?.role !== 'student') {
+  if (!payload || !['student', 'dev'].includes(payload.role)) {
     return NextResponse.json({ pinnedCategories: [] })
   }
   await connectDB()
@@ -37,4 +37,4 @@ export const POST = withAuth(async (req: Request, { payload }) => {
   // Pin
   await User.updateOne({ _id: payload.userId }, { $addToSet: { pinned_categories: categoryId } })
   return NextResponse.json({ pinned: true, pinnedCategories: [...current, categoryId] })
-}, { roles: ['student'] })
+}, { roles: ['student', 'dev'] })
