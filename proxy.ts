@@ -14,6 +14,32 @@ import {
 
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
+// ── In-memory cache for maintenance mode ──────────────────────────────
+// Avoids a MongoDB query on every request when maintenance is off.
+const MAINTENANCE_CACHE_TTL = 30_000 // 30 seconds
+let maintenanceCache: { value: boolean; expiry: number } | null = null
+
+async function getMaintenanceStatus(): Promise<boolean> {
+  const now = Date.now()
+  if (maintenanceCache && now < maintenanceCache.expiry) {
+    return maintenanceCache.value
+  }
+  try {
+    await connectDB()
+    const settings = await getSettings()
+    const value = settings.maintenance_mode === true
+    maintenanceCache = { value, expiry: now + MAINTENANCE_CACHE_TTL }
+    return value
+  } catch {
+    maintenanceCache = { value: false, expiry: now + MAINTENANCE_CACHE_TTL }
+    return false
+  }
+}
+
+export function resetMaintenanceCache() {
+  maintenanceCache = null
+}
+
 const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
@@ -228,13 +254,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
   if (maintenanceCookie === '1') {
     isMaintenanceOn = true
   } else {
-    try {
-      await connectDB()
-      const settings = await getSettings()
-      isMaintenanceOn = settings.maintenance_mode === true
-    } catch {
-      isMaintenanceOn = false
-    }
+    isMaintenanceOn = await getMaintenanceStatus()
   }
 
   if (!isMaintenanceOn) return null
