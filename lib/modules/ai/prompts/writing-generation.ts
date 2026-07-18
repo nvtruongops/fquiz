@@ -1,11 +1,7 @@
 import { z } from 'zod'
+import type { PromptDefinition } from './types'
 
-export interface WritingPromptParams {
-  language: string
-  cefr: string
-  topic: string
-  wordCount: number
-}
+export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedWritingPromptSchema = z.object({
   title: z.string(),
@@ -24,9 +20,18 @@ export const GeneratedWritingPromptSchema = z.object({
 
 export type GeneratedWritingPrompt = z.infer<typeof GeneratedWritingPromptSchema>
 
-export function writingGeneration(params: WritingPromptParams) {
-  const { language, cefr, topic, wordCount } = params
-  const system = 'You are a language assessment expert creating writing exercises for language learners. Generate a writing prompt appropriate for CEFR level ' + cefr + '. The topic is "' + topic + '". The exercise should prompt the user to produce approximately ' + wordCount + ' words in ' + language + '. Include vocabulary hints and a sample answer suitable for the level.'
-  const user = 'Create a writing exercise for ' + cefr + ' level learners of ' + language + '. Topic: ' + topic + '. Target word count: ' + wordCount + '. Return JSON with: title, sourceText, sourceLanguage ("Vietnamese"), targetLanguage ("' + language + '"), cefrLevel ("' + cefr + '"), wordCount (' + wordCount + '), hints (array of { wordOrPhrase, meaning }), notes (optional), sampleAnswer (optional).'
-  return { system, user }
+export interface WritingPromptParams {
+  language: string
+  cefr: string
+  topic: string
+  wordCount: number
+}
+
+export const writingGeneration: PromptDefinition<WritingPromptParams, typeof GeneratedWritingPromptSchema> = {
+  name: 'writing-generation',
+  version: PROMPT_VERSION,
+  schema: GeneratedWritingPromptSchema,
+  buildPrompt: (params: WritingPromptParams): string => {
+    return 'You are a language assessment expert creating writing exercises for language learners. Generate a writing prompt appropriate for CEFR level ' + params.cefr + '. The topic is "' + params.topic + '". The exercise should prompt the user to produce approximately ' + params.wordCount + ' words in ' + params.language + '. Include vocabulary hints and a sample answer suitable for the level. Create a writing exercise for ' + params.cefr + ' level learners of ' + params.language + '. Topic: ' + params.topic + '. Target word count: ' + params.wordCount + '. Return JSON with: title, sourceText, sourceLanguage ("Vietnamese"), targetLanguage ("' + params.language + '"), cefrLevel ("' + params.cefr + '"), wordCount (' + params.wordCount + '), hints (array of { wordOrPhrase, meaning }), notes (optional), sampleAnswer (optional).'
+  },
 }
