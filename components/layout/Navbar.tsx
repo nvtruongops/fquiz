@@ -42,11 +42,6 @@ export default function Navbar({ initialUser }: NavbarProps) {
 
   const isDev = user?.role === 'dev'
 
-  useEffect(() => {
-    if (isAiRoute && isDev) setActivePanel('ai')
-    else if (isQuizRoute) setActivePanel('quiz')
-  }, [pathname, isAiRoute, isQuizRoute, isDev])
-
   if (!mounted) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 w-full pt-3 px-4 sm:px-6 md:px-8 pointer-events-none">
@@ -92,10 +87,10 @@ export default function Navbar({ initialUser }: NavbarProps) {
               href={user ? "/dashboard" : "/"}
               prefetch={false}
               className={cn(
-                "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+                "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border",
                 pathname === '/' || pathname === '/dashboard'
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                  : "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white hover:text-slate-900 hover:border-slate-300"
               )}
             >
               Bảng điều khiển
@@ -108,8 +103,10 @@ export default function Navbar({ initialUser }: NavbarProps) {
                 onClick={() => setActivePanel((prev) => (prev === 'ai' ? null : 'ai'))}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border",
-                  activePanel === 'ai' || isAiRoute
+                  activePanel === 'ai'
                     ? "bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-md shadow-[#5D7B6F]/25 scale-[1.02]"
+                    : isAiRoute
+                    ? "bg-[#5D7B6F]/10 text-[#5D7B6F] border-[#5D7B6F]/30"
                     : "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white hover:text-slate-900 hover:border-[#5D7B6F]/40"
                 )}
               >
@@ -138,8 +135,10 @@ export default function Navbar({ initialUser }: NavbarProps) {
               onClick={() => setActivePanel((prev) => (prev === 'quiz' ? null : 'quiz'))}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border",
-                activePanel === 'quiz' || isQuizRoute
+                activePanel === 'quiz'
                   ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/25 scale-[1.02]"
+                  : isQuizRoute
+                  ? "bg-blue-50 text-blue-600 border-blue-200"
                   : "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white hover:text-slate-900 hover:border-blue-500/40"
               )}
             >
