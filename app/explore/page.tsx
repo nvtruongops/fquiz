@@ -13,6 +13,7 @@ export const metadata = {
   description: 'Tìm kiếm và khám phá thư viện câu hỏi trắc nghiệm đa chuyên ngành trên FQuiz.',
 }
 
+export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
 async function getCategories() {

@@ -6,6 +6,8 @@ import * as motion from 'framer-motion/client'
 import { Button } from '@/components/shared/ui/button'
 import { Card, CardContent } from '@/components/shared/ui/card'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'FQuiz — Nền tảng Học Ngôn ngữ AI & Ôn thi Trắc nghiệm',
   description: 'Học tiếng Anh với AI, ôn tập Flashcard thuật toán FSRS và luyện thi trắc nghiệm chống gian lận.',
