@@ -8,6 +8,8 @@
   translation,
   dialogueGeneration,
   storyGeneration,
+  writingGeneration,
+  writingEvaluation,
 } from './index'
 
 export const promptRegistry = {
@@ -20,6 +22,8 @@ export const promptRegistry = {
   translation,
   dialogue: dialogueGeneration,
   story: storyGeneration,
+  writing: writingGeneration,
+  writing_eval: writingEvaluation,
 } as const
 
 export type PromptType = keyof typeof promptRegistry

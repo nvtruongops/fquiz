@@ -7,6 +7,8 @@ export { flashcardGeneration, GeneratedFlashcardSchema } from './flashcard-gener
 export { translation, GeneratedTranslationSchema } from './translation'
 export { dialogueGeneration, GeneratedDialogueSchema } from './dialogue-generation'
 export { storyGeneration, GeneratedStorySchema } from './story-generation'
+export { writingGeneration, GeneratedWritingPromptSchema } from './writing-generation'
+export { writingEvaluation, GeneratedWritingEvalSchema } from './writing-evaluation'
 
 export type { PromptDefinition, PromptMap } from './types'
 export type { VocabularyPromptParams, GeneratedVocabulary } from './vocabulary-generation'
@@ -18,3 +20,5 @@ export type { FlashcardPromptParams, GeneratedFlashcard } from './flashcard-gene
 export type { TranslationPromptParams, GeneratedTranslation } from './translation'
 export type { DialoguePromptParams, GeneratedDialogue } from './dialogue-generation'
 export type { StoryPromptParams, GeneratedStory } from './story-generation'
+export type { WritingPromptParams, GeneratedWritingPrompt } from './writing-generation'
+export type { WritingEvalPromptParams, GeneratedWritingEval } from './writing-evaluation'
