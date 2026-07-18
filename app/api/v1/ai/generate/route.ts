@@ -69,9 +69,8 @@ export const POST = withAuth(
             language: (parsed.data.params.language as string) || '',
             topic: parsed.data.params.topic as string,
             cefrLevel: parsed.data.params.cefr as string,
-            aiProvider: result.aiProvider || 'gemini',
-            aiModel: result.aiModel,
-            tokensUsed: result.tokensUsed,
+            aiProvider: 'gemini',
+            tokensUsed: result.tokensUsed?.input,
             durationMs: result.durationMs,
             response: JSON.stringify(result.content).slice(0, 500),
           }).catch(() => {})
