@@ -19,7 +19,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isAiRoute = pathname === '/ai' || pathname === '/roadmap' || pathname === '/flashcards' || pathname === '/analytics'
+  const isAiRoute = pathname === '/ai' || pathname === '/roadmap' || pathname === '/flashcards' || pathname === '/analytics' || pathname?.startsWith('/ai/history')
   const isQuizRoute = pathname === '/explore' || pathname === '/my-quizzes' || pathname === '/history' || pathname === '/dashboard' || pathname?.startsWith('/courses/') || pathname?.startsWith('/quiz/')
 
   const [activePanel, setActivePanel] = useState<'ai' | 'quiz' | null>(null)
@@ -232,6 +232,18 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   >
                     <TrendingUp className="w-3.5 h-3.5 text-sky-400" />
                     Thống kê tiến độ
+                  </Link>
+                  <Link
+                    href="/ai/history"
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+                      pathname === '/ai/history'
+                        ? "bg-[#5D7B6F] text-white shadow-sm shadow-[#5D7B6F]/20"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                    )}
+                  >
+                    <History className="w-3.5 h-3.5 text-purple-400" />
+                    Lịch sử học AI
                   </Link>
                 </>
               ) : activePanel === 'quiz' ? (
