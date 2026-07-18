@@ -38,7 +38,7 @@ const UserSchema = new Schema<IUser>(
 )
 
 const existingUserModel = mongoose.models.User
-if (process.env.NODE_ENV === 'development' && existingUserModel && !existingUserModel.schema.path('token_version')) {
+if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories'))) {
   delete mongoose.models.User
 }
 
