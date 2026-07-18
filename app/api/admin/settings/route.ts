@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
-import { SiteSettings, getSettings } from '@/lib/modules/auth/models/SiteSettings'
+import { SiteSettings, getSettings, clearSettingsCache } from '@/lib/modules/auth/models/SiteSettings'
 import { UpdateSiteSettingsSchema } from '@/lib/modules/auth/schemas/user'
 
 export const dynamic = 'force-dynamic'
@@ -18,6 +18,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     // Khi maintenance TẮT: xóa cookie → proxy sẽ fallback về API check,
     // đảm bảo user không bị "stuck" với cookie cũ khi admin bật maintenance.
     const response = NextResponse.json({ settings })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
     if (settings.maintenance_mode) {
       response.cookies.set('maintenance-mode', '1', {
         path: '/',
@@ -57,7 +59,7 @@ export const PUT = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // Only update fields that were provided
+    // Build updates map — getSettings() above already migrated missing llm_config
     const updates: Record<string, unknown> = {}
     Object.entries(parsed.data).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -69,14 +71,18 @@ export const PUT = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    // Ensure singleton exists
+    // Ensure singleton exists (also migrates missing llm_config from old documents)
     const existing = await getSettings()
 
-    const settings = await SiteSettings.findByIdAndUpdate(
-      existing._id,
-      { $set: updates },
-      { new: true }
-    ).lean()
+    // Use MongoDB native driver via Mongoose collection to bypass Mongoose nested-schema issues
+    const collection = SiteSettings.collection
+    await collection.updateOne(
+      { _id: existing._id },
+      { $set: updates }
+    )
+    const settings = await collection.findOne({ _id: existing._id })
+
+    clearSettingsCache()
 
     // Sync maintenance-mode cookie với DB state
     // Chỉ set cookie khi maintenance BẬT (fast path cho proxy).

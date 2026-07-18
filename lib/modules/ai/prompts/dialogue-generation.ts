@@ -1,24 +1,36 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedDialogueSchema = z.object({
-  title: z.string().min(3),
-  setting: z.string().min(5),
+  title: z.string().min(1),
+  setting: z.string().min(1),
   participants: z.array(z.object({
     name: z.string(),
     role: z.string(),
-  })).min(2).max(4),
+  })).min(1),
   lines: z.array(z.object({
     speaker: z.string(),
     text: z.string(),
     translation: z.string(),
-    vocabulary: z.array(z.object({
-      word: z.string(),
-      definition: z.string(),
-    })).optional(),
-  })).min(4).max(30),
+    vocabulary: z.array(z.preprocess(
+      (val) => {
+        if (val && typeof val === 'object') {
+          const obj = val as Record<string, unknown>
+          return {
+            word: String(obj.word ?? obj.lemma ?? obj.term ?? obj.text ?? ''),
+            definition: String(obj.definition ?? obj.meaning ?? obj.translation ?? ''),
+          }
+        }
+        return val
+      },
+      z.object({
+        word: z.string().default(''),
+        definition: z.string().default(''),
+      })
+    )).nullable().optional(),
+  })).min(1),
 })
 
 export type GeneratedDialogue = z.infer<typeof GeneratedDialogueSchema>

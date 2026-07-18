@@ -46,7 +46,7 @@ export const QuizListQuerySchema = PaginationQuerySchema.extend({
 
 export const UserListQuerySchema = PaginationQuerySchema.extend({
   search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
-  role: z.enum(['student', 'admin', '']).optional(),
+  role: z.enum(['student', 'admin', 'dev', '']).optional(),
   status: z.enum(['active', 'banned', '']).optional(),
 }).strict()
 

@@ -1,149 +1,180 @@
-import { Suspense } from 'react'
-import { connectDB } from '@/lib/core/db/mongodb'
-import { Category } from '@/lib/modules/quiz/models/Category'
-import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
+import Link from 'next/link'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
-import { HelpCircle, BookOpen, Sparkles } from "lucide-react"
-import { FAQItem, StepItem } from "@/components/shared/landing/LandingItems"
-import * as motion from "framer-motion/client"
-import Link from 'next/link'
-import { ClientOnly } from '@/components/shared/utils/ClientOnly'
+import { Sparkles, Map, Layers, TrendingUp, Compass, Zap, BookOpen, ArrowRight, ShieldCheck, CheckCircle2, Bot } from 'lucide-react'
+import * as motion from 'framer-motion/client'
+import { Button } from '@/components/shared/ui/button'
+import { Card, CardContent } from '@/components/shared/ui/card'
 
 export const metadata = {
-  title: 'Khám phá Môn Học | FQuiz',
-  description: 'Tìm kiếm và khám phá thư viện câu hỏi trắc nghiệm đa chuyên ngành trên FQuiz.',
-}
-
-export const revalidate = 60
-
-async function getCategories() {
-  await connectDB()
-  const cats = await Category.find({ type: 'public', status: 'approved' }).sort({ name: 1 }).lean()
-  
-  const catIds = cats.map(c => c._id)
-  const quizCounts = await Quiz.aggregate([
-    {
-      $match: {
-        category_id: { $in: catIds },
-        status: 'published'
-      }
-    },
-    {
-      $group: {
-        _id: '$category_id',
-        count: { $sum: 1 }
-      }
-    }
-  ])
-  
-  const countMap = new Map(quizCounts.map(item => [item._id.toString(), item.count]))
-
-  return cats.map((c: any) => ({
-    id: c._id.toString(),
-    name: c.name,
-    quizCount: countMap.get(c._id.toString()) ?? 0
-  }))
+  title: 'FQuiz — Nền tảng Học Ngôn ngữ AI & Ôn thi Trắc nghiệm',
+  description: 'Học tiếng Anh với AI, ôn tập Flashcard thuật toán FSRS và luyện thi trắc nghiệm chống gian lận.',
 }
 
 export default async function HomePage() {
-  const categories = await getCategories()
   const user = await verifySession()
 
   return (
     <AppLayout user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
-      
-      {/* Animated Background Elements */}
-      <div className="absolute inset-x-0 top-0 h-[800px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center">
-        <motion.div 
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} 
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="w-[800px] h-[800px] bg-gradient-to-tr from-[#5D7B6F]/20 to-transparent blur-[120px] rounded-full mix-blend-multiply absolute -top-40" 
+      {/* Background Mesh Glow */}
+      <div className="absolute inset-x-0 top-0 h-[900px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center">
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.45, 0.25] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-[800px] h-[800px] bg-gradient-to-tr from-[#5D7B6F]/20 to-transparent blur-[130px] rounded-full mix-blend-multiply absolute -top-40"
         />
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} 
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="w-[600px] h-[600px] bg-gradient-to-bl from-[#A4C3A2]/30 to-transparent blur-[100px] rounded-full mix-blend-multiply absolute top-[100px] right-[-100px]" 
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="w-[600px] h-[600px] bg-gradient-to-bl from-[#A4C3A2]/30 to-transparent blur-[110px] rounded-full mix-blend-multiply absolute top-[120px] right-[-100px]"
         />
       </div>
 
-      <div className="container mx-auto py-12 lg:py-20 relative z-10">
-        <div className="mb-14 text-center max-w-3xl mx-auto">
+      <div className="w-full py-12 lg:py-20 relative z-10 space-y-20">
+        {/* Hero Section */}
+        <section className="text-center max-w-4xl mx-auto space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-white/80 shadow-sm backdrop-blur-md mb-6"
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 border border-white/90 shadow-sm backdrop-blur-md"
           >
             <Sparkles className="w-4 h-4 text-[#5D7B6F]" />
-            <span className="text-xs font-bold text-[#5D7B6F] uppercase tracking-widest">Nền tảng học tập thông minh</span>
+            <span className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Nền tảng Học tập Thế hệ Mới</span>
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-[clamp(40px,5vw+16px,64px)] font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 via-[#5D7B6F] to-[#A4C3A2] leading-[1.1] pb-2 tracking-tight"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]"
           >
-            Khám phá Không giới hạn
+            Nâng tầm Học Ngôn ngữ AI & <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#5D7B6F] via-[#455A52] to-[#A4C3A2]">
+              Ôn thi Trắc nghiệm Thông minh
+            </span>
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="mt-6 text-[clamp(16px,1.5vw+10px,20px)] text-slate-500 font-medium leading-relaxed max-w-2xl mx-auto"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-base sm:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl mx-auto"
           >
-            Tìm kiếm nhanh chóng, ôn luyện hiệu quả. Chọn danh mục bạn quan tâm để bắt đầu chinh phục điểm cao ngay hôm nay.
+            Tích hợp thuật toán lặp lại ngắt quãng (FSRS), đồ thị lộ trình bài học cá nhân hóa và hệ thống thi trắc nghiệm đa chuyên ngành.
           </motion.p>
-        </div>
 
-        <Suspense fallback={
-          <div className="flex justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#A4C3A2]/30 border-t-[#5D7B6F]" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+          >
+            <Button asChild size="lg" className="rounded-2xl px-8 h-14 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-[#5D7B6F]/25 transition-all hover:scale-105">
+              <Link href="/roadmap">
+                <Map className="w-5 h-5 mr-2" />
+                Học Ngôn Ngữ AI Ngay
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="rounded-2xl px-8 h-14 bg-white/80 border-2 border-slate-200 hover:border-[#5D7B6F] text-slate-800 font-black text-sm uppercase tracking-wider transition-all hover:scale-105">
+              <Link href="/explore">
+                <Compass className="w-5 h-5 mr-2" />
+                Khám phá Đề Thi
+              </Link>
+            </Button>
+          </motion.div>
+        </section>
+
+        {/* Dual Service Pillars Showcase */}
+        <section className="space-y-8">
+          <div className="text-center space-y-2">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#5D7B6F]">Hai Trụ Cột Dịch Vụ Cốt Lõi</p>
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">Trải nghiệm Học Tập Toàn Diện</h2>
           </div>
-        }>
-          <CategoryFilter initialCategories={categories} />
-        </Suspense>
-      </div>
 
-      <ClientOnly>
-        {/* Footer */}
-        <footer className="relative z-10 border-t border-[#A4C3A2]/20 pt-16 pb-12 px-6 mt-auto">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-              <div className="col-span-1">
-                <Link href="/" className="flex items-center gap-3 mb-6 group w-fit">
-                  <div className="w-12 h-12 rounded-2xl bg-[#5D7B6F] flex items-center justify-center shadow-lg shadow-[#5D7B6F]/20 group-hover:scale-105 transition-transform">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="font-black text-slate-900 text-3xl tracking-tighter">FQuiz</span>
-                </Link>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-sm">
-                  Nền tảng học tập và ôn luyện trắc nghiệm hàng đầu dành cho sinh viên Việt Nam, giúp tối ưu hóa thời gian và hiệu quả học tập.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Service 1: AI Language Learning */}
+            <Card className="rounded-[36px] border border-white/90 bg-gradient-to-br from-emerald-50/90 via-white/80 to-emerald-50/40 backdrop-blur-2xl p-8 sm:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all space-y-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#5D7B6F]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+
+              <div className="w-14 h-14 rounded-2xl bg-[#5D7B6F] text-white flex items-center justify-center shadow-lg shadow-[#5D7B6F]/30">
+                <Map className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-2 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#5D7B6F] bg-white px-3 py-1 rounded-full border border-emerald-100 shadow-xs">
+                  AI Language Service
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Học Ngôn ngữ với AI</h3>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                  Lộ trình học cây kỹ năng thích ứng, thẻ nhớ SRS FSRS tính toán thời gian lãng quên từ vựng, và trợ lý AI hỗ trợ giải thích trực quan.
                 </p>
               </div>
 
-              <div className="flex md:justify-end">
-                <div>
-                  <h4 className="font-black text-slate-900 mb-6 uppercase text-xs tracking-widest">Pháp lý & Hỗ trợ</h4>
-                  <ul className="space-y-4 text-sm font-bold text-slate-500">
-                    <li><Link href="/terms" className="hover:text-[#5D7B6F] transition-colors">Điều khoản dịch vụ</Link></li>
-                    <li><Link href="/privacy" className="hover:text-[#5D7B6F] transition-colors">Chính sách bảo mật</Link></li>
-                  </ul>
-                </div>
+              <ul className="space-y-3 pt-2 relative z-10">
+                {[
+                  'Sơ đồ cây bài học với điều kiện tiên quyết (Prerequisites)',
+                  'Thẻ ôn tập Flashcards FSRS 4 mức đánh giá độ nhớ',
+                  'Phân tích tăng trưởng từ vựng & đường cong quên',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2.5 text-xs font-bold text-slate-700">
+                    <CheckCircle2 className="w-4 h-4 text-[#5D7B6F] shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-4 relative z-10">
+                <Button asChild className="rounded-2xl px-6 h-12 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-black text-xs uppercase tracking-wider shadow-md shadow-[#5D7B6F]/20">
+                  <Link href="/roadmap">
+                    Khám phá Lộ trình bài học <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
               </div>
-            </div>
-            
-            <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
-              <p className="text-xs font-bold text-slate-400" suppressHydrationWarning>
-                © {new Date().getFullYear()} FQuiz Inc. Made with ❤️ for Education.
-              </p>
-            </div>
+            </Card>
+
+            {/* Service 2: Quiz & Exam Testing */}
+            <Card className="rounded-[36px] border border-white/90 bg-gradient-to-br from-blue-50/90 via-white/80 to-blue-50/40 backdrop-blur-2xl p-8 sm:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all space-y-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+
+              <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Zap className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-2 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-white px-3 py-1 rounded-full border border-blue-100 shadow-xs">
+                  Quiz & Exam Service
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Ôn Thi Trắc Nghiệm & Kiểm Tra</h3>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                  Ngân hàng câu hỏi đa dạng theo môn học, trộn đề ngẫu nhiên, chế độ chống gian lận và xem lại đáp án chi tiết.
+                </p>
+              </div>
+
+              <ul className="space-y-3 pt-2 relative z-10">
+                {[
+                  'Tìm kiếm môn học theo mã',
+                  'Tạo Quiz Trộn từ nhiều bộ đề ôn thi cá nhân',
+                  'Lưu vết lịch sử thi & thống kê điểm số tức thì',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2.5 text-xs font-bold text-slate-700">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-4 relative z-10">
+                <Button asChild className="rounded-2xl px-6 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/20">
+                  <Link href="/explore">
+                    Khám phá Thư viện Đề thi <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </Card>
           </div>
-        </footer>
-      </ClientOnly>
+        </section>
+      </div>
     </AppLayout>
   )
 }

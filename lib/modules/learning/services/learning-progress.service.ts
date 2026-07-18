@@ -39,34 +39,9 @@ export class LearningProgressService {
     const prevCount = existing?.reviewCount || 0
     const prevState = existing?.strategyState as IFSRSState | undefined
 
-    let fsrsState: IFSRSState
-    let newMastery: number
-
-    if (strategy === 'fsrs') {
-      const current = prevState ?? reviewEngine.getInitialState()
-      const grade = GRADE_MAP[review.result] ?? 1
-      fsrsState = reviewEngine.calculateNext(current, grade)
-      newMastery = Math.round(fsrsState.stability * 10)
-      if (newMastery > 100) newMastery = 100
-      if (newMastery < 0) newMastery = 0
-    } else {
-      const existingState = prevState ?? reviewEngine.getInitialState()
-      const delta = review.result === 'correct' ? 15 : review.result === 'partial' ? 5 : -10
-      newMastery = Math.max(0, Math.min(100, (existing?.masteryLevel || 0) + delta))
-      const days = review.result === 'correct' ? (prevCount + 1) * 1.5 : 1
-      fsrsState = {
-        ...existingState,
-        stability: newMastery / 10,
-        difficulty: 5,
-        elapsedDays: existingState.elapsedDays + (existingState.scheduledDays || 1),
-        scheduledDays: days,
-        reps: prevCount + 1,
-        lapses: review.result === 'incorrect' ? existingState.lapses + 1 : existingState.lapses,
-        lastReview: new Date(),
-        nextReview: new Date(Date.now() + days * 86400000),
-        state: review.result === 'incorrect' ? 'relearning' : 'review',
-      }
-    }
+    const { fsrsState, newMastery } = strategy === 'fsrs'
+      ? this.calculateFsrsReview(prevState, review.result)
+      : this.calculateSimpleReview(prevState, prevCount, existing?.masteryLevel || 0, review.result)
 
     return this.progressRepo.upsert(userId, review.learningObjectId, review.loType, review.version, {
       learningStrategy: strategy,
@@ -79,5 +54,40 @@ export class LearningProgressService {
       completedAt: newMastery >= 100 ? new Date() : undefined,
       lastResult: review.result,
     })
+  }
+
+  private calculateFsrsReview(prevState: IFSRSState | undefined, result: 'correct' | 'incorrect' | 'partial') {
+    const current = prevState ?? reviewEngine.getInitialState()
+    const grade = GRADE_MAP[result] ?? 1
+    const fsrsState = reviewEngine.calculateNext(current, grade)
+    let newMastery = Math.round(fsrsState.stability * 10)
+    if (newMastery > 100) newMastery = 100
+    if (newMastery < 0) newMastery = 0
+    return { fsrsState, newMastery }
+  }
+
+  private calculateSimpleReview(
+    prevState: IFSRSState | undefined,
+    prevCount: number,
+    currentMastery: number,
+    result: 'correct' | 'incorrect' | 'partial'
+  ) {
+    const existingState = prevState ?? reviewEngine.getInitialState()
+    const delta = result === 'correct' ? 15 : result === 'partial' ? 5 : -10
+    const newMastery = Math.max(0, Math.min(100, currentMastery + delta))
+    const days = result === 'correct' ? (prevCount + 1) * 1.5 : 1
+    const fsrsState: IFSRSState = {
+      ...existingState,
+      stability: newMastery / 10,
+      difficulty: 5,
+      elapsedDays: existingState.elapsedDays + (existingState.scheduledDays || 1),
+      scheduledDays: days,
+      reps: prevCount + 1,
+      lapses: result === 'incorrect' ? existingState.lapses + 1 : existingState.lapses,
+      lastReview: new Date(),
+      nextReview: new Date(Date.now() + days * 86400000),
+      state: result === 'incorrect' ? 'relearning' : 'review',
+    }
+    return { fsrsState, newMastery }
   }
 }

@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
@@ -9,15 +9,39 @@ const QuestionOptionSchema = z.object({
 })
 
 export const GeneratedQuizSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  questions: z.array(z.object({
-    text: z.string().min(5),
-    type: z.enum(['multiple_choice', 'true_false', 'fill_blank', 'matching']),
-    options: z.array(QuestionOptionSchema).min(2).max(6),
-    explanation: z.string().min(5).optional(),
-    difficulty: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
-  })).min(1).max(20),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  questions: z.preprocess(
+    (val) => {
+      if (Array.isArray(val)) {
+        return val.map((question) => {
+          if (typeof question === 'string') {
+            return { text: question, type: 'multiple_choice', options: [{ text: '', isCorrect: true }], explanation: null, difficulty: null }
+          }
+          if (question && typeof question === 'object' && !Array.isArray(question)) {
+            const q = question as Record<string, unknown>
+            if (Array.isArray(q.options)) {
+              q.options = q.options.map((opt: unknown) => {
+                if (typeof opt === 'string') {
+                  return { text: opt, isCorrect: false }
+                }
+                return opt
+              })
+            }
+          }
+          return question
+        })
+      }
+      return val
+    },
+    z.array(z.object({
+      text: z.string().min(1),
+      type: z.string().optional().default('multiple_choice'),
+      options: z.array(QuestionOptionSchema).min(1),
+      explanation: z.string().nullable().optional(),
+      difficulty: z.string().nullable().optional(),
+    })).min(1),
+  ),
 })
 
 export type GeneratedQuiz = z.infer<typeof GeneratedQuizSchema>

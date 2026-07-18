@@ -49,7 +49,12 @@ type QuizDetailApiError = Error & { status?: number; code?: string; hint?: strin
 type StartSessionError = Error & { status?: number; code?: string; activeSession?: ActiveSessionPayload }
 
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
-  // Always try the student API first because `auth-token` is httpOnly and cannot be read via document.cookie
+  const studentDetail = await fetchStudentQuizDetail(id)
+  if (studentDetail) return studentDetail
+  return fetchPublicQuizDetail(id)
+}
+
+async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {
   try {
     const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.QUIZZES(id)}`)
     
@@ -70,24 +75,25 @@ async function fetchQuizDetail(id: string): Promise<QuizDetail> {
     }
     
     if (studentRes.status === 401 || studentRes.status === 404) {
-      // 401 = Guest user, 404 = Not in student's library. Fallback to public API.
       console.warn(`Student API returned ${studentRes.status}, falling back to public API`)
-    } else {
-      // 403 Forbidden or 500 Server Error should be thrown to the user
-      const data = (await studentRes.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
-      const error = new Error(data.error || `Bạn không có quyền truy cập bộ đề này (Lỗi ${studentRes.status}).`) as QuizDetailApiError
-      error.status = studentRes.status
-      error.code = data.code
-      error.hint = data.hint
-      throw error
+      return null
     }
+
+    const data = (await studentRes.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
+    const error = new Error(data.error || `Bạn không có quyền truy cập bộ đề này (Lỗi ${studentRes.status}).`) as QuizDetailApiError
+    error.status = studentRes.status
+    error.code = data.code
+    error.hint = data.hint
+    throw error
   } catch (e) {
     if ((e as QuizDetailApiError).status && (e as QuizDetailApiError).status !== 401 && (e as QuizDetailApiError).status !== 404) {
       throw e
     }
-    // Network errors or 401/404 fall through to public API
+    return null
   }
+}
 
+async function fetchPublicQuizDetail(id: string): Promise<QuizDetail> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.PUBLIC.QUIZ_DETAIL(id)}`)
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }

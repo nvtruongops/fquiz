@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   CheckSquare,
   Loader2,
+  Code2,
 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { normalizeSearchInput, clampPagination, sanitizeQueryParams } from '@/lib/core/validation/client-validation'
@@ -38,7 +39,7 @@ interface User {
   _id: string
   username: string
   email: string
-  role: 'admin' | 'student'
+  role: 'admin' | 'student' | 'dev'
   status: 'active' | 'banned'
   created_at: string
 }
@@ -56,7 +57,7 @@ async function fetchUsers(page: number, search: string, role: string, status: st
   const { page: validPage, limit: validLimit } = clampPagination(page, 10)
   
   // Validate enum values
-  const validRole = ['student', 'admin', ''].includes(role) ? role : ''
+  const validRole = ['student', 'admin', 'dev', ''].includes(role) ? role : ''
   const validStatus = ['active', 'banned', ''].includes(status) ? status : ''
   
   const queryParams = sanitizeQueryParams({
@@ -232,6 +233,7 @@ export default function AdminUsersPage() {
                   <SelectContent className="rounded-xl">
                     <SelectItem value="_all">Tất cả vai trò</SelectItem>
                     <SelectItem value="student">Học viên</SelectItem>
+                    <SelectItem value="dev">Developer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
@@ -338,6 +340,10 @@ export default function AdminUsersPage() {
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#A4C3A2]/20 text-[#5D7B6F]">
                             <ShieldCheck className="w-3.5 h-3.5" /> Quản trị viên
                           </span>
+                        ) : user.role === 'dev' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                            <Code2 className="w-3.5 h-3.5" /> Developer
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-gray-100 text-gray-600">
                             Học viên
@@ -355,6 +361,16 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-1">
+                          {user.role !== 'admin' && user._id !== currentUserId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                              onClick={() => updateMutation.mutate({ id: user._id, updates: { role: user.role === 'dev' ? 'student' : 'dev' } })}
+                            >
+                              {user.role === 'dev' ? 'Gỡ Dev' : 'Thành Dev'}
+                            </Button>
+                          )}
                           {user.status === 'active' ? (
                             <Button
                               variant="ghost"

@@ -1,23 +1,36 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedStorySchema = z.object({
-  title: z.string().min(3),
-  body: z.string().min(100),
-  translation: z.string().min(100),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  translation: z.string().min(1),
   vocabulary: z.array(z.object({
     word: z.string(),
     definition: z.string(),
-    cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
-  })).min(3),
-  chapters: z.array(z.object({
-    heading: z.string(),
-    text: z.string(),
-  })).optional(),
-  moral: z.string().optional(),
-  wordCount: z.number().int().optional(),
+    cefrLevel: z.string().nullable().optional(),
+  })).min(1),
+  chapters: z.preprocess(
+    (val) => {
+      if (Array.isArray(val)) {
+        return val.map((item) => {
+          if (typeof item === 'string') {
+            return { heading: '', text: item }
+          }
+          return item
+        })
+      }
+      return val
+    },
+    z.array(z.object({
+      heading: z.string(),
+      text: z.string(),
+    })).nullable().optional(),
+  ),
+  moral: z.string().nullable().optional(),
+  wordCount: z.number().int().nullable().optional(),
 })
 
 export type GeneratedStory = z.infer<typeof GeneratedStorySchema>

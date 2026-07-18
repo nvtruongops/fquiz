@@ -27,6 +27,64 @@ export interface FlashcardViewRef {
   flip: () => void
 }
 
+function getQuestionFontSize(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'text-[11px] md:text-xs'
+  if (totalContentLength > 1500) return 'text-xs md:text-sm'
+  if (totalContentLength > 1000) return 'text-sm md:text-base'
+  if (totalContentLength > 600) return 'text-base md:text-lg'
+  return 'text-lg md:text-2xl'
+}
+
+function getOptionFontSize(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'text-[10px] md:text-[11px]'
+  if (totalContentLength > 1500) return 'text-[11px] md:text-xs'
+  if (totalContentLength > 1000) return 'text-xs md:text-sm'
+  if (totalContentLength > 600) return 'text-sm md:text-base'
+  return 'text-base'
+}
+
+function getOptionPadding(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'p-1.5'
+  if (totalContentLength > 1500) return 'p-2'
+  if (totalContentLength > 1000) return 'p-3'
+  return 'p-4'
+}
+
+function getQuestionMargin(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'mb-2'
+  if (totalContentLength > 1500) return 'mb-3'
+  if (totalContentLength > 1000) return 'mb-4'
+  return 'mb-6'
+}
+
+function getOptionSpacing(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'space-y-1'
+  if (totalContentLength > 1500) return 'space-y-1.5'
+  if (totalContentLength > 1000) return 'space-y-2'
+  return 'space-y-3'
+}
+
+function getCardPadding(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'p-3'
+  if (totalContentLength > 1500) return 'p-4'
+  if (totalContentLength > 1000) return 'p-6'
+  return 'p-8'
+}
+
+function getMinHeight(totalContentLength: number): string {
+  if (totalContentLength > 2500) return 'min-h-[800px]'
+  if (totalContentLength > 2000) return 'min-h-[700px]'
+  if (totalContentLength > 1500) return 'min-h-[600px]'
+  if (totalContentLength > 1000) return 'min-h-[500px]'
+  return 'min-h-[400px]'
+}
+
+function getQuestionLineHeight(totalContentLength: number): string {
+  if (totalContentLength > 2000) return 'leading-tight'
+  if (totalContentLength > 1500) return 'leading-snug'
+  return 'leading-normal'
+}
+
 export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   question,
   questionNumber,
@@ -86,7 +144,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   // Get correct answer text - with safety checks
   const answerIndices = Array.isArray(question.correct_answer) ? question.correct_answer : question.correct_answer != null ? [question.correct_answer] : []
   const correctAnswers = answerIndices
-    .map((idx: number) => question.options?.[idx])
+    .map((idx: number) => question.options[idx])
     .filter(Boolean) as string[]
 
   // Calculate total content length for auto-scaling
@@ -94,64 +152,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   const optionsLength = question.options.reduce((sum, opt) => sum + opt.length, 0)
   const totalContentLength = questionLength + optionsLength
 
-  // Determine font sizes based on content length
-  const getQuestionFontSize = () => {
-    if (totalContentLength > 2000) return 'text-[11px] md:text-xs'
-    if (totalContentLength > 1500) return 'text-xs md:text-sm'
-    if (totalContentLength > 1000) return 'text-sm md:text-base'
-    if (totalContentLength > 600) return 'text-base md:text-lg'
-    return 'text-lg md:text-2xl'
-  }
 
-  const getOptionFontSize = () => {
-    if (totalContentLength > 2000) return 'text-[10px] md:text-[11px]'
-    if (totalContentLength > 1500) return 'text-[11px] md:text-xs'
-    if (totalContentLength > 1000) return 'text-xs md:text-sm'
-    if (totalContentLength > 600) return 'text-sm md:text-base'
-    return 'text-base'
-  }
-
-  const getOptionPadding = () => {
-    if (totalContentLength > 2000) return 'p-1.5'
-    if (totalContentLength > 1500) return 'p-2'
-    if (totalContentLength > 1000) return 'p-3'
-    return 'p-4'
-  }
-
-  const getQuestionMargin = () => {
-    if (totalContentLength > 2000) return 'mb-2'
-    if (totalContentLength > 1500) return 'mb-3'
-    if (totalContentLength > 1000) return 'mb-4'
-    return 'mb-6'
-  }
-
-  const getOptionSpacing = () => {
-    if (totalContentLength > 2000) return 'space-y-1'
-    if (totalContentLength > 1500) return 'space-y-1.5'
-    if (totalContentLength > 1000) return 'space-y-2'
-    return 'space-y-3'
-  }
-
-  const getCardPadding = () => {
-    if (totalContentLength > 2000) return 'p-3'
-    if (totalContentLength > 1500) return 'p-4'
-    if (totalContentLength > 1000) return 'p-6'
-    return 'p-8'
-  }
-
-  const getMinHeight = () => {
-    if (totalContentLength > 2500) return 'min-h-[800px]'
-    if (totalContentLength > 2000) return 'min-h-[700px]'
-    if (totalContentLength > 1500) return 'min-h-[600px]'
-    if (totalContentLength > 1000) return 'min-h-[500px]'
-    return 'min-h-[400px]'
-  }
-
-  const getQuestionLineHeight = () => {
-    if (totalContentLength > 2000) return 'leading-tight'
-    if (totalContentLength > 1500) return 'leading-snug'
-    return 'leading-normal'
-  }
 
   if (!enableAnimation) {
     return (
@@ -174,12 +175,12 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 )}
                 <h2 className={cn(
                   "font-bold whitespace-pre-wrap tracking-tight text-slate-800 dark:text-slate-100",
-                  getQuestionFontSize(),
-                  getQuestionLineHeight()
+                  getQuestionFontSize(totalContentLength),
+                  getQuestionLineHeight(totalContentLength)
                 )}>
                   {question.text}
                 </h2>
-                <div className={cn("w-full", getOptionSpacing())}>
+                <div className={cn("w-full", getOptionSpacing(totalContentLength))}>
                   {(question.options || []).map((option, idx) => {
                     const isCorrect = answerIndices.includes(idx)
                     return (
@@ -198,7 +199,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                         }}
                         className={cn(
                           "rounded-xl text-left border transition-all shadow-sm cursor-pointer",
-                          getOptionPadding(),
+                          getOptionPadding(totalContentLength),
                           isFlipped && isCorrect 
                             ? "bg-green-50 dark:bg-green-900/20 border-green-500/50" 
                             : "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -213,7 +214,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                           </span>
                           <span className={cn(
                             "whitespace-pre-wrap flex-1", 
-                            getOptionFontSize(),
+                            getOptionFontSize(totalContentLength),
                             isFlipped && isCorrect ? "text-green-800 dark:text-green-300 font-medium" : "text-slate-700 dark:text-slate-300"
                           )}>
                             {option}
@@ -374,7 +375,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             className={cn(
               'flashcard-face flashcard-face-front h-full flex flex-col transition-all duration-300',
               'bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 shadow-xl flashcard-shadow',
-              getCardPadding()
+              getCardPadding(totalContentLength)
             )}
           >
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 flex flex-col pt-1 pb-4">
@@ -396,29 +397,29 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 {/* Question text */}
                 <h2 className={cn(
                   "font-bold text-center whitespace-pre-wrap tracking-tight",
-                  getQuestionFontSize(),
-                  getQuestionMargin(),
-                  getQuestionLineHeight(),
+                  getQuestionFontSize(totalContentLength),
+                  getQuestionMargin(totalContentLength),
+                  getQuestionLineHeight(totalContentLength),
                   "text-slate-800 dark:text-slate-100"
                 )}>
                   {question.text}
                 </h2>
 
                 {/* Options */}
-                <div className={cn("max-w-2xl mx-auto w-full", getOptionSpacing())}>
+                <div className={cn("max-w-2xl mx-auto w-full", getOptionSpacing(totalContentLength))}>
                   {(question.options || []).map((option, idx) => (
                     <div
                       key={idx}
                       className={cn(
                         "bg-slate-50 dark:bg-slate-800/50 rounded-xl text-left border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm",
-                        getOptionPadding()
+                        getOptionPadding(totalContentLength)
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <span className="flex-none flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
                           {String.fromCodePoint(65 + idx)}
                         </span>
-                        <span className={cn("whitespace-pre-wrap flex-1 text-slate-700 dark:text-slate-300", getOptionFontSize())}>
+                        <span className={cn("whitespace-pre-wrap flex-1 text-slate-700 dark:text-slate-300", getOptionFontSize(totalContentLength))}>
                           {option}
                         </span>
                       </div>
@@ -442,7 +443,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             className={cn(
               'flashcard-face flashcard-face-back h-full flex flex-col',
               'bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-2xl',
-              getCardPadding()
+              getCardPadding(totalContentLength)
             )}
           >
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 pt-1 pb-4 flex flex-col">

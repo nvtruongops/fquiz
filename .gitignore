@@ -75,6 +75,9 @@ codegraph.mcp.json
 # Task documents & migration scripts (sensitive internal docs & exec scripts)
 task/
 scripts/
+Docs/
+.kilo/
+.playwright-mcp/
 
 # Scripts
 scripts/.env.local

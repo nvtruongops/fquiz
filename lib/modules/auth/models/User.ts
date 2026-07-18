@@ -17,7 +17,7 @@ const UserSchema = new Schema<IUser>(
     password_hash: { type: String, required: true },
     avatar_url: { type: String, default: null },
     profile_bio: { type: String, default: null },
-    role: { type: String, enum: ['admin', 'student'], required: true, default: 'student' },
+    role: { type: String, enum: ['admin', 'student', 'dev'], required: true, default: 'student' },
     status: { type: String, enum: ['active', 'banned'], required: true, default: 'active' },
     ban_reason: { type: String, default: null },
     sharing_violations: { type: Number, required: true, default: 0 },
@@ -31,6 +31,7 @@ const UserSchema = new Schema<IUser>(
     reset_token_expires: { type: Date, default: null },
     reset_token_attempts: { type: Number, default: 0 },
     token_version: { type: Number, required: true, default: 1 },
+    google_id: { type: String, default: null, sparse: true },
     pinned_categories: { type: [String], default: [] },
   },
   { timestamps: false }

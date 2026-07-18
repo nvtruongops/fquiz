@@ -76,104 +76,12 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       }))
     )
 
-    // 3. Find questions to remove (old questions no longer in quiz)
     const questionsToRemove = existingBankQuestions.filter(
       bq => !newQuestionIds.has(bq.question_id)
     )
 
-    // 4. Remove this quiz from used_in_quizzes or delete if no other quiz uses it
-    for (const oldQuestion of questionsToRemove) {
-      const oldQuizIds = (oldQuestion.used_in_quiz_ids || []).map((id: any) => String(id))
-
-      if (oldQuestion.used_in_quizzes.length <= 1 && oldQuizIds.length <= 1) {
-        await QuestionBank.deleteOne({
-          category_id,
-          question_id: oldQuestion.question_id,
-        })
-      } else {
-        const updateData: any = {
-          used_in_quizzes: oldQuestion.used_in_quizzes.filter((code: string) => code !== course_code),
-        }
-        if (quizObjectId) {
-          updateData.used_in_quiz_ids = oldQuizIds.filter((id: string) => id !== String(quizObjectId))
-        }
-        updateData.usage_count = quizObjectId
-          ? updateData.used_in_quiz_ids.length
-          : updateData.used_in_quizzes.length
-
-        await QuestionBank.updateOne(
-          { category_id, question_id: oldQuestion.question_id },
-          { $set: updateData }
-        )
-      }
-    }
-
-    // 5. Add/update new questions
-    for (const question of questions) {
-      const questionId = generateQuestionId({
-        text: question.text,
-        options: question.options,
-        correct_answer: question.correct_answer,
-      })
-
-      const existing = await QuestionBank.findOne({
-        category_id,
-        question_id: questionId,
-      })
-
-      if (existing) {
-        const alreadyTrackedById = quizObjectId
-          ? (existing.used_in_quiz_ids || []).some((id: any) => String(id) === String(quizObjectId))
-          : existing.used_in_quizzes.includes(course_code)
-
-        if (!alreadyTrackedById) {
-          const updateData: any = {
-            $addToSet: { used_in_quizzes: course_code },
-          }
-          if (quizObjectId) {
-            updateData.$addToSet.used_in_quiz_ids = quizObjectId
-          }
-
-          await QuestionBank.updateOne(
-            { category_id, question_id: questionId },
-            updateData
-          )
-        }
-
-        // Recalculate usage_count
-        const updated = await QuestionBank.findOne({
-          category_id,
-          question_id: questionId,
-        })
-        if (updated) {
-          const newCount = updated.used_in_quiz_ids && updated.used_in_quiz_ids.length > 0
-            ? updated.used_in_quiz_ids.length
-            : updated.used_in_quizzes.length
-          if (updated.usage_count !== newCount) {
-            await QuestionBank.updateOne(
-              { category_id, question_id: questionId },
-              { $set: { usage_count: newCount } }
-            )
-          }
-        }
-      } else {
-        // New question - create with both trackers
-        await QuestionBank.create({
-          category_id,
-          question_id: questionId,
-          text: question.text,
-          options: question.options,
-          correct_answer: question.correct_answer,
-          explanation: question.explanation,
-          image_url: question.image_url,
-          created_by: payload.userId,
-          usage_count: 1,
-          used_in_quizzes: [course_code],
-          used_in_quiz_ids: quizObjectId ? [quizObjectId] : [],
-          has_conflicts: false,
-        })
-      }
-    }
+    await syncRemovedQuestions(category_id, course_code, quizObjectId, questionsToRemove)
+    await syncUpsertQuestions(category_id, course_code, quizObjectId, payload.userId, questions)
 
     return NextResponse.json({
       success: true,
@@ -185,3 +93,118 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['admin'] })
+
+async function syncRemovedQuestions(
+  categoryId: string,
+  courseCode: string,
+  quizObjectId: mongoose.Types.ObjectId | null,
+  questionsToRemove: any[]
+) {
+  for (const oldQuestion of questionsToRemove) {
+    const oldQuizIds = (oldQuestion.used_in_quiz_ids || []).map((id: any) => String(id))
+
+    if (oldQuestion.used_in_quizzes.length <= 1 && oldQuizIds.length <= 1) {
+      await QuestionBank.deleteOne({
+        category_id: categoryId,
+        question_id: oldQuestion.question_id,
+      })
+    } else {
+      const updateData: any = {
+        used_in_quizzes: oldQuestion.used_in_quizzes.filter((code: string) => code !== courseCode),
+      }
+      if (quizObjectId) {
+        updateData.used_in_quiz_ids = oldQuizIds.filter((id: string) => id !== String(quizObjectId))
+      }
+      updateData.usage_count = quizObjectId
+        ? updateData.used_in_quiz_ids.length
+        : updateData.used_in_quizzes.length
+
+      await QuestionBank.updateOne(
+        { category_id: categoryId, question_id: oldQuestion.question_id },
+        { $set: updateData }
+      )
+    }
+  }
+}
+
+async function syncUpsertQuestions(
+  categoryId: string,
+  courseCode: string,
+  quizObjectId: mongoose.Types.ObjectId | null,
+  userId: string,
+  questions: any[]
+) {
+  for (const question of questions) {
+    const questionId = generateQuestionId({
+      text: question.text,
+      options: question.options,
+      correct_answer: question.correct_answer,
+    })
+
+    const existing = await QuestionBank.findOne({
+      category_id: categoryId,
+      question_id: questionId,
+    })
+
+    if (existing) {
+      await updateExistingBankQuestion(categoryId, questionId, courseCode, quizObjectId, existing)
+    } else {
+      await QuestionBank.create({
+        category_id: categoryId,
+        question_id: questionId,
+        text: question.text,
+        options: question.options,
+        correct_answer: question.correct_answer,
+        explanation: question.explanation,
+        image_url: question.image_url,
+        created_by: userId,
+        usage_count: 1,
+        used_in_quizzes: [courseCode],
+        used_in_quiz_ids: quizObjectId ? [quizObjectId] : [],
+        has_conflicts: false,
+      })
+    }
+  }
+}
+
+async function updateExistingBankQuestion(
+  categoryId: string,
+  questionId: string,
+  courseCode: string,
+  quizObjectId: mongoose.Types.ObjectId | null,
+  existing: any
+) {
+  const alreadyTrackedById = quizObjectId
+    ? (existing.used_in_quiz_ids || []).some((id: any) => String(id) === String(quizObjectId))
+    : existing.used_in_quizzes.includes(courseCode)
+
+  if (!alreadyTrackedById) {
+    const updateData: any = {
+      $addToSet: { used_in_quizzes: courseCode },
+    }
+    if (quizObjectId) {
+      updateData.$addToSet.used_in_quiz_ids = quizObjectId
+    }
+
+    await QuestionBank.updateOne(
+      { category_id: categoryId, question_id: questionId },
+      updateData
+    )
+  }
+
+  const updated = await QuestionBank.findOne({
+    category_id: categoryId,
+    question_id: questionId,
+  })
+  if (updated) {
+    const newCount = updated.used_in_quiz_ids && updated.used_in_quiz_ids.length > 0
+      ? updated.used_in_quiz_ids.length
+      : updated.used_in_quizzes.length
+    if (updated.usage_count !== newCount) {
+      await QuestionBank.updateOne(
+        { category_id: categoryId, question_id: questionId },
+        { $set: { usage_count: newCount } }
+      )
+    }
+  }
+}

@@ -8,7 +8,7 @@ export interface IUser {
   password_hash: string
   avatar_url?: string | null
   profile_bio?: string | null
-  role: 'admin' | 'student'
+  role: 'admin' | 'student' | 'dev'
   status: 'active' | 'banned'
   ban_reason?: string
   sharing_violations: number
@@ -22,5 +22,6 @@ export interface IUser {
   reset_token_expires?: Date
   reset_token_attempts?: number
   token_version?: number
+  google_id?: string | null
   pinned_categories?: string[]
 }

@@ -119,8 +119,8 @@ export default function HistoryPage() {
   return (
     <main className="min-h-screen bg-[#F9F9F7] pb-20">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-10 md:py-16">
+      <div className="bg-white/80 backdrop-blur-2xl border-b border-gray-100/80">
+        <div className="w-full py-8 md:py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
               <p className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-[0.3em]">Hành trình của bạn</p>
@@ -142,7 +142,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 mt-10">
+      <div className="w-full mt-10">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 text-[#5D7B6F] animate-spin" />
@@ -174,134 +174,7 @@ export default function HistoryPage() {
                 
                 <div className="grid grid-cols-1 gap-4">
                   {group.items.map((item) => (
-                    <Card key={item._id} className="rounded-[28px] border-none bg-white shadow-xl shadow-gray-200/20 hover:shadow-2xl hover:shadow-[#5D7B6F]/5 transition-all group overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row md:items-center gap-6 p-6">
-                          <div className={cn(
-                            "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
-                            item.is_mix ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" :
-                            item.status === 'completed' ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
-                          )}>
-                            {item.is_mix ? <Shuffle className="w-7 h-7" /> : item.status === 'completed' ? <CheckCircle className="w-7 h-7" /> : <Play className="w-7 h-7" />}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <h3 className="text-lg font-black text-gray-900 truncate uppercase tracking-tight group-hover:text-[#5D7B6F] transition-colors">
-                                {item.quiz_code}
-                              </h3>
-                              <ModeBadge mode={item.mode} />
-                              {item.is_mix && (
-                                <Badge variant="secondary" className="bg-[#5D7B6F]/10 text-[#5D7B6F] border-none font-black text-[9px] uppercase rounded-full px-2 py-0.5">
-                                  <Shuffle className="w-2.5 h-2.5 mr-1" />
-                                  Quiz Trộn
-                                </Badge>
-                              )}
-                              {item.status === 'active' && (
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none font-black text-[9px] uppercase">Đang làm</Badge>
-                              )}
-                            </div>
-                            <p className="text-xs font-bold text-gray-400">
-                              {item.category_name} • {format(new Date(item.started_at), 'HH:mm')}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-4 mt-2">
-                               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase">
-                                  <Clock className="w-3 h-3" />
-                                  {item.duration_minutes} phút học
-                               </div>
-                               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase">
-                                  <RotateCcw className="w-3 h-3" />
-                                  {item.source_label}
-                               </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-8 justify-between md:justify-end">
-                            <div className="text-right">
-                              {item.mode === 'flashcard' ? (
-                                item.status === 'active' ? (
-                                  <>
-                                    <p className="text-3xl font-black leading-none tracking-tighter text-gray-300">--</p>
-                                    <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
-                                      {item.flashcard_stats
-                                        ? `${item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown}/${item.total_questions} THẺ`
-                                        : `0/${item.total_questions} THẺ`}
-                                    </p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <p className="text-3xl font-black leading-none tracking-tighter text-purple-500">
-                                      {item.flashcard_stats?.cards_known ?? 0}
-                                      <span className="text-lg text-purple-300">/{item.flashcard_stats?.total_cards ?? item.total_questions}</span>
-                                    </p>
-                                    <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
-                                      THẺ ĐÃ BIẾT
-                                      {item.flashcard_stats && (item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown < item.flashcard_stats.total_cards) && (
-                                        <span className="text-orange-500 ml-1">• {item.flashcard_stats.total_cards - item.flashcard_stats.cards_known - item.flashcard_stats.cards_unknown} chưa làm</span>
-                                      )}
-                                    </p>
-                                  </>
-                                )
-                              ) : (
-                                <>
-                                  <p className={cn(
-                                    "text-3xl font-black leading-none tracking-tighter",
-                                    item.status === 'active' ? "text-gray-300" : "text-[#5D7B6F]"
-                                  )}>
-                                    {item.status === 'active'
-  ? '--'
-  : `${Math.min(10, Math.max(0, (item.score / Math.max(item.total_questions, 1)) * 10)).toFixed(1)}/10`}
-                                  </p>
-                                  <p className="text-[10px] font-black text-gray-300 uppercase mt-1">
-                                    {item.status === 'active'
-                                      ? `${item.answered_count}/${item.total_questions} ĐÃ LÀM`
-                                      : `${item.correct_count}/${item.total_questions} CÂU ĐÚNG`}
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {/* Redo buttons */}
-                              <div className="hidden sm:flex items-center gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  className="h-9 px-3 rounded-xl hover:bg-[#5D7B6F]/5 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest" 
-                                  asChild
-                                >
-                                  <Link href={`/quiz/${item.quiz_id}`}>
-                                    Làm lại
-                                  </Link>
-                                </Button>
-                                {item.is_mix && (
-                                  <Button 
-                                    variant="outline" 
-                                    className="h-9 px-3 rounded-xl border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all" 
-                                    asChild
-                                  >
-                                    <Link href={`/?tab=mix&mix_from=${item.quiz_id}`}>
-                                      Làm mới
-                                    </Link>
-                                  </Button>
-                                )}
-                              </div>
-
-                              <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg" asChild>
-                                <Link href={
-                                  item.status === 'active'
-                                    ? item.mode === 'flashcard'
-                                      ? `/quiz/${item.quiz_id}/session/${item._id}/flashcard`
-                                      : `/quiz/${item.quiz_id}/session/${item._id}`
-                                    : `/history/${item.quiz_id}/${item._id}`
-                                }>
-                                  <ChevronRight className="w-5 h-5" />
-                                </Link>
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <HistoryItemCard key={item._id} item={item} />
                   ))}
                 </div>
               </section>
@@ -338,5 +211,137 @@ export default function HistoryPage() {
         )}
       </div>
     </main>
+  )
+}
+
+function HistoryItemCard({ item }: { item: HistoryItem }) {
+  return (
+    <Card className="rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.14)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row md:items-center gap-6 p-6 md:p-7">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105",
+            item.is_mix ? "bg-[#5D7B6F]/10 text-[#5D7B6F] border border-[#5D7B6F]/20" :
+            item.status === 'completed' ? "bg-emerald-50 text-emerald-600 border border-emerald-200/50" : "bg-orange-50 text-orange-600 border border-orange-200/50"
+          )}>
+            {item.is_mix ? <Shuffle className="w-7 h-7" /> : item.status === 'completed' ? <CheckCircle className="w-7 h-7" /> : <Play className="w-7 h-7" />}
+          </div>
+          
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-lg font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-[#5D7B6F] transition-colors">
+                {item.quiz_code}
+              </h3>
+              <ModeBadge mode={item.mode} />
+              {item.is_mix && (
+                <Badge variant="secondary" className="bg-[#5D7B6F]/10 text-[#5D7B6F] border-none font-black text-[9px] uppercase rounded-full px-2.5 py-0.5">
+                  <Shuffle className="w-2.5 h-2.5 mr-1" />
+                  Quiz Trộn
+                </Badge>
+              )}
+              {item.status === 'active' && (
+                <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none font-black text-[9px] uppercase">Đang làm</Badge>
+              )}
+            </div>
+            <p className="text-xs font-bold text-slate-400">
+              {item.category_name} • {format(new Date(item.started_at), 'HH:mm')}
+            </p>
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+               <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  <Clock className="w-3 h-3 text-[#5D7B6F]" />
+                  {item.duration_minutes} phút học
+               </div>
+               <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  <RotateCcw className="w-3 h-3 text-[#5D7B6F]" />
+                  {item.source_label}
+               </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-8 justify-between md:justify-end">
+            <div className="text-right">
+              {item.mode === 'flashcard' ? (
+                item.status === 'active' ? (
+                  <>
+                    <p className="text-3xl font-black leading-none tracking-tighter text-slate-300">--</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">
+                      {item.flashcard_stats
+                        ? `${item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown}/${item.total_questions} THẺ`
+                        : `0/${item.total_questions} THẺ`}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black leading-none tracking-tighter text-purple-600">
+                      {item.flashcard_stats?.cards_known ?? 0}
+                      <span className="text-lg text-purple-300">/{item.flashcard_stats?.total_cards ?? item.total_questions}</span>
+                    </p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">
+                      THẺ ĐÃ BIẾT
+                      {item.flashcard_stats && (item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown < item.flashcard_stats.total_cards) && (
+                        <span className="text-orange-500 ml-1">• {item.flashcard_stats.total_cards - item.flashcard_stats.cards_known - item.flashcard_stats.cards_unknown} chưa làm</span>
+                      )}
+                    </p>
+                  </>
+                )
+              ) : (
+                <>
+                  <p className={cn(
+                    "text-3xl font-black leading-none tracking-tighter",
+                    item.status === 'active' ? "text-slate-300" : "text-[#5D7B6F]"
+                  )}>
+                    {item.status === 'active'
+                      ? '--'
+                      : `${Math.min(10, Math.max(0, (item.score / Math.max(item.total_questions, 1)) * 10)).toFixed(1)}/10`}
+                  </p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">
+                    {item.status === 'active'
+                      ? `${item.answered_count}/${item.total_questions} ĐÃ LÀM`
+                      : `${item.correct_count}/${item.total_questions} CÂU ĐÚNG`}
+                  </p>
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5">
+                <Button 
+                  variant="ghost" 
+                  className="h-9 px-3.5 rounded-xl hover:bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest" 
+                  asChild
+                >
+                  <Link href={`/quiz/${item.quiz_id}`}>
+                    Làm lại
+                  </Link>
+                </Button>
+                {item.is_mix && (
+                  <Button 
+                    variant="outline" 
+                    className="h-9 px-3.5 rounded-xl border-[#5D7B6F]/20 hover:bg-[#5D7B6F] hover:text-white text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest transition-all" 
+                    asChild
+                  >
+                    <Link href={`/?tab=mix&mix_from=${item.quiz_id}`}>
+                      Làm mới
+                    </Link>
+                  </Button>
+                )}
+              </div>
+
+              <Button size="icon" className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-[#5D7B6F] text-white shadow-lg transition-colors" asChild>
+                <Link href={
+                  item.status === 'active'
+                    ? item.mode === 'flashcard'
+                      ? `/quiz/${item.quiz_id}/session/${item._id}/flashcard`
+                      : `/quiz/${item.quiz_id}/session/${item._id}`
+                    : `/history/${item.quiz_id}/${item._id}`
+                }>
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

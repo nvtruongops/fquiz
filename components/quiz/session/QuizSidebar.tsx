@@ -193,7 +193,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
         {/* Question Grid Matrix (Interactive Navigator) */}
         <div className="flex-1 min-h-0 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <h4 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Ma trận câu hỏi
             </h4>
             <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -202,7 +202,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
           </div>
 
           <div className="quiz-scroll flex-1 overflow-y-auto pr-1">
-            <div className="grid grid-cols-5 gap-2 pt-1 pb-1">
+            <div className="grid grid-cols-6 gap-1.5 pt-1 pb-1">
               {Array.from({ length: totalQuestions }, (_, i) => {
                 const isCurrent = i === currentIndex
                 const isAnswered = answeredSet ? answeredSet.has(i) : false
@@ -213,9 +213,9 @@ const QuizSidebar = React.memo(function QuizSidebar({
                     type="button"
                     onClick={() => onNavigate(i)}
                     className={cn(
-                      'h-9 rounded-xl font-bold text-xs flex items-center justify-center transition-all duration-200 relative',
-                      isCurrent && 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 font-extrabold z-10 scale-105',
-                      isAnswered && !isCurrent && 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600',
+                      'h-7 rounded-lg font-bold text-[11px] flex items-center justify-center transition-all duration-200 relative',
+                      isCurrent && 'ring-2 ring-primary ring-offset-1 dark:ring-offset-slate-900 font-extrabold z-10 scale-105',
+                      isAnswered && !isCurrent && 'bg-emerald-500 text-white shadow-xs hover:bg-emerald-600',
                       !isAnswered && !isCurrent && 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-400'
                     )}
                   >
@@ -246,9 +246,9 @@ const QuizSidebar = React.memo(function QuizSidebar({
 
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onExit}
-            className="w-full h-9 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+            className="w-full h-10 rounded-xl border-2 border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 shadow-xs transition-all"
           >
             Tạm dừng & Thoát
           </Button>

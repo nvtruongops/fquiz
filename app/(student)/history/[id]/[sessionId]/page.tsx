@@ -373,7 +373,7 @@ export default function HistoryAttemptDetailPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
-        <div className="max-w-3xl mx-auto space-y-4 animate-pulse">
+        <div className="w-full max-w-7xl mx-auto space-y-4 animate-pulse">
           <div className="h-8 w-48 rounded" style={{ backgroundColor: '#B0D4B8' }} />
           <div className="h-32 rounded-xl bg-white" />
           {Array.from({ length: 3 }).map((_, i) => (
@@ -387,7 +387,7 @@ export default function HistoryAttemptDetailPage() {
   if (isError || !data) {
     return (
       <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           <Link
             href="/history"
             className="inline-flex items-center gap-1 text-sm mb-6"
@@ -418,7 +418,7 @@ export default function HistoryAttemptDetailPage() {
 
     return (
       <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="w-full max-w-7xl mx-auto space-y-6">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <Link
               href="/history"
@@ -557,7 +557,7 @@ export default function HistoryAttemptDetailPage() {
 
   return (
     <main className="min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#EAE7D6' }}>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/history"

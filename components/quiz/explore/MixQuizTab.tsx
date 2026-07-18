@@ -185,6 +185,24 @@ const VISIBLE_ITEMS = 5
 const SCROLL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS
 const LOAD_THRESHOLD = 8
 
+function handleMixMutationError(
+  err: any,
+  setRateLimitReset: (reset: number | null) => void,
+  setRateLimitMsg: (msg: string | null) => void,
+  toast: any
+) {
+  if (err.status === 429) {
+    const msg = `Bạn đã tạo quá ${err.data?.limit ?? 5} Quiz Trộn trong 1 giờ. Vui lòng thử lại sau ${err.data?.reset ? formatResetTime(err.data.reset) : 'ít phút'}.`
+    setRateLimitReset(err.data?.reset ?? null)
+    setRateLimitMsg(msg)
+    toast.error(msg)
+  } else {
+    const errorMsg = err.data?.message || err.message || 'Có lỗi xảy ra khi tạo bộ đề trộn'
+    toast.error(errorMsg)
+    console.error('Mix Error Detail:', err.data || err)
+  }
+}
+
 // ── MixQuizForm ────────────────────────────────────────────────────────────
 
 function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId: string, sessionId: string) => void; embedded?: boolean }) {
@@ -339,16 +357,7 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
       }
     },
     onError: (err: any) => {
-      if (err.status === 429) {
-        const msg = `Bạn đã tạo quá ${err.data?.limit ?? 5} Quiz Trộn trong 1 giờ. Vui lòng thử lại sau ${err.data?.reset ? formatResetTime(err.data.reset) : 'ít phút'}.`
-        setRateLimitReset(err.data?.reset ?? null)
-        setRateLimitMsg(msg)
-        toast.error(msg)
-      } else {
-        const errorMsg = err.data?.message || err.message || 'Có lỗi xảy ra khi tạo bộ đề trộn'
-        toast.error(errorMsg)
-        console.error('Mix Error Detail:', err.data || err)
-      }
+      handleMixMutationError(err, setRateLimitReset, setRateLimitMsg, toast)
     },
   })
 

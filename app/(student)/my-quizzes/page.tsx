@@ -489,12 +489,27 @@ function QuizCardSkeleton() {
   )
 }
 
+import { useSearchParams, useRouter } from 'next/navigation'
+
 export default function MyQuizzesPage() {
   const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const { toast } = useToast()
 
+  const initialTabParam = searchParams.get('tab')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'personal' | 'saved'>('personal')
+  const [activeTab, setActiveTab] = useState<'personal' | 'saved' | 'bank'>(
+    initialTabParam === 'bank' ? 'bank' : 'personal'
+  )
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'bank') {
+      setActiveTab('bank')
+    }
+  }, [searchParams])
+
   const [search, setSearch] = useState('')
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false)
   const [confirmDeleteCatId, setConfirmDeleteCatId] = useState<string | null>(null)
@@ -540,11 +555,9 @@ export default function MyQuizzesPage() {
       const isCorrectTab = activeTab === 'saved' ? quiz.is_saved_from_explore : !quiz.is_saved_from_explore
       if (!isCorrectTab) return false
 
-      const searchMatch = !debouncedSearch ||
+      return !debouncedSearch ||
         quiz.course_code.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         quiz.title.toLowerCase().includes(debouncedSearch.toLowerCase())
-
-      return searchMatch
     })
   }, [allLocalQuizzes, activeTab, debouncedSearch])
 
@@ -831,7 +844,7 @@ export default function MyQuizzesPage() {
                   <button
                     onClick={() => setActiveTab('personal')}
                     className={cn(
-                      "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
+                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                       activeTab === 'personal' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
@@ -844,7 +857,7 @@ export default function MyQuizzesPage() {
                   <button
                     onClick={() => setActiveTab('saved')}
                     className={cn(
-                      "flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5",
+                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                       activeTab === 'saved' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
@@ -853,6 +866,16 @@ export default function MyQuizzesPage() {
                     <Badge className={cn("shrink-0 border-none px-1.5 text-[10px]", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {savedQuizTotal}
                     </Badge>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('bank')}
+                    className={cn(
+                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                      activeTab === 'bank' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
+                    )}
+                  >
+                    <Library className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Ngân hàng câu hỏi</span>
                   </button>
                 </div>
 

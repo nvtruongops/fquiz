@@ -130,9 +130,9 @@ export function QuestionConflictModal({
         )
         const sameAsUser = variantAnswerTexts === userAnswerTexts
         if (!sameAsUser) {
-          const quizLabel = variant.quizzes.length > 0
-            ? `ở mã ${variant.quizzes.slice(0, 2).join(', ')}${variant.quizzes.length > 2 ? `…` : ''}`
-            : ''
+          const quizListStr = variant.quizzes.slice(0, 2).join(', ')
+          const ellipsisStr = variant.quizzes.length > 2 ? '…' : ''
+          const quizLabel = variant.quizzes.length > 0 ? `ở mã ${quizListStr}${ellipsisStr}` : ''
           choices.push({
             id: `bank-${conflict.questionIndex}-${choices.length}`,
             label: `Đáp án trong ngân hàng ${quizLabel}`.trim(),

@@ -157,48 +157,17 @@ export function QuizComments({
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-300 mt-2">Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
           </div>
         ) : (
-          comments.map((comment) => {
-            const user = comment.user_id || { username: 'Người dùng đã xóa', name: 'Người dùng đã xóa', avatar_url: null, avatarUrl: null }
-            const avatarUrl = user.avatar_url || user.avatarUrl
-            
-            return (
-              <div key={comment._id} className="group flex gap-4 animate-in fade-in duration-500">
-                <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                  {avatarUrl && <AvatarImage src={avatarUrl} />}
-                  <AvatarFallback className="bg-[#A4C3A2] text-[#5D7B6F] text-[10px] font-black uppercase">
-                    {(user.username || user.name || '??').substring(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-black text-gray-900">{user.username || user.name || 'Thành viên'}</span>
-                      <span className="h-1 w-1 rounded-full bg-gray-200" />
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
-                      </span>
-                    </div>
-                    {currentUser && comment.user_id && String(currentUser._id) === String((comment.user_id as any)._id) && (
-                      <button 
-                        onClick={() => {
-                          setCommentToDelete(comment._id)
-                          setIsDeleteDialogOpen(true)
-                        }}
-                        className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
-                        title="Xóa bình luận"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
-                    <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
-                    <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
-                  </div>
-                </div>
-              </div>
-            )
-          })
+          comments.map((comment) => (
+            <CommentItem
+              key={comment._id}
+              comment={comment}
+              currentUser={currentUser}
+              onInitiateDelete={(id) => {
+                setCommentToDelete(id)
+                setIsDeleteDialogOpen(true)
+              }}
+            />
+          ))
         )}
       </div>
 
@@ -228,6 +197,54 @@ export function QuizComments({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function CommentItem({
+  comment,
+  currentUser,
+  onInitiateDelete,
+}: {
+  comment: QuizComment
+  currentUser: any
+  onInitiateDelete: (id: string) => void
+}) {
+  const user = comment.user_id || { username: 'Người dùng đã xóa', name: 'Người dùng đã xóa', avatar_url: null, avatarUrl: null }
+  const avatarUrl = user.avatar_url || user.avatarUrl
+
+  return (
+    <div className="group flex gap-4 animate-in fade-in duration-500">
+      <Avatar className="h-8 w-8 shrink-0 border-2 border-white shadow-sm ring-1 ring-gray-100">
+        {avatarUrl && <AvatarImage src={avatarUrl} />}
+        <AvatarFallback className="bg-[#A4C3A2] text-[#5D7B6F] text-[10px] font-black uppercase">
+          {(user.username || user.name || '??').substring(0, 2)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black text-gray-900">{user.username || user.name || 'Thành viên'}</span>
+            <span className="h-1 w-1 rounded-full bg-gray-200" />
+            <span className="text-[10px] font-bold text-gray-400 uppercase">
+              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}
+            </span>
+          </div>
+          {currentUser && comment.user_id && String(currentUser._id) === String((comment.user_id as any)._id) && (
+            <button 
+              onClick={() => onInitiateDelete(comment._id)}
+              className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all p-1.5 rounded-lg"
+              title="Xóa bình luận"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="relative rounded-sm bg-gray-50/50 p-3.5 transition-colors group-hover:bg-gray-50">
+          <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">{comment.content}</p>
+          <div className="absolute -left-1 top-3 h-2.5 w-2.5 rotate-45 bg-gray-50/50 group-hover:bg-gray-50" />
+        </div>
+      </div>
     </div>
   )
 }

@@ -22,12 +22,16 @@ describe('Integration: Registry → Repository', () => {
     })
 
     it('should have all Sprint 1 models registered', async () => {
-      const models = [
-        'Language', 'Topic', 'Course', 'Module', 'Lesson', 'LearningTag',
-      ]
-      for (const name of models) {
-        const mod = await import(`@/lib/modules/learning/models/${name}`)
-        const Model = mod[name]
+      const modelImports = {
+        Language: (await import('@/lib/modules/learning/models/Language')).Language,
+        Topic: (await import('@/lib/modules/learning/models/Topic')).Topic,
+        Course: (await import('@/lib/modules/learning/models/Course')).Course,
+        Module: (await import('@/lib/modules/learning/models/Module')).Module,
+        Lesson: (await import('@/lib/modules/learning/models/Lesson')).Lesson,
+        LearningTag: (await import('@/lib/modules/learning/models/LearningTag')).LearningTag,
+      } as const
+
+      for (const [name, Model] of Object.entries(modelImports)) {
         expect(Model).toBeDefined()
         expect(Model.modelName).toBe(name)
       }

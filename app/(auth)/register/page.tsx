@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
+import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
 
 
 export default function RegisterPage() {
@@ -205,43 +206,25 @@ export default function RegisterPage() {
           <p className="text-slate-500 mt-2 text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-4">
-          {/* Username */}
-          <div className="space-y-1">
-            <label htmlFor="username" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-              Tên đăng nhập
-            </label>
-            <div className="relative">
-              <input
-                id="username" name="username" type="text" autoComplete="username"
-                value={form.username} onChange={handleChange}
-                placeholder="nguyen_van_a"
-                className={inputClasses(errors.username)}
-              />
-            </div>
-            <ErrorMsg msg={errors.username} />
-          </div>
-
-          {/* Email */}
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* Email - Full Width */}
           <div className="space-y-1">
             <label htmlFor="email" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Email
             </label>
-            <div className="relative flex gap-2">
+            <div className="relative flex gap-2 items-center">
               <input
                 id="email" name="email" type="email" autoComplete="email"
                 value={form.email} onChange={handleChange}
                 placeholder="you@email.com"
-                className={inputClasses(errors.email)}
+                className={cn(inputClasses(errors.email), "flex-1 min-w-0")}
               />
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-4 py-2 text-sm font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed w-[110px] flex justify-center items-center"
+                className="shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-2.5 py-2 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed w-[76px] flex justify-center items-center whitespace-nowrap"
               >
                 {sendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : sendCodeLabel}
               </motion.button>
@@ -250,113 +233,130 @@ export default function RegisterPage() {
             <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
-          {/* Verification Code */}
-          <div className="space-y-1">
-            <label htmlFor="verificationCode" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-              Mã xác thực
-            </label>
-            <div className="relative">
-              <input
-                id="verificationCode"
-                name="verificationCode"
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={form.verificationCode}
-                onChange={handleChange}
-                placeholder="Nhập mã 6 chữ số"
-                className={cn(
-                  inputClasses(errors.verificationCode),
-                  "placeholder:tracking-normal font-mono",
-                  form.verificationCode ? "tracking-[0.2em] text-lg py-2.5" : "tracking-normal"
-                )}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Verification Code */}
+            <div className="space-y-1">
+              <label htmlFor="verificationCode" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Mã xác thực
+              </label>
+              <div className="relative">
+                <input
+                  id="verificationCode"
+                  name="verificationCode"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={form.verificationCode}
+                  onChange={handleChange}
+                  placeholder="Mã 6 chữ số"
+                  className={cn(
+                    inputClasses(errors.verificationCode),
+                    "placeholder:tracking-normal font-mono",
+                    form.verificationCode ? "tracking-[0.2em] text-lg py-2.5" : "tracking-normal"
+                  )}
+                />
+              </div>
+              <ErrorMsg msg={errors.verificationCode} />
             </div>
-            <ErrorMsg msg={errors.verificationCode} />
+
+            {/* Username */}
+            <div className="space-y-1">
+              <label htmlFor="username" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Tên đăng nhập
+              </label>
+              <div className="relative">
+                <input
+                  id="username" name="username" type="text" autoComplete="username"
+                  value={form.username} onChange={handleChange}
+                  placeholder="nguyen_van_a"
+                  className={inputClasses(errors.username)}
+                />
+              </div>
+              <ErrorMsg msg={errors.username} />
+            </div>
           </div>
 
-            </div>
-            <div className="space-y-4 flex flex-col justify-end">
-          {/* Password */}
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-              Mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                id="password" name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={form.password} onChange={handleChange}
-                placeholder="Tối thiểu 8 ký tự"
-                className={cn(inputClasses(errors.password), "pr-10")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            
-            {/* Segmented Password Strength */}
-            <AnimatePresence>
-              {passwordStrength && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }} 
-                  animate={{ opacity: 1, height: 'auto' }} 
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-1 pt-2 pb-1 overflow-hidden"
+          {/* Password & Confirm Password Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Password */}
+            <div className="space-y-1">
+              <label htmlFor="password" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  id="password" name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={form.password} onChange={handleChange}
+                  placeholder="Tối thiểu 8 ký tự"
+                  className={cn(inputClasses(errors.password), "pr-10")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
                 >
-                  <div className="flex gap-1.5 h-1.5 w-full">
-                    {[1, 2, 3, 4].map((level) => (
-                      <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: passwordStrength.level >= level ? '100%' : '0%' }}
-                          transition={{ duration: 0.3 }}
-                          className={cn("h-full rounded-full", passwordStrength.color)} 
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2 ml-1">
-                    Mức độ: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <ErrorMsg msg={errors.password} />
-          </div>
-
-          {/* Confirm Password */}
-          <div className="space-y-1">
-            <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-              Xác nhận mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                id="confirmPassword" name="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={form.confirmPassword} onChange={handleChange}
-                placeholder="Nhập lại mật khẩu"
-                className={cn(
-                  inputClasses(errors.confirmPassword),
-                  form.confirmPassword && form.confirmPassword === form.password ? '!border-[#166534] !bg-[#B0D4B8]/10' : ''
-                )}
-              />
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              
+              {/* Segmented Password Strength */}
               <AnimatePresence>
-                {form.confirmPassword && form.confirmPassword === form.password && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <CheckCircle className="w-5 h-5 text-[#166534]" />
+                {passwordStrength && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: 'auto' }} 
+                    exit={{ opacity: 0, height: 0 }}
+                    className="px-1 pt-2 pb-1 overflow-hidden"
+                  >
+                    <div className="flex gap-1.5 h-1.5 w-full">
+                      {[1, 2, 3, 4].map((level) => (
+                        <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: passwordStrength.level >= level ? '100%' : '0%' }}
+                            transition={{ duration: 0.3 }}
+                            className={cn("h-full rounded-full", passwordStrength.color)} 
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2 ml-1">
+                      Mức độ: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
+                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
+              <ErrorMsg msg={errors.password} />
             </div>
-            <ErrorMsg msg={errors.confirmPassword} />
-          </div>
+
+            {/* Confirm Password */}
+            <div className="space-y-1">
+              <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Xác nhận mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword" name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={form.confirmPassword} onChange={handleChange}
+                  placeholder="Nhập lại mật khẩu"
+                  className={cn(
+                    inputClasses(errors.confirmPassword),
+                    form.confirmPassword && form.confirmPassword === form.password ? '!border-[#166534] !bg-[#B0D4B8]/10' : ''
+                  )}
+                />
+                <AnimatePresence>
+                  {form.confirmPassword && form.confirmPassword === form.password && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <CheckCircle className="w-5 h-5 text-[#166534]" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <ErrorMsg msg={errors.confirmPassword} />
             </div>
           </div>
 
@@ -378,16 +378,24 @@ export default function RegisterPage() {
           </motion.button>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-slate-200/50">
-          <p className="text-center text-slate-500 font-medium text-sm">
-            Bạn đã có tài khoản rồi?{' '}
-            <Link 
-              href={`/login${getCallbackUrl() ? `?redirect=${encodeURIComponent(getCallbackUrl()!)}` : ''}`}
-              className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
-            >
-              Đăng nhập ngay
-            </Link>
-          </p>
+        <GoogleSignInButton callbackUrl={getCallbackUrl()} />
+
+        <div className="mt-5 pt-4 border-t border-slate-200/50">
+          {(() => {
+            const cb = getCallbackUrl()
+            const redirectParam = cb ? `?redirect=${encodeURIComponent(cb)}` : ''
+            return (
+              <p className="text-center text-slate-500 font-medium text-sm">
+                Bạn đã có tài khoản rồi?{' '}
+                <Link 
+                  href={`/login${redirectParam}`}
+                  className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
+                >
+                  Đăng nhập ngay
+                </Link>
+              </p>
+            )
+          })()}
         </div>
       </div>
     </div>

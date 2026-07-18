@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased min-h-screen bg-[#F0F0EB] font-sans" suppressHydrationWarning>
         <NextTopLoader color="#5D7B6F" height={3} showSpinner={false} shadow={false} />
         <QueryProvider>
-          <div className="mx-auto w-[94%] xl:w-[92%] min-h-screen flex flex-col bg-white relative shadow-[0_0_120px_rgba(0,0,0,0.06)] border-x border-gray-100">
+          <div className="w-full min-h-screen flex flex-col bg-white relative">
             {children}
           </div>
           <ToastProvider />

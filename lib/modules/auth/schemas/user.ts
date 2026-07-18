@@ -19,7 +19,7 @@ export const UpdateUserSchema = z.object({
     .transform(stripHtml)
     .optional(),
   avatar_url: z.string().url('URL ảnh không hợp lệ').optional().or(z.literal('')),
-  role: z.enum(['student', 'admin']).optional(),
+  role: z.enum(['student', 'admin', 'dev']).optional(),
   status: z.enum(['active', 'banned']).optional(),
   ban_reason: z.string().max(200).optional(),
 })
@@ -34,18 +34,36 @@ export const UpdateStudentSettingsSchema = z.object({
 
 export const BulkUserActionSchema = z.object({
   user_ids: z.array(z.string().regex(/^[a-f0-9]{24}$/)),
-  action: z.enum(['ban', 'unban', 'set_student', 'set_admin', 'delete']),
+  action: z.enum(['ban', 'unban', 'set_student', 'set_admin', 'set_dev', 'delete']),
   reason: z.string().max(200).optional(),
 })
 
 export const UpdateSiteSettingsSchema = z.object({
+  app_name: z.string().max(100).optional(),
+  app_description: z.string().max(500).optional(),
   maintenance_mode: z.boolean().optional(),
-  registration_enabled: z.boolean().optional(),
+  allow_registration: z.boolean().optional(),
   anti_sharing_enabled: z.boolean().optional(),
   anti_sharing_max_violations: z.number().int().min(1).optional(),
   google_auth_enabled: z.boolean().optional(),
   site_name: z.string().max(100).optional(),
   contact_email: z.string().email().optional(),
+  llm_config: z.object({
+    active_provider: z.enum(['openai', 'gemini', 'custom']).optional(),
+    openai: z.object({
+      apiKey: z.string().optional(),
+      model: z.string().optional(),
+    }).optional(),
+    gemini: z.object({
+      apiKey: z.string().optional(),
+      model: z.string().optional(),
+    }).optional(),
+    custom: z.object({
+      baseUrl: z.string().optional(),
+      apiKey: z.string().optional(),
+      model: z.string().optional(),
+    }).optional(),
+  }).optional(),
 })
 
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>

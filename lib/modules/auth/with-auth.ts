@@ -29,8 +29,13 @@ export function withAuth<P = any>(
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (options.roles && !options.roles.includes(payload.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (options.roles) {
+      const allowedRoles = options.roles.includes('student') && !options.roles.includes('dev')
+        ? [...options.roles, 'dev']
+        : options.roles
+      if (!allowedRoles.includes(payload.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
     return handler(req, { ...context, payload })
   }

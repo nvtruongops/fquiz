@@ -38,6 +38,9 @@ export interface AIModerationResult {
 }
 
 export interface IAIProvider {
+  /** Return active provider name e.g. gemini, openai, custom */
+  getProviderName?(): Promise<string>
+
   /** Generate structured content with Zod validation */
   generate<T>(prompt: string, options?: AIGenerationOptions): Promise<AIGenerationResult<T>>
 

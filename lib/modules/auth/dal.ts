@@ -16,7 +16,7 @@ import { User } from '@/lib/modules/auth/models/User'
 export interface SessionUser {
   userId: string
   username: string
-  role: 'student' | 'admin'
+  role: 'student' | 'admin' | 'dev'
   status: 'active' | 'banned'
   avatarUrl?: string
 }
@@ -59,7 +59,7 @@ export const verifySession = cache(async (): Promise<SessionUser | null> => {
     return {
       userId: user._id.toString(),
       username: user.username,
-      role: user.role as 'student' | 'admin',
+      role: user.role as 'student' | 'admin' | 'dev',
       status: user.status as 'active' | 'banned',
       avatarUrl: user.avatar_url || user.avatarUrl || undefined,
     }

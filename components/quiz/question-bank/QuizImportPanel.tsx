@@ -277,27 +277,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
       for (const c of diffConflicts) {
         const choice = conflictChoice[c.questionIndex] ?? { source: 'current', variantIdx: 0 }
         if (choice.source === 'bank') {
-          // Use the canonical bank answer → rewrite this imported question.
-          // Map by answer TEXT (bank indices reference bank option order).
-          const fallbackVariants = c.answerVariants ?? []
-          const fallbackVariant = fallbackVariants[choice.variantIdx] ?? fallbackVariants[0]
-          const variant = c.existingQuestion
-            ? {
-                correct_answer: c.existingQuestion.correct_answer,
-                options: c.existingQuestion.options ?? questions[c.questionIndex]?.options ?? [],
-              }
-            : fallbackVariant
-          const fileQ = questions[c.questionIndex]
-          if (variant && fileQ) {
-            const answerTexts = variant.correct_answer
-              .map((i) => (variant.options[i] ?? '').trim().toLowerCase())
-            const remapped = fileQ.options
-              .map((opt, idx) => ({ idx, t: opt.trim().toLowerCase() }))
-              .filter((o) => answerTexts.includes(o.t))
-              .map((o) => o.idx)
-            // Fall back to bank indices only if texts didn't resolve.
-            fileQ.correct_answer = remapped.length > 0 ? remapped : variant.correct_answer
-          }
+          applyBankChoiceToQuestion(c, choice, questions[c.questionIndex])
         }
       }
 
@@ -307,6 +287,26 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
       setError('Không thể áp dụng đáp án đã chọn. Vui lòng thử lại.')
     } finally {
       setApplying(false)
+    }
+  }
+
+  function applyBankChoiceToQuestion(c: any, choice: any, fileQ: any) {
+    const fallbackVariants = c.answerVariants ?? []
+    const fallbackVariant = fallbackVariants[choice.variantIdx] ?? fallbackVariants[0]
+    const variant = c.existingQuestion
+      ? {
+          correct_answer: c.existingQuestion.correct_answer,
+          options: c.existingQuestion.options ?? fileQ?.options ?? [],
+        }
+      : fallbackVariant
+    if (variant && fileQ) {
+      const answerTexts = variant.correct_answer
+        .map((i: number) => (variant.options[i] ?? '').trim().toLowerCase())
+      const remapped = fileQ.options
+        .map((opt: string, idx: number) => ({ idx, t: opt.trim().toLowerCase() }))
+        .filter((o: any) => answerTexts.includes(o.t))
+        .map((o: any) => o.idx)
+      fileQ.correct_answer = remapped.length > 0 ? remapped : variant.correct_answer
     }
   }
 

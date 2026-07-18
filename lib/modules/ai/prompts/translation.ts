@@ -1,20 +1,54 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
 
-export const GeneratedTranslationSchema = z.object({
-  sourceText: z.string().min(1),
-  translatedText: z.string().min(1),
-  transliteration: z.string().optional(),
-  wordByWord: z.array(z.object({
-    source: z.string(),
-    translated: z.string(),
-    notes: z.string().optional(),
-  })).optional(),
-  grammarNotes: z.string().optional(),
-  alternatives: z.array(z.string()).optional(),
-})
+const WordByWordItemSchema = z.preprocess(
+  (val) => {
+    if (typeof val === 'string') {
+      return { source: val, translated: '' }
+    }
+    if (val && typeof val === 'object') {
+      const obj = val as Record<string, unknown>
+      return {
+        source: String(obj.source ?? obj.word ?? obj.original ?? obj.text ?? obj.src ?? obj.term ?? ''),
+        translated: String(obj.translated ?? obj.translation ?? obj.target ?? obj.meaning ?? obj.dest ?? ''),
+        notes: obj.notes != null ? String(obj.notes) : null,
+      }
+    }
+    return val
+  },
+  z.object({
+    source: z.string().default(''),
+    translated: z.string().default(''),
+    notes: z.string().nullable().optional(),
+  })
+)
+
+export const GeneratedTranslationSchema = z.preprocess(
+  (val) => {
+    if (val && typeof val === 'object') {
+      const obj = val as Record<string, unknown>
+      return {
+        ...obj,
+        sourceText: String(obj.sourceText ?? obj.source ?? obj.text ?? obj.original ?? ''),
+        translatedText: String(obj.translatedText ?? obj.translation ?? obj.translated ?? obj.target ?? ''),
+      }
+    }
+    return val
+  },
+  z.object({
+    sourceText: z.string().default(''),
+    translatedText: z.string().default(''),
+    transliteration: z.string().nullable().optional(),
+    wordByWord: z.array(WordByWordItemSchema).nullable().optional(),
+    grammarNotes: z.union([
+      z.string(),
+      z.array(z.string()).transform((arr) => arr.join('\n')),
+    ]).nullable().optional(),
+    alternatives: z.array(z.string()).nullable().optional(),
+  })
+)
 
 export type GeneratedTranslation = z.infer<typeof GeneratedTranslationSchema>
 

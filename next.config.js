@@ -30,15 +30,15 @@ const imgSrcDomains = allowedDomains.map((d) => d.trim()).join(' ')
 
 const cspDirectives = [
   "default-src 'self'",
-  `img-src 'self' data: blob: ${imgSrcDomains}`,
+  `img-src 'self' data: blob: https://lh3.googleusercontent.com ${imgSrcDomains}`,
   [
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client",
     isProduction ? '' : "'unsafe-eval'",
   ].filter(Boolean).join(' '),
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
   "font-src 'self' data:",
-  `connect-src 'self' ${apiConnectOrigins.join(' ')}`,
-  "frame-src 'self'",
+  `connect-src 'self' https://accounts.google.com/gsi/ ${apiConnectOrigins.join(' ')}`,
+  "frame-src 'self' https://accounts.google.com/",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -69,7 +69,7 @@ const securityHeaders = [
   },
   {
     key: 'Cross-Origin-Opener-Policy',
-    value: 'same-origin',
+    value: 'same-origin-allow-popups',
   },
   {
     key: 'Cross-Origin-Resource-Policy',

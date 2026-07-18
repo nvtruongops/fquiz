@@ -91,9 +91,11 @@ export function QuizEditor({
   [createEndpoint, isStudentMode])
 
   const effectiveUpdateEndpointBuilder = useMemo(() => 
-    updateEndpointBuilder ?? ((id: string) =>
-      `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`}`
-    ),
+    updateEndpointBuilder ?? ((id: string) => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
+      const subPath = isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`
+      return `${baseUrl}${subPath}`
+    }),
   [updateEndpointBuilder, isStudentMode])
 
   const effectiveRedirectOnPublish = useMemo(() => 
@@ -292,7 +294,7 @@ export function QuizEditor({
       return { ...prev, questions }
     })
 
-  const handleUpdateThisQuizOnly = () => {
+  const applyPendingQuestionUpdate = useCallback(() => {
     if (pendingQuestionUpdate) {
       const { index, field, value } = pendingQuestionUpdate
       setForm((prev) => {
@@ -303,19 +305,14 @@ export function QuizEditor({
     }
     setPendingQuestionUpdate(null)
     clearUsageInfo()
+  }, [pendingQuestionUpdate, clearUsageInfo])
+
+  const handleUpdateThisQuizOnly = () => {
+    applyPendingQuestionUpdate()
   }
 
   const handleUpdateAllQuizzes = () => {
-    if (pendingQuestionUpdate) {
-      const { index, field, value } = pendingQuestionUpdate
-      setForm((prev) => {
-        const questions = [...prev.questions]
-        questions[index] = { ...questions[index], [field]: value }
-        return { ...prev, questions }
-      })
-    }
-    setPendingQuestionUpdate(null)
-    clearUsageInfo()
+    applyPendingQuestionUpdate()
   }
 
   function effectiveOptions(q: QuestionForm): string[] {

@@ -163,11 +163,7 @@ function handleQuestionBody(line: string, context: ParserContext): boolean {
   if (!context.currentQuestion) return false
   const body = getBody(context.currentQuestion)
 
-  if (context.collectingExplanation && !line.match(/^(đáp án|dap an|answer|mô tả|mo ta|explanation|câu hỏi|cau hoi|question)\s*:/i)) {
-    body.explanation = (body.explanation as string || '') + (body.explanation ? '\n' : '') + line
-    return true
-  }
-
+  if (tryAppendExplanation(line, context, body)) return true
   if (handleStaticMatches(line, body, context)) return true
 
   if (context.collectingQuestionText) {
@@ -175,6 +171,18 @@ function handleQuestionBody(line: string, context: ParserContext): boolean {
     return true
   }
 
+  return tryAppendOptionLine(line, context, body)
+}
+
+function tryAppendExplanation(line: string, context: ParserContext, body: Record<string, unknown>): boolean {
+  if (context.collectingExplanation && !line.match(/^(đáp án|dap an|answer|mô tả|mo ta|explanation|câu hỏi|cau hoi|question)\s*:/i)) {
+    body.explanation = (body.explanation as string || '') + (body.explanation ? '\n' : '') + line
+    return true
+  }
+  return false
+}
+
+function tryAppendOptionLine(line: string, context: ParserContext, body: Record<string, unknown>): boolean {
   if (context.collectingOptionIndex !== null) {
     const options = body.options as string[]
     const idx = context.collectingOptionIndex
@@ -182,7 +190,6 @@ function handleQuestionBody(line: string, context: ParserContext): boolean {
     if (match) {
       const prefix = match[1]
       const content = match[2]
-      // Add newline before appending if not empty
       options[idx] = `${prefix}${content}${content ? '\n' : ''}${line}`
     }
     return true
