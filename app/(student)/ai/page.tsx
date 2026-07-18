@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/shared/ui/card'
+import { Skeleton } from '@/components/shared/ui/skeleton'
 import { DevOnlyGuard } from '@/components/shared/DevOnlyGuard'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
@@ -25,6 +26,10 @@ import {
   BookmarkCheck,
   ChevronDown,
   AlertTriangle,
+  PenTool,
+  CheckCircle2,
+  ThumbsUp,
+  Edit3,
 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
@@ -46,6 +51,7 @@ type AIFeatureType =
   | 'translation'
   | 'flashcard'
   | 'quiz'
+  | 'writing'
 
 const LANGUAGES = [
   { code: 'English', label: 'Tiếng Anh (English)' },
@@ -118,8 +124,9 @@ export default function StudentAIAssistantPage() {
   const [grammarTopic, setGrammarTopic] = useState('Present Perfect vs Past Simple')
   const [translationText, setTranslationText] = useState('Xin chào, tôi muốn học ngôn ngữ mới cùng trợ lý AI.')
 
-  // Result state
-  const [resultData, setResultData] = useState<any | null>(null)
+  // Result cache — preserves data per tab so switching back shows instantly
+  const [resultCache, setResultCache] = useState<Map<AIFeatureType, any>>(new Map())
+  const currentResult = resultCache.get(activeTab)
 
   // UI states for interactive features
   const [flashcardIndex, setFlashcardIndex] = useState(0)
@@ -131,11 +138,20 @@ export default function StudentAIAssistantPage() {
   const [showParagraphTranslation, setShowParagraphTranslation] = useState(false)
   const [showStoryTranslation, setShowStoryTranslation] = useState(false)
 
-  // Reset interactive states when resultData or activeTab changes
-  // Clear results when switching tabs
+  const [writingWordCount, setWritingWordCount] = useState(100)
+  const [userSubmissionLanguage, setUserSubmissionLanguage] = useState('Vietnamese')
+  const [userWritingInput, setUserWritingInput] = useState('')
+  const [evaluatingWriting, setEvaluatingWriting] = useState(false)
+  const [writingEvalResult, setWritingEvalResult] = useState<any>(null)
+
+  // Auto-switch user submission language default based on targetLanguage
   useEffect(() => {
-    setResultData(null)
-  }, [activeTab])
+    if (targetLanguage === 'Vietnamese') {
+      setUserSubmissionLanguage('English')
+    } else {
+      setUserSubmissionLanguage('Vietnamese')
+    }
+  }, [targetLanguage])
 
   // Reset interactive states when resultData or activeTab changes
   useEffect(() => {
@@ -147,7 +163,10 @@ export default function StudentAIAssistantPage() {
     setParaAnswers({})
     setShowParagraphTranslation(false)
     setShowStoryTranslation(false)
-  }, [resultData, activeTab])
+    setUserWritingInput('')
+    setWritingEvalResult(null)
+    setSavedSuccess(false)
+  }, [currentResult, activeTab])
 
   // Helper renderers for AI Content types
   const renderTranslationResult = (content: any) => {
@@ -679,6 +698,221 @@ export default function StudentAIAssistantPage() {
     )
   }
 
+  const handleEvaluateWriting = async () => {
+    if (!currentResult?.content || !userWritingInput.trim()) return
+    setEvaluatingWriting(true)
+    const exercise = currentResult.content
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/ai/generate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          type: 'writing_eval',
+          params: {
+            sourceText: exercise.sourceText,
+            sourceLanguage: exercise.sourceLanguage || targetLanguage,
+            userAnswer: userWritingInput,
+            userLanguage: userSubmissionLanguage,
+            sampleAnswer: exercise.sampleAnswer,
+            cefrLevel: exercise.cefrLevel || cefrLevel,
+          },
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        toast.error(json.error || 'Lỗi khi AI đánh giá bài viết')
+      } else {
+        setWritingEvalResult(json.data.content)
+        toast.success('AI đã chấm điểm & nhận xét bài viết thành công!')
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Không thể kết nối dịch vụ AI chấm điểm')
+    } finally {
+      setEvaluatingWriting(false)
+    }
+  }
+
+  const renderWritingResult = (content: any) => {
+    if (!content) return null
+    return (
+      <div className="space-y-6">
+        {/* Exercise Header Card */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
+            <h3 className="text-lg font-black text-slate-900">{content.title || 'Đề Luyện Viết AI'}</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-[#5D7B6F] border border-emerald-100">
+                Level {content.cefrLevel || cefrLevel}
+              </span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                {content.sourceLanguage} {'->'} {content.targetLanguage}
+              </span>
+            </div>
+          </div>
+
+          {/* Source Text / Prompt */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Văn bản gốc / Đề bài ({content.sourceLanguage})
+            </span>
+            <p className="text-base font-bold text-slate-800 leading-relaxed whitespace-pre-line">
+              {content.sourceText}
+            </p>
+          </div>
+
+          {/* Vocabulary Hints */}
+          {Array.isArray(content.hints) && content.hints.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" /> Gợi ý từ vựng & Cụm từ hay
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {content.hints.map((h: any, i: number) => (
+                  <span key={i} className="text-xs bg-emerald-50 text-emerald-900 font-semibold px-3 py-1.5 rounded-xl border border-emerald-100">
+                    <strong>{h.wordOrPhrase}:</strong> {h.meaning}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes if present */}
+          {content.notes && (
+            <p className="text-xs text-slate-500 italic bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+              {'💡'} {content.notes}
+            </p>
+          )}
+        </div>
+
+        {/* User Submission Textarea */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <Edit3 className="w-4 h-4 text-[#5D7B6F]" /> Bài làm của bạn ({content.targetLanguage})
+          </label>
+          <textarea
+            value={userWritingInput}
+            onChange={(e) => setUserWritingInput(e.target.value)}
+            placeholder={'Nhập phần dịch hoặc bài viết bằng ' + content.targetLanguage + ' tại đây...'}
+            rows={5}
+            className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 rounded-2xl p-4 text-sm font-medium bg-slate-50/50 outline-none resize-none leading-relaxed text-slate-900"
+          />
+
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500">Ngôn ngữ bài làm:</span>
+              <Select value={userSubmissionLanguage} onValueChange={setUserSubmissionLanguage}>
+                <SelectTrigger className="h-10 w-44 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F]">
+                  <SelectValue placeholder="Chọn ngôn ngữ..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl p-1.5 z-50">
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50">
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                type="button"
+                onClick={handleEvaluateWriting}
+                disabled={evaluatingWriting || !userWritingInput.trim()}
+                className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl text-xs font-bold text-white"
+              >
+                {evaluatingWriting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                Nộp bài & AI Đánh giá
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Evaluation Output */}
+        {writingEvalResult && (
+          <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 shadow-lg space-y-6 animate-in fade-in duration-300">
+            {/* Score & Rating Banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-800 to-[#5D7B6F] text-white">
+              <div className="space-y-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-200 block">Kết quả Đánh giá AI</span>
+                <h4 className="text-xl font-black">{writingEvalResult.rating}</h4>
+                <p className="text-xs text-emerald-100/90 leading-relaxed">{writingEvalResult.detailedFeedback}</p>
+              </div>
+              <div className="shrink-0 flex items-center justify-center bg-white text-[#5D7B6F] w-20 h-20 rounded-2xl shadow-md border-2 border-emerald-100 flex-col">
+                <span className="text-2xl font-black leading-none">{writingEvalResult.score}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-0.5">/ 100 điểm</span>
+              </div>
+            </div>
+
+            {writingEvalResult.suggestedAnswer && (
+              <div className="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200 space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" /> Phiên bản đề xuất chỉnh sửa tối ưu hơn
+                </span>
+                <p className="text-sm font-bold text-emerald-950 leading-relaxed">{writingEvalResult.suggestedAnswer}</p>
+              </div>
+            )}
+
+            {Array.isArray(writingEvalResult.corrections) && writingEvalResult.corrections.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" /> Chi tiết các điểm cần sửa ({writingEvalResult.corrections.length} vị trí)
+                </h4>
+                <div className="space-y-2.5">
+                  {writingEvalResult.corrections.map((corr: any, idx: number) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                        <span className="font-bold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-100 line-through">{corr.original}</span>
+                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">{'->'} {corr.corrected}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">{corr.type}</span>
+                      </div>
+                      <p className="text-slate-600 font-medium leading-relaxed">{corr.explanation}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.isArray(writingEvalResult.strengths) && writingEvalResult.strengths.length > 0 && (
+                <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
+                    <ThumbsUp className="w-4 h-4 text-[#5D7B6F]" /> Điểm mạnh bài làm
+                  </span>
+                  <ul className="space-y-1 text-xs text-slate-700 font-medium">
+                    {writingEvalResult.strengths.map((s: string, i: number) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-[#5D7B6F] font-bold">{'•'}</span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {Array.isArray(writingEvalResult.improvements) && writingEvalResult.improvements.length > 0 && (
+                <div className="bg-amber-50/40 p-4 rounded-2xl border border-amber-100 space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" /> Điểm cần phát triển thêm
+                  </span>
+                  <ul className="space-y-1 text-xs text-slate-700 font-medium">
+                    {writingEvalResult.improvements.map((imp: string, i: number) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-amber-600 font-bold">{'•'}</span>
+                        <span>{imp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderQuizResult = (content: any) => {
     if (!content) return null
     const questions = content.questions || []
@@ -779,7 +1013,6 @@ export default function StudentAIAssistantPage() {
 
   const handleGenerate = async () => {
     setLoading(true)
-    setResultData(null)
 
     let topicValue = topic
     if (targetLanguage === 'English' && englishTense && englishTense !== 'all') {
@@ -807,6 +1040,13 @@ export default function StudentAIAssistantPage() {
       params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
     } else if (activeTab === 'quiz') {
       params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
+    } else if (activeTab === 'writing') {
+      params = {
+        language: targetLanguage,
+        cefr: cefrLevel,
+        topic: topicValue,
+        wordCount: writingWordCount,
+      }
     }
 
     try {
@@ -824,7 +1064,7 @@ export default function StudentAIAssistantPage() {
       if (!res.ok || !json.success) {
         toast.error(json.error || 'Lỗi sinh nội dung AI')
       } else {
-        setResultData(json.data)
+        setResultCache(prev => new Map(prev).set(activeTab, json.data))
         toast.success(json.data.reused ? 'Tái sử dụng tri thức AI sẵn có!' : 'AI đã sinh bài học thành công!')
       }
     } catch (err: any) {
@@ -838,10 +1078,10 @@ export default function StudentAIAssistantPage() {
   const [savedSuccess, setSavedSuccess] = useState(false)
 
   const handleSaveToFlashcard = async () => {
-    if (!resultData?.content) return
+    if (!currentResult?.content) return
     setSavingFlashcard(true)
 
-    const content = resultData.content
+    const content = currentResult.content
     let loType: 'vocabulary' | 'sentence' | 'grammar' = 'vocabulary'
     let dataObj: Record<string, unknown> = {}
 
@@ -923,28 +1163,6 @@ export default function StudentAIAssistantPage() {
     <DevOnlyGuard featureName="Trợ Lý AI Ngôn Ngữ">
       <div className="min-h-screen bg-slate-50/50 pb-24">
         <div className="w-full space-y-8">
-          {/* Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5D7B6F] to-[#3f574d] p-8 text-white shadow-xl shadow-[#5D7B6F]/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="relative z-10 space-y-3 max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md text-emerald-100 border border-white/20 uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" /> FQuiz Multi-Language AI Engine
-              </span>
-            <h1 className="text-3xl font-black tracking-tight">Trợ lý Học tập AI Ngôn ngữ</h1>
-            <p className="text-sm text-emerald-100/90 leading-relaxed">
-              Tự động khởi tạo từ vựng, phân tích ngữ pháp, kịch bản hội thoại, câu chuyện và đề ôn tập đa ngôn ngữ cá nhân hóa theo các khung trình độ (CEFR, JLPT, HSK, TOPIK).
-            </p>
-          </div>
-
-          <div className="relative z-10 shrink-0">
-            <Button asChild variant="outline" className="bg-white/10 hover:bg-white/20 border-white/30 text-white font-bold rounded-2xl text-xs backdrop-blur-md shadow-sm">
-              <Link href="/flashcards">
-                <Bookmark className="w-4 h-4 mr-2" /> Xem Sổ tay bài học đã lưu
-              </Link>
-            </Button>
-          </div>
-
-          <Bot className="absolute -right-6 -bottom-6 w-56 h-56 text-white/10 pointer-events-none" />
-        </div>
 
         {/* Workspace Container */}
         <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -1050,6 +1268,17 @@ export default function StudentAIAssistantPage() {
             >
               <HelpCircle className="w-4 h-4 shrink-0" /> Trắc nghiệm AI
             </button>
+
+            <button
+              onClick={() => setActiveTab('writing')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
+                activeTab === 'writing'
+                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
+                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
+              }`}
+            >
+              <Edit3 className="w-4 h-4 shrink-0" /> Luyện viết & Đánh giá AI
+            </button>
           </div>
 
           {/* Generator Content */}
@@ -1066,16 +1295,56 @@ export default function StudentAIAssistantPage() {
                   {activeTab === 'translation' && 'Dịch thuật & Phân tích cấu trúc câu'}
                   {activeTab === 'flashcard' && 'Tạo bộ Flashcard học từ nhanh'}
                   {activeTab === 'quiz' && 'Sinh bộ Câu hỏi Trắc nghiệm AI'}
+                  {activeTab === 'writing' && 'Luyện Viết & AI Đánh giá bài làm'}
                 </CardTitle>
                 <CardDescription>Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-5">
                 {/* Form fields */}
+                {activeTab === 'writing' && (
+                  <div className="space-y-2 sm:col-span-2 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                        Số lượng từ AI sinh ra (Tối đa 500 từ)
+                      </label>
+                      <span className="text-xs font-bold text-[#5D7B6F] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        {writingWordCount} từ
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        type="number"
+                        min={20}
+                        max={500}
+                        value={writingWordCount}
+                        onChange={(e) => setWritingWordCount(Math.min(500, Math.max(20, Number(e.target.value) || 20)))}
+                        className="w-32 border-emerald-300 focus:border-[#5D7B6F] rounded-xl font-bold text-sm bg-white"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {[50, 100, 150, 200, 300, 500].map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => setWritingWordCount(count)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                              writingWordCount === count
+                                ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'
+                            }`}
+                          >
+                            {count} từ
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Language Selector */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      {activeTab === 'translation' ? 'Ngôn ngữ Đích' : 'Ngôn ngữ Mục tiêu'}
+                      {activeTab === 'writing' ? 'Ngôn ngữ AI sinh ra' : activeTab === 'translation' ? 'Ngôn ngữ Đích' : 'Ngôn ngữ Mục tiêu'}
                     </label>
                     <Select value={targetLanguage} onValueChange={setTargetLanguage}>
                       <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
@@ -1183,7 +1452,7 @@ export default function StudentAIAssistantPage() {
                     </div>
                   )}
 
-                  {['paragraph', 'dialogue', 'sentence', 'story', 'flashcard', 'quiz'].includes(activeTab) && (
+                  {['paragraph', 'dialogue', 'sentence', 'story', 'flashcard', 'quiz', 'writing'].includes(activeTab) && (
                     <div className="space-y-2 sm:col-span-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Chủ đề bài học</label>
                       <Input
@@ -1210,13 +1479,13 @@ export default function StudentAIAssistantPage() {
             </Card>
 
             {/* Results Display */}
-            {resultData && (
+            {currentResult && (
               <Card className="border-emerald-200 bg-emerald-50/10 shadow-md rounded-3xl overflow-hidden animate-in fade-in duration-300">
                 <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-emerald-100 bg-emerald-100/20 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-[#5D7B6F]" />
                     <CardTitle className="text-base font-bold text-gray-800">Kết quả phản hồi từ AI</CardTitle>
-                    {resultData.reused && (
+                    {currentResult.reused && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
                         <Zap className="w-3 h-3 fill-current" /> Tri thức tái sử dụng
                       </span>
@@ -1244,15 +1513,16 @@ export default function StudentAIAssistantPage() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <div className="animate-in fade-in duration-200">
-                    {activeTab === 'translation' && renderTranslationResult(resultData.content)}
-                    {activeTab === 'vocabulary' && renderVocabularyResult(resultData.content)}
-                    {activeTab === 'grammar' && renderGrammarResult(resultData.content)}
-                    {activeTab === 'sentence' && renderSentenceResult(resultData.content)}
-                    {activeTab === 'paragraph' && renderParagraphResult(resultData.content)}
-                    {activeTab === 'dialogue' && renderDialogueResult(resultData.content)}
-                    {activeTab === 'story' && renderStoryResult(resultData.content)}
-                    {activeTab === 'flashcard' && renderFlashcardResult(resultData.content)}
-                    {activeTab === 'quiz' && renderQuizResult(resultData.content)}
+                    {activeTab === 'translation' && renderTranslationResult(currentResult.content)}
+                    {activeTab === 'vocabulary' && renderVocabularyResult(currentResult.content)}
+                    {activeTab === 'grammar' && renderGrammarResult(currentResult.content)}
+                    {activeTab === 'sentence' && renderSentenceResult(currentResult.content)}
+                    {activeTab === 'paragraph' && renderParagraphResult(currentResult.content)}
+                    {activeTab === 'dialogue' && renderDialogueResult(currentResult.content)}
+                    {activeTab === 'story' && renderStoryResult(currentResult.content)}
+                    {activeTab === 'flashcard' && renderFlashcardResult(currentResult.content)}
+                    {activeTab === 'quiz' && renderQuizResult(currentResult.content)}
+                    {activeTab === 'writing' && renderWritingResult(currentResult.content)}
                   </div>
                 </CardContent>
               </Card>

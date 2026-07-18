@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { container } from '@/lib/core/di'
 import type { AIContentService } from '@/lib/modules/ai/services/ai-content.service'
+import { AILearningLog } from '@/lib/modules/ai/models/AILearningLog'
+import type { JWTPayload } from '@/lib/modules/auth/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +20,8 @@ const GenerateRequestSchema = z.object({
     'translation',
     'dialogue',
     'story',
+    'writing',
+    'writing_eval',
   ]),
   params: z.record(z.string(), z.unknown()).default({}),
   sourceType: z.string().optional(),
@@ -29,7 +33,7 @@ const GenerateRequestSchema = z.object({
  * Dynamic AI content generation endpoint for authenticated students & admins.
  */
 export const POST = withAuth(
-  async (req: Request) => {
+  async (req: Request, { payload }: { payload: JWTPayload }) => {
     try {
       let body: unknown
       try {
@@ -56,6 +60,23 @@ export const POST = withAuth(
         sourceType: parsed.data.sourceType,
         sourceId: parsed.data.sourceId,
       })
+
+      if (payload?.userId && result?.content) {
+        try {
+          await AILearningLog.create({
+            userId: payload.userId,
+            type: parsed.data.type,
+            language: (parsed.data.params.language as string) || '',
+            topic: parsed.data.params.topic as string,
+            cefrLevel: parsed.data.params.cefr as string,
+            aiProvider: result.aiProvider || 'gemini',
+            aiModel: result.aiModel,
+            tokensUsed: result.tokensUsed,
+            durationMs: result.durationMs,
+            response: JSON.stringify(result.content).slice(0, 500),
+          }).catch(() => {})
+        } catch {}
+      }
 
       return NextResponse.json({
         success: true,

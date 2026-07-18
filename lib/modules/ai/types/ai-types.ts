@@ -34,3 +34,5 @@ export type AIGenerationType =
   | 'dialogue'
   | 'story'
   | 'example_sentences'
+  | 'writing'
+  | 'writing_eval'
