@@ -105,66 +105,14 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
 
   return (
     <div className="relative">
-      {/* Question Bank Status Bar */}
       {formData?.category_id && (
-        <div className="fixed top-20 right-8 z-50 w-80">
-          <Alert
-            className={`shadow-lg ${
-              checking
-                ? 'border-blue-300 bg-blue-50'
-                : hasDifferentAnswerConflicts
-                ? 'border-red-300 bg-red-50'
-                : hasSameAnswerConflicts
-                ? 'border-yellow-300 bg-yellow-50'
-                : hasAnyConflicts
-                ? 'border-green-300 bg-green-50'
-                : 'border-gray-300 bg-white'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              {checking ? (
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600 mt-0.5" />
-              ) : hasDifferentAnswerConflicts ? (
-                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-              ) : hasAnyConflicts ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              ) : (
-                <Database className="h-5 w-5 text-gray-400 mt-0.5" />
-              )}
-
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-bold">Ngân hàng câu hỏi</span>
-                  {result && (
-                    <Badge variant="outline" className="text-xs">
-                      {result.total_questions} câu
-                    </Badge>
-                  )}
-                </div>
-
-                <AlertDescription className="text-xs">
-                  {checking ? (
-                    'Đang kiểm tra...'
-                  ) : hasDifferentAnswerConflicts ? (
-                    <span className="text-red-700 font-medium">
-                       {result?.different_answer_conflicts} câu có mâu thuẫn đáp án!
-                    </span>
-                  ) : hasSameAnswerConflicts ? (
-                    <span className="text-yellow-700">
-                      ✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)
-                    </span>
-                  ) : hasAnyConflicts ? (
-                    <span className="text-green-700">
-                      ✓ Tất cả câu hỏi hợp lệ
-                    </span>
-                  ) : (
-                    'Chưa có câu hỏi nào'
-                  )}
-                </AlertDescription>
-              </div>
-            </div>
-          </Alert>
-        </div>
+        <QuestionBankStatusBar
+          checking={checking}
+          hasDifferentAnswerConflicts={hasDifferentAnswerConflicts}
+          hasSameAnswerConflicts={hasSameAnswerConflicts}
+          hasAnyConflicts={hasAnyConflicts}
+          result={result}
+        />
       )}
 
       {/* Original QuizEditor */}
@@ -196,6 +144,79 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
           categoryId={formData?.category_id || ''}
         />
       )}
+    </div>
+  )
+}
+
+function QuestionBankStatusBar({
+  checking,
+  hasDifferentAnswerConflicts,
+  hasSameAnswerConflicts,
+  hasAnyConflicts,
+  result,
+}: {
+  checking: boolean
+  hasDifferentAnswerConflicts: boolean
+  hasSameAnswerConflicts: boolean
+  hasAnyConflicts: boolean
+  result: any
+}) {
+  const alertStyle = checking
+    ? 'border-blue-300 bg-blue-50'
+    : hasDifferentAnswerConflicts
+    ? 'border-red-300 bg-red-50'
+    : hasSameAnswerConflicts
+    ? 'border-yellow-300 bg-yellow-50'
+    : hasAnyConflicts
+    ? 'border-green-300 bg-green-50'
+    : 'border-gray-300 bg-white'
+
+  return (
+    <div className="fixed top-20 right-8 z-50 w-80">
+      <Alert className={`shadow-lg ${alertStyle}`}>
+        <div className="flex items-start gap-3">
+          {checking ? (
+            <Loader2 className="h-5 w-5 animate-spin text-blue-600 mt-0.5" />
+          ) : hasDifferentAnswerConflicts ? (
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+          ) : hasAnyConflicts ? (
+            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+          ) : (
+            <Database className="h-5 w-5 text-gray-400 mt-0.5" />
+          )}
+
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold">Ngân hàng câu hỏi</span>
+              {result && (
+                <Badge variant="outline" className="text-xs">
+                  {result.total_questions} câu
+                </Badge>
+              )}
+            </div>
+
+            <AlertDescription className="text-xs">
+              {checking ? (
+                'Đang kiểm tra...'
+              ) : hasDifferentAnswerConflicts ? (
+                <span className="text-red-700 font-medium">
+                  {result?.different_answer_conflicts} câu có mâu thuẫn đáp án!
+                </span>
+              ) : hasSameAnswerConflicts ? (
+                <span className="text-yellow-700">
+                  ✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)
+                </span>
+              ) : hasAnyConflicts ? (
+                <span className="text-green-700">
+                  ✓ Tất cả câu hỏi hợp lệ
+                </span>
+              ) : (
+                'Chưa có câu hỏi nào'
+              )}
+            </AlertDescription>
+          </div>
+        </div>
+      </Alert>
     </div>
   )
 }

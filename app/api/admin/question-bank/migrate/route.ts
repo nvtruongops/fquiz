@@ -175,19 +175,17 @@ async function processMigrateQuestion(
       existing.usage_count = existing.used_in_quiz_ids.length
     }
 
-    if (!sameAnswer) {
-      if (resolveConflicts === 'keep_most_used') {
-        const incomingVariants = await Quiz.countDocuments({
-          $or: [
-            { 'questions.question_id': qid },
-            { 'questions.text': q.text },
-          ],
-        })
-        if (incomingVariants > existing.usage_count) {
-          existing.correct_answer = (q.correct_answer || []) as number[]
-          existing.options = q.options as string[]
-          existing.explanation = (q.explanation as string) || existing.explanation
-        }
+    if (!sameAnswer && resolveConflicts === 'keep_most_used') {
+      const incomingVariants = await Quiz.countDocuments({
+        $or: [
+          { 'questions.question_id': qid },
+          { 'questions.text': q.text },
+        ],
+      })
+      if (incomingVariants > existing.usage_count) {
+        existing.correct_answer = (q.correct_answer || []) as number[]
+        existing.options = q.options as string[]
+        existing.explanation = (q.explanation as string) || existing.explanation
       }
     }
 
@@ -241,7 +239,8 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
     }
   }
 
-  const summary = `Đã thêm ${newQuestions} câu hỏi mới, cập nhật ${existingQuestions} câu đã có${skippedConflicts > 0 ? `, bỏ qua ${skippedConflicts} conflict` : ''}.`
+  const conflictSuffix = skippedConflicts > 0 ? `, bỏ qua ${skippedConflicts} conflict` : ''
+  const summary = `Đã thêm ${newQuestions} câu hỏi mới, cập nhật ${existingQuestions} câu đã có${conflictSuffix}.`
 
   return NextResponse.json({
     success: true,

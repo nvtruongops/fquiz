@@ -14,8 +14,8 @@ import {
 
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/api/security/csp-report'])
-const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator'])
+const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/terms', '/privacy', '/api/security/csp-report'])
+const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -179,11 +179,15 @@ function enforceRoleRouting(pathname: string, role: string, request: NextRequest
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (STUDENT_PATHS.some((p) => pathname.startsWith(p)) && role !== 'student') {
+  if (STUDENT_PATHS.some((p) => pathname.startsWith(p)) && !['student', 'dev'].includes(role)) {
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   if (pathname.startsWith('/api/admin') && role !== 'admin') {
+    return createForbiddenResponse(requestId)
+  }
+
+  if (pathname.startsWith('/api/v1/ai') && role !== 'dev') {
     return createForbiddenResponse(requestId)
   }
 

@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Vocabulary } from '@/lib/modules/learning/models/Vocabulary'
 import { Sentence } from '@/lib/modules/learning/models/Sentence'
 import { GrammarPattern } from '@/lib/modules/learning/models/GrammarPattern'
+import { Language } from '@/lib/modules/learning/models/Language'
 import type { LearningProgressService } from '@/lib/modules/learning/services/learning-progress.service'
 import type { LearningObjectType } from '@/lib/modules/learning/types/learning'
 import type { JWTPayload } from '@/lib/modules/auth/auth'
@@ -22,92 +23,123 @@ interface FlashcardItem {
   retrievability?: number
 }
 
-export const GET = withAuth(async (req, { payload }: { payload: JWTPayload }) => {
-  try {
-    await connectDB()
-    const loType = new URL(req.url).searchParams.get('loType') as LearningObjectType | null
-    const limit = Number(new URL(req.url).searchParams.get('limit')) || 50
+export const GET = withAuth(
+  async (req: Request, { payload }: { payload: JWTPayload }) => {
+    try {
+      await connectDB()
 
-    const progressService = container.resolve<LearningProgressService>('LearningProgressService')
-    const dueItems = await progressService.getDueReviews(payload.userId, limit)
+      const url = new URL(req.url)
+      const loType = url.searchParams.get('loType') as LearningObjectType | null
+      const languageCode = url.searchParams.get('languageCode') || url.searchParams.get('language')
+      const limit = Number(url.searchParams.get('limit')) || 100
 
-    let filtered = dueItems
-    if (loType) {
-      filtered = dueItems.filter((item) => item.loType === loType)
-    }
+      const progressService = container.resolve<LearningProgressService>('LearningProgressService')
+      const dueItems = await progressService.getDueReviews(payload.userId, limit)
 
-    if (filtered.length === 0) {
-      return NextResponse.json({ items: [], total: 0 })
-    }
-
-    const vocabIds: string[] = []
-    const sentenceIds: string[] = []
-    const grammarIds: string[] = []
-
-    for (const item of filtered) {
-      const id = item.learningObjectId.toString()
-      if (item.loType === 'vocabulary') vocabIds.push(id)
-      else if (item.loType === 'sentence') sentenceIds.push(id)
-      else if (item.loType === 'grammar') grammarIds.push(id)
-    }
-
-    const [vocabDocs, sentenceDocs, grammarDocs] = await Promise.all([
-      vocabIds.length ? Vocabulary.find({ _id: { $in: vocabIds } }).lean() : [],
-      sentenceIds.length ? Sentence.find({ _id: { $in: sentenceIds } }).lean() : [],
-      grammarIds.length ? GrammarPattern.find({ _id: { $in: grammarIds } }).lean() : [],
-    ])
-
-    const vocabMap = new Map(vocabDocs.map((d) => [d._id.toString(), d]))
-    const sentenceMap = new Map(sentenceDocs.map((d) => [d._id.toString(), d]))
-    const grammarMap = new Map(grammarDocs.map((d) => [d._id.toString(), d]))
-
-    const items: FlashcardItem[] = []
-
-    for (const item of filtered) {
-      const id = item.learningObjectId.toString()
-      let front = ''
-      let back = ''
-
-      if (item.loType === 'vocabulary') {
-        const doc = vocabMap.get(id)
-        if (!doc) continue
-        front = doc.lemma
-        back = `${doc.definition}${doc.examples?.length ? '\n\nExamples:\n' + doc.examples.join('\n') : ''}`
-      } else if (item.loType === 'sentence') {
-        const doc = sentenceMap.get(id)
-        if (!doc) continue
-        front = doc.text
-        back = doc.translation ?? doc.text
-      } else if (item.loType === 'grammar') {
-        const doc = grammarMap.get(id)
-        if (!doc) continue
-        front = doc.pattern
-        back = `${doc.explanation}${doc.examples?.length ? '\n\nExamples:\n' + doc.examples.join('\n') : ''}`
-      } else {
-        continue
+      let filtered = dueItems
+      if (loType) {
+        filtered = dueItems.filter((item) => item.loType === loType)
       }
 
-      const fsrsState = item.strategyState as Record<string, unknown> | undefined
-      const retrievability = fsrsState?.stability && fsrsState?.elapsedDays
-        ? Math.pow(1 + ((fsrsState.elapsedDays as number) / (fsrsState.stability as number)), -1)
-        : undefined
+      if (filtered.length === 0) {
+        return NextResponse.json({ items: [], total: 0 })
+      }
 
-      items.push({
-        progressId: item._id.toString(),
-        front,
-        back,
-        loType: item.loType,
-        learningObjectId: id,
-        version: item.learningObjectVersion,
-        masteryLevel: item.masteryLevel,
-        reviewCount: item.reviewCount,
-        nextReviewAt: item.nextReviewAt?.toISOString() ?? null,
-        retrievability,
-      })
+      let langId: string | null = null
+      if (languageCode) {
+        const langDoc = await Language.findOne({
+          $or: [
+            { code: languageCode.toLowerCase() },
+            { name: new RegExp(`^${languageCode}$`, 'i') },
+          ],
+        }).lean()
+
+        if (langDoc) {
+          langId = langDoc._id.toString()
+        }
+      }
+
+      const vocabIds: string[] = []
+      const sentenceIds: string[] = []
+      const grammarIds: string[] = []
+
+      for (const item of filtered) {
+        const id = item.learningObjectId.toString()
+        if (item.loType === 'vocabulary') vocabIds.push(id)
+        else if (item.loType === 'sentence') sentenceIds.push(id)
+        else if (item.loType === 'grammar') grammarIds.push(id)
+      }
+
+      const vocabFilter: Record<string, unknown> = { _id: { $in: vocabIds } }
+      const sentenceFilter: Record<string, unknown> = { _id: { $in: sentenceIds } }
+      const grammarFilter: Record<string, unknown> = { _id: { $in: grammarIds } }
+
+      if (langId) {
+        vocabFilter.languageId = langId
+        sentenceFilter.languageId = langId
+        grammarFilter.languageId = langId
+      }
+
+      const [vocabDocs, sentenceDocs, grammarDocs] = await Promise.all([
+        vocabIds.length ? Vocabulary.find(vocabFilter).lean() : [],
+        sentenceIds.length ? Sentence.find(sentenceFilter).lean() : [],
+        grammarIds.length ? GrammarPattern.find(grammarFilter).lean() : [],
+      ])
+
+      const vocabMap = new Map(vocabDocs.map((d) => [d._id.toString(), d]))
+      const sentenceMap = new Map(sentenceDocs.map((d) => [d._id.toString(), d]))
+      const grammarMap = new Map(grammarDocs.map((d) => [d._id.toString(), d]))
+
+      const items: FlashcardItem[] = []
+
+      for (const item of filtered) {
+        const id = item.learningObjectId.toString()
+        let front = ''
+        let back = ''
+
+        if (item.loType === 'vocabulary') {
+          const doc = vocabMap.get(id)
+          if (!doc) continue
+          front = doc.lemma
+          back = `${doc.definition}${doc.examples?.length ? '\n\nExamples:\n' + doc.examples.join('\n') : ''}`
+        } else if (item.loType === 'sentence') {
+          const doc = sentenceMap.get(id)
+          if (!doc) continue
+          front = doc.text
+          back = doc.translation ?? doc.text
+        } else if (item.loType === 'grammar') {
+          const doc = grammarMap.get(id)
+          if (!doc) continue
+          front = doc.pattern
+          back = `${doc.explanation}${doc.examples?.length ? '\n\nExamples:\n' + doc.examples.join('\n') : ''}`
+        } else {
+          continue
+        }
+
+        const fsrsState = item.strategyState as Record<string, unknown> | undefined
+        const retrievability = fsrsState?.stability && fsrsState?.elapsedDays
+          ? Math.pow(1 + ((fsrsState.elapsedDays as number) / (fsrsState.stability as number)), -1)
+          : undefined
+
+        items.push({
+          progressId: item._id.toString(),
+          front,
+          back,
+          loType: item.loType,
+          learningObjectId: id,
+          version: item.learningObjectVersion,
+          masteryLevel: item.masteryLevel,
+          reviewCount: item.reviewCount,
+          nextReviewAt: item.nextReviewAt?.toISOString() ?? null,
+          retrievability,
+        })
+      }
+
+      return NextResponse.json({ items, total: items.length })
+    } catch (err: any) {
+      console.error('[API /api/v1/learning/review/due] Error:', err)
+      return NextResponse.json({ error: err.message || 'Error fetching due reviews' }, { status: 500 })
     }
-
-    return NextResponse.json({ items, total: items.length })
-  } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
-  }
-}, { roles: ['student', 'teacher', 'admin'] })
+  },
+  { roles: ['student', 'teacher', 'admin'] }
+)

@@ -10,6 +10,7 @@ import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
+import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
 
 function LoginForm() {
   const router = useRouter()
@@ -221,8 +222,10 @@ function LoginForm() {
           </motion.button>
         </form>
 
+        <GoogleSignInButton callbackUrl={callbackUrl} />
+
         {/* Footer Link */}
-        <div className="mt-8 pt-6 border-t border-slate-200/50">
+        <div className="mt-6 pt-4 border-t border-slate-200/50">
           <p className="text-center text-slate-500 font-medium text-sm">
             Bạn chưa có tài khoản?{' '}
             <Link 

@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { motion } from 'framer-motion'
-import { Trophy, HelpCircle, ExternalLink } from 'lucide-react'
+import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2 } from 'lucide-react'
+import { useToast } from '@/store/shared/toast-store'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { cn } from '@/lib/core/utils/cn'
 
 interface QuizItem {
   _id: string
@@ -61,6 +64,10 @@ export default function CourseQuizList({
   onCategoryNameLoaded?: (name: string) => void
   onCategoryLoaded?: (name: string, id: string | null) => void
 }) {
+  const [savingQuizId, setSavingQuizId] = useState<string | null>(null)
+  const [savedQuizIds, setSavedQuizIds] = useState<string[]>([])
+  const { toast } = useToast()
+
   const { data, isLoading, isError } = useQuery<CourseQuizzesResponse>({
     queryKey: ['courseQuizzes', code],
     queryFn: () => fetchCourseQuizzes(code),
@@ -73,6 +80,28 @@ export default function CourseQuizList({
       onCategoryLoaded?.(data.categoryName, data.categoryId ?? null)
     }
   }, [data?.categoryName, data?.categoryId, onCategoryNameLoaded, onCategoryLoaded])
+
+  const handleSaveQuiz = async (quizId: string) => {
+    setSavingQuizId(quizId)
+    try {
+      const res = await fetch('/api/student/save-quiz', {
+        method: 'POST',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ quizId }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || 'Không thể lưu bài thi')
+      } else {
+        setSavedQuizIds((prev) => [...prev, quizId])
+        toast.success(json.message || 'Đã lưu lối tắt vào Bộ đề của tôi (/my-quizzes)')
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra khi lưu bài thi')
+    } finally {
+      setSavingQuizId(null)
+    }
+  }
 
   if (isLoading) return <QuizSkeleton />
 
@@ -99,18 +128,18 @@ export default function CourseQuizList({
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08
-      }
-    }
+        staggerChildren: 0.08,
+      },
+    },
   }
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 20 } }
+    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 20 } },
   }
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -118,60 +147,86 @@ export default function CourseQuizList({
     >
       {quizzes.map((quiz) => {
         const isCompleted = quiz.bestScore !== null
+        const isSaved = savedQuizIds.includes(quiz._id)
 
         return (
           <motion.div key={quiz._id} variants={itemVariants} className="h-full">
-            <Card className="h-full flex flex-col justify-between border border-white/80 bg-white/70 backdrop-blur-md rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_30px_rgba(93,123,111,0.08)] hover:-translate-y-1.5 transition-all duration-300 group overflow-hidden p-6 gap-5">
-              <div className="space-y-4">
+            <Card className="h-full flex flex-col justify-between border border-white/90 bg-white/70 backdrop-blur-2xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.14)] hover:-translate-y-1.5 transition-all duration-300 group overflow-hidden p-6 gap-5 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#5D7B6F]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+              <div className="space-y-4 relative z-10">
                 {/* Icon & Title */}
                 <div className="flex items-start gap-3">
                   {isCompleted ? (
-                    <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0 shadow-sm">
-                      <Trophy className="w-4 h-4" />
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm border border-emerald-200/50">
+                      <Trophy className="w-5 h-5" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0 shadow-sm">
-                      <HelpCircle className="w-4 h-4" />
+                    <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-sm border border-slate-200/50">
+                      <HelpCircle className="w-5 h-5" />
                     </div>
                   )}
-                  <h3 className="text-sm font-black text-slate-800 leading-snug tracking-tight group-hover:text-[#5D7B6F] transition-colors duration-300 line-clamp-2" title={quiz.title}>
+                  <h3 className="text-base font-black text-slate-800 leading-snug tracking-tight group-hover:text-[#5D7B6F] transition-colors duration-300 line-clamp-2" title={quiz.title}>
                     {quiz.title}
                   </h3>
                 </div>
 
                 {/* Metadata */}
-                <div className="space-y-2.5 pl-11">
-                  <div className="text-xs font-bold text-slate-500">
+                <div className="space-y-2.5 pl-13">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#5D7B6F]/40" />
                     {quiz.questionCount} câu hỏi
                   </div>
                   <div>
                     {isCompleted ? (
                       <Badge
-                        className="border-0 text-white font-black text-[9px] px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-sm"
+                        className="border-0 text-white font-black text-[10px] px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-sm uppercase tracking-wider"
                       >
-                        Điểm: {(() => {
+                        Điểm cao nhất: {(() => {
                           const val = (quiz.bestScore! / quiz.questionCount) * 10
                           return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
                         })()}/10
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-[9px] text-slate-500 border-slate-300 font-black px-2.5 py-1 rounded-full bg-slate-50/50">
-                        Chưa làm
+                      <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-200 font-bold px-3 py-1 rounded-full bg-slate-50/80 uppercase tracking-wider">
+                        Chưa thử sức
                       </Badge>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="pt-2 border-t border-slate-100/60">
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 relative z-10 flex items-center gap-2">
                 <Link
                   href={`/quiz/${quiz._id}`}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black text-white bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md shadow-[#5D7B6F]/10 hover:shadow-lg transition-all hover:scale-[1.02]"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md shadow-[#5D7B6F]/15 hover:shadow-lg transition-all active:scale-[0.98]"
                 >
-                  Xem đề thi
-                  <ExternalLink className="w-3 h-3" />
+                  Bắt đầu làm bài
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleSaveQuiz(quiz._id)
+                  }}
+                  disabled={savingQuizId === quiz._id}
+                  className={cn(
+                    'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
+                    isSaved
+                      ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-xs'
+                      : 'bg-slate-100 hover:bg-[#5D7B6F]/10 text-slate-500 hover:text-[#5D7B6F] border-slate-200/60'
+                  )}
+                  title="Lưu bộ đề này vào Bộ đề của tôi (/my-quizzes)"
+                >
+                  {savingQuizId === quiz._id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#5D7B6F]" />
+                  ) : (
+                    <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-amber-500')} />
+                  )}
+                </button>
               </div>
             </Card>
           </motion.div>

@@ -1,4 +1,5 @@
-﻿import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { extractJsonString } from './openai-provider'
 import type { ZodSchema } from 'zod'
 import type {
   IAIProvider,
@@ -13,13 +14,20 @@ const EMBEDDING_MODEL = 'text-embedding-004'
 
 export class GeminiProvider implements IAIProvider {
   private client: GoogleGenerativeAI
+  private apiKey: string
+  private defaultModel: string
 
-  constructor() {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
+  constructor(apiKey?: string, defaultModel?: string) {
+    this.apiKey = apiKey || process.env.GEMINI_API_KEY || ''
+    this.defaultModel = defaultModel || DEFAULT_MODEL
+    if (!this.apiKey) {
       console.warn('[GeminiProvider] GEMINI_API_KEY not set — provider will fail at runtime')
     }
-    this.client = new GoogleGenerativeAI(apiKey ?? '')
+    this.client = new GoogleGenerativeAI(this.apiKey)
+  }
+
+  async getProviderName(): Promise<string> {
+    return 'gemini'
   }
 
   async generate<T>(
@@ -27,7 +35,7 @@ export class GeminiProvider implements IAIProvider {
     options?: AIGenerationOptions
   ): Promise<AIGenerationResult<T>> {
     const startTime = Date.now()
-    const modelName = options?.model ?? DEFAULT_MODEL
+    const modelName = options?.model ?? this.defaultModel
     const genModel = this.client.getGenerativeModel({
       model: modelName,
       generationConfig: {
@@ -37,18 +45,23 @@ export class GeminiProvider implements IAIProvider {
       },
     })
 
+    if (!this.apiKey) {
+      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
+    }
+
     const result = await genModel.generateContent(prompt)
     const response = result.response
-    const text = response.text()
+    const rawText = response.text()
+    const cleanText = extractJsonString(rawText)
     const usage = response.usageMetadata
 
     let content: T
 
     if (options?.responseSchema) {
       const schema = options.responseSchema as ZodSchema<T>
-      content = schema.parse(JSON.parse(text))
+      content = schema.parse(JSON.parse(cleanText))
     } else {
-      content = text as unknown as T
+      content = cleanText as unknown as T
     }
 
     return {

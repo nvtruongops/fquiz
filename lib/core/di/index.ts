@@ -1,4 +1,4 @@
-﻿export { Container } from './container'
+export { Container } from './container'
 
 import { Container } from './container'
 import { InMemoryEventBus } from '@/lib/core/events/in-memory-event-bus'
@@ -25,6 +25,7 @@ import { LessonLearningService } from '@/lib/modules/learning/services/lesson-le
 import { CourseLearningService } from '@/lib/modules/learning/services/course-learning.service'
 
 import { AIContentService } from '@/lib/modules/ai/services/ai-content.service'
+import { DynamicAIProvider } from '@/lib/core/ai/dynamic-ai-provider'
 
 export const container = new Container()
 
@@ -32,7 +33,7 @@ export const container = new Container()
 container.registerSingleton('IEventBus', () => new InMemoryEventBus())
 container.registerSingleton('ICache', () => new InMemoryCache())
 container.registerSingleton('ISearchProvider', () => new AtlasSearchProvider())
-container.registerSingleton('IAIProvider', () => new GeminiProvider())
+container.registerSingleton('IAIProvider', () => new DynamicAIProvider())
 
 // Wire Repositories
 container.registerSingleton('LanguageRepository', () => new LanguageRepository())

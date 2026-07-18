@@ -295,78 +295,105 @@ function mapSessionToActivity(
   creatorNameMap: Map<string, string>
 ) {
   const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
-  const quizMeta = quizMetaMap.get(quizId)
   const isMixQuiz = session.is_temp === true
-  const isActive = session.status === 'active'
 
-  // 1. Mix quiz
   if (isMixQuiz) {
-    const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
-    const totalQuestions = session.quiz_id ? Number(session.quiz_id.questionCount ?? 0) : (session.user_answers?.length || 0)
-    let answeredCount = 0
-    let correctCount = 0
-
-    if (Array.isArray(session.user_answers)) {
-      correctCount = session.user_answers.filter((a: any) => a.is_correct).length
-      answeredCount = new Set(
-        session.user_answers
-          .map((a: any) => a.question_index)
-          .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
-      ).size
-    }
-
-    const activityAt = isActive ? session.started_at : (session.completed_at ?? session.started_at)
-    const score = isActive
-      ? 0
-      : Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2))
-
-    return {
-      id: session._id.toString(),
-      quizId,
-      quizTitle,
-      quizCode: session.quiz_id ? mixQuizDisplayCode(quizTitle) : 'TRỘN',
-      categoryName: 'Quiz Trộn',
-      sourceType: 'mix_quiz',
-      sourceLabel: 'Quiz Trộn',
-      sourceCreatorName: null,
-      mode: session.mode as string,
-      status: session.status as 'active' | 'completed',
-      score,
-      maxScore: 10,
-      correctCount: isActive ? answeredCount : correctCount,
-      totalCount: totalQuestions,
-      activityAt,
-      quizDeleted: false,
-      isMix: true,
-    }
+    return mapMixSessionToActivity(session, quizId)
   }
 
-  // 2. Deleted quiz (not mix)
   if (!session.quiz_id || typeof session.quiz_id === 'string') {
-    const totalQuestions = session.user_answers?.length || 0
-    return {
-      id: session._id.toString(),
-      quizId,
-      quizTitle: 'Quiz đã bị xóa',
-      quizCode: 'N/A',
-      categoryName: 'Chưa phân loại',
-      sourceType: 'deleted',
-      sourceLabel: 'Quiz đã bị xóa',
-      sourceCreatorName: null,
-      mode: session.mode as string,
-      status: isActive ? 'active' : 'completed',
-      score: isActive ? 0 : Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
-      maxScore: 10,
-      correctCount: isActive
-        ? (session.user_answers?.length || 0)
-        : (session.user_answers?.filter((a: any) => a.is_correct).length || 0),
-      totalCount: totalQuestions,
-      activityAt: isActive ? session.started_at : session.completed_at,
-      quizDeleted: true,
-    }
+    return mapDeletedSessionToActivity(session, quizId)
   }
 
-  // 3. Regular active or completed session
+  return mapRegularSessionToActivity(
+    session,
+    quizId,
+    userId,
+    quizMetaMap,
+    categoryNameMap,
+    originalCreatorMap,
+    creatorNameMap
+  )
+}
+
+function mapMixSessionToActivity(session: any, quizId: string) {
+  const isActive = session.status === 'active'
+  const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
+  const totalQuestions = session.quiz_id ? Number(session.quiz_id.questionCount ?? 0) : (session.user_answers?.length || 0)
+  let answeredCount = 0
+  let correctCount = 0
+
+  if (Array.isArray(session.user_answers)) {
+    correctCount = session.user_answers.filter((a: any) => a.is_correct).length
+    answeredCount = new Set(
+      session.user_answers
+        .map((a: any) => a.question_index)
+        .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+    ).size
+  }
+
+  const activityAt = isActive ? session.started_at : (session.completed_at ?? session.started_at)
+  const score = isActive
+    ? 0
+    : Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2))
+
+  return {
+    id: session._id.toString(),
+    quizId,
+    quizTitle,
+    quizCode: session.quiz_id ? mixQuizDisplayCode(quizTitle) : 'TRỘN',
+    categoryName: 'Quiz Trộn',
+    sourceType: 'mix_quiz',
+    sourceLabel: 'Quiz Trộn',
+    sourceCreatorName: null,
+    mode: session.mode as string,
+    status: session.status as 'active' | 'completed',
+    score,
+    maxScore: 10,
+    correctCount: isActive ? answeredCount : correctCount,
+    totalCount: totalQuestions,
+    activityAt,
+    quizDeleted: false,
+    isMix: true,
+  }
+}
+
+function mapDeletedSessionToActivity(session: any, quizId: string) {
+  const isActive = session.status === 'active'
+  const totalQuestions = session.user_answers?.length || 0
+  return {
+    id: session._id.toString(),
+    quizId,
+    quizTitle: 'Quiz đã bị xóa',
+    quizCode: 'N/A',
+    categoryName: 'Chưa phân loại',
+    sourceType: 'deleted',
+    sourceLabel: 'Quiz đã bị xóa',
+    sourceCreatorName: null,
+    mode: session.mode as string,
+    status: isActive ? 'active' : 'completed',
+    score: isActive ? 0 : Number(((session.score / Math.max(totalQuestions, 1)) * 10).toFixed(2)),
+    maxScore: 10,
+    correctCount: isActive
+      ? (session.user_answers?.length || 0)
+      : (session.user_answers?.filter((a: any) => a.is_correct).length || 0),
+    totalCount: totalQuestions,
+    activityAt: isActive ? session.started_at : session.completed_at,
+    quizDeleted: true,
+  }
+}
+
+function mapRegularSessionToActivity(
+  session: any,
+  quizId: string,
+  userId: string,
+  quizMetaMap: Map<string, any>,
+  categoryNameMap: Map<string, string>,
+  originalCreatorMap: Map<string, any>,
+  creatorNameMap: Map<string, string>
+) {
+  const isActive = session.status === 'active'
+  const quizMeta = quizMetaMap.get(quizId)
   const sourceType = inferSourceType(quizMeta, userId)
   const sourceCreatorId = resolveSourceCreatorId(quizMeta, originalCreatorMap)
 
@@ -417,6 +444,6 @@ function mapSessionToActivity(
     totalCount: totalQuestions,
     activityAt,
     quizDeleted: false,
-    isMix: isMixQuiz,
+    isMix: false,
   }
 }

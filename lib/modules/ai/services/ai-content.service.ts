@@ -1,4 +1,4 @@
-﻿import { createHash } from 'crypto'
+import { createHash } from 'crypto'
 import { Types } from 'mongoose'
 import type { IAIProvider } from '@/lib/core/ai/ai-provider-interface'
 import type { ICache } from '@/lib/core/cache/cache-interface'
@@ -39,19 +39,22 @@ export class AIContentService {
 
     const requestHash = this.computeHash(request)
     const cacheKey = `ai:${requestHash}`
+    const providerName = typeof this.aiProvider.getProviderName === 'function'
+      ? await this.aiProvider.getProviderName()
+      : 'gemini'
 
     const cached = await this.cache.get<AIContentResult<T>>(cacheKey)
     if (cached) return cached
 
-    const existing = await AIAsset.findOne({ requestHash, aiProvider: 'gemini' }).lean()
-    if (existing && existing.status === 'completed') {
+    const existing = await AIAsset.findOne({ requestHash, aiProvider: providerName }).lean()
+    if (existing && existing.status === 'completed' && existing.responseHash) {
       const result: AIContentResult<T> = {
         content: JSON.parse(existing.responseHash) as T,
         reused: true,
         assetId: existing._id.toString(),
-        durationMs: 0,
-        cost: 0,
-        tokensUsed: { input: 0, output: 0 },
+        durationMs: existing.durationMs ?? 0,
+        cost: existing.cost ?? 0,
+        tokensUsed: { input: existing.requestTokens ?? 0, output: existing.responseTokens ?? 0 },
       }
       await this.cache.set(cacheKey, result, 3600)
       return result
@@ -60,17 +63,30 @@ export class AIContentService {
     const prompt = promptDef.buildPrompt(request.params as never)
     const schema = promptDef.schema as unknown as z.ZodType<T>
 
-    const asset = await AIAsset.create({
-      sourceType: request.sourceType ?? request.type,
-      sourceId: new Types.ObjectId(request.sourceId ?? '000000000000000000000000'),
-      requestHash,
-      responseHash: '',
-      prompt,
-      promptVersion: promptDef.version,
-      aiProvider: 'gemini',
-      aiModel: 'gemini-2.0-flash-001',
-      status: 'processing',
-    })
+    const validSourceId = request.sourceId && Types.ObjectId.isValid(request.sourceId)
+      ? new Types.ObjectId(request.sourceId)
+      : new Types.ObjectId('000000000000000000000000')
+
+    const asset = await AIAsset.findOneAndUpdate(
+      { requestHash, aiProvider: providerName },
+      {
+        $set: {
+          sourceType: request.sourceType ?? request.type,
+          sourceId: validSourceId,
+          prompt,
+          promptVersion: promptDef.version,
+          aiModel: 'auto',
+          status: 'processing',
+          errorMessage: null,
+        },
+        $setOnInsert: {
+          requestHash,
+          responseHash: '',
+          aiProvider: providerName,
+        },
+      },
+      { upsert: true, returnDocument: 'after' }
+    )
 
     try {
       const genResult = await this.aiProvider.generate<T>(prompt, { responseSchema: schema })
@@ -108,7 +124,7 @@ export class AIContentService {
           assetId: asset._id.toString(),
           sourceType: request.type,
           sourceId: request.sourceId ?? '',
-          provider: 'gemini',
+          provider: providerName,
           model: genResult.model,
         },
       })
@@ -119,7 +135,7 @@ export class AIContentService {
       await AIAsset.findByIdAndUpdate(asset._id, {
         status: 'failed',
         errorMessage: message,
-        retryCount: 1,
+        $inc: { retryCount: 1 },
       })
       throw error
     }

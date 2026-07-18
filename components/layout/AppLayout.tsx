@@ -3,7 +3,6 @@
 import React from 'react'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
-import { Sidebar } from '@/components/layout/Sidebar'
 import { cn } from '@/lib/core/utils/cn'
 
 interface AppLayoutProps {
@@ -26,23 +25,20 @@ export default function AppLayout({ children, user, showNavbar = true, className
   }
 
   return (
-    <div className={cn('min-h-screen flex bg-[#F9F9F7]', className)}>
-      {/* Sidebar – desktop only, positioned relative to viewport */}
-      <Sidebar />
+    <div className={cn('min-h-screen flex flex-col bg-[#F9F9F7]', className)}>
+      {/* Top Navbar */}
+      {showNavbar && (
+        <Navbar
+          initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
+        />
+      )}
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 md:ml-[80px] transition-all duration-300">
-        {showNavbar && (
-          <Navbar
-            initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
-          />
-        )}
-        <main className="flex-1 w-full pt-4 pb-28 md:pb-12 overflow-x-hidden">
-          <div className="w-full mx-auto px-4 md:px-8 lg:px-12 animate-in fade-in duration-500">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Main Content Area */}
+      <main className={cn('flex-1 w-full pb-28 md:pb-12 overflow-x-hidden', showNavbar ? 'pt-24 sm:pt-28' : 'pt-4')}>
+        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 animate-in fade-in duration-500">
+          {children}
+        </div>
+      </main>
     </div>
   )
 }

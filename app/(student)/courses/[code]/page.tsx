@@ -109,7 +109,10 @@ function CourseDetailContent({ code }: { code: string }) {
             )}
           </button>
           <button
-            onClick={() => router.push(`/courses/${code}?tab=mix${categoryId ? `&categoryId=${categoryId}` : ''}`)}
+            onClick={() => {
+              const categoryParam = categoryId ? `&categoryId=${categoryId}` : ''
+              router.push(`/courses/${code}?tab=mix${categoryParam}`)
+            }}
             className={cn(
               "flex items-center gap-2 pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative",
               currentTab === 'mix'

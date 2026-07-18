@@ -1,25 +1,38 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedGrammarSchema = z.object({
-  patternName: z.string().min(2),
-  pattern: z.string().min(2),
-  explanation: z.string().min(20),
-  rules: z.array(z.string()).min(2),
+  patternName: z.string().min(1),
+  pattern: z.string().min(1),
+  explanation: z.string().min(1),
+  rules: z.array(z.string()).min(1),
   examples: z.array(z.object({
     sentence: z.string(),
     translation: z.string(),
-    breakdown: z.string().optional(),
-  })).min(2).max(6),
-  commonMistakes: z.array(z.object({
-    mistake: z.string(),
-    correction: z.string(),
-    explanation: z.string(),
-  })).optional(),
-  cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
-  relatedPatterns: z.array(z.string()).optional(),
+    breakdown: z.string().nullable().optional(),
+  })).min(1),
+  commonMistakes: z.preprocess(
+    (val) => {
+      if (Array.isArray(val)) {
+        return val.map((item) => {
+          if (typeof item === 'string') {
+            return { mistake: item, correction: '', explanation: '' }
+          }
+          return item
+        })
+      }
+      return val
+    },
+    z.array(z.object({
+      mistake: z.string(),
+      correction: z.string(),
+      explanation: z.string(),
+    })).nullable().optional(),
+  ),
+  cefrLevel: z.string().nullable().optional(),
+  relatedPatterns: z.array(z.string()).nullable().optional(),
 })
 
 export type GeneratedGrammar = z.infer<typeof GeneratedGrammarSchema>
@@ -55,7 +68,7 @@ Provide a comprehensive grammar explanation with:
    - sentence: the example in ${params.language}
    - translation: English translation
    - breakdown: optional word-by-word explanation)
-6. commonMistakes (optional: 2-3 frequent errors learners make)
+6. commonMistakes (optional array of objects: each with "mistake", "correction", "explanation" — never use plain strings)
 7. cefrLevel
 8. relatedPatterns (optional: related grammar points)
 

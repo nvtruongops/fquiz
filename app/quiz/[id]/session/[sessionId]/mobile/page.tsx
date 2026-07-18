@@ -289,55 +289,20 @@ export default function QuizSessionMobilePage() {
             )}
           </div>
 
-          {/* Options */}
           <div className="space-y-3">
-            {question.options.map((option, idx) => {
-              const isSelected = selectedOptions.includes(idx)
-              const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
-              const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleSelectOption(idx)}
-                  disabled={submitted}
-                  className={cn(
-                    'w-full rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98]',
-                    enableAnimation && 'duration-200 shadow-sm hover:shadow-md',
-                    isCorrect && 'border-green-500 bg-green-50',
-                    isWrongSelected && 'border-red-500 bg-red-50',
-                    !isCorrect && !isWrongSelected && isSelected && 'border-[#5D7B6F] bg-[#5D7B6F]/5 ring-2 ring-[#5D7B6F]/20',
-                    !isCorrect && !isWrongSelected && !isSelected && 'border-gray-200 bg-white hover:border-[#A4C3A2]',
-                    submitted && 'cursor-not-allowed opacity-60'
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-black',
-                        isCorrect && 'bg-green-500 text-white',
-                        isWrongSelected && 'bg-red-500 text-white',
-                        !isCorrect && !isWrongSelected && isSelected && 'bg-[#5D7B6F] text-white',
-                        !isCorrect && !isWrongSelected && !isSelected && 'bg-gray-100 text-gray-600'
-                      )}
-                    >
-                      {String.fromCodePoint(65 + idx)}
-                    </div>
-                    <p
-                      className={cn(
-                        'flex-1 text-sm leading-relaxed',
-                        isCorrect && 'font-bold text-green-700',
-                        isWrongSelected && 'font-bold text-red-700',
-                        !isCorrect && !isWrongSelected && isSelected && 'font-bold text-[#5D7B6F]',
-                        !isCorrect && !isWrongSelected && !isSelected && 'text-gray-700'
-                      )}
-                    >
-                      {option}
-                    </p>
-                  </div>
-                </button>
-              )
-            })}
+            {question.options.map((option, idx) => (
+              <MobileOptionItem
+                key={idx}
+                option={option}
+                idx={idx}
+                isSelected={selectedOptions.includes(idx)}
+                isCorrect={showImmediateFeedback && correctAnswerSet.includes(idx)}
+                isWrongSelected={showImmediateFeedback && selectedOptions.includes(idx) && !correctAnswerSet.includes(idx)}
+                submitted={submitted}
+                enableAnimation={enableAnimation}
+                onSelectOption={handleSelectOption}
+              />
+            ))}
           </div>
 
           {/* Immediate Feedback */}
@@ -507,5 +472,67 @@ export default function QuizSessionMobilePage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function MobileOptionItem({
+  option,
+  idx,
+  isSelected,
+  isCorrect,
+  isWrongSelected,
+  submitted,
+  enableAnimation,
+  onSelectOption,
+}: {
+  option: string
+  idx: number
+  isSelected: boolean
+  isCorrect: boolean
+  isWrongSelected: boolean
+  submitted: boolean
+  enableAnimation: boolean
+  onSelectOption: (index: number) => void
+}) {
+  return (
+    <button
+      key={idx}
+      onClick={() => onSelectOption(idx)}
+      disabled={submitted}
+      className={cn(
+        'w-full rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98]',
+        enableAnimation && 'duration-200 shadow-sm hover:shadow-md',
+        isCorrect && 'border-green-500 bg-green-50',
+        isWrongSelected && 'border-red-500 bg-red-50',
+        !isCorrect && !isWrongSelected && isSelected && 'border-[#5D7B6F] bg-[#5D7B6F]/5 ring-2 ring-[#5D7B6F]/20',
+        !isCorrect && !isWrongSelected && !isSelected && 'border-gray-200 bg-white hover:border-[#A4C3A2]',
+        submitted && 'cursor-not-allowed opacity-60'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-black',
+            isCorrect && 'bg-green-500 text-white',
+            isWrongSelected && 'bg-red-500 text-white',
+            !isCorrect && !isWrongSelected && isSelected && 'bg-[#5D7B6F] text-white',
+            !isCorrect && !isWrongSelected && !isSelected && 'bg-gray-100 text-gray-600'
+          )}
+        >
+          {String.fromCodePoint(65 + idx)}
+        </div>
+        <p
+          className={cn(
+            'flex-1 text-sm leading-relaxed',
+            isCorrect && 'font-bold text-green-700',
+            isWrongSelected && 'font-bold text-red-700',
+            !isCorrect && !isWrongSelected && isSelected && 'font-bold text-[#5D7B6F]',
+            !isCorrect && !isWrongSelected && !isSelected && 'text-gray-700'
+          )}
+        >
+          {option}
+        </p>
+      </div>
+    </button>
   )
 }

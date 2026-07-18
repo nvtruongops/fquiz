@@ -1,15 +1,15 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import type { PromptDefinition } from './types'
 
 export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedFlashcardSchema = z.object({
-  front: z.string().min(3),
-  back: z.string().min(5),
-  hint: z.string().optional(),
-  example: z.string().optional(),
-  mnemonic: z.string().optional(),
-  cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+  front: z.string().min(1),
+  back: z.string().min(1),
+  hint: z.string().nullable().optional(),
+  example: z.string().nullable().optional(),
+  mnemonic: z.string().nullable().optional(),
+  cefrLevel: z.string().nullable().optional(),
 })
 
 export type GeneratedFlashcard = z.infer<typeof GeneratedFlashcardSchema>
@@ -23,10 +23,10 @@ export interface FlashcardPromptParams {
   flashcardType?: 'vocabulary' | 'phrase' | 'grammar' | 'culture'
 }
 
-export const flashcardGeneration: PromptDefinition<FlashcardPromptParams, typeof GeneratedFlashcardSchema> = {
+export const flashcardGeneration: PromptDefinition<FlashcardPromptParams, z.ZodArray<typeof GeneratedFlashcardSchema>> = {
   name: 'flashcard-generation',
   version: PROMPT_VERSION,
-  schema: GeneratedFlashcardSchema,
+  schema: z.array(GeneratedFlashcardSchema),
   buildPrompt: (params: FlashcardPromptParams): string => {
     const typeInstruction = params.flashcardType === 'vocabulary'
       ? 'front: target word/phrase in target language, back: definition + example sentence'

@@ -295,7 +295,7 @@ export default function CommunityPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-tl from-[#A4C3A2]/20 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+      <div className="w-full py-8 md:py-12 relative z-10">
         {/* Header */}
         <section className="text-center space-y-4 mb-10">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/60 border border-white/80 shadow-sm backdrop-blur-md">
@@ -403,218 +403,24 @@ export default function CommunityPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {postsData?.posts?.map((p: any) => {
-                    const isLiked = p.likes.includes(userId)
-                    return (
-                      <div 
-                        key={p._id} 
-                        onClick={() => setExpandedPostId(expandedPostId === p._id ? null : p._id)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setExpandedPostId(expandedPostId === p._id ? null : p._id);
-                          }
-                        }}
-                        className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer group hover:-translate-y-0.5"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex gap-2 flex-wrap">
-                            {p.tags?.map((tag: string) => (
-                              <span key={tag} className="px-3 py-1 bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest rounded-lg">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                          {userId && (String(p.authorId) === String(userId) || authData?.user?.role === 'admin') && (
-                            <div className="relative flex items-center">
-                              <AnimatePresence>
-                                {confirmingDeletePostId === p._id ? (
-                                  <motion.div
-                                    initial={{ opacity: 0, width: 0, marginRight: 0 }}
-                                    animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
-                                    exit={{ opacity: 0, width: 0, marginRight: 0 }}
-                                    className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap"
-                                  >
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        deletePostMutation.mutate(p._id)
-                                        setConfirmingDeletePostId(null)
-                                      }}
-                                      disabled={deletePostMutation.isPending}
-                                      className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shrink-0"
-                                    >
-                                      {deletePostMutation.isPending ? (
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                      ) : 'Xóa'}
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setConfirmingDeletePostId(null)
-                                      }}
-                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors shrink-0"
-                                    >
-                                      Hủy
-                                    </button>
-                                  </motion.div>
-                                ) : null}
-                              </AnimatePresence>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setConfirmingDeletePostId(p._id)
-                                }}
-                                title="Xóa bài đăng"
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <h3 className="text-xl font-black text-slate-800 mb-2 group-hover:text-[#5D7B6F] transition-colors">{p.title}</h3>
-                        <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6 line-clamp-2">{p.content}</p>
-                        
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                              {p.authorName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-700">{p.authorName}</p>
-                              <p className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {formatDistanceToNow(new Date(p.createdAt), { addSuffix: true, locale: vi })}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            <motion.button 
-                              whileTap={userId ? { scale: 0.8 } : {}}
-                              animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!userId) {
-                                  window.location.href = '/login'
-                                  return
-                                }
-                                toggleLikeMutation.mutate(p._id)
-                              }}
-                              title={userId ? (isLiked ? 'Bỏ thích' : 'Thích') : 'Đăng nhập để thích'}
-                              className={cn("flex items-center gap-1.5 transition-colors p-1 rounded-lg", isLiked ? "text-red-500 bg-red-50" : "text-slate-400 hover:bg-slate-50")}
-                            >
-                              <motion.div 
-                                animate={isLiked ? { scale: [1, 1.4, 1] } : {}} 
-                                transition={{ duration: 0.3 }}
-                              >
-                                <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
-                              </motion.div>
-                              <span className="text-xs font-bold">{p.likes?.length || 0}</span>
-                            </motion.button>
-                            <div className="flex items-center gap-1.5 text-slate-400 p-1">
-                              <MessageSquare className="w-4 h-4" />
-                              <span className="text-xs font-bold">{p.comments?.length || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-slate-400 p-1">
-                              {expandedPostId === p._id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Inline Expanded Section */}
-                        <AnimatePresence>
-                          {expandedPostId === p._id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
-                                <p className="text-slate-700 font-medium leading-relaxed whitespace-pre-wrap text-base">{p.content}</p>
-                                <div className="space-y-3">
-                                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Bình luận ({p.comments?.length || 0})</h4>
-                                  {p.comments?.length === 0 ? (
-                                    <p className="text-slate-400 font-medium text-center py-3 text-sm">Chưa có bình luận nào.</p>
-                                  ) : (
-                                    <div className="space-y-3">
-                                      {p.comments?.map((comment: any) => (
-                                        <div key={comment._id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 group/comment relative">
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-[10px] shadow-sm">
-                                                {comment.authorName.charAt(0).toUpperCase()}
-                                              </div>
-                                              <div>
-                                                <p className="text-xs font-bold text-slate-700">{comment.authorName}</p>
-                                                <span className="text-[10px] text-slate-400 font-medium">{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}</span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <p className="text-slate-600 font-medium text-sm whitespace-pre-wrap">{comment.content}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Comment Input */}
-                                <div className="pt-2">
-                                  {isAuthLoading ? (
-                                    <div className="h-10 bg-slate-100 rounded-xl animate-pulse" />
-                                  ) : userId ? (
-                                    <div className="flex gap-2">
-                                      <Input
-                                        value={commentContent}
-                                        onChange={(e) => setCommentContent(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && !e.shiftKey && commentContent.trim()) {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            createCommentMutation.mutate({ postId: p._id, content: commentContent })
-                                            setCommentContent('')
-                                          }
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder="Viết bình luận..."
-                                        className="flex-1 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-[#5D7B6F]/30"
-                                      />
-                                      <Button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          createCommentMutation.mutate({ postId: p._id, content: commentContent })
-                                          setCommentContent('')
-                                        }}
-                                        disabled={!commentContent.trim() || createCommentMutation.isPending}
-                                        className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl px-6 font-black shrink-0"
-                                      >
-                                        {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <a href="/login" className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-bold text-[#5D7B6F] bg-[#5D7B6F]/5 hover:bg-[#5D7B6F]/10 rounded-xl transition-colors">
-                                      Đăng nhập để bình luận
-                                    </a>
-                                  )}
-                                </div>
-
-                                <button onClick={(e) => { e.stopPropagation(); setExpandedPostId(null) }} className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors mx-auto pt-2">
-                                  <ChevronUp className="w-3.5 h-3.5" /> Thu nhỏ
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )
-                  })}
+                  {postsData?.posts?.map((p: any) => (
+                    <PostItemCard
+                      key={p._id}
+                      p={p}
+                      userId={userId}
+                      authRole={authData?.user?.role}
+                      expandedPostId={expandedPostId}
+                      setExpandedPostId={setExpandedPostId}
+                      confirmingDeletePostId={confirmingDeletePostId}
+                      setConfirmingDeletePostId={setConfirmingDeletePostId}
+                      deletePostMutation={deletePostMutation}
+                      toggleLikeMutation={toggleLikeMutation}
+                      createCommentMutation={createCommentMutation}
+                      commentContent={commentContent}
+                      setCommentContent={setCommentContent}
+                      isAuthLoading={isAuthLoading}
+                    />
+                  ))}
                 </div>
               )}
               
@@ -770,5 +576,252 @@ export default function CommunityPage() {
       </Dialog>
 
     </div>
+  )
+}
+
+function PostItemCard({
+  p,
+  userId,
+  authRole,
+  expandedPostId,
+  setExpandedPostId,
+  confirmingDeletePostId,
+  setConfirmingDeletePostId,
+  deletePostMutation,
+  toggleLikeMutation,
+  createCommentMutation,
+  commentContent,
+  setCommentContent,
+  isAuthLoading,
+}: any) {
+  const isLiked = p.likes?.includes(userId)
+
+  return (
+    <div 
+      onClick={() => setExpandedPostId(expandedPostId === p._id ? null : p._id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setExpandedPostId(expandedPostId === p._id ? null : p._id)
+        }
+      }}
+      className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer group hover:-translate-y-0.5"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex gap-2 flex-wrap">
+          {p.tags?.map((tag: string) => (
+            <span key={tag} className="px-3 py-1 bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-widest rounded-lg">
+              {tag}
+            </span>
+          ))}
+        </div>
+        {userId && (String(p.authorId) === String(userId) || authRole === 'admin') && (
+          <div className="relative flex items-center">
+            <AnimatePresence>
+              {confirmingDeletePostId === p._id ? (
+                <motion.div
+                  initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                  animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
+                  exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                  className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap"
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deletePostMutation.mutate(p._id)
+                      setConfirmingDeletePostId(null)
+                    }}
+                    disabled={deletePostMutation.isPending}
+                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shrink-0"
+                  >
+                    {deletePostMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : 'Xóa'}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setConfirmingDeletePostId(null)
+                    }}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors shrink-0"
+                  >
+                    Hủy
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setConfirmingDeletePostId(p._id)
+              }}
+              title="Xóa bài đăng"
+              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+      <h3 className="text-xl font-black text-slate-800 mb-2 group-hover:text-[#5D7B6F] transition-colors">{p.title}</h3>
+      <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6 line-clamp-2">{p.content}</p>
+      
+      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            {p.authorName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-700">{p.authorName}</p>
+            <p className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+              <Clock className="w-3 h-3" /> {formatDistanceToNow(new Date(p.createdAt), { addSuffix: true, locale: vi })}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <motion.button 
+            whileTap={userId ? { scale: 0.8 } : {}}
+            animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!userId) {
+                window.location.href = '/login'
+                return
+              }
+              toggleLikeMutation.mutate(p._id)
+            }}
+            title={userId ? (isLiked ? 'Bỏ thích' : 'Thích') : 'Đăng nhập để thích'}
+            className={cn("flex items-center gap-1.5 transition-colors p-1 rounded-lg", isLiked ? "text-red-500 bg-red-50" : "text-slate-400 hover:bg-slate-50")}
+          >
+            <motion.div 
+              animate={isLiked ? { scale: [1, 1.4, 1] } : {}} 
+              transition={{ duration: 0.3 }}
+            >
+              <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
+            </motion.div>
+            <span className="text-xs font-bold">{p.likes?.length || 0}</span>
+          </motion.button>
+          <div className="flex items-center gap-1.5 text-slate-400 p-1">
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-xs font-bold">{p.comments?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-1 text-slate-400 p-1">
+            {expandedPostId === p._id ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expandedPostId === p._id && (
+          <PostExpandedDetails
+            p={p}
+            userId={userId}
+            isAuthLoading={isAuthLoading}
+            commentContent={commentContent}
+            setCommentContent={setCommentContent}
+            createCommentMutation={createCommentMutation}
+            onClose={() => setExpandedPostId(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function PostExpandedDetails({
+  p,
+  userId,
+  isAuthLoading,
+  commentContent,
+  setCommentContent,
+  createCommentMutation,
+  onClose,
+}: any) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="overflow-hidden"
+    >
+      <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
+        <p className="text-slate-700 font-medium leading-relaxed whitespace-pre-wrap text-base">{p.content}</p>
+        <div className="space-y-3">
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Bình luận ({p.comments?.length || 0})</h4>
+          {p.comments?.length === 0 ? (
+            <p className="text-slate-400 font-medium text-center py-3 text-sm">Chưa có bình luận nào.</p>
+          ) : (
+            <div className="space-y-3">
+              {p.comments?.map((comment: any) => (
+                <div key={comment._id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 group/comment relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-[10px] shadow-sm">
+                        {comment.authorName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">{comment.authorName}</p>
+                        <span className="text-[10px] text-slate-400 font-medium">{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-slate-600 font-medium text-sm whitespace-pre-wrap">{comment.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="pt-2">
+          {isAuthLoading ? (
+            <div className="h-10 bg-slate-100 rounded-xl animate-pulse" />
+          ) : userId ? (
+            <div className="flex gap-2">
+              <Input
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && commentContent.trim()) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    createCommentMutation.mutate({ postId: p._id, content: commentContent })
+                    setCommentContent('')
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="Viết bình luận..."
+                className="flex-1 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-[#5D7B6F]/30"
+              />
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  createCommentMutation.mutate({ postId: p._id, content: commentContent })
+                  setCommentContent('')
+                }}
+                disabled={!commentContent.trim() || createCommentMutation.isPending}
+                className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl px-6 font-black shrink-0"
+              >
+                {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+          ) : (
+            <a href="/login" className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-bold text-[#5D7B6F] bg-[#5D7B6F]/5 hover:bg-[#5D7B6F]/10 rounded-xl transition-colors">
+              Đăng nhập để bình luận
+            </a>
+          )}
+        </div>
+
+        <button onClick={(e) => { e.stopPropagation(); onClose() }} className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors mx-auto pt-2">
+          <ChevronUp className="w-3.5 h-3.5" /> Thu nhỏ
+        </button>
+      </div>
+    </motion.div>
   )
 }

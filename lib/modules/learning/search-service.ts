@@ -20,104 +20,112 @@ export class SearchService {
     const collections = options?.collection ? [options.collection] : ['vocabulary', 'sentence', 'grammar', 'quiz'] as SearchCollection[]
 
     if (collections.includes('vocabulary')) {
-      const docs = await Vocabulary.find({
-        $or: [
-          { lemma: regex },
-          { definition: regex },
-          { display: regex },
-          { normalizedLemma: regex },
-        ],
-        ...(options?.languageId ? { languageId: options.languageId } : {}),
-      }).limit(limit).lean()
-
-      for (const doc of docs) {
-        results.push({
-          id: doc._id.toString(),
-          collection: 'vocabulary',
-          score: 1,
-          document: {
-            lemma: doc.lemma,
-            display: doc.display,
-            definition: doc.definition,
-            partOfSpeech: doc.partOfSpeech,
-            cefrLevel: doc.cefrLevel,
-          } as unknown as Record<string, unknown>,
-        })
-      }
+      results.push(...await this.searchVocabulary(regex, limit, options?.languageId))
     }
 
     if (collections.includes('sentence')) {
-      const docs = await Sentence.find({
-        $or: [
-          { text: regex },
-          { translation: regex },
-          { normalizedText: regex },
-        ],
-        ...(options?.languageId ? { languageId: options.languageId } : {}),
-      }).limit(limit).lean()
-
-      for (const doc of docs) {
-        results.push({
-          id: doc._id.toString(),
-          collection: 'sentence',
-          score: 1,
-          document: {
-            text: doc.text,
-            translation: doc.translation,
-            cefrLevel: doc.cefrLevel,
-          } as unknown as Record<string, unknown>,
-        })
-      }
+      results.push(...await this.searchSentence(regex, limit, options?.languageId))
     }
 
     if (collections.includes('grammar')) {
-      const docs = await GrammarPattern.find({
-        $or: [
-          { name: regex },
-          { pattern: regex },
-          { explanation: regex },
-        ],
-        ...(options?.languageId ? { languageId: options.languageId } : {}),
-      }).limit(limit).lean()
-
-      for (const doc of docs) {
-        results.push({
-          id: doc._id.toString(),
-          collection: 'grammar',
-          score: 1,
-          document: {
-            name: doc.name,
-            pattern: doc.pattern,
-            explanation: doc.explanation,
-            cefrLevel: doc.cefrLevel,
-          } as unknown as Record<string, unknown>,
-        })
-      }
+      results.push(...await this.searchGrammar(regex, limit, options?.languageId))
     }
 
     if (collections.includes('quiz')) {
-      const docs = await Quiz.find({
-        $or: [
-          { title: regex },
-          { description: regex },
-        ],
-        status: 'published',
-      }).limit(limit).lean()
-
-      for (const doc of docs) {
-        results.push({
-          id: doc._id.toString(),
-          collection: 'quiz',
-          score: 1,
-          document: {
-            title: doc.title,
-            description: doc.description,
-          } as unknown as Record<string, unknown>,
-        })
-      }
+      results.push(...await this.searchQuiz(regex, limit))
     }
 
     return results
+  }
+
+  private async searchVocabulary(regex: RegExp, limit: number, languageId?: string): Promise<SearchResult[]> {
+    const docs = await Vocabulary.find({
+      $or: [
+        { lemma: regex },
+        { definition: regex },
+        { display: regex },
+        { normalizedLemma: regex },
+      ],
+      ...(languageId ? { languageId } : {}),
+    }).limit(limit).lean()
+
+    return docs.map((doc) => ({
+      id: doc._id.toString(),
+      collection: 'vocabulary' as const,
+      score: 1,
+      document: {
+        lemma: doc.lemma,
+        display: doc.display,
+        definition: doc.definition,
+        partOfSpeech: doc.partOfSpeech,
+        cefrLevel: doc.cefrLevel,
+      } as unknown as Record<string, unknown>,
+    }))
+  }
+
+  private async searchSentence(regex: RegExp, limit: number, languageId?: string): Promise<SearchResult[]> {
+    const docs = await Sentence.find({
+      $or: [
+        { text: regex },
+        { translation: regex },
+        { normalizedText: regex },
+      ],
+      ...(languageId ? { languageId } : {}),
+    }).limit(limit).lean()
+
+    return docs.map((doc) => ({
+      id: doc._id.toString(),
+      collection: 'sentence' as const,
+      score: 1,
+      document: {
+        text: doc.text,
+        translation: doc.translation,
+        cefrLevel: doc.cefrLevel,
+      } as unknown as Record<string, unknown>,
+    }))
+  }
+
+  private async searchGrammar(regex: RegExp, limit: number, languageId?: string): Promise<SearchResult[]> {
+    const docs = await GrammarPattern.find({
+      $or: [
+        { name: regex },
+        { pattern: regex },
+        { explanation: regex },
+      ],
+      ...(languageId ? { languageId } : {}),
+    }).limit(limit).lean()
+
+    return docs.map((doc) => ({
+      id: doc._id.toString(),
+      collection: 'grammar' as const,
+      score: 1,
+      document: {
+        name: doc.name,
+        pattern: doc.pattern,
+        explanation: doc.explanation,
+        cefrLevel: doc.cefrLevel,
+      } as unknown as Record<string, unknown>,
+    }))
+  }
+
+  private async searchQuiz(regex: RegExp, limit: number): Promise<SearchResult[]> {
+    const docs = await Quiz.find({
+      $or: [
+        { title: regex },
+        { description: regex },
+      ],
+      status: 'published',
+    }).limit(limit).lean()
+
+    return docs.map((doc) => ({
+      id: doc._id.toString(),
+      collection: 'quiz' as const,
+      score: 1,
+      document: {
+        title: doc.title,
+        description: doc.description,
+      } as unknown as Record<string, unknown>,
+    }))
   }
 
   async semanticSearch(text: string, options?: { limit?: number; languageId?: string }): Promise<SearchResult[]> {
@@ -181,8 +189,7 @@ export class SearchService {
         { $limit: limit },
       ]
 
-      const docs = await db.collection(collectionName).aggregate(pipeline).toArray()
-      return docs
+      return await db.collection(collectionName).aggregate(pipeline).toArray()
     } catch {
       return []
     }
