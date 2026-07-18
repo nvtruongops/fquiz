@@ -12,33 +12,56 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get('user-agent') || 'unknown'
   const route = '/api/auth/google'
 
+  const contentType = request.headers.get('content-type') || ''
+  const isFormSubmit = contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')
+
+  const url = new URL(request.url)
+  const rawCallbackUrl = url.searchParams.get('callbackUrl')
+  let callbackUrl: string | null = null
+  if (rawCallbackUrl && rawCallbackUrl.startsWith('/') && !rawCallbackUrl.startsWith('//')) {
+    callbackUrl = rawCallbackUrl
+  }
+
+  const handleError = (errorMsg: string, status: number) => {
+    if (isFormSubmit) {
+      const loginRedirect = new URL('/login', request.url)
+      loginRedirect.searchParams.set('reason', 'google_auth_failed')
+      loginRedirect.searchParams.set('error', errorMsg)
+      if (callbackUrl) loginRedirect.searchParams.set('callbackUrl', callbackUrl)
+      return NextResponse.redirect(loginRedirect, 303)
+    }
+    return NextResponse.json({ error: errorMsg }, { status })
+  }
+
   try {
     const rateLimit = await rateLimiter.check(`google_auth_${ip}`)
     if (!rateLimit.success) {
       logSecurityEvent('rate_limit_triggered', { request_id: requestId, route, outcome: 'denied', ip }, 'Google auth rate limit reached')
-      return NextResponse.json(
-        { error: 'Quá nhiều lần thử. Vui lòng thử lại sau 1 phút.' },
-        { status: 429 }
-      )
+      return handleError('Quá nhiều lần thử. Vui lòng thử lại sau 1 phút.', 429)
     }
 
-    let body: any
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: 'Dữ liệu không hợp lệ' }, { status: 400 })
+    let credential = ''
+    if (isFormSubmit) {
+      const formData = await request.formData()
+      credential = (formData.get('credential') || formData.get('id_token') || '').toString()
+    } else {
+      try {
+        const body = await request.json()
+        credential = body?.credential || body?.idToken || body?.id_token || ''
+      } catch {
+        return handleError('Dữ liệu không hợp lệ', 400)
+      }
     }
 
-    const credential = body?.credential || body?.idToken || body?.id_token
-    if (!credential || typeof credential !== 'string') {
-      return NextResponse.json({ error: 'Mã xác thực Google không hợp lệ' }, { status: 400 })
+    if (!credential) {
+      return handleError('Mã xác thực Google không hợp lệ', 400)
     }
 
     // Verify ID Token via Google API TokenInfo endpoint
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`)
     if (!googleRes.ok) {
       logSecurityEvent('google_auth_failed', { request_id: requestId, route, outcome: 'failure', ip }, 'Google token verification failed')
-      return NextResponse.json({ error: 'Xác thực Google không thành công hoặc token đã hết hạn' }, { status: 401 })
+      return handleError('Xác thực Google không thành công hoặc token đã hết hạn', 401)
     }
 
     const payload = await googleRes.json()
@@ -48,7 +71,7 @@ export async function POST(request: Request) {
     const isEmailVerified = payload.email_verified === true || payload.email_verified === 'true'
 
     if (!isValidIssuer || !isEmailVerified || !payload.email || !payload.sub) {
-      return NextResponse.json({ error: 'Tài khoản Google chưa được xác minh email' }, { status: 400 })
+      return handleError('Tài khoản Google chưa được xác minh email', 400)
     }
 
     await connectDB()
@@ -89,7 +112,6 @@ export async function POST(request: Request) {
 
     // 3. If still not found, auto-create new Google OAuth user
     if (!user) {
-      // Generate clean username from email prefix
       const emailPrefix = emailClean.split('@')[0].replace(/[^\w]/g, '')
       let baseUsername = emailPrefix.substring(0, 12)
       if (baseUsername.length < 3) {
@@ -127,10 +149,7 @@ export async function POST(request: Request) {
 
     // Status check
     if (user.status === 'banned') {
-      return NextResponse.json(
-        { error: 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.' },
-        { status: 403 }
-      )
+      return handleError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 403)
     }
 
     // Record login log
@@ -156,21 +175,27 @@ export async function POST(request: Request) {
       `User ${user.username} logged in via Google`
     )
 
-    const response = NextResponse.json(
-      {
-        token,
-        role: user.role,
-        user: {
-          _id: user._id.toString(),
-          name: user.username,
-          role: user.role,
-          avatarUrl: user.avatar_url || '',
-        },
-      },
-      { status: 200 }
-    )
-
+    const targetUrl = callbackUrl || (user.role === 'admin' ? '/admin' : '/dashboard')
     const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
+
+    let response: NextResponse
+    if (isFormSubmit) {
+      response = NextResponse.redirect(new URL(targetUrl, request.url), 303)
+    } else {
+      response = NextResponse.json(
+        {
+          token,
+          role: user.role,
+          user: {
+            _id: user._id.toString(),
+            name: user.username,
+            role: user.role,
+            avatarUrl: user.avatar_url || '',
+          },
+        },
+        { status: 200 }
+      )
+    }
 
     response.cookies.set('auth-token', token, {
       httpOnly: true,
@@ -195,6 +220,6 @@ export async function POST(request: Request) {
       },
       'Google auth handler unexpected error'
     )
-    return NextResponse.json({ error: 'Hệ thống đang bận, vui lòng thử lại sau.' }, { status: 500 })
+    return handleError('Hệ thống đang bận, vui lòng thử lại sau.', 500)
   }
 }

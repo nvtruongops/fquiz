@@ -92,9 +92,13 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
     const initializeGsi = () => {
       if (window.google?.accounts?.id) {
         if (!isInitializedRef.current) {
+          const origin = typeof window !== 'undefined' ? window.location.origin : ''
+          const loginUri = `${origin}/api/auth/google${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`
+
           window.google.accounts.id.initialize({
             client_id: clientId,
-            callback: handleGoogleResponse,
+            ux_mode: 'redirect',
+            login_uri: loginUri,
             auto_select: false,
           })
           isInitializedRef.current = true
