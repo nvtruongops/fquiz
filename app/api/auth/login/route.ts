@@ -45,7 +45,12 @@ export async function POST(request: Request) {
     const isEmail = identifier.includes('@')
     const user = isEmail
       ? await User.findOne({ email: identifier.toLowerCase().trim() })
-      : await User.findOne({ username: identifier.trim() }) // Assuming username is exact match now for security
+      : await User.findOne({
+          $or: [
+            { username: identifier.trim() },
+            { username_lower: identifier.toLowerCase().trim() }
+          ]
+        })
 
     if (!user) {
       logSecurityEvent('login_failed', { request_id: requestId, route, outcome: 'failure', ip, identifier }, 'User not found')
