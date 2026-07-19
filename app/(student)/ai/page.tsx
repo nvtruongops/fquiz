@@ -1185,7 +1185,8 @@ export default function StudentAIAssistantPage() {
     } else if (promptType === 'dialogue') {
       params = { ...params, topic: topicValue, genre: genreValue }
     } else if (promptType === 'sentence') {
-      params = { ...params, topic: topicValue }
+      const targetVocabArr = wordInput.trim() ? [wordInput.trim()] : undefined
+      params = { ...params, topic: topicValue, targetVocab: targetVocabArr }
     } else if (promptType === 'story') {
       params = { ...params, theme: topicValue, genre: genreValue }
     } else if (promptType === 'translation') {
@@ -1591,14 +1592,14 @@ export default function StudentAIAssistantPage() {
               <>
                 {writingSubTab === 'config' && (
                   <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white shrink-0">
-                    <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-4 px-6 shrink-0">
-                      <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-3 px-5 sm:p-4 sm:px-6 shrink-0">
+                      <CardTitle className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                         Luyện Viết & AI Đánh giá bài làm
                       </CardTitle>
-                      <CardDescription className="text-xs">Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
+                      <CardDescription className="text-[11px] sm:text-xs">Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-5 flex flex-col justify-between space-y-4">
-                      <div className="space-y-4">
+                    <CardContent className="p-4 sm:p-5 flex flex-col justify-between space-y-3">
+                      <div className="space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {/* Language Selector */}
                           <div className="space-y-1">
@@ -1783,25 +1784,25 @@ export default function StudentAIAssistantPage() {
               </>
             ) : (
               viewMode === 'config' ? (
-                <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white">
-                  <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-5 shrink-0">
-                    <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white shrink-0">
+                  <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-3 px-5 sm:p-4 sm:px-6 shrink-0">
+                    <CardTitle className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
                       {activeTab === 'vocabulary' && 'Tạo thẻ Từ vựng & Ví dụ câu'}
                       {activeTab === 'grammar' && 'Phân tích & Giải thích Ngữ pháp'}
                       {activeTab === 'reading' && 'Đọc hiểu & Biên soạn Ngữ cảnh'}
                       {activeTab === 'translation' && 'Dịch thuật & Phân tích cấu trúc câu'}
                     </CardTitle>
-                    <CardDescription>Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
+                    <CardDescription className="text-[11px] sm:text-xs">Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-6 flex flex-col justify-between space-y-5">
-                    <div className="space-y-5">
+                  <CardContent className="p-4 sm:p-5 flex flex-col justify-between space-y-3">
+                    <div className="space-y-3">
                       {/* Reading Sub-modes selector */}
                       {activeTab === 'reading' && (
-                        <div className="space-y-1 mb-2">
+                        <div className="space-y-1 mb-1">
                           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                             Chọn dạng bài đọc hiểu
                           </label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                             {[
                               { id: 'sentence', label: 'Mẫu câu ứng dụng' },
                               { id: 'paragraph', label: 'Bài đọc theo chủ đề' },
@@ -1828,19 +1829,19 @@ export default function StudentAIAssistantPage() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {/* Language Selector */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                             {activeTab === 'translation' ? 'Ngôn ngữ Đích' : 'Ngôn ngữ Mục tiêu'}
                           </label>
                           <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-                            <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                            <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                               <SelectValue placeholder="Chọn ngôn ngữ..." />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
                               {LANGUAGES.map((lang) => (
-                                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                   {lang.label}
                                 </SelectItem>
                               ))}
@@ -1849,15 +1850,15 @@ export default function StudentAIAssistantPage() {
                         </div>
 
                         {activeTab === 'translation' ? (
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Ngôn ngữ Nguồn</label>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Ngôn ngữ Nguồn</label>
                             <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
-                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                 <SelectValue placeholder="Chọn ngôn ngữ nguồn..." />
                               </SelectTrigger>
                               <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
                                 {LANGUAGES.map((lang) => (
-                                  <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                  <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                     {lang.label}
                                   </SelectItem>
                                 ))}
@@ -1866,17 +1867,17 @@ export default function StudentAIAssistantPage() {
                           </div>
                         ) : (
                           <>
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                                Ngôn ngữ Giải thích / Dịch nghĩa
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                                Ngôn ngữ Dịch / Giải thích
                               </label>
                               <Select value={explanationLanguage} onValueChange={setExplanationLanguage}>
-                                <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                   <SelectValue placeholder="Chọn ngôn ngữ giải thích..." />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
                                   {LANGUAGES.map((lang) => (
-                                    <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                       {lang.label}
                                     </SelectItem>
                                   ))}
@@ -1884,17 +1885,17 @@ export default function StudentAIAssistantPage() {
                               </Select>
                             </div>
 
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                                 Trình độ Khung Đánh giá
                               </label>
                               <Select value={cefrLevel} onValueChange={setCefrLevel}>
-                                <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                   <SelectValue placeholder="Chọn trình độ..." />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
                                   {activeLevelOptions.map((lvl) => (
-                                    <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                       {lvl.label}
                                     </SelectItem>
                                   ))}
@@ -1906,17 +1907,17 @@ export default function StudentAIAssistantPage() {
 
                         {/* English Tense Selector */}
                         {targetLanguage === 'English' && activeTab !== 'translation' && (
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                              Tùy chọn Thì Tiếng Anh (English Tense)
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                              Tùy chọn Thì Tiếng Anh
                             </label>
                             <Select value={englishTense} onValueChange={setEnglishTense}>
-                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-emerald-300/80 font-bold text-sm bg-emerald-50/40 text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-emerald-300/80 font-bold text-xs bg-emerald-50/40 text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                 <SelectValue placeholder="Tất cả thì (Tự động)" />
                               </SelectTrigger>
                               <SelectContent className="rounded-2xl border-emerald-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
                                 {ENGLISH_TENSES.map((t) => (
-                                  <SelectItem key={t.code || 'all'} value={t.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                  <SelectItem key={t.code || 'all'} value={t.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                     {t.label}
                                   </SelectItem>
                                 ))}
@@ -1925,35 +1926,49 @@ export default function StudentAIAssistantPage() {
                           </div>
                         )}
 
+                        {activeTab === 'vocabulary' && (
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                              Từ vựng / Cụm từ cần tra cứu cụ thể (Tùy chọn)
+                            </label>
+                            <Input
+                              value={wordInput}
+                              onChange={(e) => setWordInput(e.target.value)}
+                              placeholder="Ví dụ: Resilience, Sustainability... (Để trống nếu muốn AI tự đề xuất từ vựng)"
+                              className="border-emerald-300 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-emerald-50/20"
+                            />
+                          </div>
+                        )}
+
                         {activeTab === 'grammar' && (
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Chủ đề Ngữ pháp</label>
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Chủ đề Ngữ pháp</label>
                             <Input
                               value={grammarTopic}
                               onChange={(e) => setGrammarTopic(e.target.value)}
                               placeholder="Ví dụ: Passive Voice, Subjunctive..."
-                              className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-medium"
+                              className="border-gray-200 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-white"
                             />
                           </div>
                         )}
 
                         {activeTab === 'translation' && (
-                          <div className="space-y-2 sm:col-span-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Văn bản dịch thuật</label>
+                          <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Văn bản dịch thuật</label>
                             <textarea
                               value={translationText}
                               onChange={(e) => setTranslationText(e.target.value)}
                               placeholder="Nhập hoặc dán đoạn văn bản cần dịch..."
-                              rows={4}
-                              className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] rounded-2xl p-4 text-sm font-medium bg-white outline-none resize-none shadow-xs"
+                              rows={3}
+                              className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] rounded-xl p-3 text-xs font-medium bg-white outline-none resize-none shadow-xs"
                             />
                           </div>
                         )}
 
                         {/* Domain Topic Selector — Available for ALL tabs EXCEPT translation */}
                         {activeTab !== 'translation' && (
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                               Chủ đề bài học
                             </label>
                             <Select
@@ -1962,7 +1977,7 @@ export default function StudentAIAssistantPage() {
                                 setSelectedTopicSlug(val)
                               }}
                             >
-                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                 <SelectValue placeholder="Chọn chủ đề..." />
                               </SelectTrigger>
                               <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
@@ -1970,7 +1985,7 @@ export default function StudentAIAssistantPage() {
                                   <SelectItem
                                     key={t.code}
                                     value={t.code}
-                                    className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]"
+                                    className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]"
                                   >
                                     {t.label}
                                   </SelectItem>
@@ -1981,32 +1996,47 @@ export default function StudentAIAssistantPage() {
                         )}
 
                         {activeTab !== 'translation' && selectedTopicSlug === 'custom' && (
-                          <div className="space-y-2 sm:col-span-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
                               Nhập chủ đề tùy chỉnh của bạn
                             </label>
                             <Input
                               value={customTopicInput}
                               onChange={(e) => setCustomTopicInput(e.target.value)}
                               placeholder="Ví dụ: Công nghệ AI, Bảo vệ môi trường, Du lịch Nhật Bản..."
-                              className="border-emerald-300 focus:border-[#5D7B6F] rounded-2xl h-12 font-bold text-sm bg-emerald-50/20"
+                              className="border-emerald-300 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-emerald-50/20"
                             />
                           </div>
                         )}
 
-                        {/* Text Genre selector */}
+                        {/* Reading Sub-mode Inputs: Word input for Sentence mode */}
+                        {activeTab === 'reading' && readingSubMode === 'sentence' && (
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                              Từ vựng / Cụm từ cần ứng dụng trong câu (Tùy chọn)
+                            </label>
+                            <Input
+                              value={wordInput}
+                              onChange={(e) => setWordInput(e.target.value)}
+                              placeholder="Ví dụ: Breakthrough, Resilience... (Để trống nếu muốn AI tự đề xuất theo chủ đề)"
+                              className="border-emerald-300 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-emerald-50/20"
+                            />
+                          </div>
+                        )}
+
+                        {/* Text Genre selector for paragraph, dialogue, story */}
                         {activeTab === 'reading' && (readingSubMode === 'paragraph' || readingSubMode === 'dialogue' || readingSubMode === 'story') && (
-                          <div className="space-y-2 sm:col-span-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                               Thể loại văn bản & Cách viết
                             </label>
                             <Select value={textGenre} onValueChange={setTextGenre}>
-                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
                                 <SelectValue placeholder="Chọn thể loại văn bản..." />
                               </SelectTrigger>
                               <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
                                 {TEXT_GENRES.map((g) => (
-                                  <SelectItem key={g.code} value={g.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                  <SelectItem key={g.code} value={g.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
                                     {g.label}
                                   </SelectItem>
                                 ))}
@@ -2015,16 +2045,17 @@ export default function StudentAIAssistantPage() {
                           </div>
                         )}
 
-                        {activeTab === 'reading' && (readingSubMode === 'paragraph' || readingSubMode === 'dialogue' || readingSubMode === 'story') && (
-                          <div className="space-y-2 sm:col-span-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                        {/* Situational Context for ALL reading submodes & vocabulary & grammar */}
+                        {(activeTab === 'reading' || activeTab === 'vocabulary' || activeTab === 'grammar') && (
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                               Bối cảnh / Tình huống cụ thể (Tùy chọn bổ sung)
                             </label>
                             <Input
                               value={situationalContext}
                               onChange={(e) => setSituationalContext(e.target.value)}
                               placeholder="VD: Khi bị quá cước hành lý tại sân bay, Thư xin nghỉ phép 2 ngày..."
-                              className="border-slate-200 focus:border-[#5D7B6F] rounded-2xl h-12 font-bold text-sm bg-white"
+                              className="border-slate-200 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-white"
                             />
                           </div>
                         )}

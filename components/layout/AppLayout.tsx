@@ -16,6 +16,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, user, showNavbar = true, className, fixedHeight = false }: AppLayoutProps) {
   const pathname = usePathname()
   const isSessionMode = pathname?.includes('/session/') || pathname?.includes('/flashcard/')
+  const isAiRoute = pathname === '/ai' || pathname?.startsWith('/ai/')
   const isFixedHeight = fixedHeight || pathname === '/ai' || pathname === '/admin/categories'
 
   if (isSessionMode) {
@@ -52,8 +53,8 @@ export default function AppLayout({ children, user, showNavbar = true, className
             initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
           />
         )}
-        <main className={cn('flex-1 w-full min-h-0 overflow-hidden flex flex-col pb-4', showNavbar ? 'pt-24 sm:pt-28 lg:pt-32' : 'pt-4')}>
-          <div className="w-full h-full flex flex-col min-h-0 px-3 sm:px-6 md:px-8 lg:px-12 animate-in fade-in duration-500 overflow-hidden">
+        <main className={cn('flex-1 w-full min-h-0 overflow-hidden flex flex-col pb-2', showNavbar ? (isAiRoute ? 'pt-28 sm:pt-32 lg:pt-36' : 'pt-24 sm:pt-28 lg:pt-32') : 'pt-4')}>
+          <div className="w-full h-full flex flex-col min-h-0 px-2 sm:px-4 md:px-6 animate-in fade-in duration-500 overflow-hidden">
             {children}
           </div>
         </main>
@@ -71,8 +72,8 @@ export default function AppLayout({ children, user, showNavbar = true, className
       )}
 
       {/* Main Content Area */}
-      <main className={cn('flex-1 w-full pb-28 md:pb-12 overflow-x-hidden', showNavbar ? 'pt-24 sm:pt-28 lg:pt-32' : 'pt-4')}>
-        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 animate-in fade-in duration-500">
+      <main className={cn('flex-1 w-full pb-28 md:pb-12 overflow-x-hidden', showNavbar ? (isAiRoute ? 'pt-32 sm:pt-36 lg:pt-40' : 'pt-24 sm:pt-28 lg:pt-32') : 'pt-4')}>
+        <div className="w-full px-3 sm:px-6 md:px-8 lg:px-10 animate-in fade-in duration-500">
           {children}
         </div>
       </main>
