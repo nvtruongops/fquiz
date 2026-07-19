@@ -23,6 +23,8 @@ export interface AIContentResult<T = unknown> {
   durationMs: number
   cost: number
   tokensUsed: { input: number; output: number }
+  provider: string
+  model: string
 }
 
 export class AIContentService {
@@ -48,13 +50,19 @@ export class AIContentService {
 
     const existing = await AIAsset.findOne({ requestHash, aiProvider: providerName }).lean()
     if (existing && existing.status === 'completed' && existing.responseHash) {
+      const reusedOutputTokens = (existing.responseTokens && existing.responseTokens > 0)
+        ? existing.responseTokens
+        : Math.max(1, Math.ceil((existing.responseHash?.length || 0) / 4))
+
       const result: AIContentResult<T> = {
         content: JSON.parse(existing.responseHash) as T,
         reused: true,
         assetId: existing._id.toString(),
         durationMs: existing.durationMs ?? 0,
         cost: existing.cost ?? 0,
-        tokensUsed: { input: existing.requestTokens ?? 0, output: existing.responseTokens ?? 0 },
+        tokensUsed: { input: existing.requestTokens ?? 0, output: reusedOutputTokens },
+        provider: existing.aiProvider ?? providerName,
+        model: existing.aiModel ?? 'auto',
       }
       await this.cache.set(cacheKey, result, 3600)
       return result
@@ -109,6 +117,8 @@ export class AIContentService {
         durationMs: genResult.durationMs,
         cost: genResult.cost,
         tokensUsed: genResult.tokensUsed,
+        provider: providerName,
+        model: genResult.model,
       }
 
       await this.cache.set(cacheKey, result, 3600)

@@ -12,6 +12,36 @@ import type {
 const DEFAULT_MODEL = 'gemini-2.0-flash-001'
 const EMBEDDING_MODEL = 'text-embedding-004'
 
+export function parseGeminiTokenUsage(usage: any, textLength?: number): { input: number; output: number } {
+  if (!usage) {
+    const estimatedOutput = textLength ? Math.max(1, Math.ceil(textLength / 4)) : 0
+    return { input: 0, output: estimatedOutput }
+  }
+  const input = Number(
+    usage.promptTokenCount ?? usage.prompt_token_count ?? usage.promptTokens ?? usage.inputTokens ?? 0
+  ) || 0
+
+  let output = Number(
+    usage.candidatesTokenCount ??
+    usage.candidates_token_count ??
+    usage.outputTokenCount ??
+    usage.output_token_count ??
+    usage.completionTokens ??
+    usage.outputTokens
+  ) || 0
+
+  if (output <= 0) {
+    const total = usage.totalTokenCount ?? usage.total_token_count ?? usage.totalTokens
+    if (typeof total === 'number' && total > input) {
+      output = total - input
+    } else if (textLength && textLength > 0) {
+      output = Math.max(1, Math.ceil(textLength / 4))
+    }
+  }
+
+  return { input, output }
+}
+
 export class GeminiProvider implements IAIProvider {
   private client: GoogleGenerativeAI
   private apiKey: string
@@ -54,6 +84,7 @@ export class GeminiProvider implements IAIProvider {
     const rawText = response.text()
     const cleanText = extractJsonString(rawText)
     const usage = response.usageMetadata
+    const tokensUsed = parseGeminiTokenUsage(usage, cleanText.length)
 
     let content: T
 
@@ -67,11 +98,8 @@ export class GeminiProvider implements IAIProvider {
     return {
       content,
       model: modelName,
-      tokensUsed: {
-        input: usage?.promptTokenCount ?? 0,
-        output: usage?.candidatesTokenCount ?? 0,
-      },
-      cost: this.estimateCost(usage?.promptTokenCount ?? 0, usage?.candidatesTokenCount ?? 0, modelName),
+      tokensUsed,
+      cost: this.estimateCost(tokensUsed.input, tokensUsed.output, modelName),
       durationMs: Date.now() - startTime,
     }
   }

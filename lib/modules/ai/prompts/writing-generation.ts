@@ -9,7 +9,7 @@ export const GeneratedWritingPromptSchema = z.object({
   sourceLanguage: z.string(),
   targetLanguage: z.string(),
   cefrLevel: z.string(),
-  wordCount: z.number(),
+  wordCount: z.preprocess((v) => Number(v) || 150, z.number()),
   hints: z.array(z.object({
     wordOrPhrase: z.string(),
     meaning: z.string(),

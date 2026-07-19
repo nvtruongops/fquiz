@@ -1,6 +1,7 @@
 import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
 import { GeminiProvider } from '@/lib/core/ai/gemini-provider'
 import { OpenAIProvider } from '@/lib/core/ai/openai-provider'
+import { decryptSecret } from '@/lib/core/security/crypto'
 import type {
   IAIProvider,
   AIGenerationOptions,
@@ -26,20 +27,23 @@ export class DynamicAIProvider implements IAIProvider {
       const activeProvider = llmConfig?.active_provider ?? 'gemini'
 
       if (activeProvider === 'openai') {
-        const apiKey = llmConfig?.openai?.apiKey || process.env.OPENAI_API_KEY
+        const rawKey = llmConfig?.openai?.apiKey || process.env.OPENAI_API_KEY
+        const apiKey = decryptSecret(rawKey || '')
         const model = llmConfig?.openai?.model || 'gpt-4o-mini'
         return new OpenAIProvider(apiKey, 'https://api.openai.com/v1', model)
       }
 
       if (activeProvider === 'custom') {
-        const apiKey = llmConfig?.custom?.apiKey
+        const rawKey = llmConfig?.custom?.apiKey
+        const apiKey = decryptSecret(rawKey || '')
         const baseUrl = llmConfig?.custom?.baseUrl || 'http://localhost:11434/v1'
         const model = llmConfig?.custom?.model || 'gpt-4o-mini'
         return new OpenAIProvider(apiKey, baseUrl, model)
       }
 
       // Default: gemini
-      const apiKey = llmConfig?.gemini?.apiKey || process.env.GEMINI_API_KEY
+      const rawKey = llmConfig?.gemini?.apiKey || process.env.GEMINI_API_KEY
+      const apiKey = decryptSecret(rawKey || '')
       const model = llmConfig?.gemini?.model || 'gemini-2.0-flash-001'
       return new GeminiProvider(apiKey, model)
     } catch {

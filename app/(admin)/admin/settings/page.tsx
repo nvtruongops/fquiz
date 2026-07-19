@@ -29,22 +29,20 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { ShieldCheck } from 'lucide-react'
+
+export interface LLMProviderConfig {
+  apiKey: string
+  model: string
+  hasApiKey?: boolean
+  apiKeyMasked?: string
+}
 
 export interface LLMConfig {
   active_provider: 'openai' | 'gemini' | 'custom'
-  openai: {
-    apiKey: string
-    model: string
-  }
-  gemini: {
-    apiKey: string
-    model: string
-  }
-  custom: {
-    baseUrl: string
-    apiKey: string
-    model: string
-  }
+  openai: LLMProviderConfig
+  gemini: LLMProviderConfig
+  custom: LLMProviderConfig & { baseUrl: string }
 }
 
 interface Settings {
@@ -571,11 +569,23 @@ export default function AdminSettingsPage() {
                   {expandedProviders.gemini && (
                     <CardContent className="space-y-4 pt-2 pb-5 border-t border-gray-100 animate-in fade-in duration-200">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">Gemini API Key</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-semibold text-gray-700">Gemini API Key</label>
+                          {llmConfig.gemini?.hasApiKey && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              Đã cấu hình ({llmConfig.gemini.apiKeyMasked || '••••••••'})
+                            </span>
+                          )}
+                        </div>
                         <div className="relative">
                           <Input
                             type={showApiKeys.gemini ? 'text' : 'password'}
-                            placeholder="AIzaSy... (Để trống nếu sử dụng process.env.GEMINI_API_KEY)"
+                            placeholder={
+                              llmConfig.gemini?.hasApiKey
+                                ? `${llmConfig.gemini.apiKeyMasked || '••••••••'} (Đã bảo mật - Nhập mới để ghi đè)`
+                                : 'AIzaSy... (Để trống nếu sử dụng process.env.GEMINI_API_KEY)'
+                            }
                             value={llmConfig.gemini?.apiKey ?? ''}
                             onChange={(e) => updateLLMField('gemini', 'apiKey', e.target.value)}
                             className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-mono text-xs pr-10"
@@ -588,7 +598,9 @@ export default function AdminSettingsPage() {
                             {showApiKeys.gemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
-                        <p className="text-[11px] text-gray-500">Nếu để trống, ứng dụng tự động lấy giá trị từ tệp .env.local</p>
+                        <p className="text-[11px] text-gray-500">
+                          🔒 Bảo mật: Khóa API được mã hóa AES-256-GCM trong DB và không bao giờ hiển thị lại. Để giữ nguyên khóa cũ, hãy để trống ô này.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -681,11 +693,23 @@ export default function AdminSettingsPage() {
                   {expandedProviders.openai && (
                     <CardContent className="space-y-4 pt-2 pb-5 border-t border-gray-100 animate-in fade-in duration-200">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">OpenAI API Key</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-semibold text-gray-700">OpenAI API Key</label>
+                          {llmConfig.openai?.hasApiKey && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 shadow-2xs">
+                              <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                              Đã cấu hình ({llmConfig.openai.apiKeyMasked || '••••••••'})
+                            </span>
+                          )}
+                        </div>
                         <div className="relative">
                           <Input
                             type={showApiKeys.openai ? 'text' : 'password'}
-                            placeholder="sk-proj-... (Để trống nếu sử dụng process.env.OPENAI_API_KEY)"
+                            placeholder={
+                              llmConfig.openai?.hasApiKey
+                                ? `${llmConfig.openai.apiKeyMasked || '••••••••'} (Đã bảo mật - Nhập mới để ghi đè)`
+                                : 'sk-proj-... (Để trống nếu sử dụng process.env.OPENAI_API_KEY)'
+                            }
                             value={llmConfig.openai?.apiKey ?? ''}
                             onChange={(e) => updateLLMField('openai', 'apiKey', e.target.value)}
                             className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-mono text-xs pr-10"
@@ -698,6 +722,9 @@ export default function AdminSettingsPage() {
                             {showApiKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
+                        <p className="text-[11px] text-gray-500">
+                          🔒 Bảo mật: Khóa API được mã hóa AES-256-GCM trong DB và không bao giờ hiển thị lại. Để giữ nguyên khóa cũ, hãy để trống ô này.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -800,11 +827,23 @@ export default function AdminSettingsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">API Key (Nếu có)</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-semibold text-gray-700">API Key (Nếu có)</label>
+                          {llmConfig.custom?.hasApiKey && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200 shadow-2xs">
+                              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                              Đã cấu hình ({llmConfig.custom.apiKeyMasked || '••••••••'})
+                            </span>
+                          )}
+                        </div>
                         <div className="relative">
                           <Input
                             type={showApiKeys.custom ? 'text' : 'password'}
-                            placeholder="Bearer token hoặc API Key..."
+                            placeholder={
+                              llmConfig.custom?.hasApiKey
+                                ? `${llmConfig.custom.apiKeyMasked || '••••••••'} (Đã bảo mật - Nhập mới để ghi đè)`
+                                : 'Bearer token hoặc API Key...'
+                            }
                             value={llmConfig.custom?.apiKey ?? ''}
                             onChange={(e) => updateLLMField('custom', 'apiKey', e.target.value)}
                             className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-mono text-xs pr-10"
@@ -817,6 +856,9 @@ export default function AdminSettingsPage() {
                             {showApiKeys.custom ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
+                        <p className="text-[11px] text-gray-500">
+                          🔒 Bảo mật: Khóa API được mã hóa AES-256-GCM trong DB và không bao giờ hiển thị lại. Để giữ nguyên khóa cũ, hãy để trống ô này.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
