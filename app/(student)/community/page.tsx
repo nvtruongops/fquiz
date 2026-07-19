@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Sparkles, Bug, Lightbulb, BookOpen, MessageCircle, Send, CheckCircle2,
   Loader2, Heart, MessageSquare, Clock, Plus, Search, Trash2,
-  ChevronDown, ChevronUp, Tag, ShieldCheck, Flame, Filter, RefreshCw, X
+  ChevronDown, ChevronUp, Tag, ShieldCheck, Flame, Filter, RefreshCw, X, Eye
 } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Textarea } from '@/components/shared/ui/textarea'
@@ -32,6 +32,7 @@ const RATE_WINDOW_MS = 60 * 60 * 1000
 
 const DEFAULT_FALLBACK_TAGS = ['Ôn thi', 'Hỏi đáp', 'Góp ý']
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export default function CommunityPage() {
   const { data: authData, isLoading: isAuthLoading } = useAuth()
   const userId = authData?.user?._id
@@ -210,6 +211,53 @@ export default function CommunityPage() {
     }
   })
 
+  const deleteCommentMutation = useMutation({
+    mutationFn: async ({ postId, commentId }: { postId: string, commentId: string }) => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/community/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: withCsrfHeaders()
+      })
+      if (!res.ok) throw new Error('Failed to delete comment')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['community', 'posts'] })
+    }
+  })
+
+  const recordViewMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/community/posts/${postId}/view`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: withCsrfHeaders()
+      })
+      if (!res.ok) throw new Error('Failed to record view')
+      return res.json()
+    },
+    onSuccess: (data, postId) => {
+      queryClient.setQueryData(['community', 'posts', debouncedSearch, currentPage], (old: any) => {
+        if (!old?.posts) return old
+        return {
+          ...old,
+          posts: old.posts.map((post: any) => {
+            if (post._id === postId && userId) {
+              const currentViews = post.views || []
+              if (String(post.authorId) !== String(userId) && !currentViews.includes(userId)) {
+                return {
+                  ...post,
+                  views: [...currentViews, userId]
+                }
+              }
+            }
+            return post
+          })
+        }
+      })
+    }
+  })
+
   // Feedback Helpers
   function startCooldown(remainMs: number) {
     setRateLimited(true)
@@ -324,7 +372,8 @@ export default function CommunityPage() {
                           placeholder="Nhập tiêu đề rõ ràng..." 
                           value={postTitle}
                           onChange={(e) => setPostTitle(e.target.value)}
-                          className="h-12 rounded-xl border-2 border-slate-200 focus:border-[#5D7B6F] font-medium"
+                          maxLength={150}
+                          className="h-12 rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -334,7 +383,7 @@ export default function CommunityPage() {
                           placeholder="Mô tả chi tiết thắc mắc hoặc nội dung bạn muốn chia sẻ..." 
                           value={postContent}
                           onChange={(e) => setPostContent(e.target.value)}
-                          className="min-h-[130px] rounded-xl border-2 border-slate-200 focus:border-[#5D7B6F] font-medium"
+                          className="min-h-[130px] rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -344,7 +393,7 @@ export default function CommunityPage() {
                           placeholder="VD: Toán rời rạc, Tiếng Anh B1, Flashcards" 
                           value={postTags}
                           onChange={(e) => setPostTags(e.target.value)}
-                          className="h-12 rounded-xl border-2 border-slate-200 focus:border-[#5D7B6F] font-medium"
+                          className="h-12 rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
                         />
                       </div>
                       <Button 
@@ -380,7 +429,7 @@ export default function CommunityPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column (8 cols): Feed, Search & Posts */}
-          <main className="lg:col-span-8 space-y-6">
+          <main className="lg:col-span-8 space-y-6 max-w-2xl">
 
             {/* Action & Filter Header Bar */}
             <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -462,6 +511,8 @@ export default function CommunityPage() {
                     confirmingDeletePostId={confirmingDeletePostId}
                     setConfirmingDeletePostId={setConfirmingDeletePostId}
                     deletePostMutation={deletePostMutation}
+                    deleteCommentMutation={deleteCommentMutation}
+                    recordViewMutation={recordViewMutation}
                     toggleLikeMutation={toggleLikeMutation}
                     createCommentMutation={createCommentMutation}
                     commentContent={commentContent}
@@ -638,7 +689,7 @@ export default function CommunityPage() {
                         value={reason}
                         onChange={(e) => { setReason(e.target.value.slice(0, 200)); setError('') }}
                         placeholder="Cho chúng tôi biết lý do cụ thể..."
-                        className="h-[68px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus:border-[#5D7B6F] resize-none"
+                        className="h-[68px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] resize-none"
                       />
                     </div>
                   </motion.div>
@@ -655,7 +706,7 @@ export default function CommunityPage() {
                   value={message}
                   onChange={(e) => { setMessage(e.target.value.slice(0, 1000)); setError('') }}
                   placeholder="Mô tả chi tiết góp ý của bạn..."
-                  className="h-[130px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus:border-[#5D7B6F] resize-none"
+                  className="h-[130px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] resize-none"
                 />
                 <div className="flex justify-between items-center mt-1">
                   {error ? <p className="text-xs font-bold text-red-500 ml-1">{error}</p> : <span />}
@@ -699,6 +750,8 @@ function PostItemCard({
   confirmingDeletePostId,
   setConfirmingDeletePostId,
   deletePostMutation,
+  deleteCommentMutation,
+  recordViewMutation,
   toggleLikeMutation,
   createCommentMutation,
   commentContent,
@@ -709,85 +762,96 @@ function PostItemCard({
 
   return (
     <div 
-      onClick={() => setExpandedPostId(expandedPostId === p._id ? null : p._id)}
+      onClick={() => {
+        const nextState = expandedPostId === p._id ? null : p._id
+        setExpandedPostId(nextState)
+        if (nextState && userId && String(p.authorId) !== String(userId)) {
+          const currentViews = p.views || []
+          if (!currentViews.includes(userId)) {
+            recordViewMutation.mutate(p._id)
+          }
+        }
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          setExpandedPostId(expandedPostId === p._id ? null : p._id)
+          const nextState = expandedPostId === p._id ? null : p._id
+          setExpandedPostId(nextState)
+          if (nextState && userId && String(p.authorId) !== String(userId)) {
+            const currentViews = p.views || []
+            if (!currentViews.includes(userId)) {
+              recordViewMutation.mutate(p._id)
+            }
+          }
         }
       }}
-      className="bg-white/80 backdrop-blur-xl border border-white/90 rounded-3xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5 space-y-4"
+      className="relative bg-white/80 backdrop-blur-xl border border-white/90 rounded-3xl pt-[20px] pb-[18px] px-[25px] shadow-xs hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5 space-y-3"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex gap-1.5 flex-wrap">
-          {p.tags?.map((tag: string) => (
+      {userId && (String(p.authorId) === String(userId) || authRole === 'admin') && (
+        <div className="absolute top-[16px] right-[20px] z-10 flex items-center">
+          <AnimatePresence>
+            {confirmingDeletePostId === p._id ? (
+              <motion.div
+                initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
+                exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap"
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deletePostMutation.mutate(p._id)
+                    setConfirmingDeletePostId(null)
+                  }}
+                  disabled={deletePostMutation.isPending}
+                  className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg transition-colors shrink-0"
+                >
+                  {deletePostMutation.isPending ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : 'Xóa bài'}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setConfirmingDeletePostId(null)
+                  }}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors shrink-0"
+                >
+                  Hủy
+                </button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setConfirmingDeletePostId(p._id)
+            }}
+            title="Xóa bài đăng"
+            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {p.tags && p.tags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap pr-10">
+          {p.tags.map((tag: string) => (
             <span key={tag} className="px-2.5 py-0.5 bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-wider rounded-lg border border-[#5D7B6F]/20">
               #{tag}
             </span>
           ))}
         </div>
+      )}
 
-        {userId && (String(p.authorId) === String(userId) || authRole === 'admin') && (
-          <div className="relative flex items-center shrink-0">
-            <AnimatePresence>
-              {confirmingDeletePostId === p._id ? (
-                <motion.div
-                  initial={{ opacity: 0, width: 0, marginRight: 0 }}
-                  animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
-                  exit={{ opacity: 0, width: 0, marginRight: 0 }}
-                  className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap"
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deletePostMutation.mutate(p._id)
-                      setConfirmingDeletePostId(null)
-                    }}
-                    disabled={deletePostMutation.isPending}
-                    className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg transition-colors shrink-0"
-                  >
-                    {deletePostMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : 'Xóa bài'}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setConfirmingDeletePostId(null)
-                    }}
-                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors shrink-0"
-                  >
-                    Hủy
-                  </button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setConfirmingDeletePostId(p._id)
-              }}
-              title="Xóa bài đăng"
-              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      <h3 className="text-base sm:text-lg font-black text-slate-800 group-hover:text-[#5D7B6F] transition-colors leading-snug pr-10">
+        {p.title}
+      </h3>
 
-      <div>
-        <h3 className="text-lg sm:text-xl font-black text-slate-800 mb-1.5 group-hover:text-[#5D7B6F] transition-colors leading-snug">
-          {p.title}
-        </h3>
-        <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed line-clamp-2">
-          {p.content}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-xs shadow-xs">
             {p.authorName ? p.authorName.charAt(0).toUpperCase() : 'U'}
@@ -825,6 +889,11 @@ function PostItemCard({
             <span>{p.comments?.length || 0}</span>
           </div>
 
+          <div className="flex items-center gap-1 text-slate-400 text-xs font-bold px-2 py-1" title="Lượt xem">
+            <Eye className="w-4 h-4 text-slate-400" />
+            <span>{p.views?.length || 0}</span>
+          </div>
+
           <div className="text-slate-400 p-1">
             {expandedPostId === p._id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
@@ -836,10 +905,12 @@ function PostItemCard({
           <PostExpandedDetails
             p={p}
             userId={userId}
+            authRole={authRole}
             isAuthLoading={isAuthLoading}
             commentContent={commentContent}
             setCommentContent={setCommentContent}
             createCommentMutation={createCommentMutation}
+            deleteCommentMutation={deleteCommentMutation}
           />
         )}
       </AnimatePresence>
@@ -850,11 +921,15 @@ function PostItemCard({
 function PostExpandedDetails({
   p,
   userId,
+  authRole,
   isAuthLoading,
   commentContent,
   setCommentContent,
   createCommentMutation,
+  deleteCommentMutation,
 }: any) {
+  const [confirmingDeleteCommentId, setConfirmingDeleteCommentId] = React.useState<string | null>(null)
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -862,8 +937,9 @@ function PostExpandedDetails({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.25 }}
       className="overflow-hidden"
+      onClick={(e) => e.stopPropagation()}
     >
-      <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
+      <div className="mt-4 pt-4 border-t border-slate-100 space-y-4 pb-2 px-1.5">
         <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
           {p.content}
         </div>
@@ -888,9 +964,58 @@ function PostExpandedDetails({
                       </div>
                       <span className="text-xs font-bold text-slate-700">{comment.authorName}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
+                      </span>
+                      {userId && (String(comment.authorId) === String(userId) || authRole === 'admin') && (
+                        <div className="relative flex items-center shrink-0">
+                          <AnimatePresence>
+                            {confirmingDeleteCommentId === comment._id ? (
+                              <motion.div
+                                initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                                animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
+                                exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                                className="flex items-center gap-1 overflow-hidden whitespace-nowrap"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deleteCommentMutation.mutate({ postId: p._id, commentId: comment._id })
+                                    setConfirmingDeleteCommentId(null)
+                                  }}
+                                  disabled={deleteCommentMutation.isPending}
+                                  className="px-2 py-0.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
+                                >
+                                  {deleteCommentMutation.isPending ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : 'Xóa'}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setConfirmingDeleteCommentId(null)
+                                  }}
+                                  className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded-md transition-colors shrink-0"
+                                >
+                                  Hủy
+                                </button>
+                              </motion.div>
+                            ) : null}
+                          </AnimatePresence>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setConfirmingDeleteCommentId(confirmingDeleteCommentId === comment._id ? null : comment._id)
+                            }}
+                            title="Xóa bình luận"
+                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs font-medium text-slate-700 whitespace-pre-wrap pl-8">
                     {comment.content}
@@ -919,7 +1044,7 @@ function PostExpandedDetails({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Viết bình luận... (Nhấn Enter để gửi)"
-                className="h-10 text-xs font-medium rounded-xl border-slate-200 bg-white focus:border-[#5D7B6F]"
+                className="h-10 text-xs font-medium rounded-xl border border-slate-200 bg-white focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F]"
               />
               <Button
                 type="button"

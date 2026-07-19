@@ -12,7 +12,7 @@ const SearchParamsSchema = z.object({
 })
 
 const CreatePostSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
+  title: z.string().min(1, 'Title is required').max(150, 'Title must be less than 150 characters'),
   content: z.string().min(1, 'Content is required').max(10000, 'Content must be less than 10000 characters'),
   tags: z.array(z.string().max(50)).optional(),
 })
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 
     const [posts, total, tagAgg, categories] = await Promise.all([
       Post.find(query)
-        .select('title authorId authorName tags likes comments createdAt updatedAt')
+        .select('title content authorId authorName tags likes views comments createdAt updatedAt')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
