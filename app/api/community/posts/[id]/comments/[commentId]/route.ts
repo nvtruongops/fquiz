@@ -35,10 +35,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
     }
 
-    // Allow comment author, post author, or admin to delete
+    // Allow comment author or admin to delete
     if (
       comment.authorId.toString() !== session.userId &&
-      post.authorId.toString() !== session.userId &&
       session.role !== 'admin'
     ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
