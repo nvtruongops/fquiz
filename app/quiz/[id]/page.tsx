@@ -141,7 +141,7 @@ export default function QuizDetailPage() {
   )
   const [selectedDifficulty, setSelectedDifficulty] = useState<'sequential' | 'random'>('sequential')
   
-  const { loadingOverlay, startLoading, completeLoading, stopLoading } = useQuizLoader()
+  const { loadingOverlay, startLoading, completeLoading, stopLoading, updateStatus } = useQuizLoader()
 
   useEffect(() => {
     if (searchParams.get('reason') === 'session_expired') {
@@ -201,17 +201,25 @@ export default function QuizDetailPage() {
       }
       const sessionData = await res.json()
       
-      // PRE-LOAD QUESTIONS BEFORE REDIRECTING
+      // PRE-LOAD QUESTIONS AND SESSION BEFORE REDIRECTING
       if (sessionData.sessionId) {
         try {
-          startLoading('Đang chuẩn bị bộ câu hỏi...')
-          const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`)
+          updateStatus('Đang chuẩn bị bộ câu hỏi...')
+          const [qRes, sRes] = await Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`),
+            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${sessionData.sessionId}`)
+          ])
+
           if (qRes.ok) {
             const qData = await qRes.json()
             sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
           }
+          if (sRes.ok) {
+            const sData = await sRes.json()
+            sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sData))
+          }
         } catch (e) {
-          console.warn('Pre-load questions failed', e)
+          console.warn('Pre-load failed', e)
         }
       }
       
@@ -411,6 +419,29 @@ export default function QuizDetailPage() {
                       .then(async (res) => {
                         const data = await res.json()
                         if (!res.ok) throw new Error(data.error || 'Failed to restart review')
+
+                        // PRE-LOAD QUESTIONS AND SESSION FOR REVIEW
+                        if (data.sessionId) {
+                          try {
+                            updateStatus('Đang tải câu hỏi ôn tập...')
+                            const [qRes, sRes] = await Promise.all([
+                              fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(data.sessionId)}`),
+                              fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${data.sessionId}`)
+                            ])
+
+                            if (qRes.ok) {
+                              const qData = await qRes.json()
+                              sessionStorage.setItem(`session_preload_${data.sessionId}`, JSON.stringify(qData))
+                            }
+                            if (sRes.ok) {
+                              const sData = await sRes.json()
+                              sessionStorage.setItem(`session_initial_preload_${data.sessionId}`, JSON.stringify(sData))
+                            }
+                          } catch (e) {
+                            console.warn('Pre-load failed', e)
+                          }
+                        }
+
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
                         const targetUrl = isMobile 
                           ? `/quiz/${quizId}/session/${data.sessionId}/flashcard/mobile` 

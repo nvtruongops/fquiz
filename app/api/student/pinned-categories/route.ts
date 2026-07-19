@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 
-const MAX_PINS = 5
+const MAX_PINS = 20
 
 export async function GET(req: Request) {
   const payload = await verifyToken(req)

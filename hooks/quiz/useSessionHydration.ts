@@ -44,9 +44,9 @@ export function useSessionHydration({
     setHydratedSessionId(null)
   }, [resolvedSessionId])
 
-  // Hydrate store from server data (wait until not mid-refetch)
+  // Hydrate store from server data (wait until we have data, ignore background refetches)
   useEffect(() => {
-    if (!initialData || isHydratedFromServer || isInitialFetching) return
+    if (!initialData || isHydratedFromServer) return
     const serverAnsweredSet = new Set<number>(
       initialData.session.user_answers.map((a) => a.question_index),
     )
@@ -60,7 +60,7 @@ export function useSessionHydration({
     )
     setIsHydratedFromServer(true)
     setHydratedSessionId(resolvedSessionId)
-  }, [initialData, isHydratedFromServer, isInitialFetching, resolvedQuizId, resolvedSessionId, resumeSession])
+  }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
 
   // Session expired redirect
   useEffect(() => {
