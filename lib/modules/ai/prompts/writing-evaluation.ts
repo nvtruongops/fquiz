@@ -45,18 +45,28 @@ Task Information:
 - Learner Writing Submission (${params.userLanguage}): "${params.userAnswer}"
 ${params.sampleAnswer ? `- Model/Sample Answer: "${params.sampleAnswer}"\n` : ''}
 
+CRITICAL LANGUAGE MANDATE:
+Regardless of what language the Exercise Prompt ("${params.sourceLanguage}") or Learner Writing Submission ("${params.userLanguage}") is written in, ALL evaluation feedback text MUST BE WRITTEN IN VIETNAMESE (Tiếng Việt).
+This means:
+- "rating": MUST be a short rating label in Vietnamese (e.g. "Xuất sắc", "Tốt", "Khá", "Cần cải thiện").
+- "detailedFeedback": MUST be written entirely in Vietnamese.
+- "strengths": MUST be an array of points written in Vietnamese.
+- "improvements": MUST be an array of points written in Vietnamese.
+- "corrections": Each item's "explanation" field MUST be written in Vietnamese.
+- "suggestedAnswer": This is the ONLY field that MUST be written in the learner's submission language (${params.userLanguage}) as a corrected and polished version of their writing.
+
 Evaluation Instructions:
 1. Score the submission from 0 to 100 based on task completion, vocabulary usage, grammar accuracy, cohesion/genre formatting, and CEFR level (${params.cefrLevel}).
-2. Provide a short rating label ("rating") in ${expLang} (e.g., "Xuất sắc", "Tốt", "Cần cải thiện").
-3. Write a comprehensive feedback paragraph ("detailedFeedback") in ${expLang} evaluating the performance.
-4. List key strengths ("strengths") as an array of points in ${expLang}.
-5. List key areas for improvement ("improvements") as an array of points in ${expLang}.
-6. Provide specific corrections ("corrections") as an array of items: { "original": string, "corrected": string, "type": string, "explanation": string (in ${expLang}) }.
-7. Provide a polished, optimized version of the student's submission ("suggestedAnswer") in ${params.userLanguage} that preserves the student's original idea while correcting all errors and refining style for CEFR level ${params.cefrLevel}.
+2. Provide a short rating label ("rating") in Vietnamese.
+3. Write a comprehensive feedback paragraph ("detailedFeedback") in Vietnamese.
+4. List key strengths ("strengths") in Vietnamese.
+5. List key areas for improvement ("improvements") in Vietnamese.
+6. Provide specific corrections ("corrections") as: { "original": string, "corrected": string, "type": string, "explanation": string (in Vietnamese) }.
+7. Provide a polished version of the student's submission ("suggestedAnswer") in ${params.userLanguage}.
 
-All feedback, explanations, ratings, strengths, and improvements MUST be written in ${expLang}.
+STRICT RULE: Do NOT output feedback, rating, strengths, improvements, or explanations in ${params.userLanguage} or ${params.sourceLanguage} unless that language is Vietnamese. Output all feedback exclusively in VIETNAMESE.
 
-Return a structured JSON object matching the schema: score (0-100), rating, detailedFeedback, strengths, improvements, corrections (array of { original, corrected, type, explanation }), suggestedAnswer.`
+Return a structured JSON object matching the schema.`
   },
 }
 
