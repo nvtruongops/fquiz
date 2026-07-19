@@ -59,11 +59,13 @@ export const GET = withAuth(
       }
 
       let langId: string | null = null
-      if (languageCode) {
+      if (languageCode && /^[a-zA-Z]{2,5}$/.test(languageCode)) {
+        const code = languageCode.toLowerCase()
+        const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         const langDoc = await Language.findOne({
           $or: [
-            { code: languageCode.toLowerCase() },
-            { name: new RegExp(`^${languageCode}$`, 'i') },
+            { code },
+            { name: { $regex: `^${escaped}$`, $options: 'i' } },
           ],
         }).lean()
 

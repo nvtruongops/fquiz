@@ -242,9 +242,10 @@ export default function ForgotPasswordPage() {
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2 }}
               onSubmit={handleVerifyCode} 
               noValidate 
-              className="space-y-4 pt-4 border-t border-white/60"
+              className="space-y-4 pt-4 border-t border-white/60 overflow-hidden"
             >
               <div className="space-y-1">
                 <label htmlFor="code" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
@@ -298,9 +299,11 @@ export default function ForgotPasswordPage() {
             <motion.form 
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2 }}
               onSubmit={handleResetPassword} 
               noValidate 
-              className="space-y-4 pt-4 border-t border-white/60"
+              className="space-y-4 pt-4 border-t border-white/60 overflow-hidden"
             >
               <div className="space-y-1">
                 <label htmlFor="newPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">

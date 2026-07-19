@@ -63,11 +63,13 @@ export type GeneratedSentence = z.infer<typeof GeneratedSentenceSchema>
 
 export interface SentencePromptParams {
   language: string
+  explanationLanguage?: string
   topic: string
   cefr?: string
   count?: number
   includeVocabulary?: boolean
   targetVocab?: string[]
+  context?: string
 }
 
 export const sentenceGeneration: PromptDefinition<SentencePromptParams, z.ZodArray<typeof GeneratedSentenceSchema>> = {
@@ -75,29 +77,30 @@ export const sentenceGeneration: PromptDefinition<SentencePromptParams, z.ZodArr
   version: PROMPT_VERSION,
   schema: z.array(GeneratedSentenceSchema),
   buildPrompt: (params: SentencePromptParams): string => {
+    const expLang = params.explanationLanguage || 'Vietnamese'
     const vocabConstraint = params.targetVocab?.length
       ? `\n\nEach sentence MUST naturally include at least one of these vocabulary terms: ${params.targetVocab.join(', ')}`
       : ''
     const vocabInstruction = params.includeVocabulary !== false
-      ? '\n- vocabulary (optional: array of objects with fields: "lemma", "display", "definition")'
+      ? `\n- vocabulary (optional: array of objects with fields: "lemma", "display", "definition" written in ${expLang})`
       : ''
+    const contextInstruction = params.context ? `\n- Specific situational context: "${params.context}"` : ''
 
-    return `You are a language educator creating example sentences for "${params.language}" learners at CEFR level ${params.cefr ?? 'A2'} on the topic "${params.topic}".
+    return `You are a language educator creating example sentences for "${params.language}" learners at level ${params.cefr ?? 'A2'} on the topic "${params.topic}".${contextInstruction}
 
-Generate ${params.count ?? 5} natural, useful sentences.
+Generate ${params.count ?? 5} natural, useful sentences in ${params.language}.
 
 For each sentence, provide:
 1. text (the sentence in ${params.language})
-2. translation (natural English translation)
+2. translation (natural translation written in ${expLang})
 ${vocabInstruction}
-3. grammarHighlights (optional: 1-2 grammar patterns with explanations)
-4. difficulty${vocabConstraint}
+3. grammarHighlights (optional: 1-2 grammar patterns with explanations written in ${expLang})
+4. difficulty (${params.cefr ?? 'A2'})${vocabConstraint}
 
 Rules:
-- Sentences must be realistic and usable in everyday conversation
-- Progress from simple to slightly complex
-- Each sentence must be a complete, grammatically correct sentence
-- Include a variety of sentence structures (declarative, question, conditional where appropriate)
+- Translations, definitions, and grammar explanations MUST be in ${expLang}.
+- Sentences must be realistic and usable in everyday conversation in ${params.language}.
+- Progress from simple to slightly complex.
 
 Respond ONLY with a valid JSON array of objects matching the provided schema.`
   },

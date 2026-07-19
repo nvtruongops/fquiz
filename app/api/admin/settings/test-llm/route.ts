@@ -3,6 +3,44 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 
 export const dynamic = 'force-dynamic'
 
+function isValidLLMUrl(raw: string): { valid: true; url: string } | { valid: false; error: string } {
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return { valid: false, error: 'Base URL không hợp lệ' }
+  }
+
+  if (parsed.protocol !== 'https:') {
+    return { valid: false, error: 'Chỉ hỗ trợ HTTPS cho Custom LLM endpoint' }
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Block internal / private IPs and localhost
+  const blocked = [
+    'localhost', '127.0.0.1', '0.0.0.0',
+    '::1', '::ffff:127.0.0.1',
+    'metadata.google.internal',
+    '169.254.169.254',
+  ]
+  if (blocked.includes(hostname)) {
+    return { valid: false, error: 'Không được kết nối tới internal endpoint' }
+  }
+
+  // Block private IP ranges (10.x, 172.16-31.x, 192.168.x)
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(hostname)) {
+    return { valid: false, error: 'Không được kết nối tới private network' }
+  }
+
+  // Block very short hostnames (likely internal services)
+  if (hostname.split('.').length < 2 && hostname !== 'localhost') {
+    return { valid: false, error: 'Tên miền không hợp lệ' }
+  }
+
+  return { valid: true, url: parsed.origin }
+}
+
 export const POST = withAuth(
   async (req: Request) => {
     try {
@@ -60,14 +98,19 @@ export const POST = withAuth(
         if (!baseUrl) {
           return NextResponse.json({ error: 'Chưa nhập Base URL cho Custom LLM' }, { status: 400 })
         }
-        const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+
+        const validation = isValidLLMUrl(baseUrl)
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 })
+        }
+
+        const cleanUrl = validation.url
         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
         if (apiKey) {
           headers['Authorization'] = `Bearer ${apiKey}`
         }
-        
-        const modelsUrl = cleanUrl.endsWith('/v1') ? `${cleanUrl}/models` : `${cleanUrl}/v1/models`
-        const res = await fetch(modelsUrl, { headers, method: 'GET' })
+
+        const res = await fetch(`${cleanUrl}/models`, { headers, method: 'GET' })
         if (!res.ok) {
           const res2 = await fetch(cleanUrl, { headers, method: 'GET' }).catch(() => null)
           if (!res2 || !res2.ok) {

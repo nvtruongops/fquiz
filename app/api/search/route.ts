@@ -65,7 +65,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     if (category) {
       const cat = await Category.findOne({ 
         name: { $regex: escapeRegex(category), $options: 'i' } 
-      })
+      }).select('_id').lean()
       if (!cat) {
         return NextResponse.json({ quizzes: [], total: 0, page, limit })
       }
@@ -78,7 +78,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     const skip = (page - 1) * limit
     const [quizzes, total] = await Promise.all([
-      Quiz.find(filter, { title: 1, course_code: 1, category_id: 1, questions: 1 })
+      Quiz.find(filter, { title: 1, course_code: 1, category_id: 1, questionCount: 1 })
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -90,7 +90,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       title: q.title,
       course_code: q.course_code,
       category_id: q.category_id,
-      questionCount: Array.isArray(q.questions) ? q.questions.length : 0,
+      questionCount: q.questionCount ?? 0,
     }))
 
     return NextResponse.json({ quizzes: result, total, page, limit })

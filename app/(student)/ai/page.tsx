@@ -30,9 +30,14 @@ import {
   CheckCircle2,
   ThumbsUp,
   Edit3,
+  ArrowLeft,
+  Settings,
+  AlertCircle,
 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { cn } from '@/lib/core/utils/cn'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Select,
   SelectContent,
@@ -44,14 +49,15 @@ import {
 type AIFeatureType =
   | 'vocabulary'
   | 'grammar'
+  | 'reading'
+  | 'translation'
+  | 'writing'
+
+type ReadingSubMode =
+  | 'sentence'
   | 'paragraph'
   | 'dialogue'
-  | 'sentence'
   | 'story'
-  | 'translation'
-  | 'flashcard'
-  | 'quiz'
-  | 'writing'
 
 const LANGUAGES = [
   { code: 'English', label: 'Tiếng Anh (English)' },
@@ -110,23 +116,65 @@ const ENGLISH_TENSES = [
   { code: 'Passive Voice', label: 'Thể bị động (Passive Voice)' },
 ]
 
+const TEXT_GENRES = [
+  { code: 'random', label: 'Ngẫu nhiên / Tự do (Mặc định)' },
+  { code: 'informational', label: 'Bài viết thông tin (Informational Text)' },
+  { code: 'formal_email', label: 'Email công việc trang trọng (Formal Email)' },
+  { code: 'informal_email', label: 'Thư / Chat thân mật (Casual Email/Chat)' },
+  { code: 'essay_opinion', label: 'Bài luận nghị luận (Opinion Essay)' },
+  { code: 'story_narrative', label: 'Truyện kể & Nhật ký (Narrative Story)' },
+  { code: 'news_report', label: 'Bài báo & Tin tức (News Report)' },
+  { code: 'descriptive', label: 'Bài văn miêu tả (Descriptive Text)' },
+]
+
+const COMMON_TOPICS = [
+  { code: 'random', label: 'Ngẫu nhiên / Tự do (Mặc định)' },
+  { code: 'Travel & Tourism', label: 'Du lịch & Lữ hành (Travel & Tourism)' },
+  { code: 'Business & Career', label: 'Kinh doanh & Sự nghiệp (Business & Career)' },
+  { code: 'Technology & AI', label: 'Công nghệ & Trí tuệ nhân tạo (Technology & AI)' },
+  { code: 'Daily Life & Routine', label: 'Đời sống hàng ngày (Daily Life)' },
+  { code: 'Education & Learning', label: 'Giáo dục & Học tập (Education)' },
+  { code: 'Health & Wellness', label: 'Sức khỏe & Đời sống (Health)' },
+  { code: 'Arts & Culture', label: 'Nghệ thuật & Văn hóa (Arts & Culture)' },
+  { code: 'Sports & Entertainment', label: 'Thể thao & Giải trí (Sports & Entertainment)' },
+  { code: 'Social Issues', label: 'Vấn đề xã hội (Social Issues)' },
+  { code: 'custom', label: 'Tự nhập chủ đề tùy chỉnh...' },
+]
+
 export default function StudentAIAssistantPage() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<AIFeatureType>('vocabulary')
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false)
+  const [readingSubMode, setReadingSubMode] = useState<ReadingSubMode>('sentence')
+  const [explanationLanguage, setExplanationLanguage] = useState('Vietnamese')
   const [loading, setLoading] = useState(false)
   // Input states
   const [targetLanguage, setTargetLanguage] = useState('English')
   const [sourceLanguage, setSourceLanguage] = useState('Vietnamese')
-  const [topic, setTopic] = useState('Travel & Tourism')
+  const [topic, setTopic] = useState('')
+  const [selectedTopicSlug, setSelectedTopicSlug] = useState('random')
+  const [customTopicInput, setCustomTopicInput] = useState('')
+  const [textGenre, setTextGenre] = useState('random')
+  const [situationalContext, setSituationalContext] = useState('')
   const [cefrLevel, setCefrLevel] = useState('B1')
   const [englishTense, setEnglishTense] = useState('all')
-  const [wordInput, setWordInput] = useState('Explore')
+  const [wordInput, setWordInput] = useState('')
   const [grammarTopic, setGrammarTopic] = useState('Present Perfect vs Past Simple')
   const [translationText, setTranslationText] = useState('Xin chào, tôi muốn học ngôn ngữ mới cùng trợ lý AI.')
 
   // Result cache — preserves data per tab so switching back shows instantly
-  const [resultCache, setResultCache] = useState<Map<AIFeatureType, any>>(new Map())
-  const currentResult = resultCache.get(activeTab)
+  const [resultCache, setResultCache] = useState<Map<string, any>>(new Map())
+  const activeCacheKey = activeTab === 'reading' ? `reading:${readingSubMode}` : activeTab
+  const currentResult = resultCache.get(activeCacheKey)
+
+  // View mode state: config (Form) or result (AI output display)
+  const [viewMode, setViewMode] = useState<'config' | 'result'>('config')
+
+  // Automatically update viewMode when switching tab/submode based on cache presence
+  useEffect(() => {
+    const key = activeTab === 'reading' ? `reading:${readingSubMode}` : activeTab
+    setViewMode(resultCache.has(key) ? 'result' : 'config')
+  }, [activeTab, readingSubMode, resultCache])
 
   // UI states for interactive features
   const [flashcardIndex, setFlashcardIndex] = useState(0)
@@ -138,20 +186,23 @@ export default function StudentAIAssistantPage() {
   const [showParagraphTranslation, setShowParagraphTranslation] = useState(false)
   const [showStoryTranslation, setShowStoryTranslation] = useState(false)
 
-  const [writingWordCount, setWritingWordCount] = useState(100)
+  const [writingWordCount, setWritingWordCount] = useState<number | string>(100)
+  const [writingSubTab, setWritingSubTab] = useState<'config' | 'workspace' | 'eval'>('config')
   const [userSubmissionLanguage, setUserSubmissionLanguage] = useState('Vietnamese')
   const [userWritingInput, setUserWritingInput] = useState('')
   const [evaluatingWriting, setEvaluatingWriting] = useState(false)
   const [writingEvalResult, setWritingEvalResult] = useState<any>(null)
+  const [savingVocabIds, setSavingVocabIds] = useState<Record<string, boolean>>({})
+  const [savedVocabIds, setSavedVocabIds] = useState<Record<string, boolean>>({})
 
-  // Auto-switch user submission language default based on targetLanguage
+  // Auto-set user submission language default to match targetLanguage / explanationLanguage
   useEffect(() => {
-    if (targetLanguage === 'Vietnamese') {
-      setUserSubmissionLanguage('English')
+    if (currentResult?.targetLanguage) {
+      setUserSubmissionLanguage(currentResult.targetLanguage)
     } else {
-      setUserSubmissionLanguage('Vietnamese')
+      setUserSubmissionLanguage(explanationLanguage || targetLanguage)
     }
-  }, [targetLanguage])
+  }, [currentResult, explanationLanguage, targetLanguage])
 
   // Reset interactive states when resultData or activeTab changes
   useEffect(() => {
@@ -247,7 +298,7 @@ export default function StudentAIAssistantPage() {
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {list.map((wordItem: any, idx: number) => (
-            <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-3 relative overflow-hidden">
+            <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs space-y-2 relative overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-baseline gap-2">
@@ -258,7 +309,7 @@ export default function StudentAIAssistantPage() {
                     <span className="text-xs text-slate-400 italic">Hiển thị: {wordItem.display}</span>
                   )}
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex items-center gap-1.5">
                   {wordItem.partOfSpeech && (
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 uppercase tracking-wider">
                       {wordItem.partOfSpeech}
@@ -269,6 +320,23 @@ export default function StudentAIAssistantPage() {
                       {wordItem.cefrLevel}
                     </span>
                   )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={savingVocabIds[wordItem.lemma || `word-${idx}`]}
+                    onClick={() => handleSaveSingleVocabulary(wordItem, idx)}
+                    className="h-7 w-7 p-0 rounded-lg hover:bg-emerald-50 text-[#5D7B6F] shrink-0"
+                    title="Lưu từ vựng này vào Flashcard SRS"
+                  >
+                    {savingVocabIds[wordItem.lemma || `word-${idx}`] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : savedVocabIds[wordItem.lemma || `word-${idx}`] ? (
+                      <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in-50" />
+                    ) : (
+                      <Bookmark className="w-3.5 h-3.5 text-slate-400 hover:text-[#5D7B6F]" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
@@ -712,11 +780,12 @@ export default function StudentAIAssistantPage() {
           type: 'writing_eval',
           params: {
             sourceText: exercise.sourceText,
-            sourceLanguage: exercise.sourceLanguage || targetLanguage,
+            sourceLanguage: exercise.sourceLanguage || explanationLanguage || 'Vietnamese',
             userAnswer: userWritingInput,
-            userLanguage: userSubmissionLanguage,
+            userLanguage: userSubmissionLanguage || exercise.targetLanguage || targetLanguage,
             sampleAnswer: exercise.sampleAnswer,
             cefrLevel: exercise.cefrLevel || cefrLevel,
+            explanationLanguage: explanationLanguage || 'Vietnamese',
           },
         }),
       })
@@ -726,6 +795,7 @@ export default function StudentAIAssistantPage() {
         toast.error(json.error || 'Lỗi khi AI đánh giá bài viết')
       } else {
         setWritingEvalResult(json.data.content)
+        setWritingSubTab('eval')
         toast.success('AI đã chấm điểm & nhận xét bài viết thành công!')
       }
     } catch (err: any) {
@@ -735,10 +805,27 @@ export default function StudentAIAssistantPage() {
     }
   }
 
-  const renderWritingResult = (content: any) => {
-    if (!content) return null
+  const renderWritingWorkspace = (content: any) => {
+    if (!content) {
+      return (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 text-center space-y-3 shadow-xs">
+          <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800">Chưa có văn bản bài đọc / đề bài nào</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Hãy sang <strong>Tab Cấu hình bài tập</strong> để yêu cầu AI tự động biên soạn văn bản học liệu theo trình độ của bạn.
+          </p>
+          <Button
+            onClick={() => setWritingSubTab('config')}
+            className="bg-[#5D7B6F] hover:bg-[#4a6358] rounded-xl text-xs font-bold text-white px-5 h-9"
+          >
+            Đi tới Cấu hình bài tập
+          </Button>
+        </div>
+      )
+    }
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-in fade-in duration-200">
         {/* Exercise Header Card */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
@@ -753,7 +840,7 @@ export default function StudentAIAssistantPage() {
             </div>
           </div>
 
-          {/* Source Text / Prompt */}
+          {/* Source Text / Passage */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Văn bản gốc / Đề bài ({content.sourceLanguage})
@@ -762,48 +849,31 @@ export default function StudentAIAssistantPage() {
               {content.sourceText}
             </p>
           </div>
-
-          {/* Vocabulary Hints */}
-          {Array.isArray(content.hints) && content.hints.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> Gợi ý từ vựng & Cụm từ hay
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {content.hints.map((h: any, i: number) => (
-                  <span key={i} className="text-xs bg-emerald-50 text-emerald-900 font-semibold px-3 py-1.5 rounded-xl border border-emerald-100">
-                    <strong>{h.wordOrPhrase}:</strong> {h.meaning}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Notes if present */}
-          {content.notes && (
-            <p className="text-xs text-slate-500 italic bg-amber-50/50 p-3 rounded-xl border border-amber-100">
-              {'💡'} {content.notes}
-            </p>
-          )}
         </div>
 
-        {/* User Submission Textarea */}
+        {/* User Submission Textarea — SPACIOUS */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Edit3 className="w-4 h-4 text-[#5D7B6F]" /> Bài làm của bạn ({content.targetLanguage})
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Edit3 className="w-4 h-4 text-[#5D7B6F]" /> Bài làm của bạn ({userSubmissionLanguage || content.targetLanguage})
+            </label>
+            <span className="text-[11px] font-bold text-slate-400">
+              {userWritingInput.trim() ? userWritingInput.trim().split(/\s+/).filter(Boolean).length : 0} từ đã viết
+            </span>
+          </div>
+
           <textarea
             value={userWritingInput}
             onChange={(e) => setUserWritingInput(e.target.value)}
-            placeholder={'Nhập phần dịch hoặc bài viết bằng ' + content.targetLanguage + ' tại đây...'}
-            rows={5}
-            className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 rounded-2xl p-4 text-sm font-medium bg-slate-50/50 outline-none resize-none leading-relaxed text-slate-900"
+            placeholder={'Nhập bài viết hoặc bài dịch của bạn bằng ' + (userSubmissionLanguage || content.targetLanguage) + ' tại đây...'}
+            rows={10}
+            className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 rounded-2xl p-5 text-base font-medium bg-slate-50/50 outline-none resize-y leading-relaxed text-slate-900 min-h-[240px]"
           />
 
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">Ngôn ngữ bài làm:</span>
-              <Select value={userSubmissionLanguage} onValueChange={setUserSubmissionLanguage}>
+              <span className="text-xs font-bold text-slate-500">Ngôn ngữ Giải thích / Dịch nghĩa:</span>
+              <Select value={explanationLanguage} onValueChange={setExplanationLanguage}>
                 <SelectTrigger className="h-10 w-44 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F]">
                   <SelectValue placeholder="Chọn ngôn ngữ..." />
                 </SelectTrigger>
@@ -815,100 +885,137 @@ export default function StudentAIAssistantPage() {
                   ))}
                 </SelectContent>
               </Select>
-
-              <Button
-                type="button"
-                onClick={handleEvaluateWriting}
-                disabled={evaluatingWriting || !userWritingInput.trim()}
-                className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl text-xs font-bold text-white"
-              >
-                {evaluatingWriting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                Nộp bài & AI Đánh giá
-              </Button>
             </div>
+
+            <Button
+              type="button"
+              onClick={handleEvaluateWriting}
+              disabled={evaluatingWriting || !userWritingInput.trim()}
+              className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 py-3 rounded-xl text-xs font-bold text-white ml-auto"
+            >
+              {evaluatingWriting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              Nộp bài & AI Đánh giá
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderWritingEvalResult = () => {
+    if (!writingEvalResult) {
+      return (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 text-center space-y-3 shadow-xs">
+          <Sparkles className="w-8 h-8 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800">Chưa có kết quả đánh giá từ AI</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Hãy sang <strong>Tab Văn bản & Bài làm</strong> để hoàn thành bài viết của bạn và nhấn nút "Nộp bài & AI Đánh giá".
+          </p>
+          <Button
+            onClick={() => setWritingSubTab('workspace')}
+            className="bg-[#5D7B6F] hover:bg-[#4a6358] rounded-xl text-xs font-bold text-white px-5 h-9"
+          >
+            Đi tới Văn bản & Bài làm
+          </Button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 shadow-lg space-y-6 animate-in fade-in duration-300">
+        {/* Score & Rating Banner */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-emerald-800 to-[#5D7B6F] text-white shadow-md">
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-200 block">Kết quả Đánh giá AI</span>
+            <h4 className="text-xl font-black">{writingEvalResult.rating}</h4>
+            <p className="text-xs text-emerald-100/90 leading-relaxed">{writingEvalResult.detailedFeedback}</p>
+          </div>
+          <div className="shrink-0 flex items-center justify-center bg-white text-[#5D7B6F] w-20 h-20 rounded-2xl shadow-md border-2 border-emerald-100 flex-col">
+            <span className="text-2xl font-black leading-none">{writingEvalResult.score}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-0.5">/ 100 điểm</span>
           </div>
         </div>
 
-        {/* AI Evaluation Output */}
-        {writingEvalResult && (
-          <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 shadow-lg space-y-6 animate-in fade-in duration-300">
-            {/* Score & Rating Banner */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-800 to-[#5D7B6F] text-white">
-              <div className="space-y-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-200 block">Kết quả Đánh giá AI</span>
-                <h4 className="text-xl font-black">{writingEvalResult.rating}</h4>
-                <p className="text-xs text-emerald-100/90 leading-relaxed">{writingEvalResult.detailedFeedback}</p>
-              </div>
-              <div className="shrink-0 flex items-center justify-center bg-white text-[#5D7B6F] w-20 h-20 rounded-2xl shadow-md border-2 border-emerald-100 flex-col">
-                <span className="text-2xl font-black leading-none">{writingEvalResult.score}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-0.5">/ 100 điểm</span>
-              </div>
-            </div>
+        {writingEvalResult.suggestedAnswer && (
+          <div className="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200 space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" /> Phiên bản đề xuất chỉnh sửa tối ưu hơn
+            </span>
+            <p className="text-sm font-bold text-emerald-950 leading-relaxed whitespace-pre-line">{writingEvalResult.suggestedAnswer}</p>
+          </div>
+        )}
 
-            {writingEvalResult.suggestedAnswer && (
-              <div className="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200 space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" /> Phiên bản đề xuất chỉnh sửa tối ưu hơn
-                </span>
-                <p className="text-sm font-bold text-emerald-950 leading-relaxed">{writingEvalResult.suggestedAnswer}</p>
-              </div>
-            )}
-
-            {Array.isArray(writingEvalResult.corrections) && writingEvalResult.corrections.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" /> Chi tiết các điểm cần sửa ({writingEvalResult.corrections.length} vị trí)
-                </h4>
-                <div className="space-y-2.5">
-                  {writingEvalResult.corrections.map((corr: any, idx: number) => (
-                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
-                        <span className="font-bold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-100 line-through">{corr.original}</span>
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">{'->'} {corr.corrected}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">{corr.type}</span>
-                      </div>
-                      <p className="text-slate-600 font-medium leading-relaxed">{corr.explanation}</p>
-                    </div>
-                  ))}
+        {Array.isArray(writingEvalResult.corrections) && writingEvalResult.corrections.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> Chi tiết các điểm cần sửa ({writingEvalResult.corrections.length} vị trí)
+            </h4>
+            <div className="space-y-2.5">
+              {writingEvalResult.corrections.map((corr: any, idx: number) => (
+                <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                    <span className="font-bold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-100 line-through">{corr.original}</span>
+                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">{'->'} {corr.corrected}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">{corr.type}</span>
+                  </div>
+                  <p className="text-slate-600 font-medium leading-relaxed">{corr.explanation}</p>
                 </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.isArray(writingEvalResult.strengths) && writingEvalResult.strengths.length > 0 && (
-                <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
-                    <ThumbsUp className="w-4 h-4 text-[#5D7B6F]" /> Điểm mạnh bài làm
-                  </span>
-                  <ul className="space-y-1 text-xs text-slate-700 font-medium">
-                    {writingEvalResult.strengths.map((s: string, i: number) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-[#5D7B6F] font-bold">{'•'}</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {Array.isArray(writingEvalResult.improvements) && writingEvalResult.improvements.length > 0 && (
-                <div className="bg-amber-50/40 p-4 rounded-2xl border border-amber-100 space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-600" /> Điểm cần phát triển thêm
-                  </span>
-                  <ul className="space-y-1 text-xs text-slate-700 font-medium">
-                    {writingEvalResult.improvements.map((imp: string, i: number) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-amber-600 font-bold">{'•'}</span>
-                        <span>{imp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              ))}
             </div>
           </div>
         )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.isArray(writingEvalResult.strengths) && writingEvalResult.strengths.length > 0 && (
+            <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
+                <ThumbsUp className="w-4 h-4 text-[#5D7B6F]" /> Điểm mạnh bài làm
+              </span>
+              <ul className="space-y-1 text-xs text-slate-700 font-medium">
+                {writingEvalResult.strengths.map((s: string, i: number) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="text-[#5D7B6F] font-bold">{'•'}</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(writingEvalResult.improvements) && writingEvalResult.improvements.length > 0 && (
+            <div className="bg-amber-50/40 p-4 rounded-2xl border border-amber-100 space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-600" /> Điểm cần cải thiện
+              </span>
+              <ul className="space-y-1 text-xs text-slate-700 font-medium">
+                {writingEvalResult.improvements.map((imp: string, i: number) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="text-amber-600 font-bold">{'•'}</span>
+                    <span>{imp}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setWritingSubTab('workspace')}
+            className="rounded-xl font-bold text-xs text-slate-700 border-slate-200 hover:bg-slate-100"
+          >
+            <Edit3 className="w-4 h-4 mr-1.5" /> Chỉnh sửa & Nộp lại
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setWritingSubTab('config')}
+            className="bg-[#5D7B6F] hover:bg-[#4a6358] rounded-xl font-bold text-xs text-white"
+          >
+            <Settings className="w-4 h-4 mr-1.5" /> Tạo bài học mới
+          </Button>
+        </div>
       </div>
     )
   }
@@ -1014,38 +1121,49 @@ export default function StudentAIAssistantPage() {
   const handleGenerate = async () => {
     setLoading(true)
 
-    let topicValue = topic
-    if (targetLanguage === 'English' && englishTense && englishTense !== 'all') {
-      topicValue = `${topic} (Grammar Tense: ${englishTense})`
+    // Calculate topic value based on selectedTopicSlug
+    let topicValue = ''
+    if (selectedTopicSlug === 'custom') {
+      topicValue = customTopicInput
+    } else if (selectedTopicSlug !== 'random') {
+      topicValue = selectedTopicSlug
     }
 
-    let params: Record<string, unknown> = { language: targetLanguage, cefr: cefrLevel }
+    if (targetLanguage === 'English' && englishTense && englishTense !== 'all' && topicValue) {
+      topicValue = `${topicValue} (Grammar Tense: ${englishTense})`
+    }
 
-    if (activeTab === 'vocabulary') {
-      params = { language: targetLanguage, topic: topicValue, word: wordInput, cefr: cefrLevel }
-    } else if (activeTab === 'grammar') {
+    const promptType = activeTab === 'reading' ? readingSubMode : activeTab
+    const genreValue = textGenre === 'random' ? '' : textGenre
+
+    let params: Record<string, unknown> = { 
+      language: targetLanguage, 
+      cefr: cefrLevel,
+      explanationLanguage,
+      context: situationalContext
+    }
+
+    if (promptType === 'vocabulary') {
+      params = { ...params, topic: topicValue, word: wordInput, count: 2 }
+    } else if (promptType === 'grammar') {
       const gTopic = targetLanguage === 'English' && englishTense ? `${grammarTopic} (${englishTense})` : grammarTopic
-      params = { language: targetLanguage, topic: gTopic, cefr: cefrLevel }
-    } else if (activeTab === 'paragraph') {
-      params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'dialogue') {
-      params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'sentence') {
-      params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'story') {
-      params = { language: targetLanguage, theme: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'translation') {
+      params = { ...params, topic: gTopic }
+    } else if (promptType === 'paragraph') {
+      params = { ...params, topic: topicValue, genre: genreValue }
+    } else if (promptType === 'dialogue') {
+      params = { ...params, topic: topicValue, genre: genreValue }
+    } else if (promptType === 'sentence') {
+      params = { ...params, topic: topicValue }
+    } else if (promptType === 'story') {
+      params = { ...params, theme: topicValue, genre: genreValue }
+    } else if (promptType === 'translation') {
       params = { sourceLanguage, targetLanguage, text: translationText }
-    } else if (activeTab === 'flashcard') {
-      params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'quiz') {
-      params = { language: targetLanguage, topic: topicValue, cefr: cefrLevel }
-    } else if (activeTab === 'writing') {
+    } else if (promptType === 'writing') {
       params = {
-        language: targetLanguage,
-        cefr: cefrLevel,
+        ...params,
         topic: topicValue,
-        wordCount: writingWordCount,
+        genre: genreValue,
+        wordCount: Math.min(500, Math.max(20, Number(writingWordCount) || 100)),
       }
     }
 
@@ -1055,7 +1173,7 @@ export default function StudentAIAssistantPage() {
         credentials: 'include',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          type: activeTab,
+          type: promptType,
           params,
         }),
       })
@@ -1064,7 +1182,11 @@ export default function StudentAIAssistantPage() {
       if (!res.ok || !json.success) {
         toast.error(json.error || 'Lỗi sinh nội dung AI')
       } else {
-        setResultCache(prev => new Map(prev).set(activeTab, json.data))
+        setResultCache(prev => new Map(prev).set(activeCacheKey, json.data))
+        if (activeTab === 'writing') {
+          setWritingSubTab('workspace')
+        }
+        setViewMode('result')
         toast.success(json.data.reused ? 'Tái sử dụng tri thức AI sẵn có!' : 'AI đã sinh bài học thành công!')
       }
     } catch (err: any) {
@@ -1105,7 +1227,7 @@ export default function StudentAIAssistantPage() {
         examples: content?.examples,
         cefrLevel,
       }
-    } else if (activeTab === 'sentence') {
+    } else if (activeTab === 'reading' && readingSubMode === 'sentence') {
       loType = 'sentence'
       const item = Array.isArray(content) ? content[0] : content
       dataObj = {
@@ -1159,378 +1281,794 @@ export default function StudentAIAssistantPage() {
     }
   }
 
+  const handleSaveSingleVocabulary = async (wordItem: any, index: number) => {
+    const vocabKey = wordItem.lemma || `word-${index}`
+    setSavingVocabIds(prev => ({ ...prev, [vocabKey]: true }))
+
+    const dataObj = {
+      lemma: wordItem?.lemma || wordInput,
+      display: wordItem?.display || wordItem?.lemma || wordInput,
+      ipa: wordItem?.ipa,
+      definition: wordItem?.definition,
+      partOfSpeech: wordItem?.partOfSpeech,
+      examples: wordItem?.examples,
+      cefrLevel: wordItem?.cefrLevel || cefrLevel,
+    }
+
+    try {
+      const res = await fetch('/api/v1/learning/save-item', {
+        method: 'POST',
+        credentials: 'include',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          loType: 'vocabulary',
+          languageCode: targetLanguage,
+          data: dataObj,
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        toast.error(json.error || 'Lỗi khi lưu vào thẻ ghi nhớ')
+      } else {
+        setSavedVocabIds(prev => ({ ...prev, [vocabKey]: true }))
+        toast.success(`Đã lưu từ vựng "${wordItem.lemma}" vào bộ thẻ Flashcards SRS!`)
+        setTimeout(() => {
+          setSavedVocabIds(prev => ({ ...prev, [vocabKey]: false }))
+        }, 3000)
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Không thể lưu học liệu')
+    } finally {
+      setSavingVocabIds(prev => ({ ...prev, [vocabKey]: false }))
+    }
+  }
+
+  const handleBackToConfig = () => {
+    setResultCache(prev => {
+      const next = new Map(prev)
+      next.delete(activeCacheKey)
+      return next
+    })
+    setViewMode('config')
+  }
+
   return (
     <DevOnlyGuard featureName="Trợ Lý AI Ngôn Ngữ">
-      <div className="min-h-screen bg-slate-50/50 pb-24">
-        <div className="w-full space-y-8">
-
-        {/* Workspace Container */}
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Tab Selector */}
-          <div className="w-full md:w-64 shrink-0 flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 px-2 pb-1">Tính năng AI</span>
+      <div className="h-full w-full bg-slate-50/50 flex flex-col p-2 sm:p-4 pt-0 sm:pt-0 overflow-hidden">
+        <div className="flex-1 w-full min-h-0 flex flex-col md:flex-row gap-3 md:gap-6 items-stretch overflow-hidden">
+          {/* Desktop Tab Selector Sidebar */}
+          <div className="hidden md:flex w-64 shrink-0 flex-col gap-2 h-full overflow-y-auto pr-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 px-2 pb-1 shrink-0">Tính năng AI</span>
             
             <button
               onClick={() => setActiveTab('vocabulary')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
+              className={`w-full flex items-center px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left shrink-0 cursor-pointer ${
                 activeTab === 'vocabulary'
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
               }`}
             >
-              <Languages className="w-4 h-4 shrink-0" /> Tra Từ vựng AI
+              Tra Từ vựng AI
             </button>
 
             <button
               onClick={() => setActiveTab('grammar')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
+              className={`w-full flex items-center px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left shrink-0 cursor-pointer ${
                 activeTab === 'grammar'
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
               }`}
             >
-              <GraduationCap className="w-4 h-4 shrink-0" /> Phân tích Ngữ pháp
+              Phân tích Ngữ pháp
             </button>
 
             <button
-              onClick={() => setActiveTab('sentence')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'sentence'
+              onClick={() => setActiveTab('reading')}
+              className={`w-full flex items-center px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left shrink-0 cursor-pointer ${
+                activeTab === 'reading'
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
               }`}
             >
-              <FileText className="w-4 h-4 shrink-0" /> Mẫu câu ứng dụng
-            </button>
-
-            <button
-              onClick={() => setActiveTab('paragraph')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'paragraph'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 shrink-0" /> Bài đọc theo Chủ đề
-            </button>
-
-            <button
-              onClick={() => setActiveTab('dialogue')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'dialogue'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
-              }`}
-            >
-              <MessageSquare className="w-4 h-4 shrink-0" /> Hội thoại Mẫu
-            </button>
-
-            <button
-              onClick={() => setActiveTab('story')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'story'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
-              }`}
-            >
-              <BookMarked className="w-4 h-4 shrink-0" /> Truyện ngắn học tập
+              Đọc hiểu & Ngữ cảnh
             </button>
 
             <button
               onClick={() => setActiveTab('translation')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
+              className={`w-full flex items-center px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left shrink-0 cursor-pointer ${
                 activeTab === 'translation'
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
               }`}
             >
-              <Globe className="w-4 h-4 shrink-0" /> Dịch thuật ngữ cảnh
-            </button>
-
-            <button
-              onClick={() => setActiveTab('flashcard')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'flashcard'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
-              }`}
-            >
-              <Layers className="w-4 h-4 shrink-0" /> Thẻ Flashcard AI
-            </button>
-
-            <button
-              onClick={() => setActiveTab('quiz')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
-                activeTab === 'quiz'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
-              }`}
-            >
-              <HelpCircle className="w-4 h-4 shrink-0" /> Trắc nghiệm AI
+              Dịch thuật ngữ cảnh
             </button>
 
             <button
               onClick={() => setActiveTab('writing')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left ${
+              className={`w-full flex items-center px-4 py-3 rounded-2xl font-semibold transition-all text-sm text-left shrink-0 cursor-pointer ${
                 activeTab === 'writing'
                   ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
                   : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-[#5D7B6F] border border-gray-100'
               }`}
             >
-              <Edit3 className="w-4 h-4 shrink-0" /> Luyện viết & Đánh giá AI
+              Luyện viết & Đánh giá AI
             </button>
           </div>
 
-          {/* Generator Content */}
-          <div className="flex-1 w-full space-y-6">
-            <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white">
-              <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-6">
-                <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  {activeTab === 'vocabulary' && 'Tạo thẻ Từ vựng & Ví dụ câu'}
-                  {activeTab === 'grammar' && 'Phân tích & Giải thích Ngữ pháp'}
-                  {activeTab === 'sentence' && 'Sinh Mẫu câu ứng dụng theo chủ đề'}
-                  {activeTab === 'paragraph' && 'Sinh Bài đọc hiểu theo Trình độ'}
-                  {activeTab === 'dialogue' && 'Tạo Kịch bản Hội thoại Mẫu'}
-                  {activeTab === 'story' && 'Tạo Truyện ngắn luyện đọc AI'}
-                  {activeTab === 'translation' && 'Dịch thuật & Phân tích cấu trúc câu'}
-                  {activeTab === 'flashcard' && 'Tạo bộ Flashcard học từ nhanh'}
-                  {activeTab === 'quiz' && 'Sinh bộ Câu hỏi Trắc nghiệm AI'}
-                  {activeTab === 'writing' && 'Luyện Viết & AI Đánh giá bài làm'}
-                </CardTitle>
-                <CardDescription>Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-5">
-                {/* Form fields */}
-                {activeTab === 'writing' && (
-                  <div className="space-y-2 sm:col-span-2 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                        Số lượng từ AI sinh ra (Tối đa 500 từ)
-                      </label>
-                      <span className="text-xs font-bold text-[#5D7B6F] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        {writingWordCount} từ
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        type="number"
-                        min={20}
-                        max={500}
-                        value={writingWordCount}
-                        onChange={(e) => setWritingWordCount(Math.min(500, Math.max(20, Number(e.target.value) || 20)))}
-                        className="w-32 border-emerald-300 focus:border-[#5D7B6F] rounded-xl font-bold text-sm bg-white"
-                      />
-                      <div className="flex flex-wrap gap-1.5">
-                        {[50, 100, 150, 200, 300, 500].map((count) => (
-                          <button
-                            key={count}
-                            type="button"
-                            onClick={() => setWritingWordCount(count)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                              writingWordCount === count
-                                ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-xs'
-                                : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'
-                            }`}
-                          >
-                            {count} từ
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+          {/* Mobile AI Feature Dropdown Selector Menu */}
+          <div className="relative md:hidden shrink-0 w-full mb-2 z-30">
+            <button
+              type="button"
+              onClick={() => setMobileDropdownOpen(prev => !prev)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-[#5D7B6F] text-white rounded-2xl font-black text-xs shadow-md border border-[#5D7B6F]/40 cursor-pointer"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span className="truncate uppercase tracking-wider">
+                  {activeTab === 'vocabulary' && 'Tra Từ vựng AI'}
+                  {activeTab === 'grammar' && 'Phân tích Ngữ pháp'}
+                  {activeTab === 'reading' && 'Đọc hiểu & Ngữ cảnh'}
+                  {activeTab === 'translation' && 'Dịch thuật ngữ cảnh'}
+                  {activeTab === 'writing' && 'Luyện viết & Đánh giá AI'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0 bg-white/20 px-2.5 py-1 rounded-xl text-[10px] font-extrabold">
+                <span>Đổi tính năng</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", mobileDropdownOpen && "rotate-180")} />
+              </div>
+            </button>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Language Selector */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      {activeTab === 'writing' ? 'Ngôn ngữ AI sinh ra' : activeTab === 'translation' ? 'Ngôn ngữ Đích' : 'Ngôn ngữ Mục tiêu'}
-                    </label>
-                    <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-                      <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
-                        <SelectValue placeholder="Chọn ngôn ngữ..." />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
-                        {LANGUAGES.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
-                            {lang.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {activeTab === 'translation' ? (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Ngôn ngữ Nguồn</label>
-                      <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
-                        <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
-                          <SelectValue placeholder="Chọn ngôn ngữ nguồn..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
-                          {LANGUAGES.map((lang) => (
-                            <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
-                              {lang.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Trình độ Khung Đánh giá</label>
-                      <Select value={cefrLevel} onValueChange={setCefrLevel}>
-                        <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
-                          <SelectValue placeholder="Chọn trình độ..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
-                          {activeLevelOptions.map((lvl) => (
-                            <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
-                              {lvl.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* English Tense Selector (Only when targetLanguage === 'English') */}
-                  {targetLanguage === 'English' && activeTab !== 'translation' && (
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Tùy chọn Thì Tiếng Anh (English Tense)
-                      </label>
-                      <Select value={englishTense} onValueChange={setEnglishTense}>
-                        <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-emerald-300/80 font-bold text-sm bg-emerald-50/40 text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
-                          <SelectValue placeholder="Tất cả thì (Tự động)" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-emerald-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
-                          {ENGLISH_TENSES.map((t) => (
-                            <SelectItem key={t.code || 'all'} value={t.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
-                              {t.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {activeTab === 'vocabulary' && (
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Từ vựng cần tra</label>
-                      <Input
-                        value={wordInput}
-                        onChange={(e) => setWordInput(e.target.value)}
-                        placeholder="Ví dụ: Resilient, Sustainable..."
-                        className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-medium"
-                      />
-                    </div>
-                  )}
-
-                  {activeTab === 'grammar' && (
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Chủ đề Ngữ pháp</label>
-                      <Input
-                        value={grammarTopic}
-                        onChange={(e) => setGrammarTopic(e.target.value)}
-                        placeholder="Ví dụ: Passive Voice, Subjunctive..."
-                        className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-medium"
-                      />
-                    </div>
-                  )}
-
-                  {activeTab === 'translation' && (
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Văn bản dịch thuật</label>
-                      <textarea
-                        value={translationText}
-                        onChange={(e) => setTranslationText(e.target.value)}
-                        placeholder="Nhập văn bản cần dịch..."
-                        rows={3}
-                        className="w-full border-2 border-gray-200 focus:border-[#5D7B6F] rounded-xl p-3 text-sm font-medium bg-white outline-none resize-none"
-                      />
-                    </div>
-                  )}
-
-                  {['paragraph', 'dialogue', 'sentence', 'story', 'flashcard', 'quiz', 'writing'].includes(activeTab) && (
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Chủ đề bài học</label>
-                      <Input
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        placeholder="Ví dụ: Job Interview, Environment, Technology..."
-                        className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-medium"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={loading}
-                    className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl text-sm font-bold"
+            {/* Dropdown Menu Modal */}
+            <AnimatePresence>
+              {mobileDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-2xl rounded-2xl p-2 shadow-2xl border border-slate-200 space-y-1 z-50"
+                >
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('vocabulary'); setMobileDropdownOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer",
+                      activeTab === 'vocabulary' ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" : "text-slate-700 hover:bg-slate-50"
+                    )}
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                    Yêu cầu AI sinh bài học
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    <span>Tra Từ vựng AI</span>
+                    {activeTab === 'vocabulary' && <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" />}
+                  </button>
 
-            {/* Results Display */}
-            {currentResult && (
-              <Card className="border-emerald-200 bg-emerald-50/10 shadow-md rounded-3xl overflow-hidden animate-in fade-in duration-300">
-                <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-emerald-100 bg-emerald-100/20 px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#5D7B6F]" />
-                    <CardTitle className="text-base font-bold text-gray-800">Kết quả phản hồi từ AI</CardTitle>
-                    {currentResult.reused && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                        <Zap className="w-3 h-3 fill-current" /> Tri thức tái sử dụng
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('grammar'); setMobileDropdownOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer",
+                      activeTab === 'grammar' ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" : "text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <span>Phân tích Ngữ pháp</span>
+                    {activeTab === 'grammar' && <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('reading'); setMobileDropdownOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer",
+                      activeTab === 'reading' ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" : "text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <span>Đọc hiểu & Ngữ cảnh</span>
+                    {activeTab === 'reading' && <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('translation'); setMobileDropdownOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer",
+                      activeTab === 'translation' ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" : "text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <span>Dịch thuật ngữ cảnh</span>
+                    {activeTab === 'translation' && <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('writing'); setMobileDropdownOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer",
+                      activeTab === 'writing' ? "bg-[#5D7B6F]/10 text-[#5D7B6F]" : "text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <span>Luyện viết & Đánh giá AI</span>
+                    {activeTab === 'writing' && <CheckCircle2 className="w-4 h-4 text-[#5D7B6F]" />}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Generator Content */}
+          <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto pr-1 pb-6">
+            {/* Writing Mode 3-Sub-Tabs Navigation Bar */}
+            {activeTab === 'writing' && (
+              <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs mb-3 shrink-0">
+                <div className="grid grid-cols-3 gap-1 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setWritingSubTab('config')}
+                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold sm:text-xs transition-all flex items-center justify-center text-center whitespace-nowrap cursor-pointer ${
+                      writingSubTab === 'config'
+                        ? 'bg-[#5D7B6F] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Cấu hình
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWritingSubTab('workspace')}
+                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold sm:text-xs transition-all flex items-center justify-center gap-1 text-center whitespace-nowrap cursor-pointer ${
+                      writingSubTab === 'workspace'
+                        ? 'bg-[#5D7B6F] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>Bài làm</span>
+                    {currentResult && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWritingSubTab('eval')}
+                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold sm:text-xs transition-all flex items-center justify-center gap-1 text-center whitespace-nowrap cursor-pointer ${
+                      writingSubTab === 'eval'
+                        ? 'bg-[#5D7B6F] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>Đánh giá AI</span>
+                    {writingEvalResult && (
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full shrink-0">
+                        {writingEvalResult.score}
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={savingFlashcard}
-                      onClick={handleSaveToFlashcard}
-                      className="text-xs font-bold text-[#5D7B6F] border-emerald-300 hover:bg-emerald-100/50 rounded-xl"
-                    >
-                      {savingFlashcard ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                      ) : savedSuccess ? (
-                        <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600 mr-1" />
-                      ) : (
-                        <Bookmark className="w-3.5 h-3.5 mr-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'writing' ? (
+              <>
+                {writingSubTab === 'config' && (
+                  <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white shrink-0">
+                    <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-4 px-6 shrink-0">
+                      <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        Luyện Viết & AI Đánh giá bài làm
+                      </CardTitle>
+                      <CardDescription className="text-xs">Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-5 flex flex-col justify-between space-y-4">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {/* Language Selector */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Ngôn ngữ AI sinh ra
+                            </label>
+                            <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn ngôn ngữ..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                {LANGUAGES.map((lang) => (
+                                  <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {lang.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Số lượng từ cho Luyện viết */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Số lượng từ (Tối đa 500 từ)
+                            </label>
+                            <Input
+                              type="number"
+                              min={20}
+                              max={500}
+                              value={writingWordCount}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                if (val === '') {
+                                  setWritingWordCount('')
+                                  return
+                                }
+                                const num = Number(val)
+                                if (!isNaN(num)) {
+                                  setWritingWordCount(num)
+                                }
+                              }}
+                              onBlur={() => {
+                                const num = Number(writingWordCount)
+                                if (!writingWordCount || isNaN(num) || num < 20) {
+                                  setWritingWordCount(20)
+                                } else if (num > 500) {
+                                  setWritingWordCount(500)
+                                }
+                              }}
+                              className="border-slate-200 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-white"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Trình độ Khung Đánh giá
+                            </label>
+                            <Select value={cefrLevel} onValueChange={setCefrLevel}>
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn trình độ..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                {activeLevelOptions.map((lvl) => (
+                                  <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {lvl.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* English Tense Selector */}
+                          {targetLanguage === 'English' && (
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                                Tùy chọn Thì Tiếng Anh (English Tense)
+                              </label>
+                              <Select value={englishTense} onValueChange={setEnglishTense}>
+                                <SelectTrigger className="w-full h-10 rounded-xl border-2 border-emerald-300/80 font-bold text-xs bg-emerald-50/40 text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                  <SelectValue placeholder="Tất cả thì (Tự động)" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-emerald-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                  {ENGLISH_TENSES.map((t) => (
+                                    <SelectItem key={t.code || 'all'} value={t.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                      {t.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Chủ đề bài học
+                            </label>
+                            <Select
+                              value={selectedTopicSlug}
+                              onValueChange={(val) => {
+                                setSelectedTopicSlug(val)
+                              }}
+                            >
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn chủ đề..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
+                                {COMMON_TOPICS.map((t) => (
+                                  <SelectItem
+                                    key={t.code}
+                                    value={t.code}
+                                    className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]"
+                                  >
+                                    {t.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {selectedTopicSlug === 'custom' && (
+                            <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                              <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                                Nhập chủ đề tùy chỉnh của bạn
+                              </label>
+                              <Input
+                                value={customTopicInput}
+                                onChange={(e) => setCustomTopicInput(e.target.value)}
+                                placeholder="Ví dụ: Công nghệ AI, Bảo vệ môi trường, Du lịch Nhật Bản..."
+                                className="border-emerald-300 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-emerald-50/20"
+                              />
+                            </div>
+                          )}
+
+                          <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Thể loại văn bản & Cách viết
+                            </label>
+                            <Select value={textGenre} onValueChange={setTextGenre}>
+                              <SelectTrigger className="w-full h-10 rounded-xl border-2 border-slate-200/90 font-bold text-xs bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn thể loại văn bản..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
+                                {TEXT_GENRES.map((g) => (
+                                  <SelectItem key={g.code} value={g.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {g.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                              Bối cảnh / Tình huống cụ thể (Tùy chọn bổ sung)
+                            </label>
+                            <Input
+                              value={situationalContext}
+                              onChange={(e) => setSituationalContext(e.target.value)}
+                              placeholder="VD: Khi bị quá cước hành lý tại sân bay, Thư xin nghỉ phép 2 ngày..."
+                              className="border-slate-200 focus:border-[#5D7B6F] rounded-xl h-10 font-bold text-xs bg-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex justify-end">
+                        <Button
+                          onClick={handleGenerate}
+                          disabled={loading}
+                          className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl text-xs font-bold h-10"
+                        >
+                          {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                          Yêu cầu AI sinh bài học
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {writingSubTab === 'workspace' && renderWritingWorkspace(currentResult?.content)}
+                {writingSubTab === 'eval' && renderWritingEvalResult()}
+              </>
+            ) : (
+              viewMode === 'config' ? (
+                <Card className="border-gray-200 shadow-sm rounded-3xl overflow-hidden bg-white">
+                  <CardHeader className="bg-emerald-50/40 border-b border-gray-100 p-5 shrink-0">
+                    <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      {activeTab === 'vocabulary' && 'Tạo thẻ Từ vựng & Ví dụ câu'}
+                      {activeTab === 'grammar' && 'Phân tích & Giải thích Ngữ pháp'}
+                      {activeTab === 'reading' && 'Đọc hiểu & Biên soạn Ngữ cảnh'}
+                      {activeTab === 'translation' && 'Dịch thuật & Phân tích cấu trúc câu'}
+                    </CardTitle>
+                    <CardDescription>Nhập thông tin yêu cầu để AI tự động biên soạn học liệu văn bản chuẩn hóa</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 flex flex-col justify-between space-y-5">
+                    <div className="space-y-5">
+                      {/* Reading Sub-modes selector */}
+                      {activeTab === 'reading' && (
+                        <div className="space-y-1 mb-2">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            Chọn dạng bài đọc hiểu
+                          </label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                              { id: 'sentence', label: 'Mẫu câu ứng dụng' },
+                              { id: 'paragraph', label: 'Bài đọc theo chủ đề' },
+                              { id: 'dialogue', label: 'Hội thoại mẫu' },
+                              { id: 'story', label: 'Truyện ngắn học tập' },
+                            ].map((mode) => {
+                              const isSelected = readingSubMode === mode.id
+                              return (
+                                <button
+                                  key={mode.id}
+                                  type="button"
+                                  onClick={() => setReadingSubMode(mode.id as ReadingSubMode)}
+                                  className={`flex items-center justify-center px-2 py-1.5 rounded-lg border text-[11px] font-bold transition-all text-center ${
+                                    isSelected
+                                      ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-xs'
+                                      : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'
+                                  }`}
+                                >
+                                  <span>{mode.label}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
                       )}
-                      {savedSuccess ? 'Đã lưu SRS' : 'Lưu vào Flashcard SRS'}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  <div className="animate-in fade-in duration-200">
-                    {activeTab === 'translation' && renderTranslationResult(currentResult.content)}
-                    {activeTab === 'vocabulary' && renderVocabularyResult(currentResult.content)}
-                    {activeTab === 'grammar' && renderGrammarResult(currentResult.content)}
-                    {activeTab === 'sentence' && renderSentenceResult(currentResult.content)}
-                    {activeTab === 'paragraph' && renderParagraphResult(currentResult.content)}
-                    {activeTab === 'dialogue' && renderDialogueResult(currentResult.content)}
-                    {activeTab === 'story' && renderStoryResult(currentResult.content)}
-                    {activeTab === 'flashcard' && renderFlashcardResult(currentResult.content)}
-                    {activeTab === 'quiz' && renderQuizResult(currentResult.content)}
-                    {activeTab === 'writing' && renderWritingResult(currentResult.content)}
-                  </div>
-                </CardContent>
-              </Card>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Language Selector */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                            {activeTab === 'translation' ? 'Ngôn ngữ Đích' : 'Ngôn ngữ Mục tiêu'}
+                          </label>
+                          <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                            <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                              <SelectValue placeholder="Chọn ngôn ngữ..." />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                              {LANGUAGES.map((lang) => (
+                                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                  {lang.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {activeTab === 'translation' ? (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Ngôn ngữ Nguồn</label>
+                            <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
+                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn ngôn ngữ nguồn..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                {LANGUAGES.map((lang) => (
+                                  <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {lang.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                                Ngôn ngữ Giải thích / Dịch nghĩa
+                              </label>
+                              <Select value={explanationLanguage} onValueChange={setExplanationLanguage}>
+                                <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                  <SelectValue placeholder="Chọn ngôn ngữ giải thích..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                  {LANGUAGES.map((lang) => (
+                                    <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                      {lang.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                                Trình độ Khung Đánh giá
+                              </label>
+                              <Select value={cefrLevel} onValueChange={setCefrLevel}>
+                                <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                  <SelectValue placeholder="Chọn trình độ..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                  {activeLevelOptions.map((lvl) => (
+                                    <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                      {lvl.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+
+                        {/* English Tense Selector */}
+                        {targetLanguage === 'English' && activeTab !== 'translation' && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                              Tùy chọn Thì Tiếng Anh (English Tense)
+                            </label>
+                            <Select value={englishTense} onValueChange={setEnglishTense}>
+                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-emerald-300/80 font-bold text-sm bg-emerald-50/40 text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Tất cả thì (Tự động)" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-emerald-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                                {ENGLISH_TENSES.map((t) => (
+                                  <SelectItem key={t.code || 'all'} value={t.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {t.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {activeTab === 'grammar' && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Chủ đề Ngữ pháp</label>
+                            <Input
+                              value={grammarTopic}
+                              onChange={(e) => setGrammarTopic(e.target.value)}
+                              placeholder="Ví dụ: Passive Voice, Subjunctive..."
+                              className="border-gray-200 focus:border-[#5D7B6F] rounded-xl font-medium"
+                            />
+                          </div>
+                        )}
+
+                        {activeTab === 'translation' && (
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Văn bản dịch thuật</label>
+                            <textarea
+                              value={translationText}
+                              onChange={(e) => setTranslationText(e.target.value)}
+                              placeholder="Nhập hoặc dán đoạn văn bản cần dịch..."
+                              rows={4}
+                              className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] rounded-2xl p-4 text-sm font-medium bg-white outline-none resize-none shadow-xs"
+                            />
+                          </div>
+                        )}
+
+                        {/* Domain Topic Selector — Available for ALL tabs EXCEPT translation */}
+                        {activeTab !== 'translation' && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                              Chủ đề bài học
+                            </label>
+                            <Select
+                              value={selectedTopicSlug}
+                              onValueChange={(val) => {
+                                setSelectedTopicSlug(val)
+                              }}
+                            >
+                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn chủ đề..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
+                                {COMMON_TOPICS.map((t) => (
+                                  <SelectItem
+                                    key={t.code}
+                                    value={t.code}
+                                    className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]"
+                                  >
+                                    {t.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {activeTab !== 'translation' && selectedTopicSlug === 'custom' && (
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                              Nhập chủ đề tùy chỉnh của bạn
+                            </label>
+                            <Input
+                              value={customTopicInput}
+                              onChange={(e) => setCustomTopicInput(e.target.value)}
+                              placeholder="Ví dụ: Công nghệ AI, Bảo vệ môi trường, Du lịch Nhật Bản..."
+                              className="border-emerald-300 focus:border-[#5D7B6F] rounded-2xl h-12 font-bold text-sm bg-emerald-50/20"
+                            />
+                          </div>
+                        )}
+
+                        {/* Text Genre selector */}
+                        {activeTab === 'reading' && (readingSubMode === 'paragraph' || readingSubMode === 'dialogue' || readingSubMode === 'story') && (
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                              Thể loại văn bản & Cách viết
+                            </label>
+                            <Select value={textGenre} onValueChange={setTextGenre}>
+                              <SelectTrigger className="w-full h-12 rounded-2xl border-2 border-slate-200/90 font-bold text-sm bg-white text-slate-800 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-xs">
+                                <SelectValue placeholder="Chọn thể loại văn bản..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50 max-h-72">
+                                {TEXT_GENRES.map((g) => (
+                                  <SelectItem key={g.code} value={g.code} className="rounded-xl font-bold py-2.5 cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                                    {g.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {activeTab === 'reading' && (readingSubMode === 'paragraph' || readingSubMode === 'dialogue' || readingSubMode === 'story') && (
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                              Bối cảnh / Tình huống cụ thể (Tùy chọn bổ sung)
+                            </label>
+                            <Input
+                              value={situationalContext}
+                              onChange={(e) => setSituationalContext(e.target.value)}
+                              placeholder="VD: Khi bị quá cước hành lý tại sân bay, Thư xin nghỉ phép 2 ngày..."
+                              className="border-slate-200 focus:border-[#5D7B6F] rounded-2xl h-12 font-bold text-sm bg-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 pt-4 border-t border-slate-100 flex justify-end">
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={loading}
+                        className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl text-sm font-bold h-11"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                        Yêu cầu AI sinh bài học
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                /* Results Display for other tabs */
+                currentResult && (
+                  <Card className="border-emerald-200 bg-emerald-50/10 shadow-md rounded-3xl overflow-hidden h-full flex flex-col animate-in fade-in duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-emerald-100 bg-emerald-100/20 px-6 py-4 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-[#5D7B6F]" />
+                        <CardTitle className="text-base font-bold text-gray-800">Kết quả phản hồi từ AI</CardTitle>
+                        {currentResult.reused && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            <Zap className="w-3 h-3 fill-current" /> Tri thức tái sử dụng
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBackToConfig}
+                          className="text-xs font-bold text-slate-600 border-slate-300 hover:bg-slate-100 rounded-xl"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Cấu hình mới
+                        </Button>
+                        {activeTab !== 'vocabulary' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={savingFlashcard}
+                            onClick={handleSaveToFlashcard}
+                            className="text-xs font-bold text-[#5D7B6F] border-emerald-300 hover:bg-emerald-100/50 rounded-xl"
+                          >
+                            {savingFlashcard ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                            ) : savedSuccess ? (
+                              <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600 mr-1" />
+                            ) : (
+                              <Bookmark className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            {savedSuccess ? 'Đã lưu SRS' : 'Lưu vào Flashcard SRS'}
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+                      <div className="animate-in fade-in duration-200">
+                        {activeTab === 'translation' && renderTranslationResult(currentResult.content)}
+                        {activeTab === 'vocabulary' && renderVocabularyResult(currentResult.content)}
+                        {activeTab === 'grammar' && renderGrammarResult(currentResult.content)}
+                        {activeTab === 'reading' && (
+                          <>
+                            {readingSubMode === 'sentence' && renderSentenceResult(currentResult.content)}
+                            {readingSubMode === 'paragraph' && renderParagraphResult(currentResult.content)}
+                            {readingSubMode === 'dialogue' && renderDialogueResult(currentResult.content)}
+                            {readingSubMode === 'story' && renderStoryResult(currentResult.content)}
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              )
             )}
           </div>
         </div>
       </div>
-    </div>
     </DevOnlyGuard>
   )
 }

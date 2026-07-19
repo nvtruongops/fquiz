@@ -66,36 +66,36 @@ const corsAllowedOrigins = new Set(
     .filter((item): item is string => Boolean(item))
 )
 
+let cachedSecrets: Uint8Array[] | null = null
+
+function getSecrets(): Uint8Array[] {
+  if (cachedSecrets) return cachedSecrets
+  const secrets: Uint8Array[] = []
+  const encoder = new TextEncoder()
+  if (process.env.JWT_SECRET) secrets.push(encoder.encode(process.env.JWT_SECRET))
+  if (process.env.JWT_SECRET_PREV) secrets.push(encoder.encode(process.env.JWT_SECRET_PREV))
+  cachedSecrets = secrets
+  return secrets
+}
+
 function applyCors(request: NextRequest, response: NextResponse) {
   const { pathname } = request.nextUrl
   if (!pathname.startsWith('/api/')) return response
 
   const origin = request.headers.get('origin')
-  if (origin) {
-    const allowedOrigin = Array.from(corsAllowedOrigins).find(o => o === origin)
-    if (allowedOrigin) {
-      response.headers.set('Access-Control-Allow-Origin', allowedOrigin)
-      response.headers.append('Vary', 'Origin')
-      response.headers.set('Access-Control-Allow-Credentials', 'true')
-      response.headers.set('Access-Control-Allow-Methods', CORS_METHODS)
-      response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS)
-    }
+  if (origin && corsAllowedOrigins.has(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.append('Vary', 'Origin')
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+    response.headers.set('Access-Control-Allow-Methods', CORS_METHODS)
+    response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS)
   }
 
   return response
 }
 
-function getSecrets(): Uint8Array[] {
-  const secrets: Uint8Array[] = []
-  if (process.env.JWT_SECRET) secrets.push(new TextEncoder().encode(process.env.JWT_SECRET))
-  if (process.env.JWT_SECRET_PREV) secrets.push(new TextEncoder().encode(process.env.JWT_SECRET_PREV))
-  return secrets
-}
-
-function generateId(byteLength = 16) {
-  const array = new Uint8Array(byteLength)
-  crypto.getRandomValues(array)
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+function generateId() {
+  return crypto.randomUUID()
 }
 
 function createUnauthorizedResponse(requestId: string) {
@@ -364,5 +364,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|eot)$).*)'],
 }

@@ -7,6 +7,9 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'
 import { FlashcardReviewButton } from '@/components/quiz/shared/FlashcardReviewButton'
+import { ScrollToTopButton } from '@/components/shared/ui/ScrollToTopButton'
+import { InteractiveResultViewer } from '@/components/quiz/detail/InteractiveResultViewer'
+import { FlashcardResultView } from '@/components/quiz/detail/FlashcardResultView'
 
 interface ResultQuestion {
   _id: string
@@ -69,78 +72,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   return <StandardResultView quizId={quizId} sessionId={sessionId} data={data} />
 }
 
-function FlashcardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
-  const { flashcard_stats, completed_at, is_temp } = data
-  if (!flashcard_stats) return null
-  const percentage = Math.round((flashcard_stats.cards_known / flashcard_stats.total_cards) * 100)
-  const completedDate = new Date(completed_at).toLocaleString('vi-VN', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
 
-  return (
-    <div className="min-h-screen bg-[#F9F9F7] py-10 px-4">
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-        <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.05)] border border-white/90">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-bl-full blur-2xl" />
-          <div className="relative p-8 md:p-10 space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="text-xs font-black text-purple-600 uppercase tracking-[0.2em]">Flashcard Results</p>
-                <p className="text-xs font-bold text-gray-400 mt-1">{completedDate}</p>
-              </div>
-              <Badge className="bg-purple-600 text-white border-none px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-full shadow-md shadow-purple-500/20">
-                Flashcard Mode
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
-                <p className="text-3xl font-black text-slate-800">{flashcard_stats.total_cards}</p>
-                <p className="text-[10px] text-slate-400 mt-1 font-black uppercase tracking-wider">Tổng thẻ</p>
-              </div>
-              <div className="text-center p-5 bg-emerald-50/80 rounded-2xl border border-emerald-100">
-                <p className="text-3xl font-black text-emerald-600">{flashcard_stats.cards_known}</p>
-                <p className="text-[10px] text-emerald-600/80 mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
-              </div>
-              <div className="text-center p-5 bg-red-50/80 rounded-2xl border border-red-100">
-                <p className="text-3xl font-black text-red-500">{flashcard_stats.cards_unknown}</p>
-                <p className="text-[10px] text-red-500/80 mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-gray-500 uppercase tracking-wider font-black">Tỷ lệ nhớ bài</span>
-                <span className="text-purple-600 font-black text-lg">{percentage}%</span>
-              </div>
-              <Progress value={percentage} className="h-3.5 rounded-full bg-purple-100" />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          {is_temp ? (
-            <ExitMixQuizButton sessionId={sessionId} />
-          ) : (
-            <>
-              <Link href={`/quiz/${quizId}/session/${sessionId}/flashcard`} className="flex-1">
-                <Button className="w-full h-12 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-wider text-xs shadow-lg shadow-purple-600/20 active:scale-[0.98] transition-all">
-                  <RotateCcw className="mr-2 h-4 w-4" /> Luyện tập lại
-                </Button>
-              </Link>
-              <Link href="/dashboard" className="flex-1">
-                <Button variant="outline" className="w-full h-12 rounded-2xl border-2 font-black uppercase tracking-wider text-xs hover:bg-slate-50 active:scale-[0.98] transition-all">
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
   const { score, totalQuestions, mode, questions, completed_at, is_temp } = data
@@ -156,96 +88,61 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
   const gradeLabel = percentage >= 80 ? 'Xuất sắc!' : percentage >= 50 ? 'Khá tốt!' : 'Cần cố gắng thêm!'
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] py-10 px-4">
-      <div className="w-full max-w-7xl mx-auto space-y-8">
-        <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.05)] border border-white/90">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative p-8 md:p-10 space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-[0.2em]">{gradeLabel}</p>
-                <p className="text-xs font-bold text-gray-400 mt-1">{completedDate}</p>
+    <div className="w-full max-w-full h-full flex flex-col gap-2 overflow-hidden px-2 sm:px-0">
+      {/* Top Header Card Summary Toolbar */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-xl shadow-xs border border-white/90 p-2.5 sm:px-4 sm:py-3 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3.5 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <div className="flex items-baseline gap-0.5 sm:gap-1">
+                <span className={`text-xl sm:text-3xl font-extrabold ${gradeColor} tracking-tight`}>{scoreOnTenDisplay}</span>
+                <span className="text-[10px] sm:text-xs font-bold text-gray-400">/10</span>
               </div>
-              <Badge className="bg-[#5D7B6F] text-white border-none px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-full shadow-md shadow-[#5D7B6F]/20">
-                {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
-              </Badge>
-            </div>
-
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-6xl font-black ${gradeColor} tracking-tight`}>{scoreOnTenDisplay}</span>
-                  <span className="text-2xl font-black text-gray-400">/10</span>
-                </div>
-                <p className="text-xs font-black text-gray-400 uppercase tracking-wider mt-2">
-                  {score}/{totalQuestions} câu đúng · Tỷ lệ: {percentage}%
+              <div className="h-5 sm:h-6 w-px bg-slate-200" />
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs font-extrabold text-[#5D7B6F] uppercase tracking-wider">{gradeLabel}</p>
+                <p className="text-[9.5px] sm:text-[11px] font-medium text-gray-500 truncate">
+                  {score}/{totalQuestions} câu đúng · {percentage}%
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Progress
-                value={percentage}
-                className="h-3.5 rounded-full bg-slate-100"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 pt-2">
-              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-100 text-xs font-black text-amber-700">
-                <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
-                <span>{score} đúng</span>
-              </div>
-              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-red-50/80 border border-red-100 text-xs font-black text-red-600">
-                <Target className="h-5 w-5 text-red-400 shrink-0" />
-                <span>{totalQuestions - score} sai</span>
-              </div>
-              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-100 text-xs font-black text-blue-600">
-                <Clock className="h-5 w-5 text-blue-400 shrink-0" />
-                <span>{totalQuestions} câu</span>
-              </div>
-            </div>
+            <Badge className="sm:hidden shrink-0 bg-[#5D7B6F] text-white border-none px-2 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wider rounded-full shadow-xs">
+              {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
+            </Badge>
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <h2 className="text-base font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-[#5D7B6F]" />
-            Chi tiết câu trả lời
-          </h2>
-
-          {questions.map((q, idx) => (
-            <ResultQuestionItem key={q._id} question={q} index={idx} />
-          ))}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-8">
-          <div className="flex flex-wrap gap-3 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+            <Badge className="hidden sm:inline-flex bg-[#5D7B6F] text-white border-none px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-xs">
+              {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
+            </Badge>
             {is_temp ? (
               <ExitMixQuizButton sessionId={sessionId} />
             ) : (
-              <>
-                <Link href={`/quiz/${quizId}`}>
-                  <Button className="h-11 rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-semibold">
-                    <RotateCcw className="mr-2 h-4 w-4" /> Làm lại
+              <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
+                  <Button className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] cursor-pointer justify-center">
+                    <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm lại
                   </Button>
                 </Link>
-                <Link href="/dashboard">
-                  <Button variant="outline" className="h-11 rounded-xl font-semibold">
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                <Link href="/dashboard" className="w-full sm:w-auto">
+                  <Button variant="outline" className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center">
+                    <LayoutDashboard className="mr-1 h-3 w-3 shrink-0" /> Dashboard
                   </Button>
                 </Link>
-              </>
+                <Link href="/history" className="w-full sm:w-auto">
+                  <Button variant="outline" className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center">
+                    <BookOpen className="mr-1 h-3 w-3 shrink-0" /> Lịch sử
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
-          {!is_temp && (
-            <Link href="/history">
-              <Button variant="outline" className="h-11 rounded-xl font-semibold w-full sm:w-auto">
-                <BookOpen className="mr-2 h-4 w-4" /> Lịch sử
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
+
+      {/* Main Content Area: Interactive Question Matrix & Detail Viewer */}
+      <InteractiveResultViewer questions={questions} />
     </div>
   )
 }

@@ -200,11 +200,11 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     if (categoryId) query.category_id = new Types.ObjectId(categoryId)
 
     const quizzes = await Quiz.find(query)
-      .select('title course_code questionCount questions status is_public created_at category_id original_quiz_id is_saved_from_explore')
+      .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore')
       .populate('category_id', 'name')
       .populate({
         path: 'original_quiz_id',
-        select: 'questionCount questions'
+        select: 'questionCount'
       })
       .sort({ created_at: -1 })
       .lean()

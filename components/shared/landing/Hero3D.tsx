@@ -116,9 +116,8 @@ export default function Hero3D() {
         </motion.div>
       </motion.div>
 
-      {/* Decorative Blur Elements */}
-      <div className="absolute top-[-15%] right-[-10%] w-[50%] h-[50%] bg-[#A4C3A2]/20 blur-[150px] rounded-full pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] bg-[#5D7B6F]/15 blur-[150px] rounded-full pointer-events-none" />
+      {/* Decorative Blur Element */}
+      <div className="absolute inset-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#A4C3A2]/20 via-[#5D7B6F]/15 to-transparent blur-3xl opacity-40 pointer-events-none transform-gpu -z-10" />
     </section>
   );
 }

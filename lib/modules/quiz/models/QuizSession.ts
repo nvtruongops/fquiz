@@ -86,6 +86,8 @@ QuizSessionSchema.index(
 QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
 // Compound index for mix quiz concurrent check
 QuizSessionSchema.index({ student_id: 1, is_temp: 1, expires_at: 1 })
+// Compound index for dashboard aggregations
+QuizSessionSchema.index({ student_id: 1, status: 1, completed_at: -1 })
 
 // Clear model if already exists to ensure schema updates (like 'preparing' status) are picked up in dev
 if (process.env.NODE_ENV === 'development' && mongoose.models.QuizSession) {

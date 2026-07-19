@@ -2,6 +2,8 @@
 
 Single Next.js 16 App Router project (not monorepo). MongoDB/Mongoose (Atlas), React 18, Tailwind CSS 3, shadcn/ui.
 
+> **Key docs**: [`DESIGN.md`](./DESIGN.md) (full technical design), module READMEs at [`lib/modules/*/README.md`](./lib/modules/), [`lib/core/README.md`](./lib/core/README.md).
+
 ## Commands
 
 | Command | What |
@@ -22,10 +24,13 @@ Seed order: `seed:language` → `seed:topic`. `seed:learning` runs both.
 - **Middleware**: `proxy.ts` (Node.js runtime). Handles: mobile redirect, CORS, maintenance mode, CSRF double-submit cookie, JWT auth, role routing (student vs admin). Matches all paths.
 - **Auth**: JWT with rotation (`JWT_SECRET` + `JWT_SECRET_PREV`). Cookie + Bearer token. Token version bumps on ban/password change.
 - **CSRF**: Double-submit cookie. `csrf-token` cookie (httpOnly:false, sameSite:strict). Mutations must include `x-csrf-token` header matching the cookie. Exempt: public paths + auth endpoints + mail job.
-- **API routes**: `app/api/`. Admin routes at `/api/admin/*`. Public API v1 at `/api/v1/public/*`, `/api/v1/explore/*`.
+- **API routes**: `app/api/`. Admin routes at `/api/admin/*`. Public API v1 at `/api/v1/public/*`, `/api/v1/explore/*`. Learning API at `/api/v1/learning/*`. AI API at `/api/v1/ai/*`. Community at `/api/community/*`.
 - **DI container**: `lib/core/di/` — lightweight (no decorators). Registers `IEventBus`, `ICache`, `ISearchProvider`, `IAIProvider`. Learning module uses DI for repos/services.
+- **Event bus**: `lib/core/events/` — `IEventBus` (domain/integration) + `InMemoryEventBus`. Legacy `EventBus` (simple on/emit) still used by AIContentService, VocabularyService.
+- **Cache**: `lib/core/cache/` — `InMemoryCache` (Map-based, TTL + tag invalidation). Used for lesson content, course structure caching.
 - **State**: TanStack Query v5 (server state) + Zustand v5 (client state, `quiz-session` persisted to localStorage).
 - **Quiz engine**: `lib/modules/quiz/quiz-engine.ts`. Server-side answer processing only. Never trusts client state. Race condition prevention uses `findOneAndUpdate` with `{ status: { $ne: 'completed' } }`.
+- **Learning engine**: `lib/modules/learning/` — 15 models (IBaseEntity), 10 repositories, 5 services, FSRS review engine, wired via DI. See [`lib/modules/learning/README.md`](./lib/modules/learning/README.md).
 
 ## Module Architecture
 

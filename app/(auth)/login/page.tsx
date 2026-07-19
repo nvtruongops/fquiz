@@ -143,10 +143,11 @@ function LoginForm() {
             <AnimatePresence>
               {errors.identifier && (
                 <motion.p 
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginTop: 6 }}
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  className="text-[#dc2626] text-xs font-bold ml-1"
+                  initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, maxHeight: 40, marginTop: 6 }}
+                  exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-[#dc2626] text-xs font-bold ml-1 overflow-hidden"
                 >
                   {errors.identifier}
                 </motion.p>
@@ -191,10 +192,11 @@ function LoginForm() {
             <AnimatePresence>
               {errors.password && (
                 <motion.p 
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginTop: 6 }}
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  className="text-[#dc2626] text-xs font-bold ml-1"
+                  initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, maxHeight: 40, marginTop: 6 }}
+                  exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-[#dc2626] text-xs font-bold ml-1 overflow-hidden"
                 >
                   {errors.password}
                 </motion.p>

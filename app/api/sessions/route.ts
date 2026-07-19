@@ -147,6 +147,36 @@ export const POST = withAuth(async (req, { payload }) => {
     const modeGroup = ['flashcard'].includes(mode) ? 'learning' : 'assessment'
     const groupModes = modeGroup === 'learning' ? ['flashcard'] : ['immediate', 'review']
 
+    if (mode === 'flashcard' && action !== 'restart' && action !== 'continue') {
+      const completedFlashcard = await QuizSession.findOne({
+        student_id: studentId,
+        quiz_id: effective.id,
+        mode: 'flashcard',
+        status: 'completed',
+        'flashcard_stats.cards_unknown': { $gt: 0 },
+      }).sort({ completed_at: -1 }).lean() as any
+
+      if (completedFlashcard) {
+        const stats = completedFlashcard.flashcard_stats || {}
+        return NextResponse.json(
+          {
+            error: `Bạn vẫn còn ${stats.cards_unknown}/${stats.total_cards || effective.questions.length} câu chưa nhớ trong bài Học Lật Thẻ này.`,
+            code: 'COMPLETED_FLASHCARD_HAS_UNKNOWN',
+            activeSession: {
+              sessionId: completedFlashcard._id.toString(),
+              mode: 'flashcard',
+              cardsKnown: stats.cards_known || 0,
+              cardsUnknown: stats.cards_unknown || 0,
+              totalCards: stats.total_cards || effective.questions.length,
+              answeredCount: stats.cards_known || 0,
+              totalQuestions: stats.total_cards || effective.questions.length,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     const activeSessions = await QuizSession.find({ student_id: studentId, quiz_id: effective.id, status: 'active', $or: [{ expires_at: { $gt: new Date() } }, { expires_at: { $exists: false } }] }).sort({ started_at: -1 }).lean() as any[]
     const groupSession = activeSessions.find(s => groupModes.includes(s.mode))
 

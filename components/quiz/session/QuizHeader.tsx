@@ -1,8 +1,9 @@
 'use client'
 
 import React from 'react'
-import { Sparkles, BookOpen, Hash, Layers } from 'lucide-react'
+import { Sparkles, BookOpen, Hash, Layers, Lightbulb } from 'lucide-react'
 import { Switch } from '@/components/shared/ui/switch'
+import { cn } from '@/lib/core/utils/cn'
 
 interface QuizHeaderProps {
   categoryName: string
@@ -12,6 +13,8 @@ interface QuizHeaderProps {
   answeredCount: number
   enableAnimation?: boolean
   onToggleAnimation?: (enabled: boolean) => void
+  isExplanationOpen?: boolean
+  onToggleExplanation?: () => void
   children?: React.ReactNode
 }
 
@@ -23,6 +26,8 @@ const QuizHeader = React.memo(function QuizHeader({
   answeredCount,
   enableAnimation = true,
   onToggleAnimation,
+  isExplanationOpen = false,
+  onToggleExplanation,
   children
 }: Readonly<QuizHeaderProps>) {
   const safeTotal = totalQuestions > 0 ? totalQuestions : 1
@@ -42,6 +47,16 @@ const QuizHeader = React.memo(function QuizHeader({
                 There are {totalQuestions || 0} questions, and your progress of answering is {progressPercent}% ({answeredCount}/{totalQuestions || 0}) - current question: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}
               </p>
               <div className="flex items-center gap-3 shrink-0">
+                {onToggleExplanation && (
+                  <button
+                    type="button"
+                    onClick={onToggleExplanation}
+                    className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-900 border border-amber-400 font-bold text-xs"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    {isExplanationOpen ? 'Đóng giải thích' : 'Mở giải thích'}
+                  </button>
+                )}
                 {onToggleAnimation && (
                   <div className="flex items-center gap-1.5 bg-white/70 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-sm" title="Bật/Tắt hiệu ứng giao diện">
                     <Sparkles className="w-3.5 h-3.5 text-slate-400" />
@@ -106,6 +121,22 @@ const QuizHeader = React.memo(function QuizHeader({
 
         {/* Right: Controls & Timer */}
         <div className="flex items-center gap-3 shrink-0 justify-end">
+          {onToggleExplanation && (
+            <button
+              type="button"
+              onClick={onToggleExplanation}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95",
+                isExplanationOpen
+                  ? "bg-amber-500 text-white shadow-amber-500/20"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20"
+              )}
+              title={isExplanationOpen ? "Thu gọn giải thích" : "Xem gợi ý & giải thích"}
+            >
+              <Lightbulb className={cn("w-3.5 h-3.5", isExplanationOpen && "fill-current")} />
+              <span className="hidden sm:inline">{isExplanationOpen ? "Thu gọn giải thích" : "Gợi ý & Giải thích"}</span>
+            </button>
+          )}
           {onToggleAnimation && (
             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full shadow-xs" title="Bật/Tắt hiệu ứng giao diện">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />

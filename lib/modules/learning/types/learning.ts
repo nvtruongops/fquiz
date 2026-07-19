@@ -22,6 +22,7 @@ export interface ITopic extends IBaseEntity {
   icon?: string
   parentTopicId?: Types.ObjectId
   path: string                    // 'travel/airport/check-in' — materialized path for fast search
+  tags?: string[]                 // Keywords / context tags for AI generation
 }
 
 // ============================================================

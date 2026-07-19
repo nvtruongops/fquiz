@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { Category } from '@/lib/modules/quiz/models/Category'
+import { Category, PUBLIC_CATEGORY_MATCH } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
@@ -26,10 +26,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get public categories that are approved
-    const categories = await Category.find({ 
-      is_public: true,
-      status: 'approved'
-    })
+    const categories = await Category.find(PUBLIC_CATEGORY_MATCH)
       .select('name')
       .sort({ name: 1 })
       .lean()

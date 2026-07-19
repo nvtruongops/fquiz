@@ -31,26 +31,10 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         </button>
       </motion.div>
 
-      {/* Animated Aurora Background */}
+      {/* Background Aurora Mesh */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1], 
-            opacity: [0.3, 0.5, 0.3],
-            rotate: [0, 90, 0] 
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-gradient-to-br from-[#5D7B6F]/20 to-transparent blur-[140px] rounded-full mix-blend-multiply" 
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.1, 1], 
-            opacity: [0.2, 0.4, 0.2],
-            rotate: [0, -90, 0] 
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[60%] bg-gradient-to-tl from-[#A4C3A2]/30 to-transparent blur-[120px] rounded-full mix-blend-multiply" 
-        />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-gradient-to-br from-[#5D7B6F]/25 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[60%] bg-gradient-to-tl from-[#A4C3A2]/30 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full">

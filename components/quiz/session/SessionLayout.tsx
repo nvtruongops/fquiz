@@ -6,6 +6,8 @@ import QuizSidebar from '@/components/quiz/session/QuizSidebar'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { SessionData } from '@/lib/modules/quiz/types/session'
 
+import { cn } from '@/lib/core/utils/cn'
+
 interface SessionLayoutProps {
   sessionData: SessionData
   currentQuestionIndex: number
@@ -16,6 +18,7 @@ interface SessionLayoutProps {
   enableAnimation?: boolean
   onToggleAnimation?: (enabled: boolean) => void
   children: React.ReactNode
+  explanationContent?: React.ReactNode
   onSelectOption: (idx: number) => void
   onNavigate: (idx: number) => void
   onSubmit: () => void
@@ -32,6 +35,7 @@ export const SessionLayout = React.memo(function SessionLayout({
   enableAnimation = true,
   onToggleAnimation,
   children,
+  explanationContent,
   onSelectOption,
   onNavigate,
   onSubmit,
@@ -39,6 +43,9 @@ export const SessionLayout = React.memo(function SessionLayout({
 }: SessionLayoutProps) {
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
+
+  const [isExplanationOpen, setIsExplanationOpen] = React.useState(false)
+  const toggleExplanation = React.useCallback(() => setIsExplanationOpen(prev => !prev), [])
 
   const answeredSet = React.useMemo(() => {
     const set = new Set<number>()
@@ -51,47 +58,86 @@ export const SessionLayout = React.memo(function SessionLayout({
     return set
   }, [session.user_answers, selectedOptions, currentQuestionIndex])
 
+  // Inject explanation toggle props into children (QuestionDisplay & SessionModals)
+  const augmentedChildren = React.Children.map(children, (child) => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, {
+        isExplanationOpen,
+        onToggleExplanation: toggleExplanation,
+      } as any)
+    }
+    return child
+  })
+
+  const augmentedExplanation = React.isValidElement(explanationContent)
+    ? React.cloneElement(explanationContent, {
+        onClose: () => setIsExplanationOpen(false),
+      } as any)
+    : explanationContent
+
   return (
-    <div className={enableAnimation ? "quiz-scroll h-screen overflow-auto bg-slate-100 dark:bg-slate-950 font-sans" : "quiz-scroll h-screen overflow-auto bg-[#ececec] font-sans"}>
-      <div className="flex min-h-full min-w-[820px] flex-col">
-        <QuizHeader
-          categoryName={session.categoryName}
-          courseCode={session.courseCode}
-          totalQuestions={effectiveTotal}
+    <div className={cn(
+      "h-screen max-h-screen overflow-hidden flex flex-col font-sans select-none",
+      enableAnimation ? "bg-slate-100 dark:bg-slate-950" : "bg-[#ececec]"
+    )}>
+      {/* Header */}
+      <QuizHeader
+        categoryName={session.categoryName}
+        courseCode={session.courseCode}
+        totalQuestions={effectiveTotal}
+        currentIndex={currentQuestionIndex}
+        answeredCount={answeredCount}
+        enableAnimation={enableAnimation}
+        onToggleAnimation={onToggleAnimation}
+        isExplanationOpen={isExplanationOpen}
+        onToggleExplanation={toggleExplanation}
+      >
+        <QuizTimer
+          startedAt={session.started_at}
+          pausedAt={session.paused_at}
+          totalPausedDurationMs={session.total_paused_duration_ms}
+          className={enableAnimation ? "text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20" : "text-[#5D7B6F]"}
+        />
+      </QuizHeader>
+
+      {/* 3-Column Vertical Panels Workspace */}
+      <div className="flex flex-1 min-h-0 min-w-0 w-full overflow-hidden">
+        {/* Column 1: Left Quiz Sidebar & Navigator */}
+        <QuizSidebar
+          onSelectOption={onSelectOption}
+          onNavigate={onNavigate}
+          onSubmit={onSubmit}
+          onExit={onExit}
           currentIndex={currentQuestionIndex}
+          totalQuestions={effectiveTotal}
+          selectedOptions={selectedOptions}
+          optionCount={question.options.length}
+          isSubmitted={submitted}
+          isPending={isPending}
           answeredCount={answeredCount}
           enableAnimation={enableAnimation}
-          onToggleAnimation={onToggleAnimation}
-        >
-          <QuizTimer
-            startedAt={session.started_at}
-            pausedAt={session.paused_at}
-            totalPausedDurationMs={session.total_paused_duration_ms}
-            className={enableAnimation ? "text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20" : "text-[#5D7B6F]"}
-          />
-        </QuizHeader>
+          answeredSet={answeredSet}
+        />
 
-        <div className="flex min-h-0 flex-1">
-          <QuizSidebar
-            onSelectOption={onSelectOption}
-            onNavigate={onNavigate}
-            onSubmit={onSubmit}
-            onExit={onExit}
-            currentIndex={currentQuestionIndex}
-            totalQuestions={effectiveTotal}
-            selectedOptions={selectedOptions}
-            optionCount={question.options.length}
-            isSubmitted={submitted}
-            isPending={isPending}
-            answeredCount={answeredCount}
-            enableAnimation={enableAnimation}
-            answeredSet={answeredSet}
-          />
+        {/* Column 2: Center Question & Options Display */}
+        <main className={cn(
+          "flex-1 min-w-0 h-full overflow-y-auto quiz-scroll",
+          enableAnimation ? "bg-slate-50/50 dark:bg-slate-900/50" : "border-l-2 border-r-2 border-[#101010] bg-[#ececec]"
+        )}>
+          {augmentedChildren}
+        </main>
 
-          <main className={enableAnimation ? "min-w-0 flex-1 bg-slate-50/50 dark:bg-slate-900/50" : "min-w-0 flex-1 border-l-2 border-[#101010] bg-[#ececec]"}>
-            {children}
-          </main>
-        </div>
+        {/* Column 3: Right Detailed Explanation Panel (Collapsed by default, opens on toggle) */}
+        {explanationContent && isExplanationOpen && (
+          <aside className={cn(
+            "w-[320px] lg:w-[360px] xl:w-[400px] shrink-0 h-full overflow-y-auto quiz-scroll p-4 sm:p-5 animate-in fade-in slide-in-from-right-4 duration-300",
+            enableAnimation
+              ? "border-l border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md"
+              : "border-l-2 border-[#101010] bg-[#e9e9e9]"
+          )}>
+            {augmentedExplanation}
+          </aside>
+        )}
       </div>
     </div>
   )

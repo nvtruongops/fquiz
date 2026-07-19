@@ -68,36 +68,36 @@ export function QuizActionCard({
   latestSessionId
 }: QuizActionCardProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="lg:sticky lg:top-10 space-y-5">
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-          <div className="mb-6 border-b border-gray-50 pb-5">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#5D7B6F]">Tùy chọn học tập</h3>
-            <p className="mt-2 text-[10px] font-medium text-gray-400 uppercase">Cấu hình phiên làm bài của bạn</p>
+    <div className="flex flex-col gap-4">
+      <div className="lg:sticky lg:top-10 space-y-4">
+        <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+          <div className="mb-3 border-b border-gray-50 pb-2.5">
+            <h3 className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#5D7B6F]">Tùy chọn học tập</h3>
+            <p className="mt-0.5 text-[9px] sm:text-[10px] font-medium text-gray-400 uppercase">Cấu hình phiên làm bài của bạn</p>
           </div>
 
-          <div className="space-y-4 mb-8">
-            <div className="flex items-center gap-3 rounded-xl bg-gray-50/50 p-3 transition-colors hover:bg-gray-50">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm text-[#5D7B6F]">
-                <ShieldCheck className="h-4.5 w-4.5" />
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gray-50/60 p-2 sm:p-2.5 transition-colors hover:bg-gray-50">
+              <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-white shadow-xs text-[#5D7B6F]">
+                <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </div>
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-wider text-gray-900">Auto-Grading</p>
-                <p className="text-[8px] font-medium text-gray-400 uppercase">Chấm điểm tự động 100%</p>
+              <div className="min-w-0">
+                <p className="text-[8px] font-extrabold uppercase tracking-wider text-gray-900 truncate">Auto-Grading</p>
+                <p className="text-[7.5px] font-bold text-gray-400 uppercase truncate">Chấm 100%</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl bg-gray-50/50 p-3 transition-colors hover:bg-gray-50">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm text-amber-500">
-                <Zap className="h-4.5 w-4.5" />
+            <div className="flex items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gray-50/60 p-2 sm:p-2.5 transition-colors hover:bg-gray-50">
+              <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-white shadow-xs text-amber-500">
+                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </div>
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-wider text-gray-900">Instant Feedback</p>
-                <p className="text-[8px] font-medium text-gray-400 uppercase">Nhận kết quả ngay sau mỗi câu</p>
+              <div className="min-w-0">
+                <p className="text-[8px] font-extrabold uppercase tracking-wider text-gray-900 truncate">Instant Feedback</p>
+                <p className="text-[7.5px] font-bold text-gray-400 uppercase truncate">Kết quả ngay</p>
               </div>
             </div>
           </div>
 
-          <Dialog open={modeSelectOpen} onOpenChange={setModeSelectOpen}>
+          <div className="space-y-2">
             <Button 
               onClick={() => {
                 if (!currentUser) {
@@ -106,22 +106,37 @@ export function QuizActionCard({
                   setModeSelectOpen(true)
                 }
               }}
-              className="group relative h-16 w-full overflow-hidden rounded-2xl bg-[#5D7B6F] font-black uppercase tracking-[0.1em] text-white shadow-xl shadow-[#5D7B6F]/20 transition-all hover:scale-[1.02] active:scale-95"
+              className="group relative h-10 sm:h-12 w-full overflow-hidden rounded-xl sm:rounded-2xl bg-[#5D7B6F] font-bold uppercase tracking-[0.1em] text-white shadow-xs hover:bg-[#4a6358] transition-all text-xs cursor-pointer"
               disabled={isStarting}
             >
-              <div className="relative z-10 flex items-center justify-center gap-3">
-                {isStarting ? <Loader2 className="h-5 w-5 animate-spin" /> : <PlayCircle className="h-5 w-5" />}
+              <div className="relative z-10 flex items-center justify-center gap-2">
+                {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
                 Bắt đầu ngay
-                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </div>
             </Button>
-            
-            <DialogContent className="max-w-md rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">
-              <div className="bg-[#5D7B6F] px-8 py-10 text-white relative">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
+
+            {hasHistory && latestSessionId && (
+              <Button
+                variant="outline"
+                className="w-full h-9 sm:h-11 rounded-xl sm:rounded-2xl border border-slate-200 font-bold uppercase tracking-wider text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/30 transition-all text-[10px] sm:text-[11px] cursor-pointer"
+                asChild
+              >
+                <Link href={`/history/${quizId}/${latestSessionId}`}>
+                  <History className="h-3.5 w-3.5 mr-1.5" />
+                  Xem lịch sử trước đó
+                </Link>
+              </Button>
+            )}
+          </div>
+
+          <Dialog open={modeSelectOpen} onOpenChange={setModeSelectOpen}>
+            <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl sm:rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">
+              <div className="bg-[#5D7B6F] px-4 py-6 sm:px-8 sm:py-10 text-white relative">
+                <div className="absolute top-0 right-0 p-8 opacity-10 hidden sm:block">
                   <PlayCircle className="w-32 h-32" />
                 </div>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight mb-2">
+                <DialogTitle className="text-xl sm:text-2xl font-extrabold uppercase tracking-tight mb-1 sm:mb-2">
                   Thiết lập bài thi
                 </DialogTitle>
                 <DialogDescription className="text-white/70 text-sm font-medium">
@@ -203,74 +218,106 @@ export function QuizActionCard({
             </DialogContent>
           </Dialog>
 
-          {hasHistory && latestSessionId && (
-            <Button
-              variant="outline"
-              className="w-full h-16 rounded-2xl border-2 border-[#5D7B6F]/20 font-black uppercase tracking-[0.1em] text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/40 transition-all"
-              asChild
-            >
-              <Link href={`/history/${quizId}/${latestSessionId}`}>
-                <History className="h-5 w-5 mr-2" />
-                Xem lịch sử trước đó
-              </Link>
-            </Button>
-          )}
-
           <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
             <DialogContent className="max-w-md rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">
-              <div className="bg-amber-500 px-8 py-10 text-white relative">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <AlertCircle className="w-32 h-32" />
-                </div>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight mb-2">
-                  Phát hiện phiên học cũ
-                </DialogTitle>
-                <DialogDescription className="text-white/70 text-sm font-medium">
-                  Bạn đang có một phiên làm bài chưa hoàn thành
-                </DialogDescription>
-              </div>
-
-              <div className="p-8 space-y-6">
-                <div className="rounded-2xl bg-amber-50 p-6 border border-amber-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Tiến độ hiện tại</span>
-                    <span className="bg-amber-600/10 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black">
-                      {activeSessionInfo?.answeredCount ?? 0}/{activeSessionInfo?.totalQuestions ?? 0} CÂU
-                    </span>
+              {activeSessionInfo?.mode === 'flashcard' || activeSessionInfo?.cardsUnknown > 0 ? (
+                <>
+                  <div className="bg-[#5D7B6F] px-8 py-8 text-white">
+                    <DialogTitle className="text-xl font-black uppercase tracking-tight mb-2">
+                      Học Lật Thẻ (Flashcard)
+                    </DialogTitle>
+                    <DialogDescription className="text-white/80 text-xs font-medium leading-relaxed">
+                      Với Quiz này ở chế độ <strong className="text-white font-bold">Học Lật Thẻ (Flashcard)</strong>, bạn vẫn còn <strong className="text-amber-200 font-bold">{activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0}/{activeSessionInfo?.totalCards ?? activeSessionInfo?.totalQuestions ?? 0} câu chưa nhớ</strong>. Bạn có muốn học tiếp hay làm mới?
+                    </DialogDescription>
                   </div>
-                  <div className="h-2 w-full bg-amber-200/50 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-amber-500 transition-all duration-1000"
-                      style={{ width: `${((activeSessionInfo?.answeredCount ?? 0) / (activeSessionInfo?.totalQuestions ?? 1)) * 100}%` }}
-                    />
-                  </div>
-                  <p className="mt-4 text-[11px] font-bold text-amber-800 uppercase tracking-tight">
-                    Chế độ: {activeSessionInfo?.mode === 'immediate' ? 'Thực hành' : activeSessionInfo?.mode === 'flashcard' ? 'Flashcard' : 'Kiểm tra'}
-                  </p>
-                </div>
 
-                <div className="grid grid-cols-1 gap-3">
-                  <Button 
-                    onClick={onContinue}
-                    className="h-14 w-full rounded-2xl bg-amber-500 font-black uppercase tracking-widest text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
-                  >
-                    Tiếp tục làm bài
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={onRestart}
-                    className="h-14 w-full rounded-2xl border-gray-100 font-black uppercase tracking-widest text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all"
-                  >
-                    Làm lại từ đầu
-                  </Button>
-                  <button 
-                    onClick={onCloseResumeDialog}
-                    className="py-2 text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] hover:text-gray-400 transition-colors"
-                  >
-                    Đổi chế độ học khác
-                  </button>
-                </div>
-              </div>
+                  <div className="p-6 space-y-4">
+                    <div className="rounded-2xl bg-emerald-50/60 p-4 border border-emerald-100/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#5D7B6F]">Tiến độ thẻ chưa nhớ</span>
+                        <span className="bg-emerald-600/10 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                          {activeSessionInfo?.cardsUnknown ?? 0}/{activeSessionInfo?.totalCards ?? 0} câu chưa nhớ
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2.5 pt-1">
+                      <Button 
+                        onClick={onContinue}
+                        className="h-12 w-full rounded-2xl bg-[#5D7B6F] font-bold text-xs uppercase tracking-wider text-white shadow-md shadow-[#5D7B6F]/20 hover:bg-[#4a6358] transition-all"
+                      >
+                        Học tiếp (Ôn lại {activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0} câu chưa nhớ)
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={onRestart}
+                        className="h-12 w-full rounded-2xl border-slate-200 font-bold text-xs uppercase tracking-wider text-slate-700 hover:bg-slate-50 transition-all"
+                      >
+                        Làm mới (Bắt đầu từ đầu)
+                      </Button>
+                      <button 
+                        onClick={onCloseResumeDialog}
+                        className="py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors"
+                      >
+                        Đổi chế độ học khác
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-amber-500 px-8 py-10 text-white">
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tight mb-2">
+                      Phát hiện phiên học cũ
+                    </DialogTitle>
+                    <DialogDescription className="text-white/70 text-sm font-medium">
+                      Bạn đang có một phiên làm bài chưa hoàn thành
+                    </DialogDescription>
+                  </div>
+
+                  <div className="p-8 space-y-6">
+                    <div className="rounded-2xl bg-amber-50 p-6 border border-amber-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Tiến độ hiện tại</span>
+                        <span className="bg-amber-600/10 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black">
+                          {activeSessionInfo?.answeredCount ?? 0}/{activeSessionInfo?.totalQuestions ?? 0} CÂU
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-amber-200/50 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-amber-500 transition-all duration-1000"
+                          style={{ width: `${((activeSessionInfo?.answeredCount ?? 0) / (activeSessionInfo?.totalQuestions ?? 1)) * 100}%` }}
+                        />
+                      </div>
+                      <p className="mt-4 text-[11px] font-bold text-amber-800 uppercase tracking-tight">
+                        Chế độ: {activeSessionInfo?.mode === 'immediate' ? 'Thực hành' : activeSessionInfo?.mode === 'flashcard' ? 'Flashcard' : 'Kiểm tra'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <Button 
+                        onClick={onContinue}
+                        className="h-14 w-full rounded-2xl bg-amber-500 font-black uppercase tracking-widest text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+                      >
+                        Tiếp tục làm bài
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={onRestart}
+                        className="h-14 w-full rounded-2xl border-gray-100 font-black uppercase tracking-widest text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all"
+                      >
+                        Làm lại từ đầu
+                      </Button>
+                      <button 
+                        onClick={onCloseResumeDialog}
+                        className="py-2 text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] hover:text-gray-400 transition-colors"
+                      >
+                        Đổi chế độ học khác
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </DialogContent>
           </Dialog>
 

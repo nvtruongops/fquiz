@@ -34,10 +34,11 @@ const sections: Section[] = [
   {
     id: 'english', title: 'HỌC NGÔN NGỮ (AI)',
     items: [
+      { label: 'Trợ lý AI', href: '/ai', icon: Bot },
       { label: 'Lộ trình bài học', href: '/roadmap', icon: Map },
       { label: 'Ôn tập Flashcards', href: '/flashcards', icon: Layers },
       { label: 'Phân tích tiến độ', href: '/analytics', icon: TrendingUp },
-      { label: 'Trợ lý AI', href: '/ai', icon: Bot },
+      { label: 'Lịch sử học AI', href: '/ai/history', icon: History },
     ],
   },
   {
@@ -107,7 +108,7 @@ export function Sidebar() {
                         <Link
                           key={item.href + item.label}
                           href={item.soon ? '#' : item.href}
-                          prefetch={false}
+                          prefetch={item.soon ? false : undefined}
                           onClick={(e) => {
                             if (item.soon) {
                               e.preventDefault()

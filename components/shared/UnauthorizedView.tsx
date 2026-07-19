@@ -36,9 +36,8 @@ export function UnauthorizedView({
       "flex flex-col items-center justify-center p-10 rounded-[32px] bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-center relative overflow-hidden group transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.06)]",
       className
     )}>
-      {/* Decorative Background Elements */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#5D7B6F]/5 rounded-full blur-3xl group-hover:bg-[#5D7B6F]/10 transition-colors" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#A4C3A2]/5 rounded-full blur-3xl group-hover:bg-[#A4C3A2]/10 transition-colors" />
+      {/* Decorative Background Element */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-[#A4C3A2]/5 to-transparent blur-2xl pointer-events-none transform-gpu" />
 
       <div className="relative z-10">
         <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[#5D7B6F]/5 text-[#5D7B6F] shadow-inner">

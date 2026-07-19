@@ -41,14 +41,29 @@ export class CourseLearningService {
     const modules = await this.moduleRepo.findByCourse(courseId)
     const structure: CourseStructure = { course: course as any, modules: [] }
 
+    // Collect all lesson IDs first for batch progress query
+    const allLessons = []
     for (const mod of modules) {
       const lessons = await this.lessonRepo.findByModule(mod._id.toString())
+      allLessons.push({ mod, lessons })
+    }
+
+    // Batch query all progress in one request
+    const lessonProgressQueries = allLessons.flatMap(({ lessons }) =>
+      lessons.map(l => ({
+        learningObjectId: l._id.toString(),
+        loType: 'lesson' as const,
+        version: (l as any).contentVersion || 1,
+      }))
+    )
+    const progressMap = await this.progressRepo.findByUserAndLOs(userId, lessonProgressQueries)
+
+    for (const { mod, lessons } of allLessons) {
       const lessonEntries = []
 
       for (const lesson of lessons) {
-        const progress = await this.progressRepo.findByUserAndLO(
-          userId, lesson._id.toString(), 'lesson', lesson.contentVersion || 1
-        )
+        const key = `${lesson._id.toString()}:lesson:${(lesson as any).contentVersion || 1}`
+        const progress = progressMap.get(key)
         lessonEntries.push({
           lesson: lesson as any,
           progress: progress ? {

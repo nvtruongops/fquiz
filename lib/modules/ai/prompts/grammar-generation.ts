@@ -39,6 +39,7 @@ export type GeneratedGrammar = z.infer<typeof GeneratedGrammarSchema>
 
 export interface GrammarPromptParams {
   language: string
+  explanationLanguage?: string
   topic?: string
   cefr?: string
   patternName?: string
@@ -49,34 +50,33 @@ export const grammarGeneration: PromptDefinition<GrammarPromptParams, typeof Gen
   version: PROMPT_VERSION,
   schema: GeneratedGrammarSchema,
   buildPrompt: (params: GrammarPromptParams): string => {
+    const expLang = params.explanationLanguage || 'Vietnamese'
     const patternConstraint = params.patternName
       ? ` specifically for the grammar pattern "${params.patternName}"`
-      : ''
-    const topicContext = params.topic
-      ? ` Contextualized within the topic "${params.topic}".`
+      : params.topic
+      ? ` specifically for the grammar topic "${params.topic}"`
       : ''
 
-  return `You are a grammar specialist teaching "${params.language}" grammar${patternConstraint} at CEFR level ${params.cefr ?? 'B1'}.${topicContext}
+    return `You are a grammar specialist teaching "${params.language}" grammar${patternConstraint} at level ${params.cefr ?? 'B1'}.
 
 Provide a comprehensive grammar explanation with:
 
 1. patternName (descriptive name of the grammar point)
 2. pattern (the grammatical formula, e.g., "Subject + have/has + past participle")
-3. explanation (clear, learner-friendly explanation in English)
-4. rules (list of 2-4 concrete rules for using this pattern)
+3. explanation (clear, learner-friendly explanation written in ${expLang})
+4. rules (list of 2-4 concrete rules written in ${expLang})
 5. examples (3-4 example sentences in ${params.language} with:
    - sentence: the example in ${params.language}
-   - translation: English translation
-   - breakdown: optional word-by-word explanation)
-6. commonMistakes (optional array of objects: each with "mistake", "correction", "explanation" — never use plain strings)
-7. cefrLevel
+   - translation: translation in ${expLang}
+   - breakdown: optional word-by-word explanation in ${expLang})
+6. commonMistakes (optional array of objects: each with "mistake", "correction", "explanation" written in ${expLang})
+7. cefrLevel (${params.cefr ?? 'B1'})
 8. relatedPatterns (optional: related grammar points)
 
 Rules:
-- Example sentences MUST be in ${params.language} with English translations
-- Explanations are in English for clarity
-- Focus on practical usage, not theoretical linguistics
-- Include contrast with similar patterns if relevant
+- Example sentences MUST be in ${params.language} with translations in ${expLang}.
+- Explanations and rules MUST be in ${expLang} for maximum clarity.
+- Focus on practical usage, not theoretical linguistics.
 
 Respond ONLY with a valid JSON object matching the provided schema.`
   },

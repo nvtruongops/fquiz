@@ -30,11 +30,15 @@ export const qstashReceiver = new Receiver({
  */
 export async function publishJob(destination: string, body: any, delay?: number) {
   try {
-    console.log(`[QStash] Publishing job to ${destination}...`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[QStash] Publishing job to ${destination}...`)
+    }
     
     // Local development fallback: QStash cannot call localhost
     if (destination.includes('localhost') || destination.includes('127.0.0.1') || destination.includes('::1')) {
-      console.log('[QStash] Local environment detected. Simulating background job via local fetch...');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[QStash] Local environment detected. Simulating background job via local fetch...')
+      }
       
       const localDest = destination.replace('localhost', '127.0.0.1');
       console.log(`[QStash] Local simulation target normalized to: ${localDest}`);
@@ -48,7 +52,7 @@ export async function publishJob(destination: string, body: any, delay?: number)
         },
         body: JSON.stringify(body),
       })
-      .then(() => console.log('[QStash] Local simulation fetch sent successfully.'))
+      .then(() => { if (process.env.NODE_ENV !== 'production') console.log('[QStash] Local simulation fetch sent successfully.') })
       .catch(err => console.error('[QStash] Local simulation failed:', err));
       
       return { success: true, messageId: 'local-mock-id-' + Date.now() };
@@ -63,7 +67,9 @@ export async function publishJob(destination: string, body: any, delay?: number)
       body: body,
       delay: delay,
     });
-    console.log(`[QStash] Job published successfully. MessageId: ${result.messageId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[QStash] Job published successfully. MessageId: ${result.messageId}`)
+    }
     return { success: true, messageId: result.messageId };
   } catch (error: any) {
     console.error("[QStash] Failed to publish job:", error.message || error);

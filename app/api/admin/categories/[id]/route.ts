@@ -50,9 +50,10 @@ export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{
       { new: true }
     )
 
-    // Revalidate admin pages to show updated category
+    // Revalidate admin pages and explore to show updated category
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
+    revalidatePath('/explore')
 
     return NextResponse.json({ category })
   } catch (err) {
@@ -86,9 +87,10 @@ export const DELETE = withAuth(async (req: Request, { params }: { params: Promis
 
     await Category.deleteOne({ _id: category._id })
 
-    // Revalidate admin pages to remove deleted category
+    // Revalidate admin pages and explore to remove deleted category
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
+    revalidatePath('/explore')
 
     return NextResponse.json({ message: 'Deleted' })
   } catch (err) {

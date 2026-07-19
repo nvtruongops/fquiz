@@ -43,18 +43,52 @@ export const GET = withAuth(
 
       const skip = (page - 1) * limit
 
-      const [logs, total] = await Promise.all([
-        AILearningLog.find(queryFilter)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        AILearningLog.countDocuments(queryFilter),
-      ])
+      const allLogs = await AILearningLog.find(queryFilter)
+        .sort({ createdAt: -1 })
+        .lean()
+
+      // Deduplicate writing logs: If a 'writing' log has a matching 'writing_eval' log, omit the uncompleted 'writing' log
+      const deduplicatedLogs: any[] = []
+      const evalSourceTexts = new Set<string>()
+
+      for (const log of allLogs) {
+        if (log.type === 'writing_eval') {
+          const st = (log.metadata?.params as any)?.sourceText || ''
+          if (st) evalSourceTexts.add(st.trim().slice(0, 50))
+          deduplicatedLogs.push(log)
+        } else if (log.type === 'writing') {
+          let st = (log.metadata?.params as any)?.sourceText || ''
+          if (!st && log.response) {
+            try {
+              const resObj = JSON.parse(log.response)
+              st = resObj.sourceText || ''
+            } catch {}
+          }
+          const snippet = st ? st.trim().slice(0, 50) : ''
+          if (snippet && evalSourceTexts.has(snippet)) {
+            continue
+          }
+          const hasEvalMatch = allLogs.some(
+            (other) =>
+              other.type === 'writing_eval' &&
+              Math.abs(new Date(other.createdAt).getTime() - new Date(log.createdAt).getTime()) < 60 * 60 * 1000 &&
+              other.topic === log.topic
+          )
+          if (hasEvalMatch) {
+            continue
+          }
+          deduplicatedLogs.push(log)
+        } else {
+          deduplicatedLogs.push(log)
+        }
+      }
+
+      const total = deduplicatedLogs.length
+      const paginatedLogs = deduplicatedLogs.slice(skip, skip + limit)
 
       return NextResponse.json({
         success: true,
-        history: logs.map((log) => ({
+        history: paginatedLogs.map((log) => ({
           ...log,
           _id: log._id.toString(),
           userId: log.userId.toString(),

@@ -74,46 +74,46 @@ export function QuizComments({
   }
 
   return (
-    <div className={cn("flex flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]", className)}>
+    <div className={cn("flex flex-col gap-3 sm:gap-5 rounded-xl sm:rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden", className)}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5D7B6F]/5 text-[#5D7B6F]">
-            <MessageSquare className="h-5 w-5" />
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl bg-[#5D7B6F]/5 text-[#5D7B6F]">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-[0.1em] text-gray-900">Thảo luận cộng đồng</h3>
-            <div className="flex items-center gap-2 mt-1">
+            <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-[0.1em] text-gray-900">Thảo luận cộng đồng</h3>
+            <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{comments.length} đóng góp</p>
+              <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{comments.length} đóng góp</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all focus-within:shadow-md focus-within:border-[#5D7B6F]/30">
-        <div className="flex items-center gap-3 border-b border-gray-50 pb-3">
-          <Avatar className="h-8 w-8 border border-gray-100 shadow-sm">
+      <div className="flex flex-col gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-gray-100 shadow-xs transition-all focus-within:shadow-md focus-within:border-[#5D7B6F]/30">
+        <div className="flex items-center gap-2.5 border-b border-gray-50 pb-2 sm:pb-3">
+          <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-gray-100 shadow-xs shrink-0">
             {(currentUser?.avatarUrl || currentUser?.avatar_url) && (
               <AvatarImage src={currentUser.avatarUrl || currentUser.avatar_url} />
             )}
-            <AvatarFallback className="bg-gray-100 text-gray-400 text-[10px] font-black uppercase">
+            <AvatarFallback className="bg-gray-100 text-gray-400 text-[9px] sm:text-[10px] font-bold uppercase">
               {currentUser?._id ? (currentUser?.username || currentUser?.name || '??').substring(0, 2) : '?'}
             </AvatarFallback>
           </Avatar>
-          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#5D7B6F]">
+          <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#5D7B6F] truncate">
             {currentUser?._id ? 'Viết bình luận của bạn' : 'Đăng nhập để tham gia thảo luận'}
           </p>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className={`overflow-hidden transition-all duration-300 ${showAuthHint ? 'max-h-20 opacity-100 mb-2' : 'max-h-0 opacity-0'}`}>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                <p className="text-[10px] font-bold uppercase tracking-wider">Vui lòng đăng nhập để gửi bình luận</p>
+            <div className="flex items-center justify-between p-2.5 rounded-lg sm:rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider">Vui lòng đăng nhập để gửi bình luận</p>
               </div>
               <Link href={`/login?redirect=/quiz/${quizId}`}>
-                <Button variant="ghost" className="h-7 px-3 text-[9px] font-black uppercase text-amber-700 hover:bg-amber-100">
+                <Button variant="ghost" className="h-6 px-2 text-[9px] font-bold uppercase text-amber-700 hover:bg-amber-100">
                   Đăng nhập
                 </Button>
               </Link>
@@ -124,20 +124,20 @@ export function QuizComments({
             placeholder={currentUser?._id ? "Chia sẻ suy nghĩ hoặc thắc mắc của bạn về bộ đề này..." : "Bạn cần đăng nhập để gửi bình luận..."}
             value={commentContent}
             onChange={(e) => setCommentContent(e.target.value)}
-            className="min-h-[80px] w-full resize-none border-none bg-transparent p-0 text-[14px] font-medium text-gray-700 placeholder:text-gray-300 focus-visible:ring-0 focus:outline-none"
+            className="min-h-[70px] sm:min-h-[80px] w-full resize-none border-none bg-transparent p-0 text-xs sm:text-[14px] font-medium text-gray-700 placeholder:text-gray-300 focus-visible:ring-0 focus:outline-none"
           />
           
-          <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-            <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">Tối đa 1000 ký tự</p>
+          <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-50">
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-300 uppercase tracking-widest">Tối đa 1000 ký tự</p>
             <Button 
               onClick={handlePost}
               disabled={isPosting || (currentUser?._id && !commentContent.trim())}
-              className="bg-[#5D7B6F] h-9 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-[#5D7B6F]/10 hover:bg-[#4a6358] hover:translate-y-[-1px] active:translate-y-0 transition-all"
+              className="bg-[#5D7B6F] h-8 sm:h-9 px-3.5 sm:px-5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-[0.15em] text-white shadow-xs hover:bg-[#4a6358] transition-all cursor-pointer"
             >
               {isPosting ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {currentUser?._id ? 'Gửi bình luận' : 'Đăng nhập để gửi'} <Send className="h-3 w-3" />
                 </div>
               )}

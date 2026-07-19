@@ -37,9 +37,8 @@ export function MobileNav() {
             <Link
               key={tab.id}
               href={tab.href}
-              prefetch={false}
               className={cn(
-                'relative flex flex-col items-center justify-center gap-1 transition-all duration-300 w-16 h-16 group outline-none',
+                'relative flex flex-col items-center justify-center gap-1 transition-all duration-300 w-16 h-16 min-h-[44px] min-w-[44px] group outline-none',
               )}
             >
               {isActive && (

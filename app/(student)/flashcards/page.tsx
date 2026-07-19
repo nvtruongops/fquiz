@@ -47,7 +47,7 @@ interface SavedItem {
 }
 
 const LO_FILTERS = [
-  { key: '', label: 'Tất cả học liệu' },
+  { key: 'all', label: 'Tất cả học liệu' },
   { key: 'vocabulary', label: 'Từ vựng' },
   { key: 'sentence', label: 'Mẫu câu' },
   { key: 'grammar', label: 'Ngữ pháp' },
@@ -67,7 +67,7 @@ const LANG_FILTERS = [
 
 export default function FlashcardsPage() {
   const [viewTab, setViewTab] = useState<'srs' | 'notebook'>('srs')
-  const [loFilter, setLoFilter] = useState<string>('')
+  const [loFilter, setLoFilter] = useState<string>('all')
   const [langFilter, setLangFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
@@ -76,7 +76,7 @@ export default function FlashcardsPage() {
     queryKey: ['flashcards-due', loFilter, langFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: '100' })
-      if (loFilter) params.set('loType', loFilter)
+      if (loFilter && loFilter !== 'all') params.set('loType', loFilter)
       if (langFilter && langFilter !== 'all') params.set('languageCode', langFilter)
       const res = await fetch(`/api/v1/learning/review/due?${params}`)
       if (!res.ok) throw new Error('Failed to fetch due flashcards')
@@ -90,7 +90,7 @@ export default function FlashcardsPage() {
     queryKey: ['saved-items', loFilter, searchQuery, langFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: '200' })
-      if (loFilter) params.set('loType', loFilter)
+      if (loFilter && loFilter !== 'all') params.set('loType', loFilter)
       if (langFilter && langFilter !== 'all') params.set('languageCode', langFilter)
       if (searchQuery) params.set('search', searchQuery)
       const res = await fetch(`/api/v1/learning/saved-items?${params}`)
@@ -107,8 +107,8 @@ export default function FlashcardsPage() {
     <DevOnlyGuard featureName="Flashcards AI & Sổ Tay">
       <div className="w-full py-8 space-y-8">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl p-8 md:p-10 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl p-6 md:p-10 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transform-gpu" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3">
@@ -123,28 +123,28 @@ export default function FlashcardsPage() {
             </div>
 
             {/* Main View Mode Selector Tabs */}
-            <div className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200/80">
+            <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200/80 w-full sm:w-auto">
               <button
                 onClick={() => setViewTab('srs')}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                  "flex-1 sm:flex-initial text-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
                   viewTab === 'srs'
-                    ? "bg-[#5D7B6F] text-white shadow-sm shadow-[#5D7B6F]/20"
+                    ? "bg-[#5D7B6F] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
-                <Sparkles className="w-3.5 h-3.5" /> Thẻ cần ôn (SRS)
+                Thẻ cần ôn (SRS)
               </button>
               <button
                 onClick={() => setViewTab('notebook')}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                  "flex-1 sm:flex-initial text-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
                   viewTab === 'notebook'
-                    ? "bg-[#5D7B6F] text-white shadow-sm shadow-[#5D7B6F]/20"
+                    ? "bg-[#5D7B6F] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
-                <Bookmark className="w-3.5 h-3.5" /> Sổ tay đã lưu ({savedData?.total ?? 0})
+                Sổ tay đã lưu ({savedData?.total ?? 0})
               </button>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function FlashcardsPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Language Filter */}
             <Select value={langFilter} onValueChange={setLangFilter}>
-              <SelectTrigger className="w-48 h-10 rounded-2xl bg-white border border-slate-200/90 font-bold text-xs text-slate-800 shadow-xs focus:ring-2 focus:ring-[#5D7B6F]/20">
+              <SelectTrigger className="w-full sm:w-48 h-10 rounded-2xl bg-white border border-slate-200/90 font-bold text-xs text-slate-800 shadow-xs focus:ring-2 focus:ring-[#5D7B6F]/20">
                 <div className="flex items-center gap-1.5 truncate">
                   <Globe className="w-3.5 h-3.5 text-[#5D7B6F] shrink-0" />
                   <SelectValue placeholder="Tất cả ngôn ngữ" />
@@ -192,23 +192,19 @@ export default function FlashcardsPage() {
               </SelectContent>
             </Select>
 
-            {/* Learning Object Type Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-              {LO_FILTERS.map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setLoFilter(f.key)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap border",
-                    loFilter === f.key
-                      ? "bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-sm shadow-[#5D7B6F]/20"
-                      : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200/80"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            {/* Learning Object Type Filter Select */}
+            <Select value={loFilter} onValueChange={setLoFilter}>
+              <SelectTrigger className="w-full sm:w-44 h-10 rounded-2xl bg-white border border-slate-200/90 font-bold text-xs text-slate-800 shadow-xs focus:ring-2 focus:ring-[#5D7B6F]/20">
+                <SelectValue placeholder="Tất cả học liệu" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-xl shadow-2xl p-1.5 z-50">
+                {LO_FILTERS.map((f) => (
+                  <SelectItem key={f.key} value={f.key} className="rounded-xl font-bold py-2 text-xs cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50 focus:text-[#5D7B6F]">
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {viewTab === 'notebook' && (
