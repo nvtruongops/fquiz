@@ -54,6 +54,16 @@ export function useFlashcardSession(sessionId: string) {
   const { data, isLoading, error, refetch } = useQuery<FlashcardSessionData>({
     queryKey: ['flashcard-session', sessionId],
     queryFn: async () => {
+      try {
+        const cached = sessionStorage.getItem(`session_initial_preload_${sessionId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed.session) {
+            sessionStorage.removeItem(`session_initial_preload_${sessionId}`)
+            return parsed as FlashcardSessionData
+          }
+        }
+      } catch {}
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`
       )
@@ -75,6 +85,16 @@ export function useFlashcardSession(sessionId: string) {
   const { data: allQuestionsData, isLoading: isAllQuestionsLoading } = useQuery<{ questions: FlashcardQuestion[] }>({
     queryKey: ['flashcard-session', sessionId, 'all-questions'],
     queryFn: async () => {
+      try {
+        const cached = sessionStorage.getItem(`session_preload_${sessionId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed.questions?.length > 0) {
+            sessionStorage.removeItem(`session_preload_${sessionId}`)
+            return parsed as { questions: FlashcardQuestion[] }
+          }
+        }
+      } catch {}
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`
       )

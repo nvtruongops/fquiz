@@ -34,7 +34,19 @@ export function useQuizSessionQueries(
     error: initialError,
   } = useQuery<SessionData, Error>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
-    queryFn: () => fetchSession(resolvedSessionId),
+    queryFn: async () => {
+      try {
+        const cached = sessionStorage.getItem(`session_initial_preload_${resolvedSessionId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed.session) {
+            sessionStorage.removeItem(`session_initial_preload_${resolvedSessionId}`)
+            return parsed as SessionData
+          }
+        }
+      } catch {}
+      return fetchSession(resolvedSessionId)
+    },
     enabled: resolvedSessionId.length > 0,
     staleTime: 30_000,
     refetchOnMount: 'always',

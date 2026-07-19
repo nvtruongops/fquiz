@@ -50,7 +50,7 @@ export default function CategoryFilter({ initialCategories }: { initialCategorie
       if (!res.ok) {
         toast.error(json.error || 'Không thể ghim danh mục')
       } else {
-        queryClient.invalidateQueries({ queryKey: ['pinned-categories'] })
+        queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: json.pinnedCategories })
         toast.success(json.pinned ? 'Đã ghim danh mục lên đầu' : 'Đã bỏ ghim danh mục')
       }
     } catch {
