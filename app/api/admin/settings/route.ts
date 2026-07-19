@@ -4,32 +4,46 @@ import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { SiteSettings, getSettings, clearSettingsCache } from '@/lib/modules/auth/models/SiteSettings'
 import { UpdateSiteSettingsSchema } from '@/lib/modules/auth/schemas/user'
+import { encryptSecret, maskApiKey } from '@/lib/core/security/crypto'
 
 export const dynamic = 'force-dynamic'
+
+function sanitizeSettingsForClient(rawSettings: any) {
+  const settings = JSON.parse(JSON.stringify(rawSettings))
+  if (settings && settings.llm_config) {
+    const providers = ['gemini', 'openai', 'custom'] as const
+    for (const provider of providers) {
+      if (settings.llm_config[provider]) {
+        const key = settings.llm_config[provider].apiKey || ''
+        settings.llm_config[provider].hasApiKey = Boolean(key)
+        settings.llm_config[provider].apiKeyMasked = maskApiKey(key)
+        settings.llm_config[provider].apiKey = '' // Never return plain-text or encrypted key to client
+      }
+    }
+  }
+  return settings
+}
 
 /** GET — Retrieve current site settings (auto-creates default if none exist) */
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
-    const settings = await getSettings()
+    const rawSettings = await getSettings()
+    const settings = sanitizeSettingsForClient(rawSettings)
 
     // Sync maintenance-mode cookie với DB state khi GET
-    // Chỉ set cookie khi maintenance đang BẬT (để proxy dùng fast path).
-    // Khi maintenance TẮT: xóa cookie → proxy sẽ fallback về API check,
-    // đảm bảo user không bị "stuck" với cookie cũ khi admin bật maintenance.
     const response = NextResponse.json({ settings })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
-    if (settings.maintenance_mode) {
+    if (rawSettings.maintenance_mode) {
       response.cookies.set('maintenance-mode', '1', {
         path: '/',
         httpOnly: false,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 30, // 30 giây - ngắn để tự expire khi admin tắt
+        maxAge: 30,
       })
     } else {
-      // Xóa cookie khi maintenance tắt
       response.cookies.delete('maintenance-mode')
     }
     return response
@@ -59,8 +73,11 @@ export const PUT = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // Build updates map — getSettings() above already migrated missing llm_config
-    const updates: Record<string, unknown> = {}
+    // Ensure singleton exists
+    const existing = await getSettings()
+
+    // Build updates map
+    const updates: Record<string, any> = {}
     Object.entries(parsed.data).forEach(([key, value]) => {
       if (value !== undefined) {
         updates[key] = value
@@ -71,23 +88,48 @@ export const PUT = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    // Ensure singleton exists (also migrates missing llm_config from old documents)
-    const existing = await getSettings()
+    // Handle LLM Config API Key encryption & overwrite preservation
+    if (updates.llm_config) {
+      const mergedLlmConfig = {
+        ...(existing.llm_config || {}),
+        ...updates.llm_config,
+      }
 
-    // Use MongoDB native driver via Mongoose collection to bypass Mongoose nested-schema issues
+      const providers = ['gemini', 'openai', 'custom'] as const
+      for (const provider of providers) {
+        const submittedProviderObj = updates.llm_config[provider]
+        const existingProviderObj = (existing.llm_config as any)?.[provider] || {}
+
+        if (submittedProviderObj) {
+          const submittedKey = (submittedProviderObj.apiKey || '').trim()
+          const existingKey = existingProviderObj.apiKey || ''
+
+          if (submittedKey && !submittedKey.startsWith('••••')) {
+            // Admin entered a new key -> Encrypt and save
+            mergedLlmConfig[provider].apiKey = encryptSecret(submittedKey)
+          } else {
+            // Admin left key blank or kept placeholder mask -> Retain existing encrypted key in DB
+            mergedLlmConfig[provider].apiKey = existingKey
+          }
+        } else if (existingProviderObj) {
+          mergedLlmConfig[provider] = { ...existingProviderObj }
+        }
+      }
+
+      updates.llm_config = mergedLlmConfig
+    }
+
+    // Use MongoDB native driver via Mongoose collection
     const collection = SiteSettings.collection
     await collection.updateOne(
       { _id: existing._id },
       { $set: updates }
     )
-    const settings = await collection.findOne({ _id: existing._id })
+    const updatedRaw = await collection.findOne({ _id: existing._id })
 
     clearSettingsCache()
 
-    // Sync maintenance-mode cookie với DB state
-    // Chỉ set cookie khi maintenance BẬT (fast path cho proxy).
-    // Khi tắt: xóa cookie → proxy fallback về API check,
-    // tránh user giữ cookie '0' cũ bypass maintenance khi admin bật lại.
+    const settings = sanitizeSettingsForClient(updatedRaw)
     const response = NextResponse.json({ settings })
     if ('maintenance_mode' in updates) {
       if (updates.maintenance_mode === true) {
@@ -96,16 +138,16 @@ export const PUT = withAuth(async (req: Request, { payload }) => {
           httpOnly: false,
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          maxAge: 30, // 30 giây - ngắn để tự expire
+          maxAge: 30,
         })
       } else {
-        // Xóa cookie khi tắt maintenance
         response.cookies.delete('maintenance-mode')
       }
     }
 
     return response
   } catch (err) {
+    console.error('Error updating settings:', err)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
 }, { roles: ['admin'] })

@@ -36,6 +36,40 @@ export function extractJsonString(str: string): string {
   return trimmed
 }
 
+export function parseOpenAITokenUsage(usageObj: any, textLength?: number): { input: number; output: number } {
+  if (!usageObj || typeof usageObj !== 'object') {
+    const estimatedOutput = textLength ? Math.max(1, Math.ceil(textLength / 4)) : 0
+    return { input: 0, output: estimatedOutput }
+  }
+
+  const input = Number(
+    usageObj.prompt_tokens ??
+    usageObj.input_tokens ??
+    usageObj.promptTokens ??
+    usageObj.inputTokens ??
+    0
+  ) || 0
+
+  let output = Number(
+    usageObj.completion_tokens ??
+    usageObj.output_tokens ??
+    usageObj.completionTokens ??
+    usageObj.outputTokens ??
+    usageObj.generation_tokens
+  ) || 0
+
+  if (output <= 0) {
+    const total = usageObj.total_tokens ?? usageObj.totalTokens ?? usageObj.total
+    if (typeof total === 'number' && total > input) {
+      output = total - input
+    } else if (textLength && textLength > 0) {
+      output = Math.max(1, Math.ceil(textLength / 4))
+    }
+  }
+
+  return { input, output }
+}
+
 export class OpenAIProvider implements IAIProvider {
   private apiKey: string
   private baseUrl: string
@@ -112,8 +146,7 @@ export class OpenAIProvider implements IAIProvider {
     }
 
     let textContent = ''
-    let inputTokens = 0
-    let outputTokens = 0
+    let usageObj: any = null
 
     const trimmedBody = rawResponseBody.trim()
     if (trimmedBody.startsWith('data:')) {
@@ -126,8 +159,7 @@ export class OpenAIProvider implements IAIProvider {
             const delta = chunkJson.choices?.[0]?.delta?.content || chunkJson.choices?.[0]?.text || ''
             textContent += delta
             if (chunkJson.usage) {
-              inputTokens = chunkJson.usage.prompt_tokens ?? inputTokens
-              outputTokens = chunkJson.usage.completion_tokens ?? outputTokens
+              usageObj = { ...(usageObj || {}), ...chunkJson.usage }
             }
           } catch {
             // ignore malformed SSE lines
@@ -137,11 +169,11 @@ export class OpenAIProvider implements IAIProvider {
     } else {
       const data = JSON.parse(trimmedBody)
       textContent = data.choices?.[0]?.message?.content ?? ''
-      inputTokens = data.usage?.prompt_tokens ?? 0
-      outputTokens = data.usage?.completion_tokens ?? 0
+      usageObj = data.usage
     }
 
     const cleanContent = extractJsonString(textContent)
+    const tokensUsed = parseOpenAITokenUsage(usageObj, cleanContent.length)
 
     let content: T
     if (options?.responseSchema) {
@@ -154,11 +186,8 @@ export class OpenAIProvider implements IAIProvider {
     return {
       content,
       model: modelName,
-      tokensUsed: {
-        input: inputTokens,
-        output: outputTokens,
-      },
-      cost: this.estimateCost(inputTokens, outputTokens, modelName),
+      tokensUsed,
+      cost: this.estimateCost(tokensUsed.input, tokensUsed.output, modelName),
       durationMs: Date.now() - startTime,
     }
   }

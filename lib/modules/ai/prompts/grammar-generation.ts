@@ -5,7 +5,12 @@ export const PROMPT_VERSION = '1.0.0'
 
 export const GeneratedGrammarSchema = z.object({
   patternName: z.string().min(1),
-  pattern: z.string().min(1),
+  pattern: z.preprocess((val) => {
+    if (typeof val === 'object' && val !== null) {
+      return (val as any).formula || (val as any).name || (val as any).structure || JSON.stringify(val)
+    }
+    return val
+  }, z.string().min(1)),
   explanation: z.string().min(1),
   rules: z.array(z.string()).min(1),
   examples: z.array(z.object({

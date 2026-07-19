@@ -64,6 +64,14 @@ export const POST = withAuth(
       if (payload?.userId && result?.content) {
         try {
           const p = (parsed.data.params as Record<string, any>) || {}
+          const inputTokens = result.tokensUsed?.input ?? 0
+          const outputTokens = result.tokensUsed?.output ?? 0
+          const totalTokens = inputTokens + outputTokens
+          const cost = result.cost ?? 0
+
+          const providerName = result.provider || 'gemini'
+          const modelName = result.model || 'auto'
+
           if (parsed.data.type === 'writing_eval') {
             const sourceText = (p.sourceText as string) || ''
             const existingLog = await AILearningLog.findOne({
@@ -76,7 +84,14 @@ export const POST = withAuth(
               await AILearningLog.findByIdAndUpdate(existingLog._id, {
                 $set: {
                   type: 'writing_eval',
+                  aiProvider: providerName,
+                  aiModel: modelName,
                   response: JSON.stringify(result.content),
+                  inputTokens: (existingLog.inputTokens || 0) + inputTokens,
+                  outputTokens: (existingLog.outputTokens || 0) + outputTokens,
+                  totalTokens: (existingLog.totalTokens || 0) + totalTokens,
+                  cost: (existingLog.cost || 0) + cost,
+                  durationMs: (existingLog.durationMs || 0) + result.durationMs,
                   'metadata.params': { ...((existingLog.metadata as any)?.params || {}), ...p },
                   'metadata.userSubmission': p.userAnswer,
                   'metadata.evalResult': result.content,
@@ -94,8 +109,13 @@ export const POST = withAuth(
                 topic: (p.topic as string) || (p.selectedTopicSlug as string) || (p.customTopicInput as string) || '',
                 cefrLevel: (p.cefr as string) || (p.cefrLevel as string) || '',
                 prompt: JSON.stringify(p),
-                aiProvider: 'gemini',
-                tokensUsed: result.tokensUsed?.input,
+                aiProvider: providerName,
+                aiModel: modelName,
+                tokensUsed: inputTokens,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                cost,
                 durationMs: result.durationMs,
                 response: JSON.stringify(result.content),
                 metadata: {
@@ -114,8 +134,13 @@ export const POST = withAuth(
               topic: (p.topic as string) || (p.selectedTopicSlug as string) || (p.customTopicInput as string) || '',
               cefrLevel: (p.cefr as string) || (p.cefrLevel as string) || '',
               prompt: JSON.stringify(p),
-              aiProvider: 'gemini',
-              tokensUsed: result.tokensUsed?.input,
+              aiProvider: providerName,
+              aiModel: modelName,
+              tokensUsed: inputTokens,
+              inputTokens,
+              outputTokens,
+              totalTokens,
+              cost,
               durationMs: result.durationMs,
               response: JSON.stringify(result.content),
               metadata: {
