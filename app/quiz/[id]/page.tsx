@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuizLoader, QuizLoadingOverlay } from '@/components/quiz/shared/QuizLoader'
@@ -39,10 +40,13 @@ interface CreateSessionResponse {
 interface ActiveSessionPayload {
   sessionId: string
   mode: 'immediate' | 'review' | 'flashcard'
-  difficulty: 'sequential' | 'random'
-  answeredCount: number
-  totalQuestions: number
-  started_at: string
+  difficulty?: 'sequential' | 'random'
+  answeredCount?: number
+  totalQuestions?: number
+  cardsKnown?: number
+  cardsUnknown?: number
+  totalCards?: number
+  started_at?: string
 }
 
 type QuizDetailApiError = Error & { status?: number; code?: string; hint?: string }
@@ -132,7 +136,9 @@ export default function QuizDetailPage() {
   const [modeSelectOpen, setModeSelectOpen] = useState(() => searchParams.get('selectMode') === 'true')
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
   const [authRequiredDialogOpen, setAuthRequiredDialogOpen] = useState(false)
-  const [selectedMode, setSelectedMode] = useState<'immediate' | 'review' | 'flashcard'>('immediate')
+  const [selectedMode, setSelectedMode] = useState<'immediate' | 'review' | 'flashcard'>(
+    () => (searchParams.get('mode') === 'flashcard' ? 'flashcard' : 'immediate')
+  )
   const [selectedDifficulty, setSelectedDifficulty] = useState<'sequential' | 'random'>('sequential')
   
   const { loadingOverlay, startLoading, completeLoading, stopLoading } = useQuizLoader()
@@ -143,6 +149,9 @@ export default function QuizDetailPage() {
     }
     if (searchParams.get('selectMode') === 'true') {
       setModeSelectOpen(true)
+    }
+    if (searchParams.get('mode') === 'flashcard') {
+      setSelectedMode('flashcard')
     }
   }, [searchParams, toast])
 
@@ -193,15 +202,17 @@ export default function QuizDetailPage() {
       const sessionData = await res.json()
       
       // PRE-LOAD QUESTIONS BEFORE REDIRECTING
-      try {
-        startLoading('Đang chuẩn bị bộ câu hỏi...')
-        const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`)
-        if (qRes.ok) {
-          const qData = await qRes.json()
-          sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
+      if (sessionData.sessionId) {
+        try {
+          startLoading('Đang chuẩn bị bộ câu hỏi...')
+          const qRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`)
+          if (qRes.ok) {
+            const qData = await qRes.json()
+            sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
+          }
+        } catch (e) {
+          console.warn('Pre-load questions failed', e)
         }
-      } catch (e) {
-        console.warn('Pre-load questions failed', e)
       }
       
       return sessionData as CreateSessionResponse
@@ -223,6 +234,11 @@ export default function QuizDetailPage() {
       if (error.status === 401) {
         toast.error('Bạn cần đăng nhập để làm bài quiz này')
         setTimeout(() => router.push(`/login?redirect=/quiz/${quizId}`), 1500)
+        return
+      }
+      if (error.status === 409 && error.activeSession) {
+        setActiveSessionInfo(error.activeSession)
+        setResumeDialogOpen(true)
         return
       }
       toast.error(error.message)
@@ -299,22 +315,61 @@ export default function QuizDetailPage() {
     <div className="flex min-h-screen flex-col bg-[#FDFDFB] font-sans">
       <QuizLoadingOverlay {...loadingOverlay} />
       
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] rounded-full bg-[#5D7B6F]/3 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-[#A4C3A2]/5 blur-[100px]" />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden transform-gpu -z-10">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <main className="relative z-10 flex flex-1 flex-col px-6 py-8 pb-32 md:pb-16">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main className="relative z-10 flex flex-1 flex-col px-3 sm:px-6 py-4 sm:py-8 pb-24 md:pb-16 max-w-7xl mx-auto w-full">
+        {/* Back Navigation Bar */}
+        {(() => {
+          const rawCode = quiz?.course_code || ''
+          const baseCourseCode = rawCode ? rawCode.split('_')[0].toLowerCase() : ''
+          const displayCourseCode = rawCode ? rawCode.split('_')[0].toUpperCase() : ''
+
+          return (
+            <div className="w-full mb-4 sm:mb-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  if (baseCourseCode) {
+                    router.push(`/courses/${baseCourseCode}`)
+                  } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                    router.back()
+                  } else {
+                    router.push('/explore')
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/80 shadow-xs text-xs font-bold transition-all hover:-translate-x-1 active:translate-x-0 cursor-pointer group"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800 transition-colors" />
+                <span>
+                  {displayCourseCode ? `Quay lại môn ${displayCourseCode}` : 'Quay lại'}
+                </span>
+              </button>
+
+              {baseCourseCode && (
+                <Link
+                  href={`/courses/${baseCourseCode}`}
+                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-600 bg-slate-100/80 hover:bg-slate-200/80 border border-slate-200/60 transition-colors"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Môn học:</span>
+                  <span className="font-extrabold text-slate-800 uppercase">{displayCourseCode}</span>
+                </Link>
+              )}
+            </div>
+          )
+        })()}
+
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
           
           {/* Header & Comments Column (Mobile order 1 & 3) */}
-          <div className="lg:col-span-8 flex flex-col gap-8 order-1 lg:order-1">
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm">
+          <div className="lg:col-span-8 flex flex-col gap-4 sm:gap-8 order-1 lg:order-1">
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs">
               <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
             </div>
 
             {/* Hidden on mobile, shown on desktop here to keep side-by-side */}
-            <div className="hidden lg:block bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-sm">
+            <div className="hidden lg:block bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-xs">
               <QuizComments 
                 quizId={resolvedQuizId}
                 comments={comments}
@@ -330,8 +385,8 @@ export default function QuizDetailPage() {
           </div>
 
           {/* Action Card & Stats Column (Mobile order 2 & 4) */}
-          <div className="lg:col-span-4 flex flex-col gap-8 lg:sticky lg:top-28 order-2 lg:order-2">
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm">
+          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 lg:sticky lg:top-28 order-2 lg:order-2">
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs">
               <QuizActionCard 
                 quizId={resolvedQuizId}
                 selectedMode={selectedMode}
@@ -347,8 +402,30 @@ export default function QuizDetailPage() {
                 activeSessionInfo={activeSessionInfo}
                 onContinue={() => {
                   setResumeDialogOpen(false)
-                  startLoading('Đang kết nối lại...')
-                  startSessionMutation.mutate({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'continue' })
+                  if (activeSessionInfo?.cardsUnknown && activeSessionInfo?.cardsUnknown > 0 && activeSessionInfo?.sessionId) {
+                    startLoading('Đang chuẩn bị bộ câu hỏi chưa nhớ...')
+                    fetch(`/api/sessions/${activeSessionInfo.sessionId}/flashcard-review`, {
+                      method: 'POST',
+                      headers: withCsrfHeaders(),
+                    })
+                      .then(async (res) => {
+                        const data = await res.json()
+                        if (!res.ok) throw new Error(data.error || 'Failed to restart review')
+                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+                        const targetUrl = isMobile 
+                          ? `/quiz/${quizId}/session/${data.sessionId}/flashcard/mobile` 
+                          : `/quiz/${quizId}/session/${data.sessionId}/flashcard`
+                        completeLoading()
+                        setTimeout(() => router.push(targetUrl), 300)
+                      })
+                      .catch((err) => {
+                        stopLoading()
+                        toast.error(err.message || 'Lỗi khi mở lại phiên ôn tập')
+                      })
+                  } else {
+                    startLoading('Đang kết nối lại...')
+                    startSessionMutation.mutate({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'continue' })
+                  }
                 }}
                 onRestart={() => {
                   setResumeDialogOpen(false)
@@ -365,13 +442,13 @@ export default function QuizDetailPage() {
               />
             </div>
 
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-1 shadow-sm overflow-hidden order-4">
+            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs overflow-hidden order-4">
               <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
             </div>
           </div>
 
           {/* Comments for Mobile Only (order 3) */}
-          <div className="lg:hidden order-3 bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-sm">
+          <div className="lg:hidden order-3 bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs overflow-hidden">
             <QuizComments 
               quizId={resolvedQuizId}
               comments={comments}

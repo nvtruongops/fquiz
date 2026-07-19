@@ -32,7 +32,9 @@ export type GeneratedVocabulary = z.infer<typeof GeneratedVocabularySchema>
 
 export interface VocabularyPromptParams {
   language: string
-  topic: string
+  explanationLanguage?: string
+  topic?: string
+  word?: string
   cefr?: string
   count?: number
   existingTerms?: string[]
@@ -43,30 +45,37 @@ export const vocabularyGeneration: PromptDefinition<VocabularyPromptParams, z.Zo
   version: PROMPT_VERSION,
   schema: z.array(GeneratedVocabularySchema),
   buildPrompt: (params: VocabularyPromptParams): string => {
+    const expLang = params.explanationLanguage || 'Vietnamese'
     const exclude = params.existingTerms?.length
       ? `\n\nEXCLUDED TERMS (do NOT generate these): ${params.existingTerms.join(', ')}`
       : ''
 
-    return `You are a professional language teacher. Generate ${params.count ?? 10} vocabulary items for "${params.language}" learners on the topic "${params.topic}" at CEFR level ${params.cefr ?? 'A2'}.
+    const isSingleLookup = Boolean(params.word && params.word.trim())
+    const wordConstraint = isSingleLookup
+      ? `specifically analyzing the word/term "${params.word!.trim()}" (if entered in ${expLang}, translate it to the matching base lemma in ${params.language} first) as the first item, and generating a closely related vocabulary item (synonym, antonym, or collocated word) as the second item`
+      : `on the topic "${params.topic || 'General Vocabulary'}"`
 
-For each word, provide:
-1. lemma (base form)
+    const itemCount = isSingleLookup ? 2 : (params.count ?? 2)
+
+    return `You are an expert language teacher. Generate exactly ${itemCount} vocabulary items in "${params.language}" for learners at level ${params.cefr ?? 'B1'}, ${wordConstraint}.
+
+For each vocabulary item, provide:
+1. lemma (base form in ${params.language})
 2. display (how it appears in lessons)
 3. ipa (IPA pronunciation)
-4. definition (clear, age-appropriate)
+4. definition (clear definition written in ${expLang})
 5. partOfSpeech
-6. examples (2-3 natural sentences showing usage)
-7. cefrLevel
-8. synonyms (optional, 1-3)
-9. antonyms (optional, 1-3)
-10. collocations (optional, 2-4 common word pairings)
+6. examples (2-3 natural sentences showing usage in ${params.language} calibrated to level ${params.cefr ?? 'B1'}, followed by natural translation in ${expLang} in parentheses)
+7. cefrLevel (${params.cefr ?? 'B1'})
+8. synonyms (optional, 1-3 terms in ${params.language})
+9. antonyms (optional, 1-3 terms in ${params.language})
+10. collocations (optional, 2-4 common word pairings in ${params.language})
 11. wordFamily (optional object with "base": string, "forms": array of { "form": string, "partOfSpeech": string }) — if you cannot provide this, set it to null, never {}
 
 Rules:
-- All definitions and examples MUST be in the target language "${params.language}"
-- Use natural, contemporary language
-- Prioritize high-frequency words for the given CEFR level
-- Each vocabulary item must have a unique lemma${exclude}
+- The definition and example translations MUST be in ${expLang}.
+- Example sentences MUST be in ${params.language} and calibrated to level ${params.cefr ?? 'B1'}.
+- Use natural, contemporary language.${exclude}
 
 Respond ONLY with a valid JSON array of objects matching the provided schema.`
   },

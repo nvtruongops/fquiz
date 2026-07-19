@@ -10,10 +10,17 @@ import QuizSessionMobilePage from '@/app/quiz/[id]/session/[sessionId]/mobile/pa
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { useToast } from '@/store/shared/toast-store'
 
+import dynamic from 'next/dynamic'
+
 // Sub-components
 import { SessionLayout } from '@/components/quiz/session/SessionLayout'
 import { QuestionDisplay } from '@/components/quiz/session/QuestionDisplay'
-import { SessionModals } from '@/components/quiz/session/SessionModals'
+import { ExplanationPanel } from '@/components/quiz/session/ExplanationPanel'
+
+const SessionModals = dynamic(
+  () => import('@/components/quiz/session/SessionModals').then((mod) => mod.SessionModals),
+  { ssr: false }
+)
 
 import { useQuizSessionQueries } from '@/hooks/quiz/useQuizSessionQueries'
 import { useSessionAnswerSync } from '@/hooks/quiz/useSessionAnswerSync'
@@ -67,13 +74,10 @@ function DesktopSessionContent({
   const router = useRouter()
   const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
-  const {
-    currentQuestionIndex,
-    answeredQuestions,
-    lastAnswerResult,
-    resumeSession,
-    navigateToQuestion,
-  } = useQuizSessionStore()
+  const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)
+  const answeredQuestions = useQuizSessionStore((s) => s.answeredQuestions)
+  const lastAnswerResult = useQuizSessionStore((s) => s.lastAnswerResult)
+  const navigateToQuestion = useQuizSessionStore((s) => s.navigateToQuestion)
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const sessionLoader = useSessionLoader()
@@ -174,6 +178,7 @@ function DesktopSessionContent({
 
   const { session, question } = activeData
   const answeredCount = Math.max(answeredQuestions.size, new Set(session.user_answers.map(a => a.question_index)).size + (selectedOptions.length > 0 ? 1 : 0))
+  const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
 
   return (
     <>
@@ -183,47 +188,57 @@ function DesktopSessionContent({
         status={sessionLoader.status} 
       />
       <SessionLayout
-      sessionData={activeData}
-      currentQuestionIndex={currentQuestionIndex}
-      answeredCount={answeredCount}
-      selectedOptions={selectedOptions}
-      submitted={submitted}
-      isPending={finalizeMutation.isPending}
-      enableAnimation={enableAnimation}
-      onToggleAnimation={setEnableAnimation}
-      onSelectOption={handleSelectOption}
-      onNavigate={navigateToQuestion}
-      onSubmit={handleSubmit}
-      onExit={handleExit}
-    >
-      <QuestionDisplay
-        question={question}
-        currentIndex={currentQuestionIndex}
-        totalQuestions={session.totalQuestions}
+        sessionData={activeData}
+        currentQuestionIndex={currentQuestionIndex}
+        answeredCount={answeredCount}
         selectedOptions={selectedOptions}
         submitted={submitted}
-        showImmediateFeedback={session.mode === 'immediate' && submitted && lastAnswerResult !== null}
-        lastAnswerResult={lastAnswerResult}
+        isPending={finalizeMutation.isPending}
+        enableAnimation={enableAnimation}
+        onToggleAnimation={setEnableAnimation}
         onSelectOption={handleSelectOption}
-        isPending={finalizeMutation.isPending}
-        sessionMode={session.mode}
-        enableAnimation={enableAnimation}
-      />
-      <SessionModals
-        confirmOpen={confirmOpen}
-        setConfirmOpen={setConfirmOpen}
-        exitConfirmOpen={exitConfirmOpen}
-        setExitConfirmOpen={setExitConfirmOpen}
-        answeredCount={answeredCount}
-        totalQuestions={session.totalQuestions}
-        isPending={finalizeMutation.isPending}
-        enableAnimation={enableAnimation}
-        onConfirmSubmit={() => { setConfirmOpen(false); finalizeMutation.mutate(); }}
-        onConfirmExit={() => { setExitConfirmOpen(false); reportSessionActivity('pause'); router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`); }}
-      />
-    </SessionLayout>
-  </>
-)
+        onNavigate={navigateToQuestion}
+        onSubmit={handleSubmit}
+        onExit={handleExit}
+        explanationContent={
+          <ExplanationPanel
+            question={question}
+            sessionMode={session.mode}
+            submitted={submitted}
+            showImmediateFeedback={showImmediateFeedback}
+            lastAnswerResult={lastAnswerResult}
+            enableAnimation={enableAnimation}
+          />
+        }
+      >
+        <QuestionDisplay
+          question={question}
+          currentIndex={currentQuestionIndex}
+          totalQuestions={session.totalQuestions}
+          selectedOptions={selectedOptions}
+          submitted={submitted}
+          showImmediateFeedback={showImmediateFeedback}
+          lastAnswerResult={lastAnswerResult}
+          onSelectOption={handleSelectOption}
+          isPending={finalizeMutation.isPending}
+          sessionMode={session.mode}
+          enableAnimation={enableAnimation}
+        />
+        <SessionModals
+          confirmOpen={confirmOpen}
+          setConfirmOpen={setConfirmOpen}
+          exitConfirmOpen={exitConfirmOpen}
+          setExitConfirmOpen={setExitConfirmOpen}
+          answeredCount={answeredCount}
+          totalQuestions={session.totalQuestions}
+          isPending={finalizeMutation.isPending}
+          enableAnimation={enableAnimation}
+          onConfirmSubmit={() => { setConfirmOpen(false); finalizeMutation.mutate(); }}
+          onConfirmExit={() => { setExitConfirmOpen(false); reportSessionActivity('pause'); router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`); }}
+        />
+      </SessionLayout>
+    </>
+  )
 }
 
 // Note: QuizSessionPage (above) handles isMobile detection and delegates to

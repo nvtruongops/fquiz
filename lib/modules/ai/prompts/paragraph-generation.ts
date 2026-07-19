@@ -73,9 +73,12 @@ export type GeneratedParagraph = z.infer<typeof GeneratedParagraphSchema>
 
 export interface ParagraphPromptParams {
   language: string
+  explanationLanguage?: string
   topic: string
   cefr?: string
-  paragraphType?: 'narrative' | 'descriptive' | 'dialogue' | 'informational'
+  paragraphType?: 'narrative' | 'descriptive' | 'dialogue' | 'informational' | 'email' | 'essay' | 'news'
+  genre?: string
+  tone?: string
   targetLength?: number
 }
 
@@ -84,22 +87,24 @@ export const paragraphGeneration: PromptDefinition<ParagraphPromptParams, typeof
   version: PROMPT_VERSION,
   schema: GeneratedParagraphSchema,
   buildPrompt: (params: ParagraphPromptParams): string => {
-    return `You are creating a ${params.paragraphType ?? 'informational'} reading passage for "${params.language}" learners at CEFR level ${params.cefr ?? 'A2'} on the topic "${params.topic}".
+    const expLang = params.explanationLanguage || 'Vietnamese'
+    const genreInstruction = params.genre ? `\nWriting Genre/Format: ${params.genre}` : ''
+    const toneInstruction = params.tone ? `\nTone & Style: ${params.tone}` : ''
+
+    return `You are a language educator creating a ${params.paragraphType ?? 'informational'} reading passage for "${params.language}" learners at level ${params.cefr ?? 'A2'} on topic "${params.topic}".${genreInstruction}${toneInstruction}
 
 Generate a reading passage with the following structure:
 
-1. title (engaging, level-appropriate)
-2. body (${params.targetLength ?? 150}-${(params.targetLength ?? 150) + 100} characters, natural flowing text)
-3. translation (natural English translation of the entire passage)
-4. vocabulary (5-8 objects: each with fields: "lemma", "display", "definition", "cefrLevel")
-5. comprehensionQuestions (optional: 3-4 objects with fields: "question", "options" (string array), "correctIndex" (number))
+1. title (engaging title in ${params.language})
+2. body (${params.targetLength ?? 150}-${(params.targetLength ?? 150) + 120} words, natural flowing text in ${params.language})
+3. translation (natural translation written in ${expLang})
+4. vocabulary (5-8 objects: each with fields: "lemma", "display", "definition" written in ${expLang}, "cefrLevel")
+5. comprehensionQuestions (optional: 3-4 objects with fields: "question", "options" (array of 4 options), "correctIndex" (0-3))
 
 Rules:
-- The body text must be entirely in ${params.language}
-- Use vocabulary and grammar appropriate for ${params.cefr ?? 'A2'} level
-- Make the content interesting and culturally relevant
-- The passage should be self-contained and meaningful
-- Comprehension questions must be answerable from the text alone
+- The passage body MUST be entirely in ${params.language}.
+- Translations, definitions, and questions MUST be written in ${expLang}.
+- Use vocabulary and grammar appropriate for level ${params.cefr ?? 'A2'}.
 
 Respond ONLY with a valid JSON object matching the provided schema.`
   },

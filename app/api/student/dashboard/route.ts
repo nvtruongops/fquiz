@@ -128,7 +128,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const sessionIds = latestSessionIdsByQuiz.map((x) => x.latestSessionId)
     const recentActivitiesRaw = await QuizSession.find({ _id: { $in: sessionIds } })
       .sort({ completed_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount questions category_id created_by is_saved_from_explore original_quiz_id')
+      .populate('quiz_id', 'title course_code questionCount category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
 
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
@@ -149,7 +149,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const activeSessionIds = latestActiveIdsByQuiz.map((x) => x.latestSessionId)
     const activeActivitiesRaw = await QuizSession.find({ _id: { $in: activeSessionIds } })
       .sort({ started_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount questions category_id created_by is_saved_from_explore original_quiz_id')
+      .populate('quiz_id', 'title course_code questionCount category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
 
     // Build a set of ALL (quizId + mode_group) that have completed sessions — used to filter activeOnlyActivities

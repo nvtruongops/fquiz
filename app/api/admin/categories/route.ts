@@ -3,19 +3,14 @@ import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
-import { Category } from '@/lib/modules/quiz/models/Category'
+import { Category, PUBLIC_CATEGORY_MATCH } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { CategoryListQuerySchema } from '@/lib/core/schemas/common'
 import { CreateCategorySchema } from '@/lib/modules/quiz/schemas/category'
 
 export const dynamic = 'force-dynamic'
 
-const publicCategoryMatch = {
-  $or: [
-    { type: 'public' },
-    { type: { $exists: false }, owner_id: null },
-  ],
-}
+const publicCategoryMatch = PUBLIC_CATEGORY_MATCH
 
 function buildCategoryMatchFilter(search?: string, typeParam?: 'public' | 'private' | '', status?: 'pending' | 'approved' | 'rejected' | '') {
   const filter: Record<string, unknown> = {}
@@ -133,9 +128,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       status: 'approved'
     })
     
-    // Revalidate admin pages to show new category immediately
+    // Revalidate admin pages and explore to show new category immediately
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
+    revalidatePath('/explore')
     
     return NextResponse.json({ category }, { status: 201 })
   } catch (err) {

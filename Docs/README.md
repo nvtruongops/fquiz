@@ -1,7 +1,7 @@
 # 📚 FQuiz — Tài Liệu Dự Án
 
-> Hub tài liệu cho FQuiz — Nền tảng thi trắc nghiệm trực tuyến.  
-> Cập nhật: 2026-07-09
+> Hub tài liệu cho FQuiz — Nền tảng học ngôn ngữ & thi trắc nghiệm.  
+> Cập nhật: 2026-07-19
 
 ---
 
@@ -10,6 +10,8 @@
 ```
 FQuiz/
 ├── DESIGN.md              ← Tài liệu thiết kế kỹ thuật (CHÍNH THỨC)
+├── README.md              ← Tổng quan dự án, setup, API, kiến trúc
+├── AGENTS.md              ← Hướng dẫn cho AI agent (commands, conventions)
 ├── Docs/
 │   ├── README.md          ← Hub này — bạn đang ở đây
 │   ├── requirements.md    ← Đặc tả yêu cầu hệ thống (formal)
@@ -17,7 +19,13 @@ FQuiz/
 │   ├── UI_UX_GUIDE.md     ← Hướng dẫn UI/UX cho developer
 │   ├── ui-colors.md       ← Bảng màu UI reference
 │   └── security.md        ← Hướng dẫn bảo mật & công cụ quét
-```
+├── lib/modules/
+│   ├── ai/README.md       ← Module AI (AIContentService, 11 prompts, dedup)
+│   ├── auth/README.md     ← Module Auth (JWT, withAuth HOF, UserService)
+│   ├── learning/README.md ← Module Learning (15 models, DI, FSRS, repos)
+│   ├── quiz/README.md     ← Module Quiz (engine, import, question bank)
+│   └── community/README.md ← Module Community (Post, comments)
+└── lib/core/README.md     ← Core infrastructure (DI, AI providers, events, cache)
 
 ---
 
@@ -26,14 +34,29 @@ FQuiz/
 ### [`DESIGN.md`](../DESIGN.md) — Tài Liệu Thiết Kế Kỹ Thuật
 > **File quan trọng nhất — đọc đầu tiên.**
 
-- Kiến trúc hệ thống (Vercel + MongoDB Atlas + QStash)
-- Data schema (Mongoose models: User, Quiz, QuizSession, Category, QuestionBank, QuizComment, Feedback...)
-- API routes đầy đủ (`/api/auth/*`, `/api/admin/*`, `/api/sessions/*`, `/api/community/*`, `/api/public/*`...)
+- Kiến trúc hệ thống (Vercel + MongoDB Atlas + QStash + Gemini/OpenAI)
+- Data schema (Mongoose models: User, Quiz, QuizSession, Category, QuestionBank, AIAsset, 15 learning models, Post...)
+- API routes đầy đủ (`/api/auth/*`, `/api/admin/*`, `/api/sessions/*`, `/api/community/*`, `/api/v1/*`)
 - Component hierarchy & Server/Client split
 - Quiz Engine logic (immediate, review, flashcard, mix quiz)
+- AI Module (Gemini/OpenAI, AIContentService, prompt registry, dedup)
+- Learning Module (FSRS, DI container, Repository pattern, course structure)
+- Core Infrastructure (Event bus, Cache, Search, AI providers)
 - External services (Cloudinary, Nodemailer, QStash)
 - Testing strategy, deployment, environment variables
 - Known design decisions & tradeoffs
+
+### Module READMEs
+> Tài liệu chi tiết cho từng module:
+
+| Module | File | Nội dung chính |
+|--------|------|---------------|
+| **AI** | [`lib/modules/ai/README.md`](../lib/modules/ai/README.md) | AIContentService, 11 prompt types, AIAsset dedup, AILearningLog |
+| **Auth** | [`lib/modules/auth/README.md`](../lib/modules/auth/README.md) | JWT, withAuth HOF, UserService, token rotation, SiteSettings |
+| **Learning** | [`lib/modules/learning/README.md`](../lib/modules/learning/README.md) | 15 models, 10 repos, 5 services, FSRS, DI wiring, search |
+| **Quiz** | [`lib/modules/quiz/README.md`](../lib/modules/quiz/README.md) | Quiz engine, question bank, import pipeline, mix quiz |
+| **Community** | [`lib/modules/community/README.md`](../lib/modules/community/README.md) | Post model, comments, authorization |
+| **Core** | [`lib/core/README.md`](../lib/core/README.md) | DI container, AI providers, events, cache, search, types |
 
 ### [`Docs/requirements.md`](./requirements.md) — Đặc Tả Yêu Cầu
 > Formal requirement specification với Acceptance Criteria.

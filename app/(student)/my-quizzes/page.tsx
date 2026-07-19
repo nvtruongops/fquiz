@@ -328,51 +328,51 @@ function QuizCard({
 
   return (
     <>
-      <Card className="group relative w-full border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_40px_rgba(93,123,111,0.08)] transition-all duration-300">
-        <CardContent className="p-4 sm:p-5 relative">
+      <Card className="group relative w-full border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl sm:rounded-[24px] overflow-hidden bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_40px_rgba(93,123,111,0.08)] transition-all duration-300">
+        <CardContent className="p-3.5 sm:p-5 relative">
 
           {/* Main Content (Default View) */}
           <div className={cn("transition-all duration-300", view === 'default' ? "opacity-100" : "opacity-10 blur-[4px] pointer-events-none scale-[0.98]")}>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
               {/* Left Section: Quiz Info */}
-              <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
                 {/* Category Badge */}
-                <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-black text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
+                <Badge variant="secondary" className="rounded-md sm:rounded-lg px-2 py-0.5 sm:px-3 sm:py-1 bg-[#5D7B6F]/5 text-[#5D7B6F] border-none font-bold text-[9px] sm:text-[10px] tracking-wider uppercase line-clamp-1 max-w-[180px]" title={categoryName}>
                   {categoryName}
                 </Badge>
 
                 {/* Quiz Code */}
                 <div className="flex items-center gap-2">
-                  <span className="bg-[#5D7B6F] text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0">Mã</span>
-                  <h3 className="text-sm sm:text-base font-black text-[#5D7B6F] leading-none truncate" title={quiz.course_code}>
+                  <span className="bg-[#5D7B6F] text-white px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-extrabold uppercase tracking-widest shrink-0">Mã</span>
+                  <h3 className="text-xs sm:text-base font-extrabold text-[#5D7B6F] leading-none truncate" title={quiz.course_code}>
                     {quiz.course_code}
                   </h3>
                 </div>
 
                 {/* Quiz Title - Only show if different from course code */}
                 {quiz.title && quiz.title !== quiz.course_code && (
-                  <p className="text-[11px] font-bold text-gray-400 leading-relaxed line-clamp-1" title={quiz.title}>
+                  <p className="text-[11px] font-medium text-gray-500 leading-relaxed line-clamp-1" title={quiz.title}>
                     {quiz.title}
                   </p>
                 )}
 
                 {/* Quiz Meta Info */}
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400">
-                    <div className="w-5 h-5 bg-gray-50 rounded-lg flex items-center justify-center text-[#A4C3A2]">
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-gray-50 rounded-md sm:rounded-lg flex items-center justify-center text-[#A4C3A2]">
                       <BookOpen className="w-2.5 h-2.5" />
                     </div>
                     <span className="uppercase tracking-tighter">{quiz.questionCount} CÂU</span>
                   </div>
                   <div className={cn(
-                    "flex items-center gap-1.5 text-[10px] font-black",
-                    quiz.is_public ? 'text-green-500' : 'text-orange-400'
+                    "flex items-center gap-1 text-[10px] font-bold",
+                    quiz.is_public ? 'text-emerald-600' : 'text-orange-500'
                   )}>
                     <div className={cn(
-                      "w-6 h-6 rounded-lg flex items-center justify-center",
-                      quiz.is_public ? 'bg-green-50' : 'bg-orange-50'
+                      "w-4 h-4 sm:w-5 sm:h-5 rounded-md sm:rounded-lg flex items-center justify-center",
+                      quiz.is_public ? 'bg-emerald-50' : 'bg-orange-50'
                     )}>
-                      {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                      {quiz.is_public ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
                     </div>
                     <span className="uppercase tracking-tighter">{quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
                   </div>
@@ -380,7 +380,7 @@ function QuizCard({
               </div>
 
               {/* Middle Section: Status */}
-              <div className="flex items-center justify-center px-6 border-l border-r border-gray-100 min-w-[180px]">
+              <div className="flex items-center justify-start sm:justify-center border-t sm:border-t-0 sm:border-l sm:border-r border-gray-100 pt-2 sm:pt-0 sm:px-6 min-w-0 sm:min-w-[180px]">
                 <QuizStatusBadge
                   quiz={quiz}
                   hasAttempt={hasAttempt}
@@ -392,26 +392,26 @@ function QuizCard({
               </div>
 
               {/* Right Section: Actions */}
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                 <Button
                   asChild={!isSourceLocked}
                   disabled={isSourceLocked}
                   className={cn(
-                    'rounded-xl px-6 py-5 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all active:scale-95',
+                    'rounded-xl px-4 py-2 sm:px-6 sm:py-5 font-bold text-xs uppercase tracking-wider shadow-xs flex items-center gap-1.5 transition-all active:scale-95 flex-1 sm:flex-initial justify-center',
                     isSourceLocked
                       ? 'bg-gray-300 text-white shadow-gray-200 cursor-not-allowed'
                       : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
                   )}
                 >
                   {isSourceLocked ? (
-                    <span className="inline-flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
+                    <span className="inline-flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
                       Đã đóng
                     </span>
                   ) : (
                     <Link href={`/quiz/${quiz._id}`}>
                       {hasAttempt ? 'Làm lại' : 'Ôn tập'}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   )}
                 </Button>
@@ -421,9 +421,9 @@ function QuizCard({
                   size="icon"
                   onClick={() => setView('actions')}
                   disabled={isDeleting}
-                  className="w-10 h-10 rounded-xl bg-gray-50/50 hover:bg-gray-100 text-gray-400 group-hover:text-[#5D7B6F] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-50/80 hover:bg-gray-100 text-gray-500 group-hover:text-[#5D7B6F] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <MoreVertical className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -683,23 +683,22 @@ export default function MyQuizzesPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden pb-20">
-      {/* Animated Background Mesh */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-br from-[#5D7B6F]/10 to-transparent blur-[120px] rounded-full mix-blend-multiply" />
-        <div className="absolute bottom-[20%] left-[5%] w-[30%] h-[30%] bg-gradient-to-tr from-[#A4C3A2]/20 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
+      {/* Background Mesh Glow */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden transform-gpu -z-10">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/15 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
       {/* Unified Header & Controls Section */}
-      <section className="w-full mx-auto px-4 pt-12 relative z-10">
-        <Card className="rounded-[40px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
+      <section className="w-full mx-auto px-3 sm:px-4 pt-4 sm:pt-12 relative z-10">
+        <Card className="rounded-2xl sm:rounded-[40px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
           <CardContent className="p-0">
             {/* Top Row: Title & Category Management */}
-            <div className="px-8 py-6 md:px-12 md:py-6 flex flex-col md:flex-row items-center justify-between gap-8 border-b border-white/50">
-              <div className="space-y-1 text-center md:text-left">
-                <h1 className="text-3xl font-black text-[#5D7B6F] flex items-center justify-center md:justify-start gap-3">
-                  <Library className="w-9 h-9 text-[#A4C3A2]" /> Bộ đề của tôi
+            <div className="px-4 py-4 sm:px-8 sm:py-6 md:px-12 md:py-6 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-8 border-b border-white/50">
+              <div className="space-y-0.5 sm:space-y-1 text-center md:text-left">
+                <h1 className="text-xl sm:text-3xl font-extrabold text-[#5D7B6F] flex items-center justify-center md:justify-start gap-2 sm:gap-3">
+                  <Library className="w-6 h-6 sm:w-9 sm:h-9 text-[#A4C3A2]" /> Bộ đề của tôi
                 </h1>
-                <p className="text-xs font-bold text-gray-400 max-w-md leading-relaxed">
+                <p className="text-[11px] sm:text-xs font-medium text-gray-500 max-w-md leading-relaxed">
                   Quản lý và ôn tập các mã đề thi do bạn biên soạn hoặc lưu về.
                 </p>
               </div>
@@ -715,23 +714,23 @@ export default function MyQuizzesPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="bg-gray-50 hover:bg-white text-[#5D7B6F] rounded-2xl py-6 px-8 font-black border border-[#5D7B6F]/5 hover:border-[#5D7B6F]/20 shadow-xl shadow-[#5D7B6F]/5 transition-all active:scale-95 flex items-center gap-3">
-                    <Settings2 className="w-5 h-5 text-[#A4C3A2]" />
+                  <Button className="bg-gray-50 hover:bg-white text-[#5D7B6F] rounded-xl sm:rounded-2xl py-2 px-4 sm:py-6 sm:px-8 h-9 sm:h-auto font-bold border border-[#5D7B6F]/5 hover:border-[#5D7B6F]/20 shadow-xs transition-all active:scale-95 flex items-center gap-2 text-xs sm:text-sm cursor-pointer">
+                    <Settings2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#A4C3A2]" />
                     Quản lý danh mục
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden w-[calc(100vw-2rem)] sm:max-w-md">
-                  <div className="px-6 py-6 sm:px-8 sm:py-8 bg-[#5D7B6F] text-white space-y-2">
-                    <DialogTitle className="text-xl sm:text-2xl font-black flex items-center gap-3">
-                      <FolderTree className="w-5 h-5 sm:w-6 sm:h-6" /> Danh mục của bạn
+                <DialogContent className="rounded-2xl sm:rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden w-[calc(100vw-2rem)] sm:max-w-md">
+                  <div className="px-4 py-3.5 sm:px-6 sm:py-6 bg-[#5D7B6F] text-white space-y-1">
+                    <DialogTitle className="text-base sm:text-xl font-bold flex items-center gap-2">
+                      <FolderTree className="w-4 h-4 sm:w-5 sm:h-5" /> Danh mục của bạn
                     </DialogTitle>
                     <DialogDescription className="sr-only">
                       Tạo, sửa, xóa danh mục cá nhân và xem số lượng quiz tự tạo hoặc quiz đã lưu trong từng danh mục.
                     </DialogDescription>
-                    <p className="text-[10px] sm:text-xs font-bold opacity-70 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
+                    <p className="text-[10px] sm:text-xs font-medium opacity-80 uppercase tracking-widest">Tối đa 5 danh mục cá nhân ({privateCategoryCount}/5)</p>
                   </div>
 
-                  <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
+                  <div className="px-4 py-4 sm:px-6 sm:py-6 space-y-3.5 sm:space-y-5">
                     {privateCategoryCount < 5 && (
                       <div className="flex gap-2 items-center">
                         <Input
@@ -739,37 +738,37 @@ export default function MyQuizzesPage() {
                           value={newCategoryName}
                           onChange={(e) => setNewCategoryName(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
-                          className="h-14 rounded-xl border-[#5D7B6F]/10 font-bold text-sm flex-1"
+                          className="h-10 rounded-xl border-[#5D7B6F]/20 font-bold text-xs flex-1"
                         />
                         <Button
                           onClick={() => newCategoryName.trim() && createCatMutation.mutate(newCategoryName)}
                           disabled={createCatMutation.isPending || !newCategoryName.trim()}
-                          className="bg-[#5D7B6F] hover:bg-[#4a6358] h-14 w-14 rounded-xl shrink-0 disabled:opacity-50"
+                          className="bg-[#5D7B6F] hover:bg-[#4a6358] h-10 w-10 rounded-xl shrink-0 disabled:opacity-50 flex items-center justify-center cursor-pointer"
                         >
-                          {createCatMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6" />}
+                          {createCatMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                         </Button>
                       </div>
                     )}
 
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                    <div className="space-y-2 sm:space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                       {privateCategories.map((cat: any) => {
                         const isConfirming = confirmDeleteCatId === cat._id
                         return (
-                          <div key={cat._id} className="group flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#5D7B6F]/10 transition-all">
+                          <div key={cat._id} className="group flex items-center justify-between p-2.5 sm:p-3.5 bg-gray-50 rounded-xl border border-transparent hover:border-[#5D7B6F]/10 transition-all">
                             {editingCategoryId === cat._id ? (
                               <div className="flex-1 flex gap-2">
                                 <Input
                                   autoFocus
                                   value={editingCategoryName}
                                   onChange={(e) => setEditingCategoryName(e.target.value)}
-                                  className="h-9 text-xs font-bold"
+                                  className="h-8 text-xs font-bold"
                                 />
-                                <Button size="sm" onClick={() => updateCatMutation.mutate({ id: cat._id, name: editingCategoryName })}>Lưu</Button>
+                                <Button size="sm" className="h-8 text-xs px-2.5" onClick={() => updateCatMutation.mutate({ id: cat._id, name: editingCategoryName })}>Lưu</Button>
                               </div>
                             ) : (
                               <div className="space-y-0.5">
-                                <span className="text-sm font-black text-[#5D7B6F]">{cat.name}</span>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                <span className="text-xs sm:text-sm font-bold text-[#5D7B6F]">{cat.name}</span>
+                                <p className="text-[9px] sm:text-[10px] font-medium text-gray-400 uppercase tracking-wider">
                                   Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0}
                                 </p>
                               </div>
@@ -777,19 +776,19 @@ export default function MyQuizzesPage() {
 
                             <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                               {isConfirming ? (
-                                <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-red-100 animate-in fade-in slide-in-from-right-2 duration-200">
+                                <div className="flex items-center gap-1 bg-white p-1 rounded-lg shadow-xs border border-red-100 animate-in fade-in slide-in-from-right-2 duration-200">
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => setConfirmDeleteCatId(null)}
-                                    className="h-7 px-2 text-[10px] font-black text-gray-400 hover:bg-transparent"
+                                    className="h-6 px-1.5 text-[9px] font-bold text-gray-400 hover:bg-transparent"
                                   >
                                     Hủy
                                   </Button>
                                   <Button
                                     size="sm"
                                     onClick={() => deleteCatMutation.mutate(cat._id)}
-                                    className="h-7 px-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black rounded-lg transition-all active:scale-95"
+                                    className="h-6 px-2 bg-red-500 hover:bg-red-600 text-white text-[9px] font-bold rounded-md transition-all active:scale-95"
                                   >
                                     {deleteCatMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xác nhận xóa'}
                                   </Button>
@@ -799,7 +798,7 @@ export default function MyQuizzesPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="w-8 h-8 rounded-lg"
+                                    className="w-7 h-7 rounded-lg"
                                     onClick={() => {
                                       setEditingCategoryId(cat._id)
                                       setEditingCategoryName(cat.name)
@@ -810,7 +809,7 @@ export default function MyQuizzesPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-red-500"
+                                    className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500"
                                     onClick={() => setConfirmDeleteCatId(cat._id)}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -828,66 +827,66 @@ export default function MyQuizzesPage() {
             </div>
 
             {/* Bottom Section: Search & Filters */}
-            <div className="px-8 py-8 md:px-12 md:py-8 space-y-6">
+            <div className="px-3.5 py-4 sm:px-8 sm:py-8 md:px-12 md:py-8 space-y-3 sm:space-y-6">
               <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-[#5D7B6F] transition-colors" />
+                <Search className="absolute left-3.5 sm:left-6 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-focus-within:text-[#5D7B6F] transition-colors" />
                 <Input
                   placeholder="Tìm nhanh theo Mã đề, Tên bộ đề hoặc Danh mục..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-16 pl-16 pr-8 rounded-[24px] border-2 border-[#5D7B6F]/20 bg-white shadow-inner font-bold text-[#5D7B6F] text-lg focus:ring-4 focus:ring-[#5D7B6F]/10 focus:border-[#5D7B6F]/40 transition-all"
+                  className="h-10 sm:h-16 pl-10 sm:pl-16 pr-4 sm:pr-8 rounded-xl sm:rounded-[24px] border-2 border-[#5D7B6F]/20 bg-white shadow-inner font-bold text-[#5D7B6F] text-xs sm:text-lg focus:ring-4 focus:ring-[#5D7B6F]/10 focus:border-[#5D7B6F]/40 transition-all"
                 />
               </div>
 
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                <div className="flex p-1.5 bg-white rounded-2xl w-full lg:w-fit shadow-sm border border-gray-100 min-w-0">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6">
+                <div className="flex p-1 bg-white rounded-xl sm:rounded-2xl w-full lg:w-fit shadow-xs border border-gray-100 min-w-0">
                   <button
                     onClick={() => setActiveTab('personal')}
                     className={cn(
-                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-                      activeTab === 'personal' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
+                      "flex-1 min-w-0 px-2 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer",
+                      activeTab === 'personal' ? "bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <FolderPlus className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Quiz tự tạo</span>
-                    <Badge className={cn("shrink-0 border-none px-1.5 text-[10px]", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <FolderPlus className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+                    <span className="truncate">Tự tạo</span>
+                    <Badge className={cn("shrink-0 border-none px-1 py-0 text-[9px] sm:text-[10px]", activeTab === 'personal' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {ownQuizTotal}
                     </Badge>
                   </button>
                   <button
                     onClick={() => setActiveTab('saved')}
                     className={cn(
-                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-                      activeTab === 'saved' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
+                      "flex-1 min-w-0 px-2 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer",
+                      activeTab === 'saved' ? "bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <Download className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Quiz đã lưu</span>
-                    <Badge className={cn("shrink-0 border-none px-1.5 text-[10px]", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
+                    <Download className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+                    <span className="truncate">Đã lưu</span>
+                    <Badge className={cn("shrink-0 border-none px-1 py-0 text-[9px] sm:text-[10px]", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {savedQuizTotal}
                     </Badge>
                   </button>
                   <button
                     onClick={() => setActiveTab('bank')}
                     className={cn(
-                      "flex-1 min-w-0 px-3 sm:px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-                      activeTab === 'bank' ? "bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
+                      "flex-1 min-w-0 px-2 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer",
+                      activeTab === 'bank' ? "bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    <Library className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Ngân hàng câu hỏi</span>
+                    <Library className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
+                    <span className="truncate">Ngân hàng</span>
                   </button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full lg:w-auto">
                   <Select value={selectedCategoryId || "all"} onValueChange={(val) => setSelectedCategoryId(val === "all" ? null : val)}>
-                    <SelectTrigger className="w-full sm:w-[240px] h-14 rounded-2xl border-2 border-[#5D7B6F]/20 bg-white font-black text-xs text-[#5D7B6F] shadow-sm hover:border-[#5D7B6F]/40 transition-all">
+                    <SelectTrigger className="w-full sm:w-[240px] h-10 sm:h-14 rounded-xl sm:rounded-2xl border-2 border-[#5D7B6F]/20 bg-white font-bold text-xs text-[#5D7B6F] shadow-xs hover:border-[#5D7B6F]/40 transition-all">
                       <SelectValue placeholder="Tất cả danh mục" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
-                      <SelectItem value="all" className="font-black text-xs pl-10 pr-4 py-2.5">Tất cả danh mục</SelectItem>
+                      <SelectItem value="all" className="font-bold text-xs pl-8 sm:pl-10 pr-4 py-2">Tất cả danh mục</SelectItem>
                       {categories.map((cat: any) => (
-                        <SelectItem key={cat._id} value={cat._id} className="font-bold text-xs pl-10 pr-4 py-2.5">
+                        <SelectItem key={cat._id} value={cat._id} className="font-bold text-xs pl-8 sm:pl-10 pr-4 py-2">
                           {cat.name} (Tự tạo: {cat.ownQuizCount ?? 0} | Đã lưu: {cat.savedQuizCount ?? 0})
                         </SelectItem>
                       ))}
@@ -896,10 +895,10 @@ export default function MyQuizzesPage() {
 
                   <Button
                     asChild
-                    className="w-full sm:w-auto bg-[#5D7B6F] hover:bg-[#4A6359] text-white h-14 px-10 rounded-2xl font-black shadow-xl shadow-[#5D7B6F]/20 flex items-center gap-3 transition-all active:scale-95"
+                    className="w-full sm:w-auto bg-[#5D7B6F] hover:bg-[#4A6359] text-white h-10 sm:h-14 px-6 sm:px-10 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-md shadow-[#5D7B6F]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                   >
                     <Link href="/create">
-                      <Plus className="w-6 h-6" /> Tạo bài thi mới
+                      <Plus className="w-4 h-4 sm:w-6 sm:h-6" /> Tạo bài thi mới
                     </Link>
                   </Button>
                 </div>
@@ -910,7 +909,7 @@ export default function MyQuizzesPage() {
       </section>
 
       {/* Quizzes Grid Section */}
-      <section className="w-full mx-auto px-4 mt-20 relative z-10">
+      <section className="w-full mx-auto px-3 sm:px-4 mt-6 sm:mt-12 relative z-10">
         {filteredQuizzes.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-700">
             <div className="w-24 h-24 rounded-[40px] bg-white shadow-2xl flex items-center justify-center">

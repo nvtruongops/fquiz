@@ -8,7 +8,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: { retry: 1, refetchOnWindowFocus: false },
+          queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 60_000 },
+          mutations: { retry: 0 },
         },
       })
   )

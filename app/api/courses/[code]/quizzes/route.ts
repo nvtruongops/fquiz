@@ -65,6 +65,7 @@ export async function GET(
               student_id: studentId,
               quiz_id: { $in: quizIds },
               status: 'completed',
+              mode: { $ne: 'flashcard' },
             },
           },
           {

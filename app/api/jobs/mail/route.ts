@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 import { sendResetPasswordMail, sendVerificationCodeMail } from '@/lib/core/mail/mail';
+import logger from '@/lib/core/utils/logger';
 
 export const runtime = 'nodejs';
 
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     const job = JSON.parse(verification.bodyText);
     const { type, data } = job;
 
-    console.log(`Processing email job: ${type} for ${data.to}`);
+    logger.info({ type }, 'Processing email job')
 
     if (type === 'reset-password') {
       await sendResetPasswordMail(data);
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to process email job:', error);
+    logger.error({ err: error }, 'Failed to process email job')
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

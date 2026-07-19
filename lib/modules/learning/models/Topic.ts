@@ -10,6 +10,7 @@ const TopicSchema = new Schema<ITopic>(
     icon: { type: String, default: null },
     parentTopicId: { type: Schema.Types.ObjectId, default: null, index: true },
     path: { type: String, required: true, index: true },  // materialized path
+    tags: [{ type: String, trim: true }],
   },
   BaseEntityOptions
 )

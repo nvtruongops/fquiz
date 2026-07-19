@@ -54,36 +54,29 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     }
 
     const [quizzesRaw, total] = await Promise.all([
-      Quiz.find(query).skip(skip).limit(limit).sort({ created_at: -1 }).lean(),
+      Quiz.find(query).select('-questions').skip(skip).limit(limit).sort({ created_at: -1 }).lean(),
       Quiz.countDocuments(query),
     ])
 
-    // Enrich with student count
-    const quizzes = await Promise.all(
-      quizzesRaw.map(async (quiz: any) => {
-        const uniqueStudents = await QuizSession.distinct('student_id', {
-          quiz_id: quiz._id,
-          // Đếm cả active và completed sessions - tính ngay khi user bắt đầu làm
-        })
-        const studentCount = uniqueStudents.length
-        const actualQuestionCount = Array.isArray(quiz.questions) ? quiz.questions.length : 0
-        const declaredQuestionCount = Number(quiz.questionCount ?? 0)
-        const normalizedQuestionCount = actualQuestionCount > 0 ? actualQuestionCount : declaredQuestionCount
+    // Batch student count — single aggregation instead of N+1 distinct queries
+    const quizIds = quizzesRaw.map((q: any) => q._id)
+    const studentCountMap = new Map<string, number>()
+    if (quizIds.length > 0) {
+      const counts = await QuizSession.aggregate([
+        { $match: { quiz_id: { $in: quizIds } } },
+        { $group: { _id: '$quiz_id', count: { $addToSet: '$student_id' } } },
+        { $project: { _id: 1, count: { $size: '$count' } } },
+      ])
+      for (const c of counts) {
+        studentCountMap.set(c._id.toString(), c.count)
+      }
+    }
 
-        if (actualQuestionCount > 0 && declaredQuestionCount !== actualQuestionCount) {
-          await Quiz.updateOne(
-            { _id: quiz._id },
-            { $set: { questionCount: actualQuestionCount } }
-          )
-        }
-
-        return {
-          ...quiz,
-          questionCount: normalizedQuestionCount,
-          studentCount,
-        }
-      })
-    )
+    const quizzes = quizzesRaw.map((quiz: any) => ({
+      ...quiz,
+      questionCount: Number(quiz.questionCount ?? 0),
+      studentCount: studentCountMap.get(quiz._id.toString()) ?? 0,
+    }))
 
     return NextResponse.json({ quizzes, total, page })
   } catch (err) {

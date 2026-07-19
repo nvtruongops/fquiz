@@ -35,7 +35,7 @@ function SidebarContent({
     <>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-[#A4C3A2]/30">
-        <Link href="/admin" prefetch={false} className="flex items-center gap-2" onClick={onNavigate}>
+        <Link href="/admin" className="flex items-center gap-2" onClick={onNavigate}>
           <div className="w-7 h-7 rounded-lg bg-[#5D7B6F] flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 text-white" />
           </div>
@@ -51,7 +51,6 @@ function SidebarContent({
             <Link
               key={href}
               href={href}
-              prefetch={false}
               onClick={onNavigate}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -103,7 +102,7 @@ export function AdminSidebar() {
 
       {/* ── Mobile top bar (< md) ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-[#A4C3A2]/30 flex items-center justify-between px-4 h-14">
-        <Link href="/admin" prefetch={false} className="flex items-center gap-2">
+        <Link href="/admin" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-[#5D7B6F] flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 text-white" />
           </div>

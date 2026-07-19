@@ -20,5 +20,15 @@ CategorySchema.index({ type: 1, status: 1, created_at: -1 })
 // Fast path for user-owned category queries.
 CategorySchema.index({ owner_id: 1, type: 1, created_at: -1 })
 
+export const PUBLIC_CATEGORY_MATCH = {
+  $or: [
+    { type: 'public' },
+    { is_public: true },
+    { type: { $exists: false }, owner_id: null },
+  ],
+  status: { $nin: ['pending', 'rejected'] },
+}
+
 export const Category =
   mongoose.models.Category ?? mongoose.model<ICategory>('Category', CategorySchema)
+

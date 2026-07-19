@@ -26,7 +26,7 @@ LearningProgressSchema.index(
   { userId: 1, learningObjectId: 1, loType: 1, learningObjectVersion: 1 },
   { unique: true }
 )
-LearningProgressSchema.index({ userId: 1, nextReviewAt: 1 })
+LearningProgressSchema.index({ userId: 1, status: 1, nextReviewAt: 1 })
 LearningProgressSchema.index({ userId: 1, masteryLevel: 1 })
 
 export const LearningProgress =

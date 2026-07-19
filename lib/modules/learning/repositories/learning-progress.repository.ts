@@ -28,6 +28,24 @@ export class LearningProgressRepository {
     }).lean()
   }
 
+  async findByUserAndLOs(
+    userId: string, loIds: Array<{ learningObjectId: string; loType: LearningObjectType; version: number }>
+  ): Promise<Map<string, ILearningProgress>> {
+    if (!loIds.length) return new Map()
+    const docs = await LearningProgress.find({
+      userId,
+      status: { $ne: 'deleted' },
+      $or: loIds.map(({ learningObjectId, loType, version }) => ({
+        learningObjectId, loType, learningObjectVersion: version,
+      })),
+    }).lean()
+    const map = new Map<string, ILearningProgress>()
+    for (const doc of docs) {
+      map.set(`${doc.learningObjectId}:${doc.loType}:${doc.learningObjectVersion}`, doc)
+    }
+    return map
+  }
+
   async upsert(
     userId: string, learningObjectId: string, loType: LearningObjectType,
     version: number, data: Partial<ILearningProgress>

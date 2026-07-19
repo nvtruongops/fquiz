@@ -19,20 +19,11 @@ export default async function HomePage() {
   return (
     <AppLayout user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
       {/* Background Mesh Glow */}
-      <div className="absolute inset-x-0 top-0 h-[900px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.45, 0.25] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-[800px] h-[800px] bg-gradient-to-tr from-[#5D7B6F]/20 to-transparent blur-[130px] rounded-full mix-blend-multiply absolute -top-40"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="w-[600px] h-[600px] bg-gradient-to-bl from-[#A4C3A2]/30 to-transparent blur-[110px] rounded-full mix-blend-multiply absolute top-[120px] right-[-100px]"
-        />
+      <div className="absolute inset-x-0 top-0 h-[700px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center transform-gpu">
+        <div className="w-full max-w-7xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#5D7B6F]/20 via-[#A4C3A2]/15 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <div className="w-full py-12 lg:py-20 relative z-10 space-y-20">
+      <div className="w-full pt-1 sm:pt-2 pb-12 lg:pb-20 relative z-10 space-y-12 sm:space-y-20">
         {/* Hero Section */}
         <section className="text-center max-w-4xl mx-auto space-y-8">
           <motion.div
@@ -97,7 +88,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Service 1: AI Language Learning */}
             <Card className="rounded-[36px] border border-white/90 bg-gradient-to-br from-emerald-50/90 via-white/80 to-emerald-50/40 backdrop-blur-2xl p-8 sm:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all space-y-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#5D7B6F]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#5D7B6F]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 pointer-events-none transform-gpu" />
 
               <div className="w-14 h-14 rounded-2xl bg-[#5D7B6F] text-white flex items-center justify-center shadow-lg shadow-[#5D7B6F]/30">
                 <Map className="w-7 h-7" />
@@ -137,7 +128,7 @@ export default async function HomePage() {
 
             {/* Service 2: Quiz & Exam Testing */}
             <Card className="rounded-[36px] border border-white/90 bg-gradient-to-br from-blue-50/90 via-white/80 to-blue-50/40 backdrop-blur-2xl p-8 sm:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all space-y-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 pointer-events-none transform-gpu" />
 
               <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Zap className="w-7 h-7" />

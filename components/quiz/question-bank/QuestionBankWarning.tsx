@@ -72,7 +72,6 @@ export function QuestionBankWarning({
       }
 
       const data = await response.json()
-      console.log('Sync update result:', data)
 
       onUpdateAll()
       onOpenChange(false)

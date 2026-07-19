@@ -117,7 +117,7 @@ export default function RoadmapPage() {
       <div className="w-full py-8 space-y-8">
       {/* Hero Header */}
       <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl p-8 md:p-10 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transform-gpu" />
         
         <div className="relative z-10 space-y-6">
           <div className="flex items-center gap-2.5">

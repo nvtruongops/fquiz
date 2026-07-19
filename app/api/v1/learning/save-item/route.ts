@@ -50,10 +50,13 @@ export const POST = withAuth(
       const { loType, languageCode, data } = parsed.data
 
       // 1. Resolve Language
+      const codeValid = /^[a-zA-Z]{2,5}$/.test(languageCode)
+      const codeClean = codeValid ? languageCode.toLowerCase() : languageCode.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 10) || 'en'
+      const escaped = codeClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       let lang = await Language.findOne({
         $or: [
-          { code: languageCode.toLowerCase() },
-          { name: new RegExp(`^${languageCode}$`, 'i') },
+          { code: codeClean },
+          { name: { $regex: `^${escaped}$`, $options: 'i' } },
         ],
       })
 

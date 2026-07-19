@@ -134,7 +134,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     }
 
     // 6. Create a placeholder session with status 'preparing'
-    console.log('Creating placeholder session...')
+    if (process.env.NODE_ENV !== 'production') console.log('Creating placeholder session...')
     const tempSession = await QuizSession.create({
       student_id: studentId,
       mode,
@@ -146,11 +146,15 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       started_at: now,
       last_activity_at: now,
     })
-    console.log('Placeholder session created:', tempSession._id)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Placeholder session created:', tempSession._id)
+    }
 
     // 7. Publish job to QStash
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    console.log(`Publishing mix-quiz job... URL: ${appUrl}/api/jobs/mix-quiz`)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Publishing mix-quiz job... URL: ${appUrl}/api/jobs/mix-quiz`)
+    }
     
     // Check if we can do a local bypass for development
     if (process.env.NODE_ENV === 'development') {
@@ -208,7 +212,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       }, { status: 500 })
     }
     
-    console.log('Job published successfully:', publishResult.messageId)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Job published successfully:', publishResult.messageId)
+    }
 
     return NextResponse.json(
       {

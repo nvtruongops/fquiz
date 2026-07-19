@@ -34,17 +34,10 @@ export default function QuizSessionMobilePage() {
   const router = useRouter()
   const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
-  const {
-    sessionId: storeSessionId,
-    currentQuestionIndex,
-    answeredQuestions,
-    lastAnswerResult,
-    initSession,
-    resumeSession,
-    navigateToQuestion,
-    restoreAnswers,
-    setLastAnswerResult,
-  } = useQuizSessionStore()
+  const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)
+  const answeredQuestions = useQuizSessionStore((s) => s.answeredQuestions)
+  const lastAnswerResult = useQuizSessionStore((s) => s.lastAnswerResult)
+  const navigateToQuestion = useQuizSessionStore((s) => s.navigateToQuestion)
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
@@ -374,15 +367,15 @@ export default function QuizSessionMobilePage() {
 
       {/* Question Map Dialog */}
       <Dialog open={questionMapOpen} onOpenChange={setQuestionMapOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-h-[80vh] rounded-2xl p-0 sm:max-w-md">
-          <DialogHeader className="border-b border-gray-200 px-6 py-4">
+        <DialogContent className="w-[calc(100vw-2rem)] max-h-[85vh] rounded-2xl p-0 sm:max-w-md flex flex-col overflow-hidden">
+          <DialogHeader className="border-b border-gray-200 px-6 py-4 shrink-0">
             <DialogTitle className="text-lg font-black text-[#5D7B6F]">Danh sách câu hỏi</DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
               Đã trả lời: {answeredCount}/{effectiveTotal} câu
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] px-6 py-4">
-            <div className="grid grid-cols-5 gap-2">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid grid-cols-5 gap-2 pb-2">
               {Array.from({ length: effectiveTotal }, (_, i) => {
                 const isAnswered = answeredFromSession.has(i)
                 const isCurrent = i === effectiveIndex
@@ -403,7 +396,7 @@ export default function QuizSessionMobilePage() {
                 )
               })}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -27,6 +27,8 @@ function getErrorDetails(error: unknown): string | undefined {
   return String(error)
 }
 
+import { Category } from '@/lib/modules/quiz/models/Category'
+
 export async function GET(req: Request) {
   try {
     await connectDB()
@@ -62,17 +64,33 @@ export async function GET(req: Request) {
       }
     }
 
-    const [posts, total] = await Promise.all([
+    const [posts, total, tagAgg, categories] = await Promise.all([
       Post.find(query)
+        .select('title authorId authorName tags likes comments createdAt updatedAt')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Post.countDocuments(query)
+      Post.countDocuments(query),
+      Post.aggregate([
+        { $unwind: '$tags' },
+        { $group: { _id: '$tags', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 }
+      ]),
+      Category.find({ is_public: true, status: 'approved' })
+        .select('name')
+        .limit(10)
+        .lean()
     ])
+
+    const realPostTags = tagAgg.map((t: any) => String(t._id || '').trim()).filter(Boolean)
+    const categoryNames = categories.map((c: any) => String(c.name || '').trim()).filter(Boolean)
+    const popularTags = Array.from(new Set([...realPostTags, ...categoryNames])).slice(0, 10)
 
     return NextResponse.json({
       posts,
+      popularTags,
       pagination: {
         page,
         limit,

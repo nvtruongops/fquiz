@@ -38,7 +38,7 @@ const PostSchema = new Schema<IPost>({
 }, { timestamps: true })
 
 // Add text index for search
-PostSchema.index({ title: 'text', tags: 'text' })
+PostSchema.index({ title: 'text', tags: 'text', content: 'text' })
 // Support sorting by newest first
 PostSchema.index({ createdAt: -1 })
 

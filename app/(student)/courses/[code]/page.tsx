@@ -49,14 +49,13 @@ function CourseDetailContent({ code }: { code: string }) {
   }, [currentTab, categoryIdParam, data?.categoryId, code, router])
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden px-6 md:px-10 py-10">
-      {/* Animated Background Mesh */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[10%] right-[10%] w-[45%] h-[45%] bg-gradient-to-br from-[#5D7B6F]/10 to-transparent blur-[120px] rounded-full mix-blend-multiply" />
-        <div className="absolute bottom-[20%] left-[5%] w-[35%] h-[35%] bg-gradient-to-tr from-[#A4C3A2]/20 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
+    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden px-4 sm:px-6 md:px-10 py-5 md:py-10">
+      {/* Background Mesh Glow */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden -z-10 transform-gpu">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/15 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-8 relative z-10">
         {/* Back navigation */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
@@ -64,11 +63,11 @@ function CourseDetailContent({ code }: { code: string }) {
           transition={{ duration: 0.5 }}
         >
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#5D7B6F]/70 hover:text-[#5D7B6F] transition-colors group"
+            href="/explore"
+            className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest text-[#5D7B6F]/70 hover:text-[#5D7B6F] transition-colors group"
           >
-            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            Quay lại
+            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+            Quay lại khám phá
           </Link>
         </motion.div>
 
@@ -77,14 +76,14 @@ function CourseDetailContent({ code }: { code: string }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-3"
         >
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <div className="flex items-center gap-2 text-[#5D7B6F]/60">
               <div className="h-1 w-1 rounded-full bg-[#5D7B6F]/60" />
               <p className="text-[10px] font-black uppercase tracking-[0.3em]">Danh mục môn học</p>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight uppercase">
+            <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight uppercase">
               {categoryName}
             </h1>
           </div>
@@ -92,17 +91,17 @@ function CourseDetailContent({ code }: { code: string }) {
         </motion.header>
 
         {/* Tabs Bar */}
-        <div className="flex border-b border-slate-200/80 gap-6 pt-2">
+        <div className="flex border-b border-slate-200/80 gap-4 sm:gap-6 pt-1">
           <button
             onClick={() => router.push(`/courses/${code}`)}
             className={cn(
-              "flex items-center gap-2 pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative",
+              "flex items-center gap-1.5 pb-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative cursor-pointer",
               currentTab === 'list'
                 ? "border-[#5D7B6F] text-[#5D7B6F]"
                 : "border-transparent text-slate-400 hover:text-slate-600"
             )}
           >
-            <List className="w-4 h-4" />
+            <List className="w-3.5 h-3.5" />
             Danh sách đề thi
             {currentTab === 'list' && (
               <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5D7B6F] rounded-full" />
@@ -114,13 +113,13 @@ function CourseDetailContent({ code }: { code: string }) {
               router.push(`/courses/${code}?tab=mix${categoryParam}`)
             }}
             className={cn(
-              "flex items-center gap-2 pb-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative",
+              "flex items-center gap-1.5 pb-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative cursor-pointer",
               currentTab === 'mix'
                 ? "border-[#5D7B6F] text-[#5D7B6F]"
                 : "border-transparent text-slate-400 hover:text-slate-600"
             )}
           >
-            <Shuffle className="w-4 h-4" />
+            <Shuffle className="w-3.5 h-3.5" />
             Trộn bộ đề
             {currentTab === 'mix' && (
               <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5D7B6F] rounded-full" />

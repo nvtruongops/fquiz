@@ -202,7 +202,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
           </div>
 
           <div className="quiz-scroll flex-1 overflow-y-auto pr-1">
-            <div className="grid grid-cols-6 gap-1.5 pt-1 pb-1">
+            <div className="grid grid-cols-6 gap-1.5 p-1.5">
               {Array.from({ length: totalQuestions }, (_, i) => {
                 const isCurrent = i === currentIndex
                 const isAnswered = answeredSet ? answeredSet.has(i) : false
@@ -214,7 +214,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
                     onClick={() => onNavigate(i)}
                     className={cn(
                       'h-7 rounded-lg font-bold text-[11px] flex items-center justify-center transition-all duration-200 relative',
-                      isCurrent && 'ring-2 ring-primary ring-offset-1 dark:ring-offset-slate-900 font-extrabold z-10 scale-105',
+                      isCurrent && 'ring-2 ring-primary ring-offset-1 dark:ring-offset-slate-900 font-extrabold z-10',
                       isAnswered && !isCurrent && 'bg-emerald-500 text-white shadow-xs hover:bg-emerald-600',
                       !isAnswered && !isCurrent && 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-400'
                     )}

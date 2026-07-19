@@ -1,18 +1,21 @@
 # DESIGN.md — FQuiz Platform
 
 > Tài liệu thiết kế kỹ thuật, phản ánh trạng thái thực tế của codebase.  
-> Cập nhật lần cuối: 2026-07-01
+> Cập nhật lần cuối: 2026-07-19
 
 ---
 
 ## 1. Tổng quan hệ thống
 
-FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.js 16 App Router**, triển khai trên **Vercel** (region `sin1`).
+FQuiz là nền tảng học ngôn ngữ và thi trắc nghiệm full-stack, xây dựng trên **Next.js 16 App Router**, triển khai trên **Vercel** (region `sin1`).
 
 - **3 vai trò**: `admin`, `student`, `public` (unauthenticated)
 - **3 chế độ thi**: `immediate` (chấm ngay), `review` (nộp cuối), `flashcard` (lật thẻ)
 - **Mix Quiz**: trộn câu hỏi từ nhiều quiz/bộ đề
 - **Ngân hàng câu hỏi (Question Bank)**: quản lý câu hỏi tái sử dụng, phát hiện conflict đáp án
+- **AI Learning**: sinh nội dung học tập (từ vựng, ngữ pháp, câu, đoạn văn, quiz, flashcard) qua Gemini/OpenAI
+- **Học ngôn ngữ**: khóa học theo lộ trình CEFR, spaced repetition (FSRS), community
+- **Kiến trúc Module**: DI container, Repository pattern, Event bus cho learning module
 - Frontend và API nằm trong cùng một Next.js project; database là **MongoDB Atlas** qua Mongoose.
 
 ---
@@ -20,43 +23,52 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 ## 2. Kiến trúc tổng thể
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Vercel (sin1)                             │
-│                                                                     │
-│  ┌─────────────────────┐   proxy.ts (Node.js Middleware)            │
-│  │  Next.js App Router │◄─────────────────────────────────────────  │
-│  │  (RSC + Client)     │                                            │
-│  │                     │                                            │
-│  │  /(auth)/           │   ┌──────────────────────────────────────┐ │
-│  │  /(student)/        │   │  Next.js API Route Handlers          │ │
-│  │  /(admin)/admin/    │◄──│  /api/**  (Serverless Functions)     │ │
-│  │  /quiz/[id]/        │   └─────────────────┬────────────────────┘ │
-│  │  /explore/          │                     │                      │
-│  └─────────────────────┘                     │                      │
-│                                              │ Mongoose (Singleton)  │
-└──────────────────────────────────────────────┼─────────────────────┘
-                                               │
-                   ┌───────────────────────────▼──────────────────┐
-                   │               MongoDB Atlas                   │
-                   │  Collections:                                 │
-                   │  - users         (User schema)                │
-                   │  - quizzes       (Quiz + embedded Questions)  │
-                   │  - quizsessions  (QuizSession)                │
-                   │  - categories    (Category)                   │
-                   │  - questionbanks (QuestionBank)               │
-                   │  - quizcomments  (QuizComment)                │
-                   │  - feedbacks     (Feedback)                   │
-                   │  - emailverifications                         │
-                   │  - loginlogs                                  │
-                   │  - sitesettings                               │
-                   └──────────────────────────────────────────────┘
-                                               │
-                   ┌───────────────────────────▼──────────────────┐
-                   │           Upstash QStash (Background Jobs)    │
-                   │  - mail jobs (email verification, reset PW)   │
-                   │  - quiz stats sync (studentCount)             │
-                   │  - mix quiz temp session cleanup              │
-                   └──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              Vercel (sin1)                                    │
+│                                                                              │
+│  ┌─────────────────────┐   proxy.ts (Node.js Middleware)                     │
+│  │  Next.js App Router │◄──────────────────────────────────────────────────  │
+│  │  (RSC + Client)     │                                                     │
+│  │                     │                                                     │
+│  │  /(auth)/           │   ┌───────────────────────────────────────────────┐ │
+│  │  /(student)/        │   │  Next.js API Route Handlers                   │ │
+│  │  /(admin)/admin/    │◄──│  /api/**  (Serverless Functions)              │ │
+│  │  /quiz/[id]/        │   │                                               │ │
+│  │  /explore/          │   │  ┌─────────────────────────────────────────┐  │ │
+│  └─────────────────────┘   │  │          DI Container                    │  │ │
+│                            │  │  IAIProvider  ICache  ISearchProvider    │  │ │
+│                            │  │  IEventBus    Services  Repositories     │  │ │
+│                            │  └────────────────┬────────────────────────┘  │ │
+│                            └───────────────────┼──────────────────────────┘ │
+│                                                │ Mongoose (Singleton)        │
+└────────────────────────────────────────────────┼────────────────────────────┘
+                                                 │
+              ┌──────────────────────────────────┼────────────────────────────┐
+              │            MongoDB Atlas         │                            │
+              │  Collections:                    │                            │
+              │  - users, quizzes, quizsessions, │  - languages, topics        │
+              │    categories, questionbanks,    │  - courses, modules, lessons│
+              │    quizcomments, feedbacks       │  - vocabularies, sentences  │
+              │  - posts (community)             │  - paragraphs, grammarpatterns│
+              │  - emailverifications, loginlogs │  - learningprogresses       │
+              │  - sitesettings                  │  - aiassets, ailearninglogs │
+              │  - vocabularyembeddings,         │  - learningtags             │
+              │    sentenceembeddings            │                             │
+              └──────────────────────────────────┴────────────────────────────┘
+                                                 │
+              ┌──────────────────────────────────┼────────────────────────────┐
+              │     Upstash QStash (Background Jobs)                          │
+              │  - mail jobs (email verification, reset PW)                   │
+              │  - quiz stats sync (studentCount)                             │
+              │  - mix quiz temp session cleanup                              │
+              └──────────────────────────────────────────────────────────────┘
+                                                 │
+              ┌──────────────────────────────────┼────────────────────────────┐
+              │        External AI Services                                   │
+              │  - Gemini API (gemini-2.0-flash-001, text-embedding-004)      │
+              │  - OpenAI API (GPT-4o-mini, text-embedding-3-small)           │
+              │  - Custom OpenAI-compatible endpoints                         │
+              └──────────────────────────────────────────────────────────────┘
 ```
 
 ### External Services
@@ -76,7 +88,7 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 .
 ├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Login, Register, Forgot/Reset Password
-│   ├── (student)/                # Dashboard, Courses, History, Profile, Settings, My-Quizzes, Create, Community
+│   ├── (student)/                # Dashboard, Courses, History, Profile, Settings, My-Quizzes, Create, Community, AI
 │   ├── (admin)/admin/            # Users, Quizzes, Categories, Question Bank, Feedback, Settings
 │   ├── quiz/[id]/                # Quiz Detail → Session (desktop/mobile/flashcard) → Result
 │   ├── explore/                  # Khám phá quiz công khai
@@ -84,7 +96,7 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 │   ├── privacy/, terms/          # Legal pages
 │   ├── globals.css               # Global styles
 │   ├── layout.tsx                # Root layout (font, providers, toploader)
-│   └── api/                      # 69 API route handlers
+│   └── api/                      # 80+ API route handlers
 │       ├── auth/                 # login, register, logout, me, forgot-password, reset-password, send-code
 │       ├── admin/                # quizzes, categories, users, settings, ban/unban
 │       ├── student/              # profile, saved quizzes, community
@@ -95,9 +107,10 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 │       ├── history/              # list + detail
 │       ├── feedback/             # submit feedback
 │       ├── import/               # import quiz từ JSON/TXT
+│       ├── community/            # posts (CRUD + comments)
 │       ├── jobs/                 # QStash job handlers (mail, quiz-stats)
 │       ├── security/             # csp-report
-│       └── v1/public/            # Public API v1 (unauthenticated)
+│       └── v1/                   # Public API v1, AI, learning, explore, analytics, search
 ├── components/
 │   ├── quiz/
 │   │   ├── QuizEditor.tsx        # Editor tổng hợp (32KB — core component)
@@ -108,6 +121,7 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 │   │   ├── editor/               # Editor sub-components: control panel, metadata, question card
 │   │   └── shared/               # Dùng chung: loader, timer, badge, upload, tabs
 │   ├── admin/                    # Admin-specific components
+│   ├── flashcard/                # Flashcard viewer
 │   ├── layout/                   # Sidebar, navbar, mobile nav
 │   └── shared/
 │       ├── ui/                   # shadcn/ui primitives (button, dialog, select, tabs…)
@@ -118,18 +132,49 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 │       └── UnauthorizedView.tsx  # 403 view
 ├── lib/
 │   ├── core/
-│   │   ├── db/mongodb.ts         # Connection pool singleton + DNS SRV fallback
+│   │   ├── db/
+│   │   │   ├── mongodb.ts        # Connection pool singleton + DNS SRV fallback
+│   │   │   ├── model-registry.ts # Lazy model registration → bootstrapModels()
+│   │   │   └── base-schema.ts    # BaseEntityFields (Mongoose schema fragment)
+│   │   ├── di/                   # DI Container (lightweight, no decorators)
+│   │   │   ├── container.ts      # Container class: register, resolve, singleton/transient
+│   │   │   └── index.ts          # Wiring: providers + repositories + services
+│   │   ├── ai/                   # AI Provider abstraction
+│   │   │   ├── ai-provider-interface.ts  # IAIProvider (generate, embed, moderate)
+│   │   │   ├── gemini-provider.ts        # GeminiProvider (gemini-2.0-flash-001)
+│   │   │   ├── openai-provider.ts        # OpenAIProvider (GPT-4o-mini)
+│   │   │   └── dynamic-ai-provider.ts    # DynamicAIProvider (runtime LLM switching)
+│   │   ├── events/               # Event bus system
+│   │   │   ├── event-bus-interface.ts    # IEventBus (domain/integration events)
+│   │   │   ├── in-memory-event-bus.ts    # InMemoryEventBus implementation
+│   │   │   ├── event-bus.ts              # Legacy EventBus (simple on/emit)
+│   │   │   └── domain-event.ts           # IDomainEvent, DomainEventType
+│   │   ├── cache/                # In-memory cache with TTL + tag invalidation
+│   │   ├── search/               # Search provider abstraction (Atlas Search)
 │   │   ├── security/             # csrf.ts, rate-limit/
 │   │   ├── queue/qstash.ts       # publishJob() — Upstash QStash wrapper
 │   │   ├── mail/mail.ts          # Nodemailer + email templates
+│   │   ├── types/                # base-entity.ts, domain-metadata.ts
 │   │   ├── schemas/common.ts     # Zod shared schemas
 │   │   ├── constants/            # Cookie names, cookie max age, etc.
+│   │   ├── validation/           # Input validation helpers
 │   │   └── utils/                # cn(), logger (Pino), formatters, cache invalidation
 │   └── modules/
-│       ├── auth/                 # auth.ts, authz.ts, dal.ts, with-auth.ts, models/, schemas/, types/
-│       └── quiz/                 # quiz-engine.ts, question-bank-manager.ts, quiz-analyzer.ts,
-│                                 # question-id-generator.ts, session-api.ts, feedback-utils.ts,
-│                                 # quiz-import/, models/, schemas/, types/, constants/
+│       ├── auth/                 # User, EmailVerification, LoginLog, SiteSettings, Feedback
+│       │                         # auth.ts, authz.ts, dal.ts, with-auth.ts, UserService
+│       ├── quiz/                 # Quiz, QuizSession, Category, QuestionBank, QuizComment
+│       │                         # quiz-engine.ts, question-bank-manager.ts, session-api.ts
+│       │                         # quiz-import/, question-id-generator.ts
+│       ├── ai/                   # AIAsset, AILearningLog
+│       │                         # AIContentService, prompt registry (11 prompt types)
+│       │                         # Dedup (requestHash), Zod validation, event emission
+│       ├── learning/             # Language, Topic, Course, Module, Lesson, Vocabulary,
+│       │                         # GrammarPattern, Sentence, Paragraph, LearningProgress,
+│       │                         # LearningTag + 3 join tables
+│       │                         # 10 repositories, 5 services, FSRS review engine
+│       │                         # DI-wired, IBaseEntity, application-level joins
+│       └── community/            # Post (with embedded Comments)
+│                                 # validatePostRequest utility
 ├── hooks/
 │   ├── quiz/                     # useSubmitAnswer, useFlashcardSession, useQuizSessionQueries,
 │   │                             # useSessionHydration, useSessionAnswerSync, useSessionActivityTracking,
@@ -141,7 +186,7 @@ FQuiz là nền tảng thi trắc nghiệm full-stack, xây dựng trên **Next.
 │   └── shared/toast-store.ts       # Zustand — toast notifications
 ├── proxy.ts                        # Next.js Middleware (CORS, JWT, CSRF, maintenance, role routing)
 ├── scripts/                        # CLI: seed, migrate, audit, perf tests
-└── Docs/                           # design.md (cũ), requirements.md, security.md, ui-colors.md
+└── Docs/                           # requirements.md, security.md, ui-colors.md, UI_UX_GUIDE.md
 ```
 
 ---
@@ -251,7 +296,152 @@ export const GET = withAuth(async (req, { params, payload }) => {
 
 ---
 
-## 6. Data Models
+## 6. Model Registry & DI Container
+
+### Model Registry (`lib/core/db/model-registry.ts`)
+
+Ngăn `MissingSchemaError` trong Next.js Serverless Routes bằng cách lazy-register tất cả Mongoose models:
+
+```typescript
+// Mỗi module index.ts gọi registerModel():
+// lib/modules/quiz/index.ts
+registerModel(() => import('./models/Quiz'))
+registerModel(() => import('./models/QuizSession'))
+// ... 7 models total
+
+// lib/modules/auth/index.ts
+registerModel(() => import('./models/User'))
+// ... 5 models total
+
+// lib/modules/learning/index.ts
+registerModel(() => import('./models/Language'))
+// ... 15 models total
+
+// lib/modules/community/index.ts
+registerModel(() => import('./models/Post'))
+
+// lib/modules/ai/index.ts
+registerModel(() => import('./models/AIAsset'))
+registerModel(() => import('./models/AILearningLog'))
+```
+
+`mongodb.ts` static-imports all 5 module indexes, sau đó `connectDB()` gọi `bootstrapModels()` — thực thi tất cả registrations sau khi kết nối thành công.
+
+### DI Container (`lib/core/di/`)
+
+Lightweight container, không decorator, không reflect-metadata:
+
+```typescript
+// lib/core/di/container.ts
+class Container {
+  register<T>(token: symbol, factory: () => T): void          // transient
+  registerSingleton<T>(token: symbol, factory: () => T): void  // singleton
+  resolve<T>(token: symbol): T
+  has(token: symbol): boolean
+  reset(): void
+}
+
+// lib/core/di/index.ts — Wiring
+container.registerSingleton(IEventBus,        () => new InMemoryEventBus())
+container.registerSingleton(ICache,           () => new InMemoryCache())
+container.registerSingleton(ISearchProvider,  () => new AtlasSearchProvider())
+container.registerSingleton(IAIProvider,      () => new DynamicAIProvider())
+
+// 10 learning repositories → transient
+container.register(LanguageRepository,        () => new LanguageRepository())
+// ...
+
+// 6 services (depends on repos + providers) → transient
+container.register(VocabularyService,         () => new VocabularyService(
+  container.resolve(VocabularyRepository), container.resolve(IEventBus)))
+container.register(AIContentService,          () => new AIContentService(
+  container.resolve(IAIProvider), container.resolve(ICache)))
+```
+
+**Quy tắc**: Learning module dùng DI cho repos/services. Legacy modules (auth, quiz, community) import trực tiếp.
+
+### Core Infrastructure
+
+| Component | Interface | Implementation | Purpose |
+|-----------|-----------|---------------|---------|
+| **Event Bus** | `IEventBus` | `InMemoryEventBus` | Pub/sub domain + integration events. AIContentService emits `AIAssetGenerated`; LessonLearningService emits `LessonCompleted`. Legacy `EventBus` (simple on/emit) vẫn dùng cho AIContentService và VocabularyService. |
+| **Cache** | `ICache` | `InMemoryCache` | In-memory Map với TTL + tag-based invalidation. Dùng cho lesson content cache, course structure cache. |
+| **Search** | `ISearchProvider` | `AtlasSearchProvider` | MongoDB Atlas Search. Learning module SearchService dùng cho full-text + semantic search (`$vectorSearch`). |
+| **AI Provider** | `IAIProvider` | `DynamicAIProvider` | Runtime LLM switching qua `SiteSettings.llm_config.active_provider`. Routes to GeminiProvider (`gemini-2.0-flash-001`), OpenAIProvider (`GPT-4o-mini`), hoặc custom OpenAI-compatible endpoint. |
+
+---
+
+## 7. Base Entity (`IBaseEntity`)
+
+Tất cả model Phase 2+ (learning, AIAsset) kế thừa `IBaseEntity`:
+
+```typescript
+// lib/core/types/base-entity.ts
+type EntityStatus = 'draft' | 'pending' | 'published' | 'archived' | 'deleted'
+
+interface IBaseMetadata {
+  searchKeywords?: string[]
+  normalizedText?: string
+  embeddingStatus?: 'pending' | 'processing' | 'completed' | 'failed'
+  source?: string
+  sourceRef?: string
+  tags?: string[]
+  customFields?: Record<string, unknown>
+}
+
+interface IBaseEntity {
+  _id: string
+  createdAt: Date
+  updatedAt: Date
+  createdBy: string          // ref: User ObjectId
+  updatedBy?: string
+  deletedAt?: Date           // soft delete
+  deletedBy?: string
+  status: EntityStatus
+  schemaVersion: number
+  contentVersion: number
+  metadata: IBaseMetadata
+}
+
+// lib/core/db/base-schema.ts — Mongoose schema fragment
+const BaseEntityFields = { createdBy, updatedBy, deletedAt, deletedBy,
+  status, schemaVersion, contentVersion, metadata }
+```
+
+### Domain Metadata (`lib/core/types/domain-metadata.ts`)
+
+```typescript
+interface IDomainMetadata {
+  languageId?: string       // ref: Language
+  languageCode?: string     // denormalized
+  topicId?: string          // ref: Topic
+  cefrLevel?: CEFRLevel     // A1-C2
+  difficulty?: number       // 1-5
+  frequency?: number
+  tags?: string[]
+  source: ContentSource     // manual | ai_generated | ai_assisted | imported
+  isVerified: boolean
+  verifiedBy?: string
+  verifiedAt?: Date
+}
+
+interface IAIMetadata {
+  aiProvider?: string
+  aiModel?: string
+  aiPromptVersion?: string
+  aiGeneratedBy?: string    // ref: User
+  aiGeneratedAt?: Date
+  aiVerified: boolean
+  aiReviewStatus: AIReviewStatus
+  aiGenerationType: AIGenerationType
+  aiAssetId?: string
+  aiConfidence?: number
+}
+```
+
+---
+
+## 8. Data Models (MongoDB Collections)
 
 ### User
 
@@ -413,6 +603,225 @@ interface IQuestionBank {
 - `{ category_id, question_id }` unique — 1 câu hỏi chỉ xuất hiện 1 lần trong 1 môn
 - Text index: `{ text }` — search
 - `{ category_id, usage_count: -1 }` — popular questions
+
+### QuizComment
+
+```typescript
+interface IQuizComment {
+  _id: ObjectId
+  quiz_id: ObjectId         // ref: Quiz
+  user_id: ObjectId         // ref: User
+  username: string          // denormalized
+  content: string
+  created_at: Date
+  updated_at: Date
+}
+```
+
+### Community Post (module: community)
+
+```typescript
+interface IPost {
+  _id: ObjectId
+  title: string
+  content: string
+  authorId: ObjectId        // ref: User
+  authorName: string        // denormalized
+  tags: string[]
+  likes: ObjectId[]         // ref: User[]
+  comments: IComment[]      // embedded subdocuments
+  createdAt: Date
+  updatedAt: Date
+}
+```
+
+**Indexes**: Text `{ title, tags }`; `{ createdAt: -1 }`.
+
+### AIAsset (module: ai)
+
+```typescript
+// Kế thừa IBaseEntity (status, createdBy, updatedBy, deletedAt, metadata...)
+interface IAIAsset {
+  requestHash: string          // SHA-256 dedup key
+  responseHash: string
+  aiProvider: string           // 'gemini' | 'openai' | 'custom'
+  aiModel: string              // 'gemini-2.0-flash-001' | 'gpt-4o-mini'
+  sourceType: AIGenerationType // vocabulary | sentence | paragraph | grammar |
+                               // quiz | flashcard | translation | dialogue |
+                               // story | example_sentences | writing | writing_eval
+  promptTemplate: string       // versioned prompt key
+  requestPayload: Record<string, any>
+  responsePayload: Record<string, any>  // Zod-validated
+  tokensUsed?: number
+  costEstimated?: number
+}
+```
+
+**Indexes**: Unique `{ requestHash, aiProvider }` — dedup trước khi gọi API. `{ status }`, `{ responseHash, sourceType }`, `{ aiProvider, aiModel, createdAt }`.
+
+### AILearningLog (module: ai)
+
+```typescript
+interface IAILearningLog {
+  _id: ObjectId
+  userId: ObjectId
+  languageId: ObjectId
+  generationType: AIGenerationType
+  promptKey: string
+  requestPreview: string
+  responsePreview: string
+  tokensUsed: number
+  costEstimated: number
+  duration: number           // ms
+  createdAt: Date
+}
+```
+
+### Learning Models (module: learning)
+
+Tất cả model learning đều dùng `IBaseEntity` + `BaseEntityFields`. Kế thừa: `status`, `createdBy`, `updatedBy`, `deletedAt`, `schemaVersion`, `contentVersion`, `metadata`.
+
+**Domain Metadata**: Mỗi content model kèm `IDomainMetadata` (languageId, languageCode, topicId, cefrLevel, source, isVerified) và `IAIMetadata` (aiProvider, aiModel, aiAssetId, aiConfidence) nếu được AI sinh.
+
+**Hierarchy**: `Language → Topic → Course → Module → Lesson`
+
+```typescript
+interface ILanguage {
+  code: string               // unique: 'en', 'ja', 'zh', 'ko', 'fr'...
+  name: string
+  nativeName?: string
+  isActive: boolean
+}
+
+interface ICourse {
+  languageId: ObjectId
+  topicId: ObjectId
+  title: string
+  slug: string
+  cefrLevel: CEFRLevel      // A1-C2
+  order: number
+  isPublished: boolean
+}
+
+interface ILesson {
+  moduleId: ObjectId
+  title: string
+  order: number
+  type: 'vocabulary' | 'grammar' | 'reading' | 'mixed'
+  prerequisiteId?: ObjectId  // previous lesson must be completed
+  estimatedMinutes: number
+}
+```
+
+**Content Models**:
+
+```typescript
+interface IVocabulary {
+  languageId: ObjectId
+  lemma: string              // normalized form (lowercase, trim)
+  displayForm: string
+  partOfSpeech: PartOfSpeech
+  definitions: { languageCode: string, text: string }[]
+  cefrLevel: CEFRLevel
+}
+
+interface IGrammarPattern {
+  languageId: ObjectId
+  name: string
+  pattern: string            // template: "V-{te} + います"
+  explanation: string
+  examples: { sentence: string, translation: string }[]
+  cefrLevel: CEFRLevel
+}
+
+interface ISentence {
+  languageId: ObjectId
+  text: string
+  translation?: string
+  checksum: string           // SHA-256 dedup
+  source: ContentSource
+}
+
+interface IParagraph {
+  lessonId: ObjectId
+  title: string
+  content: string
+  translation?: string
+  order: number
+}
+```
+
+**Join Tables** (application-level joins, không `.populate()`):
+
+```typescript
+interface ISentenceVocabulary {   // sentence ↔ vocabulary
+  sentenceId: ObjectId; vocabularyId: ObjectId
+}
+interface IGrammarSentence {      // grammar ↔ sentence
+  grammarId: ObjectId; sentenceId: ObjectId
+}
+interface IParagraphSentence {    // paragraph ↔ sentence (với order)
+  paragraphId: ObjectId; sentenceId: ObjectId; order: number
+}
+```
+
+**Learning Progress (FSRS)**:
+
+```typescript
+interface ILearningProgress {
+  userId: ObjectId
+  learningObjectId: ObjectId
+  learningObjectType: LearningObjectType
+  status: 'new' | 'learning' | 'review' | 'mastered'
+  fsrsState: {               // FSRS algorithm state
+    stability: number; difficulty: number
+    elapsedDays: number; scheduledDays: number
+    reps: number; lapses: number
+    state: number            // 0=New 1=Learning 2=Review 3=Relearning
+    lastReview?: Date; due?: Date
+  }
+  reviewCount: number
+  correctCount: number
+  incorrectCount: number
+  lastReviewAt?: Date
+  nextReviewAt?: Date
+  masteryLevel: number       // 0.0 — 1.0
+}
+```
+
+**Indexes**: `{ userId, learningObjectId, learningObjectType }` unique; `{ userId, nextReviewAt }` for due reviews.
+
+### Feedback
+
+```typescript
+interface IFeedback {
+  _id: ObjectId
+  user_id: ObjectId
+  username: string
+  content: string
+  created_at: Date
+}
+```
+
+### SiteSettings
+
+```typescript
+interface ISiteSettings {
+  maintenance_mode: boolean
+  maintenance_message?: string
+  public_access_enabled: boolean
+  max_public_quizzes_per_page: number
+  rate_limit_enabled: boolean
+  rate_limit_max_requests: number
+  rate_limit_window_ms: number
+  llm_config: {
+    active_provider: 'gemini' | 'openai' | 'custom'
+    openai: { apiKey: string; baseUrl: string; model: string }
+    gemini: { apiKey: string; model: string }
+    custom: { apiKey: string; baseUrl: string; model: string }
+  }
+}
+```
 
 ---
 
@@ -675,6 +1084,24 @@ useMutation({
 | GET | `/api/v1/public/quizzes/[id]` | Public |
 | GET | `/api/v1/explore/quizzes` | Optional auth |
 
+### AI API v1
+
+| Method | Endpoint | Auth | Mô tả |
+|--------|----------|------|-------|
+| POST | `/api/v1/ai/generate` | Student | Sinh nội dung AI (từ vựng, câu, đoạn...) |
+| GET | `/api/v1/ai/history` | Student | Lịch sử generation |
+| GET | `/api/v1/ai/stats` | Student | Thống kê usage |
+
+### Community
+
+| Method | Endpoint | Auth | Mô tả |
+|--------|----------|------|-------|
+| GET | `/api/community/posts` | Student | Danh sách posts |
+| POST | `/api/community/posts` | Student | Tạo post |
+| GET/PUT/DELETE | `/api/community/posts/[id]` | Student | CRUD post |
+| POST | `/api/community/posts/[id]/comments` | Student | Thêm comment |
+| POST | `/api/community/posts/[id]/like` | Student | Like/unlike |
+
 ---
 
 ## 12. Security Design
@@ -840,22 +1267,205 @@ Fallback:
 
 ---
 
-## 17. Explore & Community
+## 17. Explore, Community & AI Learning
 
+### Explore
 ```
 /explore page:
   - Duyệt quiz public (is_public=true, status=published)
   - Filter theo category, search theo title/course_code
   - Lưu quiz vào library: tạo bản copy với original_quiz_id, is_saved_from_explore=true
+```
 
+### Community
+```
 /community (student):
   - Xem quiz của người dùng khác (privacy_share_activity=true)
   - Comment trên Quiz (QuizComment collection)
+  - Post bài thảo luận (Post collection với embedded comments)
+  - Tag-based filtering
+```
+
+### Community API
+
+| Method | Endpoint | Auth | Mô tả |
+|--------|----------|------|-------|
+| GET | `/api/community/posts` | Student | Danh sách posts |
+| POST | `/api/community/posts` | Student | Tạo post mới |
+| GET | `/api/community/posts/[id]` | Student | Chi tiết post |
+| PUT | `/api/community/posts/[id]` | Student | Cập nhật post |
+| DELETE | `/api/community/posts/[id]` | Student | Xóa post |
+| POST | `/api/community/posts/[id]/comments` | Student | Thêm comment |
+| POST | `/api/community/posts/[id]/like` | Student | Like/unlike post |
+
+---
+
+## 18. AI Module (`lib/modules/ai/`)
+
+Module quản lý nội dung sinh bởi AI (Gemini/OpenAI) cho dịch vụ học ngôn ngữ.
+
+### AI Provider Architecture
+
+```
+DynamicAIProvider (runtime switching)
+    ├── GeminiProvider  (gemini-2.0-flash-001, text-embedding-004)
+    ├── OpenAIProvider  (GPT-4o-mini, text-embedding-3-small)
+    └── Custom OpenAI-compatible endpoint
+
+Provider selection: SiteSettings.llm_config.active_provider
+Fallback: Gemini nếu active provider không khả dụng
+```
+
+### Prompt Registry (`lib/modules/ai/prompts/`)
+
+11 loại prompt, mỗi loại có Zod schema validate structured JSON output từ AI:
+
+| Prompt Type | Output | Schema |
+|-------------|--------|--------|
+| `vocabularyGeneration` | Từ vựng + định nghĩa + ví dụ | `GeneratedVocabularySchema` |
+| `sentenceGeneration` | Câu ví dụ theo ngữ pháp | `GeneratedSentenceSchema` |
+| `paragraphGeneration` | Đoạn văn theo chủ đề | `GeneratedParagraphSchema` |
+| `grammarGeneration` | Pattern ngữ pháp + giải thích | `GeneratedGrammarSchema` |
+| `quizGeneration` | Câu hỏi trắc nghiệm | `GeneratedQuizSchema` |
+| `flashcardGeneration` | Flashcard hai mặt | `GeneratedFlashcardSchema` |
+| `translation` | Bản dịch + giải thích | `GeneratedTranslationSchema` |
+| `dialogueGeneration` | Hội thoại theo ngữ cảnh | `GeneratedDialogueSchema` |
+| `storyGeneration` | Truyện ngắn theo trình độ | `GeneratedStorySchema` |
+| `writingGeneration` | Đề bài viết + gợi ý | `GeneratedWritingPromptSchema` |
+| `writingEvaluation` | Chấm bài viết + feedback | `GeneratedWritingEvalSchema` |
+
+### AIContentService
+
+```typescript
+// lib/modules/ai/services/ai-content.service.ts
+class AIContentService {
+  async generate<T>(request: AIContentRequest): Promise<AIContentResult<T>>
+}
+
+interface AIContentRequest {
+  promptType: PromptType
+  params: Record<string, any>
+  languageId?: string
+  userId?: string
+  enableCache?: boolean        // default: true
+}
+
+interface AIContentResult<T> {
+  success: boolean
+  data?: T                     // Zod-validated
+  error?: string
+  fromCache: boolean
+  aiAssetId?: string
+  tokensUsed?: number
+  costEstimated?: number
+}
+```
+
+### Dedup Flow
+
+```
+generate() request
+  │
+  ├─ 1. Build canonical prompt từ promptRegistry + params
+  ├─ 2. SHA-256(requestHash) từ prompt + params
+  ├─ 3. Check AIAsset DB: { requestHash, aiProvider } unique index
+  │      └─ Found → reuse response (skip API call, emit log)
+  ├─ 4. Check in-memory cache (ICache, TTL-based)
+  │      └─ Hit → return cached result
+  ├─ 5. Call IAIProvider.generate() → Gemini/OpenAI
+  ├─ 6. Validate response với Zod schema từ promptRegistry
+  ├─ 7. Persist vào AIAsset collection
+  ├─ 8. Emit AIAssetGenerated event (EventBus)
+  └─ 9. Return AIContentResult<T>
 ```
 
 ---
 
-## 18. UI/UX & Frontend Stack
+## 19. Learning Module (`lib/modules/learning/`)
+
+Module quản lý lộ trình học ngôn ngữ, sử dụng DI container, Repository pattern, và FSRS spaced repetition.
+
+### Architecture
+
+```
+API Route Handlers
+       │
+       ▼
+   Services (5)         ←── DI Container resolves repos + providers
+       │
+       ▼
+   Repositories (10)    ←── Mongoose models với .lean()
+       │
+       ▼
+   Models (15)          ←── IBaseEntity + BaseEntityFields
+```
+
+### Repositories (10)
+
+| Repository | Model | Key Methods |
+|------------|-------|-------------|
+| `LanguageRepository` | Language | `findByCode`, `upsertByCode`, `findAll` |
+| `TopicRepository` | Topic | `findBySlug`, `findByPath`, `findChildren` |
+| `CourseRepository` | Course | `findByLanguage`, `findByCEFR`, `findByTopic` |
+| `ModuleRepository` | Module | `findByCourse` |
+| `LessonRepository` | Lesson | `findByModule`, `findByPrerequisite` |
+| `VocabularyRepository` | Vocabulary | `findByLemma` (normalized), `findByLanguage`, `bulkCreate` |
+| `GrammarRepository` | GrammarPattern | `findByName`, `findByLanguage` |
+| `SentenceRepository` | Sentence | `findByChecksum`, `findByLanguage`, `bulkCreate` |
+| `ParagraphRepository` | Paragraph | `findByLesson` |
+| `LearningProgressRepository` | LearningProgress | `findDueReviews`, `upsert`, `getDetailedAnalytics` |
+| `SentenceReadRepository` | (read-only, joins 3 tables) | `getSentenceWithRelations` (batch query join 5 collections) |
+
+### Services (5)
+
+| Service | Responsibilities |
+|---------|-----------------|
+| `VocabularyService` | CRUD vocabulary + emit `VocabularyCreated` event |
+| `SentenceService` | CRUD sentences + createWithVocabLinks (lazy-import SentenceVocabulary join table) |
+| `LearningProgressService` | `getDueReviews`, `recordReview` (FSRS or Simple), `getDetailedAnalytics` |
+| `LessonLearningService` | `loadLesson` (orchestration: lesson→paragraphs→sentences with relations + cache), `completeLesson` (upserts progress + emits `LessonCompleted`) |
+| `CourseLearningService` | `getCourseStructure` (course→modules→lessons→progress + cache), `getRoadmap` (computes locked/available/completed status per lesson based on prerequisites) |
+
+### FSRS Review Engine (`lib/modules/learning/review-engine.ts`)
+
+```typescript
+class ReviewEngine {
+  getInitialState(): FSRSState
+  calculateNext(state: FSRSState, rating: ReviewRating): FSRSState
+  calculateNextWithRetrievability(state: FSRSState, rating: ReviewRating): {
+    state: FSRSState; retrievability: number
+  }
+  getRetrievability(state: FSRSState): number
+}
+
+// Wraps fsrs.js library
+// Rating: 1=Again, 2=Hard, 3=Good, 4=Easy
+// State: 0=New, 1=Learning, 2=Review, 3=Relearning
+```
+
+### Learning API
+
+| Method | Endpoint | Auth | Mô tả |
+|--------|----------|------|-------|
+| GET | `/api/v1/learning/courses` | Student | Danh sách khóa học |
+| GET | `/api/v1/learning/courses/[id]` | Student | Chi tiết khóa học + roadmap |
+| GET | `/api/v1/learning/lessons/[id]` | Student | Nội dung bài học (có cache) |
+| POST | `/api/v1/learning/lessons/[id]/complete` | Student | Hoàn thành bài học |
+| GET | `/api/v1/learning/reviews/due` | Student | Danh sách reviews đến hạn |
+| POST | `/api/v1/learning/reviews` | Student | Submit review (FSRS rating) |
+| GET | `/api/v1/learning/progress` | Student | Thống kê tiến độ học |
+| GET | `/api/v1/learning/search` | Student | Search vocabulary/sentence/grammar |
+
+### Cross-module Rules
+
+- **No cross-module model imports**: Learning module chỉ import model của chính nó
+- **Application-level joins**: `SentenceReadRepository` dùng batch queries với `$in` thay vì `.populate()`
+- **DI for cross-module deps**: Quiz module dùng `IUserService` interface; auth module implement
+- **Exception**: `SearchService` (learning module) import trực tiếp Quiz model từ quiz module (known tradeoff)
+
+---
+
+## 20. UI/UX & Frontend Stack
 
 ### Tech Stack
 
@@ -903,7 +1513,7 @@ Client Components:
 
 ---
 
-## 19. Testing Strategy
+## 21. Testing Strategy
 
 ### Unit Tests (Jest + ts-jest)
 
@@ -911,8 +1521,10 @@ Client Components:
 npm run test
 ```
 
-- Logic: quiz-engine, question-id-generator, validation schemas
+- Logic: quiz-engine, question-id-generator, validation schemas, review-engine (FSRS)
 - Property-based: `fast-check` cho các invariants cốt lõi
+- Module isolation: auth (@/lib/modules/auth/__tests__/), quiz (@/lib/modules/quiz/__tests__/), learning (@/lib/modules/learning/__tests__/), AI (@/lib/modules/ai/__tests__/)
+- Core: lib/core/__tests__/ (schemas, validation, utils, db, security)
 
 ### Performance Tests (tsx scripts)
 
@@ -931,9 +1543,26 @@ npm run audit:answer-conflicts   # Detect answer conflicts trong Question Bank
 npm run reconcile:question-bank  # Sync Question Bank với Quiz data
 ```
 
+### Learning Module Tests
+
+```bash
+npm run test -- --testPathPattern="learning"
+```
+- Unit: repository methods, service logic, FSRS review-engine
+- Integration: `lib/modules/learning/__tests__/integration/` — end-to-end lesson loading, review flow
+
+### Seed Scripts (Learning)
+
+```bash
+npm run seed:language      # Seed languages (en, ja, zh, ko, fr...)
+npm run seed:topic         # Seed topic hierarchy
+npm run seed:vocabulary    # Seed vocabulary data
+npm run seed:learning      # Runs seed:language + seed:topic
+```
+
 ---
 
-## 20. Deployment
+## 22. Deployment
 
 ### Vercel
 
@@ -960,7 +1589,7 @@ npm run reconcile:question-bank  # Sync Question Bank với Quiz data
 
 ---
 
-## 21. Known Design Decisions & Tradeoffs
+## 23. Known Design Decisions & Tradeoffs
 
 | Quyết định | Lý do | Tradeoff |
 |-----------|-------|---------|
@@ -974,3 +1603,11 @@ npm run reconcile:question-bank  # Sync Question Bank với Quiz data
 | Singleton MongoDB connection | Tái sử dụng qua Serverless invocations | Global state |
 | DNS SRV fallback | Hỗ trợ ISP block SRV lookup | Thêm complexity connection logic |
 | `token_version` trong User | Invalidate token cụ thể user (ban, đổi PW) | Thêm 1 DB lookup khi verify |
+| DI Container cho learning module | Testability, dependency inversion | Legacy modules chưa migrate sang DI |
+| Model Registry | Prevent MissingSchemaError trong Serverless | Lazy import pattern |
+| IBaseEntity cho Phase 2+ models | Consistent schema (status, soft delete, versioning) | Legacy models không tương thích |
+| Application-level joins (learning) | Không `.populate()`, batch query với `$in` | N+1 queries thay vì 1 |
+| DynamicAIProvider | Runtime LLM switching qua SiteSettings | Cần DB query để resolve provider |
+| AIAsset dedup trước API call | Tiết kiệm chi phí Gemini/OpenAI | DB query overhead trước mỗi generate |
+| Join tables (SentenceVocabulary...) | M-N relations với metadata (order) | 3 collections thay vì embedded arrays |
+| FSRS (fsrs.js) cho spaced repetition | Thuật toán tối ưu hơn SM-2 | Complexity cao hơn simple interval |
