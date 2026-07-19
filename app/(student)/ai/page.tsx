@@ -214,9 +214,19 @@ export default function StudentAIAssistantPage() {
     setParaAnswers({})
     setShowParagraphTranslation(false)
     setShowStoryTranslation(false)
-    setUserWritingInput('')
-    setWritingEvalResult(null)
     setSavedSuccess(false)
+
+    if (activeTab === 'writing' && currentResult) {
+      if (currentResult.userWritingInput !== undefined) {
+        setUserWritingInput(currentResult.userWritingInput)
+      }
+      if (currentResult.writingEvalResult !== undefined) {
+        setWritingEvalResult(currentResult.writingEvalResult)
+      }
+      if (currentResult.writingSubTab) {
+        setWritingSubTab(currentResult.writingSubTab)
+      }
+    }
   }, [currentResult, activeTab])
 
   // Helper renderers for AI Content types
@@ -780,12 +790,12 @@ export default function StudentAIAssistantPage() {
           type: 'writing_eval',
           params: {
             sourceText: exercise.sourceText,
-            sourceLanguage: exercise.sourceLanguage || explanationLanguage || 'Vietnamese',
+            sourceLanguage: exercise.sourceLanguage || 'English',
             userAnswer: userWritingInput,
             userLanguage: userSubmissionLanguage || exercise.targetLanguage || targetLanguage,
             sampleAnswer: exercise.sampleAnswer,
             cefrLevel: exercise.cefrLevel || cefrLevel,
-            explanationLanguage: explanationLanguage || 'Vietnamese',
+            explanationLanguage: 'Vietnamese',
           },
         }),
       })
@@ -794,8 +804,19 @@ export default function StudentAIAssistantPage() {
       if (!res.ok || !json.success) {
         toast.error(json.error || 'Lỗi khi AI đánh giá bài viết')
       } else {
-        setWritingEvalResult(json.data.content)
+        const evalContent = json.data.content
+        setWritingEvalResult(evalContent)
         setWritingSubTab('eval')
+        setResultCache(prev => {
+          const existing = prev.get('writing')
+          if (!existing) return prev
+          return new Map(prev).set('writing', {
+            ...existing,
+            userWritingInput,
+            writingEvalResult: evalContent,
+            writingSubTab: 'eval',
+          })
+        })
         toast.success('AI đã chấm điểm & nhận xét bài viết thành công!')
       }
     } catch (err: any) {
@@ -864,7 +885,18 @@ export default function StudentAIAssistantPage() {
 
           <textarea
             value={userWritingInput}
-            onChange={(e) => setUserWritingInput(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setUserWritingInput(val)
+              setResultCache(prev => {
+                const existing = prev.get('writing')
+                if (!existing) return prev
+                return new Map(prev).set('writing', {
+                  ...existing,
+                  userWritingInput: val,
+                })
+              })
+            }}
             placeholder={'Nhập bài viết hoặc bài dịch của bạn bằng ' + (userSubmissionLanguage || content.targetLanguage) + ' tại đây...'}
             rows={10}
             className="w-full border-2 border-slate-200 focus:border-[#5D7B6F] focus:ring-4 focus:ring-[#5D7B6F]/10 rounded-2xl p-5 text-base font-medium bg-slate-50/50 outline-none resize-y leading-relaxed text-slate-900 min-h-[240px]"
@@ -1182,8 +1214,17 @@ export default function StudentAIAssistantPage() {
       if (!res.ok || !json.success) {
         toast.error(json.error || 'Lỗi sinh nội dung AI')
       } else {
-        setResultCache(prev => new Map(prev).set(activeCacheKey, json.data))
+        const cachePayload = activeTab === 'writing' ? {
+          ...json.data,
+          userWritingInput: '',
+          writingEvalResult: null,
+          writingSubTab: 'workspace',
+        } : json.data
+
+        setResultCache(prev => new Map(prev).set(activeCacheKey, cachePayload))
         if (activeTab === 'writing') {
+          setUserWritingInput('')
+          setWritingEvalResult(null)
           setWritingSubTab('workspace')
         }
         setViewMode('result')
