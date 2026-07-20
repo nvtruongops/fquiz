@@ -269,13 +269,19 @@ function MobileFlashcardView({
               </div>
             </ScrollArea>
 
-            {isFlipped && (
-              <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(false); }} disabled={isLoading} variant="outline" className="flex-1 h-14 rounded-2xl bg-red-50 border-red-100 text-red-600 font-black uppercase tracking-wider text-[10px]">
-                  <XCircle className="mr-2 h-4 w-4" strokeWidth={2.5} /> Chưa biết
+            {isFlipped ? (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(false); }} disabled={isLoading} variant="outline" className="flex-1 h-12 rounded-xl bg-red-50 border-red-100 text-red-600 font-bold uppercase tracking-wider text-[10px]">
+                  <XCircle className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> Chưa biết
                 </Button>
-                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(true); }} disabled={isLoading} className="flex-1 h-14 rounded-2xl bg-green-600 text-white font-black uppercase tracking-wider text-[10px] shadow-lg shadow-green-200">
-                  <CheckCircle2 className="mr-2 h-4 w-4" strokeWidth={2.5} /> Đã biết
+                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(true); }} disabled={isLoading} className="flex-1 h-12 rounded-xl bg-green-600 text-white font-bold uppercase tracking-wider text-[10px] shadow-md shadow-green-200">
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> Đã biết
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex justify-center z-20">
+                <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} variant="outline" className="w-full max-w-xs h-12 rounded-xl border-gray-200 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
+                  Xem đáp án
                 </Button>
               </div>
             )}

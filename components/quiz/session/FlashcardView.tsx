@@ -149,206 +149,262 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
 
   // Calculate total content length for auto-scaling
   const questionLength = question.text.length
-  const optionsLength = question.options.reduce((sum, opt) => sum + opt.length, 0)
+  const optionsLength = (question.options || []).reduce((sum, opt) => sum + opt.length, 0)
   const totalContentLength = questionLength + optionsLength
-
-
 
   if (!enableAnimation) {
     return (
-      <div className="w-full h-full max-w-4xl mx-auto flex flex-col" key={question._id}>
-        <div className="flex-1 min-h-0 bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-2xl rounded-xl flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8 flex flex-col">
-            <div className="flex-1 flex flex-col space-y-6">
-              {/* Question Section */}
-              <div className="space-y-4">
-                {question.image_url && (
-                  <div className="mb-4 relative group">
-                    <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <img
-                        src={question.image_url}
-                        alt="Question"
-                        className="max-w-full h-auto mx-auto max-h-[30vh] object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
-                <h2 className={cn(
-                  "font-bold whitespace-pre-wrap tracking-tight text-slate-800 dark:text-slate-100",
-                  getQuestionFontSize(totalContentLength),
-                  getQuestionLineHeight(totalContentLength)
-                )}>
-                  {question.text}
-                </h2>
-                <div className={cn("w-full", getOptionSpacing(totalContentLength))}>
-                  {(question.options || []).map((option, idx) => {
-                    const isCorrect = answerIndices.includes(idx)
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          if (!isFlipped) setIsFlipped(true)
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            if (!isFlipped) setIsFlipped(true)
-                          }
-                        }}
-                        className={cn(
-                          "rounded-xl text-left border transition-all shadow-sm cursor-pointer",
-                          getOptionPadding(totalContentLength),
-                          isFlipped && isCorrect 
-                            ? "bg-green-50 dark:bg-green-900/20 border-green-500/50" 
-                            : "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className={cn(
-                            "flex-none flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs",
-                            isFlipped && isCorrect ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
-                          )}>
-                            {String.fromCodePoint(65 + idx)}
-                          </span>
-                          <span className={cn(
-                            "whitespace-pre-wrap flex-1", 
-                            getOptionFontSize(totalContentLength),
-                            isFlipped && isCorrect ? "text-green-800 dark:text-green-300 font-medium" : "text-slate-700 dark:text-slate-300"
-                          )}>
-                            {option}
-                          </span>
-                          {isFlipped && isCorrect && <CheckCircle className="w-5 h-5 text-green-500 flex-none mt-0.5" />}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Usage frequency badge */}
-              {isFlipped && (
-                <div className="mt-4 flex justify-center">
-                  <UsageBadge count={question.usage_count ?? 0} size="md" />
-                </div>
-              )}
-
-              {/* Explanation Section */}
-              {isFlipped && question.explanation && (
-                <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowExplanation(!showExplanation)
-                    }}
-                    className={cn(
-                      "w-full p-4 rounded-xl border transition-all flex items-center justify-between group",
-                      showExplanation 
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 shadow-inner" 
-                        : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-300"
-                    )}
-                  >
-                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                      <div className={cn(
-                        "p-1 rounded transition-colors",
-                        showExplanation ? "bg-blue-200 dark:bg-blue-800" : "bg-slate-200 dark:bg-slate-700"
-                      )}>
-                        <span className="text-xs">💡</span>
-                      </div>
-                      Giải thích chi tiết
-                    </span>
-                    {showExplanation ? (
-                      <ChevronUp className="h-5 w-5 text-blue-700 dark:text-blue-400" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-blue-500" />
-                    )}
-                  </button>
-                  
-                  {showExplanation && (
-                    <div className="mt-3 p-5 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/50 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30"></div>
-                      <div className="pr-4">
-                        <p 
-                          className={cn(
-                            "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
-                            question.explanation.length > 1000 ? "text-xs" :
-                            question.explanation.length > 600 ? "text-sm" : "text-base"
-                          )}
-                        >
-                          {question.explanation}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Self-assessment buttons */}
-            {isFlipped ? (
-              <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="group relative flex-1 h-14 rounded-2xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden"
-                  onClick={() => handleAnswer(false)}
-                  disabled={isLoading}
-                >
-                  <XCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                  <span className="font-bold">Chưa biết</span>
-                </Button>
-                <Button
-                  size="lg"
-                  className="group relative flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden"
-                  onClick={() => handleAnswer(true)}
-                  disabled={isLoading}
-                >
-                  <CheckCircle className="mr-2 h-5 w-5 group-hover:-rotate-12 transition-transform" />
-                  <span className="font-bold text-white">Đã biết</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex justify-center shrink-0">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full max-w-sm h-14 rounded-2xl border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all active:scale-95"
-                  onClick={() => setIsFlipped(true)}
-                >
-                  <RotateCw className="mr-2 h-5 w-5" />
-                  <span className="font-bold">Xem đáp án</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Keyboard shortcuts hint */}
-        <div className="mt-4 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4 border border-slate-200/50 dark:border-slate-700/50 shrink-0">
-          {!isFlipped ? (
-            <div className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">Space</kbd>
-              <span>Xem đáp án</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">1</kbd>
-                <span>Chưa biết</span>
-              </div>
-              <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
-              <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">2</kbd>
-                <span>Đã biết</span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <NoAnimationView
+        question={question}
+        totalContentLength={totalContentLength}
+        answerIndices={answerIndices}
+        isFlipped={isFlipped}
+        setIsFlipped={setIsFlipped}
+        showExplanation={showExplanation}
+        setShowExplanation={setShowExplanation}
+        handleAnswer={handleAnswer}
+        isLoading={isLoading}
+      />
     )
   }
 
+  return (
+    <AnimatedView
+      question={question}
+      totalContentLength={totalContentLength}
+      answerIndices={answerIndices}
+      correctAnswers={correctAnswers}
+      isFlipped={isFlipped}
+      handleFlip={handleFlip}
+      showExplanation={showExplanation}
+      setShowExplanation={setShowExplanation}
+      handleAnswer={handleAnswer}
+      isLoading={isLoading}
+    />
+  )
+})
+
+FlashcardView.displayName = 'FlashcardView'
+
+interface SubViewProps {
+  question: FlashcardViewProps['question']
+  totalContentLength: number
+  answerIndices: number[]
+  isFlipped: boolean
+  showExplanation: boolean
+  setShowExplanation: React.Dispatch<React.SetStateAction<boolean>>
+  handleAnswer: (knows: boolean) => void
+  isLoading: boolean
+}
+
+function NoAnimationView({
+  question,
+  totalContentLength,
+  answerIndices,
+  isFlipped,
+  setIsFlipped,
+  showExplanation,
+  setShowExplanation,
+  handleAnswer,
+  isLoading,
+}: SubViewProps & { setIsFlipped: React.Dispatch<React.SetStateAction<boolean>> }) {
+  return (
+    <div className="w-full h-full max-w-4xl mx-auto flex flex-col justify-between overflow-hidden" key={question._id}>
+      <div className="flex-1 min-h-0 bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-xl rounded-xl flex flex-col overflow-hidden p-3 md:p-5">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 flex flex-col space-y-3 md:space-y-4">
+          {/* Question Section */}
+          <div className="space-y-3">
+            {question.image_url && (
+              <div className="mb-2 relative group flex-none">
+                <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <img
+                    src={question.image_url}
+                    alt="Question"
+                    className="max-w-full h-auto mx-auto max-h-[120px] md:max-h-[160px] object-contain"
+                  />
+                </div>
+              </div>
+            )}
+            <h2 className={cn(
+              "font-bold whitespace-pre-wrap tracking-tight text-slate-800 dark:text-slate-100",
+              getQuestionFontSize(totalContentLength),
+              getQuestionLineHeight(totalContentLength)
+            )}>
+              {question.text}
+            </h2>
+            <div className={cn("w-full", getOptionSpacing(totalContentLength))}>
+              {(question.options || []).map((option, idx) => {
+                const isCorrect = answerIndices.includes(idx)
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      if (!isFlipped) setIsFlipped(true)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        if (!isFlipped) setIsFlipped(true)
+                      }
+                    }}
+                    className={cn(
+                      "rounded-xl text-left border transition-all shadow-sm cursor-pointer",
+                      getOptionPadding(totalContentLength),
+                      isFlipped && isCorrect 
+                        ? "bg-green-50 dark:bg-green-900/20 border-green-500/50" 
+                        : "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={cn(
+                        "flex-none flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs",
+                        isFlipped && isCorrect ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
+                      )}>
+                        {String.fromCodePoint(65 + idx)}
+                      </span>
+                      <span className={cn(
+                        "whitespace-pre-wrap flex-1", 
+                        getOptionFontSize(totalContentLength),
+                        isFlipped && isCorrect ? "text-green-800 dark:text-green-300 font-medium" : "text-slate-700 dark:text-slate-300"
+                      )}>
+                        {option}
+                      </span>
+                      {isFlipped && isCorrect && <CheckCircle className="w-5 h-5 text-green-500 flex-none mt-0.5" />}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Usage frequency badge */}
+          {isFlipped && (
+            <div className="mt-2 flex justify-center flex-none">
+              <UsageBadge count={question.usage_count ?? 0} size="md" />
+            </div>
+          )}
+
+          {/* Explanation Section */}
+          {isFlipped && question.explanation && (
+            <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-300 flex-none">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowExplanation(!showExplanation)
+                }}
+                className={cn(
+                  "w-full p-3 rounded-xl border transition-all flex items-center justify-between group",
+                  showExplanation 
+                    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 shadow-inner" 
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-300"
+                )}
+              >
+                <span className="text-xs md:text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                  <div className={cn(
+                    "p-1 rounded transition-colors",
+                    showExplanation ? "bg-blue-200 dark:bg-blue-800" : "bg-slate-200 dark:bg-slate-700"
+                  )}>
+                    <span className="text-xs">💡</span>
+                  </div>
+                  Giải thích chi tiết
+                </span>
+                {showExplanation ? (
+                  <ChevronUp className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-blue-500" />
+                )}
+              </button>
+              
+              {showExplanation && (
+                <div className="mt-2 p-3 md:p-4 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/50 max-h-[140px] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p 
+                    className={cn(
+                      "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
+                      question.explanation.length > 1000 ? "text-xs" :
+                      question.explanation.length > 600 ? "text-xs md:text-sm" : "text-sm"
+                    )}
+                  >
+                    {question.explanation}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Self-assessment buttons */}
+        {isFlipped ? (
+          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex gap-3 justify-center shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Button
+              size="lg"
+              variant="outline"
+              className="group relative flex-1 h-11 md:h-12 rounded-xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden"
+              onClick={() => handleAnswer(false)}
+              disabled={isLoading}
+            >
+              <XCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 group-hover:rotate-12 transition-transform" />
+              <span className="font-bold text-xs md:text-sm">Chưa biết (1)</span>
+            </Button>
+            <Button
+              size="lg"
+              className="group relative flex-1 h-11 md:h-12 rounded-xl bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden"
+              onClick={() => handleAnswer(true)}
+              disabled={isLoading}
+            >
+              <CheckCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 group-hover:-rotate-12 transition-transform" />
+              <span className="font-bold text-white text-xs md:text-sm">Đã biết (2)</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex justify-center shrink-0">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full max-w-sm h-11 md:h-12 rounded-xl border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all active:scale-95"
+              onClick={() => setIsFlipped(true)}
+            >
+              <RotateCw className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+              <span className="font-bold text-xs md:text-sm">Xem đáp án</span>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div className="mt-2 md:mt-3 px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3 md:gap-4 border border-slate-200/50 dark:border-slate-700/50 shrink-0">
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">1</kbd>
+          <span>Chưa biết</span>
+        </div>
+        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">Space</kbd>
+          <span>{isFlipped ? 'Ẩn đáp án' : 'Xem đáp án'}</span>
+        </div>
+        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        <div className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">2</kbd>
+          <span>Đã biết</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AnimatedView({
+  question,
+  totalContentLength,
+  answerIndices,
+  correctAnswers,
+  isFlipped,
+  handleFlip,
+  showExplanation,
+  setShowExplanation,
+  handleAnswer,
+  isLoading,
+}: SubViewProps & { correctAnswers: string[]; handleFlip: () => void }) {
   return (
     <div className="w-full h-full max-w-4xl mx-auto flex flex-col" key={question._id}>
       <div 
@@ -596,7 +652,4 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
       </div>
     </div>
   )
-
-})
-
-FlashcardView.displayName = 'FlashcardView'
+}
