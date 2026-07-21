@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Mail, CalendarClock, Save, UserRound } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Loader2, Mail, CalendarClock, Save, UserRound, Trash2, AlertTriangle, KeyRound } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
 import { Input } from '@/components/shared/ui/input'
 import { Button } from '@/components/shared/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 
@@ -19,9 +21,13 @@ type ProfileResponse = {
 }
 
 export default function ProfilePage() {
+  const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
   const [profile, setProfile] = useState<ProfileResponse['profile'] | null>(null)
   const [form, setForm] = useState({ username: '', bio: '' })
 
@@ -95,6 +101,43 @@ export default function ProfilePage() {
       toast.error('Không thể cập nhật hồ sơ vào lúc này')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleRequestDeletion() {
+    if (!deletePassword) {
+      toast.error('Vui lòng nhập mật khẩu xác nhận')
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/account/request-deletion`, {
+        method: 'POST',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({ password: deletePassword }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        toast.error(data?.error ?? 'Xóa tài khoản thất bại')
+        return
+      }
+
+      toast.success(data?.message ?? 'Đã gửi yêu cầu xóa tài khoản thành công! Vui lòng kiểm tra email.')
+      setDeleteDialogOpen(false)
+      setDeletePassword('')
+
+      // Redirect to login page and perform a hard navigation to clear all client memory state
+      setTimeout(() => {
+        window.location.href = '/login?message=deletion_requested'
+      }, 1200)
+    } catch {
+      toast.error('Không thể kết nối đến máy chủ')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -197,6 +240,87 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Danger Zone: Account Deletion */}
+      <Card className="border-red-200 bg-red-50/30 rounded-xl sm:rounded-3xl shadow-xs">
+        <CardHeader className="p-3.5 sm:p-6 pb-1 sm:pb-3">
+          <CardTitle className="text-sm sm:text-base font-extrabold text-red-600 flex items-center gap-2">
+            <Trash2 className="w-4 h-4" /> Khu vực nguy hiểm
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3.5 sm:p-6 pt-2 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-xs sm:text-sm font-extrabold text-gray-900">Xóa tài khoản cá nhân</h4>
+            <p className="text-[11px] sm:text-xs text-gray-500 mt-1 max-w-xl font-medium leading-relaxed">
+              Tài khoản sẽ được chuyển sang trạng thái chờ xóa và giữ trong <strong>72 giờ</strong>. Hệ thống sẽ gửi email chứa liên kết khôi phục giúp bạn hoàn tác bất kỳ lúc nào trong 72h.
+            </p>
+          </div>
+          <Button
+            onClick={() => setDeleteDialogOpen(true)}
+            variant="destructive"
+            className="h-9 sm:h-10 px-4 rounded-lg sm:rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shrink-0 shadow-xs cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5" /> Xóa tài khoản
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Password Confirmation Modal for Account Deletion */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Xác nhận xóa tài khoản
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-600 font-medium leading-relaxed mt-2">
+              Tài khoản của bạn sẽ tạm dừng hoạt động và lên lịch xóa hoàn toàn sau <strong>72 giờ</strong>.<br />
+              Vui lòng nhập mật khẩu hiện tại của bạn để tiếp tục.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 my-2">
+            <label htmlFor="confirm-delete-password" className="text-xs font-extrabold uppercase tracking-wider text-gray-600">
+              Mật khẩu xác nhận:
+            </label>
+            <div className="relative">
+              <KeyRound className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                id="confirm-delete-password"
+                type="password"
+                placeholder="Nhập mật khẩu tài khoản..."
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && deletePassword && !deleting) {
+                    handleRequestDeletion()
+                  }
+                }}
+                className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-gray-300 font-medium"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+              className="rounded-xl h-9 text-xs font-bold"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleRequestDeletion}
+              disabled={deleting || !deletePassword}
+              variant="destructive"
+              className="rounded-xl h-9 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
+              Xác nhận xóa tài khoản
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

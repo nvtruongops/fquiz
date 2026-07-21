@@ -86,10 +86,17 @@ export const GET = withAuth(async (req, { payload }) => {
  */
 async function resolveEffectiveQuiz(quiz: any) {
   if (quiz.questions?.length > 0) return { id: quiz._id, questions: quiz.questions }
+  if (quiz.question_refs?.length > 0) {
+    const { Question } = await import('@/lib/modules/quiz/models/Question')
+    const refDocs = await Question.find({ _id: { $in: quiz.question_refs } }).lean()
+    const docMap = new Map(refDocs.map((d: any) => [d._id.toString(), d]))
+    const orderedQuestions = quiz.question_refs.map((id: any) => docMap.get(id.toString())).filter(Boolean)
+    if (orderedQuestions.length > 0) return { id: quiz._id, questions: orderedQuestions }
+  }
   if (quiz.original_quiz_id && mongoose.Types.ObjectId.isValid(quiz.original_quiz_id.toString())) {
-    const original = await Quiz.findById(quiz.original_quiz_id).select('questions status is_public').lean() as any
-    if (original && original.status === 'published' && original.is_public && original.questions?.length > 0) {
-      return { id: original._id, questions: original.questions }
+    const original = await Quiz.findById(quiz.original_quiz_id).select('questions question_refs status is_public').lean() as any
+    if (original && original.status === 'published' && original.is_public) {
+      return resolveEffectiveQuiz(original)
     }
   }
   return null
@@ -187,7 +194,7 @@ export const POST = withAuth(async (req, { payload }) => {
       if (action === 'restart') return NextResponse.json({}, { status: 200 })
     }
 
-    await QuizSession.deleteMany({ student_id: studentId, quiz_id: effective.id, mode: { $in: groupModes } })
+    await QuizSession.deleteMany({ student_id: studentId, quiz_id: effective.id, mode: { $in: groupModes }, status: { $ne: 'completed' } })
 
     const now = new Date()
     const questionOrder = difficulty === 'random' ? secureShuffle([...new Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)

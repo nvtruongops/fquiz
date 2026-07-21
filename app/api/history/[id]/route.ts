@@ -127,7 +127,32 @@ export const GET = withAuth(async (
     }
 
     const source = getSourceInfo(currentQuiz, payload.userId)
-    const attempts = quizSessions.length > 0 ? quizSessions.map(s => ({ session_id: s._id, score: s.score, mode: s.mode, completed_at: s.completed_at, started_at: s.started_at, total_paused_duration_ms: s.total_paused_duration_ms })) : [{ session_id: session._id, score: session.score, mode: session.mode, completed_at: session.completed_at, started_at: session.started_at, total_paused_duration_ms: session.total_paused_duration_ms }]
+    const resolveSingleSessionTotal = (s: any) => {
+      if (Array.isArray(s.question_order) && s.question_order.length > 0) return s.question_order.length
+      if (Array.isArray(s.questions_cache) && s.questions_cache.length > 0) return s.questions_cache.length
+      if (s.flashcard_stats?.total_cards) return s.flashcard_stats.total_cards
+      return currentQuiz?.questions?.length ?? 0
+    }
+
+    const attempts = quizSessions.length > 0
+      ? quizSessions.map(s => ({
+          session_id: s._id,
+          score: s.score,
+          mode: s.mode,
+          completed_at: s.completed_at,
+          started_at: s.started_at,
+          total_paused_duration_ms: s.total_paused_duration_ms,
+          total_questions: resolveSingleSessionTotal(s),
+        }))
+      : [{
+          session_id: session._id,
+          score: session.score,
+          mode: session.mode,
+          completed_at: session.completed_at,
+          started_at: session.started_at,
+          total_paused_duration_ms: session.total_paused_duration_ms,
+          total_questions: resolveSingleSessionTotal(session),
+        }]
 
     return NextResponse.json({
       _id: session._id,
@@ -138,7 +163,7 @@ export const GET = withAuth(async (
       is_mix: Boolean(currentQuiz.is_temp),
       mode: session.mode,
       score: session.score,
-      total_questions: currentQuiz.questions?.length ?? 0,
+      total_questions: resolveSingleSessionTotal(session),
       completed_at: session.completed_at,
       started_at: session.started_at,
       total_study_minutes: calculateStudyMinutes(attempts),
@@ -149,7 +174,7 @@ export const GET = withAuth(async (
       has_active_session: Boolean(activeSession),
       active_session_id: activeSession?._id ?? null,
       active_answered_count: activeSession ? new Set((activeSession.user_answers ?? []).map((a: any) => a.question_index).filter((idx: any) => Number.isInteger(idx) && idx >= 0)).size : 0,
-      active_total_count: currentQuiz.questions?.length ?? 0,
+      active_total_count: activeSession ? resolveSingleSessionTotal(activeSession) : (currentQuiz.questions?.length ?? 0),
       active_started_at: activeSession?.started_at ?? null,
     })
   } catch (err) {

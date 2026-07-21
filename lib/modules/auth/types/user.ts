@@ -9,7 +9,7 @@ export interface IUser {
   avatar_url?: string | null
   profile_bio?: string | null
   role: 'admin' | 'student' | 'dev'
-  status: 'active' | 'banned'
+  status: 'active' | 'banned' | 'pending_deletion'
   ban_reason?: string
   sharing_violations: number
   timezone?: string
@@ -24,4 +24,8 @@ export interface IUser {
   token_version?: number
   google_id?: string | null
   pinned_categories?: string[]
+  deletion_requested_at?: Date | null
+  deletion_scheduled_for?: Date | null
+  deletion_token?: string | null
+  deletion_token_expires?: Date | null
 }

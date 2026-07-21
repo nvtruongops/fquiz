@@ -3,7 +3,7 @@ import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
+import { validateQuizSessionRequest, pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
@@ -54,6 +54,10 @@ export const POST = withAuth(async (
     if (!completed) {
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
+
+    // Prune old completed sessions inline (guarantees retention limit even if QStash is offline)
+    pruneCompletedSessions(session.student_id, session.quiz_id, session.mode)
+      .catch(err => console.error('Failed inline pruneCompletedSessions:', err))
 
     // --- HEAVY OPERATIONS OFFLOADED TO QUEUE ---
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

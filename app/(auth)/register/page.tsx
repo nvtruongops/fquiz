@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react'
@@ -25,6 +25,15 @@ export default function RegisterPage() {
   const [codeSent, setCodeSent] = useState(false)
   const [devCode, setDevCode] = useState('')
   const [retryAfterSec, setRetryAfterSec] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const error = params.get('error')
+    if (error) {
+      toast.error(decodeURIComponent(error))
+    }
+  }, [toast])
 
   // Get callback URL from query params
   function getCallbackUrl() {

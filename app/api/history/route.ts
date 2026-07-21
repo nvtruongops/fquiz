@@ -27,12 +27,15 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     }
 
     const studentId = new mongoose.Types.ObjectId(payload.userId)
+    const quizIdParam = searchParams.get('quiz_id')
+    const matchQuery: Record<string, any> = { student_id: studentId }
+    if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
+      matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
+    }
+
     const sessions = await QuizSession.aggregate([
       {
-        $match: {
-          student_id: studentId,
-          // Hiện tất cả session: thường + mix quiz (active và completed)
-        },
+        $match: matchQuery,
       },
       {
         $addFields: {
@@ -68,6 +71,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
           flashcard_stats: 1,
           user_answers: 1,
           is_temp: 1,
+          question_order: 1,
+          questions_cache: 1,
         },
       },
     ]) as Array<{
@@ -82,6 +87,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       flashcard_stats?: any
       user_answers?: any[]
       is_temp?: boolean
+      question_order?: number[]
+      questions_cache?: any[]
     }>
 
     const total = sessions.length
@@ -115,6 +122,22 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       const quiz = quizMap.get(item.quiz_id.toString()) as any
       const isMixQuiz = (item as any).is_temp === true
 
+      // Helper to compute actual session total questions (supports Retry Wrong / custom question_order)
+      const resolveSessionTotalQuestions = (fallbackQuiz: any) => {
+        if (Array.isArray(item.question_order) && item.question_order.length > 0) {
+          return item.question_order.length
+        }
+        if (Array.isArray(item.questions_cache) && item.questions_cache.length > 0) {
+          return item.questions_cache.length
+        }
+        if (item.flashcard_stats?.total_cards) {
+          return item.flashcard_stats.total_cards
+        }
+        const declaredCount = Number(fallbackQuiz?.questionCount ?? 0)
+        const derivedFromQuestions = Array.isArray(fallbackQuiz?.questions) ? fallbackQuiz.questions.length : 0
+        return declaredCount > 0 ? declaredCount : derivedFromQuestions
+      }
+
       // For mix quiz sessions, the temp quiz may have been deleted after completion
       if (isMixQuiz && !quiz) {
         let answeredCount = 0
@@ -127,7 +150,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
           ).size
           correctCount = item.user_answers.filter((a) => a.is_correct).length
         }
-        const totalQuestions = answeredCount || 0
+        const sessionTotal = resolveSessionTotalQuestions(null) || answeredCount || 0
         return {
           _id: item._id.toString(),
           quiz_id: item.quiz_id.toString(),
@@ -138,7 +161,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
           source_label: 'Quiz Trộn',
           source_creator_name: null,
           score: item.score,
-          total_questions: totalQuestions,
+          total_questions: sessionTotal,
           answered_count: answeredCount,
           correct_count: correctCount,
           mode: item.mode,
@@ -153,9 +176,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
       // Mix quiz: quiz still exists — use title-derived code and fixed labels
       if (isMixQuiz && quiz) {
-        const declaredCount = Number(quiz?.questionCount ?? 0)
-        const derivedCount = Array.isArray(quiz?.questions) ? quiz.questions.length : 0
-        const totalQuestions = declaredCount > 0 ? declaredCount : derivedCount
+        const sessionTotal = resolveSessionTotalQuestions(quiz)
         let answeredCount = 0
         let correctCount = 0
         if (Array.isArray(item.user_answers)) {
@@ -176,7 +197,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
           source_label: 'Quiz Trộn',
           source_creator_name: null,
           score: item.score,
-          total_questions: totalQuestions,
+          total_questions: sessionTotal,
           answered_count: answeredCount,
           correct_count: correctCount,
           mode: item.mode,
@@ -191,12 +212,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
       const sourceType = inferSourceType(quiz, payload.userId)
       const sourceCreatorId = resolveSourceCreatorId(quiz, originalCreatorMap)
-
-      const declaredCount = Number(quiz?.questionCount ?? 0)
-      const derivedFromQuestions = Array.isArray(quiz?.questions)
-        ? quiz.questions.length
-        : 0
-      const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
+      const sessionTotal = resolveSessionTotalQuestions(quiz)
 
       let answeredCount = 0
       let correctCount = 0
@@ -222,7 +238,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         source_label: sourceLabelFromType(sourceType),
         source_creator_name: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
         score: item.score,
-        total_questions: totalQuestions,
+        total_questions: sessionTotal,
         answered_count: answeredCount,
         correct_count: correctCount,
         mode: item.mode,

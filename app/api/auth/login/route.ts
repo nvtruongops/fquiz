@@ -64,6 +64,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (user.status === 'pending_deletion') {
+      return NextResponse.json(
+        { error: 'Tài khoản của bạn đang trong thời gian chờ xóa (72h). Vui lòng kiểm tra email và bấm vào liên kết khôi phục để kích hoạt lại tài khoản.' },
+        { status: 403 }
+      )
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) {
       logSecurityEvent('login_failed', { request_id: requestId, user_id: user._id.toString(), route, outcome: 'failure', ip }, 'Invalid password')
