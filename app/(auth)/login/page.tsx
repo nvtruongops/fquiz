@@ -26,12 +26,18 @@ function LoginForm() {
 
   // Handle URL params on client side only
   useEffect(() => {
+    const error = searchParams.get('error')
     const reason = searchParams.get('reason')
-    
-    if (reason === 'account_banned') {
+    const message = searchParams.get('message')
+
+    if (error) {
+      toast.error(decodeURIComponent(error))
+    } else if (reason === 'account_banned') {
       toast.error('Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ.')
     } else if (reason === 'session_expired') {
       toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    } else if (message === 'deletion_requested') {
+      toast.info('Yêu cầu xóa tài khoản đã được ghi nhận. Vui lòng kiểm tra email để khôi phục tài khoản nếu muốn.')
     }
 
     // Parse callback URL

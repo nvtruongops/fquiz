@@ -350,9 +350,7 @@ export default function QuizDetailPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/80 shadow-xs text-xs font-bold transition-all hover:-translate-x-1 active:translate-x-0 cursor-pointer group"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800 transition-colors" />
-                <span>
-                  {displayCourseCode ? `Quay lại môn ${displayCourseCode}` : 'Quay lại'}
-                </span>
+                <span>Quay lại</span>
               </button>
 
               {baseCourseCode && (

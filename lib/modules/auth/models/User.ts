@@ -18,7 +18,7 @@ const UserSchema = new Schema<IUser>(
     avatar_url: { type: String, default: null },
     profile_bio: { type: String, default: null },
     role: { type: String, enum: ['admin', 'student', 'dev'], required: true, default: 'student' },
-    status: { type: String, enum: ['active', 'banned'], required: true, default: 'active' },
+    status: { type: String, enum: ['active', 'banned', 'pending_deletion'], required: true, default: 'active' },
     ban_reason: { type: String, default: null },
     sharing_violations: { type: Number, required: true, default: 0 },
     timezone: { type: String, required: true, default: 'Asia/Ho_Chi_Minh' },
@@ -33,12 +33,16 @@ const UserSchema = new Schema<IUser>(
     token_version: { type: Number, required: true, default: 1 },
     google_id: { type: String, default: null, sparse: true },
     pinned_categories: { type: [String], default: [] },
+    deletion_requested_at: { type: Date, default: null },
+    deletion_scheduled_for: { type: Date, default: null },
+    deletion_token: { type: String, default: null },
+    deletion_token_expires: { type: Date, default: null },
   },
   { timestamps: false }
 )
 
 const existingUserModel = mongoose.models.User
-if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories'))) {
+if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories') || !existingUserModel.schema.path('deletion_token'))) {
   delete mongoose.models.User
 }
 

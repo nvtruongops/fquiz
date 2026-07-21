@@ -74,8 +74,11 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
 
 
 
+import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
+
 function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
   const { score, totalQuestions, mode, questions, completed_at, is_temp } = data
+  const wrongCount = totalQuestions > score ? totalQuestions - score : 0
   const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
   const scoreOnTen = totalQuestions > 0 ? (score / totalQuestions) * 10 : 0
   const scoreOnTenDisplay = scoreOnTen % 1 === 0 ? scoreOnTen.toFixed(0) : scoreOnTen.toFixed(1)
@@ -119,10 +122,11 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
             {is_temp ? (
               <ExitMixQuizButton sessionId={sessionId} />
             ) : (
-              <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                <RetryWrongButton quizId={quizId} sessionId={sessionId} wrongCount={wrongCount} />
                 <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
                   <Button className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] cursor-pointer justify-center">
-                    <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm lại
+                    <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm toàn bộ
                   </Button>
                 </Link>
                 <Link href="/dashboard" className="w-full sm:w-auto">

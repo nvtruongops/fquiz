@@ -152,6 +152,13 @@ export async function POST(request: Request) {
       return handleError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 403)
     }
 
+    if (user.status === 'pending_deletion') {
+      return handleError(
+        'Tài khoản của bạn đang trong thời gian chờ xóa (72h). Vui lòng kiểm tra email và bấm vào liên kết khôi phục để kích hoạt lại tài khoản trước khi đăng nhập.',
+        403
+      )
+    }
+
     // Record login log
     LoginLog.create({ user_id: user._id, ip, user_agent: userAgent }).catch((logErr) =>
       console.warn('[LoginLog] Failed to record Google login:', logErr)

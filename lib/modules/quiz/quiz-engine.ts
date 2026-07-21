@@ -130,24 +130,42 @@ async function resolveQuestion(
 ): Promise<{ question: IQuestion; totalQuestions: number; questionOrder: number[] }> {
   let questionOrder = session.question_order
   if (!questionOrder || questionOrder.length === 0) {
-    const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id').lean()
+    const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id question_refs').lean() as any
     if (!quizMeta) throw new Error('Quiz not found')
-    questionOrder = Array.from({ length: quizMeta.questions.length as number }, (_, i) => i)
+    const totalCount = (quizMeta.question_refs?.length) || (quizMeta.questions?.length) || 0
+    questionOrder = Array.from({ length: totalCount }, (_, i) => i)
   }
 
   const actualQuestionIndex = questionOrder[questionIndex]
-  let question: IQuestion
+  let question: IQuestion | null = null
   let totalQuestions = questionOrder.length
 
-  if (session.questions_cache && session.questions_cache.length > 0) {
+  // Use questions_cache ONLY IF its length matches totalQuestions to prevent index-shift mismatches
+  if (
+    session.questions_cache &&
+    session.questions_cache.length === totalQuestions &&
+    session.questions_cache[actualQuestionIndex]
+  ) {
     question = session.questions_cache[actualQuestionIndex] as IQuestion
-    totalQuestions = session.questions_cache.length
-  } else {
-    const quiz = await Quiz.findById(session.quiz_id, { questions: { $slice: [actualQuestionIndex, 1] } }).lean()
-    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-      throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
+  }
+
+  // Fallback: Fetch directly from Quiz / Question model if cache is missing or out-of-sync
+  if (!question) {
+    const quiz = await Quiz.findById(session.quiz_id)
+      .select('questions question_refs')
+      .lean() as any
+    if (!quiz) throw new Error('Quiz not found')
+
+    if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > actualQuestionIndex) {
+      const refId = quiz.question_refs[actualQuestionIndex]
+      const { Question } = await import('@/lib/modules/quiz/models/Question')
+      const qDoc = await Question.findById(refId).lean()
+      if (qDoc) question = qDoc as unknown as IQuestion
     }
-    question = quiz.questions[0] as IQuestion
+
+    if (!question && Array.isArray(quiz.questions) && quiz.questions.length > actualQuestionIndex) {
+      question = quiz.questions[actualQuestionIndex] as IQuestion
+    }
   }
 
   if (!question) {

@@ -26,10 +26,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ user: null }, { status: 200 })
     }
 
-    // Check if user is banned
-    if (user.status === 'banned') {
+    // Check if user is banned or pending deletion
+    if (user.status === 'banned' || user.status === 'pending_deletion') {
       // Clear auth cookie
-      const response = NextResponse.json({ user: null, banned: true }, { status: 403 })
+      const response = NextResponse.json({ user: null, banned: user.status === 'banned', pending_deletion: user.status === 'pending_deletion' }, { status: 403 })
       response.cookies.delete('auth-token')
       return response
     }

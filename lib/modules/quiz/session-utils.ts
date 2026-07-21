@@ -67,3 +67,45 @@ export async function validateQuizSessionRequest(
 
   return { isValid: true, session }
 }
+
+export const MAX_COMPLETED_SESSIONS_PER_QUIZ = 20
+
+/**
+ * Prunes older completed sessions for a given student, quiz, and mode group
+ * if the total completed count exceeds MAX_COMPLETED_SESSIONS_PER_QUIZ.
+ */
+export async function pruneCompletedSessions(
+  studentId: mongoose.Types.ObjectId | string,
+  quizId: mongoose.Types.ObjectId | string,
+  mode: string
+): Promise<number> {
+  try {
+    await connectDB()
+    const studentObjectId = typeof studentId === 'string' ? new mongoose.Types.ObjectId(studentId) : studentId
+    const quizObjectId = typeof quizId === 'string' ? new mongoose.Types.ObjectId(quizId) : quizId
+
+    const completedSessions = await QuizSession.find({
+      student_id: studentObjectId,
+      quiz_id: quizObjectId,
+      mode,
+      status: 'completed',
+    })
+      .sort({ completed_at: -1 })
+      .select('_id')
+      .lean()
+
+    if (completedSessions.length > MAX_COMPLETED_SESSIONS_PER_QUIZ) {
+      const toDeleteIds = completedSessions
+        .slice(MAX_COMPLETED_SESSIONS_PER_QUIZ)
+        .map((s: any) => s._id)
+
+      const result = await QuizSession.deleteMany({ _id: { $in: toDeleteIds } })
+      return result.deletedCount || 0
+    }
+    return 0
+  } catch (err) {
+    console.error('pruneCompletedSessions error:', err)
+    return 0
+  }
+}
+

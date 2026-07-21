@@ -78,7 +78,10 @@ export const GET = withAuth(async (
     // For immediate mode (only already answered) or completed/flashcard sessions: include correct_answer and explanation
     // Otherwise: exclude correct_answer and explanation
     const questions = questionOrder.map((originalIndex: number, displayIndex: number) => {
-      const q = quiz.questions[originalIndex]
+      const q = (session.questions_cache && session.questions_cache.length > 0 && session.questions_cache[originalIndex])
+        ? session.questions_cache[originalIndex]
+        : (quiz.questions[originalIndex] ?? quiz.questions[0])
+
       const baseQuestion = {
         _id: q._id,
         text: q.text,
@@ -93,7 +96,7 @@ export const GET = withAuth(async (
 
       const questionWithUsage = {
         ...baseQuestion,
-        usage_count: usageMap.get(q.question_id!) ?? 0,
+        usage_count: q.question_id ? (usageMap.get(q.question_id) ?? 0) : 0,
       }
 
       // Include answers for immediate mode (only if already answered), completed sessions, or flashcard mode

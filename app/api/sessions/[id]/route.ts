@@ -140,8 +140,14 @@ export const GET = withAuth(async (
     const actualQuestionIndex = questionOrder[currentIndex]
     const categoryName = await resolveCategoryName(quiz.category_id)
 
-    // Resolve question: try refs first, fallback to embedded
-    const rawQuestion = await resolveQuestion(quiz, actualQuestionIndex)
+    // Resolve question: prioritize session.questions_cache if present (e.g. retry-wrong / mix-quiz sessions), fallback to quiz refs/embedded
+    let rawQuestion: IQuestion | null = null
+    if (session.questions_cache && session.questions_cache.length > 0 && session.questions_cache[actualQuestionIndex]) {
+      rawQuestion = session.questions_cache[actualQuestionIndex] as unknown as IQuestion
+    }
+    if (!rawQuestion) {
+      rawQuestion = await resolveQuestion(quiz, actualQuestionIndex)
+    }
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
     // Req 12.3: exclude correct_answer and explanation when session is not completed

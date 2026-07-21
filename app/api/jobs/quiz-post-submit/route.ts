@@ -3,8 +3,9 @@ import { connectDB } from '@/lib/core/db/mongodb';
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession';
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine';
 import { verifyQStashRequest } from '@/lib/core/queue/qstash';
+import { MAX_COMPLETED_SESSIONS_PER_QUIZ } from '@/lib/modules/quiz/session-utils';
 
-const MAX_COMPLETED_ATTEMPTS_PER_QUIZ = 10;
+const MAX_COMPLETED_ATTEMPTS_PER_QUIZ = MAX_COMPLETED_SESSIONS_PER_QUIZ;
 
 /**
  * POST /api/jobs/quiz-post-submit

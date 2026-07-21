@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyQStashRequest } from '@/lib/core/queue/qstash';
-import { sendResetPasswordMail, sendVerificationCodeMail } from '@/lib/core/mail/mail';
+import { sendResetPasswordMail, sendVerificationCodeMail, sendAccountDeletionNoticeMail } from '@/lib/core/mail/mail';
 import logger from '@/lib/core/utils/logger';
 
 export const runtime = 'nodejs';
@@ -25,6 +25,8 @@ export async function POST(req: Request) {
       await sendResetPasswordMail(data);
     } else if (type === 'verification-code') {
       await sendVerificationCodeMail(data);
+    } else if (type === 'account-deletion-notice') {
+      await sendAccountDeletionNoticeMail(data);
     } else {
       return NextResponse.json({ error: 'Unknown job type' }, { status: 400 });
     }
