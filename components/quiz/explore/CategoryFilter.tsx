@@ -31,6 +31,9 @@ export default function CategoryFilter({ initialCategories }: { initialCategorie
       if (!res.ok) return { pinnedCategories: [] }
       return res.json() as Promise<{ pinnedCategories: string[] }>
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const pinnedIds = pinnedData?.pinnedCategories || []

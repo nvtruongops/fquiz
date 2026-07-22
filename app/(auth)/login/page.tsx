@@ -11,6 +11,7 @@ import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
 import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
+import { startGlobalPageLoader } from '@/components/shared/ui/page-transition-loader'
 
 function LoginForm() {
   const router = useRouter()
@@ -96,6 +97,8 @@ function LoginForm() {
       }
 
       toast.success('Đăng nhập thành công! Đang chuyển hướng...')
+      startGlobalPageLoader('ĐĂNG NHẬP THÀNH CÔNG!', 'Đang chuyển hướng vào hệ thống • Please wait')
+      
       if (data.user) {
         queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
       } else {

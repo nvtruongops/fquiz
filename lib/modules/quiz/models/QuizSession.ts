@@ -68,6 +68,8 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     total_paused_duration_ms: { type: Number, default: 0 },
     is_temp: { type: Boolean, default: false },
     answer_version: { type: Number, default: 1 },
+    assignment_id: { type: Schema.Types.ObjectId, ref: 'QuizAssignment', default: null },
+    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', default: null },
   },
   { timestamps: false }
 )

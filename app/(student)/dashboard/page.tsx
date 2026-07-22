@@ -45,7 +45,10 @@ export default function DashboardPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.DASHBOARD}`)
       if (!res.ok) throw new Error('Failed to fetch dashboard data')
       return res.json()
-    }
+    },
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   if (isLoading) {
@@ -88,7 +91,7 @@ export default function DashboardPage() {
 
         <div className="flex items-center gap-2">
           <Button asChild size="sm" className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-all">
-            <Link href="/explore">
+            <Link href="/explore" prefetch={false}>
               <Compass className="w-3.5 h-3.5 mr-1.5" /> Khám phá khóa học
             </Link>
           </Button>
@@ -223,10 +226,10 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-2 gap-2 pt-2 shrink-0">
                 <Button asChild size="sm" className="bg-white text-[#5D7B6F] hover:bg-emerald-50 font-black text-xs h-8 rounded-xl shadow-xs transition-all active:scale-[0.98]">
-                  <Link href="/ai">Mở AI <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                  <Link href="/ai" prefetch={false}>Mở AI <ArrowRight className="w-3 h-3 ml-1" /></Link>
                 </Button>
                 <Button asChild size="sm" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs h-8 rounded-xl transition-all active:scale-[0.98]">
-                  <Link href="/roadmap">Lộ trình</Link>
+                  <Link href="/roadmap" prefetch={false}>Lộ trình</Link>
                 </Button>
               </div>
             </div>
@@ -269,10 +272,10 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-2 pt-2 shrink-0">
               <Button asChild size="sm" className="bg-white text-blue-900 hover:bg-blue-50 font-black text-xs h-8 rounded-xl shadow-xs transition-all active:scale-[0.98]">
-                <Link href="/my-quizzes">Bộ đề <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                <Link href="/my-quizzes" prefetch={false}>Bộ đề <ArrowRight className="w-3 h-3 ml-1" /></Link>
               </Button>
               <Button asChild size="sm" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs h-8 rounded-xl transition-all active:scale-[0.98]">
-                <Link href="/explore">Khám phá</Link>
+                <Link href="/explore" prefetch={false}>Khám phá</Link>
               </Button>
             </div>
           </div>
@@ -314,10 +317,10 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-2 pt-2 shrink-0">
               <Button asChild size="sm" className="bg-white text-purple-900 hover:bg-purple-50 font-black text-xs h-8 rounded-xl shadow-xs transition-all active:scale-[0.98]">
-                <Link href="/community">Diễn đàn <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                <Link href="/community" prefetch={false}>Diễn đàn <ArrowRight className="w-3 h-3 ml-1" /></Link>
               </Button>
               <Button asChild size="sm" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-xs h-8 rounded-xl transition-all active:scale-[0.98]">
-                <Link href="/community?action=new">Đăng bài</Link>
+                <Link href="/community?action=new" prefetch={false}>Đăng bài</Link>
               </Button>
             </div>
           </div>
@@ -344,7 +347,7 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-xs text-slate-500 font-bold italic">Chưa có hoạt động gần đây.</p>
                   <Button asChild size="sm" className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-black text-xs h-8 px-4 rounded-xl shadow-xs transition-all mt-1">
-                    <Link href="/explore">
+                    <Link href="/explore" prefetch={false}>
                       Bắt đầu ngay <ArrowRight className="w-3.5 h-3.5 ml-1" />
                     </Link>
                   </Button>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
@@ -129,6 +129,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     })
     
     // Revalidate admin pages and explore to show new category immediately
+    revalidateTag('categories', 'default')
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
     revalidatePath('/explore')

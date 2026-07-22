@@ -38,6 +38,8 @@ export interface IQuizSession {
   total_paused_duration_ms?: number // Total time spent paused in milliseconds
   is_temp?: boolean
   answer_version?: number
+  assignment_id?: Types.ObjectId
+  classroom_id?: Types.ObjectId
 }
 
 /**

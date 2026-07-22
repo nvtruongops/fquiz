@@ -435,6 +435,20 @@ export async function atomicCompleteSession(sessionId: string): Promise<boolean>
     )
 
     // If result is null, the session was already completed by a concurrent request
+    if (result && result.assignment_id && result.classroom_id) {
+      const totalQuestions = questions.length
+      const scorePercent = totalQuestions > 0 ? Math.round(((result.score || 0) / totalQuestions) * 100) : 0
+      import('@/lib/modules/classroom/services/classroom-service').then(({ ClassroomService }) => {
+        ClassroomService.recordAssignmentResult({
+          assignmentId: result.assignment_id!.toString(),
+          classroomId: result.classroom_id!.toString(),
+          studentId: result.student_id.toString(),
+          sessionId: result._id.toString(),
+          scorePercent,
+        }).catch(() => {})
+      })
+    }
+
     return result !== null
   } catch (err) {
     throw new Error(

@@ -146,6 +146,8 @@ export default function QuizDetailPage() {
   useEffect(() => {
     if (searchParams.get('reason') === 'session_expired') {
       toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
+    } else if (searchParams.get('reason') === 'idle_timeout') {
+      toast.error('Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.')
     }
     if (searchParams.get('selectMode') === 'true') {
       setModeSelectOpen(true)
@@ -159,6 +161,9 @@ export default function QuizDetailPage() {
     queryKey: ['quiz', quizId],
     queryFn: () => fetchQuizDetail(resolvedQuizId),
     enabled: resolvedQuizId.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const { data: authData, isLoading: isUserLoading } = useAuth()
@@ -172,6 +177,9 @@ export default function QuizDetailPage() {
       return res.json()
     },
     enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const { data: historyData } = useQuery({
@@ -182,6 +190,9 @@ export default function QuizDetailPage() {
       return res.json()
     },
     enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const startSessionMutation = useMutation({
@@ -234,8 +245,10 @@ export default function QuizDetailPage() {
         ? (isMobile ? `/quiz/${quizId}/session/${nextSessionId}/flashcard/mobile` : `/quiz/${quizId}/session/${nextSessionId}/flashcard`)
         : `/quiz/${quizId}/session/${nextSessionId}`
 
+      // Show 100%, wait for it to display, then navigate
+      // The quiz loader suppression flag keeps the global PageTransitionLoader from firing
       completeLoading()
-      setTimeout(() => router.push(targetUrl), 300)
+      setTimeout(() => router.push(targetUrl), 400)
     },
     onError: (error: StartSessionError) => {
       stopLoading()
@@ -261,6 +274,9 @@ export default function QuizDetailPage() {
       return res.json()
     },
     enabled: !!quizId,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
 
@@ -445,7 +461,7 @@ export default function QuizDetailPage() {
                           ? `/quiz/${quizId}/session/${data.sessionId}/flashcard/mobile` 
                           : `/quiz/${quizId}/session/${data.sessionId}/flashcard`
                         completeLoading()
-                        setTimeout(() => router.push(targetUrl), 300)
+                        setTimeout(() => router.push(targetUrl), 400)
                       })
                       .catch((err) => {
                         stopLoading()

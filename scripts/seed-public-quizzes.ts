@@ -129,7 +129,21 @@ async function seedPublicQuizzes() {
       })
 
       if (existing) {
-        console.log(`⚠ Quiz ${quizData.course_code} already exists, skipping...`)
+        let updated = false
+        if (existing.questions && existing.questions.length > 0) {
+          existing.questions.forEach((q: any, idx: number) => {
+            if (!q.explanation && quizData.questions[idx]?.explanation) {
+              q.explanation = quizData.questions[idx].explanation
+              updated = true
+            }
+          })
+        }
+        if (updated) {
+          await existing.save()
+          console.log(`✓ Updated explanations for existing quiz: ${quizData.course_code}`)
+        } else {
+          console.log(`⚠ Quiz ${quizData.course_code} already exists with explanations, skipping creation...`)
+        }
         continue
       }
 

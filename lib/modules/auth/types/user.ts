@@ -8,7 +8,7 @@ export interface IUser {
   password_hash: string
   avatar_url?: string | null
   profile_bio?: string | null
-  role: 'admin' | 'student' | 'dev'
+  role: 'admin' | 'teacher' | 'student' | 'dev'
   status: 'active' | 'banned' | 'pending_deletion'
   ban_reason?: string
   sharing_violations: number

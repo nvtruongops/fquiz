@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
 import QuizSessionMobilePage from '@/app/quiz/[id]/session/[sessionId]/mobile/page'
-import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
+import { QuizLoadingOverlay, useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useToast } from '@/store/shared/toast-store'
 
 import dynamic from 'next/dynamic'
@@ -138,6 +138,9 @@ function DesktopSessionContent({
     exitConfirmOpen,
     setExitConfirmOpen,
     reportSessionActivity,
+    inactivityPauseOpen,
+    setInactivityPauseOpen,
+    handleResumeInactivity,
   } = useSessionActivityTracking({
     sessionId: resolvedSessionId,
     currentQuestionIndex,
@@ -164,16 +167,40 @@ function DesktopSessionContent({
     )
   }
 
-  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData.session.status === 'preparing'
+  const sessionLoaderStartedRef = useRef(false)
 
-  if (isStillLoading) {
-    const statusMessage = activeData?.session.status === 'preparing'
-      ? 'Đang trộn bộ đề, vui lòng chờ trong giây lát...'
-      : (!isReadyToRender ? 'Sẵn sàng...' : 'Đang tải bộ câu hỏi...')
-    const progressValue = activeData?.session.status === 'preparing'
-      ? 45
-      : (!isReadyToRender ? 95 : 60)
-    return <QuizLoadingOverlay isOpen={true} progress={progressValue} status={statusMessage} />
+  useEffect(() => {
+    if (!sessionLoaderStartedRef.current) {
+      sessionLoaderStartedRef.current = true
+      // Skip starting a new session loader if navigating from quiz detail/create page (prevents double load)
+      if (!isQuizLoaderActive()) {
+        sessionLoader.open('Đang tải bộ câu hỏi...')
+      }
+    }
+  }, [sessionLoader])
+
+  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+
+  useEffect(() => {
+    if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
+      if (activeData?.session.status === 'preparing') {
+        sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
+      } else if (!isReadyToRender) {
+        sessionLoader.setStatus('Đang chuẩn bị giao diện...')
+      } else if (!isStillLoading) {
+        sessionLoader.complete()
+      }
+    }
+  }, [isStillLoading, isReadyToRender, activeData?.session.status, sessionLoader])
+
+  if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
+    return (
+      <QuizLoadingOverlay 
+        isOpen={sessionLoader.isOpen} 
+        progress={sessionLoader.progress} 
+        status={sessionLoader.status || 'Đang tải bộ câu hỏi...'} 
+      />
+    )
   }
 
   const { session, question } = activeData
@@ -229,19 +256,29 @@ function DesktopSessionContent({
           setConfirmOpen={setConfirmOpen}
           exitConfirmOpen={exitConfirmOpen}
           setExitConfirmOpen={setExitConfirmOpen}
+          inactivityPauseOpen={inactivityPauseOpen}
+          setInactivityPauseOpen={setInactivityPauseOpen}
+          onResumeInactivity={handleResumeInactivity}
           answeredCount={answeredCount}
           totalQuestions={session.totalQuestions}
           isPending={finalizeMutation.isPending}
           enableAnimation={enableAnimation}
-          onConfirmSubmit={() => { setConfirmOpen(false); finalizeMutation.mutate(); }}
-          onConfirmExit={() => { setExitConfirmOpen(false); reportSessionActivity('pause'); router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`); }}
+          onConfirmSubmit={() => { 
+            setConfirmOpen(false); 
+            sessionLoader.open('Đang nộp bài và tổng hợp kết quả...'); 
+            finalizeMutation.mutate(); 
+          }}
+          onConfirmExit={() => { 
+            setExitConfirmOpen(false); 
+            sessionLoader.open('Đang lưu tiến trình và thoát phòng thi...'); 
+            reportSessionActivity('pause'); 
+            sessionLoader.completeAndNavigate(() => {
+              router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`);
+            });
+          }}
         />
       </SessionLayout>
     </>
   )
 }
-
-// Note: QuizSessionPage (above) handles isMobile detection and delegates to
-// either QuizSessionMobilePage or DesktopSessionContent. DesktopSessionContent
-// only mounts on desktop, avoiding wasted hooks/network calls on mobile.
 

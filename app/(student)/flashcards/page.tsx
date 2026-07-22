@@ -83,6 +83,9 @@ export default function FlashcardsPage() {
       return res.json() as Promise<{ items: FlashcardItem[]; total: number }>
     },
     enabled: viewTab === 'srs',
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   // Query 2: Saved Items Notebook
@@ -98,6 +101,9 @@ export default function FlashcardsPage() {
       return res.json() as Promise<{ items: SavedItem[]; total: number }>
     },
     enabled: viewTab === 'notebook',
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const dueItems = dueData?.items ?? []

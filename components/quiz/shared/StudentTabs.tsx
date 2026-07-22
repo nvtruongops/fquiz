@@ -41,6 +41,7 @@ export default function StudentTabs() {
               <Link
                 key={tab.href}
                 href={tab.href}
+                prefetch={false}
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 relative whitespace-nowrap rounded-lg group",
                   isActive 

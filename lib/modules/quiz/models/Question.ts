@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IQuestionStandalone } from '@/lib/modules/quiz/types/quiz'
+import { ensureExplanation } from '@/lib/modules/quiz/explanation-generator'
 
 /**
  * Question – Bộ sưu tập câu hỏi độc lập (Standalone Question Collection)
@@ -77,6 +78,18 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 )
+
+// Auto-generate explanation if missing before saving
+QuestionSchema.pre('save', function () {
+  if (!this.explanation || this.explanation.trim() === '') {
+    this.explanation = ensureExplanation({
+      text: this.text,
+      options: this.options,
+      correct_answer: this.correct_answer,
+      explanation: this.explanation,
+    })
+  }
+})
 
 // Indexes
 QuestionSchema.index({ text: 'text' }) // Text search

@@ -10,6 +10,9 @@ interface SessionModalsProps {
   setConfirmOpen: (open: boolean) => void
   exitConfirmOpen: boolean
   setExitConfirmOpen: (open: boolean) => void
+  inactivityPauseOpen?: boolean
+  setInactivityPauseOpen?: (open: boolean) => void
+  onResumeInactivity?: () => void
   answeredCount: number
   totalQuestions: number
   isPending: boolean
@@ -23,6 +26,9 @@ export const SessionModals = React.memo(function SessionModals({
   setConfirmOpen,
   exitConfirmOpen,
   setExitConfirmOpen,
+  inactivityPauseOpen = false,
+  setInactivityPauseOpen,
+  onResumeInactivity,
   answeredCount,
   totalQuestions,
   isPending,
@@ -85,6 +91,27 @@ export const SessionModals = React.memo(function SessionModals({
                 className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
               >
                 Tạm dừng &amp; Thoát
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 5-minute Inactivity Pause Modal */}
+        <Dialog open={inactivityPauseOpen} onOpenChange={setInactivityPauseOpen}>
+          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+            <DialogHeader>
+              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Đã tự động tạm dừng</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+                Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình của bạn.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+              <Button
+                type="button"
+                onClick={() => onResumeInactivity?.()}
+                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+              >
+                Tiếp tục làm bài
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -190,6 +217,38 @@ export const SessionModals = React.memo(function SessionModals({
               className="w-full h-11 rounded-2xl border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 hover:text-slate-800 transition-all"
             >
               Tạm dừng & Thoát
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modern 5-minute Inactivity Pause Modal */}
+      <Dialog open={inactivityPauseOpen} onOpenChange={setInactivityPauseOpen}>
+        <DialogContent className="max-w-sm rounded-3xl border border-slate-200/80 bg-white p-0 shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+          <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500" />
+          <div className="px-6 pt-6 pb-2">
+            <DialogHeader className="text-center sm:text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200/60 shadow-sm text-amber-600">
+                <Pause className="h-7 w-7" />
+              </div>
+              <div className="space-y-2">
+                <DialogTitle className="text-center text-lg font-black text-slate-900 tracking-tight">
+                  Đã tự động tạm dừng
+                </DialogTitle>
+                <DialogDescription className="text-center text-xs leading-relaxed text-slate-600">
+                  Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình làm bài của bạn.
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+          </div>
+          <DialogFooter className="px-6 pb-6 pt-4 flex flex-col">
+            <Button
+              type="button"
+              onClick={() => onResumeInactivity?.()}
+              className="w-full h-12 rounded-2xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-sm shadow-md shadow-[#5D7B6F]/15 transition-all"
+            >
+              Tiếp tục làm bài
+              <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
           </DialogFooter>
         </DialogContent>

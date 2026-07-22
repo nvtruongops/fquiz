@@ -25,13 +25,13 @@ export default function ToastProvider() {
             flex items-start gap-3 p-4 rounded-2xl shadow-2xl border
             bg-white/90 backdrop-blur-xl
             animate-in fade-in slide-in-from-right-8 duration-300
-            ${toast.type === 'success' ? 'border-[#A4C3A2]/50' : ''}
+            ${toast.type === 'success' ? 'border-success/50' : ''}
             ${toast.type === 'error' ? 'border-red-200' : ''}
-            ${toast.type === 'info' ? 'border-[#D7F9FA]/50' : ''}
+            ${toast.type === 'info' ? 'border-info/50' : ''}
           `}
         >
           <div className="flex-shrink-0 mt-0.5">
-            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-[#5D7B6F]" />}
+            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-primary" />}
             {toast.type === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
             {toast.type === 'info' && <AlertCircle className="w-5 h-5 text-blue-500" />}
           </div>
@@ -53,7 +53,7 @@ export default function ToastProvider() {
           <div className="absolute bottom-0 left-0 h-1 bg-gray-100 w-full overflow-hidden rounded-b-2xl opacity-30">
             <div 
               className={`h-full transition-[width] ease-linear
-                ${toast.type === 'success' ? 'bg-[#5D7B6F]' : 'bg-red-500'}`}
+                ${toast.type === 'success' ? 'bg-primary' : 'bg-red-500'}`}
               style={{ width: '0%', transitionDuration: '5000ms' }}
               ref={(el) => {
                 if (el) setTimeout(() => { el.style.width = '100%' }, 10)

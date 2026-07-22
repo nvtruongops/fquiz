@@ -30,6 +30,7 @@ import {
   CheckSquare,
   Loader2,
   Code2,
+  School,
 } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { normalizeSearchInput, clampPagination, sanitizeQueryParams } from '@/lib/core/validation/client-validation'
@@ -39,7 +40,7 @@ interface User {
   _id: string
   username: string
   email: string
-  role: 'admin' | 'student' | 'dev'
+  role: 'admin' | 'teacher' | 'student' | 'dev'
   status: 'active' | 'banned'
   created_at: string
 }
@@ -57,7 +58,7 @@ async function fetchUsers(page: number, search: string, role: string, status: st
   const { page: validPage, limit: validLimit } = clampPagination(page, 10)
   
   // Validate enum values
-  const validRole = ['student', 'admin', 'dev', ''].includes(role) ? role : ''
+  const validRole = ['student', 'teacher', 'admin', 'dev', ''].includes(role) ? role : ''
   const validStatus = ['active', 'banned', ''].includes(status) ? status : ''
   
   const queryParams = sanitizeQueryParams({
@@ -74,7 +75,9 @@ async function fetchUsers(page: number, search: string, role: string, status: st
   return res.json()
 }
 
-async function bulkAction(ids: string[], action: 'delete' | 'ban' | 'unban') {
+type BulkActionType = 'delete' | 'ban' | 'unban' | 'set_student' | 'set_teacher' | 'set_admin' | 'set_dev'
+
+async function bulkAction(ids: string[], action: BulkActionType) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/admin/users/bulk`, {
     method: 'POST',
     credentials: 'include',
@@ -124,7 +127,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [bulkActionTarget, setBulkActionTarget] = useState<'ban' | 'delete' | null>(null)
+  const [bulkActionTarget, setBulkActionTarget] = useState<'ban' | 'delete' | 'set_teacher' | 'set_student' | 'set_admin' | 'set_dev' | null>(null)
   const [confirmText, setConfirmText] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
@@ -146,7 +149,7 @@ export default function AdminUsersPage() {
   })
 
   const bulkMutation = useMutation({
-    mutationFn: ({ ids, action }: { ids: string[]; action: 'delete' | 'ban' | 'unban' }) =>
+    mutationFn: ({ ids, action }: { ids: string[]; action: 'delete' | 'ban' | 'unban' | 'set_student' | 'set_teacher' | 'set_admin' | 'set_dev' }) =>
       bulkAction(ids, action),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -233,6 +236,7 @@ export default function AdminUsersPage() {
                   <SelectContent className="rounded-xl">
                     <SelectItem value="_all">Tất cả vai trò</SelectItem>
                     <SelectItem value="student">Học viên</SelectItem>
+                    <SelectItem value="teacher">Giáo viên</SelectItem>
                     <SelectItem value="dev">Developer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
@@ -265,6 +269,13 @@ export default function AdminUsersPage() {
             </div>
             <div className="h-6 w-px bg-white/20" />
             <div className="flex gap-2">
+              <button
+                onClick={() => setBulkActionTarget('set_teacher')}
+                className="px-4 py-2 text-sm font-medium bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <School className="w-4 h-4" />
+                Thành GV
+              </button>
               <button
                 onClick={() => setBulkActionTarget('ban')}
                 className="px-4 py-2 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
@@ -340,6 +351,10 @@ export default function AdminUsersPage() {
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#A4C3A2]/20 text-[#5D7B6F]">
                             <ShieldCheck className="w-3.5 h-3.5" /> Quản trị viên
                           </span>
+                        ) : user.role === 'teacher' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                            <School className="w-3.5 h-3.5" /> Giáo viên
+                          </span>
                         ) : user.role === 'dev' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
                             <Code2 className="w-3.5 h-3.5" /> Developer
@@ -362,14 +377,24 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-1">
                           {user.role !== 'admin' && user._id !== currentUserId && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                              onClick={() => updateMutation.mutate({ id: user._id, updates: { role: user.role === 'dev' ? 'student' : 'dev' } })}
-                            >
-                              {user.role === 'dev' ? 'Gỡ Dev' : 'Thành Dev'}
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                onClick={() => updateMutation.mutate({ id: user._id, updates: { role: user.role === 'teacher' ? 'student' : 'teacher' } })}
+                              >
+                                {user.role === 'teacher' ? 'Gỡ GV' : 'Thành GV'}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                onClick={() => updateMutation.mutate({ id: user._id, updates: { role: user.role === 'dev' ? 'student' : 'dev' } })}
+                              >
+                                {user.role === 'dev' ? 'Gỡ Dev' : 'Thành Dev'}
+                              </Button>
+                            </>
                           )}
                           {user.status === 'active' ? (
                             <Button

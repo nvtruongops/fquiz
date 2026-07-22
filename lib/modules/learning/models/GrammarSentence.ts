@@ -17,7 +17,6 @@ const GrammarSentenceSchema = new Schema<IGrammarSentence>(
 )
 
 GrammarSentenceSchema.index({ sentenceId: 1, grammarId: 1 }, { unique: true })
-GrammarSentenceSchema.index({ grammarId: 1 })
 
 export const GrammarSentence =
   mongoose.models.GrammarSentence ??

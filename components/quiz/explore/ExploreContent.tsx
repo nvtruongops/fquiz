@@ -304,6 +304,9 @@ export default function ExploreContent() {
   const { data: catData, isLoading: catsLoading } = useQuery({
     queryKey: ['public', 'categories'],
     queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const { data: pinnedData } = useQuery({
@@ -311,6 +314,8 @@ export default function ExploreContent() {
     queryFn: fetchPinnedCategories,
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const pinMutation = useMutation({
@@ -339,6 +344,9 @@ export default function ExploreContent() {
       limit: 48 // Fetch more for the wide display
     }),
     enabled: !!selectedCategoryId && !debouncedSearch,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const handleCategorySelect = (id: string) => {

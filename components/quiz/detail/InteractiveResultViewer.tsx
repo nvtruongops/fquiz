@@ -123,8 +123,8 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
               className={cn(
                 'py-1 rounded-md sm:rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'incorrect'
-                  ? 'bg-red-500 text-white shadow-xs font-black'
-                  : 'text-red-600 hover:bg-red-50'
+                  ? 'bg-incorrect-border text-white shadow-xs font-black'
+                  : 'text-incorrect-fg hover:bg-incorrect-bg'
               )}
             >
               Sai ({incorrectCount})

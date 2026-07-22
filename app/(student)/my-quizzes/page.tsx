@@ -499,16 +499,9 @@ export default function MyQuizzesPage() {
 
   const initialTabParam = searchParams.get('tab')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'personal' | 'saved' | 'bank'>(
-    initialTabParam === 'bank' ? 'bank' : 'personal'
+  const [activeTab, setActiveTab] = useState<'personal' | 'saved'>(
+    initialTabParam === 'saved' ? 'saved' : 'personal'
   )
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'bank') {
-      setActiveTab('bank')
-    }
-  }, [searchParams])
 
   const [search, setSearch] = useState('')
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false)
@@ -526,7 +519,10 @@ export default function MyQuizzesPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/categories`)
       if (!res.ok) throw new Error('Failed to fetch categories')
       return res.json()
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const categories = catData?.categories || []
@@ -542,7 +538,10 @@ export default function MyQuizzesPage() {
       const res = await fetch(url.toString())
       if (!res.ok) throw new Error('Failed to fetch quizzes')
       return res.json()
-    }
+    },
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const allLocalQuizzes = (quizData?.quizzes || []).filter((q: Quiz) => !(q as any).is_temp)
@@ -865,16 +864,6 @@ export default function MyQuizzesPage() {
                     <Badge className={cn("shrink-0 border-none px-1 py-0 text-[9px] sm:text-[10px]", activeTab === 'saved' ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500")}>
                       {savedQuizTotal}
                     </Badge>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('bank')}
-                    className={cn(
-                      "flex-1 min-w-0 px-2 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer",
-                      activeTab === 'bank' ? "bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20" : "text-gray-400 hover:text-gray-600"
-                    )}
-                  >
-                    <Library className="w-3.5 h-3.5 shrink-0 hidden sm:block" />
-                    <span className="truncate">Ngân hàng</span>
                   </button>
                 </div>
 

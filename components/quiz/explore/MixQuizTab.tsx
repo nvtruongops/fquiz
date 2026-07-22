@@ -234,6 +234,8 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
     queryKey: ['mix', 'categories'],
     queryFn: fetchCategoriesForMix,
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   // Pre-load from existing mix if mix_from is present

@@ -3,6 +3,7 @@ import type { IQuiz, IQuestion } from '@/lib/modules/quiz/types/quiz'
 // Import Category to ensure it's registered before Quiz uses it in populate
 import '@/lib/modules/quiz/models/Category'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { ensureExplanation } from '@/lib/modules/quiz/explanation-generator'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
@@ -114,6 +115,14 @@ QuizSchema.pre('save', function () {
           text: q.text,
           options: q.options,
           correct_answer: q.correct_answer || []
+        })
+      }
+      if (!q.explanation || q.explanation.trim() === '') {
+        q.explanation = ensureExplanation({
+          text: q.text,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
         })
       }
     })
