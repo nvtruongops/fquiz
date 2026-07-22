@@ -10,7 +10,7 @@ import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
 import { cn } from '@/lib/core/utils/cn'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
-import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
+import { QuizLoadingOverlay, useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { type SessionApiError } from '@/lib/modules/quiz/session-api'
 import { useQuizSessionQueries } from '@/hooks/quiz/useQuizSessionQueries'
 import { useSessionAnswerSync } from '@/hooks/quiz/useSessionAnswerSync'
@@ -92,6 +92,9 @@ export default function QuizSessionMobilePage() {
     exitConfirmOpen,
     setExitConfirmOpen,
     reportSessionActivity,
+    inactivityPauseOpen,
+    setInactivityPauseOpen,
+    handleResumeInactivity,
   } = useSessionActivityTracking({
     sessionId: resolvedSessionId,
     currentQuestionIndex,
@@ -111,13 +114,17 @@ export default function QuizSessionMobilePage() {
     }
 
     setConfirmOpen(false)
+    sessionLoader.open('Đang nộp bài và tổng hợp kết quả...')
     finalizeMutation.mutate()
   }
 
   function handleConfirmExitQuiz() {
     reportSessionActivity('pause')
     setExitConfirmOpen(false)
-    router.push(activeData?.session?.is_temp ? '/' : `/quiz/${resolvedQuizId}`)
+    sessionLoader.open('Đang lưu tiến trình và thoát phòng thi...')
+    sessionLoader.completeAndNavigate(() => {
+      router.push(activeData?.session?.is_temp ? '/' : `/quiz/${resolvedQuizId}`)
+    })
   }
 
   function handleNavigate(index: number) {
@@ -151,15 +158,36 @@ export default function QuizSessionMobilePage() {
     )
   }
 
+  const sessionLoaderStartedRef = useRef(false)
+
+  useEffect(() => {
+    if (!sessionLoaderStartedRef.current) {
+      sessionLoaderStartedRef.current = true
+      sessionLoader.open('Đang tải bộ câu hỏi...')
+    }
+  }, [sessionLoader])
+
   // Single unified loading state — covers both data loading and hydration
   const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
 
-  if (isStillLoading) {
+  useEffect(() => {
+    if (sessionLoaderStartedRef.current) {
+      if (activeData?.session.status === 'preparing') {
+        sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
+      } else if (!isReadyToRender) {
+        sessionLoader.setStatus('Đang chuẩn bị giao diện...')
+      } else if (!isStillLoading) {
+        sessionLoader.complete()
+      }
+    }
+  }, [isStillLoading, isReadyToRender, activeData?.session.status, sessionLoader])
+
+  if (isStillLoading || !activeData) {
     return (
       <QuizLoadingOverlay
         isOpen={true}
-        progress={!isReadyToRender ? 95 : 60}
-        status={!isReadyToRender ? 'Sẵn sàng...' : 'Đang tải bộ câu hỏi...'}
+        progress={sessionLoader.progress}
+        status={sessionLoader.status || 'Đang tải bộ câu hỏi...'}
       />
     )
   }
@@ -222,6 +250,7 @@ export default function QuizSessionMobilePage() {
                 startedAt={session.started_at}
                 pausedAt={session.paused_at}
                 totalPausedDurationMs={session.total_paused_duration_ms}
+                sessionId={resolvedSessionId}
                 className="text-[#5D7B6F] text-sm"
               />
               <p className="text-[10px] font-bold text-gray-400">
@@ -460,6 +489,29 @@ export default function QuizSessionMobilePage() {
               className="flex-1 rounded-xl bg-[#5D7B6F] py-6 font-bold text-white hover:bg-[#4a6358]"
             >
               Thoát
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 5-minute Per-Question Inactivity Pause Dialog */}
+      <Dialog open={inactivityPauseOpen} onOpenChange={setInactivityPauseOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] rounded-2xl px-6 py-6 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-black text-[#5D7B6F]">
+              Đã tự động tạm dừng
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-center text-sm text-gray-600">
+              Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình của bạn.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex sm:justify-center">
+            <Button
+              type="button"
+              onClick={handleResumeInactivity}
+              className="w-full rounded-xl bg-[#5D7B6F] py-6 font-bold text-white hover:bg-[#4a6358]"
+            >
+              Tiếp tục làm bài
             </Button>
           </DialogFooter>
         </DialogContent>

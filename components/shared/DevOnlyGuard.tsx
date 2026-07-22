@@ -23,9 +23,9 @@ export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }:
     )
   }
 
-  const isDev = authData?.user?.role === 'dev'
+  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
 
-  if (isDev) {
+  if (isDevOrAdmin) {
     return <>{children}</>
   }
 

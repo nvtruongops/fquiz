@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
+import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
 import NextTopLoader from 'nextjs-toploader'
 import './globals.css'
@@ -42,6 +43,8 @@ export const metadata: Metadata = {
   },
 }
 
+import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning className={inter.variable}>
@@ -67,14 +70,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="antialiased min-h-screen bg-[#F0F0EB] font-sans" suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-app-bg text-foreground font-sans" suppressHydrationWarning>
         <NextTopLoader color="#5D7B6F" height={3} showSpinner={false} shadow={false} />
-        <QueryProvider>
-          <div className="w-full min-h-screen flex flex-col bg-white relative">
-            {children}
-          </div>
-          <ToastProvider />
-        </QueryProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <QueryProvider>
+            <PageTransitionLoader />
+            <div className="w-full min-h-screen flex flex-col bg-background relative">
+              {children}
+            </div>
+            <ToastProvider />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -33,6 +33,7 @@ import '@/lib/modules/quiz'
 import '@/lib/modules/community'
 import '@/lib/modules/learning'
 import '@/lib/modules/ai'
+import '@/lib/modules/classroom'
 
 const MONGODB_URI = process.env.MONGODB_URI!
 

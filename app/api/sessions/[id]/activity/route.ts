@@ -46,25 +46,26 @@ export const POST = withAuth(async (
       setPayload.paused_at = now
     }
 
-    // Handle resume event - calculate paused duration
+    const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
+
+    // Handle resume event - calculate paused duration or expire if > 5 mins
     if (body.event === 'resume') {
-      // If there's a paused_at timestamp, calculate the pause duration
       if (session.paused_at) {
         const pausedDuration = now.getTime() - new Date(session.paused_at).getTime()
-        const currentPausedTotal = session.total_paused_duration_ms || 0
-        setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
-        setPayload.paused_at = null
+        if (pausedDuration >= AUTO_PAUSE_THRESHOLD) {
+          setPayload.status = 'expired'
+          setPayload.paused_at = null
+        } else {
+          const currentPausedTotal = session.total_paused_duration_ms || 0
+          setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
+          setPayload.paused_at = null
+        }
       } 
       // Auto-detect pause: If last_activity was more than 5 minutes ago and no paused_at
-      // This handles cases where user closed tab without proper pause event
       else if (session.last_activity_at) {
         const timeSinceLastActivity = now.getTime() - new Date(session.last_activity_at).getTime()
-        const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
-        
-        if (timeSinceLastActivity > AUTO_PAUSE_THRESHOLD) {
-          // Assume user was away, add the time to paused duration
-          const currentPausedTotal = session.total_paused_duration_ms || 0
-          setPayload.total_paused_duration_ms = currentPausedTotal + timeSinceLastActivity
+        if (timeSinceLastActivity >= AUTO_PAUSE_THRESHOLD) {
+          setPayload.status = 'expired'
         }
       }
     }

@@ -20,12 +20,14 @@ export function TopHeaderBar({ user }: TopHeaderBarProps) {
       <div className="flex items-center gap-2">
         <Link
           href="/login"
+          prefetch={false}
           className="inline-flex items-center justify-center text-xs font-bold text-slate-700 hover:text-[#5D7B6F] px-4 py-2 rounded-xl hover:bg-slate-100 transition-all cursor-pointer h-9"
         >
           Đăng nhập
         </Link>
         <Link
           href="/register"
+          prefetch={false}
           className="inline-flex items-center justify-center text-xs font-black bg-[#5D7B6F] hover:bg-[#4A6359] text-white px-5 py-2 rounded-xl shadow-xs transition-all cursor-pointer h-9"
         >
           Đăng ký

@@ -55,6 +55,11 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         { _id: { $in: safeIds } },
         { role: 'student' }
       )
+    } else if (action === 'set_teacher') {
+      result = await User.updateMany(
+        { _id: { $in: safeIds } },
+        { role: 'teacher' }
+      )
     } else if (action === 'set_admin') {
       result = await User.updateMany(
         { _id: { $in: safeIds } },

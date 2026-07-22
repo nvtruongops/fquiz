@@ -30,6 +30,9 @@ export default function AnalyticsPage() {
         retrievabilityDistribution: Array<{ range: string; min: number; count: number }>
       }>
     },
+    staleTime: 120 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   if (isLoading) {

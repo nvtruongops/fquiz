@@ -9,6 +9,7 @@ import { UserDropdown } from '@/components/layout/UserDropdown'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { useSidebar } from '@/components/layout/Sidebar'
 import { useAuth } from '@/hooks/auth/useAuth'
+import FQuizLogo from '@/components/shared/ui/FQuizLogo'
 
 
 interface NavbarProps {
@@ -80,20 +81,8 @@ export default function Navbar({ initialUser }: NavbarProps) {
         >
           {/* Left: Brand Logo */}
           <div className="flex-none flex items-center gap-3 z-10">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5D7B6F] via-[#6B8D7F] to-[#A4C3B2] p-0.5 shadow-md shadow-[#5D7B6F]/20 group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full bg-[#5D7B6F] rounded-[10px] flex items-center justify-center border border-white/20">
-                  <span className="text-white font-black text-lg tracking-tighter">F</span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-base font-black tracking-tight text-slate-900 leading-none group-hover:text-[#5D7B6F] transition-colors">
-                  FQuiz
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-[#5D7B6F] mt-0.5">
-                  AI Language & Exam
-                </span>
-              </div>
+            <Link href="/" prefetch={false} className="group">
+              <FQuizLogo showText size={36} />
             </Link>
           </div>
 
@@ -101,6 +90,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
           <div className="hidden lg:flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2 z-10">
             <Link
               href={user ? "/dashboard" : "/"}
+              prefetch={false}
               className={cn(
                 "px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap",
                 pathname === '/' || pathname === '/dashboard'
@@ -165,6 +155,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
             {/* Service 3 Button: Cộng Đồng */}
             <Link
               href="/community"
+              prefetch={false}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap",
                 isCommunityRoute
@@ -217,6 +208,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </span>
                   <Link
                     href="/ai"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/ai'
@@ -229,6 +221,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/roadmap"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/roadmap'
@@ -241,6 +234,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/flashcards"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/flashcards'
@@ -253,6 +247,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/analytics"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/analytics'
@@ -265,6 +260,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/ai/history"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/ai/history'
@@ -283,6 +279,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </span>
                   <Link
                     href="/explore"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/explore' || pathname?.startsWith('/courses/')
@@ -295,6 +292,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/my-quizzes"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/my-quizzes'
@@ -307,6 +305,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/history"
+                    prefetch={false}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                       pathname === '/history'
@@ -329,6 +328,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
             {/* 1. Line 1: Bảng điều khiển */}
             <Link
               href={user ? "/dashboard" : "/"}
+              prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
                 "flex items-center justify-between p-3 rounded-2xl border transition-all shadow-xs",
@@ -362,6 +362,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                 <div className="space-y-0.5">
                   <Link
                     href="/ai"
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -372,6 +373,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/roadmap"
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -382,6 +384,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/flashcards"
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -392,6 +395,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/analytics"
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -402,6 +406,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                   </Link>
                   <Link
                     href="/ai/history"
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -433,6 +438,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
               <div className="space-y-0.5">
                 <Link
                   href="/explore"
+                  prefetch={false}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -443,6 +449,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                 </Link>
                 <Link
                   href="/my-quizzes"
+                  prefetch={false}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -453,6 +460,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
                 </Link>
                 <Link
                   href="/history"
+                  prefetch={false}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
@@ -469,6 +477,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
             {/* 4. Line 4: Cộng đồng thảo luận */}
             <Link
               href="/community"
+              prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
                 "flex items-center justify-between p-3 rounded-2xl border transition-all shadow-xs",

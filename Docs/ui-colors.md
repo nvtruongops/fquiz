@@ -15,6 +15,9 @@
 - Info background: #D7F9FA
 - Warning background: #FFE082
 - Danger background: #EF9A9A
+- Incorrect Answer foreground: #991B1B
+- Incorrect Answer background: #FEE2E2
+- Incorrect Answer border: #EF5350
 
 ## My Quizzes Status
 - Attempted badge background: #DBEAFE
@@ -25,5 +28,5 @@
 
 ## Usage Notes
 - Keep all score highlights in cool colors (blue/green) to avoid confusion with error states.
-- Use red tones only for destructive actions (delete/confirm delete).
+- Use red tones for destructive actions (delete/confirm delete) and indicating incorrect question choices.
 - Maintain text contrast ratio >= 4.5:1 for body text.

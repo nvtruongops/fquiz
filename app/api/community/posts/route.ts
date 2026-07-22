@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const [posts, total, tagAgg, categories] = await Promise.all([
+    const [posts, total, featuredTopicsAgg] = await Promise.all([
       Post.find(query)
         .select('title content authorId authorName tags likes views comments createdAt updatedAt')
         .sort({ createdAt: -1 })
@@ -73,24 +73,49 @@ export async function GET(req: Request) {
         .lean(),
       Post.countDocuments(query),
       Post.aggregate([
+        // Chỉ lọc các post có hashtag (tags array tồn tại và không rỗng)
+        {
+          $match: {
+            tags: { $exists: true, $not: { $size: 0 } }
+          }
+        },
+        // Đếm tổng số lượt xem (dựa trên mảng views) của bài viết
+        {
+          $project: {
+            tags: 1,
+            viewCount: { $size: { $ifNull: ['$views', []] } }
+          }
+        },
         { $unwind: '$tags' },
-        { $group: { _id: '$tags', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
+        // Nhóm theo hashtag, tính tổng lượt xem và số bài viết
+        {
+          $group: {
+            _id: { $toLower: { $trim: { input: '$tags' } } },
+            name: { $first: '$tags' },
+            totalViews: { $sum: '$viewCount' },
+            postCount: { $sum: 1 }
+          }
+        },
+        // Sắp xếp ưu tiên dựa trên tổng lượt xem (totalViews) giảm dần
+        { $sort: { totalViews: -1, postCount: -1 } },
         { $limit: 10 }
-      ]),
-      Category.find({ is_public: true, status: 'approved' })
-        .select('name')
-        .limit(10)
-        .lean()
+      ])
     ])
 
-    const realPostTags = tagAgg.map((t: any) => String(t._id || '').trim()).filter(Boolean)
-    const categoryNames = categories.map((c: any) => String(c.name || '').trim()).filter(Boolean)
-    const popularTags = Array.from(new Set([...realPostTags, ...categoryNames])).slice(0, 10)
+    const featuredTopics = featuredTopicsAgg
+      .map((t: any) => ({
+        name: String(t.name || '').trim(),
+        totalViews: Number(t.totalViews || 0),
+        postCount: Number(t.postCount || 0),
+      }))
+      .filter((t: any) => Boolean(t.name))
+
+    const popularTags = featuredTopics.map((t: any) => t.name)
 
     return NextResponse.json({
       posts,
       popularTags,
+      featuredTopics,
       pagination: {
         page,
         limit,
@@ -133,12 +158,22 @@ export async function POST(req: Request) {
     const cleanTitle = DOMPurify.sanitize(title)
     const cleanContent = DOMPurify.sanitize(content)
 
+    // Trích xuất tự động hashtag từ title và content nếu viết #hashtag
+    const extractHashtags = (text: string): string[] => {
+      const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || []
+      return matches.map(m => m.replace(/^#/, '').trim()).filter(Boolean)
+    }
+
+    const explicitTags = tags || []
+    const extractedTags = [...extractHashtags(cleanTitle), ...extractHashtags(cleanContent)]
+    const finalTags = Array.from(new Set([...explicitTags, ...extractedTags]))
+
     await connectDB()
 
     const post = await Post.create({
       title: cleanTitle,
       content: cleanContent,
-      tags: tags || [],
+      tags: finalTags,
       authorId: new mongoose.Types.ObjectId(session.userId),
       authorName: session.username,
       likes: [],

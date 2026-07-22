@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
   const isRegister = pathname === '/register'
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] relative overflow-hidden flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-page-bg relative overflow-hidden flex flex-col items-center justify-center px-4 py-8">
       {/* Floating Back to Home Button */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -33,8 +33,8 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
 
       {/* Background Aurora Mesh */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-gradient-to-br from-[#5D7B6F]/25 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[60%] bg-gradient-to-tl from-[#A4C3A2]/30 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-gradient-to-br from-primary/25 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[60%] bg-gradient-to-tl from-secondary-accent/30 to-transparent blur-3xl rounded-full transform-gpu opacity-40" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full">

@@ -4,7 +4,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { CreateCategoryRequestSchema } from '@/lib/modules/quiz/schemas/category'
+import { CreateCategorySchema } from '@/lib/modules/quiz/schemas/category'
 import { validateObjectId } from '@/lib/core/schemas/common'
 import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
 
@@ -93,21 +93,22 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (body instanceof NextResponse) return body
 
     // Validate with schema
-    const parsed = CreateCategoryRequestSchema.safeParse(body)
+    const parsed = CreateCategorySchema.safeParse(body)
     if (!parsed.success) {
       return validationErrorResponse(parsed.error)
     }
 
     const { name } = parsed.data
 
-    // Check limit of 5
-    const count = await Category.countDocuments({
-      owner_id: new Types.ObjectId(payload.userId),
-      type: 'private'
-    })
-
-    if (count >= 5) {
-      return NextResponse.json({ error: 'Bạn chỉ có thể tạo tối đa 5 danh mục cá nhân.' }, { status: 400 })
+    const isTeacherOrAdmin = ['teacher', 'admin', 'dev'].includes(payload.role)
+    if (!isTeacherOrAdmin) {
+      const count = await Category.countDocuments({
+        owner_id: new Types.ObjectId(payload.userId),
+        type: 'private'
+      })
+      if (count >= 5) {
+        return NextResponse.json({ error: 'Bạn chỉ có thể tạo tối đa 5 danh mục cá nhân.' }, { status: 400 })
+      }
     }
 
     const category = await Category.create({
@@ -145,7 +146,7 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
     }
 
     // Validate name
-    const nameValidation = CreateCategoryRequestSchema.shape.name.safeParse(name)
+    const nameValidation = CreateCategorySchema.shape.name.safeParse(name)
     if (!nameValidation.success) {
       return NextResponse.json(
         { error: 'Invalid name', details: nameValidation.error.issues },

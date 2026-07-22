@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
@@ -51,6 +51,7 @@ export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{
     )
 
     // Revalidate admin pages and explore to show updated category
+    revalidateTag('categories', 'default')
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
     revalidatePath('/explore')
@@ -88,6 +89,7 @@ export const DELETE = withAuth(async (req: Request, { params }: { params: Promis
     await Category.deleteOne({ _id: category._id })
 
     // Revalidate admin pages and explore to remove deleted category
+    revalidateTag('categories', 'default')
     revalidatePath('/admin/categories')
     revalidatePath('/admin/quizzes/new')
     revalidatePath('/explore')

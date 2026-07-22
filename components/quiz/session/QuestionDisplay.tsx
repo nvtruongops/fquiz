@@ -92,7 +92,7 @@ function StandardQuestionView({
                   isDisabled && 'cursor-not-allowed opacity-60',
                   !isDisabled && 'cursor-pointer hover:bg-gray-50',
                   isCorrect && 'border-green-500 bg-green-50 text-green-700 font-semibold',
-                  isWrongSelected && 'border-red-500 bg-red-50 text-red-700 font-semibold',
+                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-semibold',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-blue-400 bg-blue-50 font-semibold text-blue-700',
                   !isCorrect && !isWrongSelected && !isSelected && 'border-gray-300 bg-white text-[#202020]'
                 )}
@@ -183,7 +183,7 @@ function AnimatedQuestionView({
                   isDisabled && 'cursor-not-allowed opacity-75',
                   !isDisabled && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
                   isCorrect && 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-medium shadow-emerald-100 dark:shadow-none animate-in zoom-in-95 duration-200',
-                  isWrongSelected && 'border-rose-500 bg-rose-50/90 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 font-medium animate-in shake duration-200',
+                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium animate-in shake duration-200',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/5 dark:bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
                   !isCorrect && !isWrongSelected && !isSelected && 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
                 )}
@@ -191,7 +191,7 @@ function AnimatedQuestionView({
                 <span className={cn(
                   'flex-none flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs transition-colors duration-200 mt-0.5',
                   isCorrect && 'bg-emerald-500 text-white shadow-sm',
-                  isWrongSelected && 'bg-rose-500 text-white shadow-sm',
+                  isWrongSelected && 'bg-incorrect-border text-white shadow-sm',
                   !isCorrect && !isWrongSelected && isSelected && 'bg-primary text-white shadow-sm',
                   !isCorrect && !isWrongSelected && !isSelected && 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-slate-300 dark:group-hover:bg-slate-600'
                 )}>

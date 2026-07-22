@@ -17,7 +17,7 @@ const UserSchema = new Schema<IUser>(
     password_hash: { type: String, required: true },
     avatar_url: { type: String, default: null },
     profile_bio: { type: String, default: null },
-    role: { type: String, enum: ['admin', 'student', 'dev'], required: true, default: 'student' },
+    role: { type: String, enum: ['admin', 'teacher', 'student', 'dev'], required: true, default: 'student' },
     status: { type: String, enum: ['active', 'banned', 'pending_deletion'], required: true, default: 'active' },
     ban_reason: { type: String, default: null },
     sharing_violations: { type: Number, required: true, default: 0 },

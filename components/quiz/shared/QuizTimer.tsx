@@ -7,6 +7,7 @@ interface QuizTimerProps {
   startedAt: string | Date
   pausedAt?: string | Date | null
   totalPausedDurationMs?: number
+  sessionId?: string
   className?: string
 }
 
@@ -14,6 +15,7 @@ export function QuizTimer({
   startedAt, 
   pausedAt, 
   totalPausedDurationMs = 0,
+  sessionId,
   className = ''
 }: QuizTimerProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
@@ -24,10 +26,21 @@ export function QuizTimer({
     const updateTimer = () => {
       const now = Date.now()
       
-      // If paused, calculate time up to pause point
+      // Check local storage for tab switch pause if sessionId is provided
+      let effectivePausedAt: number | null = null
       if (pausedAt) {
-        const pauseTime = new Date(pausedAt).getTime()
-        const elapsed = Math.max(0, pauseTime - startTime - totalPausedDurationMs)
+        effectivePausedAt = new Date(pausedAt).getTime()
+      } else if (sessionId && typeof window !== 'undefined') {
+        const localPause = localStorage.getItem(`session_paused_at_${sessionId}`)
+        if (localPause) {
+          const parsed = parseInt(localPause, 10)
+          if (!isNaN(parsed)) effectivePausedAt = parsed
+        }
+      }
+      
+      // If paused, calculate time up to pause point (freeze timer)
+      if (effectivePausedAt) {
+        const elapsed = Math.max(0, effectivePausedAt - startTime - totalPausedDurationMs)
         setElapsedSeconds(Math.floor(elapsed / 1000))
         return
       }
@@ -41,11 +54,9 @@ export function QuizTimer({
     updateTimer()
     
     // Update every second if not paused
-    if (!pausedAt) {
-      const interval = setInterval(updateTimer, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [startedAt, pausedAt, totalPausedDurationMs])
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [startedAt, pausedAt, totalPausedDurationMs, sessionId])
 
   const formatTime = (seconds: number): string => {
     const hrs = Math.floor(seconds / 3600)

@@ -45,8 +45,9 @@ export function useSessionFinalize({
       return res.json()
     },
     onSuccess: () => {
-      sessionLoader.complete()
-      setTimeout(() => router.push(`/quiz/${quizId}/result/${sessionId}`), 300)
+      sessionLoader.completeAndNavigate(() => {
+        router.push(`/quiz/${quizId}/result/${sessionId}`)
+      })
     },
     onError: () => {
       sessionLoader.close()

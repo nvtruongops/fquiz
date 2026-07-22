@@ -85,6 +85,9 @@ export default function RoadmapPage() {
       const json = await res.json()
       return (Array.isArray(json) ? json : json.items || []) as CourseItem[]
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   useEffect(() => {
@@ -101,6 +104,9 @@ export default function RoadmapPage() {
       return res.json() as Promise<RoadmapData>
     },
     enabled: courseId.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const courseTitle = data?.course && 'title' in data.course

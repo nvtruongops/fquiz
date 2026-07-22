@@ -30,7 +30,7 @@ const imgSrcDomains = allowedDomains.map((d) => d.trim()).join(' ')
 
 const cspDirectives = [
   "default-src 'self'",
-  `img-src 'self' data: blob: https://lh3.googleusercontent.com ${imgSrcDomains}`,
+  `img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com ${imgSrcDomains}`,
   [
     "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client",
     isProduction ? '' : "'unsafe-eval'",
@@ -73,7 +73,7 @@ const securityHeaders = [
   },
   {
     key: 'Cross-Origin-Resource-Policy',
-    value: 'same-site',
+    value: 'cross-origin',
   },
   {
     key: isProduction ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only',

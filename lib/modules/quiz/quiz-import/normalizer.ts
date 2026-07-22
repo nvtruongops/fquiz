@@ -1,5 +1,6 @@
 import type { ImportRawQuestion, ImportRawQuizPayload, NormalizedQuestion, NormalizedQuiz } from '@/lib/modules/quiz/quiz-import/types'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { ensureExplanation } from '@/lib/modules/quiz/explanation-generator'
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -86,7 +87,12 @@ function normalizeQuestion(question: ImportRawQuestion): NormalizedQuestion {
   }
 
   const explanation = normalizeString(source.explanation)
-  if (explanation) normalized.explanation = explanation
+  normalized.explanation = ensureExplanation({
+    text: normalized.text,
+    options: normalized.options,
+    correct_answer: normalized.correct_answer,
+    explanation,
+  })
 
   const imageUrl = normalizeString(source.image_url)
   if (imageUrl) normalized.image_url = imageUrl

@@ -37,10 +37,10 @@ export function UnauthorizedView({
       className
     )}>
       {/* Decorative Background Element */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-[#A4C3A2]/5 to-transparent blur-2xl pointer-events-none transform-gpu" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-success/5 to-transparent blur-2xl pointer-events-none transform-gpu" />
 
       <div className="relative z-10">
-        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[#5D7B6F]/5 text-[#5D7B6F] shadow-inner">
+        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/5 text-primary shadow-inner">
           <div className="relative">
             <Lock className="h-8 w-8" />
             <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white border-2 border-white">
@@ -59,14 +59,14 @@ export function UnauthorizedView({
 
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
           <Link href={targetHref} className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto bg-[#5D7B6F] h-12 px-8 text-xs font-black uppercase tracking-[0.2em] text-white rounded-2xl shadow-lg shadow-[#5D7B6F]/20 hover:bg-[#4a6358] hover:translate-y-[-2px] active:translate-y-0 transition-all">
+            <Button className="w-full sm:w-auto bg-primary h-12 px-8 text-xs font-black uppercase tracking-[0.2em] text-white rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:translate-y-[-2px] active:translate-y-0 transition-all">
               Đăng nhập ngay
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
           
           <Link href="/register" className="w-full sm:w-auto">
-            <Button variant="ghost" className="w-full sm:w-auto h-12 px-8 text-xs font-black uppercase tracking-[0.2em] text-[#5D7B6F] rounded-2xl hover:bg-[#5D7B6F]/5 transition-all">
+            <Button variant="ghost" className="w-full sm:w-auto h-12 px-8 text-xs font-black uppercase tracking-[0.2em] text-primary rounded-2xl hover:bg-primary/5 transition-all">
               <UserPlus className="mr-2 h-4 w-4" />
               Tạo tài khoản
             </Button>

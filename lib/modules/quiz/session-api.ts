@@ -23,6 +23,13 @@ async function handleSessionResponse(res: Response, context: 'session' | 'questi
     window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
     throw new Error('Session expired. Redirecting to login...')
   }
+  if (res.status === 410) {
+    const match = window.location.pathname.match(/\/quiz\/([^/]+)/)
+    const quizId = match ? match[1] : ''
+    const target = quizId ? `/quiz/${quizId}?reason=idle_timeout` : '/dashboard?reason=idle_timeout'
+    window.location.href = target
+    throw new Error('Phiên làm bài đã tự động kết thúc do tạm dừng quá 5 phút.')
+  }
   const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
   const defaultMsg = context === 'session' ? 'Failed to load session' : 'Failed to load questions'
   const apiError = new Error(err.error ?? defaultMsg) as SessionApiError

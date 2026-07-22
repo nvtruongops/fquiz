@@ -19,7 +19,7 @@ export const UpdateUserSchema = z.object({
     .transform(stripHtml)
     .optional(),
   avatar_url: z.string().url('URL ảnh không hợp lệ').optional().or(z.literal('')),
-  role: z.enum(['student', 'admin', 'dev']).optional(),
+  role: z.enum(['student', 'teacher', 'admin', 'dev']).optional(),
   status: z.enum(['active', 'banned']).optional(),
   ban_reason: z.string().max(200).optional(),
 })
@@ -34,7 +34,7 @@ export const UpdateStudentSettingsSchema = z.object({
 
 export const BulkUserActionSchema = z.object({
   user_ids: z.array(z.string().regex(/^[a-f0-9]{24}$/)),
-  action: z.enum(['ban', 'unban', 'set_student', 'set_admin', 'set_dev', 'delete']),
+  action: z.enum(['ban', 'unban', 'set_student', 'set_teacher', 'set_admin', 'set_dev', 'delete']),
   reason: z.string().max(200).optional(),
 })
 

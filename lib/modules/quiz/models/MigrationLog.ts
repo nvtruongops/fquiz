@@ -62,10 +62,9 @@ const MigrationLogSchema = new Schema<IMigrationLog>(
 
     duration_ms: { type: Number },
   },
-  { timestamps: false }
+  { timestamps: false, suppressReservedKeysWarning: true }
 )
 
-MigrationLogSchema.index({ migration_id: 1 }, { unique: true })
 MigrationLogSchema.index({ migration_name: 1, started_at: -1 })
 MigrationLogSchema.index({ status: 1 })
 

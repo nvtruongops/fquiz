@@ -43,6 +43,7 @@ export function resetMaintenanceCache() {
 const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator', '/api/jobs/cleanup-deleted-accounts'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
+const TEACHER_PATHS = ['/teacher']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
 const CORS_HEADERS = `Content-Type, Authorization, ${CSRF_HEADER_NAME}`
@@ -205,11 +206,23 @@ function enforceRoleRouting(pathname: string, role: string, request: NextRequest
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (STUDENT_PATHS.some((p) => pathname.startsWith(p)) && !['student', 'dev'].includes(role)) {
+  if (TEACHER_PATHS.some((p) => pathname.startsWith(p)) && !['teacher', 'admin', 'dev'].includes(role)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (pathname.startsWith('/student/classrooms') && role === 'teacher') {
+    return NextResponse.redirect(new URL('/teacher/classrooms', request.url))
+  }
+
+  if (STUDENT_PATHS.some((p) => pathname.startsWith(p)) && !['student', 'teacher', 'dev'].includes(role)) {
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   if (pathname.startsWith('/api/admin') && role !== 'admin') {
+    return createForbiddenResponse(requestId)
+  }
+
+  if (pathname.startsWith('/api/teacher') && !['teacher', 'admin', 'dev'].includes(role)) {
     return createForbiddenResponse(requestId)
   }
 

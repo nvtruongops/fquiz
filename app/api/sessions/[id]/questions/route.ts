@@ -24,6 +24,20 @@ export const GET = withAuth(async (
 
     const session = validation.session
     
+    // Check if session has expired or been paused for more than 5 minutes
+    const AUTO_PAUSE_THRESHOLD_MS = 5 * 60 * 1000
+    const isPausedTooLong = session.paused_at && (Date.now() - new Date(session.paused_at).getTime() >= AUTO_PAUSE_THRESHOLD_MS)
+    if (session.status === 'expired' || isPausedTooLong) {
+      if (session.status !== 'expired') {
+        const { QuizSession } = await import('@/lib/modules/quiz/models/QuizSession')
+        await QuizSession.updateOne({ _id: session._id }, { $set: { status: 'expired', paused_at: null } })
+      }
+      return NextResponse.json({
+        error: 'Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.',
+        expired: true,
+      }, { status: 410 })
+    }
+
     // Handle 'preparing' status
     if (session.status === 'preparing') {
       return NextResponse.json({ 

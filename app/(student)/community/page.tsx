@@ -104,6 +104,9 @@ export default function CommunityPage() {
       if (!res.ok) throw new Error('Failed to fetch posts')
       return res.json()
     },
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     retry: 1,
     retryDelay: 1000,
   })
@@ -548,31 +551,52 @@ export default function CommunityPage() {
           {/* Right Column (4 cols): Community Sidebar Widgets */}
           <aside className="lg:col-span-4 space-y-6">
 
-            {/* Widget 1: Popular Tags */}
+            {/* Widget 1: Popular / Featured Topics */}
             <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2 text-slate-800 font-black text-sm border-b border-slate-100 pb-3">
-                <Tag className="w-4 h-4 text-[#5D7B6F]" />
+                <Flame className="w-4 h-4 text-amber-500" />
                 <span>Chủ đề thảo luận nổi bật</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {((postsData?.popularTags && postsData.popularTags.length > 0) ? postsData.popularTags : DEFAULT_FALLBACK_TAGS).map((tag: string) => {
-                  const isActive = searchQuery.toLowerCase() === tag.toLowerCase()
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => setSearchQuery(isActive ? '' : tag)}
-                      className={cn(
-                        'text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer border',
-                        isActive 
-                          ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-xs'
-                          : 'bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-emerald-50 hover:text-[#5D7B6F] hover:border-emerald-200'
-                      )}
-                    >
-                      #{tag}
-                    </button>
-                  )
-                })}
-              </div>
+
+              {postsData?.featuredTopics && postsData.featuredTopics.length > 0 ? (
+                <div className="space-y-2">
+                  {postsData.featuredTopics.map((topic: { name: string; totalViews: number; postCount: number }) => {
+                    const isActive = searchQuery.toLowerCase() === topic.name.toLowerCase()
+                    return (
+                      <button
+                        key={topic.name}
+                        onClick={() => setSearchQuery(isActive ? '' : topic.name)}
+                        className={cn(
+                          'w-full flex items-center justify-between p-2.5 rounded-2xl transition-all cursor-pointer border text-xs font-bold text-left',
+                          isActive
+                            ? 'bg-[#5D7B6F] text-white border-[#5D7B6F] shadow-xs'
+                            : 'bg-slate-50/90 text-slate-700 border-slate-200/70 hover:bg-emerald-50 hover:text-[#5D7B6F] hover:border-emerald-200'
+                        )}
+                      >
+                        <span className="truncate">#{topic.name}</span>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className={cn(
+                            'inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full',
+                            isActive ? 'bg-white/20 text-white' : 'bg-emerald-100/60 text-[#166534]'
+                          )}>
+                            <Eye className="w-3 h-3" /> {topic.totalViews}
+                          </span>
+                          <span className={cn(
+                            'text-[10px] font-bold',
+                            isActive ? 'text-emerald-100' : 'text-slate-400'
+                          )}>
+                            {topic.postCount} bài
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs font-medium text-slate-400 text-center py-2">
+                  Chưa có chủ đề hashtag nào
+                </p>
+              )}
             </div>
 
             {/* Widget 2: Feedback Promotion */}

@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { unstable_cache } from 'next/cache'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category, PUBLIC_CATEGORY_MATCH } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -13,36 +14,38 @@ export const metadata = {
   description: 'Tìm kiếm và khám phá thư viện câu hỏi trắc nghiệm đa chuyên ngành trên FQuiz.',
 }
 
-export const dynamic = 'force-dynamic'
-
-async function getCategories() {
-  await connectDB()
-  const cats = await Category.find(PUBLIC_CATEGORY_MATCH).sort({ name: 1 }).lean()
-  
-  const catIds = cats.map((c: any) => c._id)
-  const quizCounts = await Quiz.aggregate([
-    {
-      $match: {
-        category_id: { $in: catIds },
-        status: 'published'
+const getCategories = unstable_cache(
+  async () => {
+    await connectDB()
+    const cats = await Category.find(PUBLIC_CATEGORY_MATCH).sort({ name: 1 }).lean()
+    
+    const catIds = cats.map((c: any) => c._id)
+    const quizCounts = await Quiz.aggregate([
+      {
+        $match: {
+          category_id: { $in: catIds },
+          status: 'published'
+        }
+      },
+      {
+        $group: {
+          _id: '$category_id',
+          count: { $sum: 1 }
+        }
       }
-    },
-    {
-      $group: {
-        _id: '$category_id',
-        count: { $sum: 1 }
-      }
-    }
-  ])
-  
-  const countMap = new Map(quizCounts.map((item: any) => [item._id.toString(), item.count]))
+    ])
+    
+    const countMap = new Map(quizCounts.map((item: any) => [item._id.toString(), item.count]))
 
-  return cats.map((c: any) => ({
-    id: c._id.toString(),
-    name: c.name,
-    quizCount: countMap.get(c._id.toString()) ?? 0
-  }))
-}
+    return cats.map((c: any) => ({
+      id: c._id.toString(),
+      name: c.name,
+      quizCount: countMap.get(c._id.toString()) ?? 0
+    }))
+  },
+  ['explore-categories-list'],
+  { revalidate: 300, tags: ['categories'] }
+)
 
 export default async function ExplorePage() {
   const categories = await getCategories()

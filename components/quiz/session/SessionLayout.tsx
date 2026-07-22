@@ -96,6 +96,7 @@ export const SessionLayout = React.memo(function SessionLayout({
           startedAt={session.started_at}
           pausedAt={session.paused_at}
           totalPausedDurationMs={session.total_paused_duration_ms}
+          sessionId={session._id || (session as any).id}
           className={enableAnimation ? "text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20" : "text-[#5D7B6F]"}
         />
       </QuizHeader>

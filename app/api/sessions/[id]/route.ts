@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Question } from '@/lib/modules/quiz/models/Question'
 import { Category } from '@/lib/modules/quiz/models/Category'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
@@ -58,6 +59,19 @@ export const GET = withAuth(async (
     if (!validation.isValid) return validation.response
 
     const session = validation.session
+
+    // Check if session has expired or been paused for more than 5 minutes
+    const AUTO_PAUSE_THRESHOLD_MS = 5 * 60 * 1000
+    const isPausedTooLong = session.paused_at && (Date.now() - new Date(session.paused_at).getTime() >= AUTO_PAUSE_THRESHOLD_MS)
+    if (session.status === 'expired' || isPausedTooLong) {
+      if (session.status !== 'expired') {
+        await QuizSession.updateOne({ _id: session._id }, { $set: { status: 'expired', paused_at: null } })
+      }
+      return NextResponse.json({
+        error: 'Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.',
+        expired: true,
+      }, { status: 410 })
+    }
 
     // Handle 'preparing' status — quiz might not be created yet
     if (session.status === 'preparing') {

@@ -139,7 +139,10 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   }, [session, question, submitAnswer, actualIndex, displayIndex, setStats, setDisplayIndex])
 
   const handleExit = () => {
-    router.push(`/dashboard`)
+    sessionLoader.open('Đang lưu tiến trình và thoát Flashcard...')
+    sessionLoader.completeAndNavigate(() => {
+      router.push(`/dashboard`)
+    })
   }
 
   const handleBackgroundClick = () => {
