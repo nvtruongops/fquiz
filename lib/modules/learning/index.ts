@@ -5,6 +5,8 @@
  *           SentenceVocabulary, GrammarSentence, ParagraphSentence
  */
 import { registerModel } from '@/lib/core/db/model-registry'
+import { registerUserCleanupHandler } from '@/lib/core/services/user-cleanup-registry'
+import { LearningProgress } from './models/LearningProgress'
 
 registerModel(() => {
   // Sprint 1
@@ -24,4 +26,8 @@ registerModel(() => {
   import('./models/ParagraphSentence')
   // Sprint 3
   import('./models/LearningProgress')
+})
+
+registerUserCleanupHandler('learning', async (userId: string) => {
+  await LearningProgress.deleteMany({ createdBy: userId })
 })

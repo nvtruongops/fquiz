@@ -41,7 +41,7 @@ export function resetMaintenanceCache() {
 }
 
 const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
-const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator'])
+const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator', '/api/jobs/cleanup-deleted-accounts'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -153,9 +153,9 @@ function shouldSkipAuth(pathname: string) {
   return pathname.startsWith('/api/v1/public/') || 
          pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
          pathname.startsWith('/api/auth/') ||
-         pathname === '/api/jobs/mail' ||
-         pathname === '/api/jobs/ai-generator'
+         pathname.startsWith('/api/jobs/')
 }
+
 
 function validateCsrf(request: NextRequest, pathname: string, requestId: string) {
   const isMutation = MUTATION_METHODS.has(request.method)
