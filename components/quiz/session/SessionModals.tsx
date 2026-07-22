@@ -185,7 +185,7 @@ export const SessionModals = React.memo(function SessionModals({
                       </div>
                       <div className="h-8 w-px bg-slate-200" />
                       <div className="text-center">
-                        <div className="text-2xl font-black text-amber-600 tabular-nums">{totalQuestions - answeredCount}</div>
+                        <div className="text-2xl font-black text-amber-600 tabular-nums">{Math.max(totalQuestions - answeredCount, 0)}</div>
                         <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-0.5">Câu còn lại</div>
                       </div>
                     </div>

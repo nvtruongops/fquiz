@@ -200,10 +200,13 @@ export default function QuizSessionMobilePage() {
       .map((answer) => answer.question_index)
       .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal)
   )
-  if (selectedOptions.length > 0) {
+  if (selectedOptions.length > 0 && currentQuestionIndex >= 0 && currentQuestionIndex < effectiveTotal) {
     answeredFromSession.add(currentQuestionIndex)
   }
-  const answeredCount = Math.max(answeredQuestions.size, answeredFromSession.size)
+  const validStoreCount = Array.from(answeredQuestions)
+    .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal).length
+
+  const answeredCount = Math.min(Math.max(validStoreCount, answeredFromSession.size), effectiveTotal)
   const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const correctAnswerSet = showImmediateFeedback
