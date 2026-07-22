@@ -204,7 +204,22 @@ function DesktopSessionContent({
   }
 
   const { session, question } = activeData
-  const answeredCount = Math.max(answeredQuestions.size, new Set(session.user_answers.map(a => a.question_index)).size + (selectedOptions.length > 0 ? 1 : 0))
+  const validAnsweredFromDb = session.user_answers
+    .map((a) => a.question_index)
+    .filter((i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions)
+
+  const answeredSet = new Set(validAnsweredFromDb)
+  if (selectedOptions.length > 0 && currentQuestionIndex >= 0 && currentQuestionIndex < session.totalQuestions) {
+    answeredSet.add(currentQuestionIndex)
+  }
+
+  const validStoreAnsweredCount = Array.from(answeredQuestions)
+    .filter((i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions).length
+
+  const answeredCount = Math.min(
+    Math.max(validStoreAnsweredCount, answeredSet.size),
+    session.totalQuestions
+  )
   const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
 
   return (

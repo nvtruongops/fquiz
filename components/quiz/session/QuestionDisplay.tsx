@@ -39,6 +39,8 @@ function StandardQuestionView({
     ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
     : []
 
+  const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
+
   return (
     <div className="flex h-full flex-col quiz-scroll overflow-y-auto px-4 py-4 sm:px-6">
       <div className="mb-2">
@@ -50,7 +52,7 @@ function StandardQuestionView({
       </div>
       <div className="max-w-4xl border border-[#c7c7c7] bg-[#f5f5f5] px-[clamp(12px,1vw,20px)] py-[clamp(12px,1vw,20px)]">
         <p className="text-[clamp(14px,0.4vw+12px,17px)] font-semibold leading-snug text-[#101010]">
-          Câu {currentIndex + 1}/{totalQuestions}
+          Câu {safeDisplayIndex}/{totalQuestions}
         </p>
         <p className="mt-2 whitespace-pre-wrap text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed text-[#101010]">
           {question.text}
@@ -124,6 +126,8 @@ function AnimatedQuestionView({
     ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
     : []
 
+  const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
+
   return (
     <div className="flex h-full flex-col bg-slate-50/50 dark:bg-slate-900/50 quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">
       <div 
@@ -133,7 +137,7 @@ function AnimatedQuestionView({
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary tracking-wide">
-              Câu {currentIndex + 1} / {totalQuestions}
+              Câu {safeDisplayIndex} / {totalQuestions}
             </span>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 italic">
               {requiredSelectionCount === 1
