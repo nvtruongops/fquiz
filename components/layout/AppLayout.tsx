@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { usePathname } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
+import { Sidebar, SidebarProvider, useSidebar } from '@/components/layout/Sidebar'
+import { TopHeaderBar } from '@/components/layout/TopHeaderBar'
 import { cn } from '@/lib/core/utils/cn'
 
 interface AppLayoutProps {
@@ -13,12 +14,12 @@ interface AppLayoutProps {
   fixedHeight?: boolean
 }
 
-export default function AppLayout({ children, user, showNavbar = true, className, fixedHeight = false }: AppLayoutProps) {
+function AppLayoutContent({ children, user, showNavbar = true, className, fixedHeight = false }: AppLayoutProps) {
   const pathname = usePathname()
+  const { collapsed } = useSidebar()
+
   const isSessionMode = pathname?.includes('/session/') || pathname?.includes('/flashcard/')
-  const isAiRoute = pathname === '/ai' || pathname?.startsWith('/ai/')
   const isFixedHeight = fixedHeight || pathname === '/ai' || pathname === '/dashboard' || pathname === '/admin/categories'
-  const needsExtraTopPadding = isAiRoute || pathname === '/dashboard'
 
   if (isSessionMode) {
     return (
@@ -28,56 +29,56 @@ export default function AppLayout({ children, user, showNavbar = true, className
     )
   }
 
+  // Left padding for desktop based on collapsed status
+  const desktopLeftPadding = collapsed ? 'lg:pl-[80px]' : 'lg:pl-[256px]'
+
   if (isFixedHeight) {
-    // Result pages use fixed height single viewport layout
-    if (pathname?.includes('/result/')) {
-      return (
-        <div className={cn('h-dvh max-h-dvh overflow-hidden flex flex-col bg-[#F9F9F7]', className)}>
-          {showNavbar && (
-            <Navbar
-              initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
-            />
-          )}
-          <main className={cn('flex-1 w-full min-h-0 overflow-hidden flex flex-col', showNavbar ? 'pt-24 sm:pt-28 lg:pt-32' : 'pt-2')}>
-            <div className="w-full h-full flex flex-col min-h-0 px-2 sm:px-4 md:px-6 py-1.5 animate-in fade-in duration-500 overflow-hidden">
+    return (
+      <div className={cn('h-dvh max-h-dvh overflow-hidden flex flex-col bg-[#F9F9F7]', className)}>
+        <div className="flex-1 w-full min-h-0 flex overflow-hidden">
+          {showNavbar && <Sidebar user={user} />}
+
+          <main
+            className={cn(
+              'flex-1 w-full min-h-0 overflow-hidden flex flex-col transition-all duration-300',
+              showNavbar ? `${desktopLeftPadding} pt-14 lg:pt-0` : 'pt-0'
+            )}
+          >
+            {showNavbar && <TopHeaderBar user={user} />}
+            <div className="w-full flex-1 min-h-0 px-2 sm:px-5 py-2 animate-in fade-in duration-500 overflow-hidden">
               {children}
             </div>
           </main>
         </div>
-      )
-    }
-
-    return (
-      <div className={cn('h-dvh max-h-dvh overflow-hidden flex flex-col bg-[#F9F9F7]', className)}>
-        {showNavbar && (
-          <Navbar
-            initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
-          />
-        )}
-        <main className={cn('flex-1 w-full min-h-0 overflow-hidden flex flex-col pb-2', showNavbar ? (needsExtraTopPadding ? 'pt-28 sm:pt-32 lg:pt-36' : 'pt-24 sm:pt-28 lg:pt-32') : 'pt-4')}>
-          <div className="w-full h-full flex flex-col min-h-0 px-2 sm:px-4 md:px-6 animate-in fade-in duration-500 overflow-hidden">
-            {children}
-          </div>
-        </main>
       </div>
     )
   }
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-[#F9F9F7]', className)}>
-      {/* Top Navbar */}
-      {showNavbar && (
-        <Navbar
-          initialUser={user ? { _id: user._id, name: user.name, role: user.role, avatarUrl: user.avatarUrl } : null}
-        />
-      )}
+      <div className="flex-1 w-full flex">
+        {showNavbar && <Sidebar user={user} />}
 
-      {/* Main Content Area */}
-      <main className={cn('flex-1 w-full pb-28 md:pb-12 overflow-x-hidden', showNavbar ? (isAiRoute ? 'pt-32 sm:pt-36 lg:pt-40' : 'pt-24 sm:pt-28 lg:pt-32') : 'pt-4')}>
-        <div className="w-full px-3 sm:px-6 md:px-8 lg:px-10 animate-in fade-in duration-500">
-          {children}
-        </div>
-      </main>
+        <main
+          className={cn(
+            'flex-1 w-full pb-16 transition-all duration-300 overflow-x-hidden',
+            showNavbar ? `${desktopLeftPadding} pt-14 lg:pt-0` : 'pt-0'
+          )}
+        >
+          {showNavbar && <TopHeaderBar user={user} />}
+          <div className="w-full px-3 sm:px-8 py-4 animate-in fade-in duration-500">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
+  )
+}
+
+export default function AppLayout(props: AppLayoutProps) {
+  return (
+    <SidebarProvider>
+      <AppLayoutContent {...props} />
+    </SidebarProvider>
   )
 }

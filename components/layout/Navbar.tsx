@@ -7,7 +7,9 @@ import { BookOpen, Map, Layers, TrendingUp, Compass, FileText, History, LayoutDa
 import { cn } from '@/lib/core/utils/cn'
 import { UserDropdown } from '@/components/layout/UserDropdown'
 import { MobileNav } from '@/components/layout/MobileNav'
+import { useSidebar } from '@/components/layout/Sidebar'
 import { useAuth } from '@/hooks/auth/useAuth'
+
 
 interface NavbarProps {
   initialUser?: { _id?: string; name: string; role: string; avatarUrl?: string } | null
@@ -25,8 +27,10 @@ export default function Navbar({ initialUser }: NavbarProps) {
 
   const [activePanel, setActivePanel] = useState<'ai' | 'quiz' | null>(null)
 
+  const { setMobileOpen } = useSidebar()
   const { data: authData } = useAuth(initialUser ? { user: initialUser } : undefined)
   const user = authData?.user ?? initialUser
+
 
   useEffect(() => {
     setMounted(true)
@@ -176,12 +180,13 @@ export default function Navbar({ initialUser }: NavbarProps) {
           {/* Right: User Area + Mobile Menu Toggle */}
           <div className="flex-none flex justify-end items-center gap-3 z-10">
             <button
-              onClick={() => setMobileMenuOpen((v) => !v)}
+              onClick={() => setMobileOpen(true)}
               className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
               title="Mở menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
+
 
             {user ? (
               <UserDropdown user={user} />

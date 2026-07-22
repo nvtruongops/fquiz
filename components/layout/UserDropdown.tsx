@@ -13,9 +13,10 @@ import { Button } from '@/components/shared/ui/button'
 
 interface UserDropdownProps {
   user: { name: string; role: string; avatarUrl?: string }
+  compact?: boolean
 }
 
-export function UserDropdown({ user }: UserDropdownProps) {
+export function UserDropdown({ user, compact = false }: UserDropdownProps) {
   const handleLogout = () => {
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/logout`, { method: 'POST' }).then(() => {
       globalThis.location.href = '/'
@@ -28,26 +29,38 @@ export function UserDropdown({ user }: UserDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 p-1 pr-2 hover:bg-[#5D7B6F]/5 rounded-full transition-all">
+        <Button
+          variant="ghost"
+          className={
+            compact
+              ? "flex items-center justify-center p-1 hover:bg-[#5D7B6F]/5 rounded-full transition-all cursor-pointer"
+              : "flex items-center gap-2 p-1 pr-2 hover:bg-[#5D7B6F]/5 rounded-full transition-all cursor-pointer"
+          }
+        >
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={user.avatarUrl}
               alt="avatar"
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-md"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-md flex-shrink-0"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#A4C3A2] to-[#5D7B6F] flex items-center justify-center text-white font-black text-[13px] ring-2 ring-white shadow-md">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#A4C3A2] to-[#5D7B6F] flex items-center justify-center text-white font-black text-[13px] ring-2 ring-white shadow-md flex-shrink-0">
               {initial}
             </div>
           )}
-          <div className="hidden sm:block text-left mr-0.5">
-            <p className="text-[11px] font-black text-[#5D7B6F] leading-tight tracking-tight">{user.name}</p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-400" />
+
+          {!compact && (
+            <>
+              <div className="hidden sm:block text-left mr-0.5 max-w-[100px] truncate">
+                <p className="text-[11px] font-black text-[#5D7B6F] leading-tight tracking-tight truncate">{user.name}</p>
+              </div>
+              <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            </>
+          )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-60 p-0 border-slate-200/80 rounded-2xl shadow-2xl shadow-black/8 overflow-hidden">
+      <DropdownMenuContent align={compact ? "center" : "end"} sideOffset={8} className="w-60 p-0 border-slate-200/80 rounded-2xl shadow-2xl shadow-black/8 overflow-hidden z-50">
         {/* User info header */}
         <div className="px-4 py-4 bg-gradient-to-br from-[#5D7B6F]/5 to-[#A4C3A2]/10 border-b border-slate-100">
           <div className="flex items-center gap-3">
