@@ -490,14 +490,6 @@ export default function MobileFlashcardSessionPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-3.5 h-3.5 ${enableAnimation ? 'text-amber-500' : 'text-gray-300'}`} />
-              <Switch 
-                checked={enableAnimation} 
-                onCheckedChange={setEnableAnimation} 
-                className="scale-[0.6] origin-right data-[state=checked]:bg-amber-500"
-              />
-            </div>
             <div className="flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-1">
                 <span className="text-[12px] font-black text-green-600">{stats.known}</span>
@@ -535,7 +527,7 @@ export default function MobileFlashcardSessionPage() {
           onBack={handleBack} 
           onForward={handleForward}
           isLoading={isSubmitting} 
-          enableAnimation={enableAnimation}
+          enableAnimation={false}
         />
       </div>
     </div>
