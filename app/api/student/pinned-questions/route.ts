@@ -3,8 +3,50 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { PinnedQuestion } from '@/lib/modules/quiz/models/PinnedQuestion'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
 import { parseJsonBody } from '@/lib/core/api-helpers'
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Build flexible MongoDB filter matching course_code prefix/regex or Category quizzes.
+ */
+async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeParam?: string | null) {
+  const filter: any = { student_id: studentId }
+  if (!courseCodeParam || !courseCodeParam.trim()) return filter
+
+  const cleanCode = courseCodeParam.trim()
+  const escapedCode = escapeRegex(cleanCode)
+  const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
+
+  // Find Category by name
+  const category = await Category.findOne({
+    name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
+  }).select('_id').lean()
+
+  let categoryQuizIds: Types.ObjectId[] = []
+  let categoryCourseCodes: string[] = []
+
+  if (category) {
+    const quizzes = await Quiz.find({ category_id: category._id })
+      .select('_id course_code')
+      .lean() as any[]
+    categoryQuizIds = quizzes.map((q) => q._id)
+    categoryCourseCodes = quizzes.map((q) => q.course_code?.trim().toUpperCase()).filter(Boolean)
+  }
+
+  const orConditions: any[] = [
+    { course_code: { $regex: codeRegex } },
+    ...(categoryQuizIds.length > 0 ? [{ quiz_id: { $in: categoryQuizIds } }] : []),
+    ...(categoryCourseCodes.length > 0 ? [{ course_code: { $in: categoryCourseCodes } }] : []),
+  ]
+
+  filter.$or = orConditions
+  return filter
+}
 
 /**
  * Resolve the real original (non-temp) quiz and course_code for a question.
@@ -128,10 +170,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
     }
 
-    const filter: any = { student_id: studentObjectId }
-    if (courseCodeParam) {
-      filter.course_code = courseCodeParam.trim().toUpperCase()
-    }
+    const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
 
     const pinnedQuestions = await PinnedQuestion.find(filter)
       .sort({ created_at: -1 })
@@ -227,11 +266,9 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
     await connectDB()
     const { searchParams } = new URL(req.url)
     const courseCodeParam = searchParams.get('course_code')
+    const studentObjectId = new Types.ObjectId(payload.userId)
 
-    const filter: any = { student_id: new Types.ObjectId(payload.userId) }
-    if (courseCodeParam) {
-      filter.course_code = courseCodeParam.trim().toUpperCase()
-    }
+    const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
 
     const result = await PinnedQuestion.deleteMany(filter)
     return NextResponse.json({ success: true, deletedCount: result.deletedCount })
