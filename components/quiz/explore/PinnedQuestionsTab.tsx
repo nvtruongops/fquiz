@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePinnedQuestions, PinnedQuestionItem } from '@/hooks/quiz/usePinnedQuestions'
-import { Bookmark, BookmarkCheck, Trash2, PlusCircle, AlertCircle, FileText, CheckCircle2, Loader2, Info } from 'lucide-react'
+import { Bookmark, BookmarkCheck, Trash2, PlusCircle, AlertCircle, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -29,6 +29,25 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
   const [confirmClearOpen, setConfirmClearOpen] = useState(false)
   const [quotaModalOpen, setQuotaModalOpen] = useState(false)
   const [quotaMessage, setQuotaMessage] = useState('')
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const isAllExpanded = pinnedQuestions.length > 0 && pinnedQuestions.every((item: PinnedQuestionItem) => expandedIds[item._id])
+
+  const toggleExpandAll = () => {
+    if (isAllExpanded) {
+      setExpandedIds({})
+    } else {
+      const allMap: Record<string, boolean> = {}
+      pinnedQuestions.forEach((item: PinnedQuestionItem) => {
+        allMap[item._id] = true
+      })
+      setExpandedIds(allMap)
+    }
+  }
 
   const handleCreateQuiz = () => {
     if (pinnedQuestions.length === 0) {
@@ -102,6 +121,26 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               type="button"
               variant="outline"
               size="sm"
+              onClick={toggleExpandAll}
+              className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs transition-all"
+            >
+              {isAllExpanded ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                  Thu gọn tất cả
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                  Hiện tất cả đáp án
+                </>
+              )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setConfirmClearOpen(true)}
               disabled={clearAllPinsMutation.isPending}
               className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-semibold text-xs transition-all"
@@ -109,6 +148,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
               Xóa tất cả
             </Button>
+
             <Button
               type="button"
               size="sm"
@@ -144,10 +184,12 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
         </div>
       ) : (
         /* Pinned Questions List */
-        <div className="space-y-4">
+        <div className="space-y-3">
           <AnimatePresence mode="popLayout">
             {pinnedQuestions.map((item: PinnedQuestionItem, index: number) => {
               const answers = item.correct_answer || [0]
+              const isExpanded = !!expandedIds[item._id]
+
               return (
                 <motion.div
                   key={item._id}
@@ -156,7 +198,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all space-y-4 relative group"
+                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all space-y-3 relative group"
                 >
                   {/* Top metadata header */}
                   <div className="flex items-start justify-between gap-3">
@@ -186,14 +228,19 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                     </button>
                   </div>
 
-                  {/* Question Content */}
+                  {/* Question Text (Clickable to toggle expand) */}
                   <div className="space-y-2">
-                    <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed">
-                      {item.text}
-                    </p>
+                    <div
+                      onClick={() => toggleExpand(item._id)}
+                      className="cursor-pointer group/title"
+                    >
+                      <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed group-hover/title:text-[#5D7B6F] transition-colors">
+                        {item.text}
+                      </p>
+                    </div>
 
                     {item.image_url && (
-                      <div className="mt-3 max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 p-2 bg-slate-50 dark:bg-slate-850">
+                      <div className="mt-2 max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 p-2 bg-slate-50 dark:bg-slate-850">
                         <img
                           src={item.image_url}
                           alt="Minh họa"
@@ -203,47 +250,83 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                     )}
                   </div>
 
-                  {/* Options List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    {item.options.map((opt: string, optIdx: number) => {
-                      const isCorrect = answers.includes(optIdx)
-                      return (
-                        <div
-                          key={`${optIdx}-${opt}`}
-                          className={`p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 transition-colors ${
-                            isCorrect
-                              ? 'border-emerald-500/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold'
-                              : 'border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                          <span
-                            className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] flex-none mt-0.5 ${
-                              isCorrect
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                            }`}
-                          >
-                            {String.fromCodePoint(65 + optIdx)}
-                          </span>
-                          <span className="flex-1 whitespace-pre-wrap">{opt}</span>
-                          {isCorrect && (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none self-center" />
-                          )}
-                        </div>
-                      )
-                    })}
+                  {/* Toggle Answer Button */}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(item._id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-[#5D7B6F] dark:text-[#7C9D8E] font-bold text-xs transition-colors"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <EyeOff className="w-3.5 h-3.5" />
+                          <span>Ẩn đáp án</span>
+                          <ChevronUp className="w-4 h-4 ml-0.5" />
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem đáp án</span>
+                          <ChevronDown className="w-4 h-4 ml-0.5" />
+                        </>
+                      )}
+                    </button>
                   </div>
 
-                  {/* Explanation if exists */}
-                  {item.explanation && (
-                    <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-2">
-                      <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
-                      <div>
-                        <strong className="font-bold">Giải thích: </strong>
-                        <span>{item.explanation}</span>
-                      </div>
-                    </div>
-                  )}
+                  {/* Expandable Options List & Explanation */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 overflow-hidden"
+                      >
+                        {/* Options List */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                          {item.options.map((opt: string, optIdx: number) => {
+                            const isCorrect = answers.includes(optIdx)
+                            return (
+                              <div
+                                key={`${optIdx}-${opt}`}
+                                className={`p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 transition-colors ${
+                                  isCorrect
+                                    ? 'border-emerald-500/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                    : 'border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <span
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] flex-none mt-0.5 ${
+                                    isCorrect
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                  }`}
+                                >
+                                  {String.fromCodePoint(65 + optIdx)}
+                                </span>
+                                <span className="flex-1 whitespace-pre-wrap">{opt}</span>
+                                {isCorrect && (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none self-center" />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* Explanation if exists */}
+                        {item.explanation && (
+                          <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-2">
+                            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
+                            <div>
+                              <strong className="font-bold">Giải thích: </strong>
+                              <span>{item.explanation}</span>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )
             })}
