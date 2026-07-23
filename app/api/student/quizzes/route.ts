@@ -10,6 +10,7 @@ import { validateObjectId } from '@/lib/core/schemas/common'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
+import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()
@@ -195,12 +196,11 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     if (categoryId && !validateObjectId(categoryId)) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
     }
-
     // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo, bộ lưu và bài trộn)
     const query: any = { created_by: new Types.ObjectId(payload.userId) }
     if (categoryId) query.category_id = new Types.ObjectId(categoryId)
 
-    const quizzes = await Quiz.find(query)
+    const rawQuizzes = await Quiz.find(query)
       .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore is_temp')
       .populate('category_id', 'name')
       .populate({
@@ -208,7 +208,20 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         select: 'questionCount'
       })
       .sort({ created_at: -1 })
-      .lean()
+      .lean() as any[]
+
+    // Auto-heal missing category_id for student's quizzes
+    for (const q of rawQuizzes) {
+      if (!q.category_id && q.course_code) {
+        const cat = await ensureCategoryForCourseCode(q.course_code, payload.userId)
+        if (cat?._id) {
+          await Quiz.updateOne({ _id: q._id }, { $set: { category_id: cat._id } })
+          q.category_id = { _id: cat._id, name: cat.name }
+        }
+      }
+    }
+
+    const quizzes = rawQuizzes
 
     const { sourceQuizIdByDisplayId, originalSourceIds } = buildSourceMappings(quizzes as any[])
     const sourceAvailabilityByOriginalId = await fetchSourceAvailabilityMap(originalSourceIds)
@@ -225,7 +238,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
   } catch (error) {
     console.error('Error fetching student quizzes:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const POST = withAuth(async (req: Request, { payload }) => {
@@ -276,11 +289,13 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // Verify category exists
-    const category = await Category.findById(category_id)
+    // Verify or auto-create category
+    let category = category_id ? await Category.findById(category_id) : null
     if (!category) {
-      return NextResponse.json({ error: 'Danh mục không tồn tại.' }, { status: 404 })
+      category = await ensureCategoryForCourseCode(normalizedCourseCode, payload.userId)
     }
+
+    const finalCategoryId = category?._id || (category as any)?.id
 
     // 1. Generate quiz ID first for image folder organization
     const quizId = new Types.ObjectId()
@@ -305,7 +320,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       title: normalizedCourseCode,
       course_code: normalizedCourseCode,
       description: description || '',
-      category_id,
+      category_id: finalCategoryId,
       created_by: new Types.ObjectId(payload.userId),
       is_public: false, // Default to private for students
       status: 'published',

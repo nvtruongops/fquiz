@@ -8,6 +8,7 @@ import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator';
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz';
 import { secureShuffle } from '@/lib/core/utils/shuffle';
+import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper';
 
 /**
  * Generate a unique temp course_code.
@@ -126,10 +127,16 @@ export async function POST(req: Request) {
         const courseCode = isSingleCourseMix
           ? firstCourseCode.trim().toUpperCase()
           : await generateTempCourseCode();
+        let categoryId = validQuizzes[0]?.category_id
+        if (!categoryId && courseCode) {
+          const cat = await ensureCategoryForCourseCode(courseCode, studentId)
+          if (cat?._id) categoryId = cat._id
+        }
+
         tempQuiz = await Quiz.create({
           title: `Quiz Trộn · ${titlePreview}`,
           course_code: courseCode,
-          category_id: validQuizzes[0].category_id,
+          category_id: categoryId,
           questions: finalSampled,
           questionCount: actualCount,
           is_public: false,
@@ -140,7 +147,7 @@ export async function POST(req: Request) {
             quiz_ids: quizObjectIds,
             question_count: question_count,
             mode: mode,
-            category_id: validQuizzes[0].category_id,
+            category_id: categoryId,
           },
         });
         break;
