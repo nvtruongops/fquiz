@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { SessionData, PreloadedQuestions, SessionQuestion } from '@/lib/modules/quiz/types/session'
-import { fetchSession, fetchAllQuestions } from '@/lib/modules/quiz/session-api'
+import { fetchSession, fetchAllQuestions, SessionApiError } from '@/lib/modules/quiz/session-api'
 
 interface UseQuizSessionQueriesResult {
   initialData: SessionData | undefined
@@ -47,9 +47,16 @@ export function useQuizSessionQueries(
       } catch {}
       return fetchSession(resolvedSessionId)
     },
-    enabled: resolvedSessionId.length > 0,
+    enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
     staleTime: 30_000,
     refetchOnMount: 'always',
+    retry: (failureCount, error) => {
+      const err = error as SessionApiError
+      if (err?.status === 404 || err?.status === 410 || err?.status === 401) {
+        return false
+      }
+      return failureCount < 2
+    },
     refetchInterval: (query) => {
       const data = query.state.data as SessionData | undefined
       if (data?.session.status === 'preparing') return 2000
@@ -80,6 +87,13 @@ export function useQuizSessionQueries(
              resolvedSessionId !== 'undefined' &&
              initialData?.session.status !== 'preparing',
     staleTime: Infinity,
+    retry: (failureCount, error) => {
+      const err = error as SessionApiError
+      if (err?.status === 404 || err?.status === 410 || err?.status === 401) {
+        return false
+      }
+      return failureCount < 2
+    },
   })
 
   useEffect(() => {

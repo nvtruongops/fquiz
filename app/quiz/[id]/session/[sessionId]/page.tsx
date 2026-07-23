@@ -183,7 +183,9 @@ function DesktopSessionContent({
 
   useEffect(() => {
     if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
-      if (activeData?.session.status === 'preparing') {
+      if (isInitialError) {
+        sessionLoader.close()
+      } else if (activeData?.session.status === 'preparing') {
         sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
       } else if (!isReadyToRender) {
         sessionLoader.setStatus('Đang chuẩn bị giao diện...')
@@ -191,7 +193,7 @@ function DesktopSessionContent({
         sessionLoader.complete()
       }
     }
-  }, [isStillLoading, isReadyToRender, activeData?.session.status, sessionLoader])
+  }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
 
   if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
     return (

@@ -62,12 +62,18 @@ export function useSessionHydration({
     setHydratedSessionId(resolvedSessionId)
   }, [initialData, isHydratedFromServer, resolvedQuizId, resolvedSessionId, resumeSession])
 
-  // Session expired redirect
+  // Session expired or not found redirect
   useEffect(() => {
     const err = initialError as SessionApiError | undefined
     if (!quizId || !err) return
-    if (err.code !== 'SESSION_EXPIRED' && err.status !== 410) return
-    router.replace(`/quiz/${quizId}?reason=session_expired`)
+    if (err.status === 404) {
+      router.replace(`/quiz/${quizId}?reason=session_not_found`)
+      return
+    }
+    if (err.code === 'SESSION_EXPIRED' || err.status === 410) {
+      router.replace(`/quiz/${quizId}?reason=session_expired`)
+      return
+    }
   }, [initialError, quizId, router])
 
   // Session completed redirect
