@@ -1,78 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'next/navigation'
-import { API_ROUTES } from '@/lib/core/constants/api-routes'
-import { formatStudyDuration } from '@/lib/core/utils/format'
-import {
-  Search, Users, Clock3, Download, AlertCircle, ArrowRight, ChevronDown, ChevronUp,
-  Pin, PinOff, Shuffle, SearchCode, BookOpen, Loader2, ChevronLeft, ChevronRight,
-} from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { Shuffle, SearchCode, Loader2, ChevronDown, ChevronUp, Download, Users, Clock3, ArrowRight } from 'lucide-react'
 import { Input } from '@/components/shared/ui/input'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { Button } from '@/components/shared/ui/button'
-import { useDebounce } from '@/hooks/shared/useDebounce'
-import Link from 'next/link'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
-import { useToast } from '@/store/shared/toast-store'
-import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import Link from 'next/link'
 import MixQuizTab from '@/components/quiz/explore/MixQuizTab'
 import { CategorySidebar } from '@/components/quiz/explore/CategorySidebar'
 import { QuizDisplayArea } from '@/components/quiz/explore/QuizDisplayArea'
-import { useAuth } from '@/hooks/auth/useAuth'
+import { useExploreQuizzes, QuizMeta } from '@/hooks/useExploreQuizzes'
+import { API_ROUTES } from '@/lib/core/constants/api-routes'
+import { formatStudyDuration } from '@/lib/core/utils/format'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface Category {
-  id: string
-  name: string
-  publishedQuizCount?: number
-}
-
-interface QuizMeta {
-  id: string
-  title: string
-  course_code: string
-  source_label: string
-  source_creator_name?: string | null
-  questionCount: number
-  studentCount: number
-  categoryId: string
-  categoryName: string
-  latestCorrectCount?: number | null
-  latestTotalCount?: number | null
-  latestScoreOnTen?: number | null
-  totalStudyMinutes?: number | null
-}
-
-const PAGE_SIZE = 12 // Increased page size for wider layout
-
-// ── API ────────────────────────────────────────────────────────────────────
-
-async function fetchCategories(): Promise<{ data: Category[] }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.PUBLIC.CATEGORIES}`)
-  if (!res.ok) throw new Error('Failed to fetch categories')
-  return res.json()
-}
-
-async function fetchPinnedCategories(): Promise<{ pinnedCategories: string[] }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.PINNED_CATEGORIES}`)
-  if (!res.ok) return { pinnedCategories: [] }
-  return res.json()
-}
-
-async function togglePinCategory(categoryId: string): Promise<{ pinned: boolean; pinnedCategories: string[]; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.PINNED_CATEGORIES}`, {
-    method: 'POST',
-    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ categoryId }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to pin category')
-  return data
-}
+const PAGE_SIZE = 12
 
 async function fetchQuizzes(params: {
   categoryId?: string
@@ -92,8 +39,6 @@ async function fetchQuizzes(params: {
   if (!res.ok) throw new Error('Failed to fetch quizzes')
   return res.json()
 }
-
-// ── QuizCard ───────────────────────────────────────────────────────────────
 
 function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean }) {
   const { toast } = useToast()
@@ -205,8 +150,6 @@ function QuizCard({ quiz, isLoggedIn }: { quiz: QuizMeta; isLoggedIn: boolean })
   )
 }
 
-// ── SearchResults ──────────────────────────────────────────────────────────
-
 function SearchResults({ search, isLoggedIn }: { search: string; isLoggedIn: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -245,14 +188,6 @@ function SearchResults({ search, isLoggedIn }: { search: string; isLoggedIn: boo
     ? infiniteQuery.data?.pages.flatMap(p => p.data) ?? []
     : previewQuery.data?.data ?? []
 
-  if (previewQuery.isLoading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-52 rounded-[20px] bg-white border border-slate-100 animate-pulse" />)}
-      </div>
-    )
-  }
-
   return (
     <QuizDisplayArea 
       isLoading={previewQuery.isLoading}
@@ -278,200 +213,94 @@ function SearchResults({ search, isLoggedIn }: { search: string; isLoggedIn: boo
   )
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────
-
 export default function ExploreContent() {
-  const [search, setSearch] = useState('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  
-  const { data: authData, isLoading: authLoading } = useAuth()
-  const user = authLoading ? undefined : (authData?.user ?? null)
+  const {
+    search, setSearch,
+    selectedCategoryId, setSelectedCategoryId,
+    activeTab, setActiveTab,
+    debouncedSearch,
+    user,
+    categories, catsLoading,
+    pinnedIds,
+    pinMutation,
+    categoryQuizzes,
+    quizzesLoading,
+  } = useExploreQuizzes()
 
-  const [activeTab, setActiveTab] = useState<'explore' | 'mix'>('explore')
-  const debouncedSearch = useDebounce(search, 300)
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab === 'mix') setActiveTab('mix')
-    else setActiveTab('explore')
-  }, [searchParams])
-
-  const { data: catData, isLoading: catsLoading } = useQuery({
-    queryKey: ['public', 'categories'],
-    queryFn: fetchCategories,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
-
-  const { data: pinnedData } = useQuery({
-    queryKey: ['student', 'pinned-categories'],
-    queryFn: fetchPinnedCategories,
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
-
-  const pinMutation = useMutation({
-    mutationFn: (categoryId: string) => togglePinCategory(categoryId),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: data.pinnedCategories })
-      toast.success(data.pinned ? 'Đã ghim môn học' : 'Đã bỏ ghim môn học')
-    },
-    onError: (err: Error) => toast.error(err.message),
-  })
-
-  const categories = useMemo(() => {
-    const list = (catData?.data ?? []).filter(c => 
-      !['Tư tưởng HCM', 'Triết học', 'Kinh tế chính trị'].includes(c.name)
-    )
-    return [...list].sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-  }, [catData])
-
-  const pinnedIds = useMemo(() => new Set(pinnedData?.pinnedCategories ?? []), [pinnedData])
-
-  const { data: categoryQuizzes, isLoading: quizzesLoading } = useQuery({
-    queryKey: ['explore', 'quizzes', selectedCategoryId, !!user],
-    queryFn: () => fetchQuizzes({ 
-      categoryId: selectedCategoryId!, 
-      isLoggedIn: !!user,
-      limit: 48 // Fetch more for the wide display
-    }),
-    enabled: !!selectedCategoryId && !debouncedSearch,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
-
-  const handleCategorySelect = (id: string) => {
-    setSelectedCategoryId(id)
-    setSearch('')
-    // Scroll to top of content on mobile or just to emphasize selection
-    contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  const selectedCategoryName = categories.find(c => c.id === selectedCategoryId)?.name
+  const currentCategory = categories.find(c => c.id === selectedCategoryId)
 
   return (
-    <div className="w-full py-6 pb-28 md:pb-20 px-6 md:px-10 space-y-8 animate-in fade-in duration-500">
-      
-      {/* Dynamic Header & Search Section */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 bg-white/50 backdrop-blur-xl p-6 rounded-[32px] border border-white shadow-xl shadow-slate-200/50">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#5D7B6F] flex items-center justify-center text-white shadow-lg shadow-[#5D7B6F]/20">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-                Thư viện <span className="text-[#5D7B6F]">Học tập</span>
-              </h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1.5 px-0.5">Khám phá hàng ngàn bộ đề trắc nghiệm</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-1 bg-slate-100/50 rounded-2xl p-1 w-fit mt-4">
-            <button
-              onClick={() => setActiveTab('explore')}
-              className={cn(
-                'flex items-center gap-2 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all',
-                activeTab === 'explore'
-                  ? 'bg-white text-[#5D7B6F] shadow-sm'
-                  : 'text-slate-400 hover:text-[#5D7B6F]'
-              )}
-            >
-              Khám phá
-            </button>
-            <button
-              onClick={() => setActiveTab('mix')}
-              className={cn(
-                'flex items-center gap-2 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all',
-                activeTab === 'mix'
-                  ? 'bg-white text-[#5D7B6F] shadow-sm'
-                  : 'text-slate-400 hover:text-[#5D7B6F]'
-              )}
-            >
-              Trộn bộ đề
-            </button>
-          </div>
+    <div className="space-y-6 pb-12">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('explore')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              activeTab === 'explore' ? 'bg-[#5D7B6F] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Khám phá Đề thi
+          </button>
+          <button
+            onClick={() => setActiveTab('mix')}
+            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'mix' ? 'bg-[#5D7B6F] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Shuffle className="w-3.5 h-3.5" /> Quiz Trộn
+          </button>
         </div>
 
         {activeTab === 'explore' && (
-          <div className="w-full lg:max-w-md">
-            <div className="flex items-center gap-3 bg-white px-5 rounded-2xl shadow-sm border border-slate-100 focus-within:border-[#5D7B6F]/40 transition-all group h-14">
-              <Search className="w-5 h-5 text-slate-300 group-focus-within:text-[#5D7B6F] shrink-0" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm bộ đề, mã môn học..."
-                className="h-full border-none focus-visible:ring-0 text-[15px] font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-3 py-1.5 bg-slate-50 rounded-xl shrink-0">
-                  Xóa
-                </button>
-              )}
-            </div>
+          <div className="relative w-full sm:w-72">
+            <SearchCode className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm môn học / mã đề..."
+              className="pl-10 h-10 rounded-2xl border-slate-200 text-xs font-semibold"
+            />
           </div>
         )}
       </div>
 
       {activeTab === 'mix' ? (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-          <MixQuizTab />
-        </div>
+        <MixQuizTab />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Sidebar - Master Panel */}
-          <aside className="lg:col-span-3 xl:col-span-3">
-            <CategorySidebar 
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          {/* Category Sidebar */}
+          <div className="lg:col-span-1">
+            <CategorySidebar
               categories={categories}
-              pinnedIds={pinnedIds}
               selectedCategoryId={selectedCategoryId}
-              onSelect={handleCategorySelect}
-              onPin={(id) => pinMutation.mutate(id)}
+              onSelect={(id: string) => setSelectedCategoryId(id)}
+              pinnedIds={pinnedIds}
+              onPin={(id: string) => pinMutation.mutate(id)}
               isLoading={catsLoading}
             />
-          </aside>
+          </div>
 
-          {/* Main Content - Detail Panel */}
-          <main ref={contentRef} className="lg:col-span-9 xl:col-span-9 min-h-[600px]">
+          {/* Quiz Display Area */}
+          <div className="lg:col-span-3">
             {debouncedSearch ? (
               <SearchResults search={debouncedSearch} isLoggedIn={!!user} />
-            ) : selectedCategoryId ? (
+            ) : (
               <QuizDisplayArea
                 isLoading={quizzesLoading}
-                isEmpty={!categoryQuizzes?.data?.length}
-                title={selectedCategoryName || 'Chi tiết môn học'}
-                subtitle={''}
+                isEmpty={categoryQuizzes.length === 0}
+                title={currentCategory?.name || 'Khám phá Đề thi'}
+                subtitle={currentCategory?.id}
                 searchMode={false}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                  {categoryQuizzes?.data.map(quiz => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {categoryQuizzes.map(quiz => (
                     <QuizCard key={quiz.id} quiz={quiz} isLoggedIn={!!user} />
                   ))}
                 </div>
               </QuizDisplayArea>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
-                <div className="w-24 h-24 rounded-[32px] bg-[#5D7B6F]/5 flex items-center justify-center text-[#5D7B6F]/20">
-                  <SearchCode className="w-12 h-12" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-slate-900 uppercase">Chào mừng đến với thư viện FQuiz</h3>
-                  <p className="text-sm font-medium text-slate-400 max-w-sm mx-auto">
-                    Chọn một môn học ở danh sách bên trái hoặc tìm kiếm bộ đề để bắt đầu ôn luyện ngay hôm nay.
-                  </p>
-                </div>
-              </div>
             )}
-          </main>
+          </div>
         </div>
       )}
     </div>
