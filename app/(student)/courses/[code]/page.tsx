@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import CourseQuizList from '@/components/quiz/explore/CourseQuizList'
 import MixQuizTab from '@/components/quiz/explore/MixQuizTab'
-import { ArrowLeft, Shuffle, List } from 'lucide-react'
+import { ArrowLeft, Shuffle, List, Bookmark } from 'lucide-react'
+import PinnedQuestionsTab from '@/components/quiz/explore/PinnedQuestionsTab'
+import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
 
@@ -24,6 +26,8 @@ function CourseDetailContent({ code }: { code: string }) {
   
   const [categoryName, setCategoryName] = useState(code.toUpperCase())
   const [categoryId, setCategoryId] = useState<string | null>(null)
+
+  const { pinnedQuestions } = usePinnedQuestions(code)
 
   const { data } = useQuery({
     queryKey: ['courseQuizzes', code],
@@ -90,7 +94,7 @@ function CourseDetailContent({ code }: { code: string }) {
         </motion.header>
 
         {/* Tabs Bar */}
-        <div className="flex border-b border-slate-200/80 gap-4 sm:gap-6 pt-1">
+        <div className="flex border-b border-slate-200/80 gap-3 sm:gap-6 pt-1 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => router.push(`/courses/${code}`)}
             className={cn(
@@ -106,6 +110,7 @@ function CourseDetailContent({ code }: { code: string }) {
               <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5D7B6F] rounded-full" />
             )}
           </button>
+
           <button
             onClick={() => {
               const categoryParam = categoryId ? `&categoryId=${categoryId}` : ''
@@ -124,6 +129,30 @@ function CourseDetailContent({ code }: { code: string }) {
               <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5D7B6F] rounded-full" />
             )}
           </button>
+
+          <button
+            onClick={() => router.push(`/courses/${code}?tab=pinned`)}
+            className={cn(
+              "flex items-center gap-1.5 pb-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all relative cursor-pointer",
+              currentTab === 'pinned'
+                ? "border-[#5D7B6F] text-[#5D7B6F]"
+                : "border-transparent text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Ghim
+            {pinnedQuestions.length > 0 && (
+              <span className={cn(
+                "px-1.5 py-0.2 text-[10px] rounded-full font-bold ml-0.5",
+                currentTab === 'pinned' ? "bg-[#5D7B6F] text-white" : "bg-slate-200 text-slate-600"
+              )}>
+                {pinnedQuestions.length}
+              </span>
+            )}
+            {currentTab === 'pinned' && (
+              <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5D7B6F] rounded-full" />
+            )}
+          </button>
         </div>
 
         {/* Active Tab Content */}
@@ -136,6 +165,8 @@ function CourseDetailContent({ code }: { code: string }) {
         >
           {currentTab === 'mix' ? (
             <MixQuizTab embedded />
+          ) : currentTab === 'pinned' ? (
+            <PinnedQuestionsTab courseCode={code} />
           ) : (
             <CourseQuizList
               code={code}

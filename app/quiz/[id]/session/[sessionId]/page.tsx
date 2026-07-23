@@ -265,6 +265,9 @@ function DesktopSessionContent({
           isPending={finalizeMutation.isPending}
           sessionMode={session.mode}
           enableAnimation={enableAnimation}
+          courseCode={session.courseCode}
+          quizTitle={session.title}
+          quizId={(session as any).quiz_id || resolvedQuizId}
         />
         <SessionModals
           confirmOpen={confirmOpen}
