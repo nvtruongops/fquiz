@@ -40,7 +40,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
   const navigationStartedAtRef = useRef<number>(0)
   const routeChangedAtRef = useRef<number | null>(null)
 
-  // Finish loading completely (progress 100% -> hold 100% for 400ms -> fade out)
+  // Finish loading completely (progress 100% -> hold 100% -> fade out)
   const finishLoading = React.useCallback(() => {
     if (!isNavigatingRef.current && !isLoading && !forcedLoading) return
     isNavigatingRef.current = false
@@ -53,16 +53,17 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
     // Fill to 100%
     setProgress(100)
 
-    // Keep visible at 100% for 400ms so user clearly sees 100% before fading out
+    // Keep visible briefly (150ms for custom action, 400ms standard) before fading out
+    const holdMs = customTitle ? 150 : 400
     setTimeout(() => {
       setIsLoading(false)
       setTimeout(() => {
         setProgress(0)
         setCustomTitle(null)
         setCustomSubtitle(null)
-      }, 300)
-    }, 400)
-  }, [isLoading, forcedLoading])
+      }, 200)
+    }, holdMs)
+  }, [isLoading, forcedLoading, customTitle])
 
   // Start progress animation smoothly (deduplicated)
   const startProgress = React.useCallback(() => {
@@ -105,8 +106,9 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
   const isTimingReady = React.useCallback((): boolean => {
     const now = Date.now()
     const totalElapsed = now - navigationStartedAtRef.current
-    if (totalElapsed < 800) {
-      const waitNeeded = 800 - totalElapsed
+    const minElapsed = customTitle ? 200 : 800
+    if (totalElapsed < minElapsed) {
+      const waitNeeded = minElapsed - totalElapsed
       if (checkCompletionTimerRef.current) clearTimeout(checkCompletionTimerRef.current)
       checkCompletionTimerRef.current = setTimeout(() => tryFinishLoading(), waitNeeded + 30)
       return false
@@ -120,8 +122,9 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
 
     if (routeChangedAtRef.current) {
       const timeSinceRoute = now - routeChangedAtRef.current
-      if (timeSinceRoute < 400) {
-        const waitNeeded = 400 - timeSinceRoute
+      const minRouteTime = customTitle ? 150 : 400
+      if (timeSinceRoute < minRouteTime) {
+        const waitNeeded = minRouteTime - timeSinceRoute
         if (checkCompletionTimerRef.current) clearTimeout(checkCompletionTimerRef.current)
         checkCompletionTimerRef.current = setTimeout(() => tryFinishLoading(), waitNeeded + 30)
         return false
@@ -129,7 +132,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
     }
 
     return true
-  }, [forcedLoading])
+  }, [forcedLoading, customTitle])
 
   // Check if safe to finish loading (Requires route change + queries settled + debounce)
   const tryFinishLoading = React.useCallback(() => {

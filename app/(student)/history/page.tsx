@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { 
@@ -93,9 +93,19 @@ function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
   )
 }
 
-export default function HistoryPage() {
+import { useSearchParams } from 'next/navigation'
+
+function HistoryContent() {
+  const searchParams = useSearchParams()
+  const searchFromUrl = searchParams.get('search') || ''
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(searchFromUrl)
+
+  useEffect(() => {
+    if (searchFromUrl) {
+      setSearch(searchFromUrl)
+    }
+  }, [searchFromUrl])
 
   const { data, isLoading, isError } = useQuery<HistoryResponse>({
     queryKey: ['history', page],
@@ -377,5 +387,17 @@ function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
         )}
       </CardContent>
     </Card>
+  )
+}
+
+export default function HistoryPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="py-20 flex items-center justify-center text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    }>
+      <HistoryContent />
+    </React.Suspense>
   )
 }

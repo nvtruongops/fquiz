@@ -49,13 +49,13 @@ function CourseDetailContent({ code }: { code: string }) {
   }, [currentTab, categoryIdParam, data?.categoryId, code, router])
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden px-4 sm:px-6 md:px-10 py-5 md:py-10">
+    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative overflow-hidden px-4 sm:px-6 md:px-10 pt-3.5 md:pt-5 pb-8">
       {/* Background Mesh Glow */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden -z-10 transform-gpu">
         <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/15 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-8 relative z-10">
+      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 relative z-10">
         {/* Back navigation */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
@@ -76,18 +76,17 @@ function CourseDetailContent({ code }: { code: string }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-3"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-2"
         >
-          <div className="space-y-1 sm:space-y-2">
+          <div className="space-y-0.5 sm:space-y-1">
             <div className="flex items-center gap-2 text-[#5D7B6F]/60">
               <div className="h-1 w-1 rounded-full bg-[#5D7B6F]/60" />
               <p className="text-[10px] font-black uppercase tracking-[0.3em]">Danh mục môn học</p>
             </div>
-            <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight uppercase">
+            <h1 className="text-xl sm:text-2xl md:text-4xl font-black text-gray-900 tracking-tight leading-none uppercase">
               {categoryName}
             </h1>
           </div>
-
         </motion.header>
 
         {/* Tabs Bar */}

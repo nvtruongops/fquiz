@@ -77,7 +77,7 @@ export const SessionLayout = React.memo(function SessionLayout({
 
   return (
     <div className={cn(
-      "h-screen max-h-screen overflow-hidden flex flex-col font-sans select-none",
+      "h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans select-none",
       enableAnimation ? "bg-slate-100 dark:bg-slate-950" : "bg-[#ececec]"
     )}>
       {/* Header */}

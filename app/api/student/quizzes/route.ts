@@ -159,6 +159,7 @@ function mapQuizzesForResponse(
       latestCorrectCount,
       latestTotalCount,
       latestScoreOnTen,
+      latestSessionId: latestSession ? latestSession._id.toString() : null,
       totalStudyMinutes,
       sourceStatus,
       questions: undefined,
@@ -195,12 +196,12 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
     }
 
-    // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo và bộ lưu/shortcut)
-    const query: any = { created_by: new Types.ObjectId(payload.userId), is_temp: { $ne: true } }
+    // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo, bộ lưu và bài trộn)
+    const query: any = { created_by: new Types.ObjectId(payload.userId) }
     if (categoryId) query.category_id = new Types.ObjectId(categoryId)
 
     const quizzes = await Quiz.find(query)
-      .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore')
+      .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore is_temp')
       .populate('category_id', 'name')
       .populate({
         path: 'original_quiz_id',
@@ -241,6 +242,24 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const { course_code, category_id, questions, description } = parsed.data
     const normalizedCourseCode = course_code.trim().toUpperCase()
+    const userObjectId = new Types.ObjectId(payload.userId)
+
+    // 1. Quota Check — Max 10 (created + mix quizzes combined across account)
+    const totalCreatedAndMix = await Quiz.countDocuments({
+      created_by: userObjectId,
+      is_saved_from_explore: { $ne: true },
+    })
+
+    if (totalCreatedAndMix >= 10) {
+      return NextResponse.json(
+        {
+          error: 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để tạo bài mới.',
+          quotaExceeded: true,
+          code: 'TOTAL_QUOTA_EXCEEDED',
+        },
+        { status: 409 }
+      )
+    }
 
     const existingOwnedQuiz = await Quiz.findOne({
       created_by: new Types.ObjectId(payload.userId),
