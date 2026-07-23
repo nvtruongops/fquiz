@@ -400,7 +400,11 @@ export function QuizEditor({
                 'Phát hiện câu hỏi mâu thuẫn đáp án với ngân hàng. Vui lòng chọn đáp án đúng để đồng bộ.'
             )
           } else {
-            setError(extractApiErrorMessage(data.error))
+            const apiMsg = extractApiErrorMessage(data.error)
+            setError(apiMsg)
+            if (data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')) {
+              toast.error(apiMsg)
+            }
           }
         }
         return

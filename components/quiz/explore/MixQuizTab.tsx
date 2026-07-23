@@ -28,6 +28,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/shared/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/shared/ui/dialog'
+import Link from 'next/link'
+
+function QuotaExceededDialog({
+  open,
+  onOpenChange,
+  message,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  message: string
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md rounded-[32px] border border-white/80 bg-white/70 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden">
+        <div className="p-8 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-6 shadow-inner text-amber-600">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+
+          <DialogTitle className="text-xl font-black text-slate-900 mb-2">
+            Đã Đạt Giới Hạn Quota
+          </DialogTitle>
+
+          <DialogDescription className="text-xs font-bold text-slate-500 leading-relaxed mb-8 px-2">
+            {message || 'Bạn đã đạt giới hạn tối đa 10 bài tự tạo + trộn (hoặc 1 bài/danh mục). Vui lòng xóa bớt bài cũ tại Bộ đề của tôi để tiếp tục.'}
+          </DialogDescription>
+
+          <div className="flex flex-col gap-3 w-full">
+            <Button
+              asChild
+              className="h-13 rounded-2xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-black shadow-lg shadow-[#5D7B6F]/20 active:scale-95 transition-all text-xs uppercase tracking-wider justify-center"
+            >
+              <Link href="/my-quizzes">
+                Đi tới Bộ đề của tôi
+              </Link>
+            </Button>
+            <Button
+              onClick={() => onOpenChange(false)}
+              variant="outline"
+              className="h-11 rounded-2xl border-slate-200 font-bold text-slate-500 hover:bg-slate-50 text-xs"
+            >
+              Để sau
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
 import { cn } from '@/lib/core/utils/cn'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { MIX_QUIZ_MAX_SELECT, MIX_QUIZ_QUESTION_OPTIONS } from '@/lib/modules/quiz/constants/mix-quiz'
@@ -141,13 +196,20 @@ function ActiveSessionBanner({
       </div>
 
       <div className={cn('rounded-2xl p-4 border space-y-2', modeBg)}>
-        <p className="font-black text-slate-800 text-sm">{session.title}</p>
-        <div className="flex items-center gap-3 text-xs font-bold">
-          <span className="bg-white/80 px-2 py-0.5 rounded-full text-slate-500">{session.question_count} câu</span>
-          <span className={cn('px-2 py-0.5 rounded-full bg-white/80', modeColor)}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full bg-[#5D7B6F] text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
+            Quiz Trộn
+          </span>
+          <span className="px-2 py-0.5 rounded-full bg-white/80 text-slate-600 text-[10px] font-bold">
+            {session.question_count} câu
+          </span>
+          <span className={cn('px-2 py-0.5 rounded-full bg-white/80 text-[10px] font-bold', modeColor)}>
             {modeLabel}
           </span>
         </div>
+        <p className="font-black text-slate-800 text-sm leading-snug line-clamp-2 break-words">
+          {session.title.startsWith('Quiz Trộn · ') ? session.title.slice('Quiz Trộn · '.length) : session.title}
+        </p>
       </div>
 
       <div className="flex gap-3">
@@ -218,6 +280,7 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
   const [mode, setMode] = useState<'immediate' | 'review' | null>(null)
   const [rateLimitReset, setRateLimitReset] = useState<number | null>(null)
   const [rateLimitMsg, setRateLimitMsg] = useState<string | null>(null)
+  const [quotaErrorMsg, setQuotaErrorMsg] = useState<string | null>(null)
   const [poolWarning, setPoolWarning] = useState<string | null>(null)
   const mixFrom = searchParams.get('mix_from')
   const [isPreloading, setIsPreloading] = useState(false)
@@ -325,10 +388,12 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
 
   useEffect(() => {
     setRateLimitMsg(null)
+    setQuotaErrorMsg(null)
   }, [selectedQuizIds, questionCount, mode])
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedCategoryId || selectedQuizIds.size < 2 || questionCount === null || mode === null) return
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/mix`, {
         method: 'POST',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
@@ -420,47 +485,58 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
         </section>
       )}
 
-      {/* Step 2 — Quiz selection */}
+      {/* Step 2 — Quiz selection & Configuration (50% / 50% split on desktop) */}
       {selectedCategoryId && (
-        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 1}</div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chọn quiz muốn trộn (2-5 bộ)</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start animate-in fade-in slide-in-from-top-4 duration-500">
+          {/* Left Column (50% / col-span-6) — Quiz Checklist */}
+          <div className="lg:col-span-6 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900 text-white text-xs font-black shrink-0">{stepOffset + 1}</div>
+                <h2 className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider sm:tracking-widest">Chọn bộ đề trộn</h2>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {totalPool > 0 && (
+                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 font-extrabold text-[10px] sm:text-xs bg-green-50 text-green-700 border-green-200">
+                    Pool: {totalPool} câu
+                  </Badge>
+                )}
+                <Badge variant="outline" className={cn(
+                  'rounded-full px-2.5 py-0.5 font-extrabold text-[10px] sm:text-xs transition-colors',
+                  selectedQuizIds.size >= 2 ? 'bg-green-50 text-green-600 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200'
+                )}>
+                  {selectedQuizIds.size}/{MIX_QUIZ_MAX_SELECT} ĐÃ CHỌN
+                </Badge>
+              </div>
             </div>
-            <Badge variant="outline" className={cn(
-              'rounded-full px-3 py-1 font-black transition-colors',
-              selectedQuizIds.size >= 2 ? 'bg-green-50 text-green-600 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200'
-            )}>
-              {selectedQuizIds.size}/{MIX_QUIZ_MAX_SELECT} ĐÃ CHỌN
-            </Badge>
-          </div>
 
-          <div className="bg-slate-50/50 rounded-[24px] p-3 border border-slate-100">
-            {quizzesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-20 rounded-2xl bg-white border border-slate-100 animate-pulse" />
-                ))}
-              </div>
-            ) : quizzes.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 font-bold bg-white rounded-2xl border-2 border-dashed border-slate-100">
-                Không tìm thấy quiz nào trong danh mục này
-              </div>
-            ) : (
-              <div
-                className="overflow-y-auto overscroll-contain space-y-3 pr-2 custom-scrollbar"
-                style={{ maxHeight: SCROLL_HEIGHT + 100 }}
-              >
-                {quizzes.map((quiz, idx) => {
-                  const isSelected = selectedQuizIds.has(quiz.id)
-                  const isDisabled = !isSelected && selectedQuizIds.size >= MIX_QUIZ_MAX_SELECT
-                  const hasScore = quiz.latestScoreOnTen !== null
-                  const isPassed = (quiz.latestScoreOnTen ?? 0) >= 5
+            <div className="bg-slate-50/60 rounded-2xl p-2 sm:p-3 border border-slate-200/60">
+              {quizzesLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-white border border-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : quizzes.length === 0 ? (
+                <div className="py-10 text-center text-slate-400 font-bold bg-white rounded-xl border border-dashed border-slate-200 text-xs">
+                  Không tìm thấy quiz nào trong danh mục này
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 overflow-y-auto overscroll-contain p-1.5 pr-2.5 custom-scrollbar"
+                  style={{ maxHeight: SCROLL_HEIGHT + 140 }}
+                >
+                  {quizzes.map((quiz, idx) => {
+                    const isSelected = selectedQuizIds.has(quiz.id)
+                    const isDisabled = !isSelected && selectedQuizIds.size >= MIX_QUIZ_MAX_SELECT
+                    const hasScore = quiz.latestScoreOnTen !== null
+                    const isPassed = (quiz.latestScoreOnTen ?? 0) >= 5
+                    const isSentinel = idx === Math.min(LOAD_THRESHOLD - 1, quizzes.length - 1)
 
-                  return (
-                    <React.Fragment key={quiz.id}>
+                    return (
                       <div
+                        key={quiz.id}
+                        ref={isSentinel ? sentinelRef : undefined}
                         onClick={() => !isDisabled && toggleQuiz(quiz.id)}
                         role="button"
                         tabIndex={0}
@@ -471,203 +547,213 @@ function MixQuizForm({ onSessionCreated, embedded }: { onSessionCreated: (quizId
                           }
                         }}
                         className={cn(
-                          'relative group w-full flex items-center gap-4 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer',
+                          'relative group w-full flex items-center gap-2 px-2.5 py-2 sm:px-3 sm:py-2.5 rounded-xl border-2 transition-all cursor-pointer select-none',
                           isSelected
-                            ? 'border-[#5D7B6F] bg-white shadow-lg shadow-[#5D7B6F]/5 -translate-y-0.5'
+                            ? 'border-[#5D7B6F] bg-white shadow-sm ring-1 ring-[#5D7B6F]/40'
                             : isDisabled
                               ? 'border-slate-100 bg-slate-50/50 opacity-40 cursor-not-allowed'
-                              : 'border-white bg-white hover:border-[#5D7B6F]/20 hover:shadow-md'
+                              : 'border-white bg-white hover:border-[#5D7B6F]/20 hover:shadow-xs'
                         )}
                       >
                         <div className={cn(
-                          'flex items-center justify-center w-6 h-6 rounded-lg transition-colors',
+                          'flex items-center justify-center w-5 h-5 rounded-md transition-colors shrink-0',
                           isSelected ? 'bg-[#5D7B6F] text-white' : 'bg-slate-100 text-slate-300 group-hover:bg-slate-200'
                         )}>
-                          {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                          {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-slate-800 text-sm truncate uppercase tracking-tight">{quiz.course_code}</p>
-                          <p className="text-[11px] font-bold text-slate-400 truncate">{quiz.title}</p>
+                          <p className="font-black text-slate-800 text-[11px] sm:text-xs truncate uppercase tracking-tight">{quiz.course_code}</p>
+                          <p className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 truncate">{quiz.title}</p>
                         </div>
-                        <div className="shrink-0 text-right space-y-1">
+                        <div className="shrink-0 text-right space-y-0.5">
                           {hasScore && (
-                            <div className={cn('flex items-center gap-1.5 justify-end text-xs font-black', isPassed ? 'text-green-600' : 'text-red-600')}>
-                              <Trophy className="w-3 h-3" />
+                            <div className={cn('flex items-center gap-0.5 justify-end text-[10px] sm:text-[11px] font-black', isPassed ? 'text-green-600' : 'text-red-600')}>
+                              <Trophy className="w-2.5 h-2.5" />
                               <span>{quiz.latestScoreOnTen!.toFixed(1)}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 justify-end text-[10px] font-black text-slate-400">
-                            {quiz.totalStudyMinutes !== null && quiz.totalStudyMinutes > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Clock3 className="w-3 h-3 text-[#5D7B6F]/60" />
-                                {formatStudyDuration(quiz.totalStudyMinutes)}
-                              </span>
-                            )}
-                            <span className="bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">{quiz.questionCount} câu</span>
+                          <div className="flex items-center gap-1 justify-end text-[9px] font-bold text-slate-400">
+                            <span className="bg-slate-100 px-1 py-0.2 rounded text-slate-500 font-extrabold">{quiz.questionCount}c</span>
                           </div>
                         </div>
                       </div>
-                      {idx === LOAD_THRESHOLD - 1 && <div ref={sentinelRef} className="h-px" />}
-                    </React.Fragment>
-                  )
-                })}
-                {isFetchingNextPage && (
-                  <div className="h-20 rounded-2xl bg-white border border-slate-100 animate-pulse" />
-                )}
-              </div>
-            )}
+                    )
+                  })}
+                  {isFetchingNextPage && (
+                    <div className="col-span-full h-12 rounded-xl bg-white border border-slate-100 animate-pulse" />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {totalPool > 0 && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-green-50 rounded-xl border border-green-100 animate-in fade-in zoom-in-95 duration-300">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <p className="text-xs font-bold text-green-700">
-                Tổng kho câu hỏi (Pool): <span className="text-lg ml-1 font-black">{totalPool}</span> CÂU
-              </p>
-            </div>
-          )}
-        </section>
-      )}
+          {/* Right Column (50% / col-span-6) — Steps 2 & 3 & Start Button (Always Visible) */}
+          <div className="lg:col-span-6 space-y-3">
+            {/* Step 2 — Question count */}
+            <section className="space-y-2 bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/60 shadow-xs">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-black shrink-0">{stepOffset + 2}</div>
+                <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">Số lượng câu muốn làm</h2>
+              </div>
 
-      {/* Steps 3 & 4 — Question count + Mode */}
-      {selectedQuizIds.size >= 2 && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+                {(totalPool > 0 ? MIX_QUIZ_QUESTION_OPTIONS.filter((count) => count <= totalPool) : MIX_QUIZ_QUESTION_OPTIONS).map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setQuestionCount(count)}
+                    className={cn(
+                      'flex-1 min-w-[60px] py-1.5 sm:py-2 rounded-lg border-2 font-black text-xs transition-all cursor-pointer select-none',
+                      questionCount === count
+                        ? 'border-[#5D7B6F] bg-[#5D7B6F] text-white shadow-xs'
+                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-[#5D7B6F]/30 hover:bg-white'
+                    )}
+                  >
+                    {count} CÂU
+                  </button>
+                ))}
+              </div>
+            </section>
 
-          {/* Step 3 — Question count */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 2}</div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Số lượng câu muốn làm</h2>
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              {MIX_QUIZ_QUESTION_OPTIONS.filter((count) => count <= totalPool).map((count) => (
+            {/* Step 3 — Mode Selection */}
+            <section className="space-y-2 bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/60 shadow-xs">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-black shrink-0">{stepOffset + 3}</div>
+                <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">Chế độ làm bài</h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Luyện tập */}
                 <button
-                  key={count}
-                  onClick={() => setQuestionCount(count)}
+                  type="button"
+                  onClick={() => setMode('immediate')}
                   className={cn(
-                    'flex-1 min-w-[70px] py-3 rounded-xl border-2 font-black text-sm transition-all',
-                    questionCount === count
-                      ? 'border-[#5D7B6F] bg-[#5D7B6F] text-white shadow-lg shadow-[#5D7B6F]/20'
-                      : 'border-slate-100 bg-white text-slate-500 hover:border-[#5D7B6F]/30 hover:bg-slate-50'
+                    'relative flex items-center gap-2.5 p-2.5 rounded-lg border-2 text-left transition-all cursor-pointer select-none',
+                    mode === 'immediate'
+                      ? 'border-green-500 bg-green-50/20 shadow-xs ring-1 ring-green-500/20'
+                      : 'border-slate-100 bg-slate-50 hover:border-green-200 hover:bg-white'
                   )}
                 >
-                  {count} CÂU
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Step 4 — Mode: luyện tập hoặc kiểm tra (thứ tự luôn ngẫu nhiên) */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-black">{stepOffset + 3}</div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Chế độ làm bài</h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Luyện tập */}
-              <button
-                onClick={() => setMode('immediate')}
-                className={cn(
-                  'relative flex items-start gap-4 p-4 rounded-[20px] border-2 text-left transition-all',
-                  mode === 'immediate'
-                    ? 'border-green-500 bg-white shadow-md ring-4 ring-green-500/5'
-                    : 'border-slate-100 bg-white hover:border-green-200'
-                )}
-              >
-                <div className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                  mode === 'immediate' ? 'bg-green-500 text-white' : 'bg-green-50 text-green-500'
-                )}>
-                  <Zap className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('font-black text-sm', mode === 'immediate' ? 'text-slate-900' : 'text-slate-600')}>
-                    Chế độ luyện tập
-                  </p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-snug">
-                    Xem đáp án và giải thích ngay sau mỗi câu
-                  </p>
-                </div>
-                {mode === 'immediate' && (
-                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                )}
-              </button>
-
-              {/* Kiểm tra */}
-              <button
-                onClick={() => setMode('review')}
-                className={cn(
-                  'relative flex items-start gap-4 p-4 rounded-[20px] border-2 text-left transition-all',
-                  mode === 'review'
-                    ? 'border-blue-500 bg-white shadow-md ring-4 ring-blue-500/5'
-                    : 'border-slate-100 bg-white hover:border-blue-200'
-                )}
-              >
-                <div className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                  mode === 'review' ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-500'
-                )}>
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('font-black text-sm', mode === 'review' ? 'text-slate-900' : 'text-slate-600')}>
-                    Chế độ kiểm tra
-                  </p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-snug">
-                    Chấm điểm sau khi nộp bài
-                  </p>
-                </div>
-                {mode === 'review' && (
-                  <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                )}
-              </button>
-            </div>
-          </section>
-
-          {rateLimitMsg && (
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm font-bold text-amber-700 leading-snug">
-                {rateLimitMsg}
-              </p>
-            </div>
-          )}
-
-          {/* Start button */}
-          <div className="pt-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Button
-              onClick={() => createMutation.mutate()}
-              disabled={!canStart || createMutation.isPending}
-              className="group relative w-full h-16 rounded-[20px] bg-slate-900 hover:bg-slate-800 text-white shadow-2xl transition-all active:scale-[0.98] overflow-hidden"
-            >
-              {createMutation.isPending ? (
-                <span className="flex items-center gap-3 font-black text-lg">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  ĐANG KHỞI TẠO PHIÊN...
-                </span>
-              ) : (
-                <div className="flex items-center justify-center gap-4 w-full">
                   <div className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 transition-transform duration-500',
-                    canStart && 'group-hover:rotate-12 group-hover:scale-110'
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs',
+                    mode === 'immediate' ? 'bg-green-500 text-white' : 'bg-green-50 text-green-500'
                   )}>
-                    <Shuffle className="w-5 h-5" />
+                    <Zap className="h-3.5 w-3.5" />
                   </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60 leading-none mb-1">Xác nhận thiết lập</p>
-                    <p className="text-lg font-black tracking-tight">BẮT ĐẦU TRỘN QUIZ</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('font-black text-xs', mode === 'immediate' ? 'text-slate-900' : 'text-slate-700')}>
+                      Luyện tập
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-400 leading-none mt-0.5 truncate">
+                      Xem giải thích từng câu
+                    </p>
                   </div>
-                  <ArrowRight className="ml-2 w-6 h-6 opacity-40 group-hover:translate-x-2 transition-transform duration-500" />
-                </div>
-              )}
-              {canStart && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
-              )}
-            </Button>
+                  {mode === 'immediate' && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                  )}
+                </button>
+
+                {/* Kiểm tra */}
+                <button
+                  type="button"
+                  onClick={() => setMode('review')}
+                  className={cn(
+                    'relative flex items-center gap-2.5 p-2.5 rounded-lg border-2 text-left transition-all cursor-pointer select-none',
+                    mode === 'review'
+                      ? 'border-blue-500 bg-blue-50/20 shadow-xs ring-1 ring-blue-500/20'
+                      : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white'
+                  )}
+                >
+                  <div className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs',
+                    mode === 'review' ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-500'
+                  )}>
+                    <BookOpen className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('font-black text-xs', mode === 'review' ? 'text-slate-900' : 'text-slate-700')}>
+                      Kiểm tra
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-400 leading-none mt-0.5 truncate">
+                      Chấm điểm sau khi nộp
+                    </p>
+                  </div>
+                  {mode === 'review' && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  )}
+                </button>
+              </div>
+            </section>
+
+            {/* Hint Badge if less than 2 quizzes selected */}
+            {selectedQuizIds.size < 2 && (
+              <div className="p-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-center gap-2 animate-in fade-in duration-300">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <p className="text-[11px] font-bold text-amber-800 leading-snug">
+                  Vui lòng chọn từ 2 bộ đề trở lên ở cột bên trái để kích hoạt trộn bài.
+                </p>
+              </div>
+            )}
+
+            {rateLimitMsg && (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] font-bold text-amber-700 leading-snug">
+                  {rateLimitMsg}
+                </p>
+              </div>
+            )}
+
+            {/* Start Button */}
+            <div className="pt-0.5">
+              <Button
+                onClick={() => createMutation.mutate()}
+                disabled={!canStart || createMutation.isPending}
+                className={cn(
+                  "group relative w-full h-12 sm:h-14 rounded-xl text-white shadow-md transition-all active:scale-[0.98] overflow-hidden cursor-pointer",
+                  canStart
+                    ? "bg-slate-900 hover:bg-slate-800 shadow-slate-900/15"
+                    : "bg-slate-300 opacity-80 cursor-not-allowed shadow-none"
+                )}
+              >
+                {createMutation.isPending ? (
+                  <span className="flex items-center gap-2 font-black text-sm sm:text-base">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    ĐANG KHỞI TẠO PHIÊN...
+                  </span>
+                ) : (
+                  <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full px-2">
+                    <div className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 transition-transform duration-500 shrink-0',
+                      canStart && 'group-hover:rotate-12 group-hover:scale-110'
+                    )}>
+                      <Shuffle className="w-4 h-4" />
+                    </div>
+                    <div className="text-left min-w-0">
+                      <p className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest text-white/60 leading-none mb-0.5 truncate">
+                        {canStart ? 'Xác nhận thiết lập' : 'Cần chọn đủ từ 2 bộ đề'}
+                      </p>
+                      <p className="text-sm sm:text-base font-black tracking-tight truncate">
+                        {canStart ? 'BẮT ĐẦU TRỘN QUIZ' : 'CHỌN ĐỦ ĐỀ ĐỂ BẮT ĐẦU'}
+                      </p>
+                    </div>
+                    <ArrowRight className={cn("ml-auto sm:ml-2 w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-500 shrink-0", canStart ? "opacity-60 group-hover:translate-x-1.5" : "opacity-30")} />
+                  </div>
+                )}
+                {canStart && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
+
+      <QuotaExceededDialog
+        open={!!quotaErrorMsg}
+        onOpenChange={(open) => !open && setQuotaErrorMsg(null)}
+        message={quotaErrorMsg || ''}
+      />
     </div>
   )
 }
@@ -733,7 +819,7 @@ export default function MixQuizTab({ embedded }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header — hidden when embedded in course page */}
       {!embedded && (
         <div className="space-y-1">

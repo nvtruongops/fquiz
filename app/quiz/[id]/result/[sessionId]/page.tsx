@@ -115,35 +115,51 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
             </Badge>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
             <Badge className="hidden sm:inline-flex bg-[#5D7B6F] text-white border-none px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-xs">
               {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
             </Badge>
-            {is_temp ? (
-              <ExitMixQuizButton sessionId={sessionId} />
-            ) : (
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                <RetryWrongButton quizId={quizId} sessionId={sessionId} wrongCount={wrongCount} />
-                <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
-                  <Button className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] cursor-pointer justify-center">
-                    <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm toàn bộ
-                  </Button>
-                </Link>
-                <Link href="/dashboard" className="w-full sm:w-auto">
-                  <Button variant="outline" className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center">
-                    <LayoutDashboard className="mr-1 h-3 w-3 shrink-0" /> Dashboard
-                  </Button>
-                </Link>
-                <Link href="/history" className="w-full sm:w-auto">
-                  <Button variant="outline" className="h-7 sm:h-8 w-full px-1.5 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[9.5px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center">
-                    <BookOpen className="mr-1 h-3 w-3 shrink-0" /> Lịch sử
-                  </Button>
-                </Link>
-              </div>
-            )}
+
+            <RetryWrongButton quizId={quizId} sessionId={sessionId} wrongCount={wrongCount} />
+
+            <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
+              <Button className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[10px] sm:text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] cursor-pointer justify-center">
+                <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm lại toàn bộ
+              </Button>
+            </Link>
+
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button variant="outline" className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center text-slate-600">
+                <LayoutDashboard className="mr-1 h-3 w-3 shrink-0" /> Dashboard
+              </Button>
+            </Link>
+
+            <Link href="/history" className="w-full sm:w-auto">
+              <Button variant="outline" className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center text-slate-600">
+                <BookOpen className="mr-1 h-3 w-3 shrink-0" /> Lịch sử
+              </Button>
+            </Link>
+
+            {is_temp && <ExitMixQuizButton sessionId={sessionId} />}
           </div>
         </div>
       </div>
+
+      {is_temp && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-emerald-50/80 border border-emerald-200/80 rounded-xl px-3.5 py-2.5 shrink-0">
+          <div className="flex items-center gap-2 text-emerald-800">
+            <Trophy className="w-4 h-4 shrink-0 text-emerald-600" />
+            <p className="text-xs font-bold">
+              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="font-extrabold text-emerald-900 underline">Bộ đề của tôi → Tab Quiz Trộn</span>!
+            </p>
+          </div>
+          <Link href="/my-quizzes?tab=mix" className="shrink-0 w-full sm:w-auto">
+            <Button size="sm" className="h-7 w-full sm:w-auto px-3 rounded-lg bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-extrabold text-[10px] uppercase tracking-wider cursor-pointer">
+              Xem kho Quiz Trộn
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Main Content Area: Interactive Question Matrix & Detail Viewer */}
       <InteractiveResultViewer questions={questions} />

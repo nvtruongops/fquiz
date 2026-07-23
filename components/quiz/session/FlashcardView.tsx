@@ -1,10 +1,9 @@
-'use client'
-
-import { useState, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react'
+import { useState, forwardRef, useImperativeHandle, useCallback, useEffect, useRef } from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
-import { RotateCw, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { RotateCw, CheckCircle, XCircle, ChevronDown, ChevronUp, MousePointerClick } from 'lucide-react'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
+import { motion, useMotionValue, useTransform } from 'framer-motion'
 
 interface FlashcardViewProps {
   question: {
@@ -21,6 +20,7 @@ interface FlashcardViewProps {
   onAnswer: (knows: boolean) => void
   isLoading?: boolean
   enableAnimation?: boolean
+  enableExplanation?: boolean
 }
 
 export interface FlashcardViewRef {
@@ -92,6 +92,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   onAnswer,
   isLoading = false,
   enableAnimation = true,
+  enableExplanation = false,
 }, ref) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showExplanation, setShowExplanation] = useState(false)
@@ -124,7 +125,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
       // Reset states BEFORE calling onAnswer to ensure next card shows front
       setIsFlipped(false)
       setShowExplanation(false)
-      
+
       // Call onAnswer which will load next question
       onAnswer(knows)
     }
@@ -164,6 +165,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
         setShowExplanation={setShowExplanation}
         handleAnswer={handleAnswer}
         isLoading={isLoading}
+        enableExplanation={enableExplanation}
       />
     )
   }
@@ -180,6 +182,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
       setShowExplanation={setShowExplanation}
       handleAnswer={handleAnswer}
       isLoading={isLoading}
+      enableExplanation={enableExplanation}
     />
   )
 })
@@ -195,6 +198,7 @@ interface SubViewProps {
   setShowExplanation: React.Dispatch<React.SetStateAction<boolean>>
   handleAnswer: (knows: boolean) => void
   isLoading: boolean
+  enableExplanation: boolean
 }
 
 function NoAnimationView({
@@ -207,261 +211,99 @@ function NoAnimationView({
   setShowExplanation,
   handleAnswer,
   isLoading,
+  enableExplanation,
 }: SubViewProps & { setIsFlipped: React.Dispatch<React.SetStateAction<boolean>> }) {
+  const x = useMotionValue(0)
+  const unknownBadgeOpacity = useTransform(x, [-140, -40], [1, 0])
+  const knownBadgeOpacity = useTransform(x, [40, 140], [0, 1])
+
+  const isDraggingRef = useRef(false)
+
+  const handleDragStart = () => {
+    isDraggingRef.current = true
+  }
+
+  const handleDragEnd = (_: any, info: { offset: { x: number; y: number }; velocity: { x: number } }) => {
+    setTimeout(() => {
+      isDraggingRef.current = false
+    }, 150)
+
+    if (info.offset.x < -90 || info.velocity.x < -400) {
+      handleAnswer(false) // Drag Left = Chưa biết
+    } else if (info.offset.x > 90 || info.velocity.x > 400) {
+      handleAnswer(true) // Drag Right = Đã biết
+    }
+  }
+
+  const handleTap = () => {
+    if (isDraggingRef.current) return
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+    setIsFlipped(prev => !prev)
+  }
+
+  // Answer indices
+  const correctAnswers = answerIndices
+    .map((idx: number) => question.options[idx])
+    .filter(Boolean) as string[]
+
   return (
-    <div className="w-full h-full max-w-4xl mx-auto flex flex-col justify-between overflow-hidden" key={question._id}>
-      <div className="flex-1 min-h-0 bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-xl rounded-xl flex flex-col overflow-hidden p-3 md:p-5">
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 flex flex-col space-y-3 md:space-y-4">
-          {/* Question Section */}
-          <div className="space-y-3">
-            {question.image_url && (
-              <div className="mb-2 relative group flex-none">
-                <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <img
-                    src={question.image_url}
-                    alt="Question"
-                    className="max-w-full h-auto mx-auto max-h-[120px] md:max-h-[160px] object-contain"
-                  />
-                </div>
-              </div>
-            )}
-            <h2 className={cn(
-              "font-bold whitespace-pre-wrap tracking-tight text-slate-800 dark:text-slate-100",
-              getQuestionFontSize(totalContentLength),
-              getQuestionLineHeight(totalContentLength)
-            )}>
-              {question.text}
-            </h2>
-            <div className={cn("w-full", getOptionSpacing(totalContentLength))}>
-              {(question.options || []).map((option, idx) => {
-                const isCorrect = answerIndices.includes(idx)
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      if (!isFlipped) setIsFlipped(true)
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        if (!isFlipped) setIsFlipped(true)
-                      }
-                    }}
-                    className={cn(
-                      "rounded-xl text-left border transition-all shadow-sm cursor-pointer",
-                      getOptionPadding(totalContentLength),
-                      isFlipped && isCorrect 
-                        ? "bg-green-50 dark:bg-green-900/20 border-green-500/50" 
-                        : "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className={cn(
-                        "flex-none flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs",
-                        isFlipped && isCorrect ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
-                      )}>
-                        {String.fromCodePoint(65 + idx)}
-                      </span>
-                      <span className={cn(
-                        "whitespace-pre-wrap flex-1", 
-                        getOptionFontSize(totalContentLength),
-                        isFlipped && isCorrect ? "text-green-800 dark:text-green-300 font-medium" : "text-slate-700 dark:text-slate-300"
-                      )}>
-                        {option}
-                      </span>
-                      {isFlipped && isCorrect && <CheckCircle className="w-5 h-5 text-green-500 flex-none mt-0.5" />}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Usage frequency badge */}
-          {isFlipped && (
-            <div className="mt-2 flex justify-center flex-none">
-              <UsageBadge count={question.usage_count ?? 0} size="md" />
-            </div>
-          )}
-
-          {/* Explanation Section */}
-          {isFlipped && question.explanation && (
-            <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-300 flex-none">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowExplanation(!showExplanation)
-                }}
-                className={cn(
-                  "w-full p-3 rounded-xl border transition-all flex items-center justify-between group",
-                  showExplanation 
-                    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 shadow-inner" 
-                    : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-300"
-                )}
-              >
-                <span className="text-xs md:text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                  <div className={cn(
-                    "p-1 rounded transition-colors",
-                    showExplanation ? "bg-blue-200 dark:bg-blue-800" : "bg-slate-200 dark:bg-slate-700"
-                  )}>
-                    <span className="text-xs">💡</span>
-                  </div>
-                  Giải thích chi tiết
-                </span>
-                {showExplanation ? (
-                  <ChevronUp className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-blue-500" />
-                )}
-              </button>
-              
-              {showExplanation && (
-                <div className="mt-2 p-3 md:p-4 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/50 max-h-[140px] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-300">
-                  <p 
-                    className={cn(
-                      "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
-                      question.explanation.length > 1000 ? "text-xs" :
-                      question.explanation.length > 600 ? "text-xs md:text-sm" : "text-sm"
-                    )}
-                  >
-                    {question.explanation}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Self-assessment buttons */}
-        {isFlipped ? (
-          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex gap-3 justify-center shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <Button
-              size="lg"
-              variant="outline"
-              className="group relative flex-1 h-11 md:h-12 rounded-xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden"
-              onClick={() => handleAnswer(false)}
-              disabled={isLoading}
-            >
-              <XCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 group-hover:rotate-12 transition-transform" />
-              <span className="font-bold text-xs md:text-sm">Chưa biết (1)</span>
-            </Button>
-            <Button
-              size="lg"
-              className="group relative flex-1 h-11 md:h-12 rounded-xl bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden"
-              onClick={() => handleAnswer(true)}
-              disabled={isLoading}
-            >
-              <CheckCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 group-hover:-rotate-12 transition-transform" />
-              <span className="font-bold text-white text-xs md:text-sm">Đã biết (2)</span>
-            </Button>
-          </div>
-        ) : (
-          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex justify-center shrink-0">
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full max-w-sm h-11 md:h-12 rounded-xl border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all active:scale-95"
-              onClick={() => setIsFlipped(true)}
-            >
-              <RotateCw className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-              <span className="font-bold text-xs md:text-sm">Xem đáp án</span>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Keyboard shortcuts hint */}
-      <div className="mt-2 md:mt-3 px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3 md:gap-4 border border-slate-200/50 dark:border-slate-700/50 shrink-0">
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">1</kbd>
-          <span>Chưa biết</span>
-        </div>
-        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">Space</kbd>
-          <span>{isFlipped ? 'Ẩn đáp án' : 'Xem đáp án'}</span>
-        </div>
-        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">2</kbd>
-          <span>Đã biết</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AnimatedView({
-  question,
-  totalContentLength,
-  answerIndices,
-  correctAnswers,
-  isFlipped,
-  handleFlip,
-  showExplanation,
-  setShowExplanation,
-  handleAnswer,
-  isLoading,
-}: SubViewProps & { correctAnswers: string[]; handleFlip: () => void }) {
-  return (
-    <div className="w-full h-full max-w-4xl mx-auto flex flex-col" key={question._id}>
-      <div 
-        className="perspective-1000 flex-1 min-h-0 animate-in fade-in duration-300"
-        onClick={handleFlip}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleFlip()
-          }
-        }}
-      >
-        <div
-          className={cn(
-            'flashcard-inner relative w-full h-full min-h-0 transition-transform duration-700',
-            isFlipped && 'rotate-y-180'
-          )}
-          style={{ transformStyle: 'preserve-3d' }}
+    <div className="w-full h-full max-w-4xl mx-auto flex flex-col justify-between" key={question._id}>
+      <div className="relative flex-1 min-h-0 w-full flex items-center justify-center">
+        {/* Swipe Feedback Badges */}
+        <motion.div
+          style={{ opacity: unknownBadgeOpacity }}
+          className="absolute top-4 left-6 z-50 pointer-events-none bg-red-500 text-white px-4 py-2 rounded-2xl border-2 border-white shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
         >
-          {/* Front side */}
-          <div
-            className={cn(
-              'flashcard-face flashcard-face-front h-full flex flex-col transition-all duration-300',
-              'bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 shadow-xl flashcard-shadow',
-              getCardPadding(totalContentLength)
-            )}
-          >
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 flex flex-col pt-1 pb-4">
-              <div className="flex-1 flex flex-col justify-center">
-                {/* Question image - Improved Scaling */}
+          <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span>Chưa biết</span>
+        </motion.div>
+
+        <motion.div
+          style={{ opacity: knownBadgeOpacity }}
+          className="absolute top-4 right-6 z-50 pointer-events-none bg-emerald-500 text-white px-4 py-2 rounded-2xl border-2 border-white shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
+        >
+          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span>Đã biết</span>
+        </motion.div>
+
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.35}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onTap={handleTap}
+          style={{ x }}
+          className={cn(
+            "w-full h-full touch-none relative select-none flex flex-col justify-between bg-white dark:bg-gray-950 border-2 shadow-xl rounded-2xl p-4 md:p-6 transition-colors cursor-grab active:cursor-grabbing outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
+            isFlipped ? "border-primary/40" : "border-slate-200 dark:border-slate-800"
+          )}
+        >
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 flex flex-col space-y-4">
+            {/* Front vs Back View */}
+            {!isFlipped ? (
+              /* Front Side (Question) */
+              <div className="space-y-4 my-auto">
                 {question.image_url && (
-                  <div className="mb-6 relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary-bg/20 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                  <div className="mb-2 relative group flex-none">
                     <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
                       <img
                         src={question.image_url}
                         alt="Question"
-                        className="max-w-full h-auto mx-auto max-h-[35vh] md:max-h-[400px] object-contain transition-transform duration-500 hover:scale-[1.02]"
+                        className="max-w-full h-auto mx-auto max-h-[160px] md:max-h-[220px] object-contain"
                       />
                     </div>
                   </div>
                 )}
-
-                {/* Question text */}
                 <h2 className={cn(
-                  "font-bold text-center whitespace-pre-wrap tracking-tight",
+                  "font-bold text-center whitespace-pre-wrap tracking-tight text-slate-800 dark:text-slate-100",
                   getQuestionFontSize(totalContentLength),
-                  getQuestionMargin(totalContentLength),
-                  getQuestionLineHeight(totalContentLength),
-                  "text-slate-800 dark:text-slate-100"
+                  getQuestionLineHeight(totalContentLength)
                 )}>
                   {question.text}
                 </h2>
-
-                {/* Options */}
                 <div className={cn("max-w-2xl mx-auto w-full", getOptionSpacing(totalContentLength))}>
                   {(question.options || []).map((option, idx) => (
                     <div
@@ -482,46 +324,24 @@ function AnimatedView({
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-            
-            {/* Flip hint at bottom */}
-            <div className="text-center pt-2 opacity-40 group">
-              <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
-                <RotateCw className="w-3 h-3 animate-spin-slow" />
-                Nhấn để xem đáp án
-              </p>
-            </div>
-          </div>
 
-          {/* Back side */}
-          <div
-            className={cn(
-              'flashcard-face flashcard-face-back h-full flex flex-col',
-              'bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-2xl',
-              getCardPadding(totalContentLength)
-            )}
-          >
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 pt-1 pb-4 flex flex-col">
-              <div className="flex-1 flex flex-col justify-center space-y-6">
-                {/* Correct answer - Modernized */}
-                <div 
-                  role="none"
-                  className="p-6 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border-2 border-green-500/30 relative overflow-hidden"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <CheckCircle className="w-16 h-16 text-green-500" />
-                  </div>
-                  
+                <div className="text-center pt-2 opacity-40">
+                  <p className="text-[10px] uppercase tracking-widest font-semibold">
+                    Nhấn hoặc kéo chuột để lật / chọn đáp án
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Back Side (Answer + Explanation) */
+              <div className="space-y-6 my-auto">
+                <div className="p-6 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border-2 border-green-500/30 relative overflow-hidden">
                   <h3 className="text-sm font-bold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
                     <div className="p-1 bg-green-100 dark:bg-green-800 rounded">
                       <CheckCircle className="h-4 w-4" />
                     </div>
                     Đáp án chính xác
                   </h3>
-                  
+
                   <div className="space-y-3 relative z-10">
                     {correctAnswers.length > 0 ? (
                       correctAnswers.map((answer, idx) => (
@@ -540,53 +360,298 @@ function AnimatedView({
                       </p>
                     )}
                   </div>
-                  </div>
+                </div>
 
-                {/* Usage frequency badge */}
+                {/* Usage Badge */}
                 <div className="flex justify-center">
                   <UsageBadge count={question.usage_count ?? 0} size="md" />
                 </div>
 
-                {/* Explanation Dropdown - Modernized */}
-                {question.explanation && (
-                  <div role="none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="animate-in fade-in slide-in-from-top-2 duration-500">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowExplanation(!showExplanation)
-                      }}
-                      className={cn(
-                        "w-full p-4 rounded-xl border transition-all flex items-center justify-between group",
-                        showExplanation 
-                          ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 shadow-inner" 
-                          : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-300"
-                      )}
-                    >
-                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                        <div className={cn(
-                          "p-1 rounded transition-colors",
-                          showExplanation ? "bg-blue-200 dark:bg-blue-800" : "bg-slate-200 dark:bg-slate-700"
-                        )}>
-                          <span className="text-xs">💡</span>
+                {/* Direct Explanation */}
+                {enableExplanation && question.explanation && (
+                  <div className="p-4 bg-blue-50/40 dark:bg-blue-900/15 rounded-2xl border border-blue-100 dark:border-blue-900/50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+                    <div className="pl-2 pr-2">
+                      <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1.5 tracking-wider uppercase">
+                        Giải thích:
+                      </p>
+                      <p
+                        className={cn(
+                          "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
+                          question.explanation.length > 1000 ? "text-xs" :
+                            question.explanation.length > 600 ? "text-sm" : "text-base"
+                        )}
+                      >
+                        {question.explanation}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Self-assessment buttons */}
+          <div role="none" className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center flex-none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <Button
+              size="lg"
+              variant="outline"
+              tabIndex={-1}
+              className="group relative flex-1 h-12 rounded-xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur()
+                }
+                handleAnswer(false)
+              }}
+              disabled={isLoading}
+            >
+              <XCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+              <span className="font-bold text-xs md:text-sm">Chưa biết</span>
+            </Button>
+            <Button
+              size="lg"
+              tabIndex={-1}
+              className="group relative flex-1 h-12 rounded-xl bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur()
+                }
+                handleAnswer(true)
+              }}
+              disabled={isLoading}
+            >
+              <CheckCircle className="mr-2 h-5 w-5 group-hover:-rotate-12 transition-transform" />
+              <span className="font-bold text-white text-xs md:text-sm">Đã biết</span>
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+
+function AnimatedView({
+  question,
+  totalContentLength,
+  answerIndices,
+  correctAnswers,
+  isFlipped,
+  handleFlip,
+  showExplanation,
+  setShowExplanation,
+  handleAnswer,
+  isLoading,
+  enableExplanation,
+}: SubViewProps & { correctAnswers: string[]; handleFlip: () => void }) {
+  const x = useMotionValue(0)
+  const rotate = useTransform(x, [-300, 300], [-10, 10])
+  const unknownBadgeOpacity = useTransform(x, [-140, -40], [1, 0])
+  const knownBadgeOpacity = useTransform(x, [40, 140], [0, 1])
+
+  const isDraggingRef = useRef(false)
+
+  const handleDragStart = () => {
+    isDraggingRef.current = true
+  }
+
+  const handleDragEnd = (_: any, info: { offset: { x: number; y: number }; velocity: { x: number } }) => {
+    setTimeout(() => {
+      isDraggingRef.current = false
+    }, 150)
+
+    if (info.offset.x < -90 || info.velocity.x < -400) {
+      handleAnswer(false) // Drag Left = Chưa biết
+    } else if (info.offset.x > 90 || info.velocity.x > 400) {
+      handleAnswer(true) // Drag Right = Đã biết
+    }
+  }
+
+  const handleTap = () => {
+    if (isDraggingRef.current) return
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+    handleFlip()
+  }
+
+  return (
+    <div className="w-full h-full max-w-4xl mx-auto flex flex-col justify-between" key={question._id}>
+      <div className="relative flex-1 min-h-0 w-full flex items-center justify-center">
+        {/* Swipe Feedback Badges */}
+        <motion.div
+          style={{ opacity: unknownBadgeOpacity }}
+          className="absolute top-4 left-6 z-50 pointer-events-none bg-red-500 text-white px-4 py-2 rounded-2xl border-2 border-white shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
+        >
+          <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span>Chưa biết</span>
+        </motion.div>
+
+        <motion.div
+          style={{ opacity: knownBadgeOpacity }}
+          className="absolute top-4 right-6 z-50 pointer-events-none bg-emerald-500 text-white px-4 py-2 rounded-2xl border-2 border-white shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
+        >
+          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span>Đã biết</span>
+        </motion.div>
+
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.35}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onTap={handleTap}
+          style={{ x, rotate }}
+          transition={{ duration: 0.2 }}
+          className="w-full h-full touch-none relative select-none cursor-grab active:cursor-grabbing outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+        >
+          <div
+            className="perspective-1000 flex-1 min-h-0 h-full w-full"
+          >
+            <div
+              className={cn(
+                'flashcard-inner relative w-full h-full min-h-0 transition-transform duration-700',
+                isFlipped && 'rotate-y-180'
+              )}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
+              {/* Front side */}
+              <div
+                className={cn(
+                  'flashcard-face flashcard-face-front h-full flex flex-col transition-all duration-300',
+                  'bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 shadow-xl flashcard-shadow',
+                  getCardPadding(totalContentLength)
+                )}
+              >
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 flex flex-col pt-1 pb-4">
+                  <div className="flex-1 flex flex-col justify-center">
+                    {/* Question image */}
+                    {question.image_url && (
+                      <div className="mb-6 relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary-bg/20 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                        <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+                          <img
+                            src={question.image_url}
+                            alt="Question"
+                            className="max-w-full h-auto mx-auto max-h-[35vh] md:max-h-[400px] object-contain transition-transform duration-500 hover:scale-[1.02]"
+                          />
                         </div>
-                        Giải thích chi tiết
-                      </span>
-                      {showExplanation ? (
-                        <ChevronUp className="h-5 w-5 text-blue-700 dark:text-blue-400" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-blue-500" />
-                      )}
-                    </button>
-                    
-                    {showExplanation && (
-                      <div className="mt-3 p-5 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/50 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30"></div>
-                        <div className="pr-4">
-                          <p 
+                      </div>
+                    )}
+
+                    {/* Question text */}
+                    <h2 className={cn(
+                      "font-bold text-center whitespace-pre-wrap tracking-tight",
+                      getQuestionFontSize(totalContentLength),
+                      getQuestionMargin(totalContentLength),
+                      getQuestionLineHeight(totalContentLength),
+                      "text-slate-800 dark:text-slate-100"
+                    )}>
+                      {question.text}
+                    </h2>
+
+                    {/* Options */}
+                    <div className={cn("max-w-2xl mx-auto w-full", getOptionSpacing(totalContentLength))}>
+                      {(question.options || []).map((option, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "bg-slate-50 dark:bg-slate-800/50 rounded-xl text-left border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm",
+                            getOptionPadding(totalContentLength)
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="flex-none flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                              {String.fromCodePoint(65 + idx)}
+                            </span>
+                            <span className={cn("whitespace-pre-wrap flex-1 text-slate-700 dark:text-slate-300", getOptionFontSize(totalContentLength))}>
+                              {option}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Flip hint at bottom */}
+                <div className="text-center pt-2 opacity-40 group">
+                  <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
+                    <RotateCw className="w-3 h-3 animate-spin-slow" />
+                    Nhấn hoặc kéo chuột để lật / chọn đáp án
+                  </p>
+                </div>
+              </div>
+
+              {/* Back side */}
+              <div
+                className={cn(
+                  'flashcard-face flashcard-face-back h-full flex flex-col',
+                  'bg-white dark:bg-gray-950 border-2 border-primary/20 dark:border-primary/40 shadow-2xl',
+                  getCardPadding(totalContentLength)
+                )}
+              >
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-2 -mx-2 pt-1 pb-4 flex flex-col">
+                  <div className="flex-1 flex flex-col justify-center space-y-6">
+                    {/* Correct answer */}
+                    <div
+                      role="none"
+                      className="p-6 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border-2 border-green-500/30 relative overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <CheckCircle className="w-16 h-16 text-green-500" />
+                      </div>
+
+                      <h3 className="text-sm font-bold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                        <div className="p-1 bg-green-100 dark:bg-green-800 rounded">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                        Đáp án chính xác
+                      </h3>
+
+                      <div className="space-y-3 relative z-10">
+                        {correctAnswers.length > 0 ? (
+                          correctAnswers.map((answer, idx) => (
+                            <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30">
+                              <span className="font-bold text-green-600">
+                                {String.fromCodePoint(65 + (answerIndices[idx] ?? idx))}.
+                              </span>
+                              <p className="text-base font-medium whitespace-pre-wrap text-slate-800 dark:text-slate-200 leading-relaxed">
+                                {answer}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-base font-medium text-muted-foreground italic text-center py-4">
+                            Không có đáp án được chỉ định
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Usage frequency badge */}
+                    <div className="flex justify-center">
+                      <UsageBadge count={question.usage_count ?? 0} size="md" />
+                    </div>
+
+                    {/* Explanation Section - Directly shown when enabled */}
+                    {enableExplanation && question.explanation && (
+                      <div role="none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="p-4 bg-blue-50/40 dark:bg-blue-900/15 rounded-2xl border border-blue-100 dark:border-blue-900/50 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+                        <div className="pl-2 pr-2">
+                          <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1.5 tracking-wider uppercase">
+                            Giải thích:
+                          </p>
+                          <p
                             className={cn(
                               "leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300",
                               question.explanation.length > 1000 ? "text-xs" :
-                              question.explanation.length > 600 ? "text-sm" : "text-base"
+                                question.explanation.length > 600 ? "text-sm" : "text-base"
                             )}
                           >
                             {question.explanation}
@@ -595,61 +660,52 @@ function AnimatedView({
                       </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Self-assessment buttons - Premium look */}
-              <div role="none" className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="group relative flex-1 h-14 rounded-2xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleAnswer(false)
-                  }}
-                  disabled={isLoading}
-                >
-                  <div className="absolute inset-0 bg-red-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                  <XCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                  <span className="font-bold">Chưa biết</span>
-                </Button>
-                <Button
-                  size="lg"
-                  className="group relative flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleAnswer(true)
-                  }}
-                  disabled={isLoading}
-                >
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                  <CheckCircle className="mr-2 h-5 w-5 group-hover:-rotate-12 transition-transform" />
-                  <span className="font-bold text-white">Đã biết</span>
-                </Button>
+                  {/* Self-assessment buttons */}
+                  <div role="none" className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      tabIndex={-1}
+                      className="group relative flex-1 h-14 rounded-2xl border-2 border-red-100 dark:border-red-900/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all active:scale-95 overflow-hidden cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                          document.activeElement.blur()
+                        }
+                        handleAnswer(false)
+                      }}
+                      disabled={isLoading}
+                    >
+                      <div className="absolute inset-0 bg-red-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                      <XCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                      <span className="font-bold">Chưa biết</span>
+                    </Button>
+                    <Button
+                      size="lg"
+                      tabIndex={-1}
+                      className="group relative flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95 overflow-hidden cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                          document.activeElement.blur()
+                        }
+                        handleAnswer(true)
+                      }}
+                      disabled={isLoading}
+                    >
+                      <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                      <CheckCircle className="mr-2 h-5 w-5 group-hover:-rotate-12 transition-transform" />
+                      <span className="font-bold text-white">Đã biết</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Keyboard shortcuts hint - More elegant */}
-      <div role="none" className="mt-6 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full mx-auto text-center text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4 border border-slate-200/50 dark:border-slate-700/50" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono uppercase">Space</kbd>
-          <span>Lật thẻ</span>
-        </div>
-        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">1</kbd>
-          <span>Chưa biết</span>
-        </div>
-        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
-        <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-900 dark:text-slate-100 shadow-sm font-mono">2</kbd>
-          <span>Đã biết</span>
-        </div>
-      </div>
     </div>
   )
 }

@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
         $match: {
           category_id: { $in: categoryIds },
           is_public: true,
-          status: 'published'
+          status: 'published',
+          is_temp: { $ne: true }
         }
       },
       {

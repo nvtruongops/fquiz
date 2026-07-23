@@ -117,20 +117,21 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 5. Cleanup — delete any existing COMPLETED temp quizzes and sessions for this student
-    // This ensures "Only 1 mix quiz" design is enforced even for completed ones.
-    const oldTempSessions = await QuizSession.find({
-      student_id: studentId,
-      is_temp: true,
-    }).select('quiz_id').lean()
-    
-    const oldQuizIds = oldTempSessions.map(s => s.quiz_id).filter((id): id is mongoose.Types.ObjectId => Boolean(id))
-    
-    if (oldTempSessions.length > 0) {
-      await Promise.all([
-        QuizSession.deleteMany({ _id: { $in: oldTempSessions.map(s => s._id) } }),
-        Quiz.deleteMany({ _id: { $in: oldQuizIds }, is_temp: true } as any)
-      ])
+    // 5. Quota Check — Max 10 total (created + mix quizzes combined across account)
+    const totalCreatedAndMix = await Quiz.countDocuments({
+      created_by: studentId,
+      is_saved_from_explore: { $ne: true },
+    })
+
+    if (totalCreatedAndMix >= 10) {
+      return NextResponse.json(
+        {
+          error: 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để trộn mới.',
+          quotaExceeded: true,
+          code: 'TOTAL_QUOTA_EXCEEDED',
+        },
+        { status: 409 }
+      )
     }
 
     // 6. Create a placeholder session with status 'preparing'

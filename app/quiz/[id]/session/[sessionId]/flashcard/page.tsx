@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Loader2, Sparkles, Lightbulb, ArrowLeft, ArrowRight, Info } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/session/FlashcardView'
 import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
 
@@ -11,6 +11,13 @@ import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/Q
 import { Button } from '@/components/shared/ui/button'
 import { Card } from '@/components/shared/ui/card'
 import { Switch } from '@/components/shared/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/shared/ui/dialog'
 
 export default function FlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -83,6 +90,9 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
     handleBack,
     handleForward,
   } = useFlashcardSessionState(sessionId, quizId)
+
+  const [enableExplanation, setEnableExplanation] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
 
   const sessionLoader = useSessionLoader()
   const sessionLoaderStartedRef = useRef(false)
@@ -172,26 +182,49 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or text area
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
+
       if (isSubmitting || !question) {
         return
       }
 
       // Space = flip
       if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault() // Prevent page scroll
+        e.preventDefault() // Prevent scrolling & default focus ring/button activation
+        
+        // Remove focus from any focused element to remove black outline
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+
         if (flashcardRef.current) {
           flashcardRef.current.flip()
         }
         return
       }
-      // 1 = doesn't know
-      if (e.key === '1') {
+      // 1 or ArrowLeft = doesn't know
+      if (e.key === '1' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
         handleAnswer(false)
         return
       }
-      // 2 = knows
-      if (e.key === '2') {
+      // 2 or ArrowRight = knows
+      if (e.key === '2' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
         handleAnswer(true)
+        return
       }
     }
 
@@ -250,79 +283,118 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   return (
     <div 
       role="none"
-      className="h-[100dvh] bg-background py-2 md:py-6 flex flex-col overflow-hidden" 
+      className="h-[100dvh] bg-background py-2 md:py-6 flex flex-col overflow-hidden select-none" 
       onClick={handleBackgroundClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleBackgroundClick()
-        }
-      }}
     >
       {/* Compact Header Card */}
       <div role="none" className="container mx-auto px-4 mb-2 md:mb-4 flex-none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <Card className="p-3">
-          <div className="grid grid-cols-12 gap-3 items-center">
-            {/* Left: Quiz Info (3 cols) */}
-            <div className="col-span-12 sm:col-span-3 flex items-center gap-2">
-              <div>
+        <Card className="p-3 shadow-md">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 relative">
+            {/* Left: Quiz Info & Info Icon (flex-1) */}
+            <div className="flex items-center gap-2.5 w-full md:w-auto md:flex-1 min-w-0">
+              <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground">Thông tin</p>
-                <p className="font-medium text-xs truncate">{session.categoryName}</p>
+                <p className="font-medium text-xs truncate max-w-[130px]">{session.categoryName}</p>
               </div>
-              <div className="h-8 w-px bg-border hidden sm:block" />
-              <div className="flex-1">
+              <div className="h-7 w-px bg-border shrink-0" />
+              <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground">Mã quiz</p>
-                <p className="font-semibold text-xs">{session.courseCode}</p>
+                <p className="font-semibold text-xs truncate max-w-[130px]">{session.courseCode}</p>
               </div>
+              
+              {/* Info Icon (i) */}
+              <Dialog open={showGuideModal} onOpenChange={setShowGuideModal}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 border border-slate-200 dark:border-slate-700 ml-1 transition-colors"
+                    title="Hướng dẫn thao tác"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md p-6 rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-base font-bold text-slate-800 dark:text-slate-100 text-center">
+                      Hướng dẫn thao tác Flashcard
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  <div className="space-y-3 mt-3 text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-medium">
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+                      <p>1. Ấn <strong>1, 2</strong> hoặc <strong>kéo trái / phải</strong> để chọn Chưa biết hoặc Biết.</p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+                      <p>2. Ấn vào <strong>thẻ</strong> hoặc ấn <strong>Space</strong> để đổi mặt.</p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
-            {/* Center: Stats & Navigation (6 cols) */}
-            <div className="col-span-12 sm:col-span-6 flex items-center justify-center gap-4">
-              <Button variant="outline" size="icon" onClick={handleBack} disabled={actualIndex === 0} className="h-8 w-8 rounded-full">
+            {/* Center: Stats & Navigation (PERFECTLY DEAD CENTERED) */}
+            <div className="flex items-center justify-center gap-3 flex-none mx-auto">
+              <Button variant="outline" size="icon" onClick={handleBack} disabled={actualIndex === 0} className="h-8 w-8 rounded-full flex-none">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               
-              <div className="flex items-center gap-4 px-4">
+              <div className="flex items-center gap-4 px-2">
                 <div className="text-center">
-                  <p className="text-xl font-bold">{stats.total}</p>
-                  <p className="text-[10px] text-muted-foreground">Tổng</p>
+                  <p className="text-lg font-bold leading-none">{stats.total}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Tổng</p>
                 </div>
-                <div className="h-8 w-px bg-border" />
+                <div className="h-7 w-px bg-border" />
                 <div className="text-center">
-                  <p className="text-xl font-bold text-green-600">{stats.known}</p>
-                  <p className="text-[10px] text-muted-foreground">Biết</p>
+                  <p className="text-lg font-bold text-green-600 leading-none">{stats.known}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Biết</p>
                 </div>
-                <div className="h-8 w-px bg-border" />
+                <div className="h-7 w-px bg-border" />
                 <div className="text-center">
-                  <p className="text-xl font-bold text-red-600">{stats.unknown}</p>
-                  <p className="text-[10px] text-muted-foreground">Chưa biết</p>
+                  <p className="text-lg font-bold text-red-600 leading-none">{stats.unknown}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Chưa biết</p>
                 </div>
               </div>
 
-              <Button variant="outline" size="icon" onClick={handleForward} disabled={actualIndex >= (session?.current_question_index ?? 0)} className="h-8 w-8 rounded-full">
+              <Button variant="outline" size="icon" onClick={handleForward} disabled={actualIndex >= (session?.current_question_index ?? 0)} className="h-8 w-8 rounded-full flex-none">
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Right: Progress & Exit (3 cols) */}
-            <div className="col-span-12 sm:col-span-3 flex items-center justify-end gap-3">
-              <div className="flex items-center gap-2 mr-2">
-                <Sparkles className={`w-4 h-4 ${enableAnimation ? 'text-amber-500' : 'text-muted-foreground'}`} />
+            {/* Right: Controls & Exit (flex-1 justify-end) */}
+            <div className="flex items-center justify-end gap-3 w-full md:w-auto md:flex-1 shrink-0">
+              {/* Toggle Explanation */}
+              <div className="flex items-center gap-1.5 border-r border-border pr-2.5 shrink-0 whitespace-nowrap">
+                <Lightbulb className={`w-3.5 h-3.5 shrink-0 ${enableExplanation ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Giải thích</span>
+                <Switch 
+                  checked={enableExplanation} 
+                  onCheckedChange={setEnableExplanation} 
+                  className="scale-75 data-[state=checked]:bg-amber-500 shrink-0"
+                />
+              </div>
+
+              {/* Toggle Animation */}
+              <div className="flex items-center gap-1.5 border-r border-border pr-2.5 shrink-0 whitespace-nowrap">
+                <Sparkles className={`w-3.5 h-3.5 shrink-0 ${enableAnimation ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Hiệu ứng</span>
                 <Switch 
                   checked={enableAnimation} 
                   onCheckedChange={setEnableAnimation} 
-                  className="scale-75 data-[state=checked]:bg-amber-500"
+                  className="scale-75 data-[state=checked]:bg-amber-500 shrink-0"
                 />
               </div>
-              <div className="text-center">
+
+              <div className="text-center shrink-0 whitespace-nowrap">
                 <p className="text-[10px] text-muted-foreground">Tiến độ</p>
-                <p className="font-semibold text-xs">
+                <p className="font-semibold text-xs whitespace-nowrap">
                   Câu {actualIndex + 1}/{session.totalQuestions}
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={handleExit} className="h-8 text-xs px-3">
+              <Button variant="outline" size="sm" onClick={handleExit} className="h-8 text-xs px-3 shrink-0">
                 Thoát
               </Button>
             </div>
@@ -341,6 +413,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
             onAnswer={handleAnswer}
             isLoading={isSubmitting}
             enableAnimation={enableAnimation}
+            enableExplanation={enableExplanation}
           />
         </div>
       </div>

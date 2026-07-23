@@ -24,7 +24,9 @@ const getCategories = unstable_cache(
       {
         $match: {
           category_id: { $in: catIds },
-          status: 'published'
+          status: 'published',
+          is_public: true,
+          is_temp: { $ne: true }
         }
       },
       {
@@ -44,7 +46,7 @@ const getCategories = unstable_cache(
     }))
   },
   ['explore-categories-list'],
-  { revalidate: 300, tags: ['categories'] }
+  { revalidate: 60, tags: ['categories'] }
 )
 
 export default async function ExplorePage() {
@@ -58,13 +60,13 @@ export default async function ExplorePage() {
         <div className="w-full max-w-5xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#5D7B6F]/20 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <div className="w-full pt-2 sm:pt-3 pb-10 lg:pb-16 relative z-10 space-y-4 sm:space-y-6">
-        <div className="text-center max-w-3xl mx-auto">
+      <div className="w-full pt-1 sm:pt-3 pb-10 lg:pb-16 relative z-10 space-y-3 sm:space-y-6">
+        <div className="text-center max-w-3xl mx-auto px-2">
           <motion.h1 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight"
+            className="text-xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight"
           >
             Khám phá Danh mục & Đề Thi
           </motion.h1>

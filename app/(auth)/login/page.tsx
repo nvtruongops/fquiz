@@ -23,6 +23,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
 
   // Handle URL params on client side only
@@ -59,21 +60,25 @@ function LoginForm() {
 
     const result = LoginSchema.safeParse({ identifier, password })
     if (!result.success) {
-      const identifierError = result.error.issues.find((i) => i.path[0] === 'identifier')?.message
-      const passwordError = result.error.issues.find((i) => i.path[0] === 'password')?.message
-      setErrors({ identifier: identifierError, password: passwordError })
+      const mapped: Record<string, string> = {}
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form')
+        if (!mapped[key]) mapped[key] = issue.message
+      }
+      setErrors(mapped as { identifier?: string; password?: string })
       return
     }
+
     setErrors({})
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ identifier, password }),
       })
+
       const data = (await res.json().catch(() => ({}))) as { error?: string; role?: string; user?: AuthUser }
 
       if (!res.ok) {
@@ -96,16 +101,20 @@ function LoginForm() {
         return
       }
 
-      toast.success('Đăng nhập thành công! Đang chuyển hướng...')
-      startGlobalPageLoader('ĐĂNG NHẬP THÀNH CÔNG!', 'Đang chuyển hướng vào hệ thống • Please wait')
+      toast.success('Đăng nhập thành công!')
+      startGlobalPageLoader('THÀNH CÔNG!', 'Đang chuyển hướng...')
+      setIsRedirecting(true)
       
       if (data.user) {
         queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
       } else {
         await queryClient.invalidateQueries({ queryKey: ['auth-user'] })
       }
-      router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
-      router.refresh()
+
+      setTimeout(() => {
+        router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
+        router.refresh()
+      }, 100)
     } catch {
       toast.error('Hệ thống đang bận, vui lòng thử lại sau.')
     } finally {
@@ -114,7 +123,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full relative group">
+    <motion.div 
+      initial={{ opacity: 1, scale: 1, y: 0 }}
+      animate={isRedirecting ? { opacity: 0, scale: 0.96, y: -10 } : { opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full relative group"
+    >
       {/* Glow behind the card */}
       <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
@@ -248,7 +262,7 @@ function LoginForm() {
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react'
 import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -11,7 +11,6 @@ import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
 import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
-
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -35,7 +34,6 @@ export default function RegisterPage() {
     }
   }, [toast])
 
-  // Get callback URL from query params
   function getCallbackUrl() {
     if (typeof window === 'undefined') return null
     const params = new URLSearchParams(window.location.search)
@@ -56,7 +54,6 @@ export default function RegisterPage() {
       setErrors((prev) => ({ ...prev, email: 'Vui lòng nhập email hợp lệ trước khi gửi mã' }))
       return
     }
-
 
     setSendingCode(true)
     setRetryAfterSec(null)
@@ -151,28 +148,28 @@ export default function RegisterPage() {
     if (p.length < 8) return { label: 'Quá ngắn', color: 'bg-red-400', level: 1 }
     if (p.length < 10) return { label: 'Yếu', color: 'bg-orange-400', level: 2 }
     if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Trung bình', color: 'bg-yellow-400', level: 3 }
-    return { label: 'Mạnh', color: 'bg-[#166534]', level: 4 } // Success foreground from ui-colors.md
+    return { label: 'Mạnh', color: 'bg-[#166534]', level: 4 }
   })()
 
   let sendCodeLabel = 'Gửi mã'
-  if (sendingCode) sendCodeLabel = 'Đang gửi...'
-  else if (codeSent) sendCodeLabel = 'Gửi lại mã'
+  if (sendingCode) sendCodeLabel = 'Đang gửi'
+  else if (codeSent) sendCodeLabel = 'Gửi lại'
 
   if (success) {
     return (
-      <div className="w-full text-center py-8">
+      <div className="w-full text-center py-6 sm:py-8">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] shadow-xl border border-white/60 p-10"
+          className="bg-white/70 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-white/60 p-6 sm:p-10"
         >
-          <div className="w-20 h-20 rounded-full bg-[#B0D4B8]/50 flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <ShieldCheck className="w-10 h-10 text-[#166534]" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#B0D4B8]/50 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
+            <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-[#166534]" />
           </div>
-          <h2 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">Đăng ký thành công!</h2>
-          <p className="text-slate-500 font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
-          <div className="mt-8 flex justify-center">
-            <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin drop-shadow-sm" />
+          <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 sm:mb-3 tracking-tight">Đăng ký thành công!</h2>
+          <p className="text-slate-500 text-xs sm:text-sm font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
+          <div className="mt-6 sm:mt-8 flex justify-center">
+            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-[#5D7B6F] animate-spin drop-shadow-sm" />
           </div>
         </motion.div>
       </div>
@@ -180,10 +177,10 @@ export default function RegisterPage() {
   }
 
   const inputClasses = (error?: string) => cn(
-    "w-full rounded-2xl border-2 px-4 py-3 text-[14px] outline-none transition-all duration-300 font-medium",
+    "w-full rounded-xl sm:rounded-2xl border-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[14px] outline-none transition-all duration-300 font-medium",
     error 
-      ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
-      : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+      ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-500/10" 
+      : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs"
   )
 
   const ErrorMsg = ({ msg }: { msg?: string }) => (
@@ -191,10 +188,10 @@ export default function RegisterPage() {
       {msg && (
         <motion.p 
           initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-          animate={{ opacity: 1, maxHeight: 40, marginTop: 4 }}
+          animate={{ opacity: 1, maxHeight: 40, marginTop: 3 }}
           exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
           transition={{ duration: 0.2 }}
-          className="text-[#dc2626] text-xs font-bold ml-1 overflow-hidden"
+          className="text-[#dc2626] text-[11px] sm:text-xs font-bold ml-1 overflow-hidden"
         >
           {msg}
         </motion.p>
@@ -205,21 +202,21 @@ export default function RegisterPage() {
   return (
     <div className="w-full relative group">
       {/* Glow behind the card */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2rem] sm:rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-white/60 p-5 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
-        <div className="mb-6 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[32px] font-black text-slate-800 tracking-tight leading-tight">Tạo tài khoản</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
+        <div className="mb-4 sm:mb-6 text-center sm:text-left">
+          <h1 className="text-xl sm:text-[30px] font-black text-slate-800 tracking-tight leading-tight">Tạo tài khoản</h1>
+          <p className="text-slate-500 mt-1 text-xs sm:text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-3 sm:space-y-4">
           {/* Email - Full Width */}
           <div className="space-y-1">
-            <label htmlFor="email" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+            <label htmlFor="email" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
               Email
             </label>
             <div className="relative flex gap-2 items-center">
@@ -234,19 +231,19 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-2.5 py-2 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed w-[76px] flex justify-center items-center whitespace-nowrap"
+                className="shrink-0 rounded-xl sm:rounded-2xl bg-white border border-[#5D7B6F]/30 px-2 sm:px-3 py-2 sm:py-2.5 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-xs disabled:opacity-60 disabled:cursor-not-allowed min-w-[65px] sm:min-w-[76px] flex justify-center items-center whitespace-nowrap"
               >
-                {sendingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : sendCodeLabel}
+                {sendingCode ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : sendCodeLabel}
               </motion.button>
             </div>
             <ErrorMsg msg={errors.email} />
             <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             {/* Verification Code */}
             <div className="space-y-1">
-              <label htmlFor="verificationCode" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="verificationCode" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
                 Mã xác thực
               </label>
               <div className="relative">
@@ -258,11 +255,11 @@ export default function RegisterPage() {
                   maxLength={6}
                   value={form.verificationCode}
                   onChange={handleChange}
-                  placeholder="Mã 6 chữ số"
+                  placeholder="Mã 6 số"
                   className={cn(
                     inputClasses(errors.verificationCode),
                     "placeholder:tracking-normal font-mono",
-                    form.verificationCode ? "tracking-[0.2em] text-lg py-2.5" : "tracking-normal"
+                    form.verificationCode ? "tracking-[0.15em] sm:tracking-[0.2em] text-sm sm:text-base font-black" : "tracking-normal"
                   )}
                 />
               </div>
@@ -271,7 +268,7 @@ export default function RegisterPage() {
 
             {/* Username */}
             <div className="space-y-1">
-              <label htmlFor="username" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="username" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
                 Tên đăng nhập
               </label>
               <div className="relative">
@@ -287,10 +284,10 @@ export default function RegisterPage() {
           </div>
 
           {/* Password & Confirm Password Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             {/* Password */}
             <div className="space-y-1">
-              <label htmlFor="password" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="password" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
                 Mật khẩu
               </label>
               <div className="relative">
@@ -300,14 +297,14 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   value={form.password} onChange={handleChange}
                   placeholder="Tối thiểu 8 ký tự"
-                  className={cn(inputClasses(errors.password), "pr-10")}
+                  className={cn(inputClasses(errors.password), "pr-8 sm:pr-10")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               
@@ -319,9 +316,9 @@ export default function RegisterPage() {
                     animate={{ opacity: 1, maxHeight: 80 }} 
                     exit={{ opacity: 0, maxHeight: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="px-1 pt-2 pb-1 overflow-hidden"
+                    className="px-0.5 pt-1.5 pb-0.5 overflow-hidden"
                   >
-                    <div className="flex gap-1.5 h-1.5 w-full">
+                    <div className="flex gap-1 h-1 sm:h-1.5 w-full">
                       {[1, 2, 3, 4].map((level) => (
                         <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
                           <motion.div 
@@ -333,8 +330,8 @@ export default function RegisterPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2 ml-1">
-                      Mức độ: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 ml-0.5">
+                      Độ mạnh: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
                     </p>
                   </motion.div>
                 )}
@@ -344,8 +341,8 @@ export default function RegisterPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1">
-              <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-                Xác nhận mật khẩu
+              <label htmlFor="confirmPassword" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Xác nhận MK
               </label>
               <div className="relative">
                 <input
@@ -361,8 +358,8 @@ export default function RegisterPage() {
                 />
                 <AnimatePresence>
                   {form.confirmPassword && form.confirmPassword === form.password && (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <CheckCircle className="w-5 h-5 text-[#166534]" />
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2">
+                      <CheckCircle className="w-4 h-4 text-[#166534]" />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -375,15 +372,15 @@ export default function RegisterPage() {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-6"
+            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_6px_16px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-5"
           >
             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin drop-shadow-sm" />
             ) : (
               <>
                 <span className="tracking-wide drop-shadow-sm">Đăng ký tài khoản</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
               </>
             )}
           </motion.button>
@@ -391,12 +388,12 @@ export default function RegisterPage() {
 
         <GoogleSignInButton callbackUrl={getCallbackUrl()} />
 
-        <div className="mt-5 pt-4 border-t border-slate-200/50">
+        <div className="mt-3.5 sm:mt-5 pt-3 border-t border-slate-200/50">
           {(() => {
             const cb = getCallbackUrl()
             const redirectParam = cb ? `?redirect=${encodeURIComponent(cb)}` : ''
             return (
-              <p className="text-center text-slate-500 font-medium text-sm">
+              <p className="text-center text-slate-500 font-medium text-xs sm:text-sm">
                 Bạn đã có tài khoản rồi?{' '}
                 <Link 
                   href={`/login${redirectParam}`}
