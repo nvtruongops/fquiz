@@ -99,6 +99,9 @@ export default function QuizSessionMobilePage() {
     resolvedQuizId,
   })
 
+  const courseCode = activeData?.session?.courseCode
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+
   function handleSubmit() {
     if (!activeData?.session) return
     setConfirmOpen(true)
@@ -210,7 +213,6 @@ export default function QuizSessionMobilePage() {
     ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
     : []
 
-  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(session.courseCode)
   const isQuestionPinned = pinnedQuestions.some(
     (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
   )
