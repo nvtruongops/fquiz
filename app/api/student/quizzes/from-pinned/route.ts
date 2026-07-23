@@ -7,6 +7,7 @@ import { PinnedQuestion } from '@/lib/modules/quiz/models/PinnedQuestion'
 import { Types } from 'mongoose'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { parseJsonBody } from '@/lib/core/api-helpers'
+import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
 
 /**
  * POST /api/student/quizzes/from-pinned
@@ -45,25 +46,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 2. Resolve Category
+    // 2. Resolve Category (Auto-create category if missing)
+    const targetCategory = await ensureCategoryForCourseCode(normalizedCourseCode, userObjectId)
     const escapedCode = course_code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
-
-    let targetCategory = await Category.findOne({
-      name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
-    }).select('_id name').lean() as any
-
-    if (!targetCategory) {
-      const firstCat = await Category.findOne().select('_id').lean()
-      if (firstCat) {
-        targetCategory = firstCat
-      } else {
-        targetCategory = await Category.create({
-          name: normalizedCourseCode,
-          description: `Danh mục môn học ${normalizedCourseCode}`,
-        })
-      }
-    }
 
     let categoryQuizIds: Types.ObjectId[] = []
     let categoryCourseCodes: string[] = []
