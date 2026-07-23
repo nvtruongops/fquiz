@@ -148,6 +148,8 @@ export default function QuizDetailPage() {
       toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
     } else if (searchParams.get('reason') === 'idle_timeout') {
       toast.error('Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.')
+    } else if (searchParams.get('reason') === 'session_not_found') {
+      toast.error('Phiên làm bài không tồn tại hoặc đã bị xóa. Vui lòng bắt đầu phiên mới.')
     }
     if (searchParams.get('selectMode') === 'true') {
       setModeSelectOpen(true)
