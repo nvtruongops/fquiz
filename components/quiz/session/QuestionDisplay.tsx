@@ -1,10 +1,11 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, XCircle, Lightbulb } from 'lucide-react'
+import { CheckCircle2, XCircle, Lightbulb, Bookmark } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
+import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
@@ -20,6 +21,9 @@ interface QuestionDisplayProps {
   enableAnimation?: boolean
   isExplanationOpen?: boolean
   onToggleExplanation?: () => void
+  courseCode?: string
+  quizTitle?: string
+  quizId?: string
 }
 
 function StandardQuestionView({
@@ -33,6 +37,9 @@ function StandardQuestionView({
   onSelectOption,
   isPending,
   sessionMode,
+  courseCode,
+  quizTitle,
+  quizId,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const correctAnswerSet = showImmediateFeedback
@@ -41,14 +48,47 @@ function StandardQuestionView({
 
   const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
 
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+  const isPinned = pinnedQuestions.some(
+    (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
+  )
+
+  const handleTogglePin = () => {
+    togglePinMutation.mutate({
+      question_id: question._id,
+      quiz_id: quizId,
+      quiz_title: quizTitle || courseCode,
+      course_code: courseCode || 'GENERAL',
+      text: question.text,
+      options: question.options,
+      correct_answer: (question as any).correct_answer || [0],
+      explanation: (question as any).explanation || '',
+      image_url: question.image_url || '',
+    })
+  }
+
   return (
     <div className="flex h-full flex-col quiz-scroll overflow-y-auto px-4 py-4 sm:px-6">
-      <div className="mb-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[clamp(11px,0.2vw+10px,13px)] text-[#4f4f4f]">
           {requiredSelectionCount === 1
             ? '(Choose 1 answer)'
             : `(Choose ${requiredSelectionCount} answers)`}
         </p>
+        <button
+          type="button"
+          onClick={handleTogglePin}
+          disabled={togglePinMutation.isPending}
+          className={cn(
+            "inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer",
+            isPinned
+              ? "bg-amber-100 text-amber-800 border-amber-300"
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          )}
+        >
+          <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-amber-600")} />
+          <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+        </button>
       </div>
       <div className="max-w-4xl border border-[#c7c7c7] bg-[#f5f5f5] px-[clamp(12px,1vw,20px)] py-[clamp(12px,1vw,20px)]">
         <p className="text-[clamp(14px,0.4vw+12px,17px)] font-semibold leading-snug text-[#101010]">
@@ -120,6 +160,9 @@ function AnimatedQuestionView({
   onSelectOption,
   isPending,
   sessionMode,
+  courseCode,
+  quizTitle,
+  quizId,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const correctAnswerSet = showImmediateFeedback
@@ -127,6 +170,25 @@ function AnimatedQuestionView({
     : []
 
   const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
+
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+  const isPinned = pinnedQuestions.some(
+    (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
+  )
+
+  const handleTogglePin = () => {
+    togglePinMutation.mutate({
+      question_id: question._id,
+      quiz_id: quizId,
+      quiz_title: quizTitle || courseCode,
+      course_code: courseCode || 'GENERAL',
+      text: question.text,
+      options: question.options,
+      correct_answer: (question as any).correct_answer || [0],
+      explanation: (question as any).explanation || '',
+      image_url: question.image_url || '',
+    })
+  }
 
   return (
     <div className="flex h-full flex-col bg-slate-50/50 dark:bg-slate-900/50 quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">
@@ -145,6 +207,21 @@ function AnimatedQuestionView({
                 : `• Chọn ${requiredSelectionCount} đáp án đúng`}
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={handleTogglePin}
+            disabled={togglePinMutation.isPending}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm border",
+              isPinned
+                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+            )}
+          >
+            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-amber-500")} />
+            <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+          </button>
         </div>
 
         <h2 className="text-lg sm:text-xl font-bold leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap">
