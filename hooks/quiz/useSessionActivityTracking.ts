@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { SessionData } from '@/lib/modules/quiz/types/session'
@@ -29,9 +28,7 @@ export function useSessionActivityTracking({
   sessionId,
   currentQuestionIndex,
   activeData,
-  resolvedQuizId,
 }: UseSessionActivityTrackingParams): UseSessionActivityTrackingResult {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [inactivityPauseOpen, setInactivityPauseOpen] = useState(false)
@@ -51,51 +48,44 @@ export function useSessionActivityTracking({
     [sessionId, currentQuestionIndex],
   )
 
-  const handleAutoExit = useCallback(() => {
+  const handleResumeInactivity = useCallback(() => {
     if (!sessionId) return
     if (typeof window !== 'undefined') {
       localStorage.removeItem(`session_paused_at_${sessionId}`)
     }
-    reportSessionActivity('pause')
-    const target = resolvedQuizId ? `/quiz/${resolvedQuizId}?reason=idle_timeout` : '/dashboard?reason=idle_timeout'
-    router.push(target)
-  }, [sessionId, resolvedQuizId, reportSessionActivity, router])
-
-  const handleResumeInactivity = useCallback(() => {
-    if (!sessionId) return
-    if (typeof window !== 'undefined') {
-      const storedPause = localStorage.getItem(`session_paused_at_${sessionId}`)
-      if (storedPause) {
-        const pausedAt = parseInt(storedPause, 10)
-        localStorage.removeItem(`session_paused_at_${sessionId}`)
-        if (!isNaN(pausedAt) && Date.now() - pausedAt >= IDLE_TIMEOUT_MS) {
-          handleAutoExit()
-          return
-        }
-      }
-    }
     setInactivityPauseOpen(false)
     reportSessionActivity('resume')
     void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
-  }, [sessionId, reportSessionActivity, handleAutoExit, queryClient])
+  }, [sessionId, reportSessionActivity, queryClient])
 
   // Resume activity on mount + check if stored pause time exceeded 5 mins
   useEffect(() => {
     if (!sessionId) return
 
+    let isPausedOver5Mins = false
     if (typeof window !== 'undefined') {
       const storedPause = localStorage.getItem(`session_paused_at_${sessionId}`)
       if (storedPause) {
         const pausedAt = parseInt(storedPause, 10)
         if (!isNaN(pausedAt) && Date.now() - pausedAt >= IDLE_TIMEOUT_MS) {
-          handleAutoExit()
-          return
+          isPausedOver5Mins = true
         }
       }
     }
 
-    reportSessionActivity('resume')
-  }, [sessionId, reportSessionActivity, handleAutoExit])
+    if (activeData?.session?.paused_at) {
+      const serverPausedAt = new Date(activeData.session.paused_at).getTime()
+      if (!isNaN(serverPausedAt) && Date.now() - serverPausedAt >= IDLE_TIMEOUT_MS) {
+        isPausedOver5Mins = true
+      }
+    }
+
+    if (isPausedOver5Mins) {
+      setInactivityPauseOpen(true)
+    } else {
+      reportSessionActivity('resume')
+    }
+  }, [sessionId, activeData?.session?.paused_at, reportSessionActivity])
 
   const shouldWarnBeforeLeave = Boolean(
     activeData?.session && activeData.session.status !== 'completed',
@@ -127,10 +117,10 @@ export function useSessionActivityTracking({
       }
       reportSessionActivity('pause')
 
-      // Schedule 5-minute auto-exit timer
+      // Schedule 5-minute inactivity pause modal trigger
       if (idleTimer) clearTimeout(idleTimer)
       idleTimer = setTimeout(() => {
-        handleAutoExit()
+        setInactivityPauseOpen(true)
       }, IDLE_TIMEOUT_MS)
     }
 
@@ -144,11 +134,12 @@ export function useSessionActivityTracking({
         const storedPause = localStorage.getItem(`session_paused_at_${sessionId}`)
         if (storedPause) {
           const pausedAt = parseInt(storedPause, 10)
-          localStorage.removeItem(`session_paused_at_${sessionId}`)
           if (!isNaN(pausedAt) && Date.now() - pausedAt >= IDLE_TIMEOUT_MS) {
-            handleAutoExit()
+            // Over 5 mins pause -> open pause modal
+            setInactivityPauseOpen(true)
             return
           }
+          localStorage.removeItem(`session_paused_at_${sessionId}`)
         }
       }
 
@@ -181,7 +172,7 @@ export function useSessionActivityTracking({
       globalThis.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity, handleAutoExit, queryClient])
+  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity, queryClient])
 
   // Per-question 5-minute inactivity timer (no user interaction for 5 minutes)
   useEffect(() => {

@@ -48,25 +48,13 @@ export const POST = withAuth(async (
 
     const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
 
-    // Handle resume event - calculate paused duration or expire if > 5 mins
+    // Handle resume event - calculate accumulated paused duration and clear paused_at
     if (body.event === 'resume') {
       if (session.paused_at) {
-        const pausedDuration = now.getTime() - new Date(session.paused_at).getTime()
-        if (pausedDuration >= AUTO_PAUSE_THRESHOLD) {
-          setPayload.status = 'expired'
-          setPayload.paused_at = null
-        } else {
-          const currentPausedTotal = session.total_paused_duration_ms || 0
-          setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
-          setPayload.paused_at = null
-        }
-      } 
-      // Auto-detect pause: If last_activity was more than 5 minutes ago and no paused_at
-      else if (session.last_activity_at) {
-        const timeSinceLastActivity = now.getTime() - new Date(session.last_activity_at).getTime()
-        if (timeSinceLastActivity >= AUTO_PAUSE_THRESHOLD) {
-          setPayload.status = 'expired'
-        }
+        const pausedDuration = Math.max(0, now.getTime() - new Date(session.paused_at).getTime())
+        const currentPausedTotal = session.total_paused_duration_ms || 0
+        setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
+        setPayload.paused_at = null
       }
     }
 
