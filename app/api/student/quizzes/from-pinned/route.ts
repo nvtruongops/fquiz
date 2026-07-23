@@ -45,36 +45,54 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 2. Fetch pinned questions for this course
-    const pinnedDocs = await PinnedQuestion.find({
+    // 2. Resolve Category
+    const escapedCode = course_code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
+
+    let targetCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
+    }).select('_id name').lean() as any
+
+    if (!targetCategory) {
+      const firstCat = await Category.findOne().select('_id').lean()
+      if (firstCat) {
+        targetCategory = firstCat
+      } else {
+        targetCategory = await Category.create({
+          name: normalizedCourseCode,
+          description: `Danh mục môn học ${normalizedCourseCode}`,
+        })
+      }
+    }
+
+    let categoryQuizIds: Types.ObjectId[] = []
+    let categoryCourseCodes: string[] = []
+
+    if (targetCategory?._id) {
+      const quizzes = await Quiz.find({ category_id: targetCategory._id })
+        .select('_id course_code')
+        .lean() as any[]
+      categoryQuizIds = quizzes.map((q) => q._id)
+      categoryCourseCodes = quizzes.map((q) => q.course_code?.trim().toUpperCase()).filter(Boolean)
+    }
+
+    // 3. Fetch pinned questions matching prefix or category
+    const pinnedFilter: any = {
       student_id: userObjectId,
-      course_code: normalizedCourseCode,
-    }).sort({ created_at: -1 }).lean()
+      $or: [
+        { course_code: { $regex: codeRegex } },
+        ...(categoryQuizIds.length > 0 ? [{ quiz_id: { $in: categoryQuizIds } }] : []),
+        ...(categoryCourseCodes.length > 0 ? [{ course_code: { $in: categoryCourseCodes } }] : []),
+      ],
+    }
+
+    const pinnedDocs = await PinnedQuestion.find(pinnedFilter).sort({ created_at: -1 }).lean()
 
     if (!pinnedDocs || pinnedDocs.length === 0) {
       return NextResponse.json(
         { error: `Chưa có câu hỏi nào được ghim cho môn ${normalizedCourseCode}.` },
         { status: 400 }
       )
-    }
-
-    // 3. Resolve category ID
-    let category = await Category.findOne({
-      name: { $regex: new RegExp(`^${normalizedCourseCode}$`, 'i') },
-    }).select('_id name').lean() as any
-
-    if (!category) {
-      // Fallback: find any category or create temporary category doc
-      const firstCat = await Category.findOne().select('_id').lean()
-      if (firstCat) {
-        category = firstCat
-      } else {
-        const newCat = await Category.create({
-          name: normalizedCourseCode,
-          description: `Danh mục môn học ${normalizedCourseCode}`,
-        })
-        category = newCat
-      }
     }
 
     // 4. Transform pinned questions to Quiz questions format
@@ -98,7 +116,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       title: customTitle,
       course_code: normalizedCourseCode,
       description: `Bộ đề tự tạo từ ${quizQuestions.length} câu hỏi đã ghim của môn ${normalizedCourseCode}`,
-      category_id: category._id,
+      category_id: targetCategory._id,
       created_by: userObjectId,
       is_public: false,
       status: 'published',
