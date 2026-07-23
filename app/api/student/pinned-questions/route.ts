@@ -7,34 +7,80 @@ import { Types } from 'mongoose'
 import { parseJsonBody } from '@/lib/core/api-helpers'
 
 /**
- * Resolve the real course_code for a given quizId, following mix_config or quiz metadata.
+ * Resolve the real original (non-temp) quiz and course_code for a question.
  */
-async function resolveCourseCodeForQuiz(quizId?: string, clientCourseCode?: string): Promise<{ courseCode: string; quizTitle?: string }> {
-  let resolvedCode = clientCourseCode?.trim().toUpperCase() || 'GENERAL'
-  let quizTitle: string | undefined
+async function resolveOriginalQuizForQuestion(params: {
+  quiz_id?: string
+  clientCourseCode?: string
+  clientQuizTitle?: string
+  text: string
+  question_id?: string
+}): Promise<{
+  originalQuizId?: Types.ObjectId
+  originalQuizTitle: string
+  originalCourseCode: string
+}> {
+  const { quiz_id, clientCourseCode, clientQuizTitle, text, question_id } = params
+  const cleanText = text.trim()
+  const cleanCourse = clientCourseCode?.trim().toUpperCase()
 
-  if (quizId && Types.ObjectId.isValid(quizId)) {
-    const quiz = await Quiz.findById(quizId).select('course_code title mix_config').lean() as any
-    if (quiz) {
-      quizTitle = quiz.title
-      if (quiz.course_code && !quiz.course_code.startsWith('TEMP_') && quiz.course_code !== 'GENERAL') {
-        resolvedCode = quiz.course_code.trim().toUpperCase()
-      } else if (Array.isArray(quiz.mix_config?.quiz_ids) && quiz.mix_config.quiz_ids.length > 0) {
-        const sourceQuizzes = await Quiz.find({ _id: { $in: quiz.mix_config.quiz_ids } })
-          .select('course_code')
-          .lean() as any[]
-        const validCodes = sourceQuizzes.map((q) => q.course_code?.trim().toUpperCase()).filter(Boolean)
-        if (validCodes.length > 0) {
-          const firstCode = validCodes[0]
-          if (validCodes.every((c) => c === firstCode)) {
-            resolvedCode = firstCode
-          }
-        }
+  // 1. If quiz_id points to a real non-temp quiz, use it directly!
+  if (quiz_id && Types.ObjectId.isValid(quiz_id)) {
+    const quiz = await Quiz.findById(quiz_id).select('course_code title is_temp mix_config').lean() as any
+    if (quiz && !quiz.is_temp && !quiz.title?.startsWith('Quiz Trộn') && !quiz.course_code?.startsWith('TEMP_')) {
+      return {
+        originalQuizId: quiz._id,
+        originalQuizTitle: quiz.title,
+        originalCourseCode: quiz.course_code?.trim().toUpperCase() || cleanCourse || 'GENERAL',
       }
     }
   }
 
-  return { courseCode: resolvedCode, quizTitle }
+  // 2. Search for the real non-temp Quiz that owns this question (by question text or question_id)
+  const queryCriteria: any[] = [{ 'questions.text': cleanText }]
+  if (question_id && Types.ObjectId.isValid(question_id)) {
+    queryCriteria.push({ question_refs: new Types.ObjectId(question_id) })
+    queryCriteria.push({ 'questions._id': new Types.ObjectId(question_id) })
+  }
+
+  // Priority search: non-temp quiz in cleanCourse
+  let realQuiz: any = null
+  if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
+    realQuiz = await Quiz.findOne({
+      is_temp: { $ne: true },
+      title: { $not: /^Quiz Trộn/i },
+      course_code: cleanCourse,
+      $or: queryCriteria,
+    }).select('course_code title').lean()
+  }
+
+  // Fallback search: any non-temp quiz matching the question
+  if (!realQuiz) {
+    realQuiz = await Quiz.findOne({
+      is_temp: { $ne: true },
+      title: { $not: /^Quiz Trộn/i },
+      $or: queryCriteria,
+    }).select('course_code title').lean()
+  }
+
+  if (realQuiz) {
+    return {
+      originalQuizId: realQuiz._id,
+      originalQuizTitle: realQuiz.title,
+      originalCourseCode: realQuiz.course_code?.trim().toUpperCase() || cleanCourse || 'GENERAL',
+    }
+  }
+
+  // 3. Fallback if no non-temp quiz found
+  const title = (clientQuizTitle && !clientQuizTitle.startsWith('Quiz Trộn'))
+    ? clientQuizTitle
+    : (cleanCourse && cleanCourse !== 'GENERAL' ? cleanCourse : 'GENERAL')
+
+  return {
+    originalQuizId: quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined,
+    originalQuizTitle: title,
+    originalCourseCode: cleanCourse || 'GENERAL',
+  }
 }
 
 /**
@@ -48,28 +94,33 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const courseCodeParam = searchParams.get('course_code')
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    // Auto-heal legacy or temp-coded pins for this student if quiz_id is available
-    const fixablePins = await PinnedQuestion.find({
-      student_id: studentObjectId,
-      $or: [
-        { course_code: 'GENERAL' },
-        { course_code: { $regex: /^TEMP_/i } },
-        { course_code: { $exists: false } },
-        { course_code: '' },
-      ],
-      quiz_id: { $exists: true, $ne: null },
-    }).lean() as any[]
+    // Auto-heal legacy or temp-coded pins for this student to resolve original non-temp quiz & course code
+    const allStudentPins = await PinnedQuestion.find({ student_id: studentObjectId }).lean() as any[]
+    for (const pin of allStudentPins) {
+      const needsHealing =
+        !pin.course_code ||
+        pin.course_code === 'GENERAL' ||
+        pin.course_code.startsWith('TEMP_') ||
+        !pin.quiz_title ||
+        pin.quiz_title.startsWith('Quiz Trộn')
 
-    if (fixablePins.length > 0) {
-      for (const pin of fixablePins) {
-        const { courseCode, quizTitle } = await resolveCourseCodeForQuiz(pin.quiz_id?.toString())
-        if (courseCode && courseCode !== 'GENERAL' && !courseCode.startsWith('TEMP_')) {
+      if (needsHealing) {
+        const { originalQuizId, originalQuizTitle, originalCourseCode } = await resolveOriginalQuizForQuestion({
+          quiz_id: pin.quiz_id?.toString(),
+          clientCourseCode: courseCodeParam || pin.course_code,
+          clientQuizTitle: pin.quiz_title,
+          text: pin.text,
+          question_id: pin.question_id,
+        })
+
+        if (originalCourseCode && originalCourseCode !== 'GENERAL' && !originalCourseCode.startsWith('TEMP_')) {
           await PinnedQuestion.updateOne(
             { _id: pin._id },
             {
               $set: {
-                course_code: courseCode,
-                ...(quizTitle && !pin.quiz_title ? { quiz_title: quizTitle } : {}),
+                course_code: originalCourseCode,
+                quiz_title: originalQuizTitle,
+                ...(originalQuizId ? { quiz_id: originalQuizId } : {}),
               },
             }
           )
@@ -122,13 +173,16 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    // Resolve authoritative course_code and title
-    const { courseCode: resolvedCourseCode, quizTitle: resolvedQuizTitle } =
-      await resolveCourseCodeForQuiz(quiz_id, course_code)
+    // Resolve authoritative non-temp original quiz and course_code
+    const { originalQuizId, originalQuizTitle, originalCourseCode } = await resolveOriginalQuizForQuestion({
+      quiz_id,
+      clientCourseCode: course_code,
+      clientQuizTitle: quiz_title,
+      text,
+      question_id,
+    })
 
-    const finalQuizTitle = quiz_title || resolvedQuizTitle || resolvedCourseCode
-
-    // Check if question is already pinned by this student for this course
+    // Check if question is already pinned by this student
     const existing = await PinnedQuestion.findOne({
       student_id: studentObjectId,
       $or: [
@@ -147,9 +201,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     const newPin = await PinnedQuestion.create({
       student_id: studentObjectId,
       question_id: question_id || '',
-      quiz_id: quiz_id ? new Types.ObjectId(quiz_id) : undefined,
-      quiz_title: finalQuizTitle,
-      course_code: resolvedCourseCode,
+      quiz_id: originalQuizId || (quiz_id ? new Types.ObjectId(quiz_id) : undefined),
+      quiz_title: originalQuizTitle,
+      course_code: originalCourseCode,
       text: text.trim(),
       options: Array.isArray(options) ? options : [],
       correct_answer: Array.isArray(correct_answer) ? correct_answer : [0],
