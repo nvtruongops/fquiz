@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
@@ -17,11 +17,7 @@ import { useSessionAnswerSync } from '@/hooks/quiz/useSessionAnswerSync'
 import { useSessionActivityTracking } from '@/hooks/quiz/useSessionActivityTracking'
 import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
-
-
-import { Sparkles } from 'lucide-react'
-import { Switch } from '@/components/shared/ui/switch'
-import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
+import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 
 export default function QuizSessionMobilePage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -32,7 +28,8 @@ export default function QuizSessionMobilePage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
   const router = useRouter()
-  const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
+  // Force non-animated mode on mobile web
+  const enableAnimation = false
 
   const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)
   const answeredQuestions = useQuizSessionStore((s) => s.answeredQuestions)
@@ -213,6 +210,25 @@ export default function QuizSessionMobilePage() {
     ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
     : []
 
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(session.courseCode)
+  const isQuestionPinned = pinnedQuestions.some(
+    (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
+  )
+
+  const handleTogglePin = () => {
+    togglePinMutation.mutate({
+      question_id: question._id,
+      quiz_id: resolvedQuizId,
+      quiz_title: session.title || session.courseCode,
+      course_code: session.courseCode || 'GENERAL',
+      text: question.text,
+      options: question.options,
+      correct_answer: (question as any).correct_answer || [0],
+      explanation: (question as any).explanation || '',
+      image_url: question.image_url || '',
+    })
+  }
+
   return (
     <div className="flex h-screen flex-col bg-[#F9F9F7]">
       <QuizLoadingOverlay 
@@ -240,14 +256,6 @@ export default function QuizSessionMobilePage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full mr-1">
-              <Sparkles className={`w-3.5 h-3.5 ${enableAnimation ? 'text-amber-500 animate-pulse' : 'text-gray-300'}`} />
-              <Switch 
-                checked={enableAnimation} 
-                onCheckedChange={setEnableAnimation} 
-                className="scale-75 data-[state=checked]:bg-amber-500"
-              />
-            </div>
             <div className="flex flex-col items-end">
               <QuizTimer
                 startedAt={session.started_at}
@@ -280,17 +288,33 @@ export default function QuizSessionMobilePage() {
 
       {/* Main Content */}
       <ScrollArea className="flex-1">
-        <div key={question._id || effectiveIndex} className={cn("space-y-6 p-4 pb-24", enableAnimation && "animate-in fade-in slide-in-from-bottom-2 duration-300")}>
-          {/* Question Number */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">
-              Câu {effectiveIndex + 1}/{effectiveTotal}
-            </h2>
-            <p className="text-xs font-bold text-gray-500">
-              {requiredSelectionCount === 1
-                ? 'Chọn 1 đáp án'
-                : `Chọn ${requiredSelectionCount} đáp án`}
-            </p>
+        <div key={question._id || effectiveIndex} className="space-y-6 p-4 pb-24">
+          {/* Question Number & Pin Button */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-black text-gray-900">
+                Câu {effectiveIndex + 1}/{effectiveTotal}
+              </h2>
+              <p className="text-xs font-bold text-gray-500">
+                {requiredSelectionCount === 1
+                  ? '• Chọn 1 đáp án'
+                  : `• Chọn ${requiredSelectionCount} đáp án`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleTogglePin}
+              disabled={togglePinMutation.isPending}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0",
+                isQuestionPinned
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+              )}
+            >
+              <Bookmark className={cn("w-3.5 h-3.5", isQuestionPinned && "fill-current text-amber-600")} />
+              <span>{isQuestionPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+            </button>
           </div>
 
           {/* Question Text */}
