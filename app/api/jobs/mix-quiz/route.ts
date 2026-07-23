@@ -116,11 +116,16 @@ export async function POST(req: Request) {
     const quizTitles = validQuizzes.map((q) => q.course_code as string);
     const titlePreview = quizTitles.join(' + ');
 
+    const firstCourseCode = validQuizzes[0]?.course_code
+    const isSingleCourseMix = firstCourseCode && validQuizzes.every((q) => q.course_code?.trim().toUpperCase() === firstCourseCode.trim().toUpperCase())
+
     let tempQuiz: any = null;
     let retries = 0;
     while (retries < 2) {
       try {
-        const courseCode = await generateTempCourseCode();
+        const courseCode = isSingleCourseMix
+          ? firstCourseCode.trim().toUpperCase()
+          : await generateTempCourseCode();
         tempQuiz = await Quiz.create({
           title: `Quiz Trộn · ${titlePreview}`,
           course_code: courseCode,
