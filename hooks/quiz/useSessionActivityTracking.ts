@@ -91,7 +91,7 @@ export function useSessionActivityTracking({
     activeData?.session && activeData.session.status !== 'completed',
   )
 
-  // Popstate back-button guard
+  // Popstate back-button guard & exit confirm timer pause sync
   useEffect(() => {
     if (!shouldWarnBeforeLeave || !sessionId) return
     const guardState = { quizSessionGuard: sessionId }
@@ -103,6 +103,27 @@ export function useSessionActivityTracking({
     globalThis.addEventListener('popstate', handlePopState)
     return () => globalThis.removeEventListener('popstate', handlePopState)
   }, [sessionId, shouldWarnBeforeLeave])
+
+  // Sync pause state when manual exit confirm modal opens/closes
+  useEffect(() => {
+    if (!sessionId) return
+    if (exitConfirmOpen) {
+      const now = Date.now()
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
+      }
+      reportSessionActivity('pause')
+    } else {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem(`session_paused_at_${sessionId}`)
+        if (stored) {
+          localStorage.removeItem(`session_paused_at_${sessionId}`)
+          reportSessionActivity('resume')
+          void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+        }
+      }
+    }
+  }, [exitConfirmOpen, sessionId, reportSessionActivity, queryClient])
 
   // Visibility/pagehide/blur guard with 5-minute timeout check
   useEffect(() => {
