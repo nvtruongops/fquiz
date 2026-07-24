@@ -56,6 +56,8 @@ export async function GET(
     const quizIds = quizzes.map((q) => q._id)
     let scoreMap = new Map<string, number>()
 
+    let savedQuizIds: string[] = []
+
     if (studentId) {
       // Fetch best scores for all quizzes in one aggregation
       const bestScores: { _id: mongoose.Types.ObjectId; bestScore: number }[] =
@@ -76,6 +78,20 @@ export async function GET(
           },
         ])
       scoreMap = new Map(bestScores.map((s) => [s._id.toString(), s.bestScore]))
+
+      // Fetch saved quiz shortcuts for this student
+      const savedShortcuts = await Quiz.find(
+        {
+          created_by: studentId,
+          original_quiz_id: { $in: quizIds },
+          is_saved_from_explore: true,
+        },
+        { original_quiz_id: 1 }
+      ).lean()
+
+      savedQuizIds = savedShortcuts
+        .map((s) => s.original_quiz_id?.toString())
+        .filter((id): id is string => Boolean(id))
     }
 
     const result = quizzes.map((q) => ({
@@ -89,6 +105,7 @@ export async function GET(
       categoryId: category?._id?.toString() ?? null,
       categoryName,
       quizzes: result,
+      savedQuizIds,
     })
   } catch (err) {
     logger.error({ err }, `GET /api/courses/${code}/quizzes failed`)
