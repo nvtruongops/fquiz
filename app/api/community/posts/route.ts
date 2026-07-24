@@ -27,8 +27,6 @@ function getErrorDetails(error: unknown): string | undefined {
   return String(error)
 }
 
-import { Category } from '@/lib/modules/quiz/models/Category'
-
 export async function GET(req: Request) {
   try {
     await connectDB()
@@ -155,8 +153,12 @@ export async function POST(req: Request) {
     const { title, content, tags } = parsed.data
 
     const { default: DOMPurify } = await import('isomorphic-dompurify')
-    const cleanTitle = DOMPurify.sanitize(title)
-    const cleanContent = DOMPurify.sanitize(content)
+    const cleanTitle = DOMPurify.sanitize(title).trim()
+    const cleanContent = DOMPurify.sanitize(content).trim()
+
+    if (!cleanTitle || !cleanContent) {
+      return NextResponse.json({ error: 'Nội dung hoặc tiêu đề không hợp lệ' }, { status: 400 })
+    }
 
     // Trích xuất tự động hashtag từ title và content nếu viết #hashtag
     const extractHashtags = (text: string): string[] => {
@@ -164,9 +166,9 @@ export async function POST(req: Request) {
       return matches.map(m => m.replace(/^#/, '').trim()).filter(Boolean)
     }
 
-    const explicitTags = tags || []
+    const explicitTags = (tags || []).map(t => t.trim().slice(0, 50)).filter(Boolean)
     const extractedTags = [...extractHashtags(cleanTitle), ...extractHashtags(cleanContent)]
-    const finalTags = Array.from(new Set([...explicitTags, ...extractedTags]))
+    const finalTags = Array.from(new Set([...explicitTags, ...extractedTags])).slice(0, 10)
 
     await connectDB()
 

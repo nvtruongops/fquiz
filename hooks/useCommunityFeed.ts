@@ -108,9 +108,13 @@ export function useCommunityFeed() {
         method: 'POST',
         credentials: 'include',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ title: postTitle, content: postContent, tags }),
+        body: JSON.stringify({ title: postTitle.trim(), content: postContent.trim(), tags }),
       })
-      if (!res.ok) throw new Error('Failed to create post')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        const errorMsg = errorData?.error || (Array.isArray(errorData?.details) ? errorData.details.join(', ') : errorData?.details) || 'Không thể tạo bài đăng'
+        throw new Error(errorMsg)
+      }
       return res.json()
     },
     onSuccess: () => {
