@@ -54,7 +54,18 @@ export const QuizCardItem = React.memo(function QuizCardItem({
     : quiz.title
 
   const currentCategoryId = typeof quiz.category_id === 'string' ? quiz.category_id : quiz.category_id?._id
-  const [moveCategoryId, setMoveCategoryId] = useState(currentCategoryId || '')
+  const matchedCat = categories.find((cat) => cat._id === currentCategoryId || cat._id.split(',').includes(currentCategoryId || ''))
+  const matchedCatId = matchedCat?._id ?? currentCategoryId ?? ''
+  const [moveCategoryId, setMoveCategoryId] = useState(matchedCatId)
+
+  useEffect(() => {
+    if (matchedCatId) setMoveCategoryId(matchedCatId)
+  }, [matchedCatId])
+
+  const isPinnedQuiz = Boolean(quiz.title && (quiz.title.includes('GHIM') || quiz.title.includes('Ghim')))
+  const displayCourseCode = quiz.is_temp
+    ? (quiz.course_code && !quiz.course_code.startsWith('TEMP_') ? quiz.course_code : (categoryName !== 'Chưa phân loại' ? categoryName : 'TRỘN'))
+    : quiz.course_code
 
   return (
     <>
@@ -64,7 +75,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
               {/* Left Section */}
               <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Badge variant="secondary" className="rounded-md px-2 py-0.5 bg-[#5D7B6F]/10 text-[#5D7B6F] border-none font-bold text-[9px] uppercase line-clamp-1 max-w-[160px]" title={categoryName}>
                     {categoryName}
                   </Badge>
@@ -73,18 +84,23 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                       <Shuffle className="w-2.5 h-2.5 mr-1" /> Quiz Trộn
                     </Badge>
                   )}
+                  {isPinnedQuiz && !quiz.is_temp && (
+                    <Badge variant="outline" className="rounded-md px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-200 font-extrabold text-[9px] uppercase">
+                      📌 Quiz Ghim
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="bg-[#5D7B6F] text-white px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase shrink-0">
                     Mã
                   </span>
-                  <h3 className="text-xs sm:text-sm font-black text-[#5D7B6F] leading-none truncate" title={quiz.course_code || quiz.title}>
-                    {quiz.course_code || (quiz.is_temp ? 'Quiz Trộn' : quiz.title)}
+                  <h3 className="text-xs sm:text-sm font-black text-[#5D7B6F] leading-none truncate" title={displayCourseCode || quiz.title}>
+                    {displayCourseCode || quiz.title}
                   </h3>
                 </div>
 
-                {displayTitle && displayTitle !== quiz.course_code && (
+                {displayTitle && displayTitle !== displayCourseCode && (
                   <p className="text-[11px] font-bold text-slate-600 line-clamp-1" title={displayTitle}>
                     {displayTitle}
                   </p>

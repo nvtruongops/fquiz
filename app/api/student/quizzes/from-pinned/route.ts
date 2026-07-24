@@ -94,7 +94,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     // 5. Generate quiz title
     const customTitle = title && typeof title === 'string' && title.trim().length > 0
       ? title.trim()
-      : `${normalizedCourseCode} - GHIM (${quizQuestions.length} CÂU)`
+      : `${normalizedCourseCode} - Quiz Ghim (${quizQuestions.length} CÂU)`
 
     const quizId = new Types.ObjectId()
     const quiz = await Quiz.create({
