@@ -77,14 +77,14 @@ export const QuizCardItem = React.memo(function QuizCardItem({
 
                 <div className="flex items-center gap-2">
                   <span className="bg-[#5D7B6F] text-white px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase shrink-0">
-                    {quiz.is_temp ? 'Loại' : 'Mã'}
+                    Mã
                   </span>
-                  <h3 className="text-xs sm:text-sm font-black text-[#5D7B6F] leading-none truncate" title={quiz.is_temp ? 'Quiz Trộn' : quiz.course_code}>
-                    {quiz.is_temp ? 'Bài Thi Trộn Ngẫu Nhiên' : quiz.course_code}
+                  <h3 className="text-xs sm:text-sm font-black text-[#5D7B6F] leading-none truncate" title={quiz.course_code || quiz.title}>
+                    {quiz.course_code || (quiz.is_temp ? 'Quiz Trộn' : quiz.title)}
                   </h3>
                 </div>
 
-                {displayTitle && (
+                {displayTitle && displayTitle !== quiz.course_code && (
                   <p className="text-[11px] font-bold text-slate-600 line-clamp-1" title={displayTitle}>
                     {displayTitle}
                   </p>
@@ -167,14 +167,14 @@ export const QuizCardItem = React.memo(function QuizCardItem({
 
           {/* Action Overlay */}
           {view === 'actions' && !isDeleting && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-3 animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-3 animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
               <div className="relative w-full max-w-2xl flex flex-wrap items-center justify-center gap-2 sm:gap-4 py-1 px-2">
                 {!quiz.is_saved_from_explore && !quiz.is_temp ? (
                   <>
                     <Button
                       variant="outline"
                       asChild
-                      className="h-9 px-4 rounded-full border-none bg-emerald-500 text-white font-black hover:bg-emerald-600 shadow-sm gap-2 transition-all active:scale-95 text-xs"
+                      className="h-9 px-4 rounded-xl border-none bg-emerald-500 text-white font-black hover:bg-emerald-600 shadow-xs gap-2 transition-all active:scale-95 text-xs cursor-pointer"
                     >
                       <Link href={`/create?id=${quiz._id}`}>
                         <Edit3 className="w-3.5 h-3.5" />
@@ -182,12 +182,12 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                       </Link>
                     </Button>
 
-                    <div className="flex items-center gap-1 bg-slate-900/5 p-0.5 rounded-full border border-slate-900/5">
+                    <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
                       <Select value={moveCategoryId} onValueChange={(val) => setMoveCategoryId(val)}>
-                        <SelectTrigger className="w-[120px] h-8 rounded-full border-none bg-transparent text-[10px] font-bold text-slate-600 focus:ring-0">
-                          <SelectValue placeholder="Chuyển..." />
+                        <SelectTrigger className="w-[130px] h-8 rounded-lg border-none bg-white text-[11px] font-bold text-slate-700 shadow-xs focus:ring-0">
+                          <SelectValue placeholder="Chuyển DM..." />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1">
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1 z-[100]">
                           {categories.map((cat) => (
                             <SelectItem key={cat._id} value={cat._id} className="text-xs font-bold py-2 rounded-lg cursor-pointer">
                               {cat.name}
@@ -202,7 +202,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                           setView('default')
                         }}
                         disabled={isMovingCategory || !moveCategoryId || moveCategoryId === (currentCategoryId || '')}
-                        className="h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-white shadow-sm transition-all active:scale-90"
+                        className="h-8 w-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white shadow-xs transition-all active:scale-90 cursor-pointer"
                       >
                         {isMovingCategory ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRightLeft className="w-3 h-3" />}
                       </Button>

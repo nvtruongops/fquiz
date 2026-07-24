@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Badge } from '@/components/shared/ui/badge'
-import { Shuffle, Clock3, History } from 'lucide-react'
+import { Clock3, History } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { Quiz } from '@/hooks/useMyQuizzes'
 
@@ -23,14 +23,6 @@ export function QuizStatusBadge({
   totalStudyMinutes,
   isSourceLocked,
 }: QuizStatusBadgeProps) {
-  if (quiz.is_temp) {
-    return (
-      <Badge variant="outline" className="font-black text-[9px] px-2 py-0.5 rounded-md border-[#5D7B6F] bg-[#5D7B6F]/10 text-[#5D7B6F]">
-        <Shuffle className="w-2.5 h-2.5 mr-1" /> QUIZ TRỘN
-      </Badge>
-    )
-  }
-
   if (hasAttempt) {
     return (
       <div className={isPassed ? 'text-[#166534]' : 'text-[#B91C1C]'}>
@@ -45,6 +37,15 @@ export function QuizStatusBadge({
           <Clock3 className="h-3 w-3 text-[#5D7B6F]" />
           Đã học: {totalStudyMinutes} phút
         </p>
+      </div>
+    )
+  }
+
+  if (quiz.is_temp) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+        <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Chưa làm</span>
       </div>
     )
   }
