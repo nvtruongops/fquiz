@@ -17,6 +17,7 @@ import { QuizStats } from '@/components/quiz/detail/QuizStats'
 import { QuizComments } from '@/components/quiz/detail/QuizComments'
 import { QuizActionCard } from '@/components/quiz/detail/QuizActionCard'
 import { QuizDetailErrorView } from '@/components/quiz/detail/QuizDetailErrorView'
+import { QuizDetailSkeleton } from '@/components/quiz/detail/QuizDetailSkeleton'
 
 interface QuizDetail {
   _id: string
@@ -329,11 +330,7 @@ export default function QuizDetailPage() {
     }
   }
 
-  if (isLoading) return (
-    <div className="flex h-screen items-center justify-center bg-[#EAE7D6]/30">
-      <Loader2 className="h-10 w-10 animate-spin text-[#5D7B6F]" />
-    </div>
-  )
+  if (isLoading) return <QuizDetailSkeleton />
 
   if (isError) return <QuizDetailErrorView error={error as any} router={router} />
 
