@@ -48,17 +48,19 @@ export const POST = withAuth(async (
 
     const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
 
+    const updateQuery: Record<string, any> = { $set: setPayload }
+
     // Handle resume event - calculate accumulated paused duration and clear paused_at
     if (body.event === 'resume') {
       if (session.paused_at) {
         const pausedDuration = Math.max(0, now.getTime() - new Date(session.paused_at).getTime())
         const currentPausedTotal = session.total_paused_duration_ms || 0
         setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
-        setPayload.paused_at = null
+        updateQuery.$unset = { paused_at: 1 }
       }
     }
 
-    await QuizSession.updateOne({ _id: session._id }, { $set: setPayload })
+    await QuizSession.updateOne({ _id: session._id }, updateQuery)
 
     return NextResponse.json({ ok: true })
   } catch (err) {
