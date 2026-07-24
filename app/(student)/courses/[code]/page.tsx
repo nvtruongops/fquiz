@@ -169,7 +169,7 @@ function CourseDetailContent({ code }: { code: string }) {
           className="pt-2"
         >
           {currentTab === 'mix' ? (
-            <MixQuizTab embedded />
+            <MixQuizTab embedded categoryId={categoryId || data?.categoryId} />
           ) : currentTab === 'pinned' ? (
             <PinnedQuestionsTab courseCode={code} />
           ) : (
