@@ -109,3 +109,61 @@ export async function pruneCompletedSessions(
   }
 }
 
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import type { UserAnswer } from '@/lib/modules/quiz/types/session'
+
+export async function getQuizSessionResult(sessionId: string, userId?: string) {
+  if (!mongoose.Types.ObjectId.isValid(sessionId)) return null
+  await connectDB()
+
+  const session = (await QuizSession.findById(sessionId).lean()) as any
+  if (!session) return null
+  if (userId && session.student_id?.toString() !== userId) return null
+  if (session.status !== 'completed') return null
+
+  const hasCachedQuestions = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
+  const quiz = hasCachedQuestions ? null : ((await Quiz.findById(session.quiz_id).select('questions').lean()) as any)
+
+  if (!hasCachedQuestions && !quiz) return null
+
+  const allQuestions = (hasCachedQuestions ? session.questions_cache : (quiz?.questions ?? [])) as IQuestion[]
+  const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
+  const questionOrder = session.question_order || Array.from({ length: allQuestions.length }, (_, i) => i)
+
+  const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
+    const q = allQuestions[actualIndex] ?? allQuestions[0]
+    const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
+    const correctAnswer = q?.correct_answer
+    const submittedAnswer = submitted
+      ? (submitted.answer_indexes && submitted.answer_indexes.length > 0
+          ? submitted.answer_indexes
+          : submitted.answer_index)
+      : null
+
+    return {
+      _id: q?._id?.toString() ?? String(displayIndex),
+      text: q?.text ?? '',
+      options: q?.options ?? [],
+      correct_answer: correctAnswer,
+      explanation: q?.explanation,
+      ...(q?.image_url ? { image_url: q.image_url } : {}),
+      submitted_answer: submittedAnswer,
+      is_correct: submitted?.is_correct ?? false,
+    }
+  })
+
+  return {
+    sessionId: session._id.toString(),
+    quizId: session.quiz_id.toString(),
+    mode: session.mode,
+    score: session.score,
+    totalQuestions: questionOrder.length,
+    completed_at: session.completed_at?.toISOString() ?? new Date().toISOString(),
+    user_answers: sessionAnswers,
+    questions,
+    is_temp: session.is_temp ?? false,
+    flashcard_stats: session.mode === 'flashcard' ? session.flashcard_stats : undefined,
+  }
+}
+
