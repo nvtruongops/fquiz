@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
@@ -68,6 +68,7 @@ export default function CourseQuizList({
   const [savingQuizId, setSavingQuizId] = useState<string | null>(null)
   const [savedQuizIds, setSavedQuizIds] = useState<string[]>([])
   const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery<CourseQuizzesResponse>({
     queryKey: ['courseQuizzes', code],
@@ -80,10 +81,13 @@ export default function CourseQuizList({
       onCategoryNameLoaded?.(data.categoryName)
       onCategoryLoaded?.(data.categoryName, data.categoryId ?? null)
     }
+  }, [data?.categoryName, data?.categoryId, onCategoryNameLoaded, onCategoryLoaded])
+
+  useEffect(() => {
     if (data?.savedQuizIds) {
       setSavedQuizIds(data.savedQuizIds)
     }
-  }, [data?.categoryName, data?.categoryId, data?.savedQuizIds, onCategoryNameLoaded, onCategoryLoaded])
+  }, [data?.savedQuizIds])
 
   const handleSaveQuiz = async (quizId: string) => {
     setSavingQuizId(quizId)
@@ -96,12 +100,34 @@ export default function CourseQuizList({
       const json = await res.json()
       if (!res.ok) {
         toast.error(json.error || 'Không thể lưu bài thi')
-      } else if (json.unsaved) {
-        setSavedQuizIds((prev) => prev.filter((id) => id !== quizId))
-        toast.success(json.message || 'Đã xóa khỏi Bộ đề của tôi')
       } else {
-        setSavedQuizIds((prev) => (prev.includes(quizId) ? prev : [...prev, quizId]))
-        toast.success(json.message || 'Đã lưu mã quiz')
+        const isUnsaving = Boolean(json.unsaved)
+        const nextSavedIds = isUnsaving
+          ? savedQuizIds.filter((id) => id !== quizId)
+          : savedQuizIds.includes(quizId)
+          ? savedQuizIds
+          : [...savedQuizIds, quizId]
+
+        setSavedQuizIds(nextSavedIds)
+
+        // Optimistically update React Query cache for this course's quizzes
+        queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            savedQuizIds: nextSavedIds,
+          }
+        })
+
+        // Invalidate student quizzes / categories queries for /my-quizzes page
+        queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
+        queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
+
+        if (isUnsaving) {
+          toast.success(json.message || 'Đã xóa khỏi Bộ đề của tôi')
+        } else {
+          toast.success(json.message || 'Đã lưu mã quiz')
+        }
       }
     } catch {
       toast.error('Có lỗi xảy ra khi xử lý lưu bài thi')
