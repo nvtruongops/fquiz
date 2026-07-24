@@ -13,9 +13,9 @@ interface QuizSearchSortBarProps {
   savedQuizTotal: number
 }
 
-const TABS: { id: 'personal' | 'saved'; label: string; getCount: (p: QuizSearchSortBarProps) => number }[] = [
-  { id: 'personal', label: 'Quiz Tự Tạo', getCount: (p) => p.ownQuizTotal },
-  { id: 'saved', label: 'Quiz Đã Lưu (Explore)', getCount: (p) => p.savedQuizTotal },
+const TABS: { id: 'personal' | 'saved'; label: string; getCountText: (p: QuizSearchSortBarProps) => string }[] = [
+  { id: 'personal', label: 'Quiz Tự Tạo', getCountText: (p) => `${p.ownQuizTotal}/10` },
+  { id: 'saved', label: 'Quiz Đã Lưu (Explore)', getCountText: (p) => `${p.savedQuizTotal}` },
 ]
 
 export const QuizSearchSortBar = React.memo(function QuizSearchSortBar(props: QuizSearchSortBarProps) {
@@ -26,7 +26,7 @@ export const QuizSearchSortBar = React.memo(function QuizSearchSortBar(props: Qu
       {/* Active Tab Switcher */}
       <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/60 max-w-md">
         {TABS.map((tab) => {
-          const count = tab.getCount(props)
+          const countText = tab.getCountText(props)
           const isActive = activeTab === tab.id
           return (
             <button
@@ -38,7 +38,7 @@ export const QuizSearchSortBar = React.memo(function QuizSearchSortBar(props: Qu
             >
               <span>{tab.label}</span>
               <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                {count}
+                {countText}
               </span>
             </button>
           )
