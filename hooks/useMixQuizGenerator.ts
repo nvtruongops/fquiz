@@ -73,7 +73,11 @@ async function fetchQuizzesForCategory(
   return { data, hasMore: data.length === limit }
 }
 
-export function useMixQuizGenerator(embedded?: boolean, onSessionCreated?: (quizId: string, sessionId: string) => void) {
+export function useMixQuizGenerator(
+  embedded?: boolean,
+  onSessionCreated?: (quizId: string, sessionId: string) => void,
+  initialCategoryId?: string
+) {
   const router = useRouter()
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -81,7 +85,7 @@ export function useMixQuizGenerator(embedded?: boolean, onSessionCreated?: (quiz
   const categoryIdParam = searchParams.get('categoryId')
   const mixFrom = searchParams.get('mix_from')
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(() => categoryIdParam ?? '')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(() => initialCategoryId || categoryIdParam || '')
   const [selectedQuizIds, setSelectedQuizIds] = useState<Set<string>>(new Set())
   const [questionCount, setQuestionCount] = useState<number | null>(null)
   const [mode, setMode] = useState<'immediate' | 'review' | null>(null)
@@ -110,11 +114,12 @@ export function useMixQuizGenerator(embedded?: boolean, onSessionCreated?: (quiz
   })
 
   useEffect(() => {
-    if (categoryIdParam) {
-      setSelectedCategoryId(categoryIdParam)
+    const target = initialCategoryId || categoryIdParam
+    if (target && target !== selectedCategoryId) {
+      setSelectedCategoryId(target)
       setSelectedQuizIds(new Set())
     }
-  }, [categoryIdParam])
+  }, [initialCategoryId, categoryIdParam])
 
   // Pre-load from mix_from
   useEffect(() => {
@@ -245,8 +250,10 @@ export function useMixQuizGenerator(embedded?: boolean, onSessionCreated?: (quiz
         setRateLimitReset(err.data?.reset ?? null)
         setRateLimitMsg(msg)
         toast.error(msg)
+      } else if (err.status === 409 && err.data?.quotaExceeded) {
+        setQuotaErrorMsg(err.data.error || 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để tiếp tục.')
       } else {
-        toast.error(err.data?.message || err.message || 'Có lỗi xảy ra khi tạo bộ đề trộn')
+        toast.error(err.data?.message || err.data?.error || err.message || 'Có lỗi xảy ra khi tạo bộ đề trộn')
       }
     },
   })
@@ -268,6 +275,7 @@ export function useMixQuizGenerator(embedded?: boolean, onSessionCreated?: (quiz
     hasNextPage, isFetchingNextPage, fetchNextPage,
     totalPool,
     canStart,
+    isPreloading,
     createMutation,
     deleteActiveSessionMutation,
   }
