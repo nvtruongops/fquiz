@@ -1,12 +1,10 @@
 import crypto from 'crypto'
-import {
-  ensureArray,
-  getAnswerTexts,
-  areAnswersSame,
-} from '@/lib/core/utils/array-utils'
+import { getAnswerTexts, areAnswersSame } from '@/lib/core/utils/array-utils'
+import { normalizeTextAST } from '@/lib/modules/quiz/utils/ast-normalizer'
+
 
 /**
- * CHIẾN LƯỢC HASH CŨ (Conflict Detection): text + sorted options
+ * CHIẾN LƯỢC HASH CŨ (Conflict Detection): AST-normalized text + sorted options
  * Dùng cho QuestionBank – phát hiện mâu thuẫn đáp án giữa các quiz.
  * KHÔNG bao gồm correct_answer → câu hỏi giống + options giống nhưng đáp án khác → CÙNG ID → conflict.
  */
@@ -15,23 +13,22 @@ export function generateQuestionId(question: {
   options: string[]
   correct_answer?: number | number[]
 }): string {
-  const normalizedText = question.text.trim().toLowerCase().replace(/\s+/g, ' ')
+  const normalizedText = normalizeTextAST(question.text)
   
   // Sort options để thứ tự không quan trọng
   const normalizedOptions = question.options
-    .map(o => o.trim().toLowerCase().replace(/\s+/g, ' '))
+    .map(o => normalizeTextAST(o))
     .sort((a, b) => a.localeCompare(b))
   
   const content = JSON.stringify({
     text: normalizedText,
     options: normalizedOptions,
-    // KHÔNG bao gồm answers trong hash
-    // → Cùng câu hỏi + cùng options nhưng khác answers → CÙNG ID → phát hiện conflict
   })
   
   const hash = crypto.createHash('sha256').update(content, 'utf8').digest('hex')
   return `q_${hash.substring(0, 16)}`
 }
+
 
 /**
  * CHIẾN LƯỢC FINGERPRINT MỚI (Exact Deduplication): language + text + options + correct_answer + type

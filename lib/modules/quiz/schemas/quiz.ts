@@ -205,8 +205,10 @@ export const CreateSessionSchema = z.object({
   quiz_id: MongoIdSchema,
   mode: z.enum(['immediate', 'review', 'flashcard']).default('immediate'),
   difficulty: z.enum(['sequential', 'random']).default('sequential'),
+  shuffle_options: z.boolean().optional(),
   action: z.enum(['continue', 'restart']).optional(),
 }).strict()
+
 
 export type QuestionInput = z.infer<typeof QuestionSchema>
 export type CreateQuizInput = z.infer<typeof CreateQuizSchema>

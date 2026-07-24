@@ -9,7 +9,8 @@ import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
-import { secureShuffle } from '@/lib/core/utils/shuffle'
+import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle'
+
 
 export const GET = withAuth(async (req, { payload }) => {
   try {
@@ -136,7 +137,7 @@ export const POST = withAuth(async (req, { payload }) => {
     const parsed = CreateSessionSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
 
-    const { quiz_id, mode, difficulty, action } = parsed.data
+    const { quiz_id, mode, difficulty, action, shuffle_options } = parsed.data
     await connectDB()
 
     const quiz = await Quiz.findById(quiz_id).select('questions original_quiz_id created_by is_public status is_saved_from_explore').lean() as any
@@ -198,15 +199,20 @@ export const POST = withAuth(async (req, { payload }) => {
 
     const now = new Date()
     const questionOrder = difficulty === 'random' ? secureShuffle([...new Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)
+    const shouldShuffleOptions = shuffle_options ?? (difficulty === 'random')
     // Cache questions to avoid repeated Quiz DB fetches during answer processing
-    const questionsCache = effective.questions.map((q: any) => ({
-      _id: q._id,
-      text: q.text,
-      options: q.options,
-      correct_answer: q.correct_answer,
-      explanation: q.explanation,
-      ...(q.image_url ? { image_url: q.image_url } : {}),
-    }))
+    const questionsCache = effective.questions.map((q: any) => {
+      const processed = shouldShuffleOptions ? shuffleQuestionOptions(q) : q
+      return {
+        _id: processed._id,
+        text: processed.text,
+        options: processed.options,
+        correct_answer: processed.correct_answer,
+        explanation: processed.explanation,
+        ...(processed.image_url ? { image_url: processed.image_url } : {}),
+      }
+    })
+
 
     const session = await QuizSession.create({
       student_id: studentId, quiz_id: effective.id, mode, difficulty, status: 'active', current_question_index: 0, question_order: questionOrder, user_answers: [], score: 0,
