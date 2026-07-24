@@ -268,7 +268,8 @@ function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
   const [expanded, setExpanded] = useState(false)
   const latestAttempt = quizGroup.attempts[0]
   const attemptCount = quizGroup.attempts.length
-  const maxScoreDisplay = (quizGroup.bestScorePercentage / 10).toFixed(1)
+  const hasCompletedAttempt = quizGroup.attempts.some(a => a.status === 'completed')
+  const maxScoreDisplay = hasCompletedAttempt ? (quizGroup.bestScorePercentage / 10).toFixed(1) : '--'
 
   return (
     <Card className="rounded-2xl sm:rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.14)] transition-all duration-300 overflow-hidden">
@@ -301,7 +302,7 @@ function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
                 {quizGroup.quiz_title || quizGroup.source_label}
               </p>
               <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 pt-0.5 text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>Điểm cao nhất: <strong className="text-[#5D7B6F] font-black">{maxScoreDisplay}/10</strong></span>
+                <span>Điểm cao nhất: <strong className="text-[#5D7B6F] font-black">{hasCompletedAttempt ? `${maxScoreDisplay}/10` : 'Chưa có'}</strong></span>
                 <span>• Gần nhất: {format(new Date(latestAttempt.started_at), 'HH:mm')}</span>
               </div>
             </div>
@@ -372,9 +373,9 @@ function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
                       ) : (
                         <div className="text-right flex flex-col items-end">
                           <Badge className="bg-amber-100 text-amber-800 border-none font-bold text-[9px] uppercase px-2 py-0.5">
-                            Đang làm dở
+                            Chưa hoàn thành
                           </Badge>
-                          <span className="text-[9px] font-extrabold text-amber-600">Chưa nộp bài</span>
+                          <span className="text-[9px] font-extrabold text-amber-600">Đã làm {attempt.answered_count ?? 0}/{attempt.total_questions} câu</span>
                         </div>
                       )}
 
