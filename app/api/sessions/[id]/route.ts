@@ -224,3 +224,36 @@ export const GET = withAuth(async (
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }, { roles: ['student'] })
+
+/**
+ * DELETE /api/sessions/[id]
+ * Delete a specific quiz session belonging to the authenticated student.
+ * If the session is temporary (is_temp: true), also deletes the temporary quiz.
+ */
+export const DELETE = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
+  try {
+    const { id } = await params
+    const validation = await validateQuizSessionRequest(id, payload, { checkExpired: false })
+    if (!validation.isValid) return validation.response
+
+    const session = await QuizSession.findOneAndDelete({
+      _id: id,
+      student_id: payload.userId,
+    }).lean() as any
+
+    if (session && session.is_temp && session.quiz_id) {
+      await Quiz.findOneAndDelete({
+        _id: session.quiz_id,
+        is_temp: true,
+      })
+    }
+
+    return NextResponse.json({ success: true, message: 'Session deleted' }, { status: 200 })
+  } catch (err) {
+    console.error('DELETE /api/sessions/[id] error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}, { roles: ['student'] })

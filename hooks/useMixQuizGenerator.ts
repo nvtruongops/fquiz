@@ -196,7 +196,7 @@ export function useMixQuizGenerator(
 
   const deleteActiveSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/mix/${sessionId}`, {
         method: 'DELETE',
         headers: withCsrfHeaders(),
       })
