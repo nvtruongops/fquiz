@@ -27,7 +27,7 @@ export async function GET(
       name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
     }).lean()
 
-    let query: any = { status: 'published', is_temp: { $ne: true } }
+    let query: any = { is_public: true, status: 'published', is_temp: { $ne: true } }
     let categoryName = code.toUpperCase()
 
     if (category) {
