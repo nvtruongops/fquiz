@@ -28,7 +28,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     const studentId = new mongoose.Types.ObjectId(payload.userId)
     const quizIdParam = searchParams.get('quiz_id')
-    const matchQuery: Record<string, any> = { student_id: studentId, status: 'completed' }
+    const matchQuery: Record<string, any> = { student_id: studentId }
     if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
       matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
     }
