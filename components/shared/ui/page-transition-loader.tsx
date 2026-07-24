@@ -16,8 +16,8 @@ function isExcludedPath(path: string): boolean {
   if (!path) return false
   const cleanPath = path.split('?')[0].split('#')[0]
   const isStatic = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/maintenance'].includes(cleanPath)
-  const isQuizSession = cleanPath.includes('/session/') || cleanPath.includes('/mode') || cleanPath.includes('/result/')
-  return isStatic || isQuizSession
+  const isQuizRoute = cleanPath.startsWith('/quiz/') || cleanPath.includes('/session/') || cleanPath.includes('/mode') || cleanPath.includes('/result/')
+  return isStatic || isQuizRoute
 }
 
 function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTransitionLoaderProps) {
