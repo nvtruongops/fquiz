@@ -1,29 +1,40 @@
-'use client'
-
 import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/shared/ui/button'
-import { Library, FolderTree, Plus } from 'lucide-react'
+import { Library, FolderTree, Plus, HardDrive } from 'lucide-react'
+import { cn } from '@/lib/core/utils/cn'
 
 interface MyQuizzesHeaderProps {
   onOpenManageCategories: () => void
+  ownQuizTotal?: number
 }
 
 export const MyQuizzesHeader = React.memo(function MyQuizzesHeader({
   onOpenManageCategories,
+  ownQuizTotal = 0,
 }: MyQuizzesHeaderProps) {
+  const isFull = ownQuizTotal >= 10
+  const isWarning = ownQuizTotal >= 8 && ownQuizTotal < 10
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5D7B6F] to-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-700/20">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5D7B6F] to-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 shrink-0">
           <Library className="w-6 h-6" />
         </div>
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Kho Đề Của Tôi</h1>
             <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#5D7B6F] border border-emerald-100">
               Library
             </span>
+            <div className={cn(
+              "flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs",
+              isFull ? "bg-red-50 text-red-600 border-red-200" : isWarning ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+            )}>
+              <HardDrive className="w-3 h-3 shrink-0" />
+              <span>Dung lượng: {ownQuizTotal}/10 bộ đề</span>
+            </div>
           </div>
           <p className="text-xs font-medium text-slate-500 mt-0.5">
             Quản lý bộ đề tự tạo, quiz lưu từ Explore và bài thi trộn ngẫu nhiên.

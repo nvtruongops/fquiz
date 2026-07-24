@@ -61,7 +61,7 @@ export default function MyQuizzesPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 min-h-screen">
       {/* Header & Main Navigation */}
-      <MyQuizzesHeader onOpenManageCategories={() => setIsManageCategoriesOpen(true)} />
+      <MyQuizzesHeader onOpenManageCategories={() => setIsManageCategoriesOpen(true)} ownQuizTotal={ownQuizTotal} />
 
       {/* Category Tabs */}
       <CategoryFilterTabs
