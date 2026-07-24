@@ -22,6 +22,7 @@ interface CourseQuizzesResponse {
   categoryId?: string | null
   categoryName: string
   quizzes: QuizItem[]
+  savedQuizIds?: string[]
 }
 
 async function fetchCourseQuizzes(code: string): Promise<CourseQuizzesResponse> {
@@ -79,7 +80,10 @@ export default function CourseQuizList({
       onCategoryNameLoaded?.(data.categoryName)
       onCategoryLoaded?.(data.categoryName, data.categoryId ?? null)
     }
-  }, [data?.categoryName, data?.categoryId, onCategoryNameLoaded, onCategoryLoaded])
+    if (data?.savedQuizIds) {
+      setSavedQuizIds(data.savedQuizIds)
+    }
+  }, [data?.categoryName, data?.categoryId, data?.savedQuizIds, onCategoryNameLoaded, onCategoryLoaded])
 
   const handleSaveQuiz = async (quizId: string) => {
     setSavingQuizId(quizId)
