@@ -41,7 +41,16 @@ interface ResultData {
   }
 }
 
+import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
+
 async function getResult(sessionId: string): Promise<ResultData | null> {
+  try {
+    const directResult = await getQuizSessionResult(sessionId)
+    if (directResult) return directResult as unknown as ResultData
+  } catch (err) {
+    console.error('Direct getQuizSessionResult error, falling back to fetch:', err)
+  }
+
   const headersList = await headers()
   const host = headersList.get('host') ?? 'localhost:3000'
   const protocol = host.includes('localhost') ? 'http' : 'https'
