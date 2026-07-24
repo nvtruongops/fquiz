@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark, Hand } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
@@ -101,6 +101,65 @@ export default function QuizSessionMobilePage() {
 
   const courseCode = activeData?.session?.courseCode
   const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+  const [isRightHanded, setIsRightHanded] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fquiz_mobile_handedness')
+      if (saved === 'right') {
+        setIsRightHanded(true)
+      }
+    }
+  }, [])
+
+  const toggleHandedness = () => {
+    setIsRightHanded((prev) => {
+      const next = !prev
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('fquiz_mobile_handedness', next ? 'right' : 'left')
+      }
+      return next
+    })
+  }
+
+  const sessionLoaderStartedRef = useRef(false)
+
+  const [touchState, setTouchState] = useState({
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    isDragging: false,
+  })
+
+  useEffect(() => {
+    if (!sessionLoaderStartedRef.current) {
+      sessionLoaderStartedRef.current = true
+      if (!isQuizLoaderActive()) {
+        sessionLoader.open('Đang tải bộ câu hỏi...')
+      }
+    }
+  }, [sessionLoader])
+
+  // Single unified loading state — covers both data loading and hydration
+  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+
+  useEffect(() => {
+    if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
+      if (isInitialError) {
+        sessionLoader.close()
+      } else if (activeData?.session.status === 'preparing') {
+        sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
+      } else if (!isReadyToRender) {
+        sessionLoader.setStatus('Đang chuẩn bị giao diện...')
+      } else if (!isStillLoading) {
+        sessionLoader.complete()
+      }
+    }
+  }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
+
+  useEffect(() => {
+    setTouchState({ startX: 0, startY: 0, offsetX: 0, isDragging: false })
+  }, [currentQuestionIndex])
 
   function handleSubmit() {
     if (!activeData?.session) return
@@ -136,6 +195,50 @@ export default function QuizSessionMobilePage() {
     setQuestionMapOpen(false)
   }
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return
+    setTouchState({
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      offsetX: 0,
+      isDragging: true,
+    })
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchState.isDragging || e.touches.length !== 1) return
+    const dx = e.touches[0].clientX - touchState.startX
+    const dy = e.touches[0].clientY - touchState.startY
+
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+      setTouchState((prev) => ({
+        ...prev,
+        offsetX: dx,
+      }))
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchState.isDragging) return
+    const { offsetX } = touchState
+    const threshold = 50
+    const effectiveTotal = activeData?.session?.totalQuestions || 0
+
+    if (offsetX < -threshold && currentQuestionIndex < effectiveTotal - 1) {
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(30) } catch {}
+      }
+      handleNavigate(currentQuestionIndex + 1)
+    } else if (offsetX > threshold && currentQuestionIndex > 0) {
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(30) } catch {}
+      }
+      handleNavigate(currentQuestionIndex - 1)
+    }
+
+    setTouchState({ startX: 0, startY: 0, offsetX: 0, isDragging: false })
+  }
+
   // Show error if preload failed
   if (isPreloadError || isInitialError) {
     return (
@@ -158,31 +261,7 @@ export default function QuizSessionMobilePage() {
     )
   }
 
-  const sessionLoaderStartedRef = useRef(false)
-
-  useEffect(() => {
-    if (!sessionLoaderStartedRef.current) {
-      sessionLoaderStartedRef.current = true
-      sessionLoader.open('Đang tải bộ câu hỏi...')
-    }
-  }, [sessionLoader])
-
-  // Single unified loading state — covers both data loading and hydration
-  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
-
-  useEffect(() => {
-    if (sessionLoaderStartedRef.current) {
-      if (activeData?.session.status === 'preparing') {
-        sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
-      } else if (!isReadyToRender) {
-        sessionLoader.setStatus('Đang chuẩn bị giao diện...')
-      } else if (!isStillLoading) {
-        sessionLoader.complete()
-      }
-    }
-  }, [isStillLoading, isReadyToRender, activeData?.session.status, sessionLoader])
-
-  if (isStillLoading || !activeData) {
+  if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
     return (
       <QuizLoadingOverlay
         isOpen={true}
@@ -258,6 +337,22 @@ export default function QuizSessionMobilePage() {
           </div>
           
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleHandedness}
+              title={isRightHanded ? 'Đang ở chế độ Tay phải (Nhấn để đổi Tay trái)' : 'Đang ở chế độ Tay trái (Nhấn để đổi Tay phải)'}
+              className={cn(
+                "h-10 w-10 rounded-xl transition-all flex items-center justify-center gap-0.5",
+                isRightHanded
+                  ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-sm"
+                  : "bg-gray-50 text-[#5D7B6F] hover:bg-gray-100 border border-transparent"
+              )}
+            >
+              <Hand className={cn("h-4 w-4 transition-transform duration-200", !isRightHanded ? "scale-x-[-1]" : "")} />
+              <span className="text-[9px] font-black tracking-tighter uppercase">{isRightHanded ? 'R' : 'L'}</span>
+            </Button>
+
             <div className="flex flex-col items-end">
               <QuizTimer
                 startedAt={session.started_at}
@@ -290,7 +385,17 @@ export default function QuizSessionMobilePage() {
 
       {/* Main Content */}
       <ScrollArea className="flex-1">
-        <div key={question._id || effectiveIndex} className="space-y-6 p-4 pb-24">
+        <div
+          key={question._id || effectiveIndex}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            transform: touchState.offsetX !== 0 ? `translateX(${touchState.offsetX}px)` : undefined,
+            transition: touchState.isDragging ? 'none' : 'transform 0.2s ease-out',
+          }}
+          className="space-y-6 p-4 pb-24 touch-pan-y select-none"
+        >
           {/* Question Number & Pin Button */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -301,6 +406,7 @@ export default function QuizSessionMobilePage() {
                 {requiredSelectionCount === 1
                   ? '• Chọn 1 đáp án'
                   : `• Chọn ${requiredSelectionCount} đáp án`}
+                <span className="hidden sm:inline"> • Vuốt 👈 👉 để lật câu</span>
               </p>
             </div>
             <button
@@ -390,8 +496,8 @@ export default function QuizSessionMobilePage() {
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 border-t-2 border-gray-200 bg-white p-2 pb-8 md:pb-4 shadow-lg z-50">
-        <div className="flex items-center justify-between gap-3">
-          {/* Back/Next buttons on the left */}
+        <div className={cn("flex items-center justify-between gap-3", isRightHanded && "flex-row-reverse")}>
+          {/* Back/Next buttons */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
