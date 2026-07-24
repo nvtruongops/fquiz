@@ -296,7 +296,7 @@ function QuestionDetailCard({
 
         {/* Options List - Anti-copy select-none */}
         <div className="space-y-2 select-none">
-          {q.options.map((option: string, optIdx: number) => {
+          {(q?.options || []).map((option: string, optIdx: number) => {
             const isCorrectAnswer = correctAnswers.includes(optIdx)
             const isSubmittedAnswer = submittedAnswers.includes(optIdx)
 
