@@ -31,18 +31,20 @@ export const GET = withAuth(async (
     }
 
     const quiz = await Quiz.findById(session.quiz_id).lean()
-    if (!quiz) {
+    if (!quiz && (!session.questions_cache || session.questions_cache.length === 0)) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
-    const quizQuestions = (quiz.questions ?? []) as IQuestion[]
+    const allQuestions = (session.questions_cache?.length
+      ? session.questions_cache
+      : (quiz?.questions ?? [])) as IQuestion[]
     const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
-    const questionOrder = session.question_order || Array.from({ length: quizQuestions.length }, (_, i) => i)
+    const questionOrder = session.question_order || Array.from({ length: allQuestions.length }, (_, i) => i)
 
     // Build full result — include correct_answer and explanation (Req 12.2)
     // Map questions according to question_order so they appear in the same order as during the quiz
     const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
-      const q = quizQuestions[actualIndex]
+      const q = allQuestions[actualIndex] ?? allQuestions[0]
       const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
       
       // Return correct_answer as-is (can be number or number[])

@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect, Suspense } from 'react'
+import { use, useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -26,6 +26,11 @@ function CourseDetailContent({ code }: { code: string }) {
   
   const [categoryName, setCategoryName] = useState(code.toUpperCase())
   const [categoryId, setCategoryId] = useState<string | null>(null)
+
+  const handleCategoryLoaded = useCallback((name: string, id: string | null) => {
+    setCategoryName(name)
+    setCategoryId(id)
+  }, [])
 
   const { pinnedQuestions } = usePinnedQuestions(code)
 
@@ -170,10 +175,7 @@ function CourseDetailContent({ code }: { code: string }) {
           ) : (
             <CourseQuizList
               code={code}
-              onCategoryLoaded={(name, id) => {
-                setCategoryName(name)
-                setCategoryId(id)
-              }}
+              onCategoryLoaded={handleCategoryLoaded}
             />
           )}
         </motion.div>
