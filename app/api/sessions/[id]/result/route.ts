@@ -1,3 +1,6 @@
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/modules/auth/with-auth'
+import { JWTPayload } from '@/lib/modules/auth/auth'
 import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
 
 /**
