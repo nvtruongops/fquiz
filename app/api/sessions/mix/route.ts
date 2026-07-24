@@ -16,7 +16,7 @@ import {
 } from '@/lib/modules/quiz/constants/mix-quiz'
 import { z } from 'zod'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
-import { publishJob } from '@/lib/core/queue/qstash'
+import { processMixQuizGeneration } from '@/lib/modules/quiz/utils/mix-quiz-processor'
 
 const CreateMixSessionSchema = z.object({
   quiz_ids: z.array(MongoIdSchema).min(2, 'Cần ít nhất 2 quiz').max(MIX_QUIZ_MAX_SELECT, `Tối đa ${MIX_QUIZ_MAX_SELECT} quiz`),
@@ -134,93 +134,21 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 6. Create a placeholder session with status 'preparing'
-    if (process.env.NODE_ENV !== 'production') console.log('Creating placeholder session...')
-    const tempSession = await QuizSession.create({
-      student_id: studentId,
-      mode,
-      difficulty,
-      status: 'preparing',
-      current_question_index: 0,
-      score: 0,
-      is_temp: true,
-      started_at: now,
-      last_activity_at: now,
-    })
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Placeholder session created:', tempSession._id)
-    }
-
-    // 7. Publish job to QStash
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`Publishing mix-quiz job... URL: ${appUrl}/api/jobs/mix-quiz`)
-    }
-    
-    // Check if we can do a local bypass for development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Dev] Local environment detected. Using direct handler call bypass...');
-      
-      // We import it dynamically to avoid any potential circular dependency issues at top level
-      // and only in dev mode.
-      import('../../jobs/mix-quiz/route').then(m => {
-        const mockReq = new Request(`${appUrl}/api/jobs/mix-quiz`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'upstash-signature': 'mock-signature-for-local-dev'
-          },
-          body: JSON.stringify({
-            sessionId: tempSession._id,
-            quiz_ids,
-            question_count,
-            mode,
-            difficulty,
-            studentId: payload.userId
-          })
-        });
-        
-        // Call handler without await to simulate background job
-        m.POST(mockReq)
-          .then(() => console.log('[Dev] Local job handler bypass completed.'))
-          .catch(err => console.error('[Dev] Local job handler bypass failed:', err));
-      }).catch(err => console.error('[Dev] Failed to import job handler:', err));
-      
-      return NextResponse.json(
-        {
-          sessionId: tempSession._id,
-          status: 'preparing',
-        },
-        { status: 201 }
-      )
-    }
-
-    const publishResult = await publishJob(`${appUrl}/api/jobs/mix-quiz`, {
-      sessionId: tempSession._id,
+    // 6. Generate Mix Quiz and active Session synchronously (~30ms)
+    const mixResult = await processMixQuizGeneration({
       quiz_ids,
       question_count,
       mode,
       difficulty,
-      studentId: payload.userId
+      studentId: payload.userId,
     })
-
-    if (!publishResult.success) {
-      console.error('Failed to publish job to QStash:', publishResult.error)
-      await QuizSession.deleteOne({ _id: tempSession._id })
-      return NextResponse.json({ 
-        error: 'Failed to queue background job', 
-        message: publishResult.error 
-      }, { status: 500 })
-    }
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Job published successfully:', publishResult.messageId)
-    }
 
     return NextResponse.json(
       {
-        sessionId: tempSession._id,
-        status: 'preparing',
+        sessionId: mixResult.sessionId,
+        quizId: mixResult.quizId,
+        actual_count: mixResult.actualCount,
+        status: 'active',
       },
       { status: 201 }
     )
