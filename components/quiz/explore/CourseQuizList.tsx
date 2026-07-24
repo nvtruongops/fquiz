@@ -96,16 +96,20 @@ export default function CourseQuizList({
       const json = await res.json()
       if (!res.ok) {
         toast.error(json.error || 'Không thể lưu bài thi')
+      } else if (json.unsaved) {
+        setSavedQuizIds((prev) => prev.filter((id) => id !== quizId))
+        toast.success(json.message || 'Đã xóa khỏi Bộ đề của tôi')
       } else {
-        setSavedQuizIds((prev) => [...prev, quizId])
-        toast.success(json.message || 'Đã lưu lối tắt vào Bộ đề của tôi (/my-quizzes)')
+        setSavedQuizIds((prev) => (prev.includes(quizId) ? prev : [...prev, quizId]))
+        toast.success(json.message || 'Đã lưu mã quiz')
       }
     } catch {
-      toast.error('Có lỗi xảy ra khi lưu bài thi')
+      toast.error('Có lỗi xảy ra khi xử lý lưu bài thi')
     } finally {
       setSavingQuizId(null)
     }
   }
+
 
   if (isLoading) return <QuizSkeleton />
 

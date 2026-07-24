@@ -35,17 +35,20 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       ? String((sourceQuiz.category_id as { name?: string }).name || 'Khác')
       : 'Khác'
 
-    // Prevent duplicate shortcut creation for the same source quiz and student
+    // Toggle save/unsave: if already saved, delete shortcut to unsave
     const existingShortcut = await Quiz.findOne({
       created_by: new Types.ObjectId(payload.userId),
       original_quiz_id: sourceQuiz._id,
       is_saved_from_explore: true,
-    }).lean()
+    })
 
     if (existingShortcut) {
+      await Quiz.deleteOne({ _id: existingShortcut._id })
       return NextResponse.json({
-        quiz: existingShortcut,
-        message: 'Mã đề này đã được lưu trước đó.',
+        unsaved: true,
+        quizId: sourceQuiz._id.toString(),
+        courseCode: sourceQuiz.course_code,
+        message: `Đã xóa mã quiz ${sourceQuiz.course_code} khỏi Bộ đề của tôi`,
       }, { status: 200 })
     }
 
@@ -110,9 +113,12 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     })
 
     return NextResponse.json({ 
+      saved: true,
       quiz: newQuiz, 
-      message: `Đã lưu lối tắt vào danh mục: ${targetCategory.name}` 
+      courseCode: sourceQuiz.course_code,
+      message: `Đã lưu mã quiz ${sourceQuiz.course_code}` 
     })
+
   } catch (error: any) {
     console.error('Error saving quiz shortcut:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

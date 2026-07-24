@@ -7,7 +7,8 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession';
 import { verifyQStashRequest } from '@/lib/core/queue/qstash';
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator';
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz';
-import { secureShuffle } from '@/lib/core/utils/shuffle';
+import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle';
+
 import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper';
 
 /**
@@ -160,19 +161,24 @@ export async function POST(req: Request) {
       }
     }
 
-    // Update session
     const questionOrder = difficulty === 'random'
       ? secureShuffle(Array.from({ length: actualCount }, (_, i) => i))
       : Array.from({ length: actualCount }, (_, i) => i);
+
+    const processedQuestionsCache = (difficulty === 'random')
+      ? finalSampled.map((q: any) => shuffleQuestionOptions(q))
+      : finalSampled;
+
 
     await QuizSession.updateOne(
       { _id: sessionId },
       {
         $set: {
           quiz_id: tempQuiz._id,
-          questions_cache: finalSampled,
+          questions_cache: processedQuestionsCache,
           question_order: questionOrder,
           status: 'active',
+
           flashcard_stats: mode === 'flashcard' ? {
             total_cards: actualCount,
             cards_known: 0,
