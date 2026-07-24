@@ -101,6 +101,15 @@ export async function GET(
       bestScore: scoreMap.get(q._id.toString()) ?? null,
     }))
 
+    // Sort: Attempted quizzes (bestScore !== null) first, then unattempted, sorted naturally by title
+    result.sort((a, b) => {
+      const aDone = a.bestScore !== null
+      const bDone = b.bestScore !== null
+      if (aDone && !bDone) return -1
+      if (!aDone && bDone) return 1
+      return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+    })
+
     return NextResponse.json({
       categoryId: category?._id?.toString() ?? null,
       categoryName,
