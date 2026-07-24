@@ -231,17 +231,18 @@ export function useMixQuizGenerator(
       return data
     },
     onSuccess: (data) => {
+      const targetQuizId = data.quizId || 'mix'
       if (data.actual_count && data.actual_count < (questionCount ?? 0)) {
         setPoolWarning(
           `Pool câu hỏi chỉ có ${data.actual_count} câu — đã lấy hết. Bắt đầu với ${data.actual_count} câu.`
         )
         setTimeout(() => {
-          if (onSessionCreated) onSessionCreated(data.quizId, data.sessionId)
-          else router.push(`/quiz/${data.quizId}/session/${data.sessionId}`)
+          if (onSessionCreated) onSessionCreated(targetQuizId, data.sessionId)
+          else router.push(`/quiz/${targetQuizId}/session/${data.sessionId}`)
         }, 1500)
       } else {
-        if (onSessionCreated) onSessionCreated(data.quizId, data.sessionId)
-        else router.push(`/quiz/${data.quizId}/session/${data.sessionId}`)
+        if (onSessionCreated) onSessionCreated(targetQuizId, data.sessionId)
+        else router.push(`/quiz/${targetQuizId}/session/${data.sessionId}`)
       }
     },
     onError: (err: any) => {

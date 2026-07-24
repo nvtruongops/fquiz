@@ -66,12 +66,14 @@ export function useSessionHydration({
   useEffect(() => {
     const err = initialError as SessionApiError | undefined
     if (!quizId || !err) return
+    const validQuizId = (quizId && quizId !== 'undefined' && quizId !== 'mix') ? quizId : null
+    const targetUrl = validQuizId ? `/quiz/${validQuizId}` : '/my-quizzes'
     if (err.status === 404) {
-      router.replace(`/quiz/${quizId}?reason=session_not_found`)
+      router.replace(`${targetUrl}?reason=session_not_found`)
       return
     }
     if (err.code === 'SESSION_EXPIRED' || err.status === 410) {
-      router.replace(`/quiz/${quizId}?reason=session_expired`)
+      router.replace(`${targetUrl}?reason=session_expired`)
       return
     }
   }, [initialError, quizId, router])

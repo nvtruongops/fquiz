@@ -179,7 +179,16 @@ function DesktopSessionContent({
     }
   }, [sessionLoader])
 
-  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+  useEffect(() => {
+    const realQuizId = (activeData?.session as any)?.quiz_id
+    if (realQuizId && (quizId === 'undefined' || quizId === 'mix')) {
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `/quiz/${realQuizId}/session/${sessionId}`)
+      }
+    }
+  }, [activeData?.session, quizId, sessionId])
+
+  const isStillLoading = isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
 
   useEffect(() => {
     if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {

@@ -206,7 +206,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
       <div className="max-w-xl mx-auto py-6">
         <ActiveSessionBanner
           session={activeSession}
-          onContinue={() => router.push(`/quiz/${activeSession.quizId}/session/${activeSession.sessionId}`)}
+          onContinue={() => router.push(`/quiz/${activeSession.quizId || 'mix'}/session/${activeSession.sessionId}`)}
           onCreateNew={() => deleteActiveSessionMutation.mutate(activeSession.sessionId)}
           isDeleting={deleteActiveSessionMutation.isPending}
         />
