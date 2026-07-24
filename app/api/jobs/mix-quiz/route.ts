@@ -118,16 +118,23 @@ export async function POST(req: Request) {
     const quizTitles = validQuizzes.map((q) => q.course_code as string);
     const titlePreview = quizTitles.join(' + ');
 
-    const firstCourseCode = validQuizzes[0]?.course_code
-    const isSingleCourseMix = firstCourseCode && validQuizzes.every((q) => q.course_code?.trim().toUpperCase() === firstCourseCode.trim().toUpperCase())
+    const extractSubjectPrefix = (code?: string): string => {
+      if (!code) return ''
+      const clean = code.trim().toUpperCase()
+      if (clean.startsWith('TEMP_')) return ''
+      const parts = clean.split('_')
+      return parts[0] ?? clean
+    }
+
+    const prefixes = validQuizzes.map(q => extractSubjectPrefix(q.course_code)).filter(Boolean)
+    const firstPrefix = prefixes[0]
+    const isSameSubjectMix = Boolean(firstPrefix && prefixes.every(p => p === firstPrefix))
 
     let tempQuiz: any = null;
     let retries = 0;
     while (retries < 2) {
       try {
-        const courseCode = isSingleCourseMix
-          ? firstCourseCode.trim().toUpperCase()
-          : await generateTempCourseCode();
+        const courseCode = isSameSubjectMix ? firstPrefix : 'TRỘN'
         let categoryId = validQuizzes[0]?.category_id
         if (!categoryId && courseCode) {
           const cat = await ensureCategoryForCourseCode(courseCode, studentId)
