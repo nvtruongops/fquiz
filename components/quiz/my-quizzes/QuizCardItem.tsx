@@ -113,7 +113,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   </div>
                   <div className={cn('flex items-center gap-1 text-[9px] font-bold', quiz.is_public ? 'text-emerald-600' : 'text-orange-500')}>
                     {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                    <span>{quiz.is_temp ? 'CÁ NHÂN' : quiz.is_public ? 'PUBLIC' : 'PRIVATE'}</span>
+                    <span>{quiz.is_public ? 'CÔNG KHAI' : 'CÁ NHÂN'}</span>
                   </div>
                 </div>
               </div>
@@ -185,7 +185,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
           {view === 'actions' && !isDeleting && (
             <div className="absolute inset-0 bg-white/90 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-3 animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
               <div className="relative w-full max-w-2xl flex flex-wrap items-center justify-center gap-2 sm:gap-4 py-1 px-2">
-                {!quiz.is_saved_from_explore && !quiz.is_temp ? (
+                {!quiz.is_saved_from_explore && !quiz.is_temp && !isPinnedQuiz ? (
                   <>
                     <Button
                       variant="outline"
@@ -228,7 +228,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   <div className="flex items-center gap-2 bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/10">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600 opacity-60" />
                     <span className="text-[10px] font-black text-amber-700/80 uppercase tracking-wider">
-                      {quiz.is_temp ? 'Quiz Trộn Tạm Thời' : 'Saved from Explore'}
+                      {quiz.is_temp ? 'Quiz Trộn Tạm Thời' : isPinnedQuiz ? 'Quiz Ghim Tự Tạo' : 'Saved from Explore'}
                     </span>
                   </div>
                 )}
