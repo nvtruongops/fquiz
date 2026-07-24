@@ -192,13 +192,16 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
 
-    // Validate categoryId if provided
-    if (categoryId && !validateObjectId(categoryId)) {
-      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
-    }
     // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo, bộ lưu và bài trộn)
     const query: any = { created_by: new Types.ObjectId(payload.userId) }
-    if (categoryId) query.category_id = new Types.ObjectId(categoryId)
+    if (categoryId) {
+      const catIds = categoryId.split(',').map((s) => s.trim()).filter(validateObjectId)
+      if (catIds.length === 1) {
+        query.category_id = new Types.ObjectId(catIds[0])
+      } else if (catIds.length > 1) {
+        query.category_id = { $in: catIds.map((id) => new Types.ObjectId(id)) }
+      }
+    }
 
     const rawQuizzes = await Quiz.find(query)
       .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore is_temp')

@@ -78,7 +78,6 @@ export default function MyQuizzesPage() {
         setActiveTab={setActiveTab}
         ownQuizTotal={ownQuizTotal}
         savedQuizTotal={savedQuizTotal}
-        mixQuizTotal={mixQuizTotal}
       />
 
       {/* Quiz List Grid / State */}
