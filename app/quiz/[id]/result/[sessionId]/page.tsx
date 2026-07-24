@@ -150,12 +150,12 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
           <div className="flex items-center gap-2 text-emerald-800">
             <Trophy className="w-4 h-4 shrink-0 text-emerald-600" />
             <p className="text-xs font-bold">
-              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="font-extrabold text-emerald-900 underline">Bộ đề của tôi → Tab Quiz Trộn</span>!
+              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="font-extrabold text-emerald-900 underline">Bộ đề của tôi → Tab Quiz Tự Tạo</span>!
             </p>
           </div>
-          <Link href="/my-quizzes?tab=mix" className="shrink-0 w-full sm:w-auto">
+          <Link href="/my-quizzes" className="shrink-0 w-full sm:w-auto">
             <Button size="sm" className="h-7 w-full sm:w-auto px-3 rounded-lg bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-extrabold text-[10px] uppercase tracking-wider cursor-pointer">
-              Xem kho Quiz Trộn
+              Xem Bộ đề của tôi
             </Button>
           </Link>
         </div>

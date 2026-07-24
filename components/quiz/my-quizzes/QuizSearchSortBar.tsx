@@ -7,17 +7,15 @@ import { Search } from 'lucide-react'
 interface QuizSearchSortBarProps {
   search: string
   setSearch: (val: string) => void
-  activeTab: 'personal' | 'saved' | 'mix'
-  setActiveTab: (tab: 'personal' | 'saved' | 'mix') => void
+  activeTab: 'personal' | 'saved'
+  setActiveTab: (tab: 'personal' | 'saved') => void
   ownQuizTotal: number
   savedQuizTotal: number
-  mixQuizTotal: number
 }
 
-const TABS: { id: 'personal' | 'saved' | 'mix'; label: string; getCount: (p: QuizSearchSortBarProps) => number }[] = [
+const TABS: { id: 'personal' | 'saved'; label: string; getCount: (p: QuizSearchSortBarProps) => number }[] = [
   { id: 'personal', label: 'Quiz Tự Tạo', getCount: (p) => p.ownQuizTotal },
   { id: 'saved', label: 'Quiz Đã Lưu (Explore)', getCount: (p) => p.savedQuizTotal },
-  { id: 'mix', label: 'Quiz Trộn', getCount: (p) => p.mixQuizTotal },
 ]
 
 export const QuizSearchSortBar = React.memo(function QuizSearchSortBar(props: QuizSearchSortBarProps) {

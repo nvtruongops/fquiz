@@ -44,8 +44,8 @@ export function useMyQuizzes() {
 
   const initialTabParam = searchParams.get('tab')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'personal' | 'saved' | 'mix'>(
-    initialTabParam === 'saved' ? 'saved' : initialTabParam === 'mix' ? 'mix' : 'personal'
+  const [activeTab, setActiveTab] = useState<'personal' | 'saved'>(
+    initialTabParam === 'saved' ? 'saved' : 'personal'
   )
 
   const [search, setSearch] = useState('')
@@ -93,7 +93,7 @@ export function useMyQuizzes() {
   })
 
   const allQuizzes: Quiz[] = quizData?.quizzes || []
-  const ownQuizTotal = useMemo(() => allQuizzes.filter((q) => !q.is_saved_from_explore && !q.is_temp).length, [allQuizzes])
+  const ownQuizTotal = useMemo(() => allQuizzes.filter((q) => !q.is_saved_from_explore).length, [allQuizzes])
   const savedQuizTotal = useMemo(() => allQuizzes.filter((q) => q.is_saved_from_explore).length, [allQuizzes])
   const mixQuizTotal = useMemo(() => allQuizzes.filter((q) => q.is_temp).length, [allQuizzes])
 
@@ -101,9 +101,8 @@ export function useMyQuizzes() {
   const filteredQuizzes = useMemo(() => {
     return allQuizzes.filter((quiz: Quiz) => {
       let isCorrectTab = false
-      if (activeTab === 'personal') isCorrectTab = !quiz.is_saved_from_explore && !quiz.is_temp
+      if (activeTab === 'personal') isCorrectTab = !quiz.is_saved_from_explore
       else if (activeTab === 'saved') isCorrectTab = Boolean(quiz.is_saved_from_explore)
-      else if (activeTab === 'mix') isCorrectTab = Boolean(quiz.is_temp)
 
       if (!isCorrectTab) return false
 

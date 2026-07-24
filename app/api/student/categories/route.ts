@@ -89,7 +89,37 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       },
     ])
 
-    return NextResponse.json({ categories })
+    // Merge duplicate categories sharing the same uppercase name
+    const categoryMap = new Map<string, any>()
+    for (const cat of categories) {
+      const nameKey = (cat.name || '').trim().toUpperCase()
+      if (!categoryMap.has(nameKey)) {
+        categoryMap.set(nameKey, {
+          _id: cat._id.toString(),
+          name: cat.name,
+          type: cat.type,
+          owner_id: cat.owner_id,
+          savedQuizCount: cat.savedQuizCount || 0,
+          ownQuizCount: cat.ownQuizCount || 0,
+          totalQuizCount: cat.totalQuizCount || 0,
+          allIds: [cat._id.toString()],
+        })
+      } else {
+        const existing = categoryMap.get(nameKey)!
+        existing.allIds.push(cat._id.toString())
+        existing.savedQuizCount += cat.savedQuizCount || 0
+        existing.ownQuizCount += cat.ownQuizCount || 0
+        existing.totalQuizCount += cat.totalQuizCount || 0
+        if (cat.type === 'private') {
+          existing.type = 'private'
+          existing.owner_id = cat.owner_id
+        }
+        existing._id = existing.allIds.join(',')
+      }
+    }
+
+    const mergedCategories = Array.from(categoryMap.values())
+    return NextResponse.json({ categories: mergedCategories })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -150,8 +180,8 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 })
     }
 
-    // Validate ObjectId
-    if (!validateObjectId(id)) {
+    const idList = id.split(',').map((s) => s.trim()).filter(validateObjectId)
+    if (idList.length === 0) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
     }
 
@@ -164,8 +194,9 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
       )
     }
 
+    const objectIds = idList.map((i) => new Types.ObjectId(i))
     const category = await Category.findOneAndUpdate(
-      { _id: new Types.ObjectId(id), owner_id: new Types.ObjectId(payload.userId) },
+      { _id: { $in: objectIds }, owner_id: new Types.ObjectId(payload.userId) },
       { name: nameValidation.data },
       { new: true }
     )
@@ -189,13 +220,15 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
-    // Validate ObjectId
-    if (!validateObjectId(id)) {
+    const idList = id.split(',').map((s) => s.trim()).filter(validateObjectId)
+    if (idList.length === 0) {
       return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
     }
 
+    const objectIds = idList.map((i) => new Types.ObjectId(i))
+
     // Check if category has quizzes
-    const quizCount = await Quiz.countDocuments({ category_id: new Types.ObjectId(id) })
+    const quizCount = await Quiz.countDocuments({ category_id: { $in: objectIds } })
     if (quizCount > 0) {
       return NextResponse.json({
         error: `Không thể xóa: Danh mục này đang chứa ${quizCount} mã đề. Hãy di chuyển hoặc xóa các mã đề trước.`
@@ -203,7 +236,7 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
     }
 
     const category = await Category.findOneAndDelete({
-      _id: new Types.ObjectId(id),
+      _id: { $in: objectIds },
       owner_id: new Types.ObjectId(payload.userId)
     })
 
