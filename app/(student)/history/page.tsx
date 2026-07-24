@@ -155,9 +155,11 @@ function HistoryContent() {
 
       quizGroup.attempts.push(item)
 
-      const pct = item.total_questions > 0 ? (item.score / item.total_questions) * 100 : 0
-      if (pct > quizGroup.bestScorePercentage) {
-        quizGroup.bestScorePercentage = pct
+      if (item.status === 'completed') {
+        const pct = item.total_questions > 0 ? (item.score / item.total_questions) * 100 : 0
+        if (pct > quizGroup.bestScorePercentage) {
+          quizGroup.bestScorePercentage = pct
+        }
       }
     })
 
@@ -362,10 +364,19 @@ function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <span className="text-sm font-black text-[#5D7B6F]">{formattedScore}/10</span>
-                        <p className="text-[9px] font-bold text-slate-400">{attempt.correct_count}/{attempt.total_questions} đúng</p>
-                      </div>
+                      {attempt.status === 'completed' ? (
+                        <div className="text-right">
+                          <span className="text-sm font-black text-[#5D7B6F]">{formattedScore}/10</span>
+                          <p className="text-[9px] font-bold text-slate-400">{attempt.correct_count}/{attempt.total_questions} đúng</p>
+                        </div>
+                      ) : (
+                        <div className="text-right flex flex-col items-end">
+                          <Badge className="bg-amber-100 text-amber-800 border-none font-bold text-[9px] uppercase px-2 py-0.5">
+                            Đang làm dở
+                          </Badge>
+                          <span className="text-[9px] font-extrabold text-amber-600">Chưa nộp bài</span>
+                        </div>
+                      )}
 
                       <Button size="icon" variant="ghost" className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer" asChild>
                         <Link href={
