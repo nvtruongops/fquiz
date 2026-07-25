@@ -38,9 +38,10 @@ export function mixQuizDisplayCode(title: string): string {
 export async function buildOriginalCreatorMap(quizzes: QuizSourceProjection[]): Promise<Map<string, string | null>> {
   const originalSourceIds = Array.from(
     new Set(
-      quizzes
-        .filter((q) => !!(q.is_saved_from_explore && q.original_quiz_id))
-        .map((q) => (q.original_quiz_id as mongoose.Types.ObjectId).toString())
+      (quizzes || [])
+        .filter((q) => Boolean(q?.is_saved_from_explore && q?.original_quiz_id))
+        .map((q) => q.original_quiz_id?.toString?.())
+        .filter((id): id is string => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
     )
   ).map((id) => new mongoose.Types.ObjectId(id))
 
@@ -55,8 +56,13 @@ export async function buildOriginalCreatorMap(quizzes: QuizSourceProjection[]): 
 /**
  * Fetch category names for a set of category ObjectIds.
  */
-export async function buildCategoryNameMap(categoryIds: string[]): Promise<Map<string, string>> {
-  const ids = Array.from(new Set(categoryIds.filter(Boolean))).map((id) => new mongoose.Types.ObjectId(id))
+export async function buildCategoryNameMap(categoryIds: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const ids = Array.from(
+    new Set(
+      (categoryIds || [])
+        .filter((id): id is string => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+    )
+  ).map((id) => new mongoose.Types.ObjectId(id))
   if (ids.length === 0) return new Map()
 
   const categories = await Category.find({ _id: { $in: ids } }, { name: 1 }).lean()
@@ -74,14 +80,14 @@ export async function buildCreatorNameMap(
 ): Promise<Map<string, string>> {
   const sourceCreatorIds = Array.from(
     new Set(
-      quizzes
+      (quizzes || [])
         .map((quiz) => {
           if (quiz?.is_saved_from_explore && quiz?.original_quiz_id) {
             return originalCreatorMap.get(quiz.original_quiz_id.toString()) ?? null
           }
           return quiz?.created_by?.toString?.() ?? null
         })
-        .filter((id): id is string => Boolean(id))
+        .filter((id): id is string => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
     )
   )
 

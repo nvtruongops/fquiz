@@ -10,7 +10,10 @@ export class UserService implements IUserService {
   async getUsernames(userIds: string[]): Promise<Map<string, string>> {
     if (userIds.length === 0) return new Map()
 
-    const objectIds = userIds.map((id) => new mongoose.Types.ObjectId(id))
+    const objectIds = userIds
+      .filter((id): id is string => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id))
+    if (objectIds.length === 0) return new Map()
     const users = await User.find({ _id: { $in: objectIds } }, { username: 1 }).lean()
 
     return new Map(

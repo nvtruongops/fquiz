@@ -26,9 +26,18 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
     }
 
+    if (!payload?.userId || !mongoose.Types.ObjectId.isValid(payload.userId)) {
+      return NextResponse.json({ error: 'Invalid student ID' }, { status: 400 })
+    }
+
     const studentId = new mongoose.Types.ObjectId(payload.userId)
     const quizIdParam = searchParams.get('quiz_id')
-    const matchQuery: Record<string, any> = { student_id: studentId }
+    const matchQuery: Record<string, any> = {
+      $or: [
+        { student_id: studentId },
+        { student_id: payload.userId },
+      ],
+    }
     if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
       matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
     }
@@ -46,8 +55,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
                 $subtract: [
                   {
                     $subtract: [
-                      { $ifNull: ['$completed_at', '$started_at'] },
-                      '$started_at',
+                      { $ifNull: ['$completed_at', { $ifNull: ['$started_at', new Date()] }] },
+                      { $ifNull: ['$started_at', new Date()] },
                     ],
                   },
                   { $ifNull: ['$total_paused_duration_ms', 0] },
@@ -77,7 +86,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       },
     ]) as Array<{
       _id: mongoose.Types.ObjectId
-      quiz_id: mongoose.Types.ObjectId
+      quiz_id?: mongoose.Types.ObjectId | null
       score: number
       mode: 'immediate' | 'review' | 'flashcard'
       status: 'active' | 'completed'
@@ -97,10 +106,12 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const skip = (safePage - 1) * limit
     const pageItems = sessions.slice(skip, skip + limit)
 
-    const inProgress = [] // We'll combine them in the main list
-
     const quizIds = Array.from(
-      new Set(pageItems.map((item) => item.quiz_id.toString()))
+      new Set(
+        pageItems
+          .map((item) => item.quiz_id?.toString?.())
+          .filter((id): id is string => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+      )
     ).map((id) => new mongoose.Types.ObjectId(id))
 
     const quizzes = quizIds.length
@@ -119,7 +130,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const creatorNameMap = await buildCreatorNameMap(quizzes, originalCreatorMap, new UserService())
 
     const history = pageItems.map((item) => {
-      const quiz = quizMap.get(item.quiz_id.toString()) as any
+      const quizIdStr = item.quiz_id?.toString?.() ?? ''
+      const quiz = quizIdStr ? (quizMap.get(quizIdStr) as any) : null
       const isMixQuiz = (item as any).is_temp === true
 
       // Helper to compute actual session total questions (supports Retry Wrong / custom question_order)
@@ -153,7 +165,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         const sessionTotal = resolveSessionTotalQuestions(null) || answeredCount || 0
         return {
           _id: item._id.toString(),
-          quiz_id: item.quiz_id.toString(),
+          quiz_id: quizIdStr,
           quiz_title: 'Quiz Trộn',
           quiz_code: 'TRỘN',
           category_name: 'Quiz Trộn',
@@ -189,7 +201,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         }
         return {
           _id: item._id.toString(),
-          quiz_id: item.quiz_id.toString(),
+          quiz_id: quizIdStr,
           quiz_title: quiz.title ?? 'Quiz Trộn',
           quiz_code: mixQuizDisplayCode(quiz.title ?? 'Quiz Trộn'),
           category_name: 'Quiz Trộn',
@@ -228,15 +240,18 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         correctCount = item.user_answers.filter((a) => a.is_correct).length
       }
 
+      const categoryIdStr = quiz?.category_id?.toString?.()
+      const categoryName = categoryIdStr ? (categoryNameMap.get(categoryIdStr) ?? 'Chưa phân loại') : 'Chưa phân loại'
+
       return {
         _id: item._id.toString(),
-        quiz_id: item.quiz_id.toString(),
+        quiz_id: quizIdStr,
         quiz_title: quiz?.title ?? 'Quiz đã bị xóa',
         quiz_code: quiz?.course_code ?? 'N/A',
-        category_name: quiz?.category_id ? (categoryNameMap.get(quiz.category_id.toString()) ?? 'Chưa phân loại') : 'Chưa phân loại',
+        category_name: categoryName,
         source_type: sourceType,
         source_label: sourceLabelFromType(sourceType),
-        source_creator_name: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,
+        source_creator_name: sourceCreatorId ? (creatorNameMap.get(sourceCreatorId) ?? null) : null,
         score: item.score,
         total_questions: sessionTotal,
         answered_count: answeredCount,
@@ -252,6 +267,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     return NextResponse.json({ history, inProgress: [], total, page: safePage, limit, totalPages })
   } catch (err) {
+    console.error('[API GET /api/history] Error:', err)
     if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
     }
