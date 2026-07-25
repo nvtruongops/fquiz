@@ -4,6 +4,7 @@ import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
 import NextTopLoader from 'nextjs-toploader'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const inter = Inter({
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ToastProvider />
           </QueryProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
