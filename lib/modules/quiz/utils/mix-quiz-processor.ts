@@ -117,7 +117,24 @@ export async function processMixQuizGeneration({
     sampled.push(...shuffledPool.slice(0, take))
   }
 
-  const finalSampled = secureShuffle(sampled)
+  const rawSampled = secureShuffle(sampled)
+  const finalSampled = rawSampled.map((q: any) => {
+    const opts = q.options || []
+    const ca = Array.isArray(q.correct_answer)
+      ? q.correct_answer
+      : typeof q.correct_answer === 'number'
+        ? [q.correct_answer]
+        : [0]
+
+    let validCa = ca.filter((i: any) => typeof i === 'number' && i >= 0 && i < opts.length)
+    if (validCa.length === 0 && opts.length > 0) {
+      validCa = [0]
+    }
+    return {
+      ...q,
+      correct_answer: validCa,
+    }
+  })
   const actualCount = finalSampled.length
 
   // Create temp quiz
