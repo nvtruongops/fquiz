@@ -83,5 +83,10 @@ Docs/
 scripts/.env.local
 .scannerwork/
 
+# Local Agents & MCP Config
+.agents/
+.agents
+
+
 
 
