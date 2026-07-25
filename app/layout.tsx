@@ -44,6 +44,8 @@ export const metadata: Metadata = {
 }
 
 import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -81,6 +83,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ToastProvider />
           </QueryProvider>
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
