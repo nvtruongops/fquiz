@@ -5,6 +5,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
 
 /**
  * GET /api/sessions/[id]/questions
@@ -93,9 +94,7 @@ export const GET = withAuth(async (
         _id: q._id,
         text: q.text,
         options: q.options,
-        answer_selection_count: Array.isArray(q.correct_answer)
-          ? Math.min(Math.max(q.correct_answer.length, 1), q.options.length)
-          : 1,
+        answer_selection_count: getAnswerSelectionCount(q),
         ...(q.image_url ? { image_url: q.image_url } : {}),
       }
 

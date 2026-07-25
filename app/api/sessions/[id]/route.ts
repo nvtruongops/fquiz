@@ -8,6 +8,7 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
+import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
 
 /**
  * Application-level join: resolve category name from category_id.
@@ -178,18 +179,14 @@ export const GET = withAuth(async (
           options: rawQuestion.options,
           correct_answer: rawQuestion.correct_answer,
           explanation: rawQuestion.explanation,
-          answer_selection_count: Array.isArray(rawQuestion.correct_answer)
-            ? Math.min(Math.max(rawQuestion.correct_answer.length, 1), rawQuestion.options.length)
-            : 1,
+          answer_selection_count: getAnswerSelectionCount(rawQuestion),
           ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
         }
       : {
           _id: rawQuestion._id,
           text: rawQuestion.text,
           options: rawQuestion.options,
-          answer_selection_count: Array.isArray(rawQuestion.correct_answer)
-            ? Math.min(Math.max(rawQuestion.correct_answer.length, 1), rawQuestion.options.length)
-            : 1,
+          answer_selection_count: getAnswerSelectionCount(rawQuestion),
           ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
         }
 

@@ -31,10 +31,23 @@ function parseAnswerToken(value: unknown): number {
 }
 
 function splitAnswerTokens(value: string): string[] {
-  return value
-    .split(/[,\s;|]+/)
+  const tokens = value
+    .split(/[,\s;|/\\+&\-]+|\b(?:and|và)\b/i)
     .map((item) => item.trim())
     .filter(Boolean)
+
+  const expanded: string[] = []
+  for (const token of tokens) {
+    const cleanToken = token.replace(/^\[|\]$/g, '').trim()
+    if (/^[A-Za-z]{2,6}$/.test(cleanToken)) {
+      for (const char of cleanToken) {
+        expanded.push(char)
+      }
+    } else {
+      expanded.push(token)
+    }
+  }
+  return expanded
 }
 
 function normalizeCorrectAnswers(question: ImportRawQuestion): number[] {
@@ -44,6 +57,10 @@ function normalizeCorrectAnswers(question: ImportRawQuestion): number[] {
       ? question.correct_answers
       : typeof question.correct_answer === 'string'
         ? splitAnswerTokens(question.correct_answer)
+      : typeof question.correct_answer === 'number'
+        ? [question.correct_answer]
+      : typeof question.correct_answers === 'number'
+        ? [question.correct_answers]
       : []
   return source
     .map((value) => parseAnswerToken(value))
