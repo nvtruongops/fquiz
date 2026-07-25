@@ -5,6 +5,11 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
 import { safeCompare } from '@/lib/core/security/csrf'
 import { 
+  checkRateLimit, 
+  createRateLimitErrorResponse, 
+  RATE_LIMIT_TIERS 
+} from '@/lib/core/security/rate-limit/sliding-window'
+import { 
   AUTH_COOKIE_NAME, 
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
@@ -340,6 +345,62 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
   return applyCors(request, response)
 }
 
+function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
+  if (!pathname.startsWith('/api/')) return null
+
+  // Exclude health checks & jobs from strict public rate limit if needed
+  if (pathname.startsWith('/api/jobs/')) return null
+
+  // 1. Critical Auth & Security Endpoints
+  if (
+    pathname.startsWith('/api/auth/login') ||
+    pathname.startsWith('/api/auth/register') ||
+    pathname.startsWith('/api/auth/forgot-password') ||
+    pathname.startsWith('/api/auth/reset-password')
+  ) {
+    const status = checkRateLimit(request, RATE_LIMIT_TIERS.AUTH_STRICT)
+    if (!status.success) return createRateLimitErrorResponse(status)
+    return null
+  }
+
+  // 2. High Cost AI & Generation Routes
+  if (
+    pathname.startsWith('/api/v1/ai') ||
+    pathname.startsWith('/api/import/') ||
+    pathname.startsWith('/api/admin/settings/test-llm')
+  ) {
+    const status = checkRateLimit(request, RATE_LIMIT_TIERS.AI_GENERATE)
+    if (!status.success) return createRateLimitErrorResponse(status)
+    return null
+  }
+
+  // 3. Search & Heavy Query Endpoints
+  if (
+    pathname.startsWith('/api/search') ||
+    pathname.startsWith('/api/v1/search') ||
+    pathname.startsWith('/api/question-bank/check')
+  ) {
+    const status = checkRateLimit(request, RATE_LIMIT_TIERS.SEARCH_HEAVY)
+    if (!status.success) return createRateLimitErrorResponse(status)
+    return null
+  }
+
+  // 4. Standard Mutation Endpoints
+  if (MUTATION_METHODS.has(request.method)) {
+    const status = checkRateLimit(request, RATE_LIMIT_TIERS.MUTATION_STANDARD)
+    if (!status.success) return createRateLimitErrorResponse(status)
+    return null
+  }
+
+  // 5. Default Public/Read API Rate Limit
+  const isAuthenticated = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value)
+  const tier = isAuthenticated ? RATE_LIMIT_TIERS.PUBLIC_READ_AUTH : RATE_LIMIT_TIERS.PUBLIC_READ_GUEST
+  const status = checkRateLimit(request, tier)
+  if (!status.success) return createRateLimitErrorResponse(status)
+
+  return null
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const requestId = request.headers.get('x-request-id') || generateId()
@@ -355,6 +416,10 @@ export async function proxy(request: NextRequest) {
 
   const maintenanceResponse = await handleMaintenanceMode(request, pathname, requestId)
   if (maintenanceResponse) return maintenanceResponse
+
+  // API Rate Limiting Evaluation (Layer 1 Defense against DoS & Flooding)
+  const rateLimitResponse = handleGlobalRateLimit(request, pathname)
+  if (rateLimitResponse) return applyCors(request, rateLimitResponse)
 
   const deployTarget = process.env.DEPLOY_TARGET
   if (deployTarget === 'api' && !pathname.startsWith('/api/')) {
