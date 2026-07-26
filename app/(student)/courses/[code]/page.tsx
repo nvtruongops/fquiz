@@ -4,13 +4,30 @@ import { use, useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import dynamic from 'next/dynamic'
 import CourseQuizList from '@/components/quiz/explore/CourseQuizList'
-import MixQuizTab from '@/components/quiz/explore/MixQuizTab'
-import { ArrowLeft, Shuffle, List, Bookmark } from 'lucide-react'
-import PinnedQuestionsTab from '@/components/quiz/explore/PinnedQuestionsTab'
+import { ArrowLeft, Shuffle, List, Bookmark, Loader2 } from 'lucide-react'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
+
+const MixQuizTab = dynamic(() => import('@/components/quiz/explore/MixQuizTab'), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-6 h-6 animate-spin text-[#5D7B6F]" />
+    </div>
+  ),
+  ssr: false,
+})
+
+const PinnedQuestionsTab = dynamic(() => import('@/components/quiz/explore/PinnedQuestionsTab'), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-6 h-6 animate-spin text-[#5D7B6F]" />
+    </div>
+  ),
+  ssr: false,
+})
 
 async function fetchCourseQuizzes(code: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/courses/${code}/quizzes`)

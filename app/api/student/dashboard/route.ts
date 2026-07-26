@@ -22,89 +22,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     await connectDB()
     const userId = new Types.ObjectId(payload.userId)
 
-    // 1a. Fetch overwrite stats from latest completed session per quiz
-    const latestStatsResult = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'completed' } },
-      { $sort: { completed_at: -1 } },
-      {
-        $group: {
-          _id: '$quiz_id',
-          latestSession: { $first: '$$ROOT' },
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: '$latestSession',
-        },
-      },
-      {
-        $lookup: {
-          from: 'quizzes',
-          localField: 'quiz_id',
-          foreignField: '_id',
-          as: 'quizDoc',
-        },
-      },
-      {
-        $addFields: {
-          quizDoc: { $arrayElemAt: ['$quizDoc', 0] },
-        },
-      },
-      {
-        $addFields: {
-          totalQuestions: {
-            $cond: [
-              { $ne: ['$quizDoc', null] },
-              // Quiz exists: use questionCount or questions array length
-              {
-                $ifNull: [
-                  '$quizDoc.questionCount',
-                  { $size: { $ifNull: ['$quizDoc.questions', []] } },
-                ],
-              },
-              // Quiz deleted: fallback to user_answers length (best effort)
-              { $size: { $ifNull: ['$user_answers', []] } },
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalQuizzes: { $sum: 1 },
-          averageScore: {
-            $avg: {
-              $cond: [
-                { $gt: ['$totalQuestions', 0] },
-                { $multiply: [{ $divide: ['$score', '$totalQuestions'] }, 10] },
-                0,
-              ],
-            },
-          },
-          totalCorrectAnswers: {
-            $sum: {
-              $size: {
-                $filter: {
-                  input: '$user_answers',
-                  as: 'ans',
-                  cond: { $eq: ['$$ans.is_correct', true] },
-                },
-              },
-            },
-          },
-        },
-      },
-    ])
-
-    // 1b. (removed: duration, weekly activity, streak)
-
-    const stats = latestStatsResult[0] || {
-      totalQuizzes: 0,
-      averageScore: 0,
-      totalCorrectAnswers: 0,
-    }
-
-    // 2. Fetch Recent Activities — completed sessions (thường + mix quiz)
+    // 1. Fetch Recent Activities — completed sessions (thường + mix quiz)
     const latestSessionIdsByQuiz = await QuizSession.aggregate([
       {
         $match: {
@@ -128,7 +46,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const sessionIds = latestSessionIdsByQuiz.map((x) => x.latestSessionId)
     const recentActivitiesRaw = await QuizSession.find({ _id: { $in: sessionIds } })
       .sort({ completed_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
 
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
@@ -149,8 +66,32 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const activeSessionIds = latestActiveIdsByQuiz.map((x) => x.latestSessionId)
     const activeActivitiesRaw = await QuizSession.find({ _id: { $in: activeSessionIds } })
       .sort({ started_at: -1 })
-      .populate('quiz_id', 'title course_code questionCount category_id created_by is_saved_from_explore original_quiz_id')
       .lean()
+
+    // Application-level join for quiz_id without using Mongoose .populate()
+    const rawQuizIds = Array.from(
+      new Set(
+        [...recentActivitiesRaw, ...activeActivitiesRaw]
+          .map((s: any) => s.quiz_id?.toString())
+          .filter((id): id is string => Boolean(id))
+      )
+    )
+    const quizDocsFetched = await Quiz.find(
+      { _id: { $in: rawQuizIds.map((id) => new Types.ObjectId(id)) } },
+      'title course_code questionCount category_id created_by is_saved_from_explore original_quiz_id'
+    ).lean()
+    const quizMapByObjId = new Map(quizDocsFetched.map((q: any) => [q._id.toString(), q]))
+
+    recentActivitiesRaw.forEach((s: any) => {
+      if (s.quiz_id) {
+        s.quiz_id = quizMapByObjId.get(s.quiz_id.toString()) || s.quiz_id
+      }
+    })
+    activeActivitiesRaw.forEach((s: any) => {
+      if (s.quiz_id) {
+        s.quiz_id = quizMapByObjId.get(s.quiz_id.toString()) || s.quiz_id
+      }
+    })
 
     // Build a set of ALL (quizId + mode_group) that have completed sessions — used to filter activeOnlyActivities
     // Query separately (no limit) so active sessions aren't incorrectly shown when a completed session exists outside top 10
@@ -273,11 +214,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       .slice(0, 5)
 
     return NextResponse.json({
-      stats: {
-        totalQuizzes: stats.totalQuizzes,
-        averageScore: stats.averageScore?.toFixed(1) || '0.0',
-        totalCorrectAnswers: stats.totalCorrectAnswers,
-      },
       recentActivities
     })
   } catch (error) {
@@ -383,6 +319,36 @@ function mapDeletedSessionToActivity(session: any, quizId: string) {
   }
 }
 
+function calculateSessionAnswerCounts(session: any) {
+  const isFlashcard = session.mode === 'flashcard'
+  const fcStats = session.flashcard_stats
+
+  if (isFlashcard && fcStats) {
+    return {
+      correctCount: fcStats.cards_known,
+      answeredCount: fcStats.cards_known + fcStats.cards_unknown,
+      baseScore: fcStats.cards_known,
+    }
+  }
+
+  let correctCount = 0
+  let answeredCount = 0
+  if (Array.isArray(session.user_answers)) {
+    correctCount = session.user_answers.filter((a: any) => a.is_correct).length
+    answeredCount = new Set(
+      session.user_answers
+        .map((a: any) => a.question_index)
+        .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
+    ).size
+  }
+
+  return {
+    correctCount,
+    answeredCount,
+    baseScore: session.score || 0,
+  }
+}
+
 function mapRegularSessionToActivity(
   session: any,
   quizId: string,
@@ -403,25 +369,8 @@ function mapRegularSessionToActivity(
     : 0
   const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
 
-  const isFlashcard = session.mode === 'flashcard'
-  const fcStats = session.flashcard_stats
+  const { correctCount, answeredCount, baseScore } = calculateSessionAnswerCounts(session)
 
-  let correctCount = 0
-  let answeredCount = 0
-
-  if (isFlashcard && fcStats) {
-    correctCount = fcStats.cards_known
-    answeredCount = fcStats.cards_known + fcStats.cards_unknown
-  } else if (Array.isArray(session.user_answers)) {
-    correctCount = session.user_answers.filter((a: any) => a.is_correct).length
-    answeredCount = new Set(
-      session.user_answers
-        .map((a: any) => a.question_index)
-        .filter((idx: unknown) => Number.isInteger(idx) && Number(idx) >= 0)
-    ).size
-  }
-
-  const baseScore = isFlashcard && fcStats ? fcStats.cards_known : (session.score || 0)
   const score = isActive ? 0 : Number(((baseScore / Math.max(totalQuestions, 1)) * 10).toFixed(2))
   const activityAt = isActive ? session.started_at : session.completed_at
 

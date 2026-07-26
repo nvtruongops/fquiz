@@ -20,12 +20,17 @@ export async function GET(
   try {
     await connectDB()
 
-    const escapedCode = escapeRegex(code)
-
-    // 1. Find category case-insensitively by name
-    const category = await Category.findOne({
-      name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
+    // 1. Find category by exact match first (index hit), fallback to case-insensitive regex
+    let category = await Category.findOne({
+      $or: [{ name: code }, { name: code.toUpperCase() }],
     }).lean()
+
+    if (!category) {
+      const escapedCode = escapeRegex(code)
+      category = await Category.findOne({
+        name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
+      }).lean()
+    }
 
     let query: any = { is_public: true, status: 'published', is_temp: { $ne: true } }
     let categoryName = code.toUpperCase()
@@ -34,6 +39,7 @@ export async function GET(
       query.category_id = category._id
       categoryName = category.name
     } else {
+      const escapedCode = escapeRegex(code)
       query.course_code = { $regex: new RegExp(`^${escapedCode}$`, 'i') }
     }
 

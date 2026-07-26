@@ -4,8 +4,8 @@ import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowRight, Zap, Bot, Flame, CheckCircle2, Award, Target, Compass, Loader2,
-  TrendingUp, HelpCircle, Layers, Sparkles, BookOpen, RefreshCw, Trophy, BookMarked
+  ArrowRight, Zap, Bot, Flame, Compass, Loader2,
+  TrendingUp, HelpCircle, Layers, Sparkles, BookOpen, RefreshCw, BookMarked
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -13,7 +13,6 @@ import { vi } from 'date-fns/locale'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/shared/ui/avatar'
-import { Progress } from '@/components/shared/ui/progress'
 import { cn } from '@/lib/core/utils/cn'
 
 import { useStudentDashboard } from '@/hooks/useStudentDashboard'
@@ -27,26 +26,13 @@ export default function DashboardPage() {
     refetch,
     recentActivities,
     primaryIncomplete,
-    stats,
-    avgScoreNum,
     userInitial,
-    performanceGrade,
-    completionRate,
   } = useStudentDashboard()
 
   const router = useRouter()
 
   if (isLoading) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-12 text-center space-y-4">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-3xl bg-[#5D7B6F]/10 border border-[#5D7B6F]/20 flex items-center justify-center animate-pulse">
-            <Loader2 className="w-8 h-8 animate-spin text-[#5D7B6F]" />
-          </div>
-        </div>
-        <p className="text-xs font-black text-slate-500 tracking-wide uppercase">Đang tải bảng điều khiển FQuiz...</p>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
@@ -122,83 +108,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 3. Stats Summary Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        {/* Card 1: Completed */}
-        <div className="bg-white p-4 sm:p-5 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 hover:border-[#5D7B6F]/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Đã Hoàn Thành</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#5D7B6F] flex items-center justify-center border border-emerald-100">
-              <CheckCircle2 className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {stats.totalQuizzes || 0} <span className="text-xs font-bold text-slate-400">bài</span>
-            </div>
-            <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Tổng số lượt làm bài</p>
-          </div>
-        </div>
-
-        {/* Card 2: Average Score */}
-        <div className="bg-white p-4 sm:p-5 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 hover:border-blue-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Điểm Trung Bình</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-              <Award className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">
-                {avgScoreNum.toFixed(1)}
-              </span>
-              <span className="text-xs font-bold text-slate-400">/ 10</span>
-            </div>
-            <div className="mt-1">
-              <Badge className={cn('text-[9px] font-black px-2 py-0.5 rounded-md border', performanceGrade.color)}>
-                {performanceGrade.label}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Correct Answers */}
-        <div className="bg-white p-4 sm:p-5 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 hover:border-emerald-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Câu Đúng</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
-              <Target className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {stats.totalCorrectAnswers || 0} <span className="text-xs font-bold text-slate-400">câu</span>
-            </div>
-            <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Tổng số đáp án đúng</p>
-          </div>
-        </div>
-
-        {/* Card 4: Mastery Progress */}
-        <div className="bg-white p-4 sm:p-5 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 hover:border-purple-300 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Thành Thạo</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-              <Trophy className="w-4.5 h-4.5" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl sm:text-3xl font-black text-purple-600 tracking-tight">
-                {completionRate}%
-              </span>
-            </div>
-            <Progress value={completionRate} className="h-2 bg-slate-100 mt-2 rounded-full" />
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Quick Action Learning Hub & Recent Activities Grid */}
+      {/* 3. Quick Action Learning Hub & Recent Activities Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
         {/* LEFT 8 COLS: LEARNING STUDIO HUB */}
         <div className="lg:col-span-8 space-y-4">
@@ -409,6 +319,41 @@ function CompactActivityItem({ activity, router }: { activity: any; router: any 
             Xong
           </Badge>
         )}
+      </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-5 font-sans text-slate-800 pb-10 p-4 sm:p-6 md:p-8 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="bg-white/90 p-5 sm:p-7 rounded-[28px] border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-full bg-slate-200 shrink-0" />
+          <div className="space-y-2">
+            <div className="h-6 w-48 bg-slate-200 rounded-lg" />
+            <div className="h-4 w-64 bg-slate-100 rounded-lg" />
+          </div>
+        </div>
+        <div className="h-10 w-36 bg-slate-200 rounded-2xl shrink-0" />
+      </div>
+
+      {/* Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
+        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-44 rounded-[24px] bg-slate-200/70 p-5 flex flex-col justify-between" />
+          ))}
+        </div>
+        <div className="lg:col-span-4 h-96 rounded-[24px] bg-white p-5 border border-slate-200/80 space-y-4">
+          <div className="h-5 w-32 bg-slate-200 rounded-md" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-2xl bg-slate-100" />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
