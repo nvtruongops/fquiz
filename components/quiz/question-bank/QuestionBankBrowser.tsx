@@ -44,13 +44,31 @@ export function QuestionBankBrowser({
   const [loading, setLoading] = useState(false)
   const [questions, setQuestions] = useState<QuestionBankItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<'popular' | 'recent'>('popular')
 
-  const fetchQuestions = useCallback(async () => {
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const fetchQuestions = useCallback(async (search: string) => {
     setLoading(true)
     try {
+      const params = new URLSearchParams({
+        category_id: categoryId,
+        sort: sortBy,
+        limit: '50',
+      })
+      if (search.trim()) {
+        params.set('search', search.trim())
+      }
+
       const response = await fetch(
-        `/api/question-bank/list?category_id=${categoryId}&sort=${sortBy}&limit=50`,
+        `/api/question-bank/list?${params.toString()}`,
         {
           credentials: 'include',
         }
@@ -74,13 +92,9 @@ export function QuestionBankBrowser({
 
   useEffect(() => {
     if (open && categoryId) {
-      fetchQuestions()
+      fetchQuestions(debouncedSearch)
     }
-  }, [open, categoryId, fetchQuestions])
-
-  const filteredQuestions = questions.filter((q) =>
-    q.text.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  }, [open, categoryId, sortBy, debouncedSearch, fetchQuestions])
 
   const handleSelectQuestion = (question: QuestionBankItem) => {
     onSelectQuestion({
@@ -141,13 +155,13 @@ export function QuestionBankBrowser({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
-          ) : filteredQuestions.length === 0 ? (
+          ) : questions.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               {searchQuery ? 'Không tìm thấy câu hỏi phù hợp' : 'Chưa có câu hỏi trong ngân hàng'}
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredQuestions.map((question) => (
+              {questions.map((question) => (
                 <QuestionCard
                   key={question._id}
                   question={question}

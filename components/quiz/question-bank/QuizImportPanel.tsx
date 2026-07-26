@@ -199,13 +199,20 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
             credentials: 'include',
             body: JSON.stringify({
               category_id: categoryId,
-              questions: nextPreview.normalizedQuiz.questions.map(q => ({
-                text: q.text,
-                options: q.options,
-                correct_answer: q.correct_answer,
-                explanation: q.explanation,
-                image_url: q.image_url,
-              })),
+              questions: nextPreview.normalizedQuiz.questions.map(q => {
+                const opts = q.options.map(o => o.trim())
+                let last = opts.length - 1
+                while (last > 1 && !opts[last]) last--
+                const cleanOpts = opts.slice(0, last + 1)
+
+                return {
+                  text: q.text.trim(),
+                  options: cleanOpts,
+                  correct_answer: q.correct_answer,
+                  explanation: q.explanation,
+                  image_url: q.image_url,
+                }
+              }),
             }),
           })
           

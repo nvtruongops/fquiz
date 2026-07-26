@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/shared/ui/collapsible'
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 
 interface AnalyticsData {
   total_questions: number
@@ -46,17 +47,34 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchAnalytics = useCallback(async (page: number = currentPage) => {
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const fetchAnalytics = useCallback(async (category: string, page: number, search: string) => {
     setLoading(true)
     try {
-      const url =
-        selectedCategory === 'all'
-          ? '/api/question-bank/analytics'
-          : `/api/question-bank/analytics?category_id=${selectedCategory}&page=${page}&per_page=100`
+      const params = new URLSearchParams()
+      if (category && category !== 'all') {
+        params.set('category_id', category)
+      }
+      params.set('page', String(page))
+      params.set('per_page', '100')
+      if (search.trim()) {
+        params.set('search', search.trim())
+      }
 
-      const response = await fetch(url, { credentials: 'include' })
+      const response = await fetch(`/api/question-bank/analytics?${params.toString()}`, {
+        credentials: 'include',
+      })
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics')
@@ -64,44 +82,29 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
 
       const result = await response.json()
       setData(result)
-      setCurrentPage(page)
     } catch (error) {
-      console.error('Error fetching analytics:', error)
+       console.error('Error fetching analytics:', error)
     } finally {
       setLoading(false)
     }
-  }, [selectedCategory, currentPage])
+  }, [])
 
+  // When category or debounced search changes, reset to page 1 and fetch
   useEffect(() => {
-    setCurrentPage(1) // Reset to page 1 when category changes
-    fetchAnalytics(1)
-  }, [selectedCategory, fetchAnalytics])
+    setCurrentPage(1)
+    fetchAnalytics(selectedCategory, 1, debouncedSearch)
+  }, [selectedCategory, debouncedSearch, fetchAnalytics])
 
   const handlePageChange = (page: number) => {
-    fetchAnalytics(page)
+    setCurrentPage(page)
+    fetchAnalytics(selectedCategory, page, debouncedSearch)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        Không thể tải dữ liệu thống kê
-      </div>
-    )
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Thống kê Ngân hàng Câu hỏi
@@ -110,35 +113,73 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
             Phân tích mức độ sử dụng và chất lượng câu hỏi
           </p>
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Chọn môn học" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả môn học</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat._id} value={cat._id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Tìm kiếm câu hỏi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-8 text-sm"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Category Select */}
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Chọn môn học" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả môn học</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Overview Stats */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500">
-            Tổng câu hỏi
+            {debouncedSearch ? 'Số câu hỏi tìm thấy' : 'Tổng câu hỏi'}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{data.total_questions}</div>
+          <div className="text-3xl font-bold">{data?.total_questions ?? 0}</div>
         </CardContent>
       </Card>
 
       {/* Questions List */}
-      {data.questions && data.questions.length > 0 && (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : !data || !data.questions || data.questions.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-gray-500">
+            {debouncedSearch
+              ? `Không tìm thấy câu hỏi phù hợp với từ khóa "${debouncedSearch}"`
+              : selectedCategory !== 'all'
+              ? 'Chưa có câu hỏi nào trong ngân hàng môn học này'
+              : 'Chưa có câu hỏi nào trong ngân hàng'}
+          </CardContent>
+        </Card>
+      ) : (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -176,7 +217,6 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
                 <div className="flex items-center gap-1">
                   {Array.from({ length: data.total_pages }, (_, i) => i + 1)
                     .filter((page) => {
-                      // Show first page, last page, current page, and pages around current
                       return (
                         page === 1 ||
                         page === data.total_pages ||
@@ -184,7 +224,6 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
                       )
                     })
                     .map((page, idx, arr) => {
-                      // Add ellipsis if there's a gap
                       const prevPage = arr[idx - 1]
                       const showEllipsis = prevPage && page - prevPage > 1
 
@@ -217,14 +256,6 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {selectedCategory !== 'all' && data.questions && data.questions.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-gray-500">
-            Chưa có câu hỏi nào trong ngân hàng môn học này
           </CardContent>
         </Card>
       )}
