@@ -34,15 +34,18 @@ export function getAnswerSelectionCount(question: {
     }
     /* eslint-disable security/detect-unsafe-regex */
     const match =
-      text.match(/\((?:choose|select|chọn)\s+(two|three|four|five|six|\d+)(?:\s+answers?|\s+đáp\s+án)?\.?\)/i) ||
-      text.match(/\b(?:choose|select|chọn)\s+(two|three|four|five|six|\d+)\b/i)
+      text.match(/\((?:choose|select|chọn)\s+(two|three|four|five|six|\d+)(?:\s+answers?|\s+options?|\s+đáp\s+án)?\.?\)/i) ||
+      text.match(/\b(?:choose|select|chọn)\s+(two|three|four|five|six|\d+)(?!\s*-\s*[a-z])\s*(?:answers?|options?|đáp\s+án|\.|\$|\b)/i)
     /* eslint-enable security/detect-unsafe-regex */
 
     if (match && match[1]) {
       const val = match[1].toLowerCase()
       /* eslint-disable security/detect-object-injection */
-      countFromText = numberWordsMap[val] ?? (Number.parseInt(val, 10) || 0)
+      const parsedNum = numberWordsMap[val] ?? (Number.parseInt(val, 10) || 0)
       /* eslint-enable security/detect-object-injection */
+      if (parsedNum >= 1 && parsedNum <= 10) {
+        countFromText = parsedNum
+      }
     }
   }
 

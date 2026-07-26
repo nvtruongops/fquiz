@@ -63,4 +63,18 @@ describe('getAnswerSelectionCount', () => {
     }
     expect(getAnswerSelectionCount(q)).toBe(2)
   })
+
+  it('should not misinterpret prose like "choose 64-bit" as choosing 64 answers', () => {
+    const q = {
+      text: 'Why should administrators choose 64-bit versions of SQL Server when possible?',
+      correct_answer: [0],
+      options: [
+        'To fully leverage the capability of 64-bit operating systems.',
+        'To reduce the cost of licensing.',
+        'To simplify the installation process.',
+        'To avoid compatibility issues with 32-bit applications.',
+      ],
+    }
+    expect(getAnswerSelectionCount(q)).toBe(1)
+  })
 })
