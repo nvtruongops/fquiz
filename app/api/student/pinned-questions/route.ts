@@ -51,6 +51,37 @@ async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeP
 /**
  * Resolve the real original (non-temp) quiz and course_code for a question.
  */
+async function findRealQuizForQuestion(cleanCourse: string | undefined, queryCriteria: any[]) {
+  const baseFilter = { is_temp: { $ne: true }, title: { $not: /^Quiz Trộn/i }, $or: queryCriteria }
+  if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
+    const matched = await Quiz.findOne({ ...baseFilter, course_code: cleanCourse }).select('course_code title questions question_refs').lean()
+    if (matched) return matched
+  }
+  return Quiz.findOne(baseFilter).select('course_code title questions question_refs').lean()
+}
+
+async function findAnswerAndExplanation(realQuiz: any, cleanText: string) {
+  if (realQuiz?.questions && Array.isArray(realQuiz.questions)) {
+    const qDoc = realQuiz.questions.find((q: any) => q.text?.trim() === cleanText)
+    if (qDoc?.correct_answer) {
+      const correctAnswer = Array.isArray(qDoc.correct_answer) ? qDoc.correct_answer : [qDoc.correct_answer]
+      return { correctAnswer, explanation: qDoc.explanation }
+    }
+  }
+
+  const { Question } = await import('@/lib/modules/quiz/models/Question')
+  const standalone = await Question.findOne({ text: cleanText }).select('correct_answer explanation').lean() as any
+  if (standalone?.correct_answer) {
+    const correctAnswer = Array.isArray(standalone.correct_answer) ? standalone.correct_answer : [standalone.correct_answer]
+    return { correctAnswer, explanation: standalone.explanation }
+  }
+
+  return { correctAnswer: undefined, explanation: undefined }
+}
+
+/**
+ * Resolve the real original (non-temp) quiz, course_code, correct_answer, and explanation for a question.
+ */
 async function resolveOriginalQuizForQuestion(params: {
   quiz_id?: string
   clientCourseCode?: string
@@ -61,67 +92,65 @@ async function resolveOriginalQuizForQuestion(params: {
   originalQuizId?: Types.ObjectId
   originalQuizTitle: string
   originalCourseCode: string
+  correctAnswer?: number[]
+  explanation?: string
 }> {
   const { quiz_id, clientCourseCode, clientQuizTitle, text, question_id } = params
   const cleanText = text.trim()
   const cleanCourse = clientCourseCode?.trim().toUpperCase()
 
-  // 1. If quiz_id points to a real non-temp quiz, use it directly!
-  if (quiz_id && Types.ObjectId.isValid(quiz_id)) {
-    const quiz = await Quiz.findById(quiz_id).select('course_code title is_temp mix_config').lean() as any
-    if (quiz && !quiz.is_temp && !quiz.title?.startsWith('Quiz Trộn') && !quiz.course_code?.startsWith('TEMP_')) {
-      return {
-        originalQuizId: quiz._id,
-        originalQuizTitle: quiz.title,
-        originalCourseCode: quiz.course_code?.trim().toUpperCase() || cleanCourse || 'GENERAL',
-      }
-    }
-  }
-
-  // 2. Search for the real non-temp Quiz that owns this question (by question text or question_id)
   const queryCriteria: any[] = [{ 'questions.text': cleanText }]
   if (question_id && Types.ObjectId.isValid(question_id)) {
     queryCriteria.push({ question_refs: new Types.ObjectId(question_id) })
     queryCriteria.push({ 'questions._id': new Types.ObjectId(question_id) })
   }
 
-  // Priority search: non-temp quiz in cleanCourse
-  let realQuiz: any = null
-  if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
-    realQuiz = await Quiz.findOne({
-      is_temp: { $ne: true },
-      title: { $not: /^Quiz Trộn/i },
-      course_code: cleanCourse,
-      $or: queryCriteria,
-    }).select('course_code title').lean()
-  }
+  const realQuiz: any = await findRealQuizForQuestion(cleanCourse, queryCriteria)
+  const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText)
 
-  // Fallback search: any non-temp quiz matching the question
-  if (!realQuiz) {
-    realQuiz = await Quiz.findOne({
-      is_temp: { $ne: true },
-      title: { $not: /^Quiz Trộn/i },
-      $or: queryCriteria,
-    }).select('course_code title').lean()
-  }
+  const title = realQuiz?.title ||
+    ((clientQuizTitle && !clientQuizTitle.startsWith('Quiz Trộn'))
+      ? clientQuizTitle
+      : (cleanCourse && cleanCourse !== 'GENERAL' ? cleanCourse : 'GENERAL'))
 
-  if (realQuiz) {
-    return {
-      originalQuizId: realQuiz._id,
-      originalQuizTitle: realQuiz.title,
-      originalCourseCode: realQuiz.course_code?.trim().toUpperCase() || cleanCourse || 'GENERAL',
-    }
-  }
-
-  // 3. Fallback if no non-temp quiz found
-  const title = (clientQuizTitle && !clientQuizTitle.startsWith('Quiz Trộn'))
-    ? clientQuizTitle
-    : (cleanCourse && cleanCourse !== 'GENERAL' ? cleanCourse : 'GENERAL')
+  const courseCode = realQuiz?.course_code?.trim().toUpperCase() || cleanCourse || 'GENERAL'
+  const resolvedQuizId = realQuiz?._id || (quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined)
 
   return {
-    originalQuizId: quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined,
+    originalQuizId: resolvedQuizId,
     originalQuizTitle: title,
-    originalCourseCode: cleanCourse || 'GENERAL',
+    originalCourseCode: courseCode,
+    correctAnswer,
+    explanation,
+  }
+}
+
+async function autoHealPin(pin: any, courseCodeParam: string | null) {
+  const { originalQuizId, originalQuizTitle, originalCourseCode, correctAnswer, explanation } = await resolveOriginalQuizForQuestion({
+    quiz_id: pin.quiz_id?.toString(),
+    clientCourseCode: courseCodeParam || pin.course_code,
+    clientQuizTitle: pin.quiz_title,
+    text: pin.text,
+    question_id: pin.question_id,
+  })
+
+  const updates: any = {}
+  if (originalCourseCode && originalCourseCode !== 'GENERAL' && !originalCourseCode.startsWith('TEMP_') && pin.course_code !== originalCourseCode) {
+    updates.course_code = originalCourseCode
+    updates.quiz_title = originalQuizTitle
+    if (originalQuizId) updates.quiz_id = originalQuizId
+  }
+
+  if (correctAnswer && correctAnswer.length > 0 && JSON.stringify(pin.correct_answer) !== JSON.stringify(correctAnswer)) {
+    updates.correct_answer = correctAnswer
+  }
+
+  if (explanation && (!pin.explanation || pin.explanation.trim() === '')) {
+    updates.explanation = explanation
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await PinnedQuestion.updateOne({ _id: pin._id }, { $set: updates })
   }
 }
 
@@ -136,38 +165,10 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const courseCodeParam = searchParams.get('course_code')
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    // Auto-heal legacy or temp-coded pins for this student to resolve original non-temp quiz & course code
+    // Auto-heal legacy or temp-coded pins for this student
     const allStudentPins = await PinnedQuestion.find({ student_id: studentObjectId }).lean() as any[]
     for (const pin of allStudentPins) {
-      const needsHealing =
-        !pin.course_code ||
-        pin.course_code === 'GENERAL' ||
-        pin.course_code.startsWith('TEMP_') ||
-        !pin.quiz_title ||
-        pin.quiz_title.startsWith('Quiz Trộn')
-
-      if (needsHealing) {
-        const { originalQuizId, originalQuizTitle, originalCourseCode } = await resolveOriginalQuizForQuestion({
-          quiz_id: pin.quiz_id?.toString(),
-          clientCourseCode: courseCodeParam || pin.course_code,
-          clientQuizTitle: pin.quiz_title,
-          text: pin.text,
-          question_id: pin.question_id,
-        })
-
-        if (originalCourseCode && originalCourseCode !== 'GENERAL' && !originalCourseCode.startsWith('TEMP_')) {
-          await PinnedQuestion.updateOne(
-            { _id: pin._id },
-            {
-              $set: {
-                course_code: originalCourseCode,
-                quiz_title: originalQuizTitle,
-                ...(originalQuizId ? { quiz_id: originalQuizId } : {}),
-              },
-            }
-          )
-        }
-      }
+      await autoHealPin(pin, courseCodeParam)
     }
 
     const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
@@ -182,6 +183,50 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['student'] })
+
+async function findExistingPin(studentObjectId: Types.ObjectId, question_id?: string, text?: string) {
+  const cleanText = text?.trim() || ''
+  const orConditions: any[] = [{ text: cleanText }]
+  if (question_id) {
+    orConditions.push({ question_id })
+  }
+  return PinnedQuestion.findOne({
+    student_id: studentObjectId,
+    $or: orConditions,
+  })
+}
+
+async function createPinDocument(params: {
+  studentObjectId: Types.ObjectId
+  question_id?: string
+  originalQuizId?: Types.ObjectId
+  originalQuizTitle: string
+  originalCourseCode: string
+  text: string
+  options: string[]
+  resolvedCorrectAnswer?: number[]
+  correct_answer?: any
+  resolvedExplanation?: string
+  explanation?: string
+  image_url?: string
+}) {
+  const finalCorrectAnswer = (params.resolvedCorrectAnswer && params.resolvedCorrectAnswer.length > 0)
+    ? params.resolvedCorrectAnswer
+    : (Array.isArray(params.correct_answer) && params.correct_answer.length > 0 ? params.correct_answer : [0])
+
+  return PinnedQuestion.create({
+    student_id: params.studentObjectId,
+    question_id: params.question_id || '',
+    quiz_id: params.originalQuizId,
+    quiz_title: params.originalQuizTitle,
+    course_code: params.originalCourseCode,
+    text: params.text.trim(),
+    options: Array.isArray(params.options) ? params.options : [],
+    correct_answer: finalCorrectAnswer,
+    explanation: params.resolvedExplanation || params.explanation || '',
+    image_url: params.image_url || '',
+  })
+}
 
 /**
  * POST /api/student/pinned-questions
@@ -212,8 +257,8 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    // Resolve authoritative non-temp original quiz and course_code
-    const { originalQuizId, originalQuizTitle, originalCourseCode } = await resolveOriginalQuizForQuestion({
+    // Resolve authoritative non-temp original quiz, course_code, correct_answer & explanation
+    const { originalQuizId, originalQuizTitle, originalCourseCode, correctAnswer: resolvedCorrectAnswer, explanation: resolvedExplanation } = await resolveOriginalQuizForQuestion({
       quiz_id,
       clientCourseCode: course_code,
       clientQuizTitle: quiz_title,
@@ -222,13 +267,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     })
 
     // Check if question is already pinned by this student
-    const existing = await PinnedQuestion.findOne({
-      student_id: studentObjectId,
-      $or: [
-        ...(question_id ? [{ question_id }] : []),
-        { text: text.trim() },
-      ],
-    })
+    const existing = await findExistingPin(studentObjectId, question_id, text)
 
     if (existing) {
       // Unpin
@@ -237,18 +276,22 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     }
 
     // Pin
-    const newPin = await PinnedQuestion.create({
-      student_id: studentObjectId,
-      question_id: question_id || '',
-      quiz_id: originalQuizId || (quiz_id ? new Types.ObjectId(quiz_id) : undefined),
-      quiz_title: originalQuizTitle,
-      course_code: originalCourseCode,
-      text: text.trim(),
-      options: Array.isArray(options) ? options : [],
-      correct_answer: Array.isArray(correct_answer) ? correct_answer : [0],
-      explanation: explanation || '',
-      image_url: image_url || '',
+    const newPin = await createPinDocument({
+      studentObjectId,
+      question_id,
+      originalQuizId: originalQuizId || (quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined),
+      originalQuizTitle,
+      originalCourseCode,
+      text,
+      options,
+      resolvedCorrectAnswer,
+      correct_answer,
+      resolvedExplanation,
+      explanation,
+      image_url,
     })
+
+    return NextResponse.json({ pinned: true, item: newPin, message: 'Đã ghim câu hỏi.' }, { status: 201 })
 
     return NextResponse.json({ pinned: true, item: newPin, message: 'Đã ghim câu hỏi.' }, { status: 201 })
   } catch (error) {

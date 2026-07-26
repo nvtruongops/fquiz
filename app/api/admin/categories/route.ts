@@ -39,7 +39,13 @@ async function attachQuizCounts(categories: any[]) {
 
   const categoryIds = categories.map((c) => c._id)
   const grouped = await Quiz.aggregate([
-    { $match: { category_id: { $in: categoryIds } } },
+    {
+      $match: {
+        category_id: { $in: categoryIds },
+        is_temp: { $ne: true },
+        is_saved_from_explore: { $ne: true },
+      },
+    },
     { $group: { _id: '$category_id', quizCount: { $sum: 1 } } },
   ])
 

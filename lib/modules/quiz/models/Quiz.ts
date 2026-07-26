@@ -90,6 +90,7 @@ QuizSchema.index(
     unique: true,
     partialFilterExpression: {
       is_saved_from_explore: { $ne: true },
+      is_temp: { $ne: true },
       created_by: { $exists: true },
     },
   }

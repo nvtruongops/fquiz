@@ -109,7 +109,10 @@ export const RATE_LIMIT_TIERS = {
   // 4. Standard Quiz Session Mutations (60 req/min)
   MUTATION_STANDARD: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'rl:mut' },
 
-  // 5. General Public API Read (100 req/min for Guest, 300 req/min for Auth)
+  // 5. Active Quiz Session Traffic (180 req/min)
+  QUIZ_SESSION: { limit: 180, windowMs: 60 * 1000, keyPrefix: 'rl:quiz_sess' },
+
+  // 6. General Public API Read (100 req/min for Guest, 300 req/min for Auth)
   PUBLIC_READ_GUEST: { limit: 100, windowMs: 60 * 1000, keyPrefix: 'rl:read_guest' },
   PUBLIC_READ_AUTH: { limit: 300, windowMs: 60 * 1000, keyPrefix: 'rl:read_auth' },
 }
@@ -122,8 +125,10 @@ export function checkRateLimit(
   config: RateLimitConfig
 ): RateLimitStatus {
   const ip = getClientIp(request)
-  const authToken = request.cookies.get('auth-token')?.value
-  const userIdentifier = authToken ? `user:${authToken.slice(0, 16)}` : `ip:${ip}`
+  const authToken =
+    request.cookies.get('auth-token')?.value ??
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  const userIdentifier = authToken ? `user:${authToken.slice(-24)}` : `ip:${ip}`
   const key = `${config.keyPrefix || 'rl'}:${userIdentifier}`
 
   return memoryStore.check(key, config.limit, config.windowMs)

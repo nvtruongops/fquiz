@@ -18,11 +18,13 @@ export interface PublicRateLimitResult {
  * Uses IP address for guests, user ID for authenticated users
  */
 function getClientIdentifier(request: NextRequest): string {
-  // Check if user is authenticated (has auth token)
-  const authToken = request.cookies.get('auth-token')?.value
+  // Check if user is authenticated (has auth token in cookie or header)
+  const authToken =
+    request.cookies.get('auth-token')?.value ??
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   if (authToken) {
-    // For authenticated users, use a different (higher) limit
-    return `auth:${authToken.slice(0, 16)}`
+    // For authenticated users, use a different (higher) limit with unique user token signature
+    return `auth:${authToken.slice(-24)}`
   }
 
   // For guests, use IP address
