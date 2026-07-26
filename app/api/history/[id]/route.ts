@@ -76,6 +76,7 @@ async function handleActivePath(quiz: any, activeSession: any, payload: any) {
   })
 }
 
+/* eslint-disable sonarjs/cognitive-complexity */
 export const GET = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
@@ -90,7 +91,7 @@ export const GET = withAuth(async (
     const idObjectId = new mongoose.Types.ObjectId(id)
 
     const quiz = await Quiz.findById(idObjectId).lean() as any
-    const quizSessions = await QuizSession.find({ student_id: new mongoose.Types.ObjectId(payload.userId), quiz_id: idObjectId, status: 'completed' }).sort({ completed_at: -1 }).limit(10).lean() as any[]
+    const quizSessions = await QuizSession.find({ student_id: new mongoose.Types.ObjectId(payload.userId), quiz_id: idObjectId, status: 'completed' }).sort({ completed_at: -1 }).limit(25).lean() as any[]
 
     if (quizSessions.length > 0) {
       let session = quizSessions[0]
@@ -134,10 +135,21 @@ export const GET = withAuth(async (
       return currentQuiz?.questions?.length ?? 0
     }
 
+    const resolveCorrectCount = (s: any) => {
+      if (s.mode === 'flashcard' && s.flashcard_stats) {
+        return s.flashcard_stats.cards_known ?? 0
+      }
+      if (Array.isArray(s.user_answers) && s.user_answers.length > 0) {
+        return s.user_answers.filter((a: any) => a.is_correct).length
+      }
+      return s.score ?? 0
+    }
+
     const attempts = quizSessions.length > 0
       ? quizSessions.map(s => ({
           session_id: s._id,
           score: s.score,
+          correct_count: resolveCorrectCount(s),
           mode: s.mode,
           completed_at: s.completed_at,
           started_at: s.started_at,
@@ -147,6 +159,7 @@ export const GET = withAuth(async (
       : [{
           session_id: session._id,
           score: session.score,
+          correct_count: resolveCorrectCount(session),
           mode: session.mode,
           completed_at: session.completed_at,
           started_at: session.started_at,
