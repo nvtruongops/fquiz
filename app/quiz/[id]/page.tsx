@@ -14,7 +14,7 @@ import { API_ROUTES } from '@/lib/core/constants/api-routes'
 // Sub-components
 import { QuizDetailHeader } from '@/components/quiz/detail/QuizDetailHeader'
 import { QuizStats } from '@/components/quiz/detail/QuizStats'
-import { QuizComments } from '@/components/quiz/detail/QuizComments'
+import { QuizHistory } from '@/components/quiz/detail/QuizHistory'
 import { QuizActionCard } from '@/components/quiz/detail/QuizActionCard'
 import { QuizDetailErrorView } from '@/components/quiz/detail/QuizDetailErrorView'
 import { QuizDetailSkeleton } from '@/components/quiz/detail/QuizDetailSkeleton'
@@ -185,7 +185,7 @@ export default function QuizDetailPage() {
     refetchOnWindowFocus: false,
   })
 
-  const { data: historyData } = useQuery({
+  const { data: historyData, isLoading: isHistoryLoading } = useQuery({
     queryKey: ['quiz-history-detail', quizId],
     queryFn: async () => {
       const res = await fetch(`/api/history/${resolvedQuizId}`)
@@ -269,52 +269,6 @@ export default function QuizDetailPage() {
     },
   })
 
-  const { data: comments = [], isLoading: isCommentsLoading } = useQuery({
-    queryKey: ['quiz-comments', quizId],
-    queryFn: async () => {
-      const res = await fetch(API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId))
-      if (!res.ok) throw new Error('Failed to fetch comments')
-      return res.json()
-    },
-    enabled: !!quizId,
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
-
-
-  const postCommentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await fetch(API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId), {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ content }),
-      })
-      if (!res.ok) throw new Error((await res.json()).error || 'Failed to post comment')
-      return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quiz-comments', quizId] })
-      toast.success('Đã gửi bình luận')
-    },
-    onError: (err: any) => toast.error(err.message)
-  })
-
-  const deleteCommentMutation = useMutation({
-    mutationFn: async (commentId: string) => {
-      const res = await fetch(`${API_ROUTES.PUBLIC.QUIZ_COMMENTS(resolvedQuizId)}?commentId=${commentId}`, {
-        method: 'DELETE',
-        headers: withCsrfHeaders(),
-      })
-      if (!res.ok) throw new Error((await res.json()).error || 'Failed to delete comment')
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quiz-comments', quizId] })
-      toast.success('Đã xóa bình luận')
-    },
-    onError: (err: any) => toast.error(err.message)
-  })
-
   function handleStart() {
     const isLearning = selectedMode === 'flashcard'
     const conflict = isLearning ? activeSessionData?.learningSession : activeSessionData?.assessmentSession
@@ -342,7 +296,7 @@ export default function QuizDetailPage() {
         <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
-      <main className="relative z-10 flex flex-1 flex-col px-3 sm:px-6 py-4 sm:py-8 pb-24 md:pb-16 max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex flex-1 flex-col px-3 sm:px-6 py-4 sm:py-8 pb-40 md:pb-32 max-w-7xl mx-auto w-full">
         {/* Back Navigation Bar */}
         {(() => {
           const rawCode = quiz?.course_code || ''
@@ -390,23 +344,20 @@ export default function QuizDetailPage() {
             </div>
 
             {/* Hidden on mobile, shown on desktop here to keep side-by-side */}
-            <div className="hidden lg:block bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-[32px] p-6 shadow-xs">
-              <QuizComments 
+            <div className="hidden lg:block">
+              <QuizHistory 
                 quizId={resolvedQuizId}
-                comments={comments}
-                isLoading={isCommentsLoading}
+                numQuestions={quiz?.num_questions ?? 0}
+                historyData={historyData}
+                isLoading={isHistoryLoading}
                 currentUser={currentUser}
-                onPostComment={(c) => postCommentMutation.mutate(c)}
-                onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
-                isPosting={postCommentMutation.isPending}
-                isDeleting={deleteCommentMutation.isPending}
                 onAuthRequired={() => setAuthRequiredDialogOpen(true)}
               />
             </div>
           </div>
 
           {/* Action Card & Stats Column (Mobile order 2 & 4) */}
-          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 lg:sticky lg:top-28 order-2 lg:order-2">
+          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 lg:sticky lg:top-24 h-fit order-2 lg:order-2">
             <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs">
               <QuizActionCard 
                 quizId={resolvedQuizId}
@@ -491,17 +442,14 @@ export default function QuizDetailPage() {
             </div>
           </div>
 
-          {/* Comments for Mobile Only (order 3) */}
-          <div className="lg:hidden order-3 bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs overflow-hidden">
-            <QuizComments 
+          {/* Quiz History for Mobile Only (order 3) */}
+          <div className="lg:hidden order-3">
+            <QuizHistory 
               quizId={resolvedQuizId}
-              comments={comments}
-              isLoading={isCommentsLoading}
+              numQuestions={quiz?.num_questions ?? 0}
+              historyData={historyData}
+              isLoading={isHistoryLoading}
               currentUser={currentUser}
-              onPostComment={(c) => postCommentMutation.mutate(c)}
-              onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
-              isPosting={postCommentMutation.isPending}
-              isDeleting={deleteCommentMutation.isPending}
               onAuthRequired={() => setAuthRequiredDialogOpen(true)}
             />
           </div>

@@ -45,6 +45,7 @@ interface QuizActionCardProps {
   latestSessionId?: string
 }
 
+/* eslint-disable sonarjs/cognitive-complexity */
 export function QuizActionCard({
   quizId,
   selectedMode,
@@ -69,7 +70,7 @@ export function QuizActionCard({
 }: QuizActionCardProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="lg:sticky lg:top-10 space-y-4">
+      <div className="space-y-4">
         <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
           <div className="mb-3 border-b border-gray-50 pb-2.5">
             <h3 className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#5D7B6F]">Tùy chọn học tập</h3>
