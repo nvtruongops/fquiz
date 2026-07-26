@@ -58,7 +58,7 @@ export const POST = withAuth(async (
     // Atomic: update only if this question hasn't been answered yet
     const updated = await QuizSession.findOneAndUpdate(
       { _id: id, 'user_answers.question_index': { $ne: targetIndex } },
-      { $push: { user_answers: { question_index: targetIndex, answer_index: submittedAnswerIndexes[0], is_correct: false } } },
+      { $push: { user_answers: { question_index: targetIndex, answer_index: submittedAnswerIndexes[0], answer_indexes: submittedAnswerIndexes, is_correct: false } } },
       { new: true }
     ).lean()
 

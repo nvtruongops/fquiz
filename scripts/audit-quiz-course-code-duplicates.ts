@@ -71,13 +71,18 @@ function compareByNewest(a: QuizDoc, b: QuizDoc): number {
   return b._id.toString().localeCompare(a._id.toString())
 }
 
-async function fetchScopedDocs(collection: mongoose.mongo.Collection): Promise<QuizDoc[]> {
+async function fetchScopedDocs(collection: mongoose.mongo.Collection, publicOnly: boolean): Promise<QuizDoc[]> {
+  const filter: Record<string, any> = {
+    created_by: { $exists: true, $ne: null },
+    is_saved_from_explore: { $ne: true },
+    is_temp: { $ne: true },
+  }
+  if (publicOnly) {
+    filter.is_public = true
+  }
   return (await collection
     .find(
-      {
-        created_by: { $exists: true, $ne: null },
-        is_saved_from_explore: { $ne: true },
-      },
+      filter,
       {
         projection: {
           _id: 1,
@@ -242,7 +247,8 @@ async function main() {
   await mongoose.connect(mongoUri, { bufferCommands: false })
   const collection = mongoose.connection.collection('quizzes')
 
-  const docs = await fetchScopedDocs(collection)
+  const publicOnly = hasFlag('--public-only')
+  const docs = await fetchScopedDocs(collection, publicOnly)
   const docsByOwner = groupDocsByOwner(docs)
   const plan = buildPlan(docsByOwner)
 

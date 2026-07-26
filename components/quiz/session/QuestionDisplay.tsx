@@ -42,9 +42,10 @@ function StandardQuestionView({
   quizId,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
-  const correctAnswerSet = showImmediateFeedback
-    ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
-    : []
+  const rawCorrect = lastAnswerResult?.correctAnswers ??
+    (lastAnswerResult?.correctAnswer !== undefined ? [lastAnswerResult.correctAnswer] : undefined) ??
+    (Array.isArray(question.correct_answer) ? question.correct_answer : typeof question.correct_answer === 'number' ? [question.correct_answer] : [])
+  const correctAnswerSet = showImmediateFeedback ? (Array.isArray(rawCorrect) ? rawCorrect : []) : []
 
   const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
 
@@ -54,6 +55,14 @@ function StandardQuestionView({
   )
 
   const handleTogglePin = () => {
+    const pinCorrectAnswer = showImmediateFeedback && lastAnswerResult?.correctAnswers
+      ? lastAnswerResult.correctAnswers
+      : (Array.isArray((question as any).correct_answer)
+          ? (question as any).correct_answer
+          : typeof (question as any).correct_answer === 'number'
+            ? [(question as any).correct_answer]
+            : [])
+
     togglePinMutation.mutate({
       question_id: question._id,
       quiz_id: quizId,
@@ -61,8 +70,8 @@ function StandardQuestionView({
       course_code: courseCode || 'GENERAL',
       text: question.text,
       options: question.options,
-      correct_answer: (question as any).correct_answer || [0],
-      explanation: (question as any).explanation || '',
+      correct_answer: pinCorrectAnswer,
+      explanation: lastAnswerResult?.explanation || (question as any).explanation || '',
       image_url: question.image_url || '',
     })
   }
@@ -167,9 +176,10 @@ function AnimatedQuestionView({
   quizId,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
-  const correctAnswerSet = showImmediateFeedback
-    ? lastAnswerResult?.correctAnswers ?? [lastAnswerResult?.correctAnswer ?? -1]
-    : []
+  const rawCorrect = lastAnswerResult?.correctAnswers ??
+    (lastAnswerResult?.correctAnswer !== undefined ? [lastAnswerResult.correctAnswer] : undefined) ??
+    (Array.isArray(question.correct_answer) ? question.correct_answer : typeof question.correct_answer === 'number' ? [question.correct_answer] : [])
+  const correctAnswerSet = showImmediateFeedback ? (Array.isArray(rawCorrect) ? rawCorrect : []) : []
 
   const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
 
@@ -179,6 +189,14 @@ function AnimatedQuestionView({
   )
 
   const handleTogglePin = () => {
+    const pinCorrectAnswer = showImmediateFeedback && lastAnswerResult?.correctAnswers
+      ? lastAnswerResult.correctAnswers
+      : (Array.isArray((question as any).correct_answer)
+          ? (question as any).correct_answer
+          : typeof (question as any).correct_answer === 'number'
+            ? [(question as any).correct_answer]
+            : [])
+
     togglePinMutation.mutate({
       question_id: question._id,
       quiz_id: quizId,
@@ -186,8 +204,8 @@ function AnimatedQuestionView({
       course_code: courseCode || 'GENERAL',
       text: question.text,
       options: question.options,
-      correct_answer: (question as any).correct_answer || [0],
-      explanation: (question as any).explanation || '',
+      correct_answer: pinCorrectAnswer,
+      explanation: lastAnswerResult?.explanation || (question as any).explanation || '',
       image_url: question.image_url || '',
     })
   }

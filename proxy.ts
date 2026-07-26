@@ -126,10 +126,7 @@ function createCsrfErrorResponse(requestId: string) {
 }
 
 function isValidRedirectPath(path: string): boolean {
-  if (!path.startsWith('/')) return false
-  if (path.startsWith('//')) return false
-  if (path.includes('%2F') || path.includes('%2f') || path.toLowerCase().includes('%2f')) return false
-  return true
+  return path.startsWith('/') && !path.startsWith('//') && !path.toLowerCase().includes('%2f')
 }
 
 function redirectToLogin(request: NextRequest, pathname: string) {
@@ -345,60 +342,47 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
   return applyCors(request, response)
 }
 
-function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
-  if (!pathname.startsWith('/api/')) return null
-
-  // Exclude health checks & jobs from strict public rate limit if needed
-  if (pathname.startsWith('/api/jobs/')) return null
-
-  // 1. Critical Auth & Security Endpoints
+function getRateLimitTier(request: NextRequest, pathname: string) {
   if (
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/api/auth/register') ||
     pathname.startsWith('/api/auth/forgot-password') ||
     pathname.startsWith('/api/auth/reset-password')
   ) {
-    const status = checkRateLimit(request, RATE_LIMIT_TIERS.AUTH_STRICT)
-    if (!status.success) return createRateLimitErrorResponse(status)
-    return null
+    return RATE_LIMIT_TIERS.AUTH_STRICT
   }
-
-  // 2. High Cost AI & Generation Routes
   if (
     pathname.startsWith('/api/v1/ai') ||
     pathname.startsWith('/api/import/') ||
     pathname.startsWith('/api/admin/settings/test-llm')
   ) {
-    const status = checkRateLimit(request, RATE_LIMIT_TIERS.AI_GENERATE)
-    if (!status.success) return createRateLimitErrorResponse(status)
-    return null
+    return RATE_LIMIT_TIERS.AI_GENERATE
   }
-
-  // 3. Search & Heavy Query Endpoints
   if (
     pathname.startsWith('/api/search') ||
     pathname.startsWith('/api/v1/search') ||
     pathname.startsWith('/api/question-bank/check')
   ) {
-    const status = checkRateLimit(request, RATE_LIMIT_TIERS.SEARCH_HEAVY)
-    if (!status.success) return createRateLimitErrorResponse(status)
-    return null
+    return RATE_LIMIT_TIERS.SEARCH_HEAVY
   }
-
-  // 4. Standard Mutation Endpoints
+  if (pathname.startsWith('/api/sessions/')) {
+    return RATE_LIMIT_TIERS.QUIZ_SESSION
+  }
   if (MUTATION_METHODS.has(request.method)) {
-    const status = checkRateLimit(request, RATE_LIMIT_TIERS.MUTATION_STANDARD)
-    if (!status.success) return createRateLimitErrorResponse(status)
-    return null
+    return RATE_LIMIT_TIERS.MUTATION_STANDARD
   }
+  const isAuthenticated = Boolean(
+    request.cookies.get(AUTH_COOKIE_NAME)?.value ??
+    request.headers.get('authorization')
+  )
+  return isAuthenticated ? RATE_LIMIT_TIERS.PUBLIC_READ_AUTH : RATE_LIMIT_TIERS.PUBLIC_READ_GUEST
+}
 
-  // 5. Default Public/Read API Rate Limit
-  const isAuthenticated = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value)
-  const tier = isAuthenticated ? RATE_LIMIT_TIERS.PUBLIC_READ_AUTH : RATE_LIMIT_TIERS.PUBLIC_READ_GUEST
+function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
+  if (!pathname.startsWith('/api/') || pathname.startsWith('/api/jobs/')) return null
+  const tier = getRateLimitTier(request, pathname)
   const status = checkRateLimit(request, tier)
-  if (!status.success) return createRateLimitErrorResponse(status)
-
-  return null
+  return status.success ? null : createRateLimitErrorResponse(status)
 }
 
 export async function proxy(request: NextRequest) {

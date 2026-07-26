@@ -14,12 +14,12 @@ interface UseSessionActivityTrackingParams {
 
 interface UseSessionActivityTrackingResult {
   shouldWarnBeforeLeave: boolean
-  reportSessionActivity: (event: 'pause' | 'resume') => void
+  reportSessionActivity: (event: 'pause' | 'resume') => Promise<void>
   exitConfirmOpen: boolean
   setExitConfirmOpen: (open: boolean) => void
   inactivityPauseOpen: boolean
   setInactivityPauseOpen: (open: boolean) => void
-  handleResumeInactivity: () => void
+  handleResumeInactivity: () => Promise<void>
 }
 
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -34,27 +34,45 @@ export function useSessionActivityTracking({
   const [inactivityPauseOpen, setInactivityPauseOpen] = useState(false)
 
   const reportSessionActivity = useCallback(
-    (event: 'pause' | 'resume') => {
+    async (event: 'pause' | 'resume') => {
       if (!sessionId) return
       const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
-      void fetch(url, {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: payload,
-        keepalive: true,
-      })
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+          body: payload,
+          keepalive: true,
+        })
+      } catch (err) {
+        console.error('Failed to report session activity', err)
+      }
     },
     [sessionId, currentQuestionIndex],
   )
 
-  const handleResumeInactivity = useCallback(() => {
+  const handleResumeInactivity = useCallback(async () => {
     if (!sessionId) return
     if (typeof window !== 'undefined') {
       localStorage.removeItem(`session_paused_at_${sessionId}`)
     }
     setInactivityPauseOpen(false)
-    reportSessionActivity('resume')
+
+    // Await API POST activity call to guarantee DB removes paused_at
+    await reportSessionActivity('resume')
+
+    // Optimistically update TanStack Query cache to remove paused_at before invalidating
+    queryClient.setQueryData(['sessions', sessionId], (old: SessionData | undefined) => {
+      if (!old?.session) return old
+      const newSession = { ...old.session }
+      delete newSession.paused_at
+      return {
+        ...old,
+        session: newSession,
+      }
+    })
+
     void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
   }, [sessionId, reportSessionActivity, queryClient])
 
@@ -83,7 +101,7 @@ export function useSessionActivityTracking({
     if (isPausedOver5Mins) {
       setInactivityPauseOpen(true)
     } else {
-      reportSessionActivity('resume')
+      void reportSessionActivity('resume')
     }
   }, [sessionId, activeData?.session?.paused_at, reportSessionActivity])
 
@@ -112,13 +130,13 @@ export function useSessionActivityTracking({
       if (typeof window !== 'undefined') {
         localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
       }
-      reportSessionActivity('pause')
+      void reportSessionActivity('pause')
     } else {
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem(`session_paused_at_${sessionId}`)
         if (stored) {
           localStorage.removeItem(`session_paused_at_${sessionId}`)
-          reportSessionActivity('resume')
+          void reportSessionActivity('resume')
           void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
         }
       }
@@ -136,7 +154,7 @@ export function useSessionActivityTracking({
       if (typeof window !== 'undefined') {
         localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
       }
-      reportSessionActivity('pause')
+      void reportSessionActivity('pause')
 
       // Schedule 5-minute inactivity pause modal trigger
       if (idleTimer) clearTimeout(idleTimer)
@@ -151,6 +169,9 @@ export function useSessionActivityTracking({
         idleTimer = null
       }
 
+      // Guard: do not re-trigger pause check if pause modal is already open
+      if (inactivityPauseOpen) return
+
       if (typeof window !== 'undefined') {
         const storedPause = localStorage.getItem(`session_paused_at_${sessionId}`)
         if (storedPause) {
@@ -164,7 +185,7 @@ export function useSessionActivityTracking({
         }
       }
 
-      reportSessionActivity('resume')
+      void reportSessionActivity('resume')
       void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
     }
 
@@ -193,7 +214,7 @@ export function useSessionActivityTracking({
       globalThis.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, reportSessionActivity, queryClient])
+  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, inactivityPauseOpen, reportSessionActivity, queryClient])
 
   // Per-question 5-minute inactivity timer (no user interaction for 5 minutes)
   useEffect(() => {
@@ -209,7 +230,7 @@ export function useSessionActivityTracking({
         if (typeof window !== 'undefined') {
           localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
         }
-        reportSessionActivity('pause')
+        void reportSessionActivity('pause')
         setInactivityPauseOpen(true)
       }, IDLE_TIMEOUT_MS)
     }
@@ -247,3 +268,4 @@ export function useSessionActivityTracking({
     handleResumeInactivity,
   }
 }
+

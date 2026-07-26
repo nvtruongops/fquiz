@@ -19,11 +19,13 @@ function StaticExplanationView({
   showImmediateFeedback,
   lastAnswerResult,
   explanationText,
+  correctLetters,
   onClose,
 }: {
   showImmediateFeedback: boolean
   lastAnswerResult: QuestionFeedback | null
   explanationText?: string
+  correctLetters?: string
   onClose?: () => void
 }) {
   return (
@@ -52,6 +54,11 @@ function StaticExplanationView({
               )}
               <span>{lastAnswerResult?.isCorrect ? 'Chính xác!' : 'Chưa đúng!'}</span>
             </div>
+            {correctLetters && (
+              <p className="font-bold text-emerald-700">
+                Đáp án đúng: {correctLetters}
+              </p>
+            )}
             <p className="whitespace-pre-wrap leading-relaxed">
               {explanationText || 'Hệ thống chưa có phần giải thích cho câu này.'}
             </p>
@@ -70,11 +77,13 @@ function AnimatedExplanationView({
   showImmediateFeedback,
   lastAnswerResult,
   explanationText,
+  correctLetters,
   onClose,
 }: {
   showImmediateFeedback: boolean
   lastAnswerResult: QuestionFeedback | null
   explanationText?: string
+  correctLetters?: string
   onClose?: () => void
 }) {
   return (
@@ -156,6 +165,11 @@ function AnimatedExplanationView({
                     ? 'Chính xác! Bạn đã trả lời đúng.'
                     : 'Chưa đúng! Vui lòng đọc giải thích bên dưới.'}
                 </h4>
+                {correctLetters && (
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mt-1">
+                    Đáp án đúng: {correctLetters}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -199,12 +213,22 @@ export const ExplanationPanel = React.memo(function ExplanationPanel({
 }: ExplanationPanelProps) {
   const explanationText = lastAnswerResult?.explanation || question?.explanation
 
+  const correctAnswersList = lastAnswerResult?.correctAnswers ??
+    (lastAnswerResult?.correctAnswer !== undefined ? [lastAnswerResult.correctAnswer] : undefined) ??
+    (Array.isArray(question?.correct_answer) ? question.correct_answer : typeof question?.correct_answer === 'number' ? [question.correct_answer] : [])
+
+  const correctLetters = correctAnswersList
+    .filter((idx) => typeof idx === 'number' && idx >= 0)
+    .map((idx) => String.fromCodePoint(65 + idx))
+    .join(', ')
+
   if (!enableAnimation) {
     return (
       <StaticExplanationView
         showImmediateFeedback={showImmediateFeedback}
         lastAnswerResult={lastAnswerResult}
         explanationText={explanationText}
+        correctLetters={correctLetters}
         onClose={onClose}
       />
     )
@@ -215,6 +239,7 @@ export const ExplanationPanel = React.memo(function ExplanationPanel({
       showImmediateFeedback={showImmediateFeedback}
       lastAnswerResult={lastAnswerResult}
       explanationText={explanationText}
+      correctLetters={correctLetters}
       onClose={onClose}
     />
   )
