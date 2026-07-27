@@ -30,13 +30,13 @@ function StaticExplanationView({
 }) {
   return (
     <div className="flex h-full flex-col font-sans">
-      <div className="flex items-center justify-between border-b-2 border-[#101010] pb-2 mb-3">
-        <h3 className="text-[20px] font-bold text-[#111111]">Giải thích chi tiết</h3>
+      <div className="flex items-center justify-between border-b border-[#d4d4d4] pb-2 mb-3">
+        <h3 className="text-sm font-bold text-[#171717]">Giải thích chi tiết</h3>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="text-[14px] font-bold text-[#111111] hover:underline"
+            className="text-xs font-semibold text-[#525252] hover:underline"
             title="Thu gọn"
           >
             [X] Thu gọn
@@ -45,17 +45,17 @@ function StaticExplanationView({
       </div>
       <div className="flex-1 overflow-y-auto quiz-scroll pr-1">
         {showImmediateFeedback ? (
-          <div className="border border-[#c7c7c7] bg-[#f5f5f5] p-3 text-[14px] text-[#111111] space-y-2">
+          <div className="border border-[#d4d4d4] bg-white p-3 text-sm text-[#262626] space-y-2">
             <div className="flex items-center gap-2 font-bold">
               {lastAnswerResult?.isCorrect ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
               ) : (
-                <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+                <XCircle className="h-4 w-4 text-red-600 shrink-0" />
               )}
               <span>{lastAnswerResult?.isCorrect ? 'Chính xác!' : 'Chưa đúng!'}</span>
             </div>
             {correctLetters && (
-              <p className="font-bold text-emerald-700">
+              <p className="font-semibold text-green-700">
                 Đáp án đúng: {correctLetters}
               </p>
             )}
@@ -64,7 +64,7 @@ function StaticExplanationView({
             </p>
           </div>
         ) : (
-          <div className="border border-[#d0d0d0] bg-[#fafafa] p-3 text-[13px] text-[#555555]">
+          <div className="border border-dashed border-[#d4d4d4] bg-[#fafafa] p-3 text-xs text-[#737373]">
             <p>Chưa có giải thích. Sau khi nộp đáp án ở chế độ luyện tập, giải thích chi tiết sẽ hiển thị tại đây.</p>
           </div>
         )}

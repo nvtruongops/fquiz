@@ -149,6 +149,24 @@ describe('shuffleQuestionOptions', () => {
     expect(shuffled.correct_answer).toBe(2)
   })
 
+  it('should not strip leading digits from decimal numbers like 1.0, 2.0, 1.4', () => {
+    const q = {
+      text: 'What is the recommended processor speed for a machine running SQL Server 2008?',
+      options: ['1.0 GHz (32-bit)', '2.0 GHz or higher', '1.4 GHz (64-bit)', '3.0 GHz or higher'],
+      correct_answer: 1,
+    }
+
+    for (let i = 0; i < 10; i++) {
+      const shuffled = shuffleQuestionOptions(q)
+      expect(shuffled.options).toEqual(expect.arrayContaining([
+        '1.0 GHz (32-bit)',
+        '2.0 GHz or higher',
+        '1.4 GHz (64-bit)',
+        '3.0 GHz or higher'
+      ]))
+    }
+  })
+
   it('should return original question if options length < 2', () => {
     const q = {
       text: 'Một câu hỏi đơn',
@@ -160,5 +178,6 @@ describe('shuffleQuestionOptions', () => {
     expect(result).toEqual(q)
   })
 })
+
 
 

@@ -78,7 +78,7 @@ export const SessionLayout = React.memo(function SessionLayout({
   return (
     <div className={cn(
       "h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans select-none",
-      enableAnimation ? "bg-slate-100 dark:bg-slate-950" : "bg-[#ececec]"
+      enableAnimation ? "bg-slate-100 dark:bg-slate-950" : "bg-[#fafafa]"
     )}>
       {/* Header */}
       <QuizHeader
@@ -123,7 +123,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         {/* Column 2: Center Question & Options Display */}
         <main className={cn(
           "flex-1 min-w-0 h-full overflow-y-auto quiz-scroll",
-          enableAnimation ? "bg-slate-50/50 dark:bg-slate-900/50" : "border-l-2 border-r-2 border-[#101010] bg-[#ececec]"
+          enableAnimation ? "bg-slate-50/50 dark:bg-slate-900/50" : "border-l border-r border-[#d4d4d4] bg-white"
         )}>
           {augmentedChildren}
         </main>
@@ -131,10 +131,10 @@ export const SessionLayout = React.memo(function SessionLayout({
         {/* Column 3: Right Detailed Explanation Panel (Collapsed by default, opens on toggle) */}
         {explanationContent && isExplanationOpen && (
           <aside className={cn(
-            "w-[320px] lg:w-[360px] xl:w-[400px] shrink-0 h-full overflow-y-auto quiz-scroll p-4 sm:p-5 animate-in fade-in slide-in-from-right-4 duration-300",
+            "w-[320px] lg:w-[360px] xl:w-[400px] shrink-0 h-full overflow-y-auto quiz-scroll p-4 sm:p-5",
             enableAnimation
-              ? "border-l border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md"
-              : "border-l-2 border-[#101010] bg-[#e9e9e9]"
+              ? "animate-in fade-in slide-in-from-right-4 duration-300 border-l border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md"
+              : "border-l border-[#d4d4d4] bg-[#fafafa]"
           )}>
             {augmentedExplanation}
           </aside>

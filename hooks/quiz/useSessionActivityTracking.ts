@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { SessionData } from '@/lib/modules/quiz/types/session'
@@ -20,6 +20,7 @@ interface UseSessionActivityTrackingResult {
   inactivityPauseOpen: boolean
   setInactivityPauseOpen: (open: boolean) => void
   handleResumeInactivity: () => Promise<void>
+  markExiting: () => void
 }
 
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -32,6 +33,11 @@ export function useSessionActivityTracking({
   const queryClient = useQueryClient()
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [inactivityPauseOpen, setInactivityPauseOpen] = useState(false)
+  const isExitingRef = useRef(false)
+
+  const markExiting = useCallback(() => {
+    isExitingRef.current = true
+  }, [])
 
   const reportSessionActivity = useCallback(
     async (event: 'pause' | 'resume') => {
@@ -115,6 +121,7 @@ export function useSessionActivityTracking({
     const guardState = { quizSessionGuard: sessionId }
     globalThis.history.pushState(guardState, '', globalThis.location.href)
     const handlePopState = () => {
+      if (isExitingRef.current) return
       setExitConfirmOpen(true)
       globalThis.history.pushState(guardState, '', globalThis.location.href)
     }
@@ -136,8 +143,10 @@ export function useSessionActivityTracking({
         const stored = localStorage.getItem(`session_paused_at_${sessionId}`)
         if (stored) {
           localStorage.removeItem(`session_paused_at_${sessionId}`)
-          void reportSessionActivity('resume')
-          void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+          if (!isExitingRef.current) {
+            void reportSessionActivity('resume')
+            void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+          }
         }
       }
     }
@@ -145,11 +154,12 @@ export function useSessionActivityTracking({
 
   // Visibility/pagehide/blur guard with 5-minute timeout check
   useEffect(() => {
-    if (!shouldWarnBeforeLeave || !sessionId) return
+    if (!shouldWarnBeforeLeave || !sessionId || isExitingRef.current) return
 
     let idleTimer: NodeJS.Timeout | null = null
 
     const handlePause = () => {
+      if (isExitingRef.current) return
       const now = Date.now()
       if (typeof window !== 'undefined') {
         localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
@@ -159,11 +169,12 @@ export function useSessionActivityTracking({
       // Schedule 5-minute inactivity pause modal trigger
       if (idleTimer) clearTimeout(idleTimer)
       idleTimer = setTimeout(() => {
-        setInactivityPauseOpen(true)
+        if (!isExitingRef.current) setInactivityPauseOpen(true)
       }, IDLE_TIMEOUT_MS)
     }
 
     const handleResume = () => {
+      if (isExitingRef.current) return
       if (idleTimer) {
         clearTimeout(idleTimer)
         idleTimer = null
@@ -225,6 +236,7 @@ export function useSessionActivityTracking({
     const resetQuestionIdleTimer = () => {
       if (questionIdleTimer) clearTimeout(questionIdleTimer)
       questionIdleTimer = setTimeout(() => {
+        if (isExitingRef.current) return
         // Paused due to 5 minutes of no user interaction on the question
         const now = Date.now()
         if (typeof window !== 'undefined') {
@@ -241,7 +253,7 @@ export function useSessionActivityTracking({
     // Reset timer on user interaction
     const userActivityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
     const handleUserInteraction = () => {
-      if (!inactivityPauseOpen) {
+      if (!inactivityPauseOpen && !isExitingRef.current) {
         resetQuestionIdleTimer()
       }
     }
@@ -266,6 +278,7 @@ export function useSessionActivityTracking({
     inactivityPauseOpen,
     setInactivityPauseOpen,
     handleResumeInactivity,
+    markExiting,
   }
 }
 

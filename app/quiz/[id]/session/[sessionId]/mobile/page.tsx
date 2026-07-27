@@ -92,6 +92,7 @@ export default function QuizSessionMobilePage() {
     inactivityPauseOpen,
     setInactivityPauseOpen,
     handleResumeInactivity,
+    markExiting,
   } = useSessionActivityTracking({
     sessionId: resolvedSessionId,
     currentQuestionIndex,
@@ -178,11 +179,14 @@ export default function QuizSessionMobilePage() {
   }
 
   function handleConfirmExitQuiz() {
-    reportSessionActivity('pause')
+    markExiting()
+    void reportSessionActivity('pause')
     setExitConfirmOpen(false)
     sessionLoader.open('Đang lưu tiến trình và thoát phòng thi...')
+    const targetQuizId = (activeData?.session as any)?.quiz_id || (activeData?.session as any)?.quizId || resolvedQuizId
+    const targetUrl = activeData?.session?.is_temp || !targetQuizId || targetQuizId === 'undefined' ? '/' : `/quiz/${targetQuizId}`
     sessionLoader.completeAndNavigate(() => {
-      router.push(activeData?.session?.is_temp ? '/' : `/quiz/${resolvedQuizId}`)
+      router.push(targetUrl)
     })
   }
 

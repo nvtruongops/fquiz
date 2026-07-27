@@ -40,55 +40,55 @@ export const SessionModals = React.memo(function SessionModals({
     return (
       <>
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+          <DialogContent className="max-w-md rounded-none border border-[#d4d4d4] bg-white p-5 shadow-none">
             <DialogHeader>
-              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Xác nhận nộp bài</DialogTitle>
-              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+              <DialogTitle className="text-center text-base font-bold text-[#171717]">Xác nhận nộp bài</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-sm text-[#525252]">
                 Bạn đã làm {answeredCount}/{totalQuestions} câu. Bạn có chắc chắn muốn nộp không?
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+            <DialogFooter className="mt-3 flex gap-2 sm:justify-center">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-none border-[#101010] bg-white px-6 text-[15px] font-semibold text-[#111111] hover:bg-[#efefef]"
+                className="rounded-none border-[#d4d4d4] bg-white px-6 text-sm font-semibold text-[#404040] hover:bg-[#f5f5f5]"
               >
-                Cancel
+                Hủy
               </Button>
               <Button
                 type="button"
                 onClick={onConfirmSubmit}
                 disabled={isPending}
-                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+                className="rounded-none bg-[#5D7B6F] px-6 text-sm font-semibold text-white hover:bg-[#4a6358]"
               >
-                {isPending ? 'Đang nộp...' : 'OK'}
+                {isPending ? 'Đang nộp...' : 'Nộp bài'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
-          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+          <DialogContent className="max-w-md rounded-none border border-[#d4d4d4] bg-white p-5 shadow-none">
             <DialogHeader>
-              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Dừng làm bài?</DialogTitle>
-              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+              <DialogTitle className="text-center text-base font-bold text-[#171717]">Dừng làm bài?</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-sm text-[#525252]">
                 Tiến trình của bạn đã được lưu tự động. Bạn có muốn tạm dừng và quay lại sau không?
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+            <DialogFooter className="mt-3 flex gap-2 sm:justify-center">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setExitConfirmOpen(false)}
-                className="rounded-none border-[#101010] bg-white px-6 text-[15px] font-semibold text-[#111111] hover:bg-[#efefef]"
+                className="rounded-none border-[#d4d4d4] bg-white px-6 text-sm font-semibold text-[#404040] hover:bg-[#f5f5f5]"
               >
                 Tiếp tục làm bài
               </Button>
               <Button
                 type="button"
                 onClick={onConfirmExit}
-                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+                className="rounded-none bg-[#5D7B6F] px-6 text-sm font-semibold text-white hover:bg-[#4a6358]"
               >
                 Tạm dừng &amp; Thoát
               </Button>
@@ -98,18 +98,18 @@ export const SessionModals = React.memo(function SessionModals({
 
         {/* 5-minute Inactivity Pause Modal */}
         <Dialog open={inactivityPauseOpen} onOpenChange={setInactivityPauseOpen}>
-          <DialogContent className="max-w-md border-2 border-[#101010] bg-[#f3f3f3] p-5">
+          <DialogContent className="max-w-md rounded-none border border-[#d4d4d4] bg-white p-5 shadow-none">
             <DialogHeader>
-              <DialogTitle className="text-center text-[22px] font-bold text-[#101010]">Đã tự động tạm dừng</DialogTitle>
-              <DialogDescription className="pt-1 text-center text-[15px] text-[#3d3d3d]">
+              <DialogTitle className="text-center text-base font-bold text-[#171717]">Đã tự động tạm dừng</DialogTitle>
+              <DialogDescription className="pt-1 text-center text-sm text-[#525252]">
                 Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình của bạn.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="mt-2 flex gap-2 sm:justify-center">
+            <DialogFooter className="mt-3 flex gap-2 sm:justify-center">
               <Button
                 type="button"
                 onClick={() => onResumeInactivity?.()}
-                className="rounded-none border border-[#101010] bg-[#efefef] px-6 text-[15px] font-semibold text-[#111111] hover:bg-white"
+                className="rounded-none bg-[#5D7B6F] px-6 text-sm font-semibold text-white hover:bg-[#4a6358]"
               >
                 Tiếp tục làm bài
               </Button>

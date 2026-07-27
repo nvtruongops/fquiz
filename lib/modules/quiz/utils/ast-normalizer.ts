@@ -35,7 +35,7 @@ export function normalizeTextAST(text: string): string {
     // 6. Strip Question prefixes (e.g. "Question 1:", "Câu 1:", "Q1:") if non-empty remainder
     .replace(/^(?:question\s+\d+|câu\s+\d+|cau\s+\d+|q\d+)[:.]\s*/gi, '')
     // 7. Strip Option label prefixes (A. , B) , [C] , 1. , (A) , A- , A: , A/ )
-    .replace(/^(?:\[[a-z0-9]+\]|\([a-z0-9]+\)|[a-z0-9][.\):/-])\s*/gi, '')
+    .replace(/^(?:\[[a-z0-9]+\]|\([a-z0-9]+\)|[a-z][.\):/-]|\d+[.\):/-](?!\d))\s*/gi, '')
     // 8. Normalize punctuation before spaces (e.g. " ?" -> "?")
     .replace(/\s+([?.!,:;])/g, '$1')
     // 9. Strip leading & trailing punctuation & whitespace

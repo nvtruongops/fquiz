@@ -141,6 +141,7 @@ function DesktopSessionContent({
     inactivityPauseOpen,
     setInactivityPauseOpen,
     handleResumeInactivity,
+    markExiting,
   } = useSessionActivityTracking({
     sessionId: resolvedSessionId,
     currentQuestionIndex,
@@ -298,11 +299,14 @@ function DesktopSessionContent({
             finalizeMutation.mutate(); 
           }}
           onConfirmExit={() => { 
+            markExiting();
             setExitConfirmOpen(false); 
             sessionLoader.open('Đang lưu tiến trình và thoát phòng thi...'); 
-            reportSessionActivity('pause'); 
+            void reportSessionActivity('pause'); 
+            const targetQuizId = (session as any)?.quiz_id || (session as any)?.quizId || resolvedQuizId;
+            const targetUrl = session?.is_temp || !targetQuizId || targetQuizId === 'undefined' ? '/' : `/quiz/${targetQuizId}`;
             sessionLoader.completeAndNavigate(() => {
-              router.push(session.is_temp ? '/' : `/quiz/${resolvedQuizId}`);
+              router.push(targetUrl);
             });
           }}
         />

@@ -35,49 +35,49 @@ const QuizHeader = React.memo(function QuizHeader({
 
   if (!enableAnimation) {
     return (
-      <header className="shrink-0 border-b-2 border-[#101010] bg-[#e9e9e9] px-3 py-2 sm:px-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
-          <div className="flex min-w-[210px] flex-col gap-1 text-[15px] font-semibold leading-tight text-[#111111]">
-            <p>Danh mục: <span className="font-bold">{categoryName || 'Chưa phân loại'}</span></p>
-            <p>Mã Quiz: <span className="font-bold uppercase">{courseCode || 'N/A'}</span></p>
+      <header className="shrink-0 border-b border-[#d4d4d4] bg-white px-3 py-2 sm:px-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* Left: Quiz info */}
+          <div className="min-w-0 shrink-0">
+            <p className="truncate text-sm font-bold text-[#171717]">{categoryName || 'Chưa phân loại'}</p>
+            <p className="text-xs font-semibold uppercase text-[#737373]">{courseCode || 'N/A'}</p>
           </div>
-          <div className="min-w-0 flex-1 border border-[#c8c8c8] bg-[#efefef] px-3 py-2">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[12px] text-[#2f6f31]">
-                There are {totalQuestions || 0} questions, and your progress of answering is {progressPercent}% ({answeredCount}/{totalQuestions || 0}) - current question: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}
-              </p>
-              <div className="flex items-center gap-3 shrink-0">
-                {onToggleExplanation && (
-                  <button
-                    type="button"
-                    onClick={onToggleExplanation}
-                    className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-900 border border-amber-400 font-bold text-xs"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    {isExplanationOpen ? 'Đóng giải thích' : 'Mở giải thích'}
-                  </button>
-                )}
-                {onToggleAnimation && (
-                  <div className="flex items-center gap-1.5 bg-white/70 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-sm" title="Bật/Tắt hiệu ứng giao diện">
-                    <Sparkles className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 hidden sm:inline">Hiệu ứng</span>
-                    <Switch 
-                      checked={enableAnimation} 
-                      onCheckedChange={onToggleAnimation} 
-                      className="scale-75 data-[state=checked]:bg-amber-500"
-                    />
-                  </div>
-                )}
-                {children}
+
+          {/* Center: Progress */}
+          <div className="min-w-[180px] flex-1">
+            <div className="flex items-center justify-between gap-3 text-xs text-[#525252]">
+              <span>Đã trả lời {answeredCount}/{totalQuestions || 0} câu ({progressPercent}%)</span>
+              <span>Câu hiện tại: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}</span>
+            </div>
+            <div className="mt-1 h-1.5 w-full bg-[#e5e5e5]">
+              <div className="h-full bg-[#5D7B6F]" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+
+          {/* Right: Controls & Timer */}
+          <div className="flex items-center gap-2 shrink-0">
+            {onToggleExplanation && (
+              <button
+                type="button"
+                onClick={onToggleExplanation}
+                className="flex items-center gap-1 border border-[#d4d4d4] bg-white px-2 py-1 text-xs font-semibold text-[#404040] hover:bg-[#f5f5f5]"
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                {isExplanationOpen ? 'Đóng giải thích' : 'Giải thích'}
+              </button>
+            )}
+            {onToggleAnimation && (
+              <div className="flex items-center gap-1.5 border border-[#d4d4d4] bg-white px-2 py-1" title="Bật/Tắt hiệu ứng giao diện">
+                <Sparkles className="w-3.5 h-3.5 text-[#a3a3a3]" />
+                <span className="text-xs font-semibold text-[#525252] hidden sm:inline">Hiệu ứng</span>
+                <Switch 
+                  checked={enableAnimation} 
+                  onCheckedChange={onToggleAnimation} 
+                  className="scale-75 data-[state=checked]:bg-amber-500"
+                />
               </div>
-            </div>
-            <div className="mt-1 border border-[#c8c8c8] bg-white p-[2px]">
-              <progress
-                value={progressPercent}
-                max={100}
-                className="h-3 w-full overflow-hidden [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:bg-[#22b14c] [&::-moz-progress-bar]:bg-[#22b14c]"
-              />
-            </div>
+            )}
+            {children}
           </div>
         </div>
       </header>

@@ -35,7 +35,7 @@ const DEPENDENT_OPTION_PATTERNS = [
 export function stripOptionPrefix(text: string): string {
   if (typeof text !== 'string') return text
   /* eslint-disable security/detect-unsafe-regex */
-  return text.replace(/^\s*(?:\[[A-Za-z0-9]\]|[A-Za-z0-9][.\):])\s*/, '').trim()
+  return text.replace(/^\s*(?:\[[A-Za-z0-9]+\]|\([A-Za-z0-9]+\)|[A-Za-z][.\):]|\d+[.\):](?!\d))\s*/, '').trim()
   /* eslint-enable security/detect-unsafe-regex */
 }
 

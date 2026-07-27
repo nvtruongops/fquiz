@@ -81,11 +81,11 @@ const QuizSidebar = React.memo(function QuizSidebar({
 
   if (!enableAnimation) {
     return (
-      <aside className="w-[210px] shrink-0 bg-[#e9e9e9] sm:w-[250px]">
+      <aside className="w-[200px] shrink-0 border-r border-[#d4d4d4] bg-[#fafafa] sm:w-[230px]">
         <div className="quiz-scroll flex h-full flex-col overflow-y-auto">
-          <div className="px-4 py-4 sm:px-5">
-            <h3 className="mb-2 whitespace-nowrap text-[24px] font-bold leading-none text-[#111111]">Chọn đáp án</h3>
-            <div className="space-y-1.5">
+          <div className="p-3 sm:p-4">
+            <h3 className="mb-2 text-sm font-bold text-[#171717]">Chọn đáp án</h3>
+            <div className="space-y-1">
               {options.map((option, idx) => (
                 <button
                   key={option}
@@ -93,68 +93,72 @@ const QuizSidebar = React.memo(function QuizSidebar({
                   disabled={isSubmitted}
                   onClick={() => onSelectOption(idx)}
                   className={cn(
-                    'flex items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-80 rounded px-1 transition-colors',
-                    focusedOption === idx && !isSubmitted && 'bg-gray-300'
+                    'flex w-full items-center gap-2 border px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60',
+                    selectedOptions.includes(idx)
+                      ? 'border-[#5D7B6F] bg-[#5D7B6F]/10 font-semibold text-[#3d5c50]'
+                      : 'border-[#d4d4d4] bg-white text-[#404040] hover:border-[#a3a3a3]',
+                    focusedOption === idx && !isSubmitted && 'ring-1 ring-[#5D7B6F]'
                   )}
                 >
                   <span
                     className={cn(
-                      'inline-flex h-6 w-6 items-center justify-center border-2 border-[#111111] bg-white text-[10px] font-bold',
-                      selectedOptions.includes(idx) && 'bg-[#d8ebd8]',
-                      focusedOption === idx && !isSubmitted && 'border-gray-600 bg-gray-200'
+                      'flex h-5 w-5 shrink-0 items-center justify-center border text-[11px] font-bold',
+                      selectedOptions.includes(idx)
+                        ? 'border-[#5D7B6F] bg-[#5D7B6F] text-white'
+                        : 'border-[#a3a3a3] bg-white text-[#525252]'
                     )}
                   >
-                    {selectedOptions.includes(idx) ? 'X' : ''}
+                    {option}
                   </span>
-                  <span className="text-[24px] font-bold leading-none text-[#111111]">{option}</span>
+                  {selectedOptions.includes(idx) && <span className="text-xs">Đã chọn</span>}
                 </button>
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onNavigate(currentIndex - 1)}
                 disabled={currentIndex === 0}
-                className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
+                className="h-9 rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-[#404040] hover:bg-[#f5f5f5]"
                 title="Câu trước (←)"
               >
-                <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                <ChevronLeft className="mr-1 h-4 w-4" /> Trước
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onNavigate(currentIndex + 1)}
                 disabled={currentIndex === totalQuestions - 1}
-                className="h-10 rounded-none border-[#111111] bg-[#f4f4f4] text-[16px] font-semibold text-[#111111] hover:bg-white"
+                className="h-9 rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-[#404040] hover:bg-[#f5f5f5]"
                 title="Câu sau (→)"
               >
-                Next <ChevronRight className="ml-1 h-4 w-4" />
+                Sau <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <div className="mt-auto border-t-2 border-[#101010] p-3 sm:p-4 space-y-2">
-            <Button
-              type="button"
-              onClick={onExit}
-              className="h-auto w-full rounded-none border-2 border-[#111111] bg-white px-3 py-2 text-left text-[18px] font-bold text-red-600 hover:bg-red-50"
-            >
-              Thoát bài thi
-            </Button>
+          <div className="mt-auto border-t border-[#d4d4d4] p-3 sm:p-4 space-y-2">
+            <p className="text-xs font-semibold text-[#525252]">
+              {answeredCount}/{totalQuestions} câu đã trả lời
+            </p>
             <Button
               type="button"
               onClick={onSubmit}
               disabled={isPending}
-              className="h-auto w-full rounded-none border-2 border-[#111111] bg-[#efefef] px-3 py-3 text-left text-[22px] font-bold leading-tight text-[#111111] hover:bg-white"
+              className="h-10 w-full rounded-none bg-[#5D7B6F] text-sm font-bold text-white hover:bg-[#4a6358]"
             >
-              <span className="block">Nộp bài <span className="inline-block h-5 w-5 border-2 border-[#111111] align-middle" /></span>
-              {isPending ? <Loader2 className="ml-2 inline h-4 w-4 animate-spin align-middle" /> : null}
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Nộp bài'}
             </Button>
-            <p className="mt-2 text-[17px] font-semibold text-[#333333]">
-              {answeredCount}/{totalQuestions} câu đã trả lời
-            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onExit}
+              className="h-9 w-full rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-red-600 hover:bg-red-50"
+            >
+              Thoát bài thi
+            </Button>
           </div>
         </div>
       </aside>
