@@ -26,29 +26,15 @@ interface QuestionDisplayProps {
   quizId?: string
 }
 
-function StandardQuestionView({
+// Shared pin logic for both static & animated views
+function useQuestionPin({
   question,
-  currentIndex,
-  totalQuestions,
-  selectedOptions,
-  submitted,
   showImmediateFeedback,
   lastAnswerResult,
-  onSelectOption,
-  isPending,
-  sessionMode,
   courseCode,
   quizTitle,
   quizId,
-}: QuestionDisplayProps) {
-  const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
-  const rawCorrect = lastAnswerResult?.correctAnswers ??
-    (lastAnswerResult?.correctAnswer !== undefined ? [lastAnswerResult.correctAnswer] : undefined) ??
-    (Array.isArray(question.correct_answer) ? question.correct_answer : typeof question.correct_answer === 'number' ? [question.correct_answer] : [])
-  const correctAnswerSet = showImmediateFeedback ? (Array.isArray(rawCorrect) ? rawCorrect : []) : []
-
-  const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
-
+}: Pick<QuestionDisplayProps, 'question' | 'showImmediateFeedback' | 'lastAnswerResult' | 'courseCode' | 'quizTitle' | 'quizId'>) {
   const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
   const isPinned = pinnedQuestions.some(
     (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
@@ -76,18 +62,51 @@ function StandardQuestionView({
     })
   }
 
+  return { isPinned, togglePinMutation, handleTogglePin }
+}
+
+function StandardQuestionView({
+  question,
+  currentIndex,
+  totalQuestions,
+  selectedOptions,
+  submitted,
+  showImmediateFeedback,
+  lastAnswerResult,
+  onSelectOption,
+  isPending,
+  sessionMode,
+  courseCode,
+  quizTitle,
+  quizId,
+}: QuestionDisplayProps) {
+  const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
+  const rawCorrect = lastAnswerResult?.correctAnswers ??
+    (lastAnswerResult?.correctAnswer !== undefined ? [lastAnswerResult.correctAnswer] : undefined) ??
+    (Array.isArray(question.correct_answer) ? question.correct_answer : typeof question.correct_answer === 'number' ? [question.correct_answer] : [])
+  const correctAnswerSet = showImmediateFeedback ? (Array.isArray(rawCorrect) ? rawCorrect : []) : []
+
+  const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
+
+  const { isPinned, togglePinMutation, handleTogglePin } = useQuestionPin({
+    question,
+    showImmediateFeedback,
+    lastAnswerResult,
+    courseCode,
+    quizTitle,
+    quizId,
+  })
+
   return (
     <div className="flex h-full flex-col quiz-scroll overflow-y-auto px-4 py-4 sm:px-6">
-      <div className="mb-2">
-        <p className="text-[clamp(11px,0.2vw+10px,13px)] text-[#4f4f4f]">
-          {requiredSelectionCount === 1
-            ? '(Choose 1 answer)'
-            : `(Choose ${requiredSelectionCount} answers)`}
-        </p>
-      </div>
-      <div className="max-w-4xl border border-[#c7c7c7] bg-[#f5f5f5] px-[clamp(12px,1vw,20px)] py-[clamp(12px,1vw,20px)]">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-[clamp(14px,0.4vw+12px,17px)] font-semibold leading-snug text-[#101010]">
+      <p className="mb-2 text-xs text-[#737373]">
+        {requiredSelectionCount === 1
+          ? '(Chọn 1 đáp án)'
+          : `(Chọn ${requiredSelectionCount} đáp án)`}
+      </p>
+      <div className="max-w-3xl border border-[#d4d4d4] bg-white p-4 sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#e5e5e5] pb-3">
+          <p className="text-sm font-bold text-[#171717]">
             Câu {safeDisplayIndex}/{totalQuestions}
           </p>
           <button
@@ -95,23 +114,23 @@ function StandardQuestionView({
             onClick={handleTogglePin}
             disabled={togglePinMutation.isPending}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer",
+              "flex items-center gap-1 border px-2 py-1 text-xs font-semibold cursor-pointer",
               isPinned
-                ? "bg-amber-100 text-amber-800 border-amber-300"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                ? "border-amber-400 bg-amber-50 text-amber-700"
+                : "border-[#d4d4d4] bg-white text-[#525252] hover:bg-[#f5f5f5]"
             )}
           >
-            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-amber-600")} />
+            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
             <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
           </button>
         </div>
-        <p className="mt-1 whitespace-pre-wrap text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed text-[#101010]">
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-[#171717]">
           {question.text}
         </p>
 
         {question.image_url && (
-          <div className="mt-4 border border-[#d0d0d0] bg-white p-2">
-            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-sm bg-[#fafafa]">
+          <div className="mt-4 border border-[#d4d4d4] bg-white p-2">
+            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden bg-[#fafafa]">
               <img
                 src={question.image_url}
                 alt="Minh họa câu hỏi"
@@ -127,7 +146,7 @@ function StandardQuestionView({
           </div>
         )}
 
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-4 space-y-2">
           {question.options.map((option, idx) => {
             const isSelected = selectedOptions.includes(idx)
             const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
@@ -141,13 +160,13 @@ function StandardQuestionView({
                 onClick={() => !isDisabled && onSelectOption(idx)}
                 disabled={isDisabled}
                 className={cn(
-                  'w-full select-none px-3 py-2.5 text-left text-[clamp(13px,0.45vw+11px,16px)] leading-relaxed transition-all duration-200 rounded-md border-2',
+                  'w-full select-none border px-3 py-2 text-left text-sm leading-relaxed',
                   isDisabled && 'cursor-not-allowed opacity-60',
-                  !isDisabled && 'cursor-pointer hover:bg-gray-50',
-                  isCorrect && 'border-green-500 bg-green-50 text-green-700 font-semibold',
-                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-semibold',
-                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-blue-400 bg-blue-50 font-semibold text-blue-700',
-                  !isCorrect && !isWrongSelected && !isSelected && 'border-gray-300 bg-white text-[#202020]'
+                  !isDisabled && 'cursor-pointer',
+                  isCorrect && 'border-green-600 bg-green-50 font-semibold text-green-800',
+                  isWrongSelected && 'border-red-500 bg-red-50 font-semibold text-red-700',
+                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-[#5D7B6F] bg-[#5D7B6F]/5 font-semibold text-[#3d5c50]',
+                  !isCorrect && !isWrongSelected && !isSelected && 'border-[#d4d4d4] bg-white text-[#262626] hover:border-[#a3a3a3]'
                 )}
               >
                 <span className="font-semibold">{String.fromCodePoint(65 + idx)}.</span> {option}
@@ -183,32 +202,14 @@ function AnimatedQuestionView({
 
   const safeDisplayIndex = Math.min(Math.max(currentIndex, 0), Math.max(totalQuestions - 1, 0)) + 1
 
-  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
-  const isPinned = pinnedQuestions.some(
-    (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
-  )
-
-  const handleTogglePin = () => {
-    const pinCorrectAnswer = showImmediateFeedback && lastAnswerResult?.correctAnswers
-      ? lastAnswerResult.correctAnswers
-      : (Array.isArray((question as any).correct_answer)
-          ? (question as any).correct_answer
-          : typeof (question as any).correct_answer === 'number'
-            ? [(question as any).correct_answer]
-            : [])
-
-    togglePinMutation.mutate({
-      question_id: question._id,
-      quiz_id: quizId,
-      quiz_title: quizTitle || courseCode,
-      course_code: courseCode || 'GENERAL',
-      text: question.text,
-      options: question.options,
-      correct_answer: pinCorrectAnswer,
-      explanation: lastAnswerResult?.explanation || (question as any).explanation || '',
-      image_url: question.image_url || '',
-    })
-  }
+  const { isPinned, togglePinMutation, handleTogglePin } = useQuestionPin({
+    question,
+    showImmediateFeedback,
+    lastAnswerResult,
+    courseCode,
+    quizTitle,
+    quizId,
+  })
 
   return (
     <div className="flex h-full flex-col bg-slate-50/50 dark:bg-slate-900/50 quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">

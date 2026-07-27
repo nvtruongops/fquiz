@@ -18,6 +18,7 @@ jest.mock('react', () => {
       return [initial, stateSetters[key]]
     },
     useCallback: (fn: any) => fn,
+    useRef: (initial: any) => ({ current: initial }),
     useEffect: (fn: any) => {
       try {
         fn()
@@ -111,6 +112,7 @@ describe('useSessionActivityTracking Unit Test Suite', () => {
     expect(tracking.shouldWarnBeforeLeave).toBe(true)
     expect(typeof tracking.reportSessionActivity).toBe('function')
     expect(typeof tracking.handleResumeInactivity).toBe('function')
+    expect(typeof tracking.markExiting).toBe('function')
   })
 
   test('handleResumeInactivity should clear localStorage, set state false, await API resume, and update query cache', async () => {
