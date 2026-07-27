@@ -54,6 +54,7 @@ jest.mock('@/lib/modules/quiz/models/QuizSession', () => ({
 }))
 
 import { GET } from '../route'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 
 describe('GET /api/history', () => {
   it('should handle sessions with null quiz_id without throwing 500 error', async () => {
@@ -64,5 +65,14 @@ describe('GET /api/history', () => {
     expect(res.body).toBeDefined()
     expect(res.body.history).toHaveLength(1)
     expect(res.body.history[0].quiz_id).toBe('')
+  })
+
+  it('should only query active and completed sessions (exclude stuck preparing sessions)', async () => {
+    const req = new Request('http://localhost/api/history?page=1&limit=20')
+    await (GET as any)(req, { params: {} })
+
+    const pipeline = (QuizSession.aggregate as jest.Mock).mock.calls[0][0]
+    const matchStage = pipeline[0].$match
+    expect(matchStage.status).toEqual({ $in: ['active', 'completed'] })
   })
 })

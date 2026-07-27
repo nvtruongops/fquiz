@@ -27,6 +27,19 @@ export interface ActivityItem {
   sourceType?: string
   sourceLabel?: string
   isMix?: boolean
+  correctCount?: number
+  totalCount?: number
+  /** True when a completed activity also has a resumable in-progress session */
+  hasActiveSession?: boolean
+  activeAnsweredCount?: number
+  activeTotalCount?: number
+  activeStartedAt?: string
+}
+
+export interface PinnedCategoryItem {
+  id: string
+  name: string
+  quizCount: number
 }
 
 export function useStudentDashboard() {
@@ -47,8 +60,12 @@ export function useStudentDashboard() {
   })
 
   const recentActivities: ActivityItem[] = data?.recentActivities || []
+  const pinnedCategories: PinnedCategoryItem[] = data?.pinnedCategories || []
+
+  // A session counts as "incomplete" when it is active itself OR when a completed
+  // activity carries a resumable in-progress session (hasActiveSession from API).
   const incompleteSessions = recentActivities.filter((a: ActivityItem) =>
-    a.status === 'active' && !a.quizDeleted
+    (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted
   ) || []
 
   const primaryIncomplete = incompleteSessions[0]
@@ -62,6 +79,7 @@ export function useStudentDashboard() {
     isRefetching,
     refetch,
     recentActivities,
+    pinnedCategories,
     incompleteSessions,
     incompleteCount,
     primaryIncomplete,
