@@ -9,6 +9,7 @@ function normalizeString(value: unknown): string {
 function normalizeOptionLabel(value: string): string {
   return value
     .replace(/^\s*\[[A-Za-z]\]\s*/, '')
+    .replace(/^\s*(?:[A-Za-z]|[0-9]+)[.\):/-](?!\d)\s*/, '')
     .replace(/^"([\s\S]*)"$/, '$1')
     .trim()
 }

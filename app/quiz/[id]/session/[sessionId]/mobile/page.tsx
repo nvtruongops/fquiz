@@ -19,6 +19,13 @@ import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 
+function triggerVibration() {
+  if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+    try { navigator.vibrate(30) } catch {}
+  }
+}
+
+/* eslint-disable sonarjs/cognitive-complexity */
 export default function QuizSessionMobilePage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
   const rawQuizId = params?.id
@@ -31,6 +38,7 @@ export default function QuizSessionMobilePage() {
   // Force non-animated mode on mobile web
   const enableAnimation = false
 
+  const storeSessionId = useQuizSessionStore((s) => s.sessionId)
   const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)
   const answeredQuestions = useQuizSessionStore((s) => s.answeredQuestions)
   const lastAnswerResult = useQuizSessionStore((s) => s.lastAnswerResult)
@@ -145,16 +153,15 @@ export default function QuizSessionMobilePage() {
   const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
 
   useEffect(() => {
-    if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
-      if (isInitialError) {
-        sessionLoader.close()
-      } else if (activeData?.session.status === 'preparing') {
-        sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
-      } else if (!isReadyToRender) {
-        sessionLoader.setStatus('Đang chuẩn bị giao diện...')
-      } else if (!isStillLoading) {
-        sessionLoader.complete()
-      }
+    if (!sessionLoaderStartedRef.current || !sessionLoader.isOpen) return
+    if (isInitialError) {
+      sessionLoader.close()
+    } else if (activeData?.session.status === 'preparing') {
+      sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
+    } else if (!isReadyToRender) {
+      sessionLoader.setStatus('Đang chuẩn bị giao diện...')
+    } else if (!isStillLoading) {
+      sessionLoader.complete()
     }
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
 
@@ -233,14 +240,10 @@ export default function QuizSessionMobilePage() {
     const effectiveTotal = activeData?.session?.totalQuestions || 0
 
     if (offsetX < -threshold && currentQuestionIndex < effectiveTotal - 1) {
-      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(30) } catch {}
-      }
+      triggerVibration()
       handleNavigate(currentQuestionIndex + 1)
     } else if (offsetX > threshold && currentQuestionIndex > 0) {
-      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(30) } catch {}
-      }
+      triggerVibration()
       handleNavigate(currentQuestionIndex - 1)
     }
 
@@ -290,8 +293,10 @@ export default function QuizSessionMobilePage() {
   if (selectedOptions.length > 0 && currentQuestionIndex >= 0 && currentQuestionIndex < effectiveTotal) {
     answeredFromSession.add(currentQuestionIndex)
   }
-  const validStoreCount = Array.from(answeredQuestions)
-    .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal).length
+  const isMatchingSessionStore = storeSessionId === resolvedSessionId
+  const validStoreCount = isMatchingSessionStore
+    ? Array.from(answeredQuestions).filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal).length
+    : 0
 
   const answeredCount = Math.min(Math.max(validStoreCount, answeredFromSession.size), effectiveTotal)
   const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
