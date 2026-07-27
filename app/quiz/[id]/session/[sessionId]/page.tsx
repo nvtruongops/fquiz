@@ -74,6 +74,7 @@ function DesktopSessionContent({
   const router = useRouter()
   const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
 
+  const storeSessionId = useQuizSessionStore((s) => s.sessionId)
   const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)
   const answeredQuestions = useQuizSessionStore((s) => s.answeredQuestions)
   const lastAnswerResult = useQuizSessionStore((s) => s.lastAnswerResult)
@@ -151,22 +152,7 @@ function DesktopSessionContent({
 
   // Stable callbacks for React.memo-wrapped children.
   const handleSubmit = useCallback(() => setConfirmOpen(true), [])
-  const handleExit = useCallback(() => setExitConfirmOpen(true), [])
-
-  if (isPreloadError || isInitialError) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#f3f3f3] font-sans">
-        <div className="max-w-sm border-2 border-[#101010] bg-white p-6 text-center">
-          <XCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
-          <h2 className="text-[26px] font-bold text-[#111111]">Lỗi phòng thi</h2>
-          <p className="mt-2 text-[16px] text-[#444444]">
-            {(initialError as any)?.message || 'Không thể tải dữ liệu'}
-          </p>
-          <Button type="button" onClick={() => router.back()} className="mt-5 rounded-none border-2 border-[#101010] bg-[#efefef] text-[18px] font-semibold text-[#111111] hover:bg-white">Quay lại</Button>
-        </div>
-      </div>
-    )
-  }
+  const handleExit = useCallback(() => setExitConfirmOpen(true), [setExitConfirmOpen])
 
   const sessionLoaderStartedRef = useRef(false)
 
@@ -182,10 +168,8 @@ function DesktopSessionContent({
 
   useEffect(() => {
     const realQuizId = (activeData?.session as any)?.quiz_id
-    if (realQuizId && (quizId === 'undefined' || quizId === 'mix')) {
-      if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', `/quiz/${realQuizId}/session/${sessionId}`)
-      }
+    if (realQuizId && (quizId === 'undefined' || quizId === 'mix') && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `/quiz/${realQuizId}/session/${sessionId}`)
     }
   }, [activeData?.session, quizId, sessionId])
 
@@ -204,6 +188,21 @@ function DesktopSessionContent({
       }
     }
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
+
+  if (isPreloadError || isInitialError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#f3f3f3] font-sans">
+        <div className="max-w-sm border-2 border-[#101010] bg-white p-6 text-center">
+          <XCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
+          <h2 className="text-[26px] font-bold text-[#111111]">Lỗi phòng thi</h2>
+          <p className="mt-2 text-[16px] text-[#444444]">
+            {(initialError as any)?.message || 'Không thể tải dữ liệu'}
+          </p>
+          <Button type="button" onClick={() => router.back()} className="mt-5 rounded-none border-2 border-[#101010] bg-[#efefef] text-[18px] font-semibold text-[#111111] hover:bg-white">Quay lại</Button>
+        </div>
+      </div>
+    )
+  }
 
   if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
     return (
@@ -225,8 +224,10 @@ function DesktopSessionContent({
     answeredSet.add(currentQuestionIndex)
   }
 
-  const validStoreAnsweredCount = Array.from(answeredQuestions)
-    .filter((i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions).length
+  const isMatchingSessionStore = storeSessionId === resolvedSessionId
+  const validStoreAnsweredCount = isMatchingSessionStore
+    ? Array.from(answeredQuestions).filter((i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions).length
+    : 0
 
   const answeredCount = Math.min(
     Math.max(validStoreAnsweredCount, answeredSet.size),
