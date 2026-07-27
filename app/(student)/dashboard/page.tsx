@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowRight, Zap, Bot, Flame, Compass, Loader2,
-  TrendingUp, HelpCircle, Layers, Sparkles, BookOpen, RefreshCw, BookMarked
+  TrendingUp, HelpCircle, Layers, Sparkles, BookOpen, RefreshCw, BookMarked, Pin
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -25,6 +25,7 @@ export default function DashboardPage() {
     isRefetching,
     refetch,
     recentActivities,
+    pinnedCategories,
     primaryIncomplete,
     userInitial,
   } = useStudentDashboard()
@@ -82,30 +83,86 @@ export default function DashboardPage() {
       </div>
 
       {/* 2. Incomplete Session Banner (High-Priority Alert) */}
-      {primaryIncomplete && (
-        <div className="overflow-hidden rounded-[24px] bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-0.5 shadow-md transform-gpu hover:scale-[1.005] transition-all">
-          <div className="bg-slate-900/95 backdrop-blur-xl px-5 py-4 rounded-[22px] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-                <Flame className="w-6 h-6 text-amber-400 animate-bounce" />
-              </div>
-              <div className="min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                    Bài thi chưa hoàn thành • {primaryIncomplete.quizCode}
-                  </span>
-                </div>
-                <h3 className="text-sm sm:text-base font-black truncate text-white">{primaryIncomplete.quizTitle}</h3>
-              </div>
-            </div>
+      {primaryIncomplete && (() => {
+        const resumeSessionId = primaryIncomplete.activeSessionId || primaryIncomplete.id
+        const resumeHref = primaryIncomplete.mode === 'flashcard'
+          ? `/quiz/${primaryIncomplete.quizId}/session/${resumeSessionId}/flashcard`
+          : `/quiz/${primaryIncomplete.quizId}/session/${resumeSessionId}`
+        const answeredCount = primaryIncomplete.hasActiveSession
+          ? (primaryIncomplete.activeAnsweredCount ?? 0)
+          : (primaryIncomplete.correctCount ?? 0)
+        const totalCount = primaryIncomplete.hasActiveSession
+          ? (primaryIncomplete.activeTotalCount ?? 0)
+          : (primaryIncomplete.totalCount ?? 0)
 
-            <Button asChild size="sm" className="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs h-9 px-5 shrink-0 shadow-sm">
-              <Link href={`/quiz/${primaryIncomplete.quizId}/session/${primaryIncomplete.activeSessionId || primaryIncomplete.id}`}>
-                Tiếp tục ngay <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Link>
-            </Button>
+        return (
+          <div className="overflow-hidden rounded-[24px] bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-0.5 shadow-md transform-gpu hover:scale-[1.005] transition-all">
+            <div className="bg-slate-900/95 backdrop-blur-xl px-5 py-4 rounded-[22px] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
+                  <Flame className="w-6 h-6 text-amber-400 animate-bounce" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                      Bài thi chưa hoàn thành • {primaryIncomplete.quizCode}
+                    </span>
+                    {totalCount > 0 && (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-white/70 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                        Đã làm {answeredCount}/{totalCount} câu
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm sm:text-base font-black truncate text-white">{primaryIncomplete.quizTitle}</h3>
+                </div>
+              </div>
+
+              <Button asChild size="sm" className="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs h-9 px-5 shrink-0 shadow-sm">
+                <Link href={resumeHref}>
+                  Tiếp tục ngay <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
+        )
+      })()}
+
+      {/* 2.5. Pinned Categories — Quick Access (synced with /explore pins) */}
+      {pinnedCategories.length > 0 && (
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
+              <Pin className="w-4 h-4 text-amber-500 fill-amber-500" /> Môn Học Đã Ghim
+            </h2>
+            <Link href="/explore" className="text-[11px] font-bold text-slate-400 hover:text-[#5D7B6F] transition-colors">
+              Quản lý ghim
+            </Link>
+          </div>
+          {/* pt-1.5/-mt-1.5: headroom for hover lift so top border isn't clipped by overflow-x-auto;
+              relative + hover:z-10: hovered chip paints above siblings so its shadow/border isn't covered */}
+          <div className="flex gap-2.5 overflow-x-auto pt-1.5 -mt-1.5 pb-2 scrollbar-thin">
+            {pinnedCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/courses/${encodeURIComponent(cat.name.toLowerCase())}`}
+                className="group relative flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-2xl bg-white/90 backdrop-blur-xl border border-amber-200/70 shadow-2xs hover:border-[#5D7B6F]/60 hover:shadow-md hover:-translate-y-0.5 hover:z-10 active:scale-[0.98] transition-all duration-200 shrink-0"
+              >
+                <span className="w-7 h-7 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center shrink-0 group-hover:bg-[#5D7B6F]/10 group-hover:border-[#5D7B6F]/30 transition-colors">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-600 group-hover:text-[#5D7B6F] transition-colors" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-xs font-black text-slate-800 uppercase tracking-tight truncate group-hover:text-[#5D7B6F] transition-colors">
+                    {cat.name}
+                  </span>
+                  <span className="block text-[10px] font-bold text-slate-400">
+                    {cat.quizCount} đề thi
+                  </span>
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#5D7B6F] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* 3. Quick Action Learning Hub & Recent Activities Grid */}
@@ -243,37 +300,95 @@ export default function DashboardPage() {
   )
 }
 
-function CompactActivityItem({ activity, router }: { activity: any; router: any }) {
-  const isCompleted = activity.status === 'completed'
+function getScoreStyle(score: number) {
+  if (score >= 8) return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (score >= 6.5) return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (score >= 5) return 'bg-amber-50 text-amber-700 border-amber-200'
+  return 'bg-rose-50 text-rose-700 border-rose-200'
+}
+
+function ActivityStatusBadge({ isResumable, formattedScore, scoreNum }: { isResumable: boolean; formattedScore: string | null; scoreNum: number | null }) {
+  if (isResumable) {
+    return (
+      <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+        Đang dở
+      </Badge>
+    )
+  }
+  if (formattedScore !== null && scoreNum !== null) {
+    return (
+      <Badge className={cn('text-[10px] font-black border px-2 py-0.5 rounded-full', getScoreStyle(scoreNum))}>
+        {formattedScore}/10
+      </Badge>
+    )
+  }
+  return (
+    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+      Xong
+    </Badge>
+  )
+}
+
+function getActivityHref(activity: any, isResumable: boolean, isFlashcard: boolean): string {
+  if (!isResumable) return `/quiz/${activity.quizId}/result/${activity.id}`
+  const resumeSessionId = activity.activeSessionId || activity.id
+  return isFlashcard
+    ? `/quiz/${activity.quizId}/session/${resumeSessionId}/flashcard`
+    : `/quiz/${activity.quizId}/session/${resumeSessionId}`
+}
+
+function formatProgressText(answered: number, total: number): string {
+  return total > 0 ? ` • ${answered}/${total} câu` : ''
+}
+
+interface ActivityViewModel {
+  isResumable: boolean
+  isFlashcard: boolean
+  scoreNum: number | null
+  formattedScore: string | null
+  progressText: string
+  timeAgo: string
+}
+
+function getActivityViewModel(activity: any): ActivityViewModel {
+  // Resumable = active session, or a completed activity carrying an in-progress session
+  const isResumable = activity.status === 'active' || activity.hasActiveSession === true
   const isFlashcard = activity.mode === 'flashcard'
 
   const scoreNum = activity.score !== null && activity.score !== undefined ? Number(activity.score) : null
   const formattedScore = scoreNum !== null ? scoreNum.toFixed(1).replace(/\.0$/, '') : null
 
-  const getScoreStyle = (score: number) => {
-    if (score >= 8) return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    if (score >= 6.5) return 'bg-blue-50 text-blue-700 border-blue-200'
-    if (score >= 5) return 'bg-amber-50 text-amber-700 border-amber-200'
-    return 'bg-rose-50 text-rose-700 border-rose-200'
-  }
-
-  const handleClick = () => {
-    if (activity.quizDeleted) return
-    if (!isCompleted) {
-      router.push(
-        isFlashcard
-          ? `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}/flashcard`
-          : `/quiz/${activity.quizId}/session/${activity.activeSessionId || activity.id}`
-      )
-    } else {
-      router.push(`/quiz/${activity.quizId}/result/${activity.id}`)
-    }
-  }
+  // Progress of the in-progress session (if any)
+  const progressAnswered = activity.hasActiveSession
+    ? (activity.activeAnsweredCount ?? 0)
+    : (activity.correctCount ?? 0)
+  const progressTotal = activity.hasActiveSession
+    ? (activity.activeTotalCount ?? 0)
+    : (activity.totalCount ?? 0)
 
   const displayTime = activity.activityAt || activity.completedAt
   const timeAgo = displayTime
     ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: vi })
     : 'Gần đây'
+
+  return {
+    isResumable,
+    isFlashcard,
+    scoreNum,
+    formattedScore,
+    progressText: formatProgressText(progressAnswered, progressTotal),
+    timeAgo,
+  }
+}
+
+function CompactActivityItem({ activity, router }: { activity: any; router: any }) {
+  const { isResumable, isFlashcard, scoreNum, formattedScore, progressText, timeAgo } =
+    getActivityViewModel(activity)
+
+  const handleClick = () => {
+    if (activity.quizDeleted) return
+    router.push(getActivityHref(activity, isResumable, isFlashcard))
+  }
 
   return (
     <div
@@ -301,24 +416,15 @@ function CompactActivityItem({ activity, router }: { activity: any; router: any 
           </h4>
           <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
             {timeAgo} • {isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}
+            {isResumable && (
+              <span className="text-amber-600 font-bold">{progressText}</span>
+            )}
           </span>
         </div>
       </div>
 
       <div className="shrink-0 ml-2">
-        {!isCompleted ? (
-          <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full">
-            Đang dở
-          </Badge>
-        ) : formattedScore !== null ? (
-          <Badge className={cn('text-[10px] font-black border px-2 py-0.5 rounded-full', getScoreStyle(scoreNum!))}>
-            {formattedScore}/10
-          </Badge>
-        ) : (
-          <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-            Xong
-          </Badge>
-        )}
+        <ActivityStatusBadge isResumable={isResumable} formattedScore={formattedScore} scoreNum={scoreNum} />
       </div>
     </div>
   )

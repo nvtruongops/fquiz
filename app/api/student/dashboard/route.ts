@@ -3,6 +3,8 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
+import { User } from '@/lib/modules/auth/models/User'
 import { Types } from 'mongoose'
 import {
   inferSourceType,
@@ -48,8 +50,21 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       .sort({ completed_at: -1 })
       .lean()
 
+    // Exclude expired active sessions (they can't be resumed — validateQuizSessionRequest returns 410).
+    // Flashcard sessions have no expires_at and stay resumable.
+    const now = new Date()
     const latestActiveIdsByQuiz = await QuizSession.aggregate([
-      { $match: { student_id: userId, status: 'active' } },
+      {
+        $match: {
+          student_id: userId,
+          status: 'active',
+          $or: [
+            { expires_at: { $gt: now } },
+            { expires_at: { $exists: false } },
+            { expires_at: null },
+          ],
+        },
+      },
       { $sort: { started_at: -1 } },
       {
         $group: {
@@ -167,11 +182,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       const group = completedIsLearning ? 'learning' : 'assessment'
       const activeSession = activeSessionsByQuizMode.get(`${activity.quizId}::${group}`)
       if (activeSession) {
-        const declaredCount = Number(activeSession.quiz_id?.questionCount ?? 0)
-        const derivedFromQuestions = Array.isArray(activeSession.quiz_id?.questions)
-          ? activeSession.quiz_id.questions.length
-          : 0
-        const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
+        const totalQuestions = resolveSessionTotalQuestions(activeSession, quizQuestionCountOf(activeSession.quiz_id))
         const isFlashcardActive = activeSession.mode === 'flashcard'
         const fcStats = activeSession.flashcard_stats
         let answeredCount = 0
@@ -209,18 +220,72 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         return !completedQuizModeGroups.has(`${activity.quizId}::${group}`)
       })
 
-    const recentActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
+    // Matches the dashboard UI feed window (page slices recentActivities.slice(0, 6)).
+    const RECENT_ACTIVITIES_LIMIT = 6
+    const allActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
       .sort((a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime())
-      .slice(0, 5)
+
+    // In-progress sessions (đang dở) must never be silently dropped by the feed limit:
+    // they surface first (most recent first), then recent completed fill remaining slots.
+    // Previously an older unsubmitted session disappeared from /dashboard while still
+    // visible in /history once 5+ newer completed activities existed.
+    const isInProgressActivity = (a: any) => a.status === 'active' || a.hasActiveSession === true
+    const recentActivities = [
+      ...allActivities.filter(isInProgressActivity),
+      ...allActivities.filter((a) => !isInProgressActivity(a)),
+    ].slice(0, RECENT_ACTIVITIES_LIMIT)
+
+    // 2. Pinned categories — quick access shortcuts (same data as /explore pins)
+    const pinnedCategories = await resolvePinnedCategories(payload.userId)
 
     return NextResponse.json({
-      recentActivities
+      recentActivities,
+      pinnedCategories,
     })
   } catch (error) {
     console.error('Dashboard Stats API Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['student'] })
+
+/**
+ * Resolve user's pinned category IDs (stored on User.pinned_categories) into
+ * display-ready items with quiz counts. Preserves the user's pin order.
+ * Application-level join — no Mongoose .populate().
+ */
+async function resolvePinnedCategories(userId: string) {
+  const userDoc = (await User.findById(userId).select('pinned_categories').lean()) as any
+  const pinnedIds: string[] = (userDoc?.pinned_categories ?? []).filter((id: unknown): id is string =>
+    typeof id === 'string' && Types.ObjectId.isValid(id)
+  )
+  if (pinnedIds.length === 0) return []
+
+  const objectIds = pinnedIds.map((id) => new Types.ObjectId(id))
+  const catDocs = await Category.find({ _id: { $in: objectIds } }, 'name').lean()
+  if (catDocs.length === 0) return []
+
+  const quizCounts = await Quiz.aggregate([
+    {
+      $match: {
+        category_id: { $in: catDocs.map((c: any) => c._id) },
+        status: 'published',
+        is_public: true,
+        is_temp: { $ne: true },
+      },
+    },
+    { $group: { _id: '$category_id', count: { $sum: 1 } } },
+  ])
+  const countMap = new Map(quizCounts.map((x: any) => [x._id.toString(), x.count]))
+  const catMap = new Map(catDocs.map((c: any) => [c._id.toString(), c]))
+
+  return pinnedIds
+    .map((id) => {
+      const cat = catMap.get(id) as any
+      if (!cat) return null
+      return { id, name: cat.name as string, quizCount: countMap.get(id) ?? 0 }
+    })
+    .filter((c): c is { id: string; name: string; quizCount: number } => Boolean(c))
+}
 
 function mapSessionToActivity(
   session: any,
@@ -252,10 +317,37 @@ function mapSessionToActivity(
   )
 }
 
+/**
+ * Resolve the ACTUAL question count of a session. Retry-wrong / custom sessions
+ * run on a subset of the quiz (question_order), so dividing the raw score by the
+ * quiz's global questionCount produces wrong scores (e.g. 2/2 shown as 0.4/10).
+ * Same resolution order as /api/history: question_order → questions_cache →
+ * flashcard_stats.total_cards → fallback quiz questionCount.
+ */
+function resolveSessionTotalQuestions(session: any, fallbackQuestionCount: number): number {
+  if (Array.isArray(session.question_order) && session.question_order.length > 0) {
+    return session.question_order.length
+  }
+  if (Array.isArray(session.questions_cache) && session.questions_cache.length > 0) {
+    return session.questions_cache.length
+  }
+  if (session.flashcard_stats?.total_cards) {
+    return session.flashcard_stats.total_cards
+  }
+  return fallbackQuestionCount
+}
+
+function quizQuestionCountOf(quizDoc: any): number {
+  const declaredCount = Number(quizDoc?.questionCount ?? 0)
+  const derivedFromQuestions = Array.isArray(quizDoc?.questions) ? quizDoc.questions.length : 0
+  return declaredCount > 0 ? declaredCount : derivedFromQuestions
+}
+
 function mapMixSessionToActivity(session: any, quizId: string) {
   const isActive = session.status === 'active'
   const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
-  const totalQuestions = session.quiz_id ? Number(session.quiz_id.questionCount ?? 0) : (session.user_answers?.length || 0)
+  const fallbackCount = session.quiz_id ? Number(session.quiz_id.questionCount ?? 0) : (session.user_answers?.length || 0)
+  const totalQuestions = resolveSessionTotalQuestions(session, fallbackCount)
   let answeredCount = 0
   let correctCount = 0
 
@@ -363,11 +455,7 @@ function mapRegularSessionToActivity(
   const sourceType = inferSourceType(quizMeta, userId)
   const sourceCreatorId = resolveSourceCreatorId(quizMeta, originalCreatorMap)
 
-  const declaredCount = Number(session.quiz_id?.questionCount ?? 0)
-  const derivedFromQuestions = Array.isArray(session.quiz_id?.questions)
-    ? session.quiz_id.questions.length
-    : 0
-  const totalQuestions = declaredCount > 0 ? declaredCount : derivedFromQuestions
+  const totalQuestions = resolveSessionTotalQuestions(session, quizQuestionCountOf(session.quiz_id))
 
   const { correctCount, answeredCount, baseScore } = calculateSessionAnswerCounts(session)
 

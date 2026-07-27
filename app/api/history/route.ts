@@ -15,6 +15,40 @@ import {
 } from '@/lib/modules/quiz/quiz-source-utils'
 import { UserService } from '@/lib/modules/auth/services/UserService'
 
+function resolveSessionTotalQuestions(item: any, fallbackQuiz: any) {
+  if (Array.isArray(item.question_order) && item.question_order.length > 0) {
+    return item.question_order.length
+  }
+  if (Array.isArray(item.questions_cache) && item.questions_cache.length > 0) {
+    return item.questions_cache.length
+  }
+  if (item.flashcard_stats?.total_cards) {
+    return item.flashcard_stats.total_cards
+  }
+  const declaredCount = Number(fallbackQuiz?.questionCount ?? 0)
+  const derivedFromQuestions = Array.isArray(fallbackQuiz?.questions) ? fallbackQuiz.questions.length : 0
+  return declaredCount > 0 ? declaredCount : derivedFromQuestions
+}
+
+function calculateAnswerCounts(item: any) {
+  if (item.flashcard_stats) {
+    return {
+      answeredCount: item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown,
+      correctCount: item.flashcard_stats.cards_known,
+    }
+  }
+  if (Array.isArray(item.user_answers)) {
+    const answeredCount = new Set(
+      item.user_answers
+        .map((a: any) => a.question_index)
+        .filter((idx: any) => Number.isInteger(idx) && idx >= 0)
+    ).size
+    const correctCount = item.user_answers.filter((a: any) => a.is_correct).length
+    return { answeredCount, correctCount }
+  }
+  return { answeredCount: 0, correctCount: 0 }
+}
+
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const { searchParams } = new URL(req.url)
@@ -37,6 +71,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         { student_id: studentId },
         { student_id: payload.userId },
       ],
+      status: { $in: ['active', 'completed'] },
     }
     if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
       matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
@@ -134,76 +169,17 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       const quiz = quizIdStr ? (quizMap.get(quizIdStr) as any) : null
       const isMixQuiz = (item as any).is_temp === true
 
-      // Helper to compute actual session total questions (supports Retry Wrong / custom question_order)
-      const resolveSessionTotalQuestions = (fallbackQuiz: any) => {
-        if (Array.isArray(item.question_order) && item.question_order.length > 0) {
-          return item.question_order.length
-        }
-        if (Array.isArray(item.questions_cache) && item.questions_cache.length > 0) {
-          return item.questions_cache.length
-        }
-        if (item.flashcard_stats?.total_cards) {
-          return item.flashcard_stats.total_cards
-        }
-        const declaredCount = Number(fallbackQuiz?.questionCount ?? 0)
-        const derivedFromQuestions = Array.isArray(fallbackQuiz?.questions) ? fallbackQuiz.questions.length : 0
-        return declaredCount > 0 ? declaredCount : derivedFromQuestions
-      }
+      if (isMixQuiz) {
+        const { answeredCount, correctCount } = calculateAnswerCounts(item)
+        const sessionTotal = resolveSessionTotalQuestions(item, quiz) || answeredCount || 0
+        const quizTitle = quiz?.title ?? 'Quiz Trộn'
+        const quizCode = quiz ? mixQuizDisplayCode(quizTitle) : 'TRỘN'
 
-      // For mix quiz sessions, the temp quiz may have been deleted after completion
-      if (isMixQuiz && !quiz) {
-        let answeredCount = 0
-        let correctCount = 0
-        if (Array.isArray(item.user_answers)) {
-          answeredCount = new Set(
-            item.user_answers
-              .map((a) => a.question_index)
-              .filter((idx) => Number.isInteger(idx) && idx >= 0)
-          ).size
-          correctCount = item.user_answers.filter((a) => a.is_correct).length
-        }
-        const sessionTotal = resolveSessionTotalQuestions(null) || answeredCount || 0
         return {
           _id: item._id.toString(),
           quiz_id: quizIdStr,
-          quiz_title: 'Quiz Trộn',
-          quiz_code: 'TRỘN',
-          category_name: 'Quiz Trộn',
-          source_type: 'mix_quiz',
-          source_label: 'Quiz Trộn',
-          source_creator_name: null,
-          score: item.score,
-          total_questions: sessionTotal,
-          answered_count: answeredCount,
-          correct_count: correctCount,
-          mode: item.mode,
-          status: item.status,
-          completed_at: item.completed_at,
-          started_at: item.started_at,
-          duration_minutes: item.duration_minutes,
-          flashcard_stats: item.flashcard_stats,
-          is_mix: true,
-        }
-      }
-
-      // Mix quiz: quiz still exists — use title-derived code and fixed labels
-      if (isMixQuiz && quiz) {
-        const sessionTotal = resolveSessionTotalQuestions(quiz)
-        let answeredCount = 0
-        let correctCount = 0
-        if (Array.isArray(item.user_answers)) {
-          answeredCount = new Set(
-            item.user_answers
-              .map((a) => a.question_index)
-              .filter((idx) => Number.isInteger(idx) && idx >= 0)
-          ).size
-          correctCount = item.user_answers.filter((a) => a.is_correct).length
-        }
-        return {
-          _id: item._id.toString(),
-          quiz_id: quizIdStr,
-          quiz_title: quiz.title ?? 'Quiz Trộn',
-          quiz_code: mixQuizDisplayCode(quiz.title ?? 'Quiz Trộn'),
+          quiz_title: quizTitle,
+          quiz_code: quizCode,
           category_name: 'Quiz Trộn',
           source_type: 'mix_quiz',
           source_label: 'Quiz Trộn',
@@ -224,21 +200,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
       const sourceType = inferSourceType(quiz, payload.userId)
       const sourceCreatorId = resolveSourceCreatorId(quiz, originalCreatorMap)
-      const sessionTotal = resolveSessionTotalQuestions(quiz)
-
-      let answeredCount = 0
-      let correctCount = 0
-      if (item.flashcard_stats) {
-        answeredCount = item.flashcard_stats.cards_known + item.flashcard_stats.cards_unknown
-        correctCount = item.flashcard_stats.cards_known
-      } else if (Array.isArray(item.user_answers)) {
-        answeredCount = new Set(
-          item.user_answers
-            .map((answer) => answer.question_index)
-            .filter((idx) => Number.isInteger(idx) && idx >= 0)
-        ).size
-        correctCount = item.user_answers.filter((a) => a.is_correct).length
-      }
+      const sessionTotal = resolveSessionTotalQuestions(item, quiz)
+      const { answeredCount, correctCount } = calculateAnswerCounts(item)
 
       const categoryIdStr = quiz?.category_id?.toString?.()
       const categoryName = categoryIdStr ? (categoryNameMap.get(categoryIdStr) ?? 'Chưa phân loại') : 'Chưa phân loại'
