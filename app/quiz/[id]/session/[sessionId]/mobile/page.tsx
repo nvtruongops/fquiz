@@ -186,7 +186,11 @@ export default function QuizSessionMobilePage() {
     const targetQuizId = (activeData?.session as any)?.quiz_id || (activeData?.session as any)?.quizId || resolvedQuizId
     const targetUrl = activeData?.session?.is_temp || !targetQuizId || targetQuizId === 'undefined' ? '/' : `/quiz/${targetQuizId}`
     sessionLoader.completeAndNavigate(() => {
-      router.push(targetUrl)
+      if (typeof window !== 'undefined') {
+        window.location.href = targetUrl
+      } else {
+        router.push(targetUrl)
+      }
     })
   }
 

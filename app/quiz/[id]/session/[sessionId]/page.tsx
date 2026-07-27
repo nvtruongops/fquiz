@@ -306,7 +306,11 @@ function DesktopSessionContent({
             const targetQuizId = (session as any)?.quiz_id || (session as any)?.quizId || resolvedQuizId;
             const targetUrl = session?.is_temp || !targetQuizId || targetQuizId === 'undefined' ? '/' : `/quiz/${targetQuizId}`;
             sessionLoader.completeAndNavigate(() => {
-              router.push(targetUrl);
+              if (typeof window !== 'undefined') {
+                window.location.href = targetUrl;
+              } else {
+                router.push(targetUrl);
+              }
             });
           }}
         />

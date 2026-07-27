@@ -116,13 +116,18 @@ export function useSessionActivityTracking({
   )
 
   // Popstate back-button guard & exit confirm timer pause sync
+  const hasPushedStateRef = useRef(false)
   useEffect(() => {
     if (!shouldWarnBeforeLeave || !sessionId) return
-    const guardState = { quizSessionGuard: sessionId }
-    globalThis.history.pushState(guardState, '', globalThis.location.href)
+    if (!hasPushedStateRef.current) {
+      hasPushedStateRef.current = true
+      const guardState = { quizSessionGuard: sessionId }
+      globalThis.history.pushState(guardState, '', globalThis.location.href)
+    }
     const handlePopState = () => {
       if (isExitingRef.current) return
       setExitConfirmOpen(true)
+      const guardState = { quizSessionGuard: sessionId }
       globalThis.history.pushState(guardState, '', globalThis.location.href)
     }
     globalThis.addEventListener('popstate', handlePopState)
