@@ -45,7 +45,7 @@ export function resetMaintenanceCache() {
   maintenanceCache = null
 }
 
-const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
+const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/google3f2272f3df4562b2.html', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator', '/api/jobs/cleanup-deleted-accounts'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
 const TEACHER_PATHS = ['/teacher']
@@ -154,7 +154,9 @@ function isPublicRoute(pathname: string) {
 }
 
 function shouldSkipAuth(pathname: string) {
-  return pathname.startsWith('/api/v1/public/') || 
+  return pathname.startsWith('/google') ||
+         pathname.endsWith('.html') ||
+         pathname.startsWith('/api/v1/public/') || 
          pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
          pathname.startsWith('/api/public/') ||
          pathname.startsWith('/api/courses/') ||
@@ -262,7 +264,8 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/public/') ||
     pathname.startsWith('/_next') ||
-    /\.(png|jpg|jpeg|gif|svg|ico|webp|css|js)$/i.test(pathname)
+    pathname.startsWith('/google') ||
+    /\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|html|txt|xml)$/i.test(pathname)
 
   if (isMaintenanceExempt) return null
 
