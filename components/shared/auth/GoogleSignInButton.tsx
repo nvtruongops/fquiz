@@ -108,12 +108,19 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
 
     const initializeGsi = () => {
       if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleGoogleResponse,
-          auto_select: false,
-        })
-        isInitializedRef.current = true
+        if (!isInitializedRef.current) {
+          const origin = typeof window !== 'undefined' ? window.location.origin : ''
+          const queryParam = callbackUrl ? '?callbackUrl=' + encodeURIComponent(callbackUrl) : ''
+          const loginUri = `${origin}/api/auth/google${queryParam}`
+
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            ux_mode: 'redirect',
+            login_uri: loginUri,
+            auto_select: false,
+          })
+          isInitializedRef.current = true
+        }
 
         const buttonContainer = document.getElementById('google-signin-btn-container')
         if (buttonContainer) {
@@ -142,7 +149,7 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
     } else {
       initializeGsi()
     }
-  }, [clientId, btnWidth, handleGoogleResponse])
+  }, [clientId, callbackUrl, btnWidth])
 
   if (!clientId) {
     return null
