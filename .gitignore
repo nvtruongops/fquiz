@@ -87,6 +87,10 @@ scripts/.env.local
 .agents/
 .agents
 
+# Exported Database Dumps
+data/
+
+
 
 
 
