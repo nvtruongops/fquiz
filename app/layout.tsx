@@ -41,6 +41,9 @@ export const metadata: Metadata = {
     description:
       'Nền tảng thi trắc nghiệm online với 3 chế độ: trắc nghiệm tức thì, ôn tập, và flashcard.',
   },
+  verification: {
+    google: 'Ebe9Yn8_Zc1Z9DhhnuKIqcjqBlpD6WTdmlyRvepZp9Y',
+  },
 }
 
 import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
