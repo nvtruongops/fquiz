@@ -37,9 +37,14 @@ export default function RegisterPage() {
   function getCallbackUrl() {
     if (typeof window === 'undefined') return null
     const params = new URLSearchParams(window.location.search)
-    const redirect = params.get('redirect')
-    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
-      return redirect
+    const raw = params.get('callbackUrl') || params.get('redirect')
+    if (raw) {
+      let decoded = raw
+      try { decoded = decodeURIComponent(decoded) } catch {}
+      try { decoded = decodeURIComponent(decoded) } catch {}
+      if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+        return decoded
+      }
     }
     return null
   }

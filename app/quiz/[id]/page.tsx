@@ -136,7 +136,6 @@ export default function QuizDetailPage() {
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
   const [modeSelectOpen, setModeSelectOpen] = useState(() => searchParams.get('selectMode') === 'true')
   const [activeSessionInfo, setActiveSessionInfo] = useState<ActiveSessionPayload | null>(null)
-  const [authRequiredDialogOpen, setAuthRequiredDialogOpen] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'immediate' | 'review' | 'flashcard'>(
     () => (searchParams.get('mode') === 'flashcard' ? 'flashcard' : 'immediate')
   )
@@ -351,7 +350,10 @@ export default function QuizDetailPage() {
                 historyData={historyData}
                 isLoading={isHistoryLoading}
                 currentUser={currentUser}
-                onAuthRequired={() => setAuthRequiredDialogOpen(true)}
+                onAuthRequired={() => {
+                  const safeCallback = encodeURIComponent(`/quiz/${resolvedQuizId}`)
+                  router.push(`/login?callbackUrl=${safeCallback}`)
+                }}
               />
             </div>
           </div>
@@ -430,8 +432,6 @@ export default function QuizDetailPage() {
                 }}
                 onCloseResumeDialog={() => { setResumeDialogOpen(false); setModeSelectOpen(true); }}
                 currentUser={currentUser}
-                authRequiredDialogOpen={authRequiredDialogOpen}
-                setAuthRequiredDialogOpen={setAuthRequiredDialogOpen}
                 hasHistory={Boolean(historyData?.completed_at)}
                 latestSessionId={historyData?.attempts?.[0]?.session_id ?? historyData?._id}
               />
@@ -450,7 +450,10 @@ export default function QuizDetailPage() {
               historyData={historyData}
               isLoading={isHistoryLoading}
               currentUser={currentUser}
-              onAuthRequired={() => setAuthRequiredDialogOpen(true)}
+              onAuthRequired={() => {
+                const safeCallback = encodeURIComponent(`/quiz/${resolvedQuizId}`)
+                router.push(`/login?callbackUrl=${safeCallback}`)
+              }}
             />
           </div>
 

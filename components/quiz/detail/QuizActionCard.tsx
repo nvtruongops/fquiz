@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { ShieldCheck, Zap, Shuffle, AlignJustify, PlayCircle, Loader2, ChevronRight, AlertCircle, X, History } from 'lucide-react'
-import { UnauthorizedView } from '@/components/shared/UnauthorizedView'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/shared/ui/button'
 import {
   Dialog,
@@ -38,9 +38,10 @@ interface QuizActionCardProps {
   onContinue: () => void
   onRestart: () => void
   onCloseResumeDialog: () => void
+  onCloseResumeDialog: () => void
   currentUser: any
-  authRequiredDialogOpen: boolean
-  setAuthRequiredDialogOpen: (open: boolean) => void
+  authRequiredDialogOpen?: boolean
+  setAuthRequiredDialogOpen?: (open: boolean) => void
   hasHistory?: boolean
   latestSessionId?: string
 }
@@ -68,6 +69,7 @@ export function QuizActionCard({
   hasHistory,
   latestSessionId
 }: QuizActionCardProps) {
+  const router = useRouter()
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4">
@@ -102,7 +104,8 @@ export function QuizActionCard({
             <Button 
               onClick={() => {
                 if (!currentUser) {
-                  setAuthRequiredDialogOpen(true)
+                  const safeCallback = encodeURIComponent(`/quiz/${quizId}`)
+                  router.push(`/login?callbackUrl=${safeCallback}`)
                 } else {
                   setModeSelectOpen(true)
                 }
@@ -319,26 +322,6 @@ export function QuizActionCard({
                   </div>
                 </>
               )}
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={authRequiredDialogOpen} onOpenChange={setAuthRequiredDialogOpen}>
-            <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl sm:rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">
-              <div className="relative">
-                <button 
-                  onClick={() => setAuthRequiredDialogOpen(false)}
-                  className="absolute top-4 right-4 z-50 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
-                  aria-label="Đóng"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <DialogTitle className="sr-only">Yêu cầu đăng nhập</DialogTitle>
-                <UnauthorizedView 
-                  title="Bắt đầu hành trình"
-                  description="Hãy đăng nhập để hệ thống có thể lưu lại kết quả, thống kê tiến độ và giúp bạn ôn tập hiệu quả nhất."
-                  className="border-none shadow-none rounded-none p-6 sm:p-10"
-                />
-              </div>
             </DialogContent>
           </Dialog>
         </div>
