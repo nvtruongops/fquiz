@@ -1,4 +1,4 @@
-import { NextResponse } from 'next'
+import { NextResponse } from 'next/server'
 
 export async function GET() {
   return new NextResponse('google-site-verification: google3f2272f3df4562b2.html', {
