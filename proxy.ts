@@ -148,8 +148,9 @@ function isPublicRoute(pathname: string) {
   const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9_-]+$/.test(pathname)
   // Allow browsing course listing and detail pages without auth
   const isPublicCourse = pathname.startsWith('/courses')
-  const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(pathname)
-  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isPublicCourse || isStaticAsset
+  const isGoogleVerification = /^\/google[a-zA-Z0-9_-]+\.html$/.test(pathname)
+  const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp|html|txt|xml)$/i.test(pathname)
+  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isPublicCourse || isGoogleVerification || isStaticAsset
 }
 
 function shouldSkipAuth(pathname: string) {
