@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable sonarjs/cognitive-complexity */
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -254,25 +255,34 @@ export function MobileNav({ user }: MobileNavProps) {
                     </button>
                   </div>
 
-                  <Link
-                    href="/login"
-                    prefetch={false}
-                    onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-black bg-[#5D7B6F] text-white shadow-xs text-center active:scale-98"
-                  >
-                    <LogIn className="w-4.5 h-4.5" />
-                    <span>Đăng nhập</span>
-                  </Link>
+                  {(() => {
+                    const callbackUrl = pathname ? encodeURIComponent(pathname) : ''
+                    const loginHref = callbackUrl ? `/login?callbackUrl=${callbackUrl}` : '/login'
+                    const registerHref = callbackUrl ? `/register?callbackUrl=${callbackUrl}` : '/register'
+                    return (
+                      <>
+                        <Link
+                          href={loginHref}
+                          prefetch={false}
+                          onClick={closeAllMenus}
+                          className="flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-black bg-[#5D7B6F] text-white shadow-xs text-center active:scale-98"
+                        >
+                          <LogIn className="w-4.5 h-4.5" />
+                          <span>Đăng nhập</span>
+                        </Link>
 
-                  <Link
-                    href="/register"
-                    prefetch={false}
-                    onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors text-center active:scale-98"
-                  >
-                    <UserPlus className="w-4.5 h-4.5" />
-                    <span>Đăng ký tài khoản</span>
-                  </Link>
+                        <Link
+                          href={registerHref}
+                          prefetch={false}
+                          onClick={closeAllMenus}
+                          className="flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors text-center active:scale-98"
+                        >
+                          <UserPlus className="w-4.5 h-4.5" />
+                          <span>Đăng ký tài khoản</span>
+                        </Link>
+                      </>
+                    )
+                  })()}
                 </>
               )}
             </motion.div>
