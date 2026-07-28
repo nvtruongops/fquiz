@@ -235,14 +235,14 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
       }, { status: 400 })
     }
 
-    const category = await Category.findOneAndDelete({
+    const result = await Category.deleteMany({
       _id: { $in: objectIds },
       owner_id: new Types.ObjectId(payload.userId)
     })
 
-    if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    if (!result.deletedCount) return NextResponse.json({ error: 'Category not found or permission denied' }, { status: 404 })
 
-    return NextResponse.json({ message: 'Danh mục đã xóa successfully' })
+    return NextResponse.json({ message: `Đã xóa ${result.deletedCount} danh mục thành công` })
   } catch (error) {
     console.error('Error deleting category:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

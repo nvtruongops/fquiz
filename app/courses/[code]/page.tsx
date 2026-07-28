@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { verifySession } from '@/lib/modules/auth/dal'
+import AppLayout from '@/components/layout/AppLayout'
 import CourseDetailClient from '@/components/quiz/explore/CourseDetailClient'
 
 export async function generateMetadata({
@@ -21,6 +23,10 @@ export async function generateMetadata({
       `đáp án ${courseCodeUpper}`,
       'FQuiz',
     ],
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: `Đề thi Trắc nghiệm ${courseCodeUpper} | FQuiz`,
       description: `Luyện tập bộ đề thi trắc nghiệm môn ${courseCodeUpper} với đáp án chi tiết và chế độ thi thử ngẫu nhiên.`,
@@ -40,16 +46,19 @@ export default async function CourseDetailPage({
   params: Promise<{ code: string }>
 }) {
   const { code } = await params
+  const user = await verifySession()
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      }
-    >
-      <CourseDetailClient code={code} />
-    </Suspense>
+    <AppLayout user={user ? { _id: user.userId, name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        }
+      >
+        <CourseDetailClient code={code} />
+      </Suspense>
+    </AppLayout>
   )
 }
