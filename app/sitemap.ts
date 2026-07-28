@@ -34,22 +34,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Dynamic course routes (e.g., /courses/mln122)
+  // Dynamic course routes (e.g., /courses/MLN131, /courses/MLN122)
   let courseRoutes: MetadataRoute.Sitemap = []
   try {
     await connectDB()
-    const categories = await Category.find({ status: { $ne: 'deleted' } }, { code: 1, name: 1, updatedAt: 1 })
+    const categories = await Category.find(
+      { status: { $nin: ['pending', 'rejected'] } },
+      { name: 1, updatedAt: 1, updated_at: 1 }
+    )
       .lean()
       .exec()
 
-    courseRoutes = categories
-      .filter((cat) => Boolean((cat as { code?: string }).code))
-      .map((cat) => ({
-        url: `${baseUrl}/courses/${String((cat as { code?: string }).code).toLowerCase()}`,
-        lastModified: ((cat as { updatedAt?: Date }).updatedAt) || currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      }))
+    // Deduplicate by course code uppercase
+    const seenCodes = new Set<string>()
+
+    for (const cat of categories as any[]) {
+      if (typeof cat.name === 'string' && cat.name.trim().length > 0) {
+        const code = cat.name.trim().toUpperCase()
+        if (!seenCodes.has(code)) {
+          seenCodes.add(code)
+          courseRoutes.push({
+            url: `${baseUrl}/courses/${code}`,
+            lastModified: cat.updatedAt || cat.updated_at || currentDate,
+            changeFrequency: 'weekly',
+            priority: 0.8,
+          })
+        }
+      }
+    }
   } catch (err) {
     console.error('[sitemap] Failed to fetch category routes:', err)
   }
