@@ -145,7 +145,7 @@ function getUnauthorizedOrRedirect(pathname: string, request: NextRequest, reque
 
 function isPublicRoute(pathname: string) {
   // Allow viewing quiz detail page without auth (but starting quiz requires auth)
-  const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9]+$/.test(pathname)
+  const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9_-]+$/.test(pathname)
   // Allow browsing course listing and detail pages without auth
   const isPublicCourse = pathname.startsWith('/courses')
   const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(pathname)
@@ -155,6 +155,8 @@ function isPublicRoute(pathname: string) {
 function shouldSkipAuth(pathname: string) {
   return pathname.startsWith('/api/v1/public/') || 
          pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
+         pathname.startsWith('/api/public/') ||
+         pathname.startsWith('/api/courses/') ||
          pathname.startsWith('/api/auth/') ||
          pathname.startsWith('/api/jobs/')
 }
