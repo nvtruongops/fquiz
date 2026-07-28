@@ -323,19 +323,20 @@ export function QuizActionCard({
           </Dialog>
 
           <Dialog open={authRequiredDialogOpen} onOpenChange={setAuthRequiredDialogOpen}>
-            <DialogContent className="max-w-md rounded-[40px] border-none p-0 shadow-2xl overflow-hidden bg-white">
+            <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl sm:rounded-[32px] border-none p-0 shadow-2xl overflow-hidden bg-white">
               <div className="relative">
                 <button 
                   onClick={() => setAuthRequiredDialogOpen(false)}
-                  className="absolute top-6 right-6 z-50 p-2 rounded-full bg-black/5 hover:bg-black/10 transition-colors"
+                  className="absolute top-4 right-4 z-50 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
+                  aria-label="Đóng"
                 >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <X className="w-4 h-4" />
                 </button>
                 <DialogTitle className="sr-only">Yêu cầu đăng nhập</DialogTitle>
                 <UnauthorizedView 
                   title="Bắt đầu hành trình"
                   description="Hãy đăng nhập để hệ thống có thể lưu lại kết quả, thống kê tiến độ và giúp bạn ôn tập hiệu quả nhất."
-                  className="border-none shadow-none rounded-none p-12"
+                  className="border-none shadow-none rounded-none p-6 sm:p-10"
                 />
               </div>
             </DialogContent>
