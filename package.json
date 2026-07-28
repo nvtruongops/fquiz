@@ -32,7 +32,11 @@
     "audit:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts",
     "cleanup:quiz-codes": "tsx --env-file=.env.local scripts/audit-quiz-course-code-duplicates.ts --apply",
     "audit:answer-conflicts": "tsx --env-file=.env.local scripts/audit-answer-conflicts.ts",
-    "reconcile:question-bank": "tsx --env-file=.env.local scripts/reconcile-question-bank.ts"
+    "reconcile:question-bank": "tsx --env-file=.env.local scripts/reconcile-question-bank.ts",
+    "generate:explanations-mln131": "tsx --env-file=.env.local scripts/generate-mln131-explanations.ts",
+    "generate:explanations-mln131:apply": "tsx --env-file=.env.local scripts/generate-mln131-explanations.ts --apply",
+    "generate:explanations-mln122": "tsx --env-file=.env.local scripts/generate-course-explanations.ts --course=MLN122",
+    "generate:explanations-mln122:apply": "tsx --env-file=.env.local scripts/generate-course-explanations.ts --course=MLN122 --apply"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 export interface QuizItem {
   _id: string
@@ -28,6 +29,7 @@ export interface Classroom {
 }
 
 export function useTeacherQuizzes() {
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<'quizzes' | 'categories'>('quizzes')
 
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
@@ -148,7 +150,7 @@ export function useTeacherQuizzes() {
         setConfirmDeleteCategoryId(null)
         fetchCategories()
       } else {
-        alert(data.error || 'Không thể xóa mã môn học')
+        toast.error(data.error || 'Không thể xóa mã môn học')
       }
     } catch (err) {
       console.error('Lỗi khi xóa môn học:', err)
@@ -210,7 +212,7 @@ export function useTeacherQuizzes() {
         fetchQuizzes()
       } else {
         const data = await res.json()
-        alert(data.error || 'Xóa thất bại')
+        toast.error(data.error || 'Xóa thất bại')
       }
     } catch (err) {
       console.error('Lỗi khi xóa bộ đề:', err)

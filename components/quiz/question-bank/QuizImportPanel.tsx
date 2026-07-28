@@ -149,6 +149,84 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
     }
   }
 
+function mapQuestionForBankCheck(q: ImportedQuestion) {
+  const opts = q.options.map((o) => o.trim())
+  let last = opts.length - 1
+  while (last > 1 && !opts[last]) last--
+  return {
+    text: q.text.trim(),
+    options: opts.slice(0, last + 1),
+    correct_answer: q.correct_answer,
+    explanation: q.explanation,
+    image_url: q.image_url,
+  }
+}
+
+  const performBankCheck = React.useCallback(async (targetPreview: ImportPreviewResponse, catId?: string) => {
+    if (mode !== 'admin' || !targetPreview.isValid || targetPreview.normalizedQuiz.questions.length === 0) {
+      return
+    }
+
+    if (!catId) {
+      setBankCheck({
+        total_questions: targetPreview.normalizedQuiz.questions.length,
+        conflicts_found: 0,
+        same_answer_conflicts: 0,
+        different_answer_conflicts: 0,
+        conflicts: { same_answer: [], different_answer: [] },
+        summary: ' Chưa chọn môn học - không thể kiểm tra Question Bank',
+      })
+      return
+    }
+
+    setCheckingBank(true)
+    try {
+      const checkRes = await fetch('/api/question-bank/check', {
+        method: 'POST',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({
+          category_id: catId,
+          questions: targetPreview.normalizedQuiz.questions.map(mapQuestionForBankCheck),
+        }),
+      })
+
+      if (checkRes.ok) {
+        const checkData: BankCheckResult = await checkRes.json()
+        setBankCheck(checkData)
+      }
+    } catch (err) {
+      console.error('Question bank check failed:', err)
+    } finally {
+      setCheckingBank(false)
+    }
+  }, [mode])
+
+  React.useEffect(() => {
+    if (preview) {
+      void performBankCheck(preview, categoryId)
+    }
+  }, [categoryId, preview, performBankCheck])
+
+  const handlePreviewCatchError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : ''
+    const uploadChanged = /upload file changed|ERR_UPLOAD_FILE_CHANGED/i.test(message)
+    const errText = uploadChanged
+      ? 'File đã thay đổi sau khi chọn. Vui lòng chọn lại file và thử lại.'
+      : 'Lỗi kết nối khi preview import'
+
+    setError(errText)
+    setPreview(null)
+    onValidationStateChange?.(true)
+    onPreviewDiagnosticsChange?.([
+      {
+        level: 'error',
+        code: uploadChanged ? 'IMPORT_FILE_CHANGED' : 'IMPORT_NETWORK_ERROR',
+        message: errText,
+      },
+    ])
+  }
+
   const handlePreview = async () => {
     if (!file || !fileSnapshot) {
       setError('Vui lòng chọn file .json hoặc .txt')
@@ -188,71 +266,11 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
 
       const nextPreview = data as ImportPreviewResponse
       setPreview(nextPreview)
-      
-      // Check Question Bank if in admin mode and category is selected
-      if (mode === 'admin' && categoryId && nextPreview.isValid && nextPreview.normalizedQuiz.questions.length > 0) {
-        setCheckingBank(true)
-        try {
-          const checkRes = await fetch('/api/question-bank/check', {
-            method: 'POST',
-            headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-            credentials: 'include',
-            body: JSON.stringify({
-              category_id: categoryId,
-              questions: nextPreview.normalizedQuiz.questions.map(q => {
-                const opts = q.options.map(o => o.trim())
-                let last = opts.length - 1
-                while (last > 1 && !opts[last]) last--
-                const cleanOpts = opts.slice(0, last + 1)
-
-                return {
-                  text: q.text.trim(),
-                  options: cleanOpts,
-                  correct_answer: q.correct_answer,
-                  explanation: q.explanation,
-                  image_url: q.image_url,
-                }
-              }),
-            }),
-          })
-          
-          if (checkRes.ok) {
-            const checkData: BankCheckResult = await checkRes.json()
-            setBankCheck(checkData)
-          }
-        } catch (err) {
-          console.error('Question bank check failed:', err)
-          // Don't block import if bank check fails
-        } finally {
-          setCheckingBank(false)
-        }
-      } else if (mode === 'admin' && !categoryId && nextPreview.isValid) {
-        // Cảnh báo: chưa chọn môn học
-        setBankCheck({
-          total_questions: nextPreview.normalizedQuiz.questions.length,
-          conflicts_found: 0,
-          same_answer_conflicts: 0,
-          different_answer_conflicts: 0,
-          conflicts: { same_answer: [], different_answer: [] },
-          summary: ' Chưa chọn môn học - không thể kiểm tra Question Bank'
-        })
-      }
-      
+      void performBankCheck(nextPreview, categoryId)
       onValidationStateChange?.(!nextPreview.isValid)
       onPreviewDiagnosticsChange?.(nextPreview.diagnostics.filter((item) => item.level === 'error'))
     } catch (err) {
-      const message = err instanceof Error ? err.message : ''
-      const uploadChanged = /upload file changed|ERR_UPLOAD_FILE_CHANGED/i.test(message)
-      setError(uploadChanged ? 'File đã thay đổi sau khi chọn. Vui lòng chọn lại file và thử lại.' : 'Lỗi kết nối khi preview import')
-      setPreview(null)
-      onValidationStateChange?.(true)
-      onPreviewDiagnosticsChange?.([
-        {
-          level: 'error',
-          code: uploadChanged ? 'IMPORT_FILE_CHANGED' : 'IMPORT_NETWORK_ERROR',
-          message: uploadChanged ? 'File đã thay đổi sau khi chọn. Vui lòng chọn lại file và thử lại.' : 'Lỗi kết nối khi preview import',
-        },
-      ])
+      handlePreviewCatchError(err)
     } finally {
       setLoading(false)
       onProcessingStateChange?.(false)
@@ -317,6 +335,32 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
     }
   }
 
+async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: string) {
+  const res = await fetch('/api/question-bank/sync-update', {
+    method: 'POST',
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify({
+      category_id: categoryId,
+      old_question_id: '',
+      new_question: {
+        text: fileQ.text,
+        options: fileQ.options,
+        correct_answer: fileQ.correct_answer,
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    throw new Error(
+      typeof data?.error === 'string'
+        ? data.error
+        : 'Không thể đồng bộ đáp án vào ngân hàng câu hỏi.'
+    )
+  }
+}
+
   const handleConfirmConflictChoices = async () => {
     if (!preview || !bankCheck || bankCheck.different_answer_conflicts === 0) return
 
@@ -331,29 +375,7 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
         if (!fileQ) continue
         if (!categoryId) throw new Error('Vui lòng chọn môn học trước khi đồng bộ đáp án.')
 
-        const res = await fetch('/api/question-bank/sync-update', {
-          method: 'POST',
-          headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-          credentials: 'include',
-          body: JSON.stringify({
-            category_id: categoryId,
-            old_question_id: '',
-            new_question: {
-              text: fileQ.text,
-              options: fileQ.options,
-              correct_answer: fileQ.correct_answer,
-            },
-          }),
-        })
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => null)
-          throw new Error(
-            typeof data?.error === 'string'
-              ? data.error
-              : 'Không thể đồng bộ đáp án vào ngân hàng câu hỏi.'
-          )
-        }
+        await syncSingleConflictQuestion(fileQ, categoryId)
       }
 
       setConflictsConfirmed(true)

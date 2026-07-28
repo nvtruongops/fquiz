@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 export interface Classroom {
   _id: string
@@ -14,6 +15,7 @@ export interface Classroom {
 }
 
 export function useTeacherClassrooms() {
+  const { toast } = useToast()
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [totalQuizzes, setTotalQuizzes] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -157,7 +159,7 @@ export function useTeacherClassrooms() {
         fetchClassrooms()
       } else {
         const data = await res.json()
-        alert(data.error || 'Xóa lớp học thất bại')
+        toast.error(data.error || 'Xóa lớp học thất bại')
       }
     } catch (err) {
       console.error('Lỗi khi xóa lớp học:', err)

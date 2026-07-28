@@ -119,6 +119,7 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
       <QuizEditor
         {...props}
         onBeforeSubmit={handleBeforeSubmit}
+        onFormChange={setFormData}
         registerApplyResolutions={(fn) => {
           applyResolutionsRef.current = fn
         }}
@@ -148,6 +149,42 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
   )
 }
 
+function getStatusConfig(checking: boolean, hasDiff: boolean, hasSame: boolean, hasAny: boolean, result: any) {
+  if (checking) {
+    return {
+      style: 'border-blue-300 bg-blue-50',
+      icon: <Loader2 className="h-5 w-5 animate-spin text-blue-600 mt-0.5" />,
+      text: 'Đang kiểm tra...',
+    }
+  }
+  if (hasDiff) {
+    return {
+      style: 'border-red-300 bg-red-50',
+      icon: <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />,
+      text: <span className="text-red-700 font-medium">{result?.different_answer_conflicts} câu có mâu thuẫn đáp án!</span>,
+    }
+  }
+  if (hasSame) {
+    return {
+      style: 'border-yellow-300 bg-yellow-50',
+      icon: <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />,
+      text: <span className="text-yellow-700">✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)</span>,
+    }
+  }
+  if (hasAny) {
+    return {
+      style: 'border-green-300 bg-green-50',
+      icon: <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />,
+      text: <span className="text-green-700">✓ Tất cả câu hỏi hợp lệ</span>,
+    }
+  }
+  return {
+    style: 'border-gray-300 bg-white',
+    icon: <Database className="h-5 w-5 text-gray-400 mt-0.5" />,
+    text: 'Chưa có câu hỏi nào',
+  }
+}
+
 function QuestionBankStatusBar({
   checking,
   hasDifferentAnswerConflicts,
@@ -161,30 +198,13 @@ function QuestionBankStatusBar({
   hasAnyConflicts: boolean
   result: any
 }) {
-  const alertStyle = checking
-    ? 'border-blue-300 bg-blue-50'
-    : hasDifferentAnswerConflicts
-    ? 'border-red-300 bg-red-50'
-    : hasSameAnswerConflicts
-    ? 'border-yellow-300 bg-yellow-50'
-    : hasAnyConflicts
-    ? 'border-green-300 bg-green-50'
-    : 'border-gray-300 bg-white'
+  const config = getStatusConfig(checking, hasDifferentAnswerConflicts, hasSameAnswerConflicts, hasAnyConflicts, result)
 
   return (
     <div className="fixed top-20 right-8 z-50 w-80">
-      <Alert className={`shadow-lg ${alertStyle}`}>
+      <Alert className={`shadow-lg ${config.style}`}>
         <div className="flex items-start gap-3">
-          {checking ? (
-            <Loader2 className="h-5 w-5 animate-spin text-blue-600 mt-0.5" />
-          ) : hasDifferentAnswerConflicts ? (
-            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-          ) : hasAnyConflicts ? (
-            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-          ) : (
-            <Database className="h-5 w-5 text-gray-400 mt-0.5" />
-          )}
-
+          {config.icon}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-bold">Ngân hàng câu hỏi</span>
@@ -194,25 +214,8 @@ function QuestionBankStatusBar({
                 </Badge>
               )}
             </div>
-
             <AlertDescription className="text-xs">
-              {checking ? (
-                'Đang kiểm tra...'
-              ) : hasDifferentAnswerConflicts ? (
-                <span className="text-red-700 font-medium">
-                  {result?.different_answer_conflicts} câu có mâu thuẫn đáp án!
-                </span>
-              ) : hasSameAnswerConflicts ? (
-                <span className="text-yellow-700">
-                  ✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)
-                </span>
-              ) : hasAnyConflicts ? (
-                <span className="text-green-700">
-                  ✓ Tất cả câu hỏi hợp lệ
-                </span>
-              ) : (
-                'Chưa có câu hỏi nào'
-              )}
+              {config.text}
             </AlertDescription>
           </div>
         </div>

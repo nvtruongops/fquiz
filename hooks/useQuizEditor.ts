@@ -310,30 +310,100 @@ export function useQuizEditor(options: QuizEditorOptions) {
     }
   }, [isStudentMode, form.category_id, form.course_code, form.questions])
 
+  const handlePostSaveRedirect = useCallback((status: string) => {
+    if (status === 'published') {
+      sessionStorage.removeItem(DRAFT_KEY)
+      toast.success(isStudentMode ? 'Đã tạo quiz thành công!' : 'Đã công khai quiz thành công!')
+      router.push(effectiveRedirectOnPublish)
+      router.refresh()
+    } else {
+      toast.success('Đã lưu bản nháp')
+    }
+  }, [effectiveRedirectOnPublish, isStudentMode, router, toast])
+
   const handleSaveSuccess = useCallback(async (data: any, status: string, quiet: boolean) => {
     const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId
-    if (savedId) setActiveQuizId(savedId)
+    if (savedId) {
+      setActiveQuizId(savedId)
+      if (!quizId) sessionStorage.setItem(DRAFT_KEY, savedId)
+    }
     if (!quiet && data?.quiz?.status) setForm(prev => ({ ...prev, status: data.quiz.status }))
     setLastUpdatedAt(data?.quiz?.updatedAt ?? null)
     lastUpdatedAtRef.current = data?.quiz?.updatedAt ?? null
     setLastSavedAt(new Date())
 
-    if (savedId && !quizId) {
-      sessionStorage.setItem(DRAFT_KEY, savedId)
-    }
-
     if (!quiet) {
       if (savedId) await invalidateHistoryForQuiz(queryClient, savedId)
-      if (status === 'published') {
-        sessionStorage.removeItem(DRAFT_KEY)
-        toast.success(isStudentMode ? 'Đã tạo quiz thành công!' : 'Đã công khai quiz thành công!')
-        router.push(effectiveRedirectOnPublish)
-        router.refresh()
-      } else {
-        toast.success('Đã lưu bản nháp')
+      handlePostSaveRedirect(status)
+    }
+  }, [activeQuizId, queryClient, quizId, handlePostSaveRedirect])
+
+  const handleSaveError = useCallback((data: any) => {
+    if (data.code === 'CONCURRENCY_ERROR') {
+      setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.')
+      toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
+    } else if (data.error === 'question_bank_conflict' && data.conflicts) {
+      onServerConflict?.(data.conflicts)
+      setError(
+        data.message ||
+          'Phát hiện câu hỏi mâu thuẫn đáp án với ngân hàng. Vui lòng chọn đáp án đúng để đồng bộ.'
+      )
+    } else {
+      const apiMsg = extractApiErrorMessage(data.error)
+      setError(apiMsg)
+      if (data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')) {
+        toast.error(apiMsg)
       }
     }
-  }, [activeQuizId, isStudentMode, effectiveRedirectOnPublish, queryClient, router, toast, quizId])
+  }, [onServerConflict, toast])
+
+  const buildSavePayload = useCallback((overrideStatus?: 'published' | 'draft') => {
+    const status = isStudentMode ? 'published' : (overrideStatus ?? form.status)
+    return {
+      status,
+      description: form.description.trim(),
+      category_id: form.category_id,
+      course_code: form.course_code.trim().toUpperCase() || 'GENERAL',
+      lastUpdatedAt: lastUpdatedAtRef.current,
+      questions: form.questions.map(q => {
+        const opts = effectiveOptions(q)
+        return {
+          text: q.text.trim(),
+          options: opts.map(o => o.trim()),
+          correct_answer: q.correct_answers.filter(a => a < opts.length),
+          ...(q.explanation.trim() ? { explanation: q.explanation.trim() } : {}),
+          ...(q.image_url.trim() ? { image_url: q.image_url.trim() } : {}),
+        }
+      }),
+    }
+  }, [form, isStudentMode])
+
+  const executeSaveFetch = useCallback(async (payload: any) => {
+    const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : effectiveCreateEndpoint
+    const method = activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST'
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json()
+    return { res, data }
+  }, [activeQuizId, effectiveCreateEndpoint, effectiveUpdateEndpointBuilder, isStudentMode])
+
+  const handleSaveResponse = useCallback(async (res: Response, data: any, status: string, quiet: boolean) => {
+    if (!res.ok) {
+      if (activeQuizId && !quizId && (res.status === 400 || res.status === 404)) {
+        setActiveQuizId(undefined)
+        sessionStorage.removeItem(DRAFT_KEY)
+      }
+      if (!quiet) handleSaveError(data)
+      return
+    }
+    const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId || quizId || ''
+    await handleSaveSuccess(data, status, quiet)
+    if (savedId) await syncToQuestionBank(savedId, status)
+  }, [activeQuizId, handleSaveError, handleSaveSuccess, quizId, syncToQuestionBank])
 
   const doSave = useCallback(async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
     if (!quiet && autosaveInFlightRef.current) {
@@ -341,51 +411,16 @@ export function useQuizEditor(options: QuizEditorOptions) {
     }
     if (!quiet) setSaving(true)
     setError('')
-    const status = isStudentMode ? 'published' : (overrideStatus ?? form.status)
-    const currentLastUpdatedAt = lastUpdatedAtRef.current
-    const payload = {
-      description: form.description.trim(), category_id: form.category_id, course_code: form.course_code.trim().toUpperCase() || 'GENERAL', status, lastUpdatedAt: currentLastUpdatedAt,
-      questions: form.questions.map(q => {
-        const opts = effectiveOptions(q)
-        return { text: q.text.trim(), options: opts.map(o => o.trim()), correct_answer: q.correct_answers.filter(a => a < opts.length), ...(q.explanation.trim() ? { explanation: q.explanation.trim() } : {}), ...(q.image_url.trim() ? { image_url: q.image_url.trim() } : {}) }
-      }),
-    }
+    const payload = buildSavePayload(overrideStatus)
     try {
-      const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : effectiveCreateEndpoint
-      const res = await fetch(url, { method: activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST', credentials: 'include', headers: withCsrfHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) })
-      const data = await res.json()
-      if (!res.ok) {
-        if (!quiet) {
-          if (data.code === 'CONCURRENCY_ERROR') {
-            setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.')
-            toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
-          } else if (data.error === 'question_bank_conflict' && data.conflicts) {
-            onServerConflict?.(data.conflicts)
-            setError(
-              data.message ||
-                'Phát hiện câu hỏi mâu thuẫn đáp án với ngân hàng. Vui lòng chọn đáp án đúng để đồng bộ.'
-            )
-          } else {
-            const apiMsg = extractApiErrorMessage(data.error)
-            setError(apiMsg)
-            if (data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')) {
-              toast.error(apiMsg)
-            }
-          }
-        }
-        return
-      }
-      const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId || quizId || ''
-      await handleSaveSuccess(data, status, quiet)
-      if (savedId) {
-        await syncToQuestionBank(savedId, status)
-      }
+      const { res, data } = await executeSaveFetch(payload)
+      await handleSaveResponse(res, data, payload.status, quiet)
     } catch {
       if (!quiet) setError('Lỗi kết nối. Vui lòng thử lại.')
     } finally {
       if (!quiet) setSaving(false)
     }
-  }, [isStudentMode, form, activeQuizId, effectiveUpdateEndpointBuilder, effectiveCreateEndpoint, handleSaveSuccess, syncToQuestionBank, toast, onServerConflict, quizId])
+  }, [buildSavePayload, executeSaveFetch, handleSaveResponse])
 
   const scrollToQuestion = (idx: number) => {
     const el = document.getElementById(`q-card-${idx}`)
@@ -540,7 +575,13 @@ export function useQuizEditor(options: QuizEditorOptions) {
     let nextLength = 0
 
     setForm((prev) => {
-      const nextQuestions = [...prev.questions]
+      const isSingleEmptyQuestion =
+        prev.questions.length === 1 &&
+        !prev.questions[0].text.trim() &&
+        !prev.questions[0].options.some((o) => o.trim()) &&
+        prev.questions[0].correct_answers.length === 0
+
+      const nextQuestions = isSingleEmptyQuestion ? [] : [...prev.questions]
       const hasQuestionNo = mappedQuestions.some((q) => typeof q.question_no === 'number' && q.question_no > 0)
 
       if (hasQuestionNo) {
@@ -593,6 +634,7 @@ export function useQuizEditor(options: QuizEditorOptions) {
 
     setHasImportBlockingErrors(false)
     setImportPreviewErrors([])
+    setShowImportPanel(false)
     if (overwriteCount > 0) {
       toast.success(`Đã áp dụng file: thêm ${addedCount} câu, ghi đè ${overwriteCount} câu trùng số.`)
     } else {
