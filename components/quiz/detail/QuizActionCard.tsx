@@ -38,7 +38,6 @@ interface QuizActionCardProps {
   onContinue: () => void
   onRestart: () => void
   onCloseResumeDialog: () => void
-  onCloseResumeDialog: () => void
   currentUser: any
   authRequiredDialogOpen?: boolean
   setAuthRequiredDialogOpen?: (open: boolean) => void
