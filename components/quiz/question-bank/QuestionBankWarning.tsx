@@ -14,6 +14,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 interface QuestionBankWarningProps {
   open: boolean
@@ -46,6 +47,7 @@ export function QuestionBankWarning({
   onUpdateAll,
   onUpdateThisOnly,
 }: QuestionBankWarningProps) {
+  const { toast } = useToast()
   const [updating, setUpdating] = useState(false)
 
   const handleUpdateAll = async () => {
@@ -77,7 +79,7 @@ export function QuestionBankWarning({
       onOpenChange(false)
     } catch (error) {
       console.error('Error syncing update:', error)
-      alert('Có lỗi khi cập nhật. Vui lòng thử lại.')
+      toast.error('Có lỗi khi cập nhật. Vui lòng thử lại.')
     } finally {
       setUpdating(false)
     }

@@ -108,18 +108,12 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
 
     const initializeGsi = () => {
       if (window.google?.accounts?.id) {
-        if (!isInitializedRef.current) {
-          const origin = typeof window !== 'undefined' ? window.location.origin : ''
-          const loginUri = `${origin}/api/auth/google${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`
-
-          window.google.accounts.id.initialize({
-            client_id: clientId,
-            ux_mode: 'redirect',
-            login_uri: loginUri,
-            auto_select: false,
-          })
-          isInitializedRef.current = true
-        }
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleResponse,
+          auto_select: false,
+        })
+        isInitializedRef.current = true
 
         const buttonContainer = document.getElementById('google-signin-btn-container')
         if (buttonContainer) {
@@ -148,7 +142,13 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
     } else {
       initializeGsi()
     }
-  }, [clientId, callbackUrl, btnWidth, handleGoogleResponse])
+  }, [clientId, btnWidth, handleGoogleResponse])
+
+  const handleContainerClick = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt()
+    }
+  }
 
   if (!clientId) {
     return null
@@ -165,7 +165,11 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
         </div>
       </div>
 
-      <div ref={containerRef} className="relative w-full min-h-[48px] flex items-center justify-center">
+      <div
+        ref={containerRef}
+        onClick={handleContainerClick}
+        className="relative w-full min-h-[48px] flex items-center justify-center cursor-pointer"
+      >
         {loading ? (
           <div className="w-full h-12 rounded-2xl bg-white/95 border border-[#5D7B6F]/30 shadow-xs flex items-center justify-center gap-2.5 text-xs font-bold text-[#5D7B6F]">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -174,7 +178,7 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
         ) : (
           <div className="relative w-full flex justify-center">
             {/* Styled Visual Google Button Matching Form Elements */}
-            <div className="w-full h-12 rounded-2xl border-2 border-slate-200/90 hover:border-[#5D7B6F]/50 bg-white/90 hover:bg-white text-slate-800 font-bold text-sm flex items-center justify-center gap-3 shadow-xs hover:shadow-md transition-all duration-300 pointer-events-none">
+            <div className="w-full h-12 rounded-2xl border-2 border-slate-200/90 hover:border-[#5D7B6F]/50 bg-white/90 hover:bg-white text-slate-800 font-bold text-sm flex items-center justify-center gap-3 shadow-xs hover:shadow-md transition-all duration-300">
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -187,7 +191,7 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
             {/* Invisible Google Native GSI Button Overlaid for Native Security & OAuth Trigger */}
             <div
               id="google-signin-btn-container"
-              className="absolute inset-0 w-full h-full opacity-0 overflow-hidden cursor-pointer flex justify-center [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:!max-w-full"
+              className="absolute inset-0 w-full h-full opacity-0.01 overflow-hidden cursor-pointer flex justify-center items-center [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:!max-w-full z-10"
             />
           </div>
         )}

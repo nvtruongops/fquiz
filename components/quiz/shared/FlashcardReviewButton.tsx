@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/shared/ui/button'
 import { RefreshCw, Loader2 } from 'lucide-react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 interface FlashcardReviewButtonProps {
   sessionId: string
@@ -20,6 +21,7 @@ export function FlashcardReviewButton({
   disabled = false,
 }: FlashcardReviewButtonProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleReview = async () => {
@@ -51,7 +53,7 @@ export function FlashcardReviewButton({
       router.push(reviewUrl)
     } catch (error) {
       console.error('Failed to create review session:', error)
-      alert('Không thể tạo phiên ôn tập. Vui lòng thử lại.')
+      toast.error('Không thể tạo phiên ôn tập. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }

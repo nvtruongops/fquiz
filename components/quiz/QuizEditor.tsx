@@ -26,6 +26,7 @@ interface Props {
   allowDraft?: boolean
   enableAutosave?: boolean
   onBeforeSubmit?: (data: any) => boolean | undefined
+  onFormChange?: (data: { category_id: string; questions: Array<{ text: string; options: string[]; correct_answer: number[] }> }) => void
   registerApplyResolutions?: (
     fn: (resolutions: Array<{ questionIndex: number; correct_answer: number[]; options: string[] }>) => void
   ) => void
@@ -45,6 +46,7 @@ export function QuizEditor(props: Props) {
     allowDraft,
     enableAutosave,
     onBeforeSubmit,
+    onFormChange,
     registerApplyResolutions,
     onServerConflict,
   } = props
@@ -98,6 +100,17 @@ export function QuizEditor(props: Props) {
     registerApplyResolutions,
     onServerConflict,
   })
+
+  React.useEffect(() => {
+    onFormChange?.({
+      category_id: form.category_id,
+      questions: form.questions.map((q) => ({
+        text: q.text,
+        options: q.options,
+        correct_answer: q.correct_answers,
+      })),
+    })
+  }, [form.category_id, form.questions, onFormChange])
 
   return (
     <div className="p-4 sm:p-8 bg-[#F9F9F7] min-h-screen">

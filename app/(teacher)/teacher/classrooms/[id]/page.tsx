@@ -28,6 +28,7 @@ import {
   Edit2
 } from 'lucide-react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 interface ClassroomDetail {
   _id: string
@@ -80,6 +81,7 @@ interface StudentReport {
 export default function TeacherClassroomDetailPage() {
   const params = useParams()
   const classroomId = params.id as string
+  const { toast } = useToast()
 
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -283,7 +285,7 @@ export default function TeacherClassroomDetailPage() {
         fetchClassroomDetail()
       } else {
         const data = await res.json()
-        alert(data.error || 'Xóa học viên thất bại')
+        toast.error(data.error || 'Xóa học viên thất bại')
       }
     } catch (err) {
       console.error('Lỗi xóa học viên:', err)

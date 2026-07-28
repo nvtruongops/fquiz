@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 
 export interface Classroom {
   _id: string
@@ -40,6 +41,7 @@ export interface Assignment {
 
 export function useStudentClassrooms() {
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null)
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -166,7 +168,7 @@ export function useStudentClassrooms() {
         fetchClassrooms()
       } else {
         const data = await res.json()
-        alert(data.error || 'Rời lớp học thất bại')
+        toast.error(data.error || 'Rời lớp học thất bại')
       }
     } catch (err) {
       console.error('Lỗi rời lớp học:', err)

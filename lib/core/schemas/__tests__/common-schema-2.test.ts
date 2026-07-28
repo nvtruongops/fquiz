@@ -39,6 +39,11 @@ describe('UserListQuerySchema', () => {
     expect(result.status).toBe('active')
   })
 
+  it('should parse teacher role filter correctly', () => {
+    const result = UserListQuerySchema.parse({ role: 'teacher' })
+    expect(result.role).toBe('teacher')
+  })
+
   it('should accept empty string as valid enum value', () => {
     const result = UserListQuerySchema.parse({ role: '', status: '' })
     expect(result.role).toBe('')
