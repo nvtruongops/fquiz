@@ -212,6 +212,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
   // Handle link clicks globally to start loading screen immediately
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return
       const target = (e.target as HTMLElement).closest('a')
       if (!target) return
 

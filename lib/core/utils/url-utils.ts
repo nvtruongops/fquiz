@@ -17,16 +17,25 @@ function getRequestBaseUrl(req: Request): string | null {
 }
 
 export function resolveAppBaseUrl(req?: Request): string {
-  const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL
+  // 1. Production APP_URL or Vercel production domain
+  const prodUrl = process.env.APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_SITE_URL
+  if (prodUrl?.trim()) {
+    return cleanUrl(prodUrl)
+  }
+
+  // 2. Next public app URL config
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL
   if (envUrl?.trim()) {
     return cleanUrl(envUrl)
   }
 
-  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL
+  // 3. Vercel preview/deployment URL
+  const vercelUrl = process.env.VERCEL_URL
   if (vercelUrl?.trim()) {
     return cleanUrl(vercelUrl)
   }
 
+  // 4. Request header host fallback
   if (req) {
     const reqUrl = getRequestBaseUrl(req)
     if (reqUrl) return reqUrl

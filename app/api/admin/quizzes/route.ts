@@ -11,6 +11,7 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 import { checkQuestionsInBank, syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { notifyPinnedUsersNewQuiz } from '@/lib/modules/quiz/utils/quiz-notification'
 
 export const dynamic = 'force-dynamic'
 
@@ -218,6 +219,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         console.error('Failed to sync to question bank:', syncError)
         // Không fail toàn bộ request nếu sync lỗi
       }
+
+      notifyPinnedUsersNewQuiz(quiz).catch((err) => {
+        console.error('Failed to send quiz notifications:', err)
+      })
     }
 
     return NextResponse.json({ 

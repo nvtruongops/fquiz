@@ -198,18 +198,17 @@ function tryAppendOptionLine(line: string, context: ParserContext, body: Record<
 }
 
 function tryMatchOption(line: string, body: Record<string, unknown>, context: ParserContext): boolean {
-  if (line.length >= 2 && line[1] === '.') {
-    const firstChar = line[0].toUpperCase()
-    if (firstChar >= 'A' && firstChar <= 'F') {
-      const optContent = line.substring(2).trim()
-      const options = (body.options as string[]) ?? []
-      options.push(`[${firstChar}]${optContent}`)
-      body.options = options
-      context.collectingExplanation = false
-      context.collectingQuestionText = false
-      context.collectingOptionIndex = options.length - 1
-      return true
-    }
+  const match = line.match(/^([A-F])[.\):\-]\s*(.*)$/i)
+  if (match) {
+    const firstChar = match[1].toUpperCase()
+    const optContent = match[2].trim()
+    const options = (body.options as string[]) ?? []
+    options.push(`[${firstChar}]${optContent}`)
+    body.options = options
+    context.collectingExplanation = false
+    context.collectingQuestionText = false
+    context.collectingOptionIndex = options.length - 1
+    return true
   }
   return false
 }

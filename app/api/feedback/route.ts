@@ -31,15 +31,14 @@ const RATE_WINDOW_MS = 60 * 60 * 1000
 
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
+    const contentLength = Number(req.headers.get('content-length') || '0')
+    if (contentLength > 5000) {
+      return NextResponse.json({ error: 'Payload quá lớn' }, { status: 413 })
+    }
+
     let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-    }
-
-    // Reject oversized payloads (> 5KB) trước khi parse
-    const bodyStr = JSON.stringify(body)
-    if (bodyStr.length > 5000) {
-      return NextResponse.json({ error: 'Payload quá lớn' }, { status: 413 })
     }
 
     const parsed = CreateFeedbackSchema.safeParse(body)

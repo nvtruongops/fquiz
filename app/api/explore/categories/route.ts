@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     await connectDB()
-    const categories = await Category.find(PUBLIC_CATEGORY_MATCH).sort({ name: 1 })
+    const categories = await Category.find(PUBLIC_CATEGORY_MATCH).sort({ name: 1 }).lean()
 
     return NextResponse.json({ categories })
   } catch (err) {

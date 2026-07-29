@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
@@ -28,7 +27,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-      const avatarUrl = resolveAvatarUrl(user)
+    const avatarUrl = resolveAvatarUrl(user)
 
     // Backfill canonical field if old data was stored under `avatarUrl`.
     if (!user.avatar_url && user.avatarUrl) {
@@ -41,7 +40,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       profile: {
         username: user.username,
         email: user.email,
-          avatarUrl,
+        avatarUrl,
         bio: user.profile_bio ?? '',
         createdAt: user.created_at,
       },
@@ -94,36 +93,21 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const freshUser = await User.findById(payload.userId)
-      .select('username email avatar_url avatarUrl profile_bio created_at')
-      .lean() as {
-      username: string
-      email: string
-      avatar_url?: string | null
-      avatarUrl?: string | null
-      profile_bio?: string | null
-      created_at: Date
-    } | null
+    const avatarUrl = resolveAvatarUrl(updated)
 
-    if (!freshUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const avatarUrl = resolveAvatarUrl(freshUser)
-
-    if (!freshUser.avatar_url && freshUser.avatarUrl) {
+    if (!updated.avatar_url && updated.avatarUrl) {
       await User.findByIdAndUpdate(payload.userId, {
-        $set: { avatar_url: freshUser.avatarUrl },
+        $set: { avatar_url: updated.avatarUrl },
       })
     }
 
     return NextResponse.json({
       profile: {
-        username: freshUser.username,
-        email: freshUser.email,
+        username: updated.username,
+        email: updated.email,
         avatarUrl,
-        bio: freshUser.profile_bio ?? '',
-        createdAt: freshUser.created_at,
+        bio: updated.profile_bio ?? '',
+        createdAt: updated.created_at,
       },
     })
   } catch {

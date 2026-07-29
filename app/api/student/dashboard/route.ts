@@ -131,27 +131,8 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       allCompletedGroupsAgg.map((x: any) => `${x._id.quiz_id.toString()}::${x._id.mode_group}`)
     )
 
-    const allRecentSessions = [...recentActivitiesRaw, ...activeActivitiesRaw] as any[]
-    const uniqueQuizIds = Array.from(
-      new Set(
-        allRecentSessions
-          .map((session) => session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || null)
-          .filter((id): id is string => Boolean(id))
-      )
-    ).map((id) => new Types.ObjectId(id))
-
-    const quizDocs: any[] = []
-    const seenQuizIds = new Set<string>()
-    for (const session of allRecentSessions) {
-      if (session.quiz_id && typeof session.quiz_id === 'object') {
-        const qId = session.quiz_id._id.toString()
-        if (!seenQuizIds.has(qId)) {
-          seenQuizIds.add(qId)
-          quizDocs.push(session.quiz_id)
-        }
-      }
-    }
-    const quizMetaMap = new Map(quizDocs.map((quiz) => [quiz._id.toString(), quiz]))
+    const quizDocs = Array.from(quizMapByObjId.values())
+    const quizMetaMap = quizMapByObjId
 
     // Lấy category IDs từ populated data
     const sessionCategoryIds = [...recentActivitiesRaw, ...activeActivitiesRaw]
