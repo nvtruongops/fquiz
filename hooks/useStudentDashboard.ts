@@ -4,12 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { API_ROUTES } from '@/lib/core/constants/api-routes'
 
-export interface DashboardStats {
-  totalQuizzes: number
-  averageScore: string
-  totalCorrectAnswers: number
-}
-
 export interface ActivityItem {
   id: string
   quizId: string
@@ -61,16 +55,10 @@ export function useStudentDashboard() {
 
   const recentActivities: ActivityItem[] = data?.recentActivities || []
   const pinnedCategories: PinnedCategoryItem[] = data?.pinnedCategories || []
-
-  // A session counts as "incomplete" when it is active itself OR when a completed
-  // activity carries a resumable in-progress session (hasActiveSession from API).
-  const incompleteSessions = recentActivities.filter((a: ActivityItem) =>
+  const primaryIncomplete = recentActivities.find((a: ActivityItem) =>
     (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted
-  ) || []
-
-  const primaryIncomplete = incompleteSessions[0]
-  const incompleteCount = incompleteSessions.length
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+  )
+  const userInitial = (user?.name?.[0] || 'U').toUpperCase()
 
   return {
     user,
@@ -80,8 +68,6 @@ export function useStudentDashboard() {
     refetch,
     recentActivities,
     pinnedCategories,
-    incompleteSessions,
-    incompleteCount,
     primaryIncomplete,
     userInitial,
   }

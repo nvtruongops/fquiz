@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -93,8 +94,6 @@ function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
   )
 }
 
-import { useSearchParams } from 'next/navigation'
-
 function HistoryContent() {
   const searchParams = useSearchParams()
   const searchFromUrl = searchParams.get('search') || ''
@@ -115,31 +114,22 @@ function HistoryContent() {
   const dateGroups = useMemo(() => {
     if (!data?.history) return []
 
-    const filtered = data.history.filter(item => 
-      (item.quiz_code || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.category_name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.quiz_title || '').toLowerCase().includes(search.toLowerCase())
-    )
+    const q = search.toLowerCase()
+    const groupsMap = new Map<string, Map<string, GroupedQuiz>>()
 
-    const groupsByDate: { title: string; quizzes: GroupedQuiz[] }[] = []
-
-    filtered.forEach(item => {
-      const date = new Date(item.started_at)
-      let dateTitle = format(date, 'dd/MM/yyyy')
-      if (isToday(date)) dateTitle = 'Hôm nay'
-      else if (isYesterday(date)) dateTitle = 'Hôm qua'
-
-      let dateGroup = groupsByDate.find(g => g.title === dateTitle)
-      if (!dateGroup) {
-        dateGroup = { title: dateTitle, quizzes: [] }
-        groupsByDate.push(dateGroup)
+    data.history.forEach(item => {
+      if (q && !(item.quiz_code?.toLowerCase().includes(q) || item.category_name?.toLowerCase().includes(q) || item.quiz_title?.toLowerCase().includes(q))) {
+        return
       }
 
-      const quizKey = item.quiz_id || `${item.quiz_code}_${item.category_name}`
-      let quizGroup = dateGroup.quizzes.find(q => q.key === quizKey)
+      const date = new Date(item.started_at)
+      const dateTitle = isToday(date) ? 'Hôm nay' : isYesterday(date) ? 'Hôm qua' : format(date, 'dd/MM/yyyy')
+      if (!groupsMap.has(dateTitle)) groupsMap.set(dateTitle, new Map())
 
-      if (!quizGroup) {
-        quizGroup = {
+      const quizMap = groupsMap.get(dateTitle)!
+      const quizKey = item.quiz_id || `${item.quiz_code}_${item.category_name}`
+      if (!quizMap.has(quizKey)) {
+        quizMap.set(quizKey, {
           key: quizKey,
           quiz_id: item.quiz_id,
           quiz_code: item.quiz_code,
@@ -149,21 +139,21 @@ function HistoryContent() {
           is_mix: item.is_mix,
           bestScorePercentage: 0,
           attempts: [],
-        }
-        dateGroup.quizzes.push(quizGroup)
+        })
       }
 
+      const quizGroup = quizMap.get(quizKey)!
       quizGroup.attempts.push(item)
 
-      if (item.status === 'completed') {
-        const pct = item.total_questions > 0 ? (item.score / item.total_questions) * 100 : 0
-        if (pct > quizGroup.bestScorePercentage) {
-          quizGroup.bestScorePercentage = pct
-        }
+      if (item.status === 'completed' && item.total_questions > 0) {
+        quizGroup.bestScorePercentage = Math.max(quizGroup.bestScorePercentage, (item.score / item.total_questions) * 100)
       }
     })
 
-    return groupsByDate
+    return Array.from(groupsMap.entries()).map(([title, quizMap]) => ({
+      title,
+      quizzes: Array.from(quizMap.values()),
+    }))
   }, [data?.history, search])
 
   return (

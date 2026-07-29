@@ -2,9 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
-  ArrowRight, Zap, Bot, Flame, Compass, Loader2,
+  ArrowRight, Zap, Bot, Flame, Compass,
   TrendingUp, HelpCircle, Layers, Sparkles, BookOpen, RefreshCw, BookMarked, Pin
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -15,7 +14,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/shared/ui/avatar'
 import { cn } from '@/lib/core/utils/cn'
 
-import { useStudentDashboard } from '@/hooks/useStudentDashboard'
+import { useStudentDashboard, ActivityItem } from '@/hooks/useStudentDashboard'
 
 export default function DashboardPage() {
   const {
@@ -29,8 +28,6 @@ export default function DashboardPage() {
     primaryIncomplete,
     userInitial,
   } = useStudentDashboard()
-
-  const router = useRouter()
 
   if (isLoading) {
     return <DashboardSkeleton />
@@ -83,49 +80,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 2. Incomplete Session Banner (High-Priority Alert) */}
-      {primaryIncomplete && (() => {
-        const resumeSessionId = primaryIncomplete.activeSessionId || primaryIncomplete.id
-        const resumeHref = primaryIncomplete.mode === 'flashcard'
-          ? `/quiz/${primaryIncomplete.quizId}/session/${resumeSessionId}/flashcard`
-          : `/quiz/${primaryIncomplete.quizId}/session/${resumeSessionId}`
-        const answeredCount = primaryIncomplete.hasActiveSession
-          ? (primaryIncomplete.activeAnsweredCount ?? 0)
-          : (primaryIncomplete.correctCount ?? 0)
-        const totalCount = primaryIncomplete.hasActiveSession
-          ? (primaryIncomplete.activeTotalCount ?? 0)
-          : (primaryIncomplete.totalCount ?? 0)
-
-        return (
-          <div className="overflow-hidden rounded-[24px] bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-0.5 shadow-md transform-gpu hover:scale-[1.005] transition-all">
-            <div className="bg-slate-900/95 backdrop-blur-xl px-5 py-4 rounded-[22px] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-                  <Flame className="w-6 h-6 text-amber-400 animate-bounce" />
-                </div>
-                <div className="min-w-0 space-y-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                      Bài thi chưa hoàn thành • {primaryIncomplete.quizCode}
-                    </span>
-                    {totalCount > 0 && (
-                      <span className="text-[10px] font-black uppercase tracking-wider text-white/70 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                        Đã làm {answeredCount}/{totalCount} câu
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-sm sm:text-base font-black truncate text-white">{primaryIncomplete.quizTitle}</h3>
-                </div>
-              </div>
-
-              <Button asChild size="sm" className="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs h-9 px-5 shrink-0 shadow-sm">
-                <Link href={resumeHref}>
-                  Tiếp tục ngay <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        )
-      })()}
+      {primaryIncomplete && <IncompleteSessionBanner item={primaryIncomplete} />}
 
       {/* 2.5. Pinned Categories — Quick Access (synced with /explore pins) */}
       {pinnedCategories.length > 0 && (
@@ -138,8 +93,6 @@ export default function DashboardPage() {
               Quản lý ghim
             </Link>
           </div>
-          {/* pt-1.5/-mt-1.5: headroom for hover lift so top border isn't clipped by overflow-x-auto;
-              relative + hover:z-10: hovered chip paints above siblings so its shadow/border isn't covered */}
           <div className="flex gap-2.5 overflow-x-auto pt-1.5 -mt-1.5 pb-2 scrollbar-thin">
             {pinnedCategories.map((cat) => (
               <Link
@@ -167,100 +120,7 @@ export default function DashboardPage() {
 
       {/* 3. Quick Action Learning Hub & Recent Activities Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
-        {/* LEFT 8 COLS: LEARNING STUDIO HUB */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#5D7B6F]" /> Không Gian Luyện Tập
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Bento 1: Mix Quiz */}
-            <div className="bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="space-y-3 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <Zap className="w-5 h-5 text-emerald-200" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black">Ôn Tập Ngẫu Nhiên (Mix Quiz)</h3>
-                  <p className="text-xs text-emerald-100/90 leading-relaxed mt-1.5 font-medium">
-                    Trộn câu hỏi ngẫu nhiên từ nhiều môn học để rèn phản xạ và kiểm tra toàn diện.
-                  </p>
-                </div>
-              </div>
-              <Button asChild size="sm" className="bg-white text-emerald-900 hover:bg-emerald-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-                <Link href="/explore?tab=mix">
-                  Tạo đề ngẫu nhiên <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Bento 2: AI Studio */}
-            <div className="bg-gradient-to-br from-indigo-700 via-blue-700 to-indigo-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="space-y-3 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <Bot className="w-5 h-5 text-blue-200" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black">AI Studio Học Tập</h3>
-                  <p className="text-xs text-blue-100/90 leading-relaxed mt-1.5 font-medium">
-                    Sinh từ vựng, đoạn văn, ngữ pháp & giải thích đáp án bằng trí tuệ nhân tạo.
-                  </p>
-                </div>
-              </div>
-              <Button asChild size="sm" className="bg-white text-blue-900 hover:bg-blue-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-                <Link href="/ai">
-                  Khám phá AI Studio <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Bento 3: Community */}
-            <div className="bg-gradient-to-br from-purple-700 via-violet-700 to-purple-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="space-y-3 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <Sparkles className="w-5 h-5 text-purple-200" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black">Diễn Đàn Cộng Đồng</h3>
-                  <p className="text-xs text-purple-100/90 leading-relaxed mt-1.5 font-medium">
-                    Đặt câu hỏi, thảo luận bài tập & chia sẻ kinh nghiệm học tập cùng sinh viên.
-                  </p>
-                </div>
-              </div>
-              <Button asChild size="sm" className="bg-white text-purple-900 hover:bg-purple-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-                <Link href="/community">
-                  Vào diễn đàn <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Bento 4: CEFR Language Learning Courses */}
-            <div className="bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="space-y-3 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <BookMarked className="w-5 h-5 text-amber-200" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black">Khóa Học Ngôn Ngữ CEFR</h3>
-                  <p className="text-xs text-amber-100/90 leading-relaxed mt-1.5 font-medium">
-                    Học theo lộ trình bài học chuẩn CEFR (A1-C2) kết hợp thuật toán lặp lại ngắt quãng (FSRS).
-                  </p>
-                </div>
-              </div>
-              <Button asChild size="sm" className="bg-white text-orange-950 hover:bg-amber-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-                <Link href="/explore">
-                  Học theo khóa học <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+        <LearningStudioGrid />
 
         {/* RIGHT 4 COLS: RECENT ACTIVITIES FEED */}
         <div className="lg:col-span-4 flex flex-col justify-between">
@@ -289,11 +149,148 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 recentActivities.slice(0, 6).map((act) => (
-                  <CompactActivityItem key={act.id} activity={act} router={router} />
+                  <CompactActivityItem key={act.id} activity={act} />
                 ))
               )}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function IncompleteSessionBanner({ item }: { item: ActivityItem }) {
+  const resumeSessionId = item.activeSessionId || item.id
+  const isFlashcardMode = item.mode === 'flashcard'
+  const resumeHref = `/quiz/${item.quizId}/session/${resumeSessionId}${isFlashcardMode ? '/flashcard' : ''}`
+  const answeredCount = item.hasActiveSession ? (item.activeAnsweredCount ?? 0) : (item.correctCount ?? 0)
+  const totalCount = item.hasActiveSession ? (item.activeTotalCount ?? 0) : (item.totalCount ?? 0)
+
+  return (
+    <div className="overflow-hidden rounded-[24px] bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-0.5 shadow-md transform-gpu hover:scale-[1.005] transition-all">
+      <div className="bg-slate-900/95 backdrop-blur-xl px-5 py-4 rounded-[22px] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
+            <Flame className="w-6 h-6 text-amber-400 animate-bounce" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                Bài thi chưa hoàn thành • {item.quizCode}
+              </span>
+              {totalCount > 0 && (
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/70 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                  Đã làm {answeredCount}/{totalCount} câu
+                </span>
+              )}
+            </div>
+            <h3 className="text-sm sm:text-base font-black truncate text-white">{item.quizTitle}</h3>
+          </div>
+        </div>
+
+        <Button asChild size="sm" className="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs h-9 px-5 shrink-0 shadow-sm">
+          <Link href={resumeHref}>
+            Tiếp tục ngay <ArrowRight className="w-4 h-4 ml-1.5" />
+          </Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function LearningStudioGrid() {
+  return (
+    <div className="lg:col-span-8 space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-sm font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[#5D7B6F]" /> Không Gian Luyện Tập
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Bento 1: Mix Quiz */}
+        <div className="bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="space-y-3 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Zap className="w-5 h-5 text-emerald-200" />
+            </div>
+            <div>
+              <h3 className="text-base font-black">Ôn Tập Ngẫu Nhiên (Mix Quiz)</h3>
+              <p className="text-xs text-emerald-100/90 leading-relaxed mt-1.5 font-medium">
+                Trộn câu hỏi ngẫu nhiên từ nhiều môn học để rèn phản xạ và kiểm tra toàn diện.
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" className="bg-white text-emerald-900 hover:bg-emerald-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+            <Link href="/explore?tab=mix">
+              Tạo đề ngẫu nhiên <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Bento 2: AI Studio */}
+        <div className="bg-gradient-to-br from-indigo-700 via-blue-700 to-indigo-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="space-y-3 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Bot className="w-5 h-5 text-blue-200" />
+            </div>
+            <div>
+              <h3 className="text-base font-black">AI Studio Học Tập</h3>
+              <p className="text-xs text-blue-100/90 leading-relaxed mt-1.5 font-medium">
+                Sinh từ vựng, đoạn văn, ngữ pháp & giải thích đáp án bằng trí tuệ nhân tạo.
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" className="bg-white text-blue-900 hover:bg-blue-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+            <Link href="/ai">
+              Khám phá AI Studio <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Bento 3: Community */}
+        <div className="bg-gradient-to-br from-purple-700 via-violet-700 to-purple-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="space-y-3 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Sparkles className="w-5 h-5 text-purple-200" />
+            </div>
+            <div>
+              <h3 className="text-base font-black">Diễn Đàn Cộng Đồng</h3>
+              <p className="text-xs text-purple-100/90 leading-relaxed mt-1.5 font-medium">
+                Đặt câu hỏi, thảo luận bài tập & chia sẻ kinh nghiệm học tập cùng sinh viên.
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" className="bg-white text-purple-900 hover:bg-purple-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+            <Link href="/community">
+              Vào diễn đàn <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Bento 4: CEFR Language Learning Courses */}
+        <div className="bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="space-y-3 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <BookMarked className="w-5 h-5 text-amber-200" />
+            </div>
+            <div>
+              <h3 className="text-base font-black">Khóa Học Ngôn Ngữ CEFR</h3>
+              <p className="text-xs text-amber-100/90 leading-relaxed mt-1.5 font-medium">
+                Học theo lộ trình bài học chuẩn CEFR (A1-C2) kết hợp thuật toán lặp lại ngắt quãng (FSRS).
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" className="bg-white text-orange-950 hover:bg-amber-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+            <Link href="/explore">
+              Học theo khóa học <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -329,76 +326,57 @@ function ActivityStatusBadge({ isResumable, formattedScore, scoreNum }: { isResu
   )
 }
 
-function getActivityHref(activity: any, isResumable: boolean, isFlashcard: boolean): string {
+function getActivityHref(activity: ActivityItem, isResumable: boolean): string {
   if (!isResumable) return `/quiz/${activity.quizId}/result/${activity.id}`
   const resumeSessionId = activity.activeSessionId || activity.id
-  return isFlashcard
+  return activity.mode === 'flashcard'
     ? `/quiz/${activity.quizId}/session/${resumeSessionId}/flashcard`
     : `/quiz/${activity.quizId}/session/${resumeSessionId}`
 }
 
-function formatProgressText(answered: number, total: number): string {
-  return total > 0 ? ` • ${answered}/${total} câu` : ''
-}
-
-interface ActivityViewModel {
-  isResumable: boolean
-  isFlashcard: boolean
-  scoreNum: number | null
-  formattedScore: string | null
-  progressText: string
-  timeAgo: string
-}
-
-function getActivityViewModel(activity: any): ActivityViewModel {
-  // Resumable = active session, or a completed activity carrying an in-progress session
+function formatActivityDetails(activity: ActivityItem) {
   const isResumable = activity.status === 'active' || activity.hasActiveSession === true
   const isFlashcard = activity.mode === 'flashcard'
-
-  const scoreNum = activity.score !== null && activity.score !== undefined ? Number(activity.score) : null
+  const scoreNum = activity.score != null ? Number(activity.score) : null
   const formattedScore = scoreNum !== null ? scoreNum.toFixed(1).replace(/\.0$/, '') : null
 
-  // Progress of the in-progress session (if any)
-  const progressAnswered = activity.hasActiveSession
-    ? (activity.activeAnsweredCount ?? 0)
-    : (activity.correctCount ?? 0)
-  const progressTotal = activity.hasActiveSession
-    ? (activity.activeTotalCount ?? 0)
-    : (activity.totalCount ?? 0)
+  const progressAnswered = activity.hasActiveSession ? (activity.activeAnsweredCount ?? 0) : (activity.correctCount ?? 0)
+  const progressTotal = activity.hasActiveSession ? (activity.activeTotalCount ?? 0) : (activity.totalCount ?? 0)
+  const progressText = progressTotal > 0 ? ` • ${progressAnswered}/${progressTotal} câu` : ''
 
   const displayTime = activity.activityAt || activity.completedAt
-  const timeAgo = displayTime
-    ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: vi })
-    : 'Gần đây'
+  const timeAgo = displayTime ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: vi }) : 'Gần đây'
 
-  return {
-    isResumable,
-    isFlashcard,
-    scoreNum,
-    formattedScore,
-    progressText: formatProgressText(progressAnswered, progressTotal),
-    timeAgo,
-  }
+  return { isResumable, isFlashcard, scoreNum, formattedScore, progressText, timeAgo }
 }
 
-function CompactActivityItem({ activity, router }: { activity: any; router: any }) {
-  const { isResumable, isFlashcard, scoreNum, formattedScore, progressText, timeAgo } =
-    getActivityViewModel(activity)
+function DeletedActivityItem({ title, timeAgo }: { title: string; timeAgo: string }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 opacity-50 cursor-not-allowed bg-slate-50 border-slate-200">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 text-[#5D7B6F] border-emerald-200">
+          <Zap className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <h4 className="text-xs font-black text-slate-800 truncate leading-snug">{title}</h4>
+          <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{timeAgo} • Đã xóa</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  const handleClick = () => {
-    if (activity.quizDeleted) return
-    router.push(getActivityHref(activity, isResumable, isFlashcard))
+function CompactActivityItem({ activity }: { activity: ActivityItem }) {
+  const { isResumable, isFlashcard, scoreNum, formattedScore, progressText, timeAgo } = formatActivityDetails(activity)
+
+  if (activity.quizDeleted) {
+    return <DeletedActivityItem title={activity.quizTitle} timeAgo={timeAgo} />
   }
 
   return (
-    <div
-      onClick={handleClick}
-      className={cn(
-        'group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200',
-        activity.quizDeleted
-          ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200'
-          : 'cursor-pointer hover:border-[#5D7B6F]/50 hover:bg-slate-50/80 bg-white border-slate-200/80 shadow-2xs'
-      )}
+    <Link
+      href={getActivityHref(activity, isResumable)}
+      className="group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer hover:border-[#5D7B6F]/50 hover:bg-slate-50/80 bg-white border-slate-200/80 shadow-2xs"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
@@ -416,9 +394,7 @@ function CompactActivityItem({ activity, router }: { activity: any; router: any 
           </h4>
           <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
             {timeAgo} • {isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}
-            {isResumable && (
-              <span className="text-amber-600 font-bold">{progressText}</span>
-            )}
+            {isResumable && <span className="text-amber-600 font-bold">{progressText}</span>}
           </span>
         </div>
       </div>
@@ -426,7 +402,7 @@ function CompactActivityItem({ activity, router }: { activity: any; router: any 
       <div className="shrink-0 ml-2">
         <ActivityStatusBadge isResumable={isResumable} formattedScore={formattedScore} scoreNum={scoreNum} />
       </div>
-    </div>
+    </Link>
   )
 }
 

@@ -123,7 +123,7 @@ export default function StudentSettingsPage() {
     privacyShareActivity: false,
   })
 
-  const notificationsEnabled = false
+  const notificationsEnabled = Boolean(form.notifyEmail && form.notifyQuizReminder)
 
   useEffect(() => {
     const run = async () => {
@@ -357,9 +357,11 @@ export default function StudentSettingsPage() {
                 <Switch
                   checked={notificationsEnabled}
                   onCheckedChange={(checked) => {
-                    if (checked) {
-                      toast.info('Tính năng Bật thông báo đang được phát triển. Coming soon.')
-                    }
+                    setForm((prev) => ({
+                      ...prev,
+                      notifyEmail: checked,
+                      notifyQuizReminder: checked,
+                    }))
                   }}
                 />
               </div>

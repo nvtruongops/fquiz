@@ -14,12 +14,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const userId = new Types.ObjectId(payload.userId)
 
     // Find category IDs used by any of the student's quizzes
-    const studentQuizzes = await Quiz.find({ created_by: userId })
-      .select('category_id')
-      .lean() as any[]
-    const quizCategoryIds = Array.from(
-      new Set(studentQuizzes.map((q) => q.category_id?.toString()).filter(Boolean))
-    ).map((id) => new Types.ObjectId(id))
+    const quizCategoryIds = await Quiz.distinct('category_id', { created_by: userId })
 
     // Match private categories owned by user OR public/course categories of user's quizzes
     const categories = await Category.aggregate([

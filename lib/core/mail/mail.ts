@@ -3,7 +3,7 @@ import logger from '@/lib/core/utils/logger'
 import { publishJob } from '@/lib/core/queue/qstash'
 import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 
-export type MailJobType = 'reset-password' | 'verification-code' | 'account-deletion-notice'
+export type MailJobType = 'reset-password' | 'verification-code' | 'account-deletion-notice' | 'new-quiz-notification'
 
 interface SendResetPasswordMailParams {
   to: string
@@ -21,6 +21,21 @@ interface SendAccountDeletionNoticeMailParams {
   username: string
   restoreUrl: string
   scheduledFor: string
+}
+
+export interface OtherQuizSummary {
+  id: string
+  title: string
+  questionCount?: number
+}
+
+export interface SendNewQuizNotificationMailParams {
+  to: string
+  username: string
+  courseCode: string
+  quizTitle: string
+  quizId: string
+  otherQuizzes?: OtherQuizSummary[]
 }
 
 function getMailConfig() {
@@ -151,6 +166,64 @@ export async function sendAccountDeletionNoticeMail({ to, username, restoreUrl, 
   })
 }
 
+export async function sendNewQuizNotificationMail({ to, username, courseCode, quizTitle, quizId, otherQuizzes = [] }: SendNewQuizNotificationMailParams): Promise<void> {
+  const { from } = getMailConfig()
+  if (!from) throw new Error('Missing MAIL_FROM')
+
+  const appUrl = resolveAppBaseUrl()
+  const quizUrl = `${appUrl}/quiz/${quizId}`
+  const courseUrl = `${appUrl}/courses/${encodeURIComponent(courseCode)}`
+  const transporter = createTransporter()
+
+  const otherQuizzesHtml = otherQuizzes.length > 0 ? `
+    <div style="margin-top:24px;border-top:1px dashed #e5e7eb;padding-top:16px">
+      <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 12px 0">Các bài quiz khác thuộc môn ${courseCode}:</p>
+      <ul style="padding-left:20px;margin:0;color:#4b5563;font-size:14px">
+        ${otherQuizzes.map(q => `
+          <li style="margin-bottom:8px">
+            <a href="${appUrl}/quiz/${q.id}" style="color:#5D7B6F;text-decoration:none;font-weight:600">${q.title}</a>
+            ${q.questionCount ? `<span style="color:#6b7280;font-size:12px"> (${q.questionCount} câu hỏi)</span>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+      <div style="margin-top:14px">
+        <a href="${courseUrl}" style="font-size:13px;color:#5D7B6F;text-decoration:underline;font-weight:600">
+          Xem tất cả bài quiz của môn ${courseCode} →
+        </a>
+      </div>
+    </div>
+  ` : ''
+
+  const otherQuizzesText = otherQuizzes.length > 0 ? `\n\nCác bài quiz khác thuộc môn ${courseCode}:\n` +
+    otherQuizzes.map(q => `- ${q.title}${q.questionCount ? ` (${q.questionCount} câu)` : ''}: ${appUrl}/quiz/${q.id}`).join('\n') +
+    `\n\nXem tất cả quiz của môn ${courseCode}: ${courseUrl}` : ''
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: `[FQuiz] Quiz mới cho môn ${courseCode}`,
+    text: `Xin chào ${username},\n\nMôn học ${courseCode} mà bạn đã ghim vừa có quiz mới: "${quizTitle}".\n\nVào làm bài ngay tại:\n${quizUrl}${otherQuizzesText}\n\nTrân trọng,\nFQuiz Team`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;padding:24px;background-color:#ffffff">
+        <h2 style="color:#5D7B6F;margin-top:0">Quiz mới cho môn ${courseCode}</h2>
+        <p>Xin chào <strong>${username}</strong>,</p>
+        <p>Môn học <strong>${courseCode}</strong> mà bạn đã ghim vừa có bài quiz mới được phát hành trên FQuiz:</p>
+        <div style="background-color:#f4f7f5;border-left:4px solid #5D7B6F;padding:14px 18px;margin:16px 0;border-radius:6px">
+          <p style="margin:0;color:#2c3e35;font-size:16px;font-weight:700">✨ ${quizTitle}</p>
+          <div style="margin-top:10px">
+            <a href="${quizUrl}" style="display:inline-block;padding:8px 16px;background-color:#5D7B6F;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px">
+              Vào làm Quiz ngay
+            </a>
+          </div>
+        </div>
+        ${otherQuizzesHtml}
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0 16px 0"/>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">Bạn nhận được email này vì đã ghim môn học và bật nhận thông báo trên FQuiz.</p>
+      </div>
+    `,
+  })
+}
+
 /**
  * Enqueue a mail job to QStash for background processing
  */
@@ -164,6 +237,7 @@ export async function enqueueMail(type: MailJobType, data: any) {
     if (type === 'reset-password') return sendResetPasswordMail(data)
     if (type === 'verification-code') return sendVerificationCodeMail(data)
     if (type === 'account-deletion-notice') return sendAccountDeletionNoticeMail(data)
+    if (type === 'new-quiz-notification') return sendNewQuizNotificationMail(data)
     return
   }
 

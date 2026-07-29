@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
-import NextTopLoader from 'nextjs-toploader'
 import './globals.css'
 
 const inter = Inter({
@@ -76,7 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased min-h-screen bg-app-bg text-foreground font-sans" suppressHydrationWarning>
-        <NextTopLoader color="#5D7B6F" height={3} showSpinner={false} shadow={false} />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <QueryProvider>
             <PageTransitionLoader />

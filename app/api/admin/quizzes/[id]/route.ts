@@ -9,6 +9,7 @@ import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSave
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { removeQuizFromBank, renameQuizCodeInBank } from '@/lib/modules/quiz/question-bank-manager'
+import { notifyPinnedUsersNewQuiz } from '@/lib/modules/quiz/utils/quiz-notification'
 
 export const GET = withAuth(async (
   req: Request,
@@ -176,7 +177,7 @@ export const PATCH = withAuth(async (
       }
     }
 
-    // 2. Atomic Update with Lock
+    // Atomic Update with Lock
     const query: any = { _id: id }
     if (lastUpdatedAt) query.updatedAt = new Date(lastUpdatedAt)
 
@@ -186,6 +187,12 @@ export const PATCH = withAuth(async (
       { returnDocument: 'after' }
     )
     if (!quiz) return NextResponse.json({ error: 'Xung đột dữ liệu hoặc Quiz không tồn tại' }, { status: 409 })
+
+    if (status === 'published') {
+      notifyPinnedUsersNewQuiz(quiz).catch((err) => {
+        console.error('Failed to send quiz notifications:', err)
+      })
+    }
 
     return NextResponse.json({ quiz })
   } catch (err) {

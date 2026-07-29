@@ -3,7 +3,6 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent } from '@/components/shared/ui/card'
-import { Skeleton } from '@/components/shared/ui/skeleton'
 import { useMyQuizzes, Quiz } from '@/hooks/useMyQuizzes'
 import { MyQuizzesHeader } from '@/components/quiz/my-quizzes/MyQuizzesHeader'
 import { CategoryFilterTabs } from '@/components/quiz/my-quizzes/CategoryFilterTabs'
@@ -11,7 +10,6 @@ import { QuizSearchSortBar } from '@/components/quiz/my-quizzes/QuizSearchSortBa
 import { QuizCardItem } from '@/components/quiz/my-quizzes/QuizCardItem'
 
 const ManageCategoriesModal = dynamic(() => import('@/components/quiz/my-quizzes/ManageCategoriesModal'), {
-  loading: () => <Skeleton className="h-64 w-full" />,
   ssr: false,
 })
 
