@@ -6,9 +6,11 @@ import { User } from '@/lib/modules/auth/models/User'
 
 const MAX_PINS = 20
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   const payload = await verifyToken(req)
-  if (!payload || !['student', 'dev'].includes(payload.role)) {
+  if (!payload || !['student', 'dev', 'admin'].includes(payload.role)) {
     return NextResponse.json({ pinnedCategories: [] })
   }
   await connectDB()

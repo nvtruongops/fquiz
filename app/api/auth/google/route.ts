@@ -19,7 +19,10 @@ export async function POST(request: Request) {
   const rawCallbackUrl = url.searchParams.get('callbackUrl')
   let callbackUrl: string | null = null
   if (rawCallbackUrl && rawCallbackUrl.startsWith('/') && !rawCallbackUrl.startsWith('//')) {
-    callbackUrl = rawCallbackUrl
+    const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(rawCallbackUrl)
+    if (!isAuthOrRoot) {
+      callbackUrl = rawCallbackUrl
+    }
   }
 
   const handleError = (errorMsg: string, status: number) => {

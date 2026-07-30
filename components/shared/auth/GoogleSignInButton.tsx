@@ -72,7 +72,9 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
           await queryClient.invalidateQueries({ queryKey: ['auth-user'] })
         }
 
-        router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
+        const isAuthOrRoot = callbackUrl && ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(callbackUrl)
+        const effectiveCallback = isAuthOrRoot ? null : callbackUrl
+        router.push(effectiveCallback || (data.role === 'admin' ? '/admin' : '/dashboard'))
         router.refresh()
       } catch {
         toast.error('Có lỗi xảy ra khi kết nối tới máy chủ.')

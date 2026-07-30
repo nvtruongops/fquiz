@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category, PUBLIC_CATEGORY_MATCH } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { User } from '@/lib/modules/auth/models/User'
 import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
@@ -53,6 +54,13 @@ export default async function ExplorePage() {
   const categories = await getCategories()
   const user = await verifySession()
 
+  let initialPinnedCategories: string[] = []
+  if (user && ['student', 'dev', 'admin'].includes(user.role)) {
+    await connectDB()
+    const userDoc = (await User.findById(user.userId).select('pinned_categories').lean()) as any
+    initialPinnedCategories = userDoc?.pinned_categories ?? []
+  }
+
   return (
     <AppLayout user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
       {/* Background Glow */}
@@ -77,7 +85,7 @@ export default async function ExplorePage() {
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#A4C3A2]/30 border-t-[#5D7B6F]" />
           </div>
         }>
-          <CategoryFilter initialCategories={categories} />
+          <CategoryFilter initialCategories={categories} initialPinnedCategories={initialPinnedCategories} />
         </Suspense>
       </div>
     </AppLayout>

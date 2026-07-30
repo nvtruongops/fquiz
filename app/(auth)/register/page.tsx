@@ -43,7 +43,10 @@ export default function RegisterPage() {
       try { decoded = decodeURIComponent(decoded) } catch {}
       try { decoded = decodeURIComponent(decoded) } catch {}
       if (decoded.startsWith('/') && !decoded.startsWith('//')) {
-        return decoded
+        const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(decoded)
+        if (!isAuthOrRoot) {
+          return decoded
+        }
       }
     }
     return null
