@@ -61,7 +61,7 @@ export const verifySession = cache(async (): Promise<SessionUser | null> => {
       username: user.username,
       role: user.role as 'student' | 'admin' | 'dev',
       status: user.status as 'active' | 'banned',
-      avatarUrl: user.avatar_url || user.avatarUrl || undefined,
+      avatarUrl: user.avatar_url || undefined,
     }
   } catch (error) {
     console.error('[verifySession] Error:', error)

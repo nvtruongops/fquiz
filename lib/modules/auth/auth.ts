@@ -21,13 +21,6 @@ export function clearUserStatusCache(userId: string): void {
   userStatusCache.delete(userId)
 }
 
-/**
- * Clear all user status cache - call this when doing bulk operations
- */
-export function clearAllUserStatusCache(): void {
-  userStatusCache.clear()
-}
-
 async function checkUserSession(userId: string, version?: number): Promise<boolean> {
   const now = Date.now()
   const cached = userStatusCache.get(userId)
@@ -132,18 +125,4 @@ export async function signToken(userId: string, role: string, v: number = 1, met
  */
 export function checkRole(payload: JWTPayload, role: string): boolean {
   return payload.role === role
-}
-
-/**
- * Throws a 403 Response if the payload role does not match the required role.
- * Usage: requireRole(payload, 'admin') — throws if not admin.
- * @deprecated Use checkRole instead for better Next.js App Router compatibility
- */
-export function requireRole(payload: JWTPayload, role: string): void {
-  if (payload.role !== role) {
-    throw new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
 }

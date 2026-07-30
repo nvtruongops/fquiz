@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
       {/* 3. Quick Action Learning Hub & Recent Activities Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
-        <LearningStudioGrid />
+        <LearningStudioGrid isDevOrAdmin={isDevOrAdmin} />
 
         {/* RIGHT 4 COLS: RECENT ACTIVITIES FEED */}
         <div className="lg:col-span-4 flex flex-col justify-between">
@@ -199,7 +199,7 @@ function IncompleteSessionBanner({ item }: { item: ActivityItem }) {
   )
 }
 
-function LearningStudioGrid() {
+function LearningStudioGrid({ isDevOrAdmin }: { isDevOrAdmin?: boolean }) {
   return (
     <div className="lg:col-span-8 space-y-4">
       <div className="flex items-center justify-between px-1">
@@ -230,26 +230,28 @@ function LearningStudioGrid() {
           </Button>
         </div>
 
-        {/* Bento 2: AI Studio */}
-        <div className="bg-gradient-to-br from-indigo-700 via-blue-700 to-indigo-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="space-y-3 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-              <Bot className="w-5 h-5 text-blue-200" />
+        {/* Bento 2: AI Studio (Conditional) */}
+        {isDevOrAdmin && (
+          <div className="bg-gradient-to-br from-indigo-700 via-blue-700 to-indigo-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="space-y-3 relative z-10">
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <Bot className="w-5 h-5 text-blue-200" />
+              </div>
+              <div>
+                <h3 className="text-base font-black">AI Studio Học Tập</h3>
+                <p className="text-xs text-blue-100/90 leading-relaxed mt-1.5 font-medium">
+                  Sinh từ vựng, đoạn văn, ngữ pháp & giải thích đáp án bằng trí tuệ nhân tạo.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-black">AI Studio Học Tập</h3>
-              <p className="text-xs text-blue-100/90 leading-relaxed mt-1.5 font-medium">
-                Sinh từ vựng, đoạn văn, ngữ pháp & giải thích đáp án bằng trí tuệ nhân tạo.
-              </p>
-            </div>
+            <Button asChild size="sm" className="bg-white text-blue-900 hover:bg-blue-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+              <Link href="/ai">
+                Khám phá AI Studio <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild size="sm" className="bg-white text-blue-900 hover:bg-blue-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-            <Link href="/ai">
-              Khám phá AI Studio <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-            </Link>
-          </Button>
-        </div>
+        )}
 
         {/* Bento 3: Community */}
         <div className="bg-gradient-to-br from-purple-700 via-violet-700 to-purple-900 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
@@ -272,26 +274,28 @@ function LearningStudioGrid() {
           </Button>
         </div>
 
-        {/* Bento 4: CEFR Language Learning Courses */}
-        <div className="bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="space-y-3 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-              <BookMarked className="w-5 h-5 text-amber-200" />
+        {/* Bento 4: CEFR Language Learning Courses (Conditional) */}
+        {isDevOrAdmin && (
+          <div className="bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 rounded-[24px] p-5 text-white shadow-xs flex flex-col justify-between group hover:shadow-md transition-all relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="space-y-3 relative z-10">
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <BookMarked className="w-5 h-5 text-amber-200" />
+              </div>
+              <div>
+                <h3 className="text-base font-black">Khóa Học Ngôn Ngữ CEFR</h3>
+                <p className="text-xs text-amber-100/90 leading-relaxed mt-1.5 font-medium">
+                  Học theo lộ trình bài học chuẩn CEFR (A1-C2) kết hợp thuật toán lặp lại ngắt quãng (FSRS).
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-black">Khóa Học Ngôn Ngữ CEFR</h3>
-              <p className="text-xs text-amber-100/90 leading-relaxed mt-1.5 font-medium">
-                Học theo lộ trình bài học chuẩn CEFR (A1-C2) kết hợp thuật toán lặp lại ngắt quãng (FSRS).
-              </p>
-            </div>
+            <Button asChild size="sm" className="bg-white text-orange-950 hover:bg-amber-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
+              <Link href="/explore">
+                Học theo khóa học <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild size="sm" className="bg-white text-orange-950 hover:bg-amber-50 font-black text-xs h-9 rounded-xl mt-4 shadow-sm w-fit relative z-10">
-            <Link href="/explore">
-              Học theo khóa học <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-            </Link>
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   )

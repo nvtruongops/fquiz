@@ -50,7 +50,10 @@ function LoginForm() {
       try { decoded = decodeURIComponent(decoded) } catch {}
       
       if (decoded.startsWith('/') && !decoded.startsWith('//')) {
-        setCallbackUrl(decoded)
+        const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(decoded)
+        if (!isAuthOrRoot) {
+          setCallbackUrl(decoded)
+        }
       }
     }
   }, [searchParams, toast])
@@ -110,6 +113,7 @@ function LoginForm() {
       } else {
         await queryClient.invalidateQueries({ queryKey: ['auth-user'] })
       }
+      await queryClient.invalidateQueries({ queryKey: ['student'] })
 
       setTimeout(() => {
         router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))

@@ -16,7 +16,8 @@ export function TopHeaderBar({ user }: TopHeaderBarProps) {
     return null
   }
 
-  const callbackUrl = pathname ? encodeURIComponent(pathname) : ''
+  const isGenericPath = !pathname || ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(pathname)
+  const callbackUrl = isGenericPath ? '' : encodeURIComponent(pathname)
   const loginHref = callbackUrl ? `/login?callbackUrl=${callbackUrl}` : '/login'
   const registerHref = callbackUrl ? `/register?callbackUrl=${callbackUrl}` : '/register'
 

@@ -1,4 +1,4 @@
-import { decrypt, verifyToken, signToken, checkRole, requireRole, clearUserStatusCache, clearAllUserStatusCache } from '../auth'
+import { decrypt, verifyToken, signToken, checkRole, clearUserStatusCache } from '../auth'
 import { User } from '../models/User'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
@@ -22,7 +22,6 @@ jest.mock('@/lib/core/utils/logger', () => ({
 describe('Auth Module', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    clearAllUserStatusCache()
   })
 
   describe('JWT signing and decryption', () => {
@@ -45,7 +44,7 @@ describe('Auth Module', () => {
     })
   })
 
-  describe('checkRole and requireRole', () => {
+  describe('checkRole', () => {
     const payload = { userId: 'user-123', role: 'student', v: 1 }
 
     it('should return true if role matches in checkRole', () => {
@@ -54,14 +53,6 @@ describe('Auth Module', () => {
 
     it('should return false if role does not match in checkRole', () => {
       expect(checkRole(payload, 'admin')).toBe(false)
-    })
-
-    it('should not throw if role matches in requireRole', () => {
-      expect(() => requireRole(payload, 'student')).not.toThrow()
-    })
-
-    it('should throw Response with 403 status if role does not match in requireRole', () => {
-      expect(() => requireRole(payload, 'admin')).toThrow()
     })
   })
 

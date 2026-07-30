@@ -19,7 +19,12 @@ interface CategoryItem {
   quizCount?: number
 }
 
-export default function CategoryFilter({ initialCategories }: { initialCategories: CategoryItem[] }) {
+interface CategoryFilterProps {
+  initialCategories: CategoryItem[]
+  initialPinnedCategories?: string[]
+}
+
+export default function CategoryFilter({ initialCategories, initialPinnedCategories }: CategoryFilterProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [pinningId, setPinningId] = useState<string | null>(null)
   const [notifyPromptCat, setNotifyPromptCat] = useState<{ id: string; name: string } | null>(null)
@@ -36,7 +41,8 @@ export default function CategoryFilter({ initialCategories }: { initialCategorie
       if (!res.ok) return { pinnedCategories: [] }
       return res.json() as Promise<{ pinnedCategories: string[] }>
     },
-    staleTime: 5 * 60 * 1000,
+    initialData: initialPinnedCategories ? { pinnedCategories: initialPinnedCategories } : undefined,
+    staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   })
