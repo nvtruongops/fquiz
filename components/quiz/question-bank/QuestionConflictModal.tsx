@@ -33,6 +33,7 @@ interface ConflictQuestion {
   }
   existingQuestion?: {
     _id: string
+    question_id?: string
     text: string
     options: string[]
     correct_answer: number[]
@@ -214,7 +215,7 @@ export function QuestionConflictModal({
             credentials: 'include',
             body: JSON.stringify({
               category_id: categoryId,
-              old_question_id: '', // Will be resolved by text matching in sync-update
+              old_question_id: conflict.existingQuestion?.question_id || conflict.existingQuestion?._id || '',
               new_question: {
                 text: conflict.question.text,
                 options: choice.options,

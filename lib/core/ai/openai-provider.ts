@@ -77,8 +77,8 @@ export class OpenAIProvider implements IAIProvider {
 
   constructor(apiKey?: string, baseUrl?: string, defaultModel?: string) {
     this.apiKey = apiKey || process.env.OPENAI_API_KEY || ''
-    this.baseUrl = baseUrl || 'https://api.openai.com/v1'
-    this.defaultModel = defaultModel || 'gpt-4o-mini'
+    this.baseUrl = baseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+    this.defaultModel = defaultModel || process.env.OPENAI_MODEL || 'AI'
   }
 
   async getProviderName(): Promise<string> {

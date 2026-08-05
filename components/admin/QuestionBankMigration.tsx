@@ -50,7 +50,7 @@ interface QuestionBankMigrationProps {
 
 export function QuestionBankMigration({ categories }: QuestionBankMigrationProps) {
   const { toast } = useToast()
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0]?._id || '')
   const [step, setStep] = useState<'select' | 'scan' | 'review' | 'migrate'>('select')
   const [scanning, setScanning] = useState(false)
   const [migrating, setMigrating] = useState(false)

@@ -6,11 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/shared/ui/input'
 import { Textarea } from '@/components/shared/ui/textarea'
 import { Button } from '@/components/shared/ui/button'
-import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
-import { Plus, Check, X, Loader2 } from 'lucide-react'
+import { Plus, Check, X, Loader2, AlertCircle } from 'lucide-react'
 import { useCreateCategory } from '@/hooks/quiz/useCreateCategory'
+import { useDebounce } from '@/hooks/shared/useDebounce'
+import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 
 interface EditorMetadataFormProps {
   form: QuizFormData
@@ -27,6 +28,53 @@ export function EditorMetadataForm({
 }: EditorMetadataFormProps) {
   const [isCreating, setIsCreating] = React.useState(false)
   const [newCatName, setNewCatName] = React.useState('')
+  const [checkingCode, setCheckingCode] = React.useState(false)
+  const [codeDuplicate, setCodeDuplicate] = React.useState<{
+    exists: boolean
+    quiz?: { _id: string; title: string; course_code: string; questionCount: number }
+  } | null>(null)
+
+  const debouncedCourseCode = useDebounce(form.course_code, 500)
+
+  React.useEffect(() => {
+    const code = debouncedCourseCode.trim()
+    if (!code) {
+      setCodeDuplicate(null)
+      setCheckingCode(false)
+      return
+    }
+
+    let isMounted = true
+    setCheckingCode(true)
+
+    const csrfToken = getCsrfTokenFromCookie()
+    fetch(`/api/admin/quizzes/check-code?code=${encodeURIComponent(code)}`, {
+      headers: {
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      },
+      credentials: 'include',
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return
+        if (data && data.exists) {
+          setCodeDuplicate(data)
+        } else {
+          setCodeDuplicate({ exists: false })
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setCodeDuplicate(null)
+      })
+      .finally(() => {
+        if (isMounted) setCheckingCode(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [debouncedCourseCode])
 
   const createCatMutation = useCreateCategory({
     onSuccess: (data) => {
@@ -162,14 +210,41 @@ export function EditorMetadataForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="course-code-input" className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Mã môn / Mã đề</label>
-                <Input
-                  id="course-code-input"
-                  placeholder="Ví dụ: MLN 131: DE-01"
-                  value={form.course_code}
-                  maxLength={150}
-                  onChange={(e) => setForm(p => ({ ...p, course_code: e.target.value }))}
-                  className="h-12 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold text-[#5D7B6F]"
-                />
+                <div className="relative">
+                  <Input
+                    id="course-code-input"
+                    placeholder="Ví dụ: MLN 131: DE-01"
+                    value={form.course_code}
+                    maxLength={150}
+                    onChange={(e) => setForm(p => ({ ...p, course_code: e.target.value }))}
+                    className={cn(
+                      "h-12 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold text-[#5D7B6F] pr-10",
+                      codeDuplicate?.exists && "border-amber-300 ring-2 ring-amber-200 bg-amber-50/20"
+                    )}
+                  />
+                  {checkingCode && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 text-[#5D7B6F] animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {codeDuplicate && codeDuplicate.exists && (
+                  <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5 animate-in fade-in duration-200">
+                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Cảnh báo trùng mã đề:</span> Mã <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-amber-900">{codeDuplicate.quiz?.course_code}</code> đã được sử dụng bởi quiz: <span className="font-semibold">&quot;{codeDuplicate.quiz?.title}&quot;</span> ({codeDuplicate.quiz?.questionCount} câu).
+                      <p className="text-[11px] text-amber-600 mt-0.5">Vui lòng thay đổi mã đề (ví dụ: {form.course_code}_V2) để tránh trùng lặp.</p>
+                    </div>
+                  </div>
+                )}
+
+                {codeDuplicate && !codeDuplicate.exists && form.course_code.trim() && !checkingCode && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold px-1">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Mã đề khả dụng (chưa trùng lặp)</span>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <span className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider block">Chế độ hiển thị</span>

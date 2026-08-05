@@ -95,6 +95,7 @@ export default function CommunityPage() {
         <CommunitySearchFilterBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          availableTags={postsData?.popularTags}
         />
 
         {/* 2-Column Grid Layout */}

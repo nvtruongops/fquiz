@@ -28,7 +28,7 @@ export class ClassroomService {
       existing = await Classroom.findOne({ code })
     }
 
-    const classroom = await Classroom.create({
+    return Classroom.create({
       name: input.name,
       password: input.password && input.password.trim() ? input.password.trim() : null,
       description: input.description ?? '',
@@ -38,8 +38,6 @@ export class ClassroomService {
       status: 'active',
       student_count: 0,
     })
-
-    return classroom
   }
 
   /**
@@ -251,7 +249,7 @@ export class ClassroomService {
     const quiz = await Quiz.findById(input.quiz_id)
     if (!quiz) throw new Error('Không tìm thấy bộ đề Quiz')
 
-    const assignment = await QuizAssignment.create({
+    return QuizAssignment.create({
       classroom_id: new Types.ObjectId(input.classroom_id),
       quiz_id: new Types.ObjectId(input.quiz_id),
       teacher_id: new Types.ObjectId(teacherId),
@@ -265,8 +263,6 @@ export class ClassroomService {
       show_answers_immediately: input.show_answers_immediately ?? true,
       status: 'published',
     })
-
-    return assignment
   }
 
   /**
@@ -336,7 +332,7 @@ export class ClassroomService {
       await existingProgress.save()
       return existingProgress
     } else {
-      const progress = await QuizAssignmentProgress.create({
+      return QuizAssignmentProgress.create({
         assignment_id: new Types.ObjectId(assignmentId),
         classroom_id: new Types.ObjectId(classroomId),
         student_id: new Types.ObjectId(studentId),
@@ -347,7 +343,6 @@ export class ClassroomService {
         status: 'completed',
         submitted_at: new Date(),
       })
-      return progress
     }
   }
 

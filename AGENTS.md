@@ -77,3 +77,4 @@ Seed order: `seed:language` → `seed:topic`. `seed:learning` runs both.
 - `tsconfig.json` excludes `scripts/` and `__tests__` from compilation.
 - `jose` is ESM — Jest transform-whitelisted in config.
 - Quiz question IDs use SHA-256: `generateQuestionId()` (text + options, no answer) for conflicts; `generateQuestionFingerprint()` (includes answer + type + topic) for exact dedup.
+- **Task Workflow**: If a task is long/complex (multi-step, major refactor, new feature), use `using-superpowers` to create an `implementation_plan.md` artifact first. If a task is short/simple (bugfix, small tweak, investigation), execute immediately without planning overhead.

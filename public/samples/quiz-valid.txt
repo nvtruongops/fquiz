@@ -1,6 +1,3 @@
-course_code: FQUIZ-001
-category_id: your-category-id-here
-description: Bài quiz mẫu - Mô tả về bộ câu hỏi này
 
 Câu 1:
 Câu hỏi: Nội dung của câu hỏi số 1 là gì?

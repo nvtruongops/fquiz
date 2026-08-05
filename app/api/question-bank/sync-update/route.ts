@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
@@ -48,24 +49,25 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
-    // Nếu old_question_id rỗng, tìm bằng question_id từ new_question (text + options không đổi)
     const effectiveOldId = old_question_id || generateQuestionId({
       text: new_question.text,
       options: new_question.options,
       correct_answer: new_question.correct_answer,
     })
 
-    // Generate new question ID (same as old when text+options unchanged)
     const newQuestionId = generateQuestionId({
       text: new_question.text,
       options: new_question.options,
       correct_answer: new_question.correct_answer,
     })
 
-    // Get old question from bank
+    const isObjectId = mongoose.Types.ObjectId.isValid(effectiveOldId)
     const oldQuestion = await QuestionBank.findOne({
       category_id,
-      question_id: effectiveOldId,
+      $or: [
+        { question_id: effectiveOldId },
+        ...(isObjectId ? [{ _id: effectiveOldId }] : []),
+      ],
     })
 
     if (!oldQuestion) {
@@ -75,26 +77,34 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     }
 
     const usedInQuizzes = oldQuestion.used_in_quizzes || []
+    const rawUsedInQuizIds = (oldQuestion.used_in_quiz_ids || []).map((id: any) => String(id))
 
-    // Update all quizzes
+    const filterOr: any[] = []
+    if (rawUsedInQuizIds.length > 0) {
+      filterOr.push({ _id: { $in: rawUsedInQuizIds } })
+    }
+    if (usedInQuizzes.length > 0) {
+      filterOr.push({ course_code: { $in: usedInQuizzes } })
+    }
+
+    const affectedQuizzes = filterOr.length > 0
+      ? await Quiz.find({ category_id, $or: filterOr })
+      : []
+
     let updatedQuizCount = 0
     const errors: string[] = []
+    const updatedQuizIds = new Set<string>()
 
-    const usedInQuizIds: string[] = []
+    function normalizeStr(s?: string) {
+      return (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+    }
 
-    for (const courseCode of usedInQuizzes) {
+    for (const quiz of affectedQuizzes) {
       try {
-        const quiz = await Quiz.findOne({
-          course_code: courseCode,
-          category_id,
-        })
-        if (quiz) usedInQuizIds.push(String(quiz._id))
-
-        if (!quiz || !Array.isArray(quiz.questions)) continue
+        if (!Array.isArray(quiz.questions)) continue
 
         let hasChanges = false
 
-        // Update matching questions
         quiz.questions.forEach((q: any) => {
           if (!q.text || !Array.isArray(q.options)) return
 
@@ -104,32 +114,25 @@ export const POST = withAuth(async (req: Request, { payload }) => {
             correct_answer: q.correct_answer || [],
           })
 
-          if (qId === effectiveOldId) {
-            // Update question text
+          const isMatch =
+            qId === oldQuestion.question_id ||
+            qId === effectiveOldId ||
+            normalizeStr(q.text) === normalizeStr(oldQuestion.text)
+
+          if (isMatch) {
             q.text = new_question.text
 
-            if (effectiveOldId === newQuestionId) {
-              // Only correct_answer changed. Keep original options order in other quizzes, map correct_answer by text.
-              const selectedAnswerTexts = new_question.correct_answer
-                .map((idx: number) => new_question.options[idx]?.trim().toLowerCase().replace(/\s+/g, ' '))
-                .filter(Boolean)
+            const selectedAnswerTexts = new_question.correct_answer
+              .map((idx: number) => normalizeStr(new_question.options[idx]))
+              .filter(Boolean)
 
-              const newCorrectAnswer = q.options
-                .map((opt: string, idx: number) => {
-                  const optNorm = opt.trim().toLowerCase().replace(/\s+/g, ' ')
-                  return selectedAnswerTexts.includes(optNorm) ? idx : -1
-                })
-                .filter((idx: number) => idx !== -1)
+            const newCorrectAnswer = q.options
+              .map((opt: string, idx: number) => (selectedAnswerTexts.includes(normalizeStr(opt)) ? idx : -1))
+              .filter((idx: number) => idx !== -1)
 
-              if (newCorrectAnswer.length > 0) {
-                q.correct_answer = newCorrectAnswer
-              } else {
-                // Fallback in case of mismatch
-                q.options = new_question.options
-                q.correct_answer = new_question.correct_answer
-              }
+            if (newCorrectAnswer.length > 0) {
+              q.correct_answer = newCorrectAnswer
             } else {
-              // Text or options changed. Update everything.
               q.options = new_question.options
               q.correct_answer = new_question.correct_answer
             }
@@ -143,15 +146,17 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         if (hasChanges) {
           await quiz.save()
           updatedQuizCount++
+          updatedQuizIds.add(String(quiz._id))
         }
       } catch (error) {
-        errors.push(`Failed to update quiz ${courseCode}`)
+        errors.push(`Failed to update quiz ${quiz.course_code || quiz._id}`)
       }
     }
 
+    const finalQuizIds = Array.from(new Set([...rawUsedInQuizIds, ...updatedQuizIds]))
+
     // Update Question Bank
-    if (effectiveOldId === newQuestionId && oldQuestion) {
-      // Same question_id (only correct_answer changed) → update in place
+    if (effectiveOldId === newQuestionId || oldQuestion.question_id === newQuestionId) {
       await QuestionBank.updateOne(
         { _id: oldQuestion._id },
         {
@@ -161,16 +166,13 @@ export const POST = withAuth(async (req: Request, { payload }) => {
             correct_answer: new_question.correct_answer,
             explanation: new_question.explanation || oldQuestion.explanation,
             image_url: new_question.image_url || oldQuestion.image_url,
+            used_in_quiz_ids: finalQuizIds,
             has_conflicts: false,
           },
         }
       )
     } else {
-      // Question_id changed (text or options modified) → delete and recreate
-      await QuestionBank.deleteOne({
-        category_id,
-        question_id: effectiveOldId,
-      })
+      await QuestionBank.deleteOne({ _id: oldQuestion._id })
 
       await QuestionBank.create({
         category_id,
@@ -181,9 +183,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         explanation: new_question.explanation,
         image_url: new_question.image_url,
         created_by: payload.userId,
-        usage_count: usedInQuizIds.length > 0 ? usedInQuizIds.length : usedInQuizzes.length,
+        usage_count: finalQuizIds.length > 0 ? finalQuizIds.length : usedInQuizzes.length,
         used_in_quizzes: usedInQuizzes,
-        used_in_quiz_ids: usedInQuizIds.length > 0 ? usedInQuizIds : [],
+        used_in_quiz_ids: finalQuizIds,
         has_conflicts: false,
       })
     }
@@ -191,9 +193,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({
       success: true,
       updated_quizzes: updatedQuizCount,
-      total_quizzes: usedInQuizzes.length,
+      total_quizzes: affectedQuizzes.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Đã cập nhật ${updatedQuizCount}/${usedInQuizzes.length} quiz thành công`,
+      message: `Đã cập nhật ${updatedQuizCount}/${affectedQuizzes.length} quiz thành công`,
     })
   } catch (error: any) {
     console.error('Error syncing update:', error)

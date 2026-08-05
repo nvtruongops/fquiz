@@ -1,12 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import { AlertCircle, CheckCircle2, Loader2, Upload } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Loader2, Upload, UploadCloud, FileText } from 'lucide-react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { Button } from '@/components/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
 import { Input } from '@/components/shared/ui/input'
 import { Badge } from '@/components/shared/ui/badge'
+import { cn } from '@/lib/core/utils/cn'
 
 function getSampleUrl(type: 'json' | 'txt'): string {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -72,6 +73,8 @@ interface BankCheckResult {
         correct_answer: number[]
       }
       existingQuestion?: {
+        question_id?: string
+        _id?: string
         correct_answer: number[]
         options?: string[]
         used_in_quizzes: string[]
@@ -115,6 +118,8 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
   const [applying, setApplying] = React.useState(false)
   const [confirmingConflicts, setConfirmingConflicts] = React.useState(false)
   const [conflictsConfirmed, setConflictsConfirmed] = React.useState(false)
+  const [isDragging, setIsDragging] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const createFileSnapshot = React.useCallback(async (source: File) => {
     const buffer = await source.arrayBuffer()
@@ -123,6 +128,76 @@ export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDia
       lastModified: source.lastModified,
     })
   }, [])
+
+  const processSelectedFile = React.useCallback((selectedFile: File | null) => {
+    setFile(selectedFile)
+    setFileSnapshot(null)
+    setPreparingFile(false)
+    setPreview(null)
+    setBankCheck(null)
+    setConflictChoice({})
+    setConfirmingConflicts(false)
+    setConflictsConfirmed(false)
+    setError('')
+    onValidationStateChange?.(false)
+    onPreviewDiagnosticsChange?.([])
+    onProcessingStateChange?.(false)
+
+    if (!selectedFile) return
+
+    setPreparingFile(true)
+    onProcessingStateChange?.(true)
+    void createFileSnapshot(selectedFile)
+      .then((snapshot) => {
+        setFileSnapshot(snapshot)
+        onProcessingStateChange?.(false)
+      })
+      .catch(() => {
+        setFile(null)
+        setFileSnapshot(null)
+        setError('Không thể đọc file đã chọn. Vui lòng thử lại.')
+        onValidationStateChange?.(true)
+        onProcessingStateChange?.(false)
+        onPreviewDiagnosticsChange?.([
+          {
+            level: 'error',
+            code: 'IMPORT_FILE_READ_ERROR',
+            message: 'Không thể đọc file đã chọn. Vui lòng thử lại.',
+          },
+        ])
+      })
+      .finally(() => {
+        setPreparingFile(false)
+      })
+  }, [createFileSnapshot, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange])
+
+  const handleDragOver = React.useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = React.useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = React.useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const droppedFile = e.dataTransfer.files?.[0] ?? null
+    if (droppedFile) {
+      const ext = droppedFile.name.split('.').pop()?.toLowerCase()
+      if (ext === 'json' || ext === 'txt') {
+        processSelectedFile(droppedFile)
+      } else {
+        setError('Chỉ hỗ trợ file định dạng .json hoặc .txt')
+      }
+    }
+  }, [processSelectedFile])
 
   const handleDownloadSample = async (type: 'json' | 'txt') => {
     const url = getSampleUrl(type)
@@ -335,14 +410,14 @@ function mapQuestionForBankCheck(q: ImportedQuestion) {
     }
   }
 
-async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: string) {
+async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: string, oldQuestionId: string = '') {
   const res = await fetch('/api/question-bank/sync-update', {
     method: 'POST',
     headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify({
       category_id: categoryId,
-      old_question_id: '',
+      old_question_id: oldQuestionId,
       new_question: {
         text: fileQ.text,
         options: fileQ.options,
@@ -375,7 +450,8 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
         if (!fileQ) continue
         if (!categoryId) throw new Error('Vui lòng chọn môn học trước khi đồng bộ đáp án.')
 
-        await syncSingleConflictQuestion(fileQ, categoryId)
+        const oldQId = c.existingQuestion?.question_id || c.existingQuestion?._id || ''
+        await syncSingleConflictQuestion(fileQ, categoryId, oldQId)
       }
 
       setConflictsConfirmed(true)
@@ -416,56 +492,60 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
           </Button>
         </div>
 
-        <div className="flex flex-col gap-2 md:flex-row">
-          <Input
-            type="file"
-            accept=".json,.txt,application/json,text/plain"
-            onChange={(e) => {
-              const selectedFile = e.target.files?.[0] ?? null
-              setFile(selectedFile)
-              setFileSnapshot(null)
-              setPreparingFile(false)
-              setPreview(null)
-              setBankCheck(null)
-              setConflictChoice({})
-              setConfirmingConflicts(false)
-              setConflictsConfirmed(false)
-              setError('')
-              onValidationStateChange?.(false)
-              onPreviewDiagnosticsChange?.([])
-              onProcessingStateChange?.(false)
+        <div className="space-y-3">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              "relative cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all text-center group",
+              isDragging
+                ? "border-[#5D7B6F] bg-[#5D7B6F]/10 scale-[1.01]"
+                : file
+                  ? "border-[#5D7B6F]/40 bg-[#5D7B6F]/5"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-gray-100/50 hover:border-[#5D7B6F]/50"
+            )}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,.txt,application/json,text/plain"
+              className="hidden"
+              onChange={(e) => processSelectedFile(e.target.files?.[0] ?? null)}
+            />
+            <div className="w-12 h-12 rounded-2xl bg-[#5D7B6F]/10 text-[#5D7B6F] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              {file ? <FileText className="w-6 h-6" /> : <UploadCloud className="w-6 h-6" />}
+            </div>
+            {file ? (
+              <div className="space-y-1">
+                <p className="font-bold text-sm text-[#5D7B6F]">{file.name}</p>
+                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB — Bấm hoặc kéo thả file khác để thay đổi</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <p className="font-bold text-sm text-gray-700">
+                  Kéo & thả file <span className="text-[#5D7B6F]">.JSON</span> hoặc <span className="text-[#5D7B6F]">.TXT</span> vào đây
+                </p>
+                <p className="text-xs text-gray-400">Hoặc bấm để chọn file từ máy tính</p>
+              </div>
+            )}
+          </div>
 
-              if (!selectedFile) return
-
-              setPreparingFile(true)
-              onProcessingStateChange?.(true)
-              void createFileSnapshot(selectedFile)
-                .then((snapshot) => {
-                  setFileSnapshot(snapshot)
-                  onProcessingStateChange?.(false)
-                })
-                .catch(() => {
-                  setFile(null)
-                  setFileSnapshot(null)
-                  setError('Không thể đọc file đã chọn. Vui lòng thử lại.')
-                  onValidationStateChange?.(true)
-                  onProcessingStateChange?.(false)
-                  onPreviewDiagnosticsChange?.([
-                    {
-                      level: 'error',
-                      code: 'IMPORT_FILE_READ_ERROR',
-                      message: 'Không thể đọc file đã chọn. Vui lòng thử lại.',
-                    },
-                  ])
-                })
-                .finally(() => {
-                  setPreparingFile(false)
-                })
-            }}
-          />
-          <Button type="button" onClick={handlePreview} disabled={!file || !fileSnapshot || loading || preparingFile} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90">
-            {loading || preparingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Preview'}
-          </Button>
+          {file && (
+            <div className="flex justify-end">
+              <Button type="button" onClick={handlePreview} disabled={!file || !fileSnapshot || loading || preparingFile} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90 w-full sm:w-auto">
+                {loading || preparingFile ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang xử lý preview...
+                  </span>
+                ) : (
+                  'Xem trước & Kiểm tra mâu thuẫn (Preview)'
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {error && (

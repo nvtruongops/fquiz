@@ -1,7 +1,6 @@
 import crypto from 'crypto'
 import { getAnswerTexts, areAnswersSame } from '@/lib/core/utils/array-utils'
-import { normalizeTextAST } from '@/lib/modules/quiz/utils/ast-normalizer'
-
+import { normalizeTextAST, normalizeOptionAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 
 /**
  * CHIẾN LƯỢC HASH CŨ (Conflict Detection): AST-normalized text + sorted options
@@ -17,7 +16,7 @@ export function generateQuestionId(question: {
   
   // Sort options để thứ tự không quan trọng
   const normalizedOptions = question.options
-    .map(o => normalizeTextAST(o))
+    .map(o => normalizeOptionAST(o))
     .sort((a, b) => a.localeCompare(b))
   
   const content = JSON.stringify({
@@ -49,9 +48,9 @@ export function generateQuestionFingerprint(q: {
   question_type?: string
   topic?: string
 }): string {
-  const normalizedText = q.text.trim().toLowerCase().replace(/\s+/g, ' ')
+  const normalizedText = normalizeTextAST(q.text)
   const normalizedOptions = q.options
-    .map((o) => o.trim().toLowerCase().replace(/\s+/g, ' '))
+    .map((o) => normalizeOptionAST(o))
     .sort((a, b) => a.localeCompare(b))
   const answerIndexes = Array.isArray(q.correct_answer)
     ? [...q.correct_answer].sort((a, b) => a - b)

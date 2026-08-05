@@ -1,12 +1,11 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/shared/ui/card'
+import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
+import { Input } from '@/components/shared/ui/input'
 import { motion } from 'framer-motion'
-import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2 } from 'lucide-react'
+import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Search, Sparkles } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
@@ -67,6 +66,7 @@ export default function CourseQuizList({
 }) {
   const [savingQuizId, setSavingQuizId] = useState<string | null>(null)
   const [savedQuizIds, setSavedQuizIds] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -110,7 +110,6 @@ export default function CourseQuizList({
 
         setSavedQuizIds(nextSavedIds)
 
-        // Optimistically update React Query cache for this course's quizzes
         queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
           if (!old) return old
           return {
@@ -119,7 +118,6 @@ export default function CourseQuizList({
           }
         })
 
-        // Invalidate student quizzes / categories queries for /my-quizzes page
         queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
         queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
 
@@ -136,6 +134,13 @@ export default function CourseQuizList({
     }
   }
 
+  const rawQuizzes = data?.quizzes ?? []
+
+  const filteredQuizzes = useMemo(() => {
+    if (!searchQuery.trim()) return rawQuizzes
+    const q = searchQuery.trim().toLowerCase()
+    return rawQuizzes.filter((quiz) => quiz.title.toLowerCase().includes(q))
+  }, [rawQuizzes, searchQuery])
 
   if (isLoading) return <QuizSkeleton />
 
@@ -147,9 +152,7 @@ export default function CourseQuizList({
     )
   }
 
-  const quizzes = data?.quizzes ?? []
-
-  if (quizzes.length === 0) {
+  if (rawQuizzes.length === 0) {
     return (
       <div className="text-center py-16 text-slate-500 font-semibold border border-dashed border-slate-300 bg-white/40 backdrop-blur-md rounded-3xl">
         Chưa có đề thi nào trong danh mục này.
@@ -162,7 +165,7 @@ export default function CourseQuizList({
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
+        staggerChildren: 0.06,
       },
     },
   }
@@ -173,99 +176,131 @@ export default function CourseQuizList({
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-    >
-      {quizzes.map((quiz) => {
-        const isCompleted = quiz.bestScore !== null
-        const isSaved = savedQuizIds.includes(quiz._id)
+    <div className="space-y-4">
+      {/* Search Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm kiếm bộ đề theo tên (VD: SP25, FE, RE)..."
+            className="pl-10 h-10 rounded-xl border-slate-200/80 text-xs bg-white font-medium"
+          />
+        </div>
+        <div className="text-xs font-bold text-slate-500 px-2 flex items-center gap-1.5 shrink-0">
+          <Sparkles className="w-3.5 h-3.5 text-[#5D7B6F]" />
+          Hiển thị <span className="text-[#5D7B6F] font-black">{filteredQuizzes.length}</span> / {rawQuizzes.length} bộ đề
+        </div>
+      </div>
 
-        return (
-          <motion.div key={quiz._id} variants={itemVariants} className="h-full">
-            <Card className="h-full flex flex-col justify-between border border-white/90 bg-white/70 backdrop-blur-2xl rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(93,123,111,0.14)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-3.5 sm:p-5 gap-3 sm:gap-5 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#5D7B6F]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      {filteredQuizzes.length === 0 ? (
+        <div className="text-center py-12 text-slate-500 text-xs font-semibold bg-white/40 border border-slate-200 rounded-2xl">
+          Không tìm thấy bộ đề phù hợp với từ khóa "{searchQuery}"
+        </div>
+      ) : (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+        >
+          {filteredQuizzes.map((quiz) => {
+            const isCompleted = quiz.bestScore !== null
+            const isSaved = savedQuizIds.includes(quiz._id)
 
-              <div className="space-y-2.5 sm:space-y-4 relative z-10">
-                {/* Icon & Title */}
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  {isCompleted ? (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs border border-emerald-200/50">
-                      <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-xs border border-slate-200/50">
-                      <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                  )}
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-800 leading-snug tracking-tight group-hover:text-[#5D7B6F] transition-colors duration-300 line-clamp-2" title={quiz.title}>
-                    {quiz.title}
-                  </h3>
-                </div>
+            return (
+              <motion.div key={quiz._id} variants={itemVariants} className="h-full">
+                <Card className="h-full flex flex-col justify-between border border-slate-200/80 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xs hover:shadow-xl hover:shadow-[#5D7B6F]/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-4 sm:p-5 gap-4 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#5D7B6F]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                {/* Metadata */}
-                <div className="space-y-1.5 sm:space-y-2.5 sm:pl-13">
-                  <div className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#5D7B6F]/40" />
-                    {quiz.questionCount} câu hỏi
-                  </div>
-                  <div>
-                    {isCompleted ? (
-                      <Badge
-                        className="border-0 text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-xs uppercase tracking-wider whitespace-nowrap"
+                  <div className="space-y-3.5 relative z-10">
+                    {/* Header: Icon & Title */}
+                    <div className="flex items-start gap-3">
+                      {isCompleted ? (
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 border border-slate-200/60 shadow-2xs">
+                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                      )}
+                      <h3
+                        className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug tracking-tight group-hover:text-[#5D7B6F] transition-colors duration-300 line-clamp-2"
+                        title={quiz.title}
                       >
-                        Điểm cao nhất: {(() => {
-                          const val = (quiz.bestScore! / quiz.questionCount) * 10
-                          return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
-                        })()}/10
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[9px] sm:text-[10px] text-slate-500 border-slate-200 font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-slate-50/80 uppercase tracking-wider whitespace-nowrap">
-                        Chưa thử sức
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
+                        {quiz.title}
+                      </h3>
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="pt-2.5 sm:pt-3 border-t border-slate-100 relative z-10 flex items-center gap-2">
-                <Link
-                  href={`/quiz/${quiz._id}`}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white bg-[#5D7B6F] hover:bg-[#4a6358] shadow-xs hover:shadow-md transition-all active:scale-[0.98] whitespace-nowrap"
-                >
-                  Bắt đầu làm bài
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    handleSaveQuiz(quiz._id)
-                  }}
-                  disabled={savingQuizId === quiz._id}
-                  className={cn(
-                    'w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
-                    isSaved
-                      ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-xs'
-                      : 'bg-slate-100 hover:bg-[#5D7B6F]/10 text-slate-500 hover:text-[#5D7B6F] border-slate-200/60'
-                  )}
-                  title="Lưu bộ đề này vào Bộ đề của tôi (/my-quizzes)"
-                >
-                  {savingQuizId === quiz._id ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#5D7B6F]" />
-                  ) : (
-                    <Bookmark className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', isSaved && 'fill-current text-amber-500')} />
-                  )}
-                </button>
-              </div>
-            </Card>
-          </motion.div>
-        )
-      })}
-    </motion.div>
+                    {/* Metadata & Status Badge */}
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#5D7B6F]" />
+                        {quiz.questionCount} câu hỏi
+                      </div>
+
+                      <div>
+                        {isCompleted ? (
+                          <Badge className="border-0 text-white font-extrabold text-[10px] px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-2xs uppercase tracking-wider whitespace-nowrap">
+                            Điểm cao nhất: {(() => {
+                              const val = (quiz.bestScore! / quiz.questionCount) * 10
+                              return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
+                            })()}/10
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] text-slate-500 border-slate-200 font-bold px-3 py-1 rounded-full bg-slate-50 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Chưa thử sức
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="pt-3 border-t border-slate-100 relative z-10 flex items-center gap-2">
+                    <Link
+                      href={`/quiz/${quiz._id}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#5D7B6F] hover:bg-[#4a6358] shadow-2xs hover:shadow-md transition-all active:scale-[0.98] whitespace-nowrap"
+                    >
+                      Vào làm bài
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleSaveQuiz(quiz._id)
+                      }}
+                      disabled={savingQuizId === quiz._id}
+                      className={cn(
+                        'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
+                        isSaved
+                          ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-2xs'
+                          : 'bg-slate-100 hover:bg-[#5D7B6F]/10 text-slate-500 hover:text-[#5D7B6F] border-slate-200/60'
+                      )}
+                      title="Lưu bộ đề vào kho của tôi"
+                    >
+                      {savingQuizId === quiz._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#5D7B6F]" />
+                      ) : (
+                        <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-amber-500')} />
+                      )}
+                    </button>
+                  </div>
+                </Card>
+              </motion.div>
+            )
+          })}
+        </motion.div>
+      )}
+    </div>
   )
 }
+

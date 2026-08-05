@@ -75,7 +75,7 @@ export const PUT = withAuth(async (
       }
     }
 
-    // 2. Optimistic Locking Check
+    // 2. Optimistic Locking & Duplicate Check
     const existingQuiz = await Quiz.findById(id)
     if (!existingQuiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
@@ -84,6 +84,23 @@ export const PUT = withAuth(async (
         error: 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng làm mới trang.',
         code: 'CONCURRENCY_ERROR' 
       }, { status: 409 })
+    }
+
+    const duplicateOwnedQuiz = await Quiz.findOne({
+      _id: { $ne: id },
+      created_by: new mongoose.Types.ObjectId(payload.userId),
+      is_saved_from_explore: { $ne: true },
+      is_temp: { $ne: true },
+      course_code: normalizedCourseCode,
+    })
+      .select('_id')
+      .lean()
+
+    if (duplicateOwnedQuiz) {
+      return NextResponse.json(
+        { error: `Mã quiz ${normalizedCourseCode} đã tồn tại trong kho quiz của bạn.` },
+        { status: 409 }
+      )
     }
 
     const oldImageUrls: string[] = [] // No longer tracking Cloudinary images
@@ -143,7 +160,13 @@ export const PUT = withAuth(async (
     })
 
     return NextResponse.json({ quiz, affectedSessionCount })
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      return NextResponse.json(
+        { error: 'Mã quiz này đã tồn tại trong kho quiz của bạn.' },
+        { status: 409 }
+      )
+    }
     console.error('Quiz update error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -216,12 +239,8 @@ export const DELETE = withAuth(async (
     const categoryId = String(quiz.category_id)
     const courseCode = quiz.course_code
 
-    // 2. Remove from question bank tracking
-    try {
-      await removeQuizFromBank(categoryId, courseCode, id)
-    } catch (cleanupError) {
-      console.error('Failed to cleanup question bank:', cleanupError)
-    }
+    // 2. Remove from question bank tracking (must succeed before deleting quiz)
+    await removeQuizFromBank(categoryId, courseCode, id)
 
     // 3. Delete quiz
     await Quiz.findByIdAndDelete(id)

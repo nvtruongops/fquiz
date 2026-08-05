@@ -1,9 +1,4 @@
 {
-  "quizMeta": {
-    "course_code": "FQUIZ-001",
-    "category_id": "your-category-id-here",
-    "description": "Bài quiz mẫu - Mô tả về bộ câu hỏi này"
-  },
   "questions": [
     {
       "question": "Nội dung của câu hỏi số 1 là gì?",
@@ -13,7 +8,9 @@
         "Đây là đáp án C",
         "Đây là đáp án D"
       ],
-      "correct_answer": [0],
+      "correct_answer": [
+        0
+      ],
       "explanation": "Giải thích: Đáp án A đúng vì đây là lựa chọn chính xác nhất."
     },
     {
@@ -24,7 +21,10 @@
         "Đáp án C (đúng)",
         "Đáp án D"
       ],
-      "correct_answer": [1, 2],
+      "correct_answer": [
+        1,
+        2
+      ],
       "explanation": "Giải thích: Cả B và C đều là đáp án đúng."
     },
     {
@@ -35,7 +35,9 @@
         "Lựa chọn 3",
         "Lựa chọn 4"
       ],
-      "correct_answer": [3],
+      "correct_answer": [
+        3
+      ],
       "explanation": "Giải thích: Lựa chọn 4 là đáp án đúng vì nó phù hợp nhất với yêu cầu."
     }
   ]

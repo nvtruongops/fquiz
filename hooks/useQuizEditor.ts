@@ -407,7 +407,9 @@ export function useQuizEditor(options: QuizEditorOptions) {
 
   const doSave = useCallback(async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
     if (!quiet && autosaveInFlightRef.current) {
-      await new Promise<void>(res => { autosaveResolveRef.current = res })
+      const timeoutPromise = new Promise<void>(res => setTimeout(res, 3000))
+      const waitAutosavePromise = new Promise<void>(res => { autosaveResolveRef.current = res })
+      await Promise.race([waitAutosavePromise, timeoutPromise])
     }
     if (!quiet) setSaving(true)
     setError('')
@@ -563,13 +565,13 @@ export function useQuizEditor(options: QuizEditorOptions) {
     }))
 
     const importedCategoryToken = (importedQuiz.category_id ?? '').trim()
+    const importedCourseCode = (importedQuiz.course_code ?? '').trim()
     const matchedCategory = categories.find(
       (cat) =>
         cat._id === importedCategoryToken ||
-        cat.name.trim().toLowerCase() === importedCategoryToken.toLowerCase()
+        cat.name.trim().toLowerCase() === importedCategoryToken.toLowerCase() ||
+        (importedCourseCode && cat.name.trim().toLowerCase() === importedCourseCode.toLowerCase())
     )
-
-    const importedCourseCode = (importedQuiz.course_code ?? '').trim()
     let overwriteCount = 0
     let addedCount = 0
     let nextLength = 0

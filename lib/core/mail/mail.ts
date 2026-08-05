@@ -194,8 +194,13 @@ export async function sendNewQuizNotificationMail({ to, username, courseCode, qu
     </div>
   ` : ''
 
+  const formatOtherQuizLine = (q: { id: string; title: string; questionCount?: number }) => {
+    const countStr = q.questionCount ? ` (${q.questionCount} câu)` : ''
+    return `- ${q.title}${countStr}: ${appUrl}/quiz/${q.id}`
+  }
+
   const otherQuizzesText = otherQuizzes.length > 0 ? `\n\nCác bài quiz khác thuộc môn ${courseCode}:\n` +
-    otherQuizzes.map(q => `- ${q.title}${q.questionCount ? ` (${q.questionCount} câu)` : ''}: ${appUrl}/quiz/${q.id}`).join('\n') +
+    otherQuizzes.map(formatOtherQuizLine).join('\n') +
     `\n\nXem tất cả quiz của môn ${courseCode}: ${courseUrl}` : ''
 
   await transporter.sendMail({
