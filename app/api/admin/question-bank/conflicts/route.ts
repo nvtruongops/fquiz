@@ -9,7 +9,7 @@ import { generateQuestionId, getAnswerTexts } from '@/lib/modules/quiz/question-
 import { z } from 'zod'
 
 const GetConflictsSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  category_id: z.string().optional().nullable(),
 })
 
 const ResolveConflictSchema = z.object({
@@ -30,13 +30,14 @@ const ResolveConflictSchema = z.object({
 
 /**
  * GET /api/admin/question-bank/conflicts
- * Lấy danh sách câu hỏi có conflict trong môn học
+ * Lấy danh sách câu hỏi có conflict trong môn học (hoặc tất cả các môn)
  */
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const { searchParams } = new URL(req.url)
+    const rawCat = searchParams.get('category_id')
     const parsed = GetConflictsSchema.safeParse({
-      category_id: searchParams.get('category_id'),
+      category_id: rawCat,
     })
 
     if (!parsed.success) {
@@ -50,17 +51,20 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
+    const matchQuery: any = {
+      status: 'published',
+      is_public: true,
+      is_temp: { $ne: true },
+      is_saved_from_explore: { $ne: true },
+    }
+
+    if (category_id && category_id !== 'all' && mongoose.Types.ObjectId.isValid(category_id)) {
+      matchQuery.category_id = new mongoose.Types.ObjectId(category_id)
+    }
+
     // PIPELINE TỐI ƯU: Chạy trực tiếp dưới Database
     const pipeline = [
-      {
-        $match: {
-          category_id: new mongoose.Types.ObjectId(category_id),
-          status: 'published',
-          is_public: true,
-          is_temp: { $ne: true },
-          is_saved_from_explore: { $ne: true }
-        }
-      },
+      { $match: matchQuery },
       { $unwind: "$questions" },
       // Bỏ qua câu hỏi thiếu question_id → tránh gom lộn xộn vào 1 group
       {
@@ -137,6 +141,10 @@ export const GET = withAuth(async (req: Request, { payload }) => {
   }
 }, { roles: ['admin'] })
 
+function normalizeStr(s?: string): string {
+  return (s || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,;!?]+$/g, '')
+}
+
 /**
  * POST /api/admin/question-bank/conflicts
  * Giải quyết conflict bằng cách chọn 1 variant làm chuẩn
@@ -190,7 +198,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         is_temp: { $ne: true },
       })
 
-      const normalizedText = question_text.trim().toLowerCase().replace(/\s+/g, ' ')
+      const normalizedText = normalizeStr(question_text)
 
       for (const quiz of quizzes) {
         if (!Array.isArray(quiz.questions)) continue
@@ -201,26 +209,33 @@ export const POST = withAuth(async (req: Request, { payload }) => {
           if (!q.text || !Array.isArray(q.options)) return
 
           // ✅ Tìm bằng text (normalize) thay vì question_id
-          // Vì Q2 có thể có options khác thứ tự → hash khác → không tìm được
-          const qText = q.text.trim().toLowerCase().replace(/\s+/g, ' ')
+          const qText = normalizeStr(q.text)
           if (qText !== normalizedText) return
 
-          // Chỉ update correct_answer và explanation, GIỮ NGUYÊN options của quiz đó
-          // Vì options có thể khác thứ tự, cần map đáp án đúng sang index mới
+          // Chuẩn hóa danh sách đáp án đúng từ variant được chọn
           const selectedAnswerTexts = selected_variant.correct_answer
-            .map((idx: number) => selected_variant.options[idx]?.trim().toLowerCase().replace(/\s+/g, ' '))
+            .map((idx: number) => normalizeStr(selected_variant.options[idx]))
             .filter(Boolean)
 
           // Tìm indices tương ứng trong options của quiz này
           const newCorrectAnswer = q.options
             .map((opt: string, idx: number) => {
-              const optNorm = opt.trim().toLowerCase().replace(/\s+/g, ' ')
+              const optNorm = normalizeStr(opt)
               return selectedAnswerTexts.includes(optNorm) ? idx : -1
             })
             .filter((idx: number) => idx !== -1)
 
           if (newCorrectAnswer.length > 0) {
             q.correct_answer = newCorrectAnswer
+            if (selected_variant.explanation) {
+              q.explanation = selected_variant.explanation
+            }
+            hasChanges = true
+          } else {
+            // Fallback: Nếu câu hỏi trong quiz có options sai/khác biệt không map được,
+            // áp dụng trực tiếp options & correct_answer từ selected_variant chuẩn
+            q.options = selected_variant.options
+            q.correct_answer = selected_variant.correct_answer
             if (selected_variant.explanation) {
               q.explanation = selected_variant.explanation
             }

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Button } from '@/components/shared/ui/button'
-import { Flame, Lightbulb, ShieldCheck, Eye } from 'lucide-react'
+import { Flame, Lightbulb, Eye } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 
 interface CommunitySidebarProps {
@@ -84,28 +84,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
           Gửi góp ý ngay
         </Button>
       </div>
-
-      {/* Widget 3: Community Guidelines */}
-      <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-6 shadow-xs space-y-3">
-        <div className="flex items-center gap-2 text-slate-800 font-black text-sm border-b border-slate-100 pb-3">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Quy tắc văn hóa cộng đồng</span>
-        </div>
-        <ul className="space-y-2 text-xs font-medium text-slate-600">
-          <li className="flex items-start gap-2">
-            <span className="text-[#5D7B6F] font-bold">•</span>
-            <span>Tôn trọng người dùng khác & không ngôn từ xúc phạm.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#5D7B6F] font-bold">•</span>
-            <span>Đặt tiêu đề rõ ràng, đúng trọng tâm bài viết.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#5D7B6F] font-bold">•</span>
-            <span>Không đăng tải nội dung quảng cáo hoặc rác.</span>
-          </li>
-        </ul>
-      </div>
     </aside>
   )
 })
+

@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category, PUBLIC_CATEGORY_MATCH } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { CategoryListQuerySchema } from '@/lib/core/schemas/common'
 import { CreateCategorySchema } from '@/lib/modules/quiz/schemas/category'
 
@@ -38,24 +39,38 @@ async function attachQuizCounts(categories: any[]) {
   if (categories.length === 0) return []
 
   const categoryIds = categories.map((c) => c._id)
-  const grouped = await Quiz.aggregate([
-    {
-      $match: {
-        category_id: { $in: categoryIds },
-        is_temp: { $ne: true },
-        is_saved_from_explore: { $ne: true },
+  const [groupedQuizzes, groupedQuestionBank] = await Promise.all([
+    Quiz.aggregate([
+      {
+        $match: {
+          category_id: { $in: categoryIds },
+          is_temp: { $ne: true },
+          is_saved_from_explore: { $ne: true },
+        },
       },
-    },
-    { $group: { _id: '$category_id', quizCount: { $sum: 1 } } },
+      { $group: { _id: '$category_id', quizCount: { $sum: 1 } } },
+    ]),
+    QuestionBank.aggregate([
+      {
+        $match: {
+          category_id: { $in: categoryIds },
+        },
+      },
+      { $group: { _id: '$category_id', qbCount: { $sum: 1 } } },
+    ]),
   ])
 
   const countMap = new Map<string, number>(
-    grouped.map((item: { _id: any; quizCount: number }) => [String(item._id), item.quizCount])
+    groupedQuizzes.map((item: { _id: any; quizCount: number }) => [String(item._id), item.quizCount])
+  )
+  const qbMap = new Map<string, number>(
+    groupedQuestionBank.map((item: { _id: any; qbCount: number }) => [String(item._id), item.qbCount])
   )
 
   return categories.map((category) => ({
     ...category,
     quizCount: countMap.get(String(category._id)) ?? 0,
+    questionBankCount: qbMap.get(String(category._id)) ?? 0,
   }))
 }
 
@@ -119,14 +134,19 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     }
 
     const { name, description } = parsed.data
+    const trimmedName = name.trim()
+    const escaped = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    const existing = await Category.findOne({ name, ...publicCategoryMatch })
+    const existing = await Category.findOne({
+      name: { $regex: `^${escaped}$`, $options: 'i' },
+      ...publicCategoryMatch,
+    })
     if (existing) {
       return NextResponse.json({ error: 'Category name already exists' }, { status: 409 })
     }
 
     const category = await Category.create({ 
-      name, 
+      name: trimmedName, 
       description,
       owner_id: null,
       is_public: true,
@@ -141,7 +161,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     revalidatePath('/explore')
     
     return NextResponse.json({ category }, { status: 201 })
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      return NextResponse.json({ error: 'Category name already exists' }, { status: 409 })
+    }
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
 }, { roles: ['admin'] })

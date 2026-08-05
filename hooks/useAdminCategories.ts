@@ -10,6 +10,7 @@ export interface Category {
   _id: string
   name: string
   quizCount: number
+  questionBankCount?: number
   created_at: string
   status: 'pending' | 'approved' | 'rejected'
   type: 'private' | 'public'

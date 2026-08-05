@@ -198,6 +198,37 @@ export default function AdminCategoriesPage() {
           )}
         </div>
       )}
+
+      {/* Delete Category Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[#5D7B6F]">Xác nhận xóa danh mục</DialogTitle>
+            <DialogDescription className="text-xs text-slate-600">
+              Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-slate-900">"{deleteTarget?.name}"</span>?
+              {deleteTarget && (deleteTarget.quizCount > 0 || (deleteTarget.questionBankCount ?? 0) > 0) && (
+                <span className="block text-rose-500 font-semibold mt-2">
+                  ⚠️ Danh mục này hiện đang chứa {deleteTarget.quizCount} bài quiz và {deleteTarget.questionBankCount ?? 0} câu hỏi ngân hàng. Không thể xóa danh mục đang có dữ liệu liên kết.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleteMutation.isPending} className="rounded-xl text-xs">
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!deleteTarget || deleteTarget.quizCount > 0 || (deleteTarget.questionBankCount ?? 0) > 0 || deleteMutation.isPending}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget._id)}
+              className="rounded-xl text-xs"
+            >
+              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              Xóa danh mục
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -51,7 +51,7 @@ export function QuestionBankConflictResolver({
   categories,
 }: QuestionBankConflictResolverProps) {
   const { toast } = useToast()
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [loading, setLoading] = useState(false)
   const [conflicts, setConflicts] = useState<Conflict[]>([])
   const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(null)
@@ -82,10 +82,8 @@ export function QuestionBankConflictResolver({
   }, [selectedCategory, toast])
 
   useEffect(() => {
-    if (selectedCategory) {
-      fetchConflicts()
-    }
-  }, [selectedCategory, fetchConflicts])
+    fetchConflicts()
+  }, [fetchConflicts])
 
   const handleResolve = async () => {
     if (!selectedConflict || !selectedCategory) return
@@ -156,6 +154,7 @@ export function QuestionBankConflictResolver({
               <SelectValue placeholder="-- Chọn môn học --" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Tất cả môn học</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   {cat.name}

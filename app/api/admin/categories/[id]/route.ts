@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 
 function isPublicCategory(category: any): boolean {
   if (!category) return false
@@ -27,8 +28,11 @@ export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Invalid category id' }, { status: 400 })
     }
 
+    const trimmedName = name.trim()
+    const escaped = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
     const duplicate = await Category.findOne({
-      name: name.trim(),
+      name: { $regex: `^${escaped}$`, $options: 'i' },
       _id: { $ne: id },
       $or: [
         { type: 'public' },
@@ -46,7 +50,7 @@ export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{
 
     const category = await Category.findByIdAndUpdate(
       id,
-      { name: name.trim(), type: 'public', owner_id: null, is_public: true },
+      { name: trimmedName, type: 'public', owner_id: null, is_public: true },
       { new: true }
     )
 
@@ -57,7 +61,10 @@ export const PUT = withAuth(async (req: Request, { params }: { params: Promise<{
     revalidatePath('/explore')
 
     return NextResponse.json({ category })
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      return NextResponse.json({ error: 'Category name already exists' }, { status: 409 })
+    }
     console.error('PUT /api/admin/categories/[id] error:', err)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
   }
@@ -78,10 +85,18 @@ export const DELETE = withAuth(async (req: Request, { params }: { params: Promis
       return NextResponse.json({ error: 'Public category not found' }, { status: 404 })
     }
 
-    const hasAnyQuiz = await Quiz.exists({ category_id: category._id })
-    if (hasAnyQuiz) {
+    const categoryNameEscaped = category.name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    const [hasQuiz, hasQuestionBank, hasCourseCode, hasMixConfig] = await Promise.all([
+      Quiz.exists({ category_id: category._id }),
+      QuestionBank.exists({ category_id: category._id }),
+      Quiz.exists({ course_code: { $regex: `^${categoryNameEscaped}$`, $options: 'i' } }),
+      Quiz.exists({ 'mix_config.category_id': category._id }),
+    ])
+
+    if (hasQuiz || hasQuestionBank || hasCourseCode || hasMixConfig) {
       return NextResponse.json(
-        { error: 'Cannot delete category: it has associated quizzes' },
+        { error: 'Không thể xóa danh mục: Danh mục hiện đang chứa bài quiz hoặc ngân hàng câu hỏi.' },
         { status: 400 }
       )
     }

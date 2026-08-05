@@ -23,43 +23,22 @@ interface ProcessMixQuizResult {
   actualCount: number
 }
 
-/**
- * Synchronously generates a mix quiz and its session in MongoDB.
- * Replaces unreliable background queue calls for fast in-line execution (~30ms).
- */
-export async function processMixQuizGeneration({
-  sessionId,
-  quiz_ids,
-  question_count,
-  mode,
-  difficulty,
-  studentId,
-}: ProcessMixQuizParams): Promise<ProcessMixQuizResult> {
-  await connectDB()
-
-  const studentObjId = new mongoose.Types.ObjectId(studentId)
-
-  // Load quizzes — only public + published
-  const quizObjectIds = quiz_ids.map((id: string) => new mongoose.Types.ObjectId(id))
-  const quizzes = (await Quiz.find({
-    _id: { $in: quizObjectIds },
-    is_public: true,
-    status: 'published',
-    is_temp: { $ne: true },
-  })
-    .select('title course_code questions category_id')
-    .lean()) as any[]
-
-  const validQuizzes = quizzes.filter((q) => q.questions && q.questions.length > 0)
-
-  if (validQuizzes.length < 2) {
-    if (sessionId) {
-      await QuizSession.updateOne({ _id: sessionId }, { status: 'expired' })
-    }
-    throw new Error('Not enough valid quizzes to mix (requires at least 2 public quizzes with questions)')
+function extractSameSubjectCourseCode(quizzes: any[]): string {
+  const extractSubjectPrefix = (code?: string): string => {
+    if (!code) return ''
+    const clean = code.trim().toUpperCase()
+    if (clean.startsWith('TEMP_')) return ''
+    const parts = clean.split('_')
+    return parts[0] ?? clean
   }
 
-  // Deduplicate questions
+  const prefixes = quizzes.map((q) => extractSubjectPrefix(q.course_code)).filter(Boolean)
+  const firstPrefix = prefixes[0]
+  const isSameSubjectMix = Boolean(firstPrefix && prefixes.every((p) => p === firstPrefix))
+  return isSameSubjectMix ? firstPrefix : 'TRỘN'
+}
+
+function deduplicateQuizzesPools(validQuizzes: any[]): IQuestion[][] {
   const seenKeys = new Set<string>()
   const uniquePoolsPerQuiz: IQuestion[][] = validQuizzes.map((quiz) => {
     const pool: IQuestion[] = []
@@ -67,27 +46,19 @@ export async function processMixQuizGeneration({
       const key = q.question_id ?? (q._id ? q._id.toString() : '')
       if (key && !seenKeys.has(key)) {
         seenKeys.add(key)
+        if (!q.question_id) q.question_id = generateQuestionId(q)
         pool.push(q)
       }
     }
     return pool
   })
+  return uniquePoolsPerQuiz.filter((pool) => pool.length > 0)
+}
 
-  // Ensure every question has a question_id
-  for (const pool of uniquePoolsPerQuiz) {
-    for (const q of pool) {
-      if (!q.question_id) {
-        q.question_id = generateQuestionId(q)
-      }
-    }
-  }
-
-  const deduplicatedQuizzes = uniquePoolsPerQuiz.filter((pool) => pool.length > 0)
-
-  // Sample proportionally
+function sampleProportionally(deduplicatedQuizzes: IQuestion[][], targetCount: number): IQuestion[] {
   const numQuizzes = deduplicatedQuizzes.length
-  const baseQuota = Math.floor(question_count / numQuizzes)
-  const remainder = question_count % numQuizzes
+  const baseQuota = Math.floor(targetCount / numQuizzes)
+  const remainder = targetCount % numQuizzes
 
   const sorted = [...deduplicatedQuizzes].sort((a, b) => b.length - a.length)
   const quotas = sorted.map((pool, i) => ({
@@ -118,7 +89,7 @@ export async function processMixQuizGeneration({
   }
 
   const rawSampled = secureShuffle(sampled)
-  const finalSampled = rawSampled.map((q: any) => {
+  return rawSampled.map((q: any) => {
     const opts = q.options || []
     const ca = Array.isArray(q.correct_answer)
       ? q.correct_answer
@@ -135,36 +106,38 @@ export async function processMixQuizGeneration({
       correct_answer: validCa,
     }
   })
-  const actualCount = finalSampled.length
+}
 
-  // Create temp quiz
+async function createTempQuizWithRetry({
+  validQuizzes,
+  quizObjectIds,
+  finalSampled,
+  actualCount,
+  question_count,
+  mode,
+  studentObjId,
+}: {
+  validQuizzes: any[]
+  quizObjectIds: mongoose.Types.ObjectId[]
+  finalSampled: IQuestion[]
+  actualCount: number
+  question_count: number
+  mode: string
+  studentObjId: mongoose.Types.ObjectId
+}): Promise<any> {
   const quizTitles = validQuizzes.map((q) => q.course_code as string)
   const titlePreview = quizTitles.join(' + ')
+  const courseCode = extractSameSubjectCourseCode(validQuizzes)
 
-  const extractSubjectPrefix = (code?: string): string => {
-    if (!code) return ''
-    const clean = code.trim().toUpperCase()
-    if (clean.startsWith('TEMP_')) return ''
-    const parts = clean.split('_')
-    return parts[0] ?? clean
+  let categoryId = validQuizzes[0]?.category_id
+  if (!categoryId && courseCode) {
+    const cat = await ensureCategoryForCourseCode(courseCode, studentObjId)
+    if (cat?._id) categoryId = cat._id
   }
 
-  const prefixes = validQuizzes.map((q) => extractSubjectPrefix(q.course_code)).filter(Boolean)
-  const firstPrefix = prefixes[0]
-  const isSameSubjectMix = Boolean(firstPrefix && prefixes.every((p) => p === firstPrefix))
-
-  let tempQuiz: any = null
-  let retries = 0
-  while (retries < 2) {
+  for (let retries = 0; retries < 2; retries++) {
     try {
-      const courseCode = isSameSubjectMix ? firstPrefix : 'TRỘN'
-      let categoryId = validQuizzes[0]?.category_id
-      if (!categoryId && courseCode) {
-        const cat = await ensureCategoryForCourseCode(courseCode, studentObjId)
-        if (cat?._id) categoryId = cat._id
-      }
-
-      tempQuiz = await Quiz.create({
+      return await Quiz.create({
         title: `Quiz Trộn · ${titlePreview}`,
         course_code: courseCode,
         category_id: categoryId,
@@ -181,15 +154,61 @@ export async function processMixQuizGeneration({
           category_id: categoryId,
         },
       })
-      break
     } catch (err: any) {
-      if (err?.code === 11000 && retries < 1) {
-        retries++
-        continue
-      }
+      if (err?.code === 11000 && retries < 1) continue
       throw err
     }
   }
+}
+
+/**
+ * Synchronously generates a mix quiz and its session in MongoDB.
+ * Replaces unreliable background queue calls for fast in-line execution (~30ms).
+ */
+export async function processMixQuizGeneration({
+  sessionId,
+  quiz_ids,
+  question_count,
+  mode,
+  difficulty,
+  studentId,
+}: ProcessMixQuizParams): Promise<ProcessMixQuizResult> {
+  await connectDB()
+
+  const studentObjId = new mongoose.Types.ObjectId(studentId)
+  const quizObjectIds = quiz_ids.map((id: string) => new mongoose.Types.ObjectId(id))
+  
+  const quizzes = (await Quiz.find({
+    _id: { $in: quizObjectIds },
+    is_public: true,
+    status: 'published',
+    is_temp: { $ne: true },
+  })
+    .select('title course_code questions category_id')
+    .lean()) as any[]
+
+  const validQuizzes = quizzes.filter((q) => q.questions && q.questions.length > 0)
+
+  if (validQuizzes.length < 2) {
+    if (sessionId) {
+      await QuizSession.updateOne({ _id: sessionId }, { status: 'expired' })
+    }
+    throw new Error('Not enough valid quizzes to mix (requires at least 2 public quizzes with questions)')
+  }
+
+  const deduplicatedQuizzes = deduplicateQuizzesPools(validQuizzes)
+  const finalSampled = sampleProportionally(deduplicatedQuizzes, question_count)
+  const actualCount = finalSampled.length
+
+  const tempQuiz = await createTempQuizWithRetry({
+    validQuizzes,
+    quizObjectIds,
+    finalSampled,
+    actualCount,
+    question_count,
+    mode,
+    studentObjId,
+  })
 
   const questionOrder =
     difficulty === 'random'
@@ -231,37 +250,38 @@ export async function processMixQuizGeneration({
       quizId: tempQuiz._id.toString(),
       actualCount,
     }
-  } else {
-    const newSession = await QuizSession.create({
-      student_id: studentObjId,
-      quiz_id: tempQuiz._id,
-      mode,
-      difficulty,
-      status: 'active',
-      user_answers: [],
-      current_question_index: 0,
-      question_order: questionOrder,
-      questions_cache: processedQuestionsCache,
-      score: 0,
-      is_temp: true,
-      started_at: now,
-      last_activity_at: now,
-      flashcard_stats:
-        mode === 'flashcard'
-          ? {
-              total_cards: actualCount,
-              cards_known: 0,
-              cards_unknown: 0,
-              time_spent_ms: 0,
-              current_round: 1,
-            }
-          : undefined,
-    })
+  }
 
-    return {
-      sessionId: newSession._id.toString(),
-      quizId: tempQuiz._id.toString(),
-      actualCount,
-    }
+  const newSession = await QuizSession.create({
+    student_id: studentObjId,
+    quiz_id: tempQuiz._id,
+    mode,
+    difficulty,
+    status: 'active',
+    user_answers: [],
+    current_question_index: 0,
+    question_order: questionOrder,
+    questions_cache: processedQuestionsCache,
+    score: 0,
+    is_temp: true,
+    started_at: now,
+    last_activity_at: now,
+    flashcard_stats:
+      mode === 'flashcard'
+        ? {
+            total_cards: actualCount,
+            cards_known: 0,
+            cards_unknown: 0,
+            time_spent_ms: 0,
+            current_round: 1,
+          }
+        : undefined,
+  })
+
+  return {
+    sessionId: newSession._id.toString(),
+    quizId: tempQuiz._id.toString(),
+    actualCount,
   }
 }
+

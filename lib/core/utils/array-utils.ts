@@ -56,7 +56,7 @@ export function isExactArrayMatch(a: number[], b: number[]): boolean {
  */
 export function getAnswerTexts(options: string[], answerIndices: number | number[]): string[] {
   return ensureArray(answerIndices)
-    .map(idx => options[idx]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
+    .map(idx => options[idx]?.trim().toLowerCase().replace(/[.,;!?]+$/g, '').replace(/\s+/g, ' ') ?? '')
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b))
 }

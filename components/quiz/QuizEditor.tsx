@@ -13,6 +13,7 @@ import { QuestionEditorCard } from '@/components/quiz/editor/QuestionEditorCard'
 import { EditorProgressHub } from '@/components/quiz/editor/EditorProgressHub'
 import { EditorControlPanel } from '@/components/quiz/editor/EditorControlPanel'
 import { useQuizEditor } from '@/hooks/useQuizEditor'
+import { cn } from '@/lib/core/utils/cn'
 
 interface Props {
   initialData?: Partial<QuizFormData>
@@ -113,15 +114,17 @@ export function QuizEditor(props: Props) {
   }, [form.category_id, form.questions, onFormChange])
 
   return (
-    <div className="p-4 sm:p-8 bg-[#F9F9F7] min-h-screen">
+    <div className={cn(isStudentMode ? "w-full" : "p-4 sm:p-8 bg-[#F9F9F7] min-h-screen")}>
       <div className="w-full mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 w-full space-y-6">
-            <div className="flex items-center justify-between gap-3">
-              <h1 className="text-2xl font-bold text-[#5D7B6F]">
-                {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
-              </h1>
-            </div>
+            {!isStudentMode && (
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="text-2xl font-bold text-[#5D7B6F]">
+                  {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
+                </h1>
+              </div>
+            )}
 
             <EditorMetadataForm
               form={form}

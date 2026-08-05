@@ -20,10 +20,20 @@ export async function ensureCategoryForCourseCode(
   const cleanCode = courseCode.trim().toUpperCase()
   const escapedCode = escapeRegex(cleanCode)
 
-  let category = await Category.findOne({
+  // 1. Look for public category matching this name
+  let category = (await Category.findOne({
     name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
-  }).lean() as any
+    $or: [{ type: 'public' }, { is_public: true }, { owner_id: null }],
+  }).lean()) as any
 
+  // 2. Fallback to any category matching this name
+  if (!category) {
+    category = (await Category.findOne({
+      name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
+    }).lean()) as any
+  }
+
+  // 3. Create public category by default if missing
   if (!category) {
     category = await Category.create({
       name: cleanCode,
@@ -31,7 +41,7 @@ export async function ensureCategoryForCourseCode(
       type: 'public',
       is_public: true,
       status: 'approved',
-      ...(userId ? { owner_id: new Types.ObjectId(userId) } : {}),
+      owner_id: null,
     })
   }
 

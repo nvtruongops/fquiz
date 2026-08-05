@@ -6,7 +6,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import type { QuestionBankDoc } from '@/lib/modules/quiz/models/QuestionBank'
-import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
+import { generateQuestionId, areAnswersSame, getAnswerTexts } from '@/lib/modules/quiz/question-id-generator'
 import { z } from 'zod'
 
 const ScanSchema = z.object({
@@ -43,6 +43,8 @@ function getQuestionId(q: Record<string, unknown>): string {
 async function loadQuizzes(categoryObjectId: mongoose.Types.ObjectId) {
   return Quiz.find({
     category_id: categoryObjectId,
+    status: 'published',
+    is_public: true,
     is_temp: { $ne: true },
     is_saved_from_explore: { $ne: true },
   }).lean()
@@ -95,11 +97,7 @@ function detectConflicts(questionMap: Map<string, QuestionEntry>) {
     const answerGroups = new Map<string, QuestionVariant[]>()
 
     for (const v of entry.variants) {
-      const answerTexts = v.correct_answer
-        .map((i: number) => v.options[i]?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '')
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b))
-        .join('||')
+      const answerTexts = getAnswerTexts(v.options, v.correct_answer).join('||')
       if (!answerGroups.has(answerTexts)) {
         answerGroups.set(answerTexts, [])
       }
@@ -222,21 +220,113 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
   const quizzes = await loadQuizzes(categoryObjectId)
   const createdBy = new mongoose.Types.ObjectId(userId)
 
-  let newQuestions = 0
-  let existingQuestions = 0
-  let skippedConflicts = 0
+  // 1. Tải toàn bộ QuestionBank hiện tại trong môn học bằng 1 query duy nhất (Batch query)
+  const existingBankDocs = await QuestionBank.find({ category_id: categoryObjectId }).lean()
+  const bankMap = new Map<string, any>()
+  for (const doc of existingBankDocs) {
+    bankMap.set(doc.question_id, doc)
+  }
 
+  // 2. Gom tất cả câu hỏi từ các quiz theo question_id trong Memory
+  const incomingMap = new Map<string, { q: any; quizzes: Array<{ _id: any; course_code: string }> }>()
   for (const quiz of quizzes) {
     if (!Array.isArray(quiz.questions)) continue
     for (const q of quiz.questions) {
       if (!q.text || !Array.isArray(q.options) || q.options.length === 0) continue
-
-      const { outcome } = await processMigrateQuestion(q, quiz, categoryObjectId, createdBy, resolve_conflicts)
-
-      if (outcome === 'created') newQuestions++
-      else if (outcome === 'updated') existingQuestions++
-      else if (outcome === 'skipped') skippedConflicts++
+      const qid = getQuestionId(q)
+      if (!incomingMap.has(qid)) {
+        incomingMap.set(qid, { q, quizzes: [] })
+      }
+      const entry = incomingMap.get(qid)!
+      if (!entry.quizzes.some(item => String(item._id) === String(quiz._id))) {
+        entry.quizzes.push({ _id: quiz._id, course_code: quiz.course_code })
+      }
     }
+  }
+
+  let newQuestions = 0
+  let existingQuestions = 0
+  let skippedConflicts = 0
+  const bulkOps: any[] = []
+
+  for (const [qid, { q, quizzes: associatedQuizzes }] of incomingMap) {
+    const existing = bankMap.get(qid)
+
+    if (existing) {
+      const sameAnswer = areAnswersSame(
+        { options: q.options as string[], correct_answer: (q.correct_answer ?? []) as number | number[] },
+        { options: existing.options, correct_answer: existing.correct_answer }
+      )
+
+      if (!sameAnswer && resolve_conflicts === 'skip') {
+        skippedConflicts++
+        continue
+      }
+
+      // Hợp nhất list quiz_ids và course_codes
+      const existingQuizIds = (existing.used_in_quiz_ids || []).map((id: any) => String(id))
+      const existingCodes = new Set<string>(existing.used_in_quizzes || [])
+      const updatedQuizIds = [...(existing.used_in_quiz_ids || [])]
+
+      for (const quiz of associatedQuizzes) {
+        const qidStr = String(quiz._id)
+        if (!existingQuizIds.includes(qidStr)) {
+          existingQuizIds.push(qidStr)
+          updatedQuizIds.push(quiz._id)
+          existingCodes.add(quiz.course_code)
+        }
+      }
+
+      const updateData: any = {
+        used_in_quizzes: Array.from(existingCodes),
+        used_in_quiz_ids: updatedQuizIds,
+        usage_count: updatedQuizIds.length,
+      }
+
+      if (!sameAnswer && resolve_conflicts === 'keep_most_used') {
+        if (associatedQuizzes.length > (existing.usage_count || 0)) {
+          updateData.correct_answer = q.correct_answer || []
+          updateData.options = q.options
+          if (q.explanation) updateData.explanation = q.explanation
+        }
+      }
+
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: existing._id },
+          update: { $set: updateData },
+        },
+      })
+      existingQuestions++
+    } else {
+      const courseCodes = Array.from(new Set(associatedQuizzes.map(q => q.course_code)))
+      const quizIds = associatedQuizzes.map(q => q._id)
+
+      bulkOps.push({
+        insertOne: {
+          document: {
+            category_id: categoryObjectId,
+            question_id: qid,
+            text: q.text,
+            options: q.options,
+            correct_answer: q.correct_answer || [],
+            explanation: q.explanation,
+            image_url: q.image_url,
+            created_by: createdBy,
+            usage_count: quizIds.length,
+            used_in_quizzes: courseCodes,
+            used_in_quiz_ids: quizIds,
+            has_conflicts: false,
+          },
+        },
+      })
+      newQuestions++
+    }
+  }
+
+  // 3. Thực thi duy nhất 1 lệnh bulkWrite dưới Database
+  if (bulkOps.length > 0) {
+    await QuestionBank.bulkWrite(bulkOps)
   }
 
   const conflictSuffix = skippedConflicts > 0 ? `, bỏ qua ${skippedConflicts} conflict` : ''

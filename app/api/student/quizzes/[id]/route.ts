@@ -8,6 +8,10 @@ import { Types } from 'mongoose'
 import { authorizeResource } from '@/lib/modules/auth/authz'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { Category } from '@/lib/modules/quiz/models/Category'
+import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
+import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
 
 async function getAuthorizedQuiz(payload: any, id: string) {
   // 1. Fetch minimal quiz data
@@ -116,11 +120,29 @@ export const GET = withAuth(async (
       await Quiz.updateOne({ _id: quiz._id }, { $set: { studentCount: numAttempts } })
     }
 
-    return NextResponse.json({ _id: quiz._id.toString(), title: quiz.title, description: quiz.description || '', category_id: { name: (quiz.category_id as any)?.name || 'Chung' }, course_code: quiz.course_code, num_questions: numQuestions, num_attempts: numAttempts, created_at: quiz.created_at, is_temp: quiz.is_temp, mix_config: quiz.mix_config })
+    const categoryIdVal = (quiz.category_id as any)?._id
+      ? String((quiz.category_id as any)._id)
+      : String(quiz.category_id || '')
+
+    return NextResponse.json({
+      _id: quiz._id.toString(),
+      title: quiz.title,
+      description: quiz.description || '',
+      category_id: categoryIdVal,
+      category_name: (quiz.category_id as any)?.name || 'Chung',
+      course_code: quiz.course_code,
+      num_questions: numQuestions,
+      num_attempts: numAttempts,
+      created_at: quiz.created_at,
+      is_temp: quiz.is_temp,
+      is_owner: isOwner,
+      questions: isOwner || quiz.is_public ? (quiz.questions || []) : [],
+      mix_config: quiz.mix_config,
+    })
   } catch (error) {
     console.error('Error fetching student quiz detail:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const DELETE = withAuth(async (
@@ -200,6 +222,89 @@ export const PATCH = withAuth(async (
     return NextResponse.json({ message: 'Quiz category updated successfully' })
   } catch (error) {
     console.error('Error moving student quiz category:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}, { roles: ['student'] })
+
+export const PUT = withAuth(async (
+  req: Request,
+  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
+) => {
+  try {
+    await connectDB()
+    const { id } = await params
+    if (!id || !Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
+    }
+
+    const quiz = await authorizeResource(payload, id, Quiz, 'quiz', 'created_by')
+    if ((quiz as any).is_saved_from_explore) {
+      return NextResponse.json(
+        { error: 'Bộ đề lưu từ kho Khám phá không thể chỉnh sửa.' },
+        { status: 400 }
+      )
+    }
+
+    const body = await parseJsonBody(req)
+    if (body instanceof NextResponse) return body
+
+    const parsed = CreateStudentQuizSchema.safeParse(body)
+    if (!parsed.success) {
+      return validationErrorResponse(parsed.error)
+    }
+
+    const { course_code, category_id, questions, description } = parsed.data
+    const normalizedCourseCode = course_code.trim().toUpperCase()
+
+    // Check course_code duplicate if changed
+    if (normalizedCourseCode !== quiz.course_code) {
+      const duplicate = await Quiz.findOne({
+        _id: { $ne: new Types.ObjectId(id) },
+        created_by: new Types.ObjectId(payload.userId),
+        is_saved_from_explore: { $ne: true },
+        course_code: normalizedCourseCode,
+      }).select('_id').lean()
+
+      if (duplicate) {
+        return NextResponse.json(
+          { error: `Mã quiz ${normalizedCourseCode} đã tồn tại trong bộ đề tự tạo của bạn.` },
+          { status: 409 }
+        )
+      }
+    }
+
+    let category = category_id ? await Category.findById(category_id) : null
+    if (!category) {
+      category = await ensureCategoryForCourseCode(normalizedCourseCode, payload.userId)
+    }
+    const finalCategoryId = category?._id || (category as any)?.id
+
+    const processedQuestions = questions.map((q) => {
+      const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
+      return {
+        text: q.text || '',
+        options: q.options || [],
+        correct_answer: q.correct_answer || [],
+        explanation: q.explanation || '',
+        image_url: finalImageUrl || '',
+        question_id: generateQuestionId(q),
+      }
+    })
+
+    quiz.title = normalizedCourseCode
+    quiz.course_code = normalizedCourseCode
+    quiz.description = description || ''
+    quiz.category_id = finalCategoryId
+    quiz.questions = processedQuestions
+    quiz.questionCount = processedQuestions.length
+    await (quiz as any).save()
+
+    return NextResponse.json({ quiz, message: 'Cập nhật bộ đề thành công' })
+  } catch (error) {
+    console.error('Error updating student quiz:', error)
+    if ((error as { code?: number }).code === 11000) {
+      return NextResponse.json({ error: 'Mã quiz đã tồn tại.' }, { status: 409 })
+    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['student'] })

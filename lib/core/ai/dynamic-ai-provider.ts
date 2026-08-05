@@ -29,15 +29,16 @@ export class DynamicAIProvider implements IAIProvider {
       if (activeProvider === 'openai') {
         const rawKey = llmConfig?.openai?.apiKey || process.env.OPENAI_API_KEY
         const apiKey = decryptSecret(rawKey || '')
-        const model = llmConfig?.openai?.model || 'gpt-4o-mini'
-        return new OpenAIProvider(apiKey, 'https://api.openai.com/v1', model)
+        const baseUrl = (llmConfig?.openai as { baseUrl?: string })?.baseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+        const model = llmConfig?.openai?.model || process.env.OPENAI_MODEL || 'AI'
+        return new OpenAIProvider(apiKey, baseUrl, model)
       }
 
       if (activeProvider === 'custom') {
-        const rawKey = llmConfig?.custom?.apiKey
+        const rawKey = llmConfig?.custom?.apiKey || process.env.OPENAI_API_KEY
         const apiKey = decryptSecret(rawKey || '')
-        const baseUrl = llmConfig?.custom?.baseUrl || 'http://localhost:11434/v1'
-        const model = llmConfig?.custom?.model || 'gpt-4o-mini'
+        const baseUrl = llmConfig?.custom?.baseUrl || process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1'
+        const model = llmConfig?.custom?.model || process.env.OPENAI_MODEL || 'AI'
         return new OpenAIProvider(apiKey, baseUrl, model)
       }
 

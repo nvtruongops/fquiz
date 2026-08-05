@@ -1,5 +1,6 @@
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
+import { normalizeTextAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 import { ensureArray } from '@/lib/core/utils/array-utils'
 import type { Types } from 'mongoose'
 
@@ -13,6 +14,7 @@ export interface QuestionInput {
 
 export interface ExistingQuestionInfo {
   _id: string
+  question_id?: string
   text: string
   options: string[]
   correct_answer: number | number[]
@@ -70,6 +72,7 @@ export async function checkQuestionInBank(
 
   const existingInfo: ExistingQuestionInfo = {
     _id: String(existing._id),
+    question_id: existing.question_id,
     text: existing.text,
     options: existing.options,
     correct_answer: existing.correct_answer,
@@ -115,55 +118,59 @@ export async function checkQuestionsInBank(
   questions: QuestionInput[]
 ): Promise<Map<number, ConflictInfo>> {
   const conflicts = new Map<number, ConflictInfo>()
-  
-  // Tạo question_ids cho tất cả câu hỏi
-  const questionIds = questions.map(q => generateQuestionId(q))
-  
-  // Lấy tất cả câu hỏi đã có trong ngân hàng (1 query duy nhất)
+
+  // Lấy tất cả câu hỏi đã có trong ngân hàng cho môn này (1 query duy nhất)
   const existingQuestions = await QuestionBank.find({
     category_id: categoryId,
-    question_id: { $in: questionIds }
   }).lean()
-  
-  // Tạo map để lookup nhanh
-  const existingMap = new Map(
-    existingQuestions.map(q => [q.question_id, q])
-  )
-  
+
+  // Tạo 2 map lookup: theo question_id và theo normalizeTextAST(text)
+  const existingIdMap = new Map<string, any>()
+  const existingTextMap = new Map<string, any>()
+
+  for (const q of existingQuestions) {
+    if (q.question_id) existingIdMap.set(q.question_id, q)
+    if (q.text) existingTextMap.set(normalizeTextAST(q.text), q)
+  }
+
   // Kiểm tra từng câu hỏi
   questions.forEach((question, index) => {
-    const questionId = questionIds[index]
-    const existing = existingMap.get(questionId)
-    
+    const questionId = generateQuestionId(question)
+    const normalizedText = normalizeTextAST(question.text)
+    const existing = existingIdMap.get(questionId) || existingTextMap.get(normalizedText)
+
     if (!existing) {
       return // Không có conflict
     }
-    
+
     // Layer 2: So sánh đáp án theo TEXT
     const sameAnswer = areAnswersSame(
       { options: question.options, correct_answer: question.correct_answer },
       { options: existing.options, correct_answer: existing.correct_answer }
     )
-    
+
+    const existingInfo: ExistingQuestionInfo = {
+      _id: String(existing._id),
+      question_id: existing.question_id,
+      text: existing.text,
+      options: existing.options,
+      correct_answer: existing.correct_answer,
+      explanation: existing.explanation,
+      used_in_quizzes: existing.used_in_quizzes || [],
+      used_in_quiz_ids: (existing.used_in_quiz_ids || []).map((id: any) => String(id)),
+      usage_count: existing.usage_count || 1,
+    }
+
     conflicts.set(index, {
       hasConflict: true,
-      existingQuestion: {
-        _id: String(existing._id),
-        text: existing.text,
-        options: existing.options,
-        correct_answer: existing.correct_answer,
-        explanation: existing.explanation,
-        used_in_quizzes: existing.used_in_quizzes || [],
-        used_in_quiz_ids: (existing.used_in_quiz_ids || []).map((id: any) => String(id)),
-        usage_count: existing.usage_count
-      },
+      existingQuestion: existingInfo,
       conflictType: sameAnswer ? 'same_answer' : 'different_answer',
       message: sameAnswer
-        ? `Câu ${index + 1}: Đã tồn tại (dùng ${existing.usage_count} lần)`
+        ? `Câu ${index + 1}: Đã tồn tại (dùng ${existingInfo.usage_count} lần)`
         : ` Câu ${index + 1}: MÂU THUẪN đáp án với câu đã có trong ngân hàng!`
     })
   })
-  
+
   return conflicts
 }
 

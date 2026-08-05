@@ -26,14 +26,16 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     }
 
     const { name } = validation.data
+    const trimmedName = name.trim()
+    const escaped = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    const existing = await Category.findOne({ name })
+    const existing = await Category.findOne({ name: { $regex: `^${escaped}$`, $options: 'i' } })
     if (existing) {
       return NextResponse.json({ error: 'Tên danh mục này đã tồn tại hoặc đang chờ duyệt.' }, { status: 400 })
     }
 
     const category = await Category.create({
-      name,
+      name: trimmedName,
       owner_id: new Types.ObjectId(payload.userId),
       type: 'public',
       is_public: false, // will be true once approved
