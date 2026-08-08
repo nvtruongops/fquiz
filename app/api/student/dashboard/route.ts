@@ -24,64 +24,85 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     await connectDB()
     const userId = new Types.ObjectId(payload.userId)
 
-    // 1. Fetch Recent Activities — completed sessions (thường + mix quiz)
-    const latestSessionIdsByQuiz = await QuizSession.aggregate([
-      {
-        $match: {
-          student_id: userId,
-          status: 'completed',
+    // 1. Parallelize initial aggregate queries and pinned categories lookup (async-parallel)
+    const now = new Date()
+    const [
+      latestSessionIdsByQuiz,
+      latestActiveIdsByQuiz,
+      allCompletedGroupsAgg,
+      pinnedCategories,
+    ] = await Promise.all([
+      QuizSession.aggregate([
+        {
+          $match: {
+            student_id: userId,
+            status: 'completed',
+          },
         },
-      },
-      { $sort: { completed_at: -1 } },
-      {
-        $group: {
-          _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
-          latestSessionId: { $first: '$_id' },
-          completedAt: { $first: '$completed_at' },
+        { $sort: { completed_at: -1 } },
+        {
+          $group: {
+            _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
+            latestSessionId: { $first: '$_id' },
+            completedAt: { $first: '$completed_at' },
+          },
         },
-      },
-      { $sort: { completedAt: -1 } },
-      { $limit: 10 },
-      { $project: { _id: 0, latestSessionId: 1 } },
+        { $sort: { completedAt: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, latestSessionId: 1 } },
+      ]),
+      QuizSession.aggregate([
+        {
+          $match: {
+            student_id: userId,
+            status: 'active',
+            $or: [
+              { expires_at: { $gt: now } },
+              { expires_at: { $exists: false } },
+              { expires_at: null },
+            ],
+          },
+        },
+        { $sort: { started_at: -1 } },
+        {
+          $group: {
+            _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
+            latestSessionId: { $first: '$_id' },
+            startedAt: { $first: '$started_at' },
+          },
+        },
+        { $sort: { startedAt: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, latestSessionId: 1 } },
+      ]),
+      QuizSession.aggregate([
+        {
+          $match: {
+            student_id: userId,
+            status: 'completed',
+          },
+        },
+        {
+          $group: {
+            _id: {
+              quiz_id: '$quiz_id',
+              mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] },
+            },
+          },
+        },
+        { $project: { _id: 1 } },
+      ]),
+      resolvePinnedCategories(payload.userId),
     ])
 
     const sessionIds = latestSessionIdsByQuiz.map((x) => x.latestSessionId)
-    const recentActivitiesRaw = await QuizSession.find({ _id: { $in: sessionIds } })
-      .sort({ completed_at: -1 })
-      .lean()
-
-    // Exclude expired active sessions (they can't be resumed — validateQuizSessionRequest returns 410).
-    // Flashcard sessions have no expires_at and stay resumable.
-    const now = new Date()
-    const latestActiveIdsByQuiz = await QuizSession.aggregate([
-      {
-        $match: {
-          student_id: userId,
-          status: 'active',
-          $or: [
-            { expires_at: { $gt: now } },
-            { expires_at: { $exists: false } },
-            { expires_at: null },
-          ],
-        },
-      },
-      { $sort: { started_at: -1 } },
-      {
-        $group: {
-          _id: { quiz_id: '$quiz_id', mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] } },
-          latestSessionId: { $first: '$_id' },
-          startedAt: { $first: '$started_at' },
-        },
-      },
-      { $sort: { startedAt: -1 } },
-      { $limit: 10 },
-      { $project: { _id: 0, latestSessionId: 1 } },
-    ])
-
     const activeSessionIds = latestActiveIdsByQuiz.map((x) => x.latestSessionId)
-    const activeActivitiesRaw = await QuizSession.find({ _id: { $in: activeSessionIds } })
-      .sort({ started_at: -1 })
-      .lean()
+
+    // Parallelize fetching raw completed and active sessions
+    const [recentActivitiesRaw, activeActivitiesRaw] = await Promise.all([
+      QuizSession.find({ _id: { $in: sessionIds } }).sort({ completed_at: -1 }).lean(),
+      QuizSession.find({ _id: { $in: activeSessionIds } }).sort({ started_at: -1 }).lean(),
+    ])
 
     // Application-level join for quiz_id without using Mongoose .populate()
     const rawQuizIds = Array.from(
@@ -108,25 +129,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
     })
 
-    // Build a set of ALL (quizId + mode_group) that have completed sessions — used to filter activeOnlyActivities
-    // Query separately (no limit) so active sessions aren't incorrectly shown when a completed session exists outside top 10
-    const allCompletedGroupsAgg = await QuizSession.aggregate([
-      {
-        $match: {
-          student_id: userId,
-          status: 'completed',
-        },
-      },
-      {
-        $group: {
-          _id: {
-            quiz_id: '$quiz_id',
-            mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] },
-          },
-        },
-      },
-      { $project: { _id: 1 } },
-    ])
     const completedQuizModeGroups = new Set(
       allCompletedGroupsAgg.map((x: any) => `${x._id.quiz_id.toString()}::${x._id.mode_group}`)
     )
@@ -215,9 +217,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       ...allActivities.filter(isInProgressActivity),
       ...allActivities.filter((a) => !isInProgressActivity(a)),
     ].slice(0, RECENT_ACTIVITIES_LIMIT)
-
-    // 2. Pinned categories — quick access shortcuts (same data as /explore pins)
-    const pinnedCategories = await resolvePinnedCategories(payload.userId)
 
     return NextResponse.json({
       recentActivities,

@@ -1,5 +1,4 @@
-'use client'
-
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { API_ROUTES } from '@/lib/core/constants/api-routes'
@@ -39,7 +38,10 @@ export interface PinnedCategoryItem {
 export function useStudentDashboard() {
   const { data: authData } = useAuth()
   const user = authData?.user ?? null
-  const isDevOrAdmin = user?.role === 'admin' || user?.role === 'dev'
+  const isDevOrAdmin = useMemo(
+    () => user?.role === 'admin' || user?.role === 'dev',
+    [user?.role]
+  )
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['student', 'dashboard'],
@@ -53,12 +55,27 @@ export function useStudentDashboard() {
     refetchOnWindowFocus: false,
   })
 
-  const recentActivities: ActivityItem[] = data?.recentActivities || []
-  const pinnedCategories: PinnedCategoryItem[] = data?.pinnedCategories || []
-  const primaryIncomplete = recentActivities.find((a: ActivityItem) =>
-    (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted
+  const recentActivities: ActivityItem[] = useMemo(
+    () => data?.recentActivities || [],
+    [data?.recentActivities]
   )
-  const userInitial = (user?.name?.[0] || 'U').toUpperCase()
+
+  const pinnedCategories: PinnedCategoryItem[] = useMemo(
+    () => data?.pinnedCategories || [],
+    [data?.pinnedCategories]
+  )
+
+  const primaryIncomplete = useMemo(
+    () => recentActivities.find((a: ActivityItem) =>
+      (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted
+    ),
+    [recentActivities]
+  )
+
+  const userInitial = useMemo(
+    () => (user?.name?.[0] || 'U').toUpperCase(),
+    [user?.name]
+  )
 
   return {
     user,

@@ -50,6 +50,61 @@ async function resolveQuestion(
  * Returns the current question and submitted answers for a quiz session.
  * Requirements: 13.2, 13.3, 12.3
  */
+function formatSessionPayload(session: any, quiz: any, categoryName: string, totalQuestions: number) {
+  return {
+    _id: session._id,
+    mode: session.mode,
+    status: session.status,
+    current_question_index: session.current_question_index,
+    totalQuestions,
+    user_answers: session.user_answers,
+    courseCode: quiz.course_code,
+    categoryName,
+    title: quiz.title,
+    started_at: session.started_at,
+    paused_at: session.paused_at,
+    total_paused_duration_ms: session.total_paused_duration_ms,
+    is_temp: Boolean(session.is_temp),
+    quiz_id: session.quiz_id,
+    ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
+  }
+}
+
+function formatQuestionResponse(rawQuestion: IQuestion, shouldShowAnswers: boolean) {
+  const base = {
+    _id: rawQuestion._id,
+    text: rawQuestion.text,
+    options: rawQuestion.options,
+    answer_selection_count: getAnswerSelectionCount(rawQuestion),
+    ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
+  }
+  if (shouldShowAnswers) {
+    return {
+      ...base,
+      correct_answer: rawQuestion.correct_answer,
+      explanation: rawQuestion.explanation,
+    }
+  }
+  return base
+}
+
+function resolveQuestionOrderAndTotal(quiz: any, session: any) {
+  let questionOrder = session.question_order
+  let sessionTotalQuestions = questionOrder?.length || 0
+
+  if (!questionOrder || questionOrder.length === 0) {
+    const totalQ = (quiz.question_refs?.length) || (quiz.questions?.length) || 0
+    questionOrder = Array.from({ length: totalQ }, (_, i) => i)
+    sessionTotalQuestions = totalQ
+  }
+  return { questionOrder, sessionTotalQuestions }
+}
+
+/**
+ * GET /api/sessions/[id]
+ * Returns the current question and submitted answers for a quiz session.
+ * Requirements: 13.2, 13.3, 12.3
+ */
 export const GET = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
@@ -68,7 +123,6 @@ export const GET = withAuth(async (
       }, { status: 410 })
     }
 
-    // Handle 'preparing' status — quiz might not be created yet
     if (session.status === 'preparing') {
       return NextResponse.json({
         session: {
@@ -88,19 +142,11 @@ export const GET = withAuth(async (
       }, { status: 200 })
     }
 
-    // Fetch quiz metadata + question refs once (used for order resolution, out-of-bound checks, and question fetching)
     const quiz = await Quiz.findById(session.quiz_id)
       .select('course_code title category_id questions question_refs').lean() as any
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    let questionOrder = session.question_order
-    let sessionTotalQuestions = questionOrder?.length || 0
-
-    if (!questionOrder || questionOrder.length === 0) {
-      const totalQ = (quiz.question_refs?.length) || (quiz.questions?.length) || 0
-      questionOrder = Array.from({ length: totalQ }, (_, i) => i)
-      sessionTotalQuestions = totalQ
-    }
+    const { questionOrder, sessionTotalQuestions } = resolveQuestionOrderAndTotal(quiz, session)
 
     const requestUrl = new URL(req.url)
     const queryParsed = SessionQuestionQuerySchema.safeParse(
@@ -120,99 +166,40 @@ export const GET = withAuth(async (
     // If session is completed or currentIndex is out of bounds, return session info without question
     if (currentIndex < 0 || currentIndex >= sessionTotalQuestions) {
       const categoryName = await resolveCategoryName(quiz.category_id)
-      
-      return NextResponse.json(
-        {
-          session: {
-            _id: session._id,
-            mode: session.mode,
-            status: session.status,
-            current_question_index: session.current_question_index,
-            totalQuestions: sessionTotalQuestions,
-            user_answers: session.user_answers,
-            courseCode: quiz.course_code,
-            categoryName,
-            title: quiz.title,
-            started_at: session.started_at,
-            paused_at: session.paused_at,
-            total_paused_duration_ms: session.total_paused_duration_ms,
-            is_temp: Boolean(session.is_temp),
-            quiz_id: session.quiz_id,
-            ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
-          },
-          question: null,
-        },
-        { status: 200 }
-      )
+      return NextResponse.json({
+        session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
+        question: null,
+      }, { status: 200 })
     }
 
     const actualQuestionIndex = questionOrder[currentIndex]
-    const categoryName = await resolveCategoryName(quiz.category_id)
 
-    // Resolve question: prioritize session.questions_cache if present (e.g. retry-wrong / mix-quiz sessions), fallback to quiz refs/embedded
+    // Parallelize category resolution & question fetching (async-parallel)
     let rawQuestion: IQuestion | null = null
     if (session.questions_cache && session.questions_cache.length > 0 && session.questions_cache[actualQuestionIndex]) {
       rawQuestion = session.questions_cache[actualQuestionIndex] as unknown as IQuestion
     }
-    if (!rawQuestion) {
-      rawQuestion = await resolveQuestion(quiz, actualQuestionIndex)
-    }
+
+    const [categoryName, fetchedQuestion] = await Promise.all([
+      resolveCategoryName(quiz.category_id),
+      rawQuestion ? Promise.resolve(rawQuestion) : resolveQuestion(quiz, actualQuestionIndex),
+    ])
+    rawQuestion = fetchedQuestion
+
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
-    // Req 12.3: exclude correct_answer and explanation when session is not completed
-    // Exception: flashcard mode always needs correct_answer and explanation
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'
     const isImmediateMode = session.mode === 'immediate'
-
-    // Check if the current question index has already been answered by the student
     const isQuestionAnswered = (session.user_answers || []).some(
       (ua: any) => ua.question_index === currentIndex
     )
-
     const shouldShowAnswers = isCompleted || isFlashcardMode || (isImmediateMode && isQuestionAnswered)
 
-    const question = shouldShowAnswers
-      ? {
-          _id: rawQuestion._id,
-          text: rawQuestion.text,
-          options: rawQuestion.options,
-          correct_answer: rawQuestion.correct_answer,
-          explanation: rawQuestion.explanation,
-          answer_selection_count: getAnswerSelectionCount(rawQuestion),
-          ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
-        }
-      : {
-          _id: rawQuestion._id,
-          text: rawQuestion.text,
-          options: rawQuestion.options,
-          answer_selection_count: getAnswerSelectionCount(rawQuestion),
-          ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
-        }
-
-    return NextResponse.json(
-      {
-        session: {
-          _id: session._id,
-          mode: session.mode,
-          status: session.status,
-          current_question_index: session.current_question_index,
-          totalQuestions: sessionTotalQuestions,
-          user_answers: session.user_answers,
-          courseCode: quiz.course_code,
-          categoryName,
-          title: quiz.title,
-          started_at: session.started_at,
-          paused_at: session.paused_at,
-          total_paused_duration_ms: session.total_paused_duration_ms,
-          is_temp: Boolean(session.is_temp),
-          quiz_id: session.quiz_id,
-          ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
-        },
-        question,
-      },
-      { status: 200 }
-    )
+    return NextResponse.json({
+      session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
+      question: formatQuestionResponse(rawQuestion, shouldShowAnswers),
+    }, { status: 200 })
   } catch (err) {
     console.error('GET /api/sessions/[id] error:', err)
     if (err instanceof Error && err.message.includes('MongoDB connection failed')) {

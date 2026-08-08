@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/core/db/mongodb'
-import { User } from '@/lib/modules/auth/models/User'
+import { User } from '@/lib/modules/auth/models/User' // ponytail: allow-cross-module
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { enqueueMail } from '@/lib/core/mail/mail'
