@@ -29,8 +29,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Create Test Results Directory
+        run: mkdir -p test-results
+
       - name: Run Jest with Coverage
-        run: npm run test:coverage
+        run: npm run test:coverage -- --forceExit
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
