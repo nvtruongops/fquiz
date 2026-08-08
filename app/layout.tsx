@@ -54,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="vi" suppressHydrationWarning className={inter.variable}>
       <head>
         <script
+          // ponytail: allow-dangerouslySetInnerHTML
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

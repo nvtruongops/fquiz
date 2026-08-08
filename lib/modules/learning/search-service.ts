@@ -2,7 +2,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { Vocabulary } from '@/lib/modules/learning/models/Vocabulary'
 import { Sentence } from '@/lib/modules/learning/models/Sentence'
 import { GrammarPattern } from '@/lib/modules/learning/models/GrammarPattern'
-import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz' // ponytail: allow-cross-module
 import type { IAIProvider } from '@/lib/core/ai/ai-provider-interface'
 import type { SearchOptions, SearchResult } from '@/lib/core/search/search-provider-interface'
 

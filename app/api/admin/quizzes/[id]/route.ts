@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Types } from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
@@ -88,7 +89,7 @@ export const PUT = withAuth(async (
 
     const duplicateOwnedQuiz = await Quiz.findOne({
       _id: { $ne: id },
-      created_by: new mongoose.Types.ObjectId(payload.userId),
+      created_by: new Types.ObjectId(payload.userId),
       is_saved_from_explore: { $ne: true },
       is_temp: { $ne: true },
       course_code: normalizedCourseCode,

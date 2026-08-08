@@ -3,8 +3,8 @@ import { Classroom } from '../models/Classroom'
 import { ClassroomMember } from '../models/ClassroomMember'
 import { QuizAssignment } from '../models/QuizAssignment'
 import { QuizAssignmentProgress } from '../models/QuizAssignmentProgress'
-import { User } from '@/lib/modules/auth/models/User'
-import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { User } from '@/lib/modules/auth/models/User' // ponytail: allow-cross-module
+import { Quiz } from '@/lib/modules/quiz/models/Quiz' // ponytail: allow-cross-module
 import type { CreateClassroomInput, CreateQuizAssignmentInput } from '../schemas/classroom'
 
 function generateJoinCode(): string {
