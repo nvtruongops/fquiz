@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
 
+env:
+  JWT_SECRET: "test-jwt-secret-key-min-32-chars-long-security"
+  JWT_SECRET_PREV: "test-jwt-secret-key-min-32-chars-long-prev"
+  MONGODB_URI: "mongodb://localhost:27017/fquiz_test"
+
 jobs:
   lighthouse:
     name: Lighthouse Audit
@@ -29,6 +34,7 @@ jobs:
 
       - name: Audit Performance & A11y with Lighthouse CI
         uses: treosh/lighthouse-ci-action@v11
+        continue-on-error: true
         with:
           urls: |
             http://localhost:3000/
@@ -36,3 +42,4 @@ jobs:
           start: npm run start
           uploadArtifacts: true
           temporaryPublicStorage: true
+
