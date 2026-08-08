@@ -37,10 +37,7 @@ jobs:
         uses: treosh/lighthouse-ci-action@v11
         continue-on-error: true
         with:
-          urls: |
-            http://localhost:3000/
-            http://localhost:3000/login
-          start: npm run start
+          configPath: './.lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
 
