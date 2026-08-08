@@ -1,0 +1,20 @@
+{
+  "id": "CODE_QUALITY_SECURITY",
+  "enabled": true,
+  "category": "SECURITY",
+  "severity": "ERROR",
+  "forbiddenPatterns": [
+    {
+      "regex": "eval\\s*\\(",
+      "reason": "Sử dụng hàm eval() gây ra lỗ hổng bảo mật nghiêm trọng (Arbitrary Code Execution)"
+    },
+    {
+      "regex": "dangerouslySetInnerHTML",
+      "reason": "Lạm dụng dangerouslySetInnerHTML có nguy cơ bị tấn công Cross-Site Scripting (XSS)"
+    },
+    {
+      "regex": "(?:AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|xox[baprs]-[0-9a-zA-Z]{10,48})",
+      "reason": "Phát hiện Hardcoded Secret Tokens / API Keys trong mã nguồn"
+    }
+  ]
+}

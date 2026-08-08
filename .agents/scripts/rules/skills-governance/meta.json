@@ -1,0 +1,11 @@
+{
+  "id": "SKILLS_GOVERNANCE",
+  "name": "Skills Integrity & Registration Validation",
+  "category": "GOVERNANCE",
+  "severity": "ERROR",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "description": "Kiểm tra tính hợp lệ của tất cả các skills trong thư mục .agents/skills (bắt buộc chứa SKILL.md có YAML frontmatter name & description)."
+}

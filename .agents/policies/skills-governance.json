@@ -1,0 +1,8 @@
+{
+  "id": "SKILLS_GOVERNANCE",
+  "enabled": true,
+  "category": "GOVERNANCE",
+  "severity": "ERROR",
+  "skillsDir": ".agents/skills",
+  "requiredFiles": ["SKILL.md"]
+}

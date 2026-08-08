@@ -1,0 +1,18 @@
+{
+  "id": "CROSS_MODULE_BOUNDARY",
+  "enabled": true,
+  "category": "ARCHITECTURE",
+  "severity": "ERROR",
+  "description": "Đảm bảo nguyên tắc độc lập giữa các module (quiz, auth, learning, community, ai): không import Model chéo và không dùng Mongoose .populate().",
+  "moduleDir": "lib/modules",
+  "forbiddenImports": [
+    {
+      "regex": "from\\s+['\"]@/lib/modules/([^/'\"]+)/models",
+      "reason": "Vi phạm ranh giới Module: Không được import trực tiếp Model Mongoose của module khác. Sử dụng ObjectId + Repository/Service interface."
+    },
+    {
+      "regex": "\\.populate\\s*\\(",
+      "reason": "Vi phạm quy chuẩn DB fquiz: Không sử dụng Mongoose .populate(). Sử dụng batch query với $in cho application-level joins."
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": "1.4.0",
+  "skills": {
+    "using-superpowers": {
+      "type": "builtin",
+      "provider": "ide-platform",
+      "priority": 100,
+      "executionMode": "exclusive",
+      "capabilities": ["meta:skill-invocation", "meta:workflow"],
+      "description": "Establishes skill invocation workflows before any response."
+    },
+    "brainstorming": {
+      "type": "builtin",
+      "provider": "ide-platform",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["meta:brainstorming", "meta:design-exploration"],
+      "description": "Explores user intent, requirements, and design options."
+    },
+    "writing-plans": {
+      "type": "builtin",
+      "provider": "ide-platform",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["meta:planning", "meta:implementation-plan"],
+      "description": "Drafts multi-step execution plans."
+    },
+    "executing-plans": {
+      "type": "builtin",
+      "provider": "ide-platform",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["meta:plan-execution", "meta:checkpoints"],
+      "description": "Executes written implementation plans with checkpoints."
+    },
+    "codegraph": {
+      "type": "mcp",
+      "provider": "codegraph-mcp",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["codegraph:ast", "codegraph:call-edges", "codegraph:impact-analysis"],
+      "description": "Queries codebase AST dependency graph database (./.codegraph/codegraph.db)."
+    },
+    "ponytail": {
+      "type": "builtin",
+      "provider": "ide-platform",
+      "priority": 80,
+      "executionMode": "sequential",
+      "capabilities": ["meta:ponytail-mode", "meta:minimal-code", "meta:root-cause-debug"],
+      "description": "Lazy senior developer mode for minimal code diffs and zero bloat."
+    },
+    "fquiz-workflow": {
+      "type": "local",
+      "path": ".agents/skills/fquiz-workflow/SKILL.md",
+      "priority": 100,
+      "executionMode": "exclusive",
+      "capabilities": ["arch:module-boundaries", "arch:text-only-learning", "arch:dependency-inversion"],
+      "description": "Mandatory development workflow and architectural standards for FQuiz."
+    },
+    "fquiz-code-refactor-performance": {
+      "type": "local",
+      "path": ".agents/skills/fquiz-code-refactor-performance/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["perf:refactor", "perf:fat-page-split", "perf:mongodb-lean"],
+      "description": "Code refactoring, line-count reduction, and performance optimization for FQuiz."
+    },
+    "fquiz-network-optimization": {
+      "type": "local",
+      "path": ".agents/skills/fquiz-network-optimization/SKILL.md",
+      "priority": 80,
+      "executionMode": "sequential",
+      "capabilities": ["net:prefetch-control", "net:tanstack-cache", "net:batch-query"],
+      "description": "Network and data-loading optimization standards for FQuiz."
+    },
+    "fquiz-gsap-ui-ux": {
+      "type": "local",
+      "path": ".agents/skills/fquiz-gsap-ui-ux/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["ui:gsap-animation", "ui:micro-interactions", "perf:gsap-react-cleanup"],
+      "description": "GSAP UI/UX animation standards and performance optimization for FQuiz."
+    }
+  }
+}

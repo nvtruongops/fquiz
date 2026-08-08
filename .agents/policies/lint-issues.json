@@ -1,0 +1,9 @@
+{
+  "id": "LINT_ISSUES",
+  "enabled": true,
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "checkEmptyCatch": true,
+  "checkUnreachableCode": true,
+  "checkExplicitAny": false
+}

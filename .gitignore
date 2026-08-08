@@ -74,7 +74,7 @@ codegraph.mcp.json
 
 # Task documents & migration scripts (sensitive internal docs & exec scripts)
 task/
-scripts/
+/scripts/
 Docs/
 .kilo/
 .playwright-mcp/
@@ -83,9 +83,9 @@ Docs/
 scripts/.env.local
 .scannerwork/
 
-# Local Agents & MCP Config
-.agents/
-.agents
+# Local Agents & MCP Config (tracked for governance)
+!.agents/
+!.agents/**
 
 # Exported Database Dumps
 data/

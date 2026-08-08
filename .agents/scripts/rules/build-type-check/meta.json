@@ -1,0 +1,12 @@
+{
+  "id": "BUILD_TYPE_CHECK",
+  "name": "TypeScript Type-Check & Compiler Validation",
+  "category": "CODE_QUALITY",
+  "severity": "ERROR",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "estimatedCost": "medium",
+  "description": "Tự động thực thi TypeScript Compiler (tsc --noEmit) kiểm tra toàn bộ lỗi Cú pháp JSX và Type Check mã nguồn fquiz."
+}

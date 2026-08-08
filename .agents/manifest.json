@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "fquiz AI Agent Governance System",
+  "governanceVersion": "1.4.0",
+  "registryPath": ".agents/registry.json",
+  "pipelinePath": ".agents/pipeline.json",
+  "compatibility": {
+    "minRepositoryVersion": "1.0.0",
+    "targetStack": [
+      "nextjs-16",
+      "mongodb-mongoose",
+      "react-18",
+      "tailwind-3",
+      "zustand-5",
+      "tanstack-query-5",
+      "gsap-3"
+    ]
+  },
+  "description": "Rulesets, Guardrails, Architecture Boundaries, Registry, and Verification Engine for fquiz AI Pair Programming."
+}
