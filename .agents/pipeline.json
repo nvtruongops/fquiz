@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "governanceVersion": "1.4.0",
+  "pipelineName": "fquiz-feature-development-pipeline",
+  "description": "Standard multi-stage DAG workflow pipeline for fquiz AI Agent task orchestration",
+  "workflowStages": [
+    {
+      "step": 1,
+      "id": "using_superpowers",
+      "name": "Method & Skill Selection",
+      "skill": "using-superpowers",
+      "provider": "builtin",
+      "priority": 100,
+      "executionMode": "exclusive",
+      "dependsOn": [],
+      "condition": ["always"],
+      "description": "Select appropriate approach (brainstorming for features, systematic-debugging for bugs)."
+    },
+    {
+      "step": 2,
+      "id": "planning",
+      "name": "Planning & Scope Alignment",
+      "skill": "writing-plans",
+      "provider": "builtin",
+      "priority": 90,
+      "executionMode": "sequential",
+      "dependsOn": ["using_superpowers"],
+      "condition": ["new_feature", "architecture_change", "multi_step"],
+      "description": "Draft implementation plan detailing technical design and verification steps."
+    },
+    {
+      "step": 3,
+      "id": "codegraph_impact",
+      "name": "Conditional CodeGraph Traversal",
+      "skill": "codegraph",
+      "provider": "mcp",
+      "priority": 85,
+      "executionMode": "sequential",
+      "dependsOn": ["planning"],
+      "condition": ["refactor", "rename", "move", "delete", "cross_file_impact"],
+      "description": "Query ./.codegraph/codegraph.db to analyze cross-file call edges and impact scope."
+    },
+    {
+      "step": 4,
+      "id": "implementation",
+      "name": "Ponytail Guided Implementation",
+      "skill": "ponytail",
+      "provider": "builtin",
+      "priority": 80,
+      "executionMode": "sequential",
+      "dependsOn": ["planning"],
+      "condition": ["always"],
+      "description": "Execute minimal working diff, fixing root cause with zero bloat."
+    },
+    {
+      "step": 5,
+      "id": "automated_verification",
+      "name": "Rule Engine Verification",
+      "script": "node .agents/scripts/verify.js --strict",
+      "provider": "local",
+      "priority": 100,
+      "executionMode": "exclusive",
+      "dependsOn": ["implementation"],
+      "condition": ["always"],
+      "gate": "Exit code 0 required",
+      "description": "Run strict rule engine verification script. Task passes only when 0 errors and 0 warnings are output."
+    }
+  ]
+}

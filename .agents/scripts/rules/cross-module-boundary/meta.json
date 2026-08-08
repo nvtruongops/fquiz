@@ -1,0 +1,11 @@
+{
+  "id": "CROSS_MODULE_BOUNDARY",
+  "name": "Cross-Module Boundaries & Database Query Standards Validation",
+  "category": "ARCHITECTURE",
+  "severity": "ERROR",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "description": "Đảm bảo ranh giới mô-đun fquiz (không import Model chéo giữa lib/modules/*) và cấm sử dụng Mongoose .populate()."
+}

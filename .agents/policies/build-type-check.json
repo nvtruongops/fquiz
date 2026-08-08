@@ -1,0 +1,7 @@
+{
+  "id": "BUILD_TYPE_CHECK",
+  "enabled": true,
+  "command": "npx tsc --noEmit",
+  "category": "CODE_QUALITY",
+  "severity": "ERROR"
+}

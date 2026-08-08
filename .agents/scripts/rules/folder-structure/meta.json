@@ -1,0 +1,11 @@
+{
+  "id": "FOLDER_STRUCTURE",
+  "name": "Folder Structure Integrity Validation",
+  "category": "ARCHITECTURE",
+  "severity": "ERROR",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "description": "Kiểm tra tính toàn vẹn cấu trúc thư mục quy chuẩn fquiz (app, components, lib/modules, lib/core, hooks)."
+}

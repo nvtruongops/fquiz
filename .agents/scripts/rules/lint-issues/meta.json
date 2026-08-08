@@ -1,0 +1,11 @@
+{
+  "id": "LINT_ISSUES",
+  "name": "Lint Issues & Code Hygiene Validation",
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "description": "Kiểm tra các vi phạm lint cơ bản: rỗng catch block, unreachable code, lạm dụng explicit any."
+}

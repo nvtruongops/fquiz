@@ -1,0 +1,12 @@
+{
+  "id": "ESLINT_VALIDATION",
+  "name": "ESLint Code Quality & Security Audit",
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "estimatedCost": "medium",
+  "description": "Thực thi ESLint kiểm tra chuẩn TypeScript, React, SonarJS Cognitive Complexity và Security audit cho ứng dụng fquiz."
+}

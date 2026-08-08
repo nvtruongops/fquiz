@@ -1,0 +1,7 @@
+{
+  "id": "ESLINT_VALIDATION",
+  "enabled": true,
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "targetDirs": ["app", "components", "lib", "hooks", "store"]
+}

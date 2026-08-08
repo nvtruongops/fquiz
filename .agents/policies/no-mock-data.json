@@ -1,0 +1,13 @@
+{
+  "id": "NO_MOCK_DATA",
+  "enabled": true,
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "searchDirs": ["app/api", "lib/modules"],
+  "forbiddenPatterns": [
+    {
+      "regex": "const\\s+mock[A-Z]\\w+\\s*=",
+      "reason": "Phát hiện khai báo mock object trực tiếp trong môi trường production code"
+    }
+  ]
+}

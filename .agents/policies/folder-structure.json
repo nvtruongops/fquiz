@@ -1,0 +1,15 @@
+{
+  "id": "FOLDER_STRUCTURE",
+  "enabled": true,
+  "category": "ARCHITECTURE",
+  "severity": "ERROR",
+  "requiredPaths": [
+    "app",
+    "app/api",
+    "components",
+    "lib/core",
+    "lib/modules",
+    "hooks",
+    ".agents/skills"
+  ]
+}
