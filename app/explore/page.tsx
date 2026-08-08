@@ -10,6 +10,8 @@ import AppLayout from '@/components/layout/AppLayout'
 import { Sparkles, Compass } from 'lucide-react'
 import * as motion from 'framer-motion/client'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Khám phá Môn Học & Đề Thi | FQuiz',
   description: 'Tìm kiếm và khám phá thư viện câu hỏi trắc nghiệm đa chuyên ngành trên FQuiz.',
