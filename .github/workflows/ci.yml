@@ -10,6 +10,8 @@ env:
   JWT_SECRET: "test-jwt-secret-key-min-32-chars-long-security"
   JWT_SECRET_PREV: "test-jwt-secret-key-min-32-chars-long-prev"
   MONGODB_URI: "mongodb://localhost:27017/fquiz_test"
+  CI: "true"
+  NODE_ENV: "test"
 
 jobs:
   ci:
@@ -27,7 +29,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run Rule Engine Verification (Strict Mode)
         run: node .agents/scripts/verify.js --strict
