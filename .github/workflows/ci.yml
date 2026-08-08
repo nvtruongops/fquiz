@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  JWT_SECRET: "test-jwt-secret-key-min-32-chars-long-security"
+  JWT_SECRET_PREV: "test-jwt-secret-key-min-32-chars-long-prev"
+  MONGODB_URI: "mongodb://localhost:27017/fquiz_test"
+
 jobs:
   ci:
     name: Verification & Build
@@ -21,11 +26,11 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Run Rule Engine Verification (Strict Mode)
-        run: node .agents/scripts/verify.js --strict
-
       - name: Install Dependencies
         run: npm ci
+
+      - name: Run Rule Engine Verification (Strict Mode)
+        run: node .agents/scripts/verify.js --strict
 
       - name: Run ESLint
         run: npm run lint
@@ -43,4 +48,5 @@ jobs:
 
       - name: Build Next.js Application
         run: npm run build
+
 
