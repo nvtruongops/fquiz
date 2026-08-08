@@ -36,8 +36,11 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
+      - name: Create Test Results Directory
+        run: mkdir -p test-results
+
       - name: Run Unit Tests
-        run: npm test
+        run: npm test -- --forceExit
 
       - name: Cache Next.js Build Artifacts
         uses: actions/cache@v4
