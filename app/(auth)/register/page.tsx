@@ -58,8 +58,8 @@ export default function RegisterPage() {
     const raw = params.get('callbackUrl') || params.get('redirect')
     if (raw) {
       let decoded = raw
-      try { decoded = decodeURIComponent(decoded) } catch {}
-      try { decoded = decodeURIComponent(decoded) } catch {}
+      try { decoded = decodeURIComponent(decoded) } catch (_err) { /* ignore URI malformed */ }
+      try { decoded = decodeURIComponent(decoded) } catch (_err) { /* ignore URI malformed */ }
       if (decoded.startsWith('/') && !decoded.startsWith('//')) {
         const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(decoded)
         if (!isAuthOrRoot) {

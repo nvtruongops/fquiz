@@ -349,7 +349,7 @@ function QuestionItem({
                   </span>
                   {option}
                   {isCorrect && (
-                    <span className="ml-2 text-green-600 font-bold">✓</span>
+                    <span className="ml-2 text-success-fg font-bold">✓</span>
                   )}
                 </div>
               )

@@ -290,7 +290,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 <div className="h-48 flex flex-col items-center justify-center text-center p-6 bg-muted/60 rounded-xl border border-border text-muted-foreground space-y-2">
                   <EyeOff className="w-8 h-8 text-primary/60" />
                   <p className="text-xs font-bold text-card-foreground">Đáp án mặt sau đang ẩn</p>
-                  <p className="text-[11px] text-muted-foreground">Ấn nút "Hiện đáp án mặt sau" ở góc trên để mở đáp án.</p>
+                  <p className="text-[11px] text-muted-foreground">Ấn nút &quot;Hiện đáp án mặt sau&quot; ở góc trên để mở đáp án.</p>
                 </div>
               )}
             </div>

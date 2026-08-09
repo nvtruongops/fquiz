@@ -121,7 +121,9 @@ export function useAIHistory() {
     if (selectedLog.prompt) {
       try {
         return typeof selectedLog.prompt === 'string' ? JSON.parse(selectedLog.prompt) : selectedLog.prompt
-      } catch {}
+      } catch (_parseErr) {
+        /* ignore invalid JSON prompt string */
+      }
     }
     return {}
   }, [selectedLog])

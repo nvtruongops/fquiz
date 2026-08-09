@@ -40,11 +40,33 @@ export interface NormalizedQuiz {
   questions: NormalizedQuestion[]
 }
 
+export interface QuestionStructureReport {
+  total: number
+  standardCount: number
+  nonStandardCount: number
+  singleCorrectCount: number
+  multiCorrectCount: number
+  multiCorrectBreakdown: Record<number, number>
+  zeroCorrectCount: number
+  fourOptionsCount: number
+  lessThanFourOptionsCount: number
+  lessThanFourBreakdown: Record<number, number>
+  moreThanFourOptionsCount: number
+  moreThanFourBreakdown: Record<number, number>
+  nonStandardQuestions: Array<{
+    questionIndex: number
+    optionCount: number
+    correctCount: number
+    reasons: string[]
+  }>
+}
+
 export interface ImportPreviewResult {
   normalizedQuiz: NormalizedQuiz
   diagnostics: ImportDiagnostic[]
   summary: ImportSummary
   isValid: boolean
+  structureReport?: QuestionStructureReport
 }
 
 export interface ImportRawQuestion {

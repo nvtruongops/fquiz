@@ -11,8 +11,7 @@ function isAuthorized(req: Request): boolean {
   const cronSecret = process.env.CRON_SECRET
 
   if (!cronSecret) {
-    if (process.env.NODE_ENV === 'production') return false
-    return true // Allow unauthenticated execution only in local dev if CRON_SECRET is missing
+    return process.env.NODE_ENV !== 'production'
   }
 
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null

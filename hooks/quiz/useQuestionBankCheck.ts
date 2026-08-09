@@ -63,13 +63,13 @@ export function useQuestionBankCheck({
   const debouncedQuestions = useDebounce(questions, debounceMs)
 
   const checkQuestions = useCallback(async () => {
-    if (!enabled || !categoryId || questions.length === 0) {
+    if (!enabled || !categoryId || debouncedQuestions.length === 0) {
       setResult(null)
       return
     }
 
     // Chỉ check câu hỏi có nội dung
-    const validQuestions = questions.filter(
+    const validQuestions = debouncedQuestions.filter(
       q => q.text.trim() && q.options.some(o => o.trim())
     )
 
@@ -111,7 +111,7 @@ export function useQuestionBankCheck({
     } finally {
       setChecking(false)
     }
-  }, [categoryId, questions, enabled])
+  }, [categoryId, debouncedQuestions, enabled])
 
   // Auto-check khi questions thay đổi (debounced)
   useEffect(() => {

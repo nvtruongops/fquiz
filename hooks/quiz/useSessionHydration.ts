@@ -74,7 +74,6 @@ export function useSessionHydration({
     }
     if (err.code === 'SESSION_EXPIRED' || err.status === 410) {
       router.replace(`${targetUrl}?reason=session_expired`)
-      return
     }
   }, [initialError, quizId, router])
 

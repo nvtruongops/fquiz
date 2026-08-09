@@ -11,6 +11,8 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuestionBankWarning } from '@/hooks/quiz/useQuestionBankWarning'
 import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
 import { extractApiErrorMessage } from '@/lib/core/utils/error-utils'
+import { analyzeQuestionStructure } from '@/lib/modules/quiz/quiz-import/analyzer'
+import { checkDuplicateQuestions } from '@/lib/modules/quiz/quiz-import/duplicate-checker'
 import { Category, QuizFormData, QuestionForm } from '@/lib/modules/quiz/types/quiz'
 import { ImportedQuiz } from '@/components/quiz/question-bank/QuizImportPanel'
 
@@ -32,6 +34,7 @@ export interface QuizEditorOptions {
     fn: (resolutions: Array<{ questionIndex: number; correct_answer: number[]; options: string[] }>) => void
   ) => void
   onServerConflict?: (conflicts: any) => void
+  onConflictsResolved?: () => void
 }
 
 function emptyQuestion(): QuestionForm {
@@ -58,6 +61,7 @@ export function useQuizEditor(options: QuizEditorOptions) {
     onBeforeSubmit,
     registerApplyResolutions,
     onServerConflict,
+    onConflictsResolved,
   } = options
 
   const router = useRouter()
@@ -66,7 +70,7 @@ export function useQuizEditor(options: QuizEditorOptions) {
   const DRAFT_KEY = 'quiz_editor_draft_id'
 
   const [activeQuizId, setActiveQuizId] = useState<string | undefined>(() => {
-    return quizId || (typeof window !== 'undefined' ? sessionStorage.getItem(DRAFT_KEY) ?? undefined : undefined)
+    return quizId
   })
 
   const isStudentMode = mode === 'student'
@@ -113,6 +117,14 @@ export function useQuizEditor(options: QuizEditorOptions) {
   const [importPreviewErrors, setImportPreviewErrors] = useState<Array<{ code: string; message: string; questionIndex?: number }>>([])
   const [showImportPanel, setShowImportPanel] = useState(false)
   const [isImportProcessing, setIsImportProcessing] = useState(false)
+  const [appliedStructureReport, setAppliedStructureReport] = useState<any | null>(null)
+  const [appliedImportSummary, setAppliedImportSummary] = useState<{
+    summary: { totalQuestions: number; validQuestions: number; errors: number; warnings: number }
+    isValid: boolean
+    sameAnswerCount: number
+    differentAnswerCount: number
+    diagnostics?: Array<{ level?: 'error' | 'warning'; code?: string; message: string; questionIndex?: number }>
+  } | null>(null)
   const importEnabled = process.env.NEXT_PUBLIC_ENABLE_QUIZ_IMPORT !== 'false'
 
   const { checkQuestionUsage, usageInfo, clearUsageInfo } = useQuestionBankWarning(form.category_id)
@@ -552,7 +564,14 @@ export function useQuizEditor(options: QuizEditorOptions) {
     doSave('published')
   }, [form, doSave])
 
-  const handleApplyImportedQuiz = (importedQuiz: ImportedQuiz) => {
+  const handleApplyImportedQuiz = (
+    importedQuiz: ImportedQuiz,
+    importInfo?: {
+      bankCheck?: any
+      previewSummary?: { totalQuestions: number; validQuestions: number; errors: number; warnings: number }
+      diagnostics?: Array<{ level?: 'error' | 'warning'; code?: string; message: string; questionIndex?: number }>
+    }
+  ) => {
     const mappedQuestions = importedQuiz.questions.map((q) => ({
       question_no: q.question_no,
       data: {
@@ -634,9 +653,33 @@ export function useQuizEditor(options: QuizEditorOptions) {
       setTargetInput(String(nextLength))
     }
 
+    const report = analyzeQuestionStructure(
+      importedQuiz.questions.map((q) => ({
+        options: q.options,
+        correct_answer: q.correct_answer,
+      }))
+    )
+    setAppliedStructureReport(report)
+
+    if (importInfo?.previewSummary) {
+      setAppliedImportSummary({
+        summary: importInfo.previewSummary,
+        isValid: (importInfo.previewSummary.errors ?? 0) === 0,
+        sameAnswerCount: importInfo.bankCheck?.same_answer_conflicts ?? 0,
+        differentAnswerCount: importInfo.bankCheck?.different_answer_conflicts ?? 0,
+        diagnostics: importInfo.diagnostics,
+      })
+    }
+
     setHasImportBlockingErrors(false)
     setImportPreviewErrors([])
     setShowImportPanel(false)
+    onConflictsResolved?.()
+
+    if ((importedCategoryToken || importedCourseCode) && !matchedCategory) {
+      toast.error(`Không tìm thấy môn học khớp với "${importedCategoryToken || importedCourseCode}". Vui lòng chọn môn học thủ công.`)
+    }
+
     if (overwriteCount > 0) {
       toast.success(`Đã áp dụng file: thêm ${addedCount} câu, ghi đè ${overwriteCount} câu trùng số.`)
     } else {
@@ -644,7 +687,98 @@ export function useQuizEditor(options: QuizEditorOptions) {
     }
   }
 
+  const reanalyzeFormQuestions = useCallback(() => {
+    const mapped = form.questions.map((q) => ({
+      text: q.text,
+      options: q.options || [],
+      correct_answer: q.correct_answers || [],
+    }))
+    const freshReport = analyzeQuestionStructure(mapped)
+    setAppliedStructureReport(freshReport)
+
+    const freshDiagnostics: Array<{ level: 'error' | 'warning'; code: string; message: string; questionIndex?: number }> = []
+
+    // 1. Dynamic Duplicate Question check across active form questions (re-calculates indices live)
+    const duplicateDiagnostics = checkDuplicateQuestions(mapped)
+    freshDiagnostics.push(...duplicateDiagnostics)
+
+    // 2. Question-level validation
+    form.questions.forEach((q, idx) => {
+      if (!q.text.trim()) {
+        freshDiagnostics.push({
+          level: 'error',
+          code: 'EMPTY_TEXT',
+          message: `Câu ${idx + 1}: Nội dung câu hỏi rỗng`,
+          questionIndex: idx,
+        })
+      }
+      const validOpts = (q.options || []).filter((o) => o.trim())
+      if (validOpts.length < 2) {
+        freshDiagnostics.push({
+          level: 'error',
+          code: 'TOO_FEW_OPTIONS',
+          message: `Câu ${idx + 1}: Cần ít nhất 2 phương án`,
+          questionIndex: idx,
+        })
+      }
+      if (!q.correct_answers || q.correct_answers.length === 0) {
+        freshDiagnostics.push({
+          level: 'warning',
+          code: 'NO_CORRECT_ANSWER',
+          message: `Câu ${idx + 1}: Chưa chọn đáp án đúng`,
+          questionIndex: idx,
+        })
+      }
+    })
+
+    // 3. Metadata field check (only add if still missing in form)
+    if (!form.course_code) {
+      freshDiagnostics.push({
+        level: 'warning',
+        code: 'MISSING_COURSE_CODE',
+        message: 'Thiếu Fquiz code (quizMeta.course_code) - có thể nhập thủ công trong form trước khi lưu',
+      })
+    }
+    if (!form.category_id) {
+      freshDiagnostics.push({
+        level: 'warning',
+        code: 'MISSING_CATEGORY_ID',
+        message: 'Thiếu category_id - có thể chọn môn học trong form trước khi lưu',
+      })
+    }
+    if (!form.description) {
+      freshDiagnostics.push({
+        level: 'warning',
+        code: 'MISSING_DESCRIPTION',
+        message: 'Thiếu quiz description (quizMeta.description) - có thể bỏ qua hoặc nhập thêm trong form',
+      })
+    }
+
+    const errorCount = freshDiagnostics.filter((d) => d.level === 'error').length
+    const warningCount = freshDiagnostics.filter((d) => d.level === 'warning').length
+
+    setAppliedImportSummary({
+      summary: {
+        totalQuestions: form.questions.length,
+        validQuestions: form.questions.length - errorCount,
+        errors: errorCount,
+        warnings: warningCount,
+      },
+      isValid: errorCount === 0,
+      sameAnswerCount: appliedImportSummary?.sameAnswerCount ?? 0,
+      differentAnswerCount: appliedImportSummary?.differentAnswerCount ?? 0,
+      diagnostics: freshDiagnostics,
+    })
+
+    if (freshDiagnostics.length === 0) {
+      toast.success('Đã cập nhật báo cáo: Không còn câu trùng hay lỗi nào trong form!')
+    } else {
+      toast.success(`Đã cập nhật vị trí mới: Còn ${errorCount} lỗi và ${warningCount} cảnh báo.`)
+    }
+  }, [form.questions, form.course_code, form.category_id, form.description, appliedImportSummary])
+
   return {
+    activeQuizId,
     form, setForm,
     targetInput, setTargetInput,
     applyTargetCount,
@@ -668,6 +802,9 @@ export function useQuizEditor(options: QuizEditorOptions) {
     importEnabled,
     showImportPanel, setShowImportPanel,
     handleApplyImportedQuiz,
+    appliedStructureReport, setAppliedStructureReport,
+    appliedImportSummary, setAppliedImportSummary,
+    reanalyzeFormQuestions,
     setHasImportBlockingErrors,
     setImportPreviewErrors,
     setIsImportProcessing,

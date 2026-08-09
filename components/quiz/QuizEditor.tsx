@@ -21,6 +21,7 @@ const QuizImportPanel = dynamic(
 import { QuestionBankWarning } from '@/components/quiz/question-bank/QuestionBankWarning'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 
+import { QuestionStructureReportCard } from '@/components/quiz/question-bank/QuestionStructureReportCard'
 import { EditorMetadataForm } from '@/components/quiz/editor/EditorMetadataForm'
 import { QuestionEditorCard } from '@/components/quiz/editor/QuestionEditorCard'
 import { EditorProgressHub } from '@/components/quiz/editor/EditorProgressHub'
@@ -45,6 +46,7 @@ interface Props {
     fn: (resolutions: Array<{ questionIndex: number; correct_answer: number[]; options: string[] }>) => void
   ) => void
   onServerConflict?: (conflicts: any) => void
+  onConflictsResolved?: () => void
 }
 
 export function QuizEditor(props: Props) {
@@ -63,9 +65,11 @@ export function QuizEditor(props: Props) {
     onFormChange,
     registerApplyResolutions,
     onServerConflict,
+    onConflictsResolved,
   } = props
 
   const {
+    activeQuizId,
     form, setForm,
     targetInput, setTargetInput,
     applyTargetCount,
@@ -89,6 +93,9 @@ export function QuizEditor(props: Props) {
     importEnabled,
     showImportPanel, setShowImportPanel,
     handleApplyImportedQuiz,
+    appliedStructureReport, setAppliedStructureReport,
+    appliedImportSummary, setAppliedImportSummary,
+    reanalyzeFormQuestions,
     setHasImportBlockingErrors,
     setImportPreviewErrors,
     setIsImportProcessing,
@@ -113,10 +120,16 @@ export function QuizEditor(props: Props) {
     onBeforeSubmit,
     registerApplyResolutions,
     onServerConflict,
+    onConflictsResolved,
+  })
+
+  const onFormChangeRef = React.useRef(onFormChange)
+  React.useEffect(() => {
+    onFormChangeRef.current = onFormChange
   })
 
   React.useEffect(() => {
-    onFormChange?.({
+    onFormChangeRef.current?.({
       category_id: form.category_id,
       questions: form.questions.map((q) => ({
         text: q.text,
@@ -124,7 +137,7 @@ export function QuizEditor(props: Props) {
         correct_answer: q.correct_answers,
       })),
     })
-  }, [form.category_id, form.questions, onFormChange])
+  }, [form.category_id, form.questions])
 
   return (
     <div className={cn(isStudentMode ? "w-full" : "p-4 sm:p-8 bg-background min-h-screen")}>
@@ -144,6 +157,7 @@ export function QuizEditor(props: Props) {
               setForm={setForm}
               categories={categories}
               isStudentMode={isStudentMode}
+              quizId={activeQuizId || quizId}
             />
 
             {!isStudentMode && !form.category_id && (
@@ -187,7 +201,34 @@ export function QuizEditor(props: Props) {
                     }
                     onProcessingStateChange={setIsImportProcessing}
                     categoryId={form.category_id}
+                    courseCode={form.course_code}
+                    description={form.description}
                     mode={mode}
+                  />
+                )}
+
+                {appliedStructureReport && (
+                  <QuestionStructureReportCard
+                    report={appliedStructureReport}
+                    importSummary={appliedImportSummary ? {
+                      totalQuestions: appliedImportSummary.summary.totalQuestions,
+                      validQuestions: appliedImportSummary.summary.validQuestions,
+                      errors: appliedImportSummary.summary.errors,
+                      warnings: appliedImportSummary.summary.warnings,
+                      isValid: appliedImportSummary.isValid,
+                    } : undefined}
+                    bankStatus={appliedImportSummary ? {
+                      sameAnswerCount: appliedImportSummary.sameAnswerCount,
+                      differentAnswerCount: appliedImportSummary.differentAnswerCount,
+                    } : undefined}
+                    diagnostics={appliedImportSummary?.diagnostics}
+                    onSelectQuestion={scrollToQuestion}
+                    onReanalyze={reanalyzeFormQuestions}
+                    onClose={() => {
+                      setAppliedStructureReport(null)
+                      setAppliedImportSummary(null)
+                    }}
+                    className="mb-4"
                   />
                 )}
 
@@ -223,20 +264,7 @@ export function QuizEditor(props: Props) {
             )}
           </div>
 
-          <aside className="w-full lg:w-80 space-y-6 lg:sticky lg:top-8">
-            <EditorProgressHub
-              diagnostics={{
-                total: diagnostics.summary.totalQuestions,
-                complete: diagnostics.summary.completedQuestions,
-                percent: diagnostics.progressPercent,
-                isValid: diagnostics.isValid,
-                errors: [...diagnostics.errors, ...diagnostics.warnings]
-              }}
-              autosaving={autosaving}
-              lastSavedAt={lastSavedAt}
-              onScrollToQuestion={scrollToQuestion}
-            />
-
+          <aside className="w-full lg:w-80 space-y-3 lg:sticky lg:top-6">
             <EditorControlPanel
               targetInput={targetInput}
               setTargetInput={setTargetInput}
@@ -249,6 +277,20 @@ export function QuizEditor(props: Props) {
               canSaveDraft={canSaveDraft}
               isStudentMode={isStudentMode}
               hasCategory={!!form.category_id}
+            />
+
+            <EditorProgressHub
+              diagnostics={{
+                total: diagnostics.summary.totalQuestions,
+                complete: diagnostics.summary.completedQuestions,
+                percent: diagnostics.progressPercent,
+                isValid: diagnostics.isValid,
+                errors: [...diagnostics.errors, ...diagnostics.warnings]
+              }}
+              questions={form.questions}
+              autosaving={autosaving}
+              lastSavedAt={lastSavedAt}
+              onScrollToQuestion={scrollToQuestion}
             />
           </aside>
         </div>

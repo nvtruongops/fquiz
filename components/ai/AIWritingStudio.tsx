@@ -204,7 +204,7 @@ export const AIWritingStudio = React.memo(function AIWritingStudio({
           <Sparkles className="w-8 h-8 text-muted-foreground/60 mx-auto" />
           <h3 className="text-sm font-bold text-card-foreground">Chưa có kết quả đánh giá từ AI</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Hãy sang <strong>Tab Văn bản & Bài làm</strong> để hoàn thành bài viết của bạn và nhấn nút "Nộp bài & AI Đánh giá".
+            Hãy sang <strong>Tab Văn bản & Bài làm</strong> để hoàn thành bài viết của bạn và nhấn nút &quot;Nộp bài & AI Đánh giá&quot;.
           </p>
           <Button
             onClick={() => setWritingSubTab('workspace')}

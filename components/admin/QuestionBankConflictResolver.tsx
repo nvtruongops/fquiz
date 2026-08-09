@@ -253,7 +253,7 @@ export function QuestionBankConflictResolver({
                   </div>
 
                   {/* Options */}
-                  <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 bg-warning-bg border border-warning-border text-warning-fg rounded-lg">
                     <Checkbox
                       id="update-all"
                       checked={updateAllQuizzes}
@@ -263,15 +263,15 @@ export function QuestionBankConflictResolver({
                     />
                     <label
                       htmlFor="update-all"
-                      className="text-sm font-medium cursor-pointer"
+                      className="text-sm font-medium cursor-pointer text-warning-fg"
                     >
                       Cập nhật đáp án đúng cho tất cả quiz có câu hỏi này
                     </label>
                   </div>
 
                   {updateAllQuizzes && (
-                    <Alert className="border-orange-300 bg-orange-50">
-                      <AlertDescription className="text-xs text-orange-800 space-y-1">
+                    <Alert className="border-warning-border bg-warning-bg">
+                      <AlertDescription className="text-xs text-warning-fg space-y-1">
                         <p className="font-bold"> Điều này sẽ xảy ra:</p>
                         <p>• Lưu đáp án đã chọn vào Ngân hàng câu hỏi</p>
                         <p>• Tìm tất cả quiz trong môn học có câu hỏi này</p>
@@ -340,7 +340,7 @@ function ConflictCard({
       }}
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
-          ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500'
+          ? 'bg-primary/10 border-primary ring-2 ring-primary/30'
           : 'bg-card border-border hover:bg-muted'
       }`}
     >
@@ -395,7 +395,7 @@ function VariantCard({
       }}
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
-          ? 'bg-green-50 border-green-300 ring-2 ring-green-500'
+          ? 'bg-success-bg border-success-border ring-2 ring-success-border'
           : 'bg-card border-border hover:bg-muted'
       }`}
     >
@@ -404,7 +404,7 @@ function VariantCard({
           <Badge variant={selected ? 'default' : 'secondary'}>
             {group.count} quiz dùng đáp án này
           </Badge>
-          {selected && <span className="text-green-600 font-bold text-sm">✓ Đã chọn</span>}
+          {selected && <span className="text-success-fg font-bold text-sm">✓ Đã chọn</span>}
         </div>
       </div>
 
