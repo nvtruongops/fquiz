@@ -257,7 +257,7 @@ function MobileFlashcardView({
                     <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
                   )}
                   
-                  <h2 className={cn("font-bold text-card-foreground text-center leading-snug tracking-tight px-1", questionFontSize)}>
+                  <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
                     {question.text}
                   </h2>
 
@@ -298,7 +298,7 @@ function MobileFlashcardView({
                           <span className="w-7 h-7 rounded-xl bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
                             {item.letter}
                           </span>
-                          <p className={cn("font-black text-foreground text-left leading-tight", item.text.length > 100 ? "text-[15px]" : "text-[18px]")}>{item.text}</p>
+                          <p className={cn("font-semibold text-foreground text-left leading-tight", item.text.length > 100 ? "text-[15px]" : "text-[18px]")}>{item.text}</p>
                         </div>
                       ))}
                     </div>
@@ -658,7 +658,7 @@ function StaticMobileFlashcardCard({
                 <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
               )}
               
-              <h2 className={cn("font-bold text-card-foreground text-center leading-snug tracking-tight px-1", questionFontSize)}>
+              <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
                 {question.text}
               </h2>
 
@@ -696,7 +696,7 @@ function StaticMobileFlashcardCard({
                       <span className={cn(
                         "font-medium leading-tight flex-1", 
                         optionFontSize,
-                        isFlipped && isCorrect ? "text-foreground font-black" : "text-card-foreground"
+                        isFlipped && isCorrect ? "text-foreground font-semibold" : "text-card-foreground"
                       )}>
                         {option}
                       </span>

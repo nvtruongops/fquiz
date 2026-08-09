@@ -201,7 +201,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           )}>
             {!isFlipped ? (
               <div className="space-y-4">
-                <h2 className={cn('font-black text-card-foreground leading-snug text-left', getQuestionFontSize(totalContentLength))}>
+                <h2 className={cn('font-normal text-card-foreground leading-relaxed text-left', getQuestionFontSize(totalContentLength))}>
                   {question.text}
                 </h2>
 
@@ -218,7 +218,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                       <span className="flex-none flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 text-primary font-black text-xs border border-primary/20">
                         {String.fromCodePoint(65 + idx)}
                       </span>
-                      <span className="text-xs sm:text-sm font-semibold text-card-foreground leading-relaxed min-w-0 break-words">
+                      <span className="text-xs sm:text-sm font-medium text-card-foreground leading-relaxed min-w-0 break-words">
                         {option}
                       </span>
                     </div>
@@ -239,7 +239,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                       <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
                         {item.letter}
                       </span>
-                      <span className="text-base sm:text-lg font-black text-foreground text-left leading-snug">
+                      <span className="text-base sm:text-lg font-semibold text-foreground text-left leading-snug">
                         {item.text}
                       </span>
                     </div>
