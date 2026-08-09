@@ -173,7 +173,7 @@ function DesktopSessionContent({
     }
   }, [activeData?.session, quizId, sessionId])
 
-  const isStillLoading = isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
 
   useEffect(() => {
     if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
