@@ -51,28 +51,51 @@ async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeP
 /**
  * Resolve the real original (non-temp) quiz and course_code for a question.
  */
-async function findRealQuizForQuestion(cleanCourse: string | undefined, queryCriteria: any[]) {
+async function findRealQuizForQuestion(quizId?: string, cleanCourse?: string, queryCriteria: any[] = []) {
+  // Direct primary lookup by quiz_id if valid
+  if (quizId && Types.ObjectId.isValid(quizId)) {
+    const directQuiz = await Quiz.findById(quizId).select('_id course_code title questions question_refs is_temp').lean()
+    if (directQuiz) return directQuiz
+  }
+
   const baseFilter = { is_temp: { $ne: true }, title: { $not: /^Quiz Trộn/i }, $or: queryCriteria }
   if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
-    const matched = await Quiz.findOne({ ...baseFilter, course_code: cleanCourse }).select('course_code title questions question_refs').lean()
+    const matched = await Quiz.findOne({ ...baseFilter, course_code: cleanCourse }).select('_id course_code title questions question_refs').lean()
     if (matched) return matched
   }
-  return Quiz.findOne(baseFilter).select('course_code title questions question_refs').lean()
+  return Quiz.findOne(baseFilter).select('_id course_code title questions question_refs').lean()
 }
 
-async function findAnswerAndExplanation(realQuiz: any, cleanText: string) {
+async function findAnswerAndExplanation(realQuiz: any, cleanText: string, question_id?: string) {
   if (realQuiz?.questions && Array.isArray(realQuiz.questions)) {
-    const qDoc = realQuiz.questions.find((q: any) => q.text?.trim() === cleanText)
-    if (qDoc?.correct_answer) {
-      const correctAnswer = Array.isArray(qDoc.correct_answer) ? qDoc.correct_answer : [qDoc.correct_answer]
+    const qDoc = realQuiz.questions.find((q: any) => 
+      (question_id && q._id?.toString() === question_id) ||
+      (q.text && q.text.trim() === cleanText)
+    )
+    if (qDoc && (qDoc.correct_answer !== undefined && qDoc.correct_answer !== null)) {
+      const correctAnswer = Array.isArray(qDoc.correct_answer) 
+        ? qDoc.correct_answer 
+        : typeof qDoc.correct_answer === 'number' 
+          ? [qDoc.correct_answer] 
+          : undefined
       return { correctAnswer, explanation: qDoc.explanation }
     }
   }
 
   const { Question } = await import('@/lib/modules/quiz/models/Question')
-  const standalone = await Question.findOne({ text: cleanText }).select('correct_answer explanation').lean() as any
-  if (standalone?.correct_answer) {
-    const correctAnswer = Array.isArray(standalone.correct_answer) ? standalone.correct_answer : [standalone.correct_answer]
+  const standalone = await Question.findOne({
+    $or: [
+      ...(question_id && Types.ObjectId.isValid(question_id) ? [{ _id: new Types.ObjectId(question_id) }] : []),
+      { text: cleanText }
+    ]
+  }).select('correct_answer explanation').lean() as any
+
+  if (standalone && (standalone.correct_answer !== undefined && standalone.correct_answer !== null)) {
+    const correctAnswer = Array.isArray(standalone.correct_answer)
+      ? standalone.correct_answer
+      : typeof standalone.correct_answer === 'number'
+        ? [standalone.correct_answer]
+        : undefined
     return { correctAnswer, explanation: standalone.explanation }
   }
 
@@ -80,7 +103,7 @@ async function findAnswerAndExplanation(realQuiz: any, cleanText: string) {
 }
 
 /**
- * Resolve the real original (non-temp) quiz, course_code, correct_answer, and explanation for a question.
+ * Resolve the real original quiz, course_code, correct_answer, and explanation for a question.
  */
 async function resolveOriginalQuizForQuestion(params: {
   quiz_id?: string
@@ -105,8 +128,8 @@ async function resolveOriginalQuizForQuestion(params: {
     queryCriteria.push({ 'questions._id': new Types.ObjectId(question_id) })
   }
 
-  const realQuiz: any = await findRealQuizForQuestion(cleanCourse, queryCriteria)
-  const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText)
+  const realQuiz: any = await findRealQuizForQuestion(quiz_id, cleanCourse, queryCriteria)
+  const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText, question_id)
 
   const title = realQuiz?.title ||
     ((clientQuizTitle && !clientQuizTitle.startsWith('Quiz Trộn'))
@@ -212,7 +235,7 @@ async function createPinDocument(params: {
 }) {
   const finalCorrectAnswer = (params.resolvedCorrectAnswer && params.resolvedCorrectAnswer.length > 0)
     ? params.resolvedCorrectAnswer
-    : (Array.isArray(params.correct_answer) && params.correct_answer.length > 0 ? params.correct_answer : [0])
+    : (Array.isArray(params.correct_answer) && params.correct_answer.length > 0 ? params.correct_answer : [])
 
   return PinnedQuestion.create({
     student_id: params.studentObjectId,

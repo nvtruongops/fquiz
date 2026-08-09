@@ -99,14 +99,14 @@ function StandardQuestionView({
 
   return (
     <div className="flex h-full flex-col quiz-scroll overflow-y-auto px-4 py-4 sm:px-6">
-      <p className="mb-2 text-xs text-[#737373]">
+      <p className="mb-2 text-xs text-muted-foreground">
         {requiredSelectionCount === 1
           ? '(Chọn 1 đáp án)'
           : `(Chọn ${requiredSelectionCount} đáp án)`}
       </p>
-      <div className="max-w-3xl border border-[#d4d4d4] bg-white p-4 sm:p-5">
-        <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#e5e5e5] pb-3">
-          <p className="text-sm font-bold text-[#171717]">
+      <div className="max-w-3xl border border-border bg-card p-4 sm:p-5 rounded-2xl shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border pb-3">
+          <p className="text-sm font-bold text-foreground">
             Câu {safeDisplayIndex}/{totalQuestions}
           </p>
           <button
@@ -114,23 +114,23 @@ function StandardQuestionView({
             onClick={handleTogglePin}
             disabled={togglePinMutation.isPending}
             className={cn(
-              "flex items-center gap-1 border px-2 py-1 text-xs font-semibold cursor-pointer",
+              "flex items-center gap-1 border px-2 py-1 text-xs font-semibold cursor-pointer rounded-lg transition-colors",
               isPinned
-                ? "border-amber-400 bg-amber-50 text-amber-700"
-                : "border-[#d4d4d4] bg-white text-[#525252] hover:bg-[#f5f5f5]"
+                ? "border-amber-400/50 bg-amber-500/10 text-amber-500"
+                : "border-border bg-card text-muted-foreground hover:bg-muted"
             )}
           >
             <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
             <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
           </button>
         </div>
-        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-[#171717]">
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
           {question.text}
         </p>
 
         {question.image_url && (
-          <div className="mt-4 border border-[#d4d4d4] bg-white p-2">
-            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden bg-[#fafafa]">
+          <div className="mt-4 border border-border bg-muted/30 p-2 rounded-xl">
+            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden bg-background rounded-lg">
               <img
                 src={question.image_url}
                 alt="Minh họa câu hỏi"
@@ -159,17 +159,23 @@ function StandardQuestionView({
                 key={optionKey}
                 onClick={() => !isDisabled && onSelectOption(idx)}
                 disabled={isDisabled}
+                aria-label={`Đáp án ${String.fromCodePoint(65 + idx)}: ${option}`}
                 className={cn(
-                  'w-full select-none border px-3 py-2 text-left text-sm leading-relaxed',
+                  'w-full select-none border px-3.5 py-2.5 text-left text-sm leading-relaxed rounded-xl transition-all flex items-center justify-between gap-3',
                   isDisabled && 'cursor-not-allowed opacity-60',
                   !isDisabled && 'cursor-pointer',
-                  isCorrect && 'border-green-600 bg-green-50 font-semibold text-green-800',
-                  isWrongSelected && 'border-red-500 bg-red-50 font-semibold text-red-700',
-                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-[#5D7B6F] bg-[#5D7B6F]/5 font-semibold text-[#3d5c50]',
-                  !isCorrect && !isWrongSelected && !isSelected && 'border-[#d4d4d4] bg-white text-[#262626] hover:border-[#a3a3a3]'
+                  isCorrect && 'border-success-fg/50 bg-success-bg/20 font-semibold text-success-fg',
+                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg font-semibold text-incorrect-fg',
+                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary',
+                  !isCorrect && !isWrongSelected && !isSelected && 'border-border bg-card text-foreground hover:border-primary/50 hover:bg-muted'
                 )}
               >
-                <span className="font-semibold">{String.fromCodePoint(65 + idx)}.</span> {option}
+                <div className="flex items-start gap-2.5">
+                  <span className="font-bold flex-none">{String.fromCodePoint(65 + idx)}.</span>
+                  <span className="flex-1 whitespace-pre-wrap">{option}</span>
+                </div>
+                {isCorrect && <CheckCircle2 className="w-4 h-4 text-success-fg flex-none" />}
+                {isWrongSelected && <XCircle className="w-4 h-4 text-incorrect-fg flex-none" />}
               </button>
             )
           })}
@@ -212,17 +218,17 @@ function AnimatedQuestionView({
   })
 
   return (
-    <div className="flex h-full flex-col bg-slate-50/50 dark:bg-slate-900/50 quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">
+    <div className="flex h-full flex-col bg-background quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">
       <div 
         key={question._id || currentIndex}
-        className="max-w-4xl mx-auto w-full border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:shadow-none animate-in fade-in slide-in-from-bottom-3 duration-300"
+        className="max-w-4xl mx-auto w-full border border-border bg-card backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl"
       >
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary tracking-wide">
               Câu {safeDisplayIndex} / {totalQuestions}
             </span>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 italic">
+            <p className="text-xs font-medium text-muted-foreground italic">
               {requiredSelectionCount === 1
                 ? '• Chọn 1 đáp án đúng'
                 : `• Chọn ${requiredSelectionCount} đáp án đúng`}
@@ -234,24 +240,24 @@ function AnimatedQuestionView({
             onClick={handleTogglePin}
             disabled={togglePinMutation.isPending}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm border",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border",
               isPinned
-                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                ? "bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border hover:bg-question-flagged-bg/80"
+                : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
             )}
           >
-            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-amber-500")} />
+            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-question-flagged-fg")} />
             <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
           </button>
         </div>
 
-        <h2 className="text-lg sm:text-xl font-bold leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap">
+        <h2 className="text-lg sm:text-xl font-bold leading-relaxed text-foreground whitespace-pre-wrap">
           {question.text}
         </h2>
 
         {question.image_url && (
-          <div className="mt-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-3 overflow-hidden shadow-inner group">
-            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-slate-900">
+          <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3 overflow-hidden shadow-inner group">
+            <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-lg bg-background">
               <img
                 src={question.image_url}
                 alt="Minh họa câu hỏi"
@@ -281,27 +287,27 @@ function AnimatedQuestionView({
                 onClick={() => !isDisabled && onSelectOption(idx)}
                 disabled={isDisabled}
                 className={cn(
-                  'w-full select-none p-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-300 rounded-xl border-2 flex items-start gap-3 relative overflow-hidden group',
+                  'option-card w-full select-none p-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-300 rounded-xl border-2 flex items-start gap-3 relative overflow-hidden group',
                   isDisabled && 'cursor-not-allowed opacity-75',
                   !isDisabled && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
-                  isCorrect && 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-medium shadow-emerald-100 dark:shadow-none animate-in zoom-in-95 duration-200',
+                  isCorrect && 'border-success-fg/60 bg-success-bg/25 text-success-fg font-medium shadow-sm animate-in zoom-in-95 duration-200',
                   isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium animate-in shake duration-200',
-                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/5 dark:bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
-                  !isCorrect && !isWrongSelected && !isSelected && 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
+                  !isCorrect && !isWrongSelected && !isSelected && 'border-border bg-card text-foreground hover:border-primary/50 hover:bg-muted/60'
                 )}
               >
                 <span className={cn(
                   'flex-none flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs transition-colors duration-200 mt-0.5',
-                  isCorrect && 'bg-emerald-500 text-white shadow-sm',
+                  isCorrect && 'bg-success-fg text-white shadow-sm',
                   isWrongSelected && 'bg-incorrect-border text-white shadow-sm',
                   !isCorrect && !isWrongSelected && isSelected && 'bg-primary text-white shadow-sm',
-                  !isCorrect && !isWrongSelected && !isSelected && 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-slate-300 dark:group-hover:bg-slate-600'
+                  !isCorrect && !isWrongSelected && !isSelected && 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                 )}>
                   {String.fromCodePoint(65 + idx)}
                 </span>
                 <span className="flex-1 whitespace-pre-wrap">{option}</span>
-                {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-none self-center animate-in zoom-in duration-300" />}
-                {isWrongSelected && <XCircle className="w-5 h-5 text-rose-500 flex-none self-center animate-in zoom-in duration-300" />}
+                {isCorrect && <CheckCircle2 className="w-5 h-5 text-success-fg flex-none self-center animate-in zoom-in duration-300" />}
+                {isWrongSelected && <XCircle className="w-5 h-5 text-incorrect-fg flex-none self-center animate-in zoom-in duration-300" />}
               </button>
             )
           })}

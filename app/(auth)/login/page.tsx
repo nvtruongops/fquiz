@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
@@ -8,7 +8,8 @@ import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
-import { motion, AnimatePresence } from 'framer-motion'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { cn } from '@/lib/core/utils/cn'
 import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
 import { startGlobalPageLoader } from '@/components/shared/ui/page-transition-loader'
@@ -18,6 +19,8 @@ function LoginForm() {
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const cardRef = useRef<HTMLDivElement>(null)
+
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -25,6 +28,21 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
+
+  // GSAP Entrance animation with reduced motion support
+  useGSAP(
+    () => {
+      if (!cardRef.current) return
+      gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.fromTo(
+          cardRef.current,
+          { autoAlpha: 0, y: 16, scale: 0.98 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
+        )
+      })
+    },
+    { scope: cardRef }
+  )
 
   // Handle URL params on client side only
   useEffect(() => {
@@ -127,16 +145,11 @@ function LoginForm() {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 1, scale: 1, y: 0 }}
-      animate={isRedirecting ? { opacity: 0, scale: 0.96, y: -10 } : { opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full relative group"
-    >
+    <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
       <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/80 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
@@ -162,24 +175,16 @@ function LoginForm() {
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.identifier 
-                    ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
-                    : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+                    ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
+                    : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
                 )}
               />
             </div>
-            <AnimatePresence>
-              {errors.identifier && (
-                <motion.p 
-                  initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, maxHeight: 40, marginTop: 6 }}
-                  exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-[#dc2626] text-xs font-bold ml-1 overflow-hidden"
-                >
-                  {errors.identifier}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            {errors.identifier && (
+              <p className="text-red-600 text-xs font-bold ml-1 mt-1">
+                {errors.identifier}
+              </p>
+            )}
           </div>
 
           {/* Password Field */}
@@ -203,52 +208,43 @@ function LoginForm() {
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 pr-12 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.password 
-                    ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
-                    : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+                    ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
+                    : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
                 )}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors cursor-pointer"
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <AnimatePresence>
-              {errors.password && (
-                <motion.p 
-                  initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, maxHeight: 40, marginTop: 6 }}
-                  exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-[#dc2626] text-xs font-bold ml-1 overflow-hidden"
-                >
-                  {errors.password}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            {errors.password && (
+              <p className="text-red-600 text-xs font-bold ml-1 mt-1">
+                {errors.password}
+              </p>
+            )}
           </div>
 
           {/* Submit Button */}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
+          <button
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-4"
+            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-4 cursor-pointer active:scale-[0.98]"
           >
             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" />
+              <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
             ) : (
               <>
-                <span className="tracking-wide drop-shadow-sm">Đăng nhập</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
+                <span className="tracking-wide drop-shadow-2xs">Đăng nhập</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-2xs" />
               </>
             )}
-          </motion.button>
+          </button>
         </form>
 
         <GoogleSignInButton callbackUrl={callbackUrl} />
@@ -266,7 +262,7 @@ function LoginForm() {
           </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

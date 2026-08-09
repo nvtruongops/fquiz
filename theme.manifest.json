@@ -1,0 +1,77 @@
+{
+  "name": "fquiz-theme-system",
+  "version": "1.2.0",
+  "defaultTheme": "green",
+  "supportedThemes": [
+    "light",
+    "dark",
+    "green"
+  ],
+  "brandThemes": {
+    "light": {
+      "name": "Giao diện Sáng",
+      "description": "Nền sáng thanh lịch, tương phản tối ưu cho môi trường ánh sáng mạnh"
+    },
+    "dark": {
+      "name": "Giao diện Tối",
+      "description": "Nền Deep Forest Charcoal (#0F1814) chống mỏi mắt ban đêm"
+    },
+    "green": {
+      "name": "Giao diện Xanh",
+      "description": "Màu nhận diện thương hiệu FQuiz: Nền Kem Be ấm (#EAE7D6) phối Xanh Sage (#5D7B6F)"
+    }
+  },
+  "tokenArchitecture": {
+    "cssVariables": true,
+    "tailwindExtend": true,
+    "allowHardcodedHex": false,
+    "allowDirectPaletteColors": false
+  },
+  "tokens": {
+    "semantic": [
+      "background",
+      "foreground",
+      "card",
+      "card-foreground",
+      "popover",
+      "popover-foreground",
+      "primary",
+      "primary-foreground",
+      "primary-hover",
+      "secondary",
+      "secondary-foreground",
+      "secondary-accent",
+      "muted",
+      "muted-foreground",
+      "accent",
+      "accent-foreground",
+      "destructive",
+      "destructive-foreground",
+      "border",
+      "input",
+      "ring",
+      "radius"
+    ],
+    "quizDomain": [
+      "quiz-question-bg",
+      "quiz-question-fg",
+      "quiz-option-bg",
+      "quiz-option-fg",
+      "quiz-option-hover",
+      "quiz-option-selected-bg",
+      "quiz-option-selected-fg",
+      "quiz-success-bg",
+      "quiz-success-fg",
+      "quiz-success-border",
+      "quiz-error-bg",
+      "quiz-error-fg",
+      "quiz-error-border",
+      "quiz-attempted-bg",
+      "quiz-attempted-fg",
+      "quiz-attempted-border",
+      "quiz-warning-bg",
+      "quiz-warning-fg",
+      "quiz-warning-border"
+    ]
+  }
+}

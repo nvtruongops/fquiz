@@ -81,14 +81,52 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 4. Transform pinned questions to Quiz questions format
-    const quizQuestions = pinnedDocs.map((pq: any) => ({
-      text: pq.text || '',
-      options: Array.isArray(pq.options) ? pq.options : [],
-      correct_answer: Array.isArray(pq.correct_answer) ? pq.correct_answer : [0],
-      explanation: pq.explanation || '',
-      image_url: pq.image_url || '',
-      question_id: pq.question_id || generateQuestionId(pq),
+    // 4. Transform pinned questions to Quiz questions format (Auto-resolving correct answers)
+    const { Question } = await import('@/lib/modules/quiz/models/Question')
+    const quizQuestions = await Promise.all(pinnedDocs.map(async (pq: any) => {
+      let validCorrectAnswer: number[] | undefined = Array.isArray(pq.correct_answer) && pq.correct_answer.length > 0 
+        ? pq.correct_answer 
+        : undefined
+
+      // If correct_answer was missing or empty, attempt auto-resolve from Quiz or Question DB
+      if (!validCorrectAnswer) {
+        if (pq.quiz_id && Types.ObjectId.isValid(pq.quiz_id)) {
+          const sourceQuiz: any = await Quiz.findById(pq.quiz_id).select('questions').lean()
+          if (sourceQuiz?.questions) {
+            const matched = sourceQuiz.questions.find((q: any) => 
+              (pq.question_id && q._id?.toString() === pq.question_id) ||
+              (q.text && q.text.trim() === pq.text?.trim())
+            )
+            if (matched && matched.correct_answer !== undefined && matched.correct_answer !== null) {
+              validCorrectAnswer = Array.isArray(matched.correct_answer) 
+                ? matched.correct_answer 
+                : typeof matched.correct_answer === 'number' 
+                  ? [matched.correct_answer] 
+                  : undefined
+            }
+          }
+        }
+
+        if (!validCorrectAnswer && pq.text) {
+          const standalone: any = await Question.findOne({ text: pq.text.trim() }).select('correct_answer').lean()
+          if (standalone && standalone.correct_answer !== undefined && standalone.correct_answer !== null) {
+            validCorrectAnswer = Array.isArray(standalone.correct_answer) 
+              ? standalone.correct_answer 
+              : typeof standalone.correct_answer === 'number' 
+                ? [standalone.correct_answer] 
+                : undefined
+          }
+        }
+      }
+
+      return {
+        text: pq.text || '',
+        options: Array.isArray(pq.options) ? pq.options : [],
+        correct_answer: validCorrectAnswer || [0],
+        explanation: pq.explanation || '',
+        image_url: pq.image_url || '',
+        question_id: pq.question_id || generateQuestionId(pq),
+      }
     }))
 
     // 5. Generate quiz title

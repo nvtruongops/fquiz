@@ -26,26 +26,84 @@ const config: Config = {
       colors: {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
           hover: 'hsl(var(--primary-hover))',
         },
         'secondary-accent': 'hsl(var(--secondary-accent))',
         'app-bg': 'hsl(var(--app-bg))',
         success: {
           DEFAULT: 'hsl(var(--success-fg))',
+          fg: 'hsl(var(--success-fg))',
           bg: 'hsl(var(--success-bg))',
+          border: 'hsl(var(--success-border))',
         },
-        info: 'hsl(var(--info-bg))',
-        warning: 'hsl(var(--warning-bg))',
-        danger: 'hsl(var(--danger-bg))',
+        info: {
+          DEFAULT: 'hsl(var(--info-fg))',
+          fg: 'hsl(var(--info-fg))',
+          bg: 'hsl(var(--info-bg))',
+          border: 'hsl(var(--info-border))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning-fg))',
+          fg: 'hsl(var(--warning-fg))',
+          bg: 'hsl(var(--warning-bg))',
+          border: 'hsl(var(--warning-border))',
+        },
         incorrect: {
+          DEFAULT: 'hsl(var(--incorrect-fg))',
           fg: 'hsl(var(--incorrect-fg))',
           bg: 'hsl(var(--incorrect-bg))',
           border: 'hsl(var(--incorrect-border))',
         },
         attempted: {
+          DEFAULT: 'hsl(var(--attempted-fg))',
+          fg: 'hsl(var(--attempted-fg))',
           bg: 'hsl(var(--attempted-bg))',
           border: 'hsl(var(--attempted-border))',
           text: 'hsl(var(--attempted-text))',
+        },
+        question: {
+          unanswered: {
+            bg: 'hsl(var(--question-unanswered-bg))',
+            fg: 'hsl(var(--question-unanswered-fg))',
+            border: 'hsl(var(--question-unanswered-border))',
+          },
+          attempted: {
+            bg: 'hsl(var(--question-attempted-bg))',
+            fg: 'hsl(var(--question-attempted-fg))',
+            border: 'hsl(var(--question-attempted-border))',
+          },
+          current: {
+            bg: 'hsl(var(--question-current-bg))',
+            fg: 'hsl(var(--question-current-fg))',
+            border: 'hsl(var(--question-current-border))',
+          },
+          correct: {
+            bg: 'hsl(var(--question-correct-bg))',
+            fg: 'hsl(var(--question-correct-fg))',
+            border: 'hsl(var(--question-correct-border))',
+          },
+          incorrect: {
+            bg: 'hsl(var(--question-incorrect-bg))',
+            fg: 'hsl(var(--question-incorrect-fg))',
+            border: 'hsl(var(--question-incorrect-border))',
+          },
+          flagged: {
+            bg: 'hsl(var(--question-flagged-bg))',
+            fg: 'hsl(var(--question-flagged-fg))',
+            border: 'hsl(var(--question-flagged-border))',
+          },
+        },
+        disabled: {
+          bg: 'hsl(var(--disabled-bg))',
+          fg: 'hsl(var(--disabled-fg))',
+          border: 'hsl(var(--disabled-border))',
+        },
+        interactive: {
+          hover: 'hsl(var(--interactive-hover-bg))',
+          active: 'hsl(var(--interactive-active-bg))',
+          'selected-bg': 'hsl(var(--interactive-selected-bg))',
+          'selected-fg': 'hsl(var(--interactive-selected-fg))',
         },
         'saved-badge-text': 'hsl(var(--saved-badge-text))',
         'draft-dot': 'hsl(var(--draft-dot))',

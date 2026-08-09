@@ -18,6 +18,7 @@ import { QuizHistory } from '@/components/quiz/detail/QuizHistory'
 import { QuizActionCard } from '@/components/quiz/detail/QuizActionCard'
 import { QuizDetailErrorView } from '@/components/quiz/detail/QuizDetailErrorView'
 import { QuizDetailSkeleton } from '@/components/quiz/detail/QuizDetailSkeleton'
+import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
 
 interface QuizDetail {
   _id: string
@@ -288,11 +289,11 @@ export default function QuizDetailPage() {
   if (isError) return <QuizDetailErrorView error={error as any} router={router} />
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FDFDFB] font-sans">
+    <div className="flex min-h-screen flex-col bg-background font-sans">
       <QuizLoadingOverlay {...loadingOverlay} />
       
       <div className="fixed inset-0 pointer-events-none overflow-hidden transform-gpu -z-10">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/10 via-emerald-500/5 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
       <main className="relative z-10 flex flex-1 flex-col px-3 sm:px-6 py-4 sm:py-8 pb-40 md:pb-32 max-w-7xl mx-auto w-full">
@@ -315,35 +316,35 @@ export default function QuizDetailPage() {
                     router.push('/explore')
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/80 shadow-xs text-xs font-bold transition-all hover:-translate-x-1 active:translate-x-0 cursor-pointer group"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-card hover:bg-muted text-foreground border border-border shadow-xs text-xs font-bold transition-all hover:-translate-x-1 active:translate-x-0 cursor-pointer group"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800 transition-colors" />
+                <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 <span>Quay lại</span>
               </button>
 
               {baseCourseCode && (
                 <Link
                   href={`/courses/${baseCourseCode}`}
-                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-600 bg-slate-100/80 hover:bg-slate-200/80 border border-slate-200/60 transition-colors"
+                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-muted-foreground bg-muted border border-border transition-colors"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Môn học:</span>
-                  <span className="font-extrabold text-slate-800 uppercase">{displayCourseCode}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Môn học:</span>
+                  <span className="font-extrabold text-foreground uppercase">{displayCourseCode}</span>
                 </Link>
               )}
             </div>
           )
         })()}
 
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
+        <GsapStaggerContainer selector=".quiz-detail-section" stagger={0.08} y={16} className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
           
           {/* Header & Comments Column (Mobile order 1 & 3) */}
           <div className="lg:col-span-8 flex flex-col gap-4 sm:gap-8 order-1 lg:order-1">
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs">
+            <div className="quiz-detail-section">
               <QuizDetailHeader quiz={quiz ?? null} resolvedQuizId={resolvedQuizId} />
             </div>
 
             {/* Hidden on mobile, shown on desktop here to keep side-by-side */}
-            <div className="hidden lg:block">
+            <div className="quiz-detail-section hidden lg:block">
               <QuizHistory 
                 quizId={resolvedQuizId}
                 numQuestions={quiz?.num_questions ?? 0}
@@ -360,7 +361,7 @@ export default function QuizDetailPage() {
 
           {/* Action Card & Stats Column (Mobile order 2 & 4) */}
           <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 lg:sticky lg:top-24 h-fit order-2 lg:order-2">
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs">
+            <div className="quiz-detail-section">
               <QuizActionCard 
                 quizId={resolvedQuizId}
                 selectedMode={selectedMode}
@@ -437,7 +438,7 @@ export default function QuizDetailPage() {
               />
             </div>
 
-            <div className="bg-white/40 backdrop-blur-md border border-[#5D7B6F]/10 rounded-2xl sm:rounded-[32px] p-0.5 sm:p-1 shadow-xs overflow-hidden order-4">
+            <div className="quiz-detail-section order-4">
               <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />
             </div>
           </div>
@@ -457,7 +458,7 @@ export default function QuizDetailPage() {
             />
           </div>
 
-        </div>
+        </GsapStaggerContainer>
       </main>
     </div>
   )

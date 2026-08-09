@@ -92,26 +92,26 @@ export function EditorMetadataForm({
   return (
     <div className="space-y-6">
         <Card className={cn(
-          "bg-white border-none shadow-xl shadow-[#5D7B6F]/5 rounded-[32px] overflow-hidden",
-          !form.category_id ? "ring-2 ring-orange-400 bg-orange-50/30" : "ring-1 ring-gray-100"
+          "bg-card border border-border shadow-xs rounded-[32px] overflow-hidden",
+          !form.category_id ? "ring-2 ring-amber-500/50 bg-amber-500/5" : ""
         )}>
           <CardHeader className="pb-3 px-6 sm:px-8">
             <div className="flex items-center gap-3">
               <div className={cn(
-                "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shadow-lg transition-all",
-                !form.category_id ? "bg-orange-500 shadow-orange-200" : "bg-[#5D7B6F] shadow-[#5D7B6F]/20"
+                "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shadow-md transition-all",
+                !form.category_id ? "bg-amber-500 shadow-amber-500/20" : "bg-primary shadow-primary/20"
               )}>
                 1
               </div>
               <div className="flex-1">
-                <CardTitle className="text-[#5D7B6F] text-lg font-black uppercase tracking-tight flex items-center justify-between">
-                  <span>Chọn Môn học {!form.category_id && <span className="text-red-600">*</span>}</span>
+                <CardTitle className="text-primary text-lg font-black uppercase tracking-tight flex items-center justify-between">
+                  <span>Chọn Môn học {!form.category_id && <span className="text-destructive">*</span>}</span>
                   {isStudentMode && !isCreating && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       onClick={() => setIsCreating(true)}
-                      className="h-8 px-3 rounded-xl bg-[#5D7B6F]/5 text-[#5D7B6F] font-black text-[10px] uppercase tracking-widest hover:bg-[#5D7B6F] hover:text-white transition-all"
+                      className="h-8 px-3 rounded-xl bg-primary/10 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
                     >
                       <Plus className="w-3 h-3 mr-1" />
                       Tạo danh mục mới
@@ -119,7 +119,7 @@ export function EditorMetadataForm({
                   )}
                 </CardTitle>
                 {!form.category_id && !isCreating && (
-                  <p className="text-[11px] font-bold text-orange-600/80 mt-0.5">
+                  <p className="text-[11px] font-bold text-amber-500 mt-0.5">
                      Bắt buộc: Vui lòng chọn môn học trước khi tiếp tục
                   </p>
                 )}
@@ -133,7 +133,7 @@ export function EditorMetadataForm({
                   <Input 
                     autoFocus
                     placeholder="Nhập tên môn học mới..." 
-                    className="h-14 rounded-2xl border-2 border-[#5D7B6F] pl-5 pr-12 font-bold text-[#5D7B6F] bg-white shadow-inner"
+                    className="h-14 rounded-2xl border-2 border-primary pl-5 pr-12 font-bold text-foreground bg-background shadow-inner"
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
                     onKeyDown={(e) => {
@@ -144,18 +144,18 @@ export function EditorMetadataForm({
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {createCatMutation.isPending ? (
-                      <Loader2 className="w-5 h-5 text-[#5D7B6F] animate-spin" />
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
                     ) : (
                       <>
                         <button 
                           onClick={handleCreate}
-                          className="p-1.5 rounded-lg bg-[#5D7B6F] text-white hover:bg-[#4A6359] transition-colors"
+                          className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover transition-colors cursor-pointer"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => setIsCreating(false)}
-                          className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                          className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-pointer"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -174,25 +174,25 @@ export function EditorMetadataForm({
                 }}
               >
                 <SelectTrigger className={cn(
-                  "h-14 rounded-2xl text-base font-black shadow-sm transition-all",
+                  "h-14 rounded-2xl text-base font-bold shadow-2xs transition-all",
                   !form.category_id 
-                    ? "border-2 border-orange-400 bg-white text-gray-500" 
-                    : "border-gray-100 bg-gray-50/50 text-[#5D7B6F] focus:bg-white focus:ring-2 focus:ring-[#5D7B6F]/20"
+                    ? "border-2 border-amber-500/80 bg-card text-muted-foreground" 
+                    : "border-border bg-card text-foreground focus:ring-2 focus:ring-primary/20"
                 )}>
                   <SelectValue placeholder="— Chọn môn học để bắt đầu —" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
+                <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl p-2">
                   {categories.length === 0 ? (
-                    <SelectItem value="__no_category__" disabled className="font-bold text-gray-400 italic">
+                    <SelectItem value="__no_category__" disabled className="font-bold text-muted-foreground italic">
                       — Chưa có môn học —
                     </SelectItem>
                   ) : (
                     <>
-                      <SelectItem value="__placeholder__" disabled className="text-gray-400 font-bold">
+                      <SelectItem value="__placeholder__" disabled className="text-muted-foreground font-bold">
                         — Chọn môn học —
                       </SelectItem>
                       {categories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id} className="font-bold text-[#5D7B6F] rounded-xl hover:bg-[#5D7B6F]/5 transition-colors">
+                        <SelectItem key={cat._id} value={cat._id} className="font-bold text-foreground rounded-xl hover:bg-primary/10 transition-colors cursor-pointer">
                           {cat.name}
                         </SelectItem>
                       ))}
@@ -205,11 +205,11 @@ export function EditorMetadataForm({
         </Card>
 
       {(isStudentMode || form.category_id) && (
-        <Card className="bg-white border-none shadow-xl shadow-[#5D7B6F]/5 rounded-[32px] overflow-hidden ring-1 ring-gray-100">
+        <Card className="bg-card border border-border shadow-xs rounded-[32px] overflow-hidden">
           <CardContent className="pt-8 px-6 sm:px-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="course-code-input" className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider">Mã môn / Mã đề</label>
+                <label htmlFor="course-code-input" className="text-[11px] font-black text-primary uppercase tracking-wider">Mã môn / Mã đề</label>
                 <div className="relative">
                   <Input
                     id="course-code-input"
@@ -218,45 +218,45 @@ export function EditorMetadataForm({
                     maxLength={150}
                     onChange={(e) => setForm(p => ({ ...p, course_code: e.target.value }))}
                     className={cn(
-                      "h-12 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold text-[#5D7B6F] pr-10",
-                      codeDuplicate?.exists && "border-amber-300 ring-2 ring-amber-200 bg-amber-50/20"
+                      "h-12 rounded-2xl border-border bg-background transition-all font-bold text-foreground pr-10",
+                      codeDuplicate?.exists && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/10"
                     )}
                   />
                   {checkingCode && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="w-4 h-4 text-[#5D7B6F] animate-spin" />
+                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
                     </div>
                   )}
                 </div>
 
                 {codeDuplicate && codeDuplicate.exists && (
-                  <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5 animate-in fade-in duration-200">
-                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-1.5 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 animate-in fade-in duration-200">
+                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Cảnh báo trùng mã đề:</span> Mã <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-amber-900">{codeDuplicate.quiz?.course_code}</code> đã được sử dụng bởi quiz: <span className="font-semibold">&quot;{codeDuplicate.quiz?.title}&quot;</span> ({codeDuplicate.quiz?.questionCount} câu).
-                      <p className="text-[11px] text-amber-600 mt-0.5">Vui lòng thay đổi mã đề (ví dụ: {form.course_code}_V2) để tránh trùng lặp.</p>
+                      <span className="font-bold">Cảnh báo trùng mã đề:</span> Mã <code className="bg-amber-500/20 px-1 py-0.5 rounded font-mono font-bold text-amber-500">{codeDuplicate.quiz?.course_code}</code> đã được sử dụng bởi quiz: <span className="font-semibold">&quot;{codeDuplicate.quiz?.title}&quot;</span> ({codeDuplicate.quiz?.questionCount} câu).
+                      <p className="text-[11px] text-amber-500/80 mt-0.5">Vui lòng thay đổi mã đề (ví dụ: {form.course_code}_V2) để tránh trùng lặp.</p>
                     </div>
                   </div>
                 )}
 
                 {codeDuplicate && !codeDuplicate.exists && form.course_code.trim() && !checkingCode && (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold px-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <div className="flex items-center gap-1.5 text-xs text-primary font-bold px-1">
+                    <Check className="w-3.5 h-3.5 text-primary" />
                     <span>Mã đề khả dụng (chưa trùng lặp)</span>
                   </div>
                 )}
               </div>
               <div className="space-y-2">
-                <span className="text-[11px] font-black text-[#5D7B6F] uppercase tracking-wider block">Chế độ hiển thị</span>
+                <span className="text-[11px] font-black text-primary uppercase tracking-wider block">Chế độ hiển thị</span>
                 <Select
                   value={isStudentMode ? 'private' : form.status}
                   onValueChange={(v: any) => setForm(p => ({ ...p, status: v }))}
                   disabled={isStudentMode}
                 >
-                  <SelectTrigger className="h-12 rounded-2xl border-gray-100 bg-gray-50/50 font-bold text-[#5D7B6F]">
+                  <SelectTrigger className="h-12 rounded-2xl border-border bg-background font-bold text-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-none shadow-2xl">
+                  <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
                     {isStudentMode ? (
                       <SelectItem value="private" className="font-bold text-xs">Riêng tư (Chỉ mình tôi)</SelectItem>
                     ) : (
@@ -270,13 +270,13 @@ export function EditorMetadataForm({
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor="description-textarea" className="text-sm font-bold text-[#5D7B6F]">Mô tả bộ đề (Tùy chọn)</label>
+              <label htmlFor="description-textarea" className="text-sm font-bold text-primary">Mô tả bộ đề (Tùy chọn)</label>
               <Textarea
                 id="description-textarea"
                 placeholder="Nhập mô tả ngắn gọn về bộ đề thi này..."
                 value={form.description}
                 onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
-                className="rounded-xl border-[#A4C3A2] min-h-[100px] focus:ring-[#5D7B6F]"
+                className="rounded-xl border-border min-h-[100px] focus:ring-primary bg-background text-foreground"
               />
             </div>
           </CardContent>

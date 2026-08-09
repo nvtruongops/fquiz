@@ -25,7 +25,7 @@ function AppLayoutContent({ children, user, showNavbar = true, className, fixedH
 
   if (isSessionMode) {
     return (
-      <div className={cn('h-dvh max-h-dvh min-h-dvh bg-[#F9F9F7] overflow-hidden', className)}>
+      <div className={cn('h-dvh max-h-dvh min-h-dvh bg-background overflow-hidden', className)}>
         <main className="w-full h-dvh">{children}</main>
       </div>
     )
@@ -38,7 +38,7 @@ function AppLayoutContent({ children, user, showNavbar = true, className, fixedH
 
   if (isFixedHeight) {
     return (
-      <div className={cn('h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col bg-[#F9F9F7]', className)}>
+      <div className={cn('h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col bg-background', className)}>
         <div className="flex-1 w-full min-h-0 flex overflow-hidden">
           {showNavbar && <Sidebar user={user} />}
 
@@ -60,7 +60,7 @@ function AppLayoutContent({ children, user, showNavbar = true, className, fixedH
   }
 
   return (
-    <div className={cn('min-h-dvh flex flex-col bg-[#F9F9F7]', className)}>
+    <div className={cn('min-h-dvh flex flex-col bg-background', className)}>
       <div className="flex-1 w-full flex">
         {showNavbar && <Sidebar user={user} />}
 

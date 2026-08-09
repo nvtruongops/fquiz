@@ -81,6 +81,14 @@
       "executionMode": "sequential",
       "capabilities": ["ui:gsap-animation", "ui:micro-interactions", "perf:gsap-react-cleanup"],
       "description": "GSAP UI/UX animation standards and performance optimization for FQuiz."
+    },
+    "fquiz-ui-theme": {
+      "type": "local",
+      "path": ".agents/skills/fquiz-ui-theme/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["theme:tokens", "theme:governance", "ui:color-consolidation"],
+      "description": "Theme Governance, Semantic Design Tokens, and Color Consolidation standards for FQuiz."
     }
   }
 }

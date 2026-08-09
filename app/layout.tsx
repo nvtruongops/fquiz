@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased min-h-screen bg-app-bg text-foreground font-sans" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="green" themes={['light', 'dark', 'green']} enableSystem={false}>
           <QueryProvider>
             <PageTransitionLoader />
             <div className="w-full min-h-screen flex flex-col bg-background relative">

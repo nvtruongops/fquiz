@@ -57,8 +57,8 @@ function SidebarContent({
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 active
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-app-bg hover:text-primary'
+                  ? 'bg-primary text-primary-foreground font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
@@ -69,10 +69,10 @@ function SidebarContent({
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-secondary-accent/30">
+      <div className="px-3 py-4 border-t border-border">
         <button
           onClick={onLogout}
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           Đăng xuất

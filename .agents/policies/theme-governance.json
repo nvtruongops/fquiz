@@ -1,0 +1,11 @@
+{
+  "id": "THEME_GOVERNANCE",
+  "enabled": true,
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "scanDirs": ["app", "components"],
+  "allowedHexFiles": [
+    "globals.css",
+    "FQuizLogo.tsx"
+  ]
+}

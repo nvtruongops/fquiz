@@ -33,11 +33,11 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
         size="lg"
         onClick={() => onAnswer(true)}
         disabled={isLoading}
-        className="flex-1 py-6 text-sm sm:text-base font-black bg-[#5D7B6F] hover:bg-[#4a6358] text-white rounded-2xl gap-2 shadow-md shadow-[#5D7B6F]/20 active:scale-95 transition-all cursor-pointer"
+        className="flex-1 py-6 text-sm sm:text-base font-black bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
       >
-        <CheckCircle className="w-5 h-5 shrink-0 text-emerald-300" />
+        <CheckCircle className="w-5 h-5 shrink-0 text-primary-foreground" />
         <span>Đã thuộc</span>
-        <span className="hidden sm:inline-block text-[10px] font-bold text-emerald-200 bg-white/10 px-1.5 py-0.5 rounded-md ml-auto">vuốt phải →</span>
+        <span className="hidden sm:inline-block text-[10px] font-bold text-primary-foreground/80 bg-primary-foreground/10 px-1.5 py-0.5 rounded-md ml-auto">vuốt phải →</span>
       </Button>
     </div>
   )

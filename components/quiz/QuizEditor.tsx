@@ -1,10 +1,23 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/shared/ui/button'
 import { Card, CardContent } from '@/components/shared/ui/card'
-import { AlertCircle } from 'lucide-react'
-import { QuizImportPanel } from '@/components/quiz/question-bank/QuizImportPanel'
+import { AlertCircle, Loader2 } from 'lucide-react'
+
+const QuizImportPanel = dynamic(
+  () => import('@/components/quiz/question-bank/QuizImportPanel').then((m) => m.QuizImportPanel),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center p-8 bg-card rounded-2xl border border-border">
+        <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+        <span className="text-xs font-bold text-muted-foreground">Đang tải công cụ nhập đề...</span>
+      </div>
+    ),
+    ssr: false,
+  }
+)
 import { QuestionBankWarning } from '@/components/quiz/question-bank/QuestionBankWarning'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 
@@ -114,13 +127,13 @@ export function QuizEditor(props: Props) {
   }, [form.category_id, form.questions, onFormChange])
 
   return (
-    <div className={cn(isStudentMode ? "w-full" : "p-4 sm:p-8 bg-[#F9F9F7] min-h-screen")}>
+    <div className={cn(isStudentMode ? "w-full" : "p-4 sm:p-8 bg-background min-h-screen")}>
       <div className="w-full mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 w-full space-y-6">
             {!isStudentMode && (
               <div className="flex items-center justify-between gap-3">
-                <h1 className="text-2xl font-bold text-[#5D7B6F]">
+                <h1 className="text-2xl font-bold text-primary">
                   {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
                 </h1>
               </div>
@@ -134,10 +147,10 @@ export function QuizEditor(props: Props) {
             />
 
             {!isStudentMode && !form.category_id && (
-              <Card className="bg-gray-50 border-gray-300">
+              <Card className="bg-card border-border">
                 <CardContent className="pt-6 text-center">
-                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground font-medium">
                     Vui lòng chọn môn học ở trên để tiếp tục tạo quiz
                   </p>
                 </CardContent>
@@ -151,7 +164,7 @@ export function QuizEditor(props: Props) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-[#A4C3A2] text-[#5D7B6F]"
+                      className="border-primary/30 text-primary hover:bg-muted"
                       onClick={() => {
                         setShowImportPanel((prev) => !prev)
                         setTimeout(() => {
@@ -201,7 +214,7 @@ export function QuizEditor(props: Props) {
                   <Button
                     type="button"
                     onClick={addQuestion}
-                    className="h-16 px-12 rounded-2xl bg-white border-2 border-[#5D7B6F] text-[#5D7B6F] font-black uppercase tracking-widest hover:bg-[#5D7B6F] hover:text-white transition-all shadow-lg hover:shadow-xl"
+                    className="h-16 px-12 rounded-2xl bg-card border-2 border-primary text-primary font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all shadow-lg hover:shadow-xl"
                   >
                     + Thêm câu hỏi tiếp theo
                   </Button>

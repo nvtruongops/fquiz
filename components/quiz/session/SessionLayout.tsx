@@ -76,10 +76,7 @@ export const SessionLayout = React.memo(function SessionLayout({
     : explanationContent
 
   return (
-    <div className={cn(
-      "h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans select-none",
-      enableAnimation ? "bg-slate-100 dark:bg-slate-950" : "bg-[#fafafa]"
-    )}>
+    <div className="h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans select-none bg-background text-foreground">
       {/* Header */}
       <QuizHeader
         categoryName={session.categoryName}
@@ -97,7 +94,7 @@ export const SessionLayout = React.memo(function SessionLayout({
           pausedAt={session.paused_at}
           totalPausedDurationMs={session.total_paused_duration_ms}
           sessionId={session._id || (session as any).id}
-          className={enableAnimation ? "text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20" : "text-[#5D7B6F]"}
+          className="text-primary font-bold text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full border border-primary/20"
         />
       </QuizHeader>
 
@@ -121,20 +118,15 @@ export const SessionLayout = React.memo(function SessionLayout({
         />
 
         {/* Column 2: Center Question & Options Display */}
-        <main className={cn(
-          "flex-1 min-w-0 h-full overflow-y-auto quiz-scroll",
-          enableAnimation ? "bg-slate-50/50 dark:bg-slate-900/50" : "border-l border-r border-[#d4d4d4] bg-white"
-        )}>
+        <main className="flex-1 min-w-0 h-full overflow-y-auto quiz-scroll border-l border-r border-border bg-background">
           {augmentedChildren}
         </main>
 
         {/* Column 3: Right Detailed Explanation Panel (Collapsed by default, opens on toggle) */}
         {explanationContent && isExplanationOpen && (
           <aside className={cn(
-            "w-[320px] lg:w-[360px] xl:w-[400px] shrink-0 h-full overflow-y-auto quiz-scroll p-4 sm:p-5",
-            enableAnimation
-              ? "animate-in fade-in slide-in-from-right-4 duration-300 border-l border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md"
-              : "border-l border-[#d4d4d4] bg-[#fafafa]"
+            "w-[320px] lg:w-[360px] xl:w-[400px] shrink-0 h-full overflow-y-auto quiz-scroll p-4 sm:p-5 border-l border-border bg-card text-card-foreground",
+            enableAnimation && "animate-in fade-in slide-in-from-right-4 duration-300"
           )}>
             {augmentedExplanation}
           </aside>

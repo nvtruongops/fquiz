@@ -303,15 +303,15 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
               </div>
             </div>
 
-            <div className="bg-slate-50/60 rounded-2xl p-2 sm:p-3 border border-slate-200/60">
+            <div className="bg-muted/60 rounded-2xl p-2 sm:p-3 border border-border">
               {quizzesLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-16 rounded-xl bg-white border border-slate-100 animate-pulse" />
+                    <div key={i} className="h-16 rounded-xl bg-card border border-border animate-pulse" />
                   ))}
                 </div>
               ) : quizzes.length === 0 ? (
-                <div className="py-10 text-center text-slate-400 font-bold bg-white rounded-xl border border-dashed border-slate-200 text-xs">
+                <div className="py-10 text-center text-muted-foreground font-bold bg-card rounded-xl border border-dashed border-border text-xs">
                   Không tìm thấy quiz nào trong danh mục này
                 </div>
               ) : (
@@ -339,39 +339,39 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                         className={cn(
                           'relative group w-full flex items-center gap-2 px-2.5 py-2 sm:px-3 sm:py-2.5 rounded-xl border-2 transition-all cursor-pointer select-none',
                           isSelected
-                            ? 'border-[#5D7B6F] bg-white shadow-xs ring-1 ring-[#5D7B6F]/40'
+                            ? 'border-primary bg-card shadow-xs ring-1 ring-primary/40 text-foreground'
                             : isDisabled
-                              ? 'border-slate-100 bg-slate-50/50 opacity-40 cursor-not-allowed'
-                              : 'border-white bg-white hover:border-[#5D7B6F]/20 hover:shadow-xs'
+                              ? 'border-border bg-muted/50 opacity-40 cursor-not-allowed text-muted-foreground'
+                              : 'border-border bg-card hover:border-primary/50 hover:shadow-xs text-foreground'
                         )}
                       >
                         <div className={cn(
                           'flex items-center justify-center w-5 h-5 rounded-md transition-colors shrink-0',
-                          isSelected ? 'bg-[#5D7B6F] text-white' : 'bg-slate-100 text-slate-300 group-hover:bg-slate-200'
+                          isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                         )}>
                           {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-slate-800 text-[11px] sm:text-xs truncate uppercase tracking-tight">{quiz.course_code}</p>
-                          <p className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 truncate">{quiz.title}</p>
+                          <p className="font-black text-foreground text-[11px] sm:text-xs truncate uppercase tracking-tight">{quiz.course_code}</p>
+                          <p className="text-[9.5px] sm:text-[10px] font-bold text-muted-foreground truncate">{quiz.title}</p>
                         </div>
                         <div className="shrink-0 text-right space-y-0.5">
                           {hasScore && (
-                            <div className={cn('flex items-center gap-0.5 justify-end text-[10px] sm:text-[11px] font-black', isPassed ? 'text-green-600' : 'text-red-600')}>
+                            <div className={cn('flex items-center gap-0.5 justify-end text-[10px] sm:text-[11px] font-black', isPassed ? 'text-success-fg' : 'text-destructive')}>
                               <Trophy className="w-2.5 h-2.5" />
                               <span>{quiz.latestScoreOnTen!.toFixed(1)}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-1 justify-end text-[9px] font-bold text-slate-400">
-                            <span className="bg-slate-100 px-1 py-0.2 rounded text-slate-500 font-extrabold">{quiz.questionCount}c</span>
+                          <div className="flex items-center gap-1 justify-end text-[9px] font-bold text-muted-foreground">
+                            <span className="bg-muted px-1 py-0.2 rounded text-muted-foreground font-extrabold">{quiz.questionCount}c</span>
                           </div>
                         </div>
                       </div>
                     )
                   })}
                   {isFetchingNextPage && (
-                    <div className="col-span-full h-12 rounded-xl bg-white border border-slate-100 animate-pulse flex items-center justify-center text-xs font-bold text-slate-400">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#5D7B6F] mr-2" /> Đang tải thêm...
+                    <div className="col-span-full h-12 rounded-xl bg-card border border-border animate-pulse flex items-center justify-center text-xs font-bold text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary mr-2" /> Đang tải thêm...
                     </div>
                   )}
                 </div>
@@ -382,12 +382,12 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
           {/* Right Column (col-span-6 on desktop) — Question Count & Mode Options & Action */}
           <div className="lg:col-span-6 space-y-3">
             {/* Step: Question count selection */}
-            <section className="space-y-2 bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/60 shadow-xs">
+            <section className="space-y-2 bg-card p-3 sm:p-3.5 rounded-xl border border-border shadow-xs">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-black shrink-0">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-[11px] font-black shrink-0">
                   {stepOffset + 2}
                 </div>
-                <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
                   Số lượng câu muốn làm
                 </h2>
               </div>
@@ -401,8 +401,8 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                     className={cn(
                       'flex-1 min-w-[60px] py-1.5 sm:py-2 rounded-lg border-2 font-black text-xs transition-all cursor-pointer select-none',
                       questionCount === count
-                        ? 'border-[#5D7B6F] bg-[#5D7B6F] text-white shadow-xs'
-                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-[#5D7B6F]/30 hover:bg-white'
+                        ? 'border-primary bg-primary text-primary-foreground shadow-xs'
+                        : 'border-border bg-muted text-muted-foreground hover:border-primary/30 hover:bg-card'
                     )}
                   >
                     {count} CÂU
@@ -412,12 +412,12 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
             </section>
 
             {/* Step: Mode Selection */}
-            <section className="space-y-2 bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/60 shadow-xs">
+            <section className="space-y-2 bg-card p-3 sm:p-3.5 rounded-xl border border-border shadow-xs">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-black shrink-0">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-[11px] font-black shrink-0">
                   {stepOffset + 3}
                 </div>
-                <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
                   Chế độ làm bài
                 </h2>
               </div>

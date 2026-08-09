@@ -35,8 +35,8 @@ export default function CreatePostModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-xl rounded-[32px] p-6 sm:p-8 border border-white/80 bg-white/95 backdrop-blur-2xl shadow-2xl z-50">
-        <DialogTitle className="text-2xl font-black text-slate-800 mb-2">Tạo bài đăng mới</DialogTitle>
+      <DialogContent aria-describedby={undefined} className="sm:max-w-xl rounded-[32px] p-6 sm:p-8 border border-border bg-card/95 backdrop-blur-2xl shadow-2xl z-50 text-card-foreground">
+        <DialogTitle className="text-2xl font-black text-foreground mb-2">Tạo bài đăng mới</DialogTitle>
 
         {createPostMutation.isError && (
           <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-start gap-2.5 text-rose-700 text-xs font-semibold">

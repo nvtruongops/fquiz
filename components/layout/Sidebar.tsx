@@ -119,10 +119,10 @@ export function Sidebar({ user }: SidebarProps) {
         <motion.aside
           animate={{ width: collapsed ? 80 : 256 }}
           transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-          className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40 bg-white/90 backdrop-blur-xl border-r border-slate-200/80 shadow-[2px_0_20px_rgba(0,0,0,0.02)] overflow-hidden"
+          className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40 bg-card/90 backdrop-blur-xl border-r border-border shadow-sm overflow-hidden"
         >
           {/* Brand Header */}
-          <div className={cn("h-16 flex items-center border-b border-slate-100 flex-shrink-0 transition-all", collapsed ? "justify-center px-2" : "justify-between px-4")}>
+          <div className={cn("h-16 flex items-center border-b border-border flex-shrink-0 transition-all", collapsed ? "justify-center px-2" : "justify-between px-4")}>
             <Link href="/" prefetch={false} className="flex items-center gap-3 group overflow-hidden">
               <FQuizLogo size={34} />
               {!collapsed && (
@@ -132,10 +132,10 @@ export function Sidebar({ user }: SidebarProps) {
                   exit={{ opacity: 0, x: -10 }}
                   className="flex flex-col whitespace-nowrap overflow-hidden"
                 >
-                  <span className="text-base font-black tracking-tight text-slate-900 leading-none group-hover:text-[#5D7B6F] transition-colors">
+                  <span className="text-base font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
                     FQuiz
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#5D7B6F] mt-0.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-primary mt-0.5">
                     Multi-Service
                   </span>
                 </motion.div>
@@ -145,7 +145,7 @@ export function Sidebar({ user }: SidebarProps) {
             {!collapsed && (
               <button
                 onClick={toggleCollapsed}
-                className="w-7 h-7 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
                 title="Thu gọn Sidebar"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -154,7 +154,7 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
 
           {/* Scrollable Navigation Items */}
-          <nav className={cn("flex-1 overflow-y-auto py-4 space-y-3 scrollbar-thin scrollbar-thumb-slate-200", collapsed ? "px-2" : "px-3")}>
+          <nav className={cn("flex-1 overflow-y-auto py-4 space-y-3 custom-scrollbar", collapsed ? "px-2" : "px-3")}>
             {/* Top Standalone Dashboard Link */}
             <Link
               href="/dashboard"
@@ -164,11 +164,11 @@ export function Sidebar({ user }: SidebarProps) {
                 "relative flex items-center transition-all duration-200 group font-bold text-sm cursor-pointer border mb-3",
                 collapsed ? "justify-center p-2.5 rounded-2xl" : "py-2.5 px-3 rounded-2xl gap-3",
                 (pathname === '/dashboard' || pathname === '/')
-                  ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                  : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                  : "bg-muted/40 border-border text-foreground hover:bg-muted"
               )}
             >
-              <Home className={cn("w-4.5 h-4.5 flex-shrink-0 transition-colors", (pathname === '/dashboard' || pathname === '/') ? "text-white" : "text-slate-500 group-hover:text-slate-800")} />
+              <Home className={cn("w-4.5 h-4.5 flex-shrink-0 transition-colors", (pathname === '/dashboard' || pathname === '/') ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
               {!collapsed && (
                 <span className="whitespace-nowrap overflow-hidden text-xs font-bold tracking-tight">
                   Bảng điều khiển
@@ -189,8 +189,8 @@ export function Sidebar({ user }: SidebarProps) {
                         className={cn(
                           "flex items-center justify-between mb-1 px-3 cursor-pointer group select-none py-1.5 rounded-xl transition-all border",
                           isExpanded
-                            ? "bg-slate-100/90 border-slate-200/80 font-bold"
-                            : "bg-slate-50/50 border-slate-100 hover:bg-slate-100/60"
+                            ? "bg-muted/80 border-border font-bold"
+                            : "bg-muted/30 border-border/50 hover:bg-muted/60"
                         )}
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -200,7 +200,7 @@ export function Sidebar({ user }: SidebarProps) {
                         </div>
                         <ChevronDown
                           className={cn(
-                            'w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0 ml-1',
+                            'w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-transform duration-200 shrink-0 ml-1',
                             !isExpanded && '-rotate-90'
                           )}
                         />
@@ -227,7 +227,7 @@ export function Sidebar({ user }: SidebarProps) {
                                   'relative flex items-center gap-3 py-2 px-3 rounded-2xl transition-all duration-200 group font-semibold text-sm cursor-pointer',
                                   active
                                     ? cn(sec.activeBg, sec.activeText)
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
                                 )}
                               >
                                 {active && (
@@ -240,7 +240,7 @@ export function Sidebar({ user }: SidebarProps) {
                                 <Icon
                                   className={cn(
                                     'w-4.5 h-4.5 flex-shrink-0 relative z-10 transition-colors',
-                                    active ? sec.activeText : 'text-slate-400 group-hover:text-slate-700'
+                                    active ? sec.activeText : 'text-muted-foreground group-hover:text-foreground'
                                   )}
                                 />
                                 <span className="whitespace-nowrap overflow-hidden relative z-10 text-xs font-bold tracking-tight">
@@ -260,7 +260,7 @@ export function Sidebar({ user }: SidebarProps) {
                           "w-10 h-10 mx-auto flex items-center justify-center rounded-2xl transition-all cursor-pointer border my-1 shadow-xs group relative",
                           isExpanded
                             ? cn(sec.activeBg, sec.activeBorder, sec.activeText)
-                            : "bg-slate-50/80 border-slate-200/60 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                            : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                         title={sec.title}
                       >
@@ -274,7 +274,7 @@ export function Sidebar({ user }: SidebarProps) {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="space-y-1.5 py-1 px-1 bg-slate-100/60 rounded-2xl border border-slate-200/60 my-1"
+                            className="space-y-1.5 py-1 px-1 bg-muted/60 rounded-2xl border border-border my-1"
                           >
                             {sec.items.map((item) => {
                               const active = isActive(item)
@@ -290,13 +290,13 @@ export function Sidebar({ user }: SidebarProps) {
                                     'relative flex items-center justify-center py-2 rounded-xl transition-all duration-200 group cursor-pointer',
                                     active
                                       ? cn(sec.activeBg, sec.activeText, 'shadow-xs font-bold')
-                                      : 'text-slate-500 hover:text-slate-900 hover:bg-white'
+                                      : 'text-muted-foreground hover:text-foreground hover:bg-card'
                                   )}
                                 >
                                   <Icon
                                     className={cn(
                                       'w-4 h-4 flex-shrink-0 relative z-10 transition-colors',
-                                      active ? sec.activeText : 'text-slate-400 group-hover:text-slate-700'
+                                      active ? sec.activeText : 'text-muted-foreground group-hover:text-foreground'
                                     )}
                                   />
                                 </Link>
@@ -313,7 +313,7 @@ export function Sidebar({ user }: SidebarProps) {
           </nav>
 
           {/* Desktop Footer — User Profile Dropdown & Toggle */}
-          <div className="p-3 border-t border-slate-100 flex-shrink-0 bg-slate-50/60 overflow-hidden">
+          <div className="p-3 border-t border-border flex-shrink-0 bg-muted/30 overflow-hidden">
             {collapsed ? (
               <div className="w-full flex flex-col items-center gap-2">
                 {user ? (
@@ -322,7 +322,7 @@ export function Sidebar({ user }: SidebarProps) {
                   <Link
                     href="/login"
                     prefetch={false}
-                    className="w-8 h-8 rounded-full bg-[#5D7B6F] text-white flex items-center justify-center shadow-xs hover:bg-[#4A6359] transition-all"
+                    className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs hover:bg-primary/90 transition-all"
                     title="Đăng nhập / Đăng ký"
                   >
                     <LogIn className="w-4 h-4" />
@@ -330,7 +330,7 @@ export function Sidebar({ user }: SidebarProps) {
                 )}
                 <button
                   onClick={toggleCollapsed}
-                  className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-600 hover:text-[#5D7B6F] hover:bg-slate-50 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-card border border-border shadow-xs flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer"
                   title="Mở rộng Sidebar"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -341,14 +341,14 @@ export function Sidebar({ user }: SidebarProps) {
                 {user ? (
                   <UserDropdown user={user} compact={false} />
                 ) : (
-                  <div className="flex items-center gap-1 text-slate-500 text-xs font-semibold px-2 py-1">
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs font-semibold px-2 py-1">
                     <span>FQuiz Guest</span>
                   </div>
                 )}
 
                 <button
                   onClick={toggleCollapsed}
-                  className="w-7 h-7 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex-shrink-0 ml-auto"
+                  className="w-7 h-7 rounded-xl bg-card border border-border shadow-xs flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex-shrink-0 ml-auto"
                   title="Thu gọn Sidebar"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -376,24 +376,24 @@ export function Sidebar({ user }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-              className="fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-white border-r border-slate-200 flex flex-col overflow-hidden lg:hidden shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border flex flex-col overflow-hidden lg:hidden shadow-2xl"
             >
-              <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#5D7B6F] flex items-center justify-center text-white font-black text-lg">
+                  <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg">
                     F
                   </div>
-                  <span className="font-black text-slate-900 text-base">Menu FQuiz</span>
+                  <span className="font-black text-foreground text-base">Menu FQuiz</span>
                 </div>
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 cursor-pointer"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
               </div>
 
-              <nav className="flex-1 overflow-y-auto p-4 space-y-3">
+              <nav className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 {/* Top Standalone Dashboard Link */}
                 <Link
                   href="/dashboard"
@@ -402,11 +402,11 @@ export function Sidebar({ user }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border",
                     (pathname === '/dashboard' || pathname === '/')
-                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                      : "bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100"
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-muted/40 border-border text-foreground hover:bg-muted"
                   )}
                 >
-                  <Home className={cn("w-4 h-4", (pathname === '/dashboard' || pathname === '/') ? "text-white" : "text-slate-500")} />
+                  <Home className={cn("w-4 h-4", (pathname === '/dashboard' || pathname === '/') ? "text-primary-foreground" : "text-muted-foreground")} />
                   <span>Bảng điều khiển</span>
                 </Link>
 
@@ -415,7 +415,7 @@ export function Sidebar({ user }: SidebarProps) {
                   const isExpanded = openSectionId !== null ? openSectionId === sec.id : hasActiveChild
 
                   return (
-                    <div key={sec.id} className="space-y-1 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                    <div key={sec.id} className="space-y-1 border border-border rounded-xl p-2 bg-muted/30">
                       <div
                         onClick={() => toggleSectionExpand(sec.id, hasActiveChild)}
                         className="flex items-center justify-between p-2 cursor-pointer select-none"
@@ -425,7 +425,7 @@ export function Sidebar({ user }: SidebarProps) {
                         </p>
                         <ChevronDown
                           className={cn(
-                            'w-4 h-4 text-slate-400 transition-transform duration-200',
+                            'w-4 h-4 text-muted-foreground transition-transform duration-200',
                             !isExpanded && '-rotate-90'
                           )}
                         />
@@ -444,11 +444,11 @@ export function Sidebar({ user }: SidebarProps) {
                                 onClick={() => setMobileOpen(false)}
                                 className={cn(
                                   'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all',
-                                  active ? cn(sec.activeBg, sec.activeText) : 'text-slate-600 hover:bg-slate-100'
+                                  active ? cn(sec.activeBg, sec.activeText) : 'text-muted-foreground hover:bg-muted'
                                 )}
                               >
                                 <div className="flex items-center gap-2.5">
-                                  <Icon className={cn('w-4 h-4', active ? sec.activeText : 'text-slate-400')} />
+                                  <Icon className={cn('w-4 h-4', active ? sec.activeText : 'text-muted-foreground')} />
                                   <span>{item.label}</span>
                                 </div>
                               </Link>
@@ -461,7 +461,7 @@ export function Sidebar({ user }: SidebarProps) {
                 })}
               </nav>
 
-              <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+              <div className="p-4 border-t border-border bg-muted/40">
                 {user ? (
                   <UserDropdown user={user} />
                 ) : (
@@ -470,7 +470,7 @@ export function Sidebar({ user }: SidebarProps) {
                       href="/login"
                       prefetch={false}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center text-xs font-bold bg-[#5D7B6F] text-white px-3 py-2.5 rounded-xl shadow-xs text-center"
+                      className="flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl shadow-xs text-center"
                     >
                       Đăng nhập
                     </Link>
@@ -478,7 +478,7 @@ export function Sidebar({ user }: SidebarProps) {
                       href="/register"
                       prefetch={false}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center text-xs font-bold bg-white text-slate-700 border border-slate-200 px-3 py-2.5 rounded-xl shadow-xs text-center"
+                      className="flex items-center justify-center text-xs font-bold bg-card text-foreground border border-border px-3 py-2.5 rounded-xl shadow-xs text-center"
                     >
                       Đăng ký
                     </Link>

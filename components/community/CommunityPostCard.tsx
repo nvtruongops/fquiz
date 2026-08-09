@@ -71,7 +71,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           handleCardClick()
         }
       }}
-      className="relative bg-white/80 backdrop-blur-xl border border-white/90 rounded-3xl pt-[20px] pb-[18px] px-[25px] shadow-xs hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5 space-y-3"
+      className="relative bg-card border border-border rounded-3xl pt-[20px] pb-[18px] px-[25px] shadow-xs hover:shadow-md hover:border-primary/50 transition-all cursor-pointer group hover:-translate-y-0.5 space-y-3"
     >
       {userId && (String(post.authorId) === String(userId) || authRole === 'admin') && (
         <div className="absolute top-[16px] right-[20px] z-10 flex items-center">
@@ -90,7 +90,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                     setConfirmingDeletePostId(null)
                   }}
                   disabled={deletePostMutation.isPending}
-                  className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg transition-colors shrink-0"
+                  className="px-2.5 py-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground text-[11px] font-bold rounded-lg transition-colors shrink-0"
                 >
                   {deletePostMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xóa bài'}
                 </button>
@@ -99,7 +99,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                     e.stopPropagation()
                     setConfirmingDeletePostId(null)
                   }}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors shrink-0"
+                  className="px-2.5 py-1 bg-muted hover:bg-muted/80 text-muted-foreground text-[11px] font-bold rounded-lg transition-colors shrink-0"
                 >
                   Hủy
                 </button>
@@ -112,7 +112,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
               setConfirmingDeletePostId(post._id)
             }}
             title="Xóa bài đăng"
-            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
+            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -122,26 +122,26 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
       {post.tags && post.tags.length > 0 && (
         <div className="flex gap-1.5 flex-wrap pr-10">
           {post.tags.map((tag: string) => (
-            <span key={tag} className="px-2.5 py-0.5 bg-[#5D7B6F]/10 text-[#5D7B6F] text-[10px] font-black uppercase tracking-wider rounded-lg border border-[#5D7B6F]/20">
+            <span key={tag} className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider rounded-lg border border-primary/20">
               #{tag}
             </span>
           ))}
         </div>
       )}
 
-      <h3 className="text-base sm:text-lg font-black text-slate-800 group-hover:text-[#5D7B6F] transition-colors leading-snug pr-10">
+      <h3 className="text-base sm:text-lg font-black text-card-foreground group-hover:text-primary transition-colors leading-snug pr-10">
         {post.title}
       </h3>
 
-      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
+      <div className="flex items-center justify-between pt-2.5 border-t border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-xs shadow-xs">
+          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs">
             {post.authorName ? post.authorName.charAt(0).toUpperCase() : 'U'}
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-700">{post.authorName}</p>
-            <p className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-              <Clock className="w-3 h-3 text-slate-400" /> {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
+            <p className="text-xs font-bold text-foreground">{post.authorName}</p>
+            <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3 text-muted-foreground" /> {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
             </p>
           </div>
         </div>
@@ -159,24 +159,24 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
             title={userId ? (isLiked ? 'Bỏ thích' : 'Thích') : 'Đăng nhập để thích'}
             className={cn(
               "flex items-center gap-1 px-2 py-1 rounded-xl transition-all cursor-pointer text-xs font-bold",
-              isLiked ? "text-red-500 bg-red-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+              isLiked ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
             <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
             <span>{post.likes?.length || 0}</span>
           </button>
 
-          <div className="flex items-center gap-1 text-slate-400 text-xs font-bold px-2 py-1">
-            <MessageSquare className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold px-2 py-1">
+            <MessageSquare className="w-4 h-4 text-muted-foreground" />
             <span>{post.comments?.length || 0}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-400 text-xs font-bold px-2 py-1" title="Lượt xem">
-            <Eye className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold px-2 py-1" title="Lượt xem">
+            <Eye className="w-4 h-4 text-muted-foreground" />
             <span>{post.views?.length || 0}</span>
           </div>
 
-          <div className="text-slate-400 p-1">
+          <div className="text-muted-foreground p-1">
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
@@ -221,24 +221,24 @@ function PostExpandedDetails({
       className="overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="mt-4 pt-4 border-t border-slate-100 space-y-4 pb-2 px-1.5">
-        <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
+      <div className="mt-4 pt-4 border-t border-border space-y-4 pb-2 px-1.5">
+        <div className="bg-muted/80 p-4 rounded-2xl border border-border text-xs sm:text-sm text-foreground font-medium leading-relaxed whitespace-pre-wrap">
           {post.content}
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+          <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
             Bình luận ({post.comments?.length || 0})
           </h4>
 
           {post.comments?.length === 0 ? (
-            <p className="text-slate-400 font-medium text-center py-4 text-xs bg-slate-50/50 rounded-2xl">
+            <p className="text-muted-foreground font-medium text-center py-4 text-xs bg-muted/50 rounded-2xl">
               Chưa có bình luận nào. Hãy gửi bình luận đầu tiên!
             </p>
           ) : (
             <div className="space-y-2.5">
               {post.comments?.map((comment: any) => (
-                <div key={comment._id} className="bg-slate-50/90 rounded-2xl p-3.5 border border-slate-100 space-y-1">
+                <div key={comment._id} className="bg-muted/90 rounded-2xl p-3.5 border border-border space-y-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-[10px]">

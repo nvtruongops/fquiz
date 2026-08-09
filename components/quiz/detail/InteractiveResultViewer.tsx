@@ -35,7 +35,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
 
   if (!questions || questions.length === 0) {
     return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-gray-100 text-gray-500">
+      <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground">
         Không có thông tin chi tiết câu hỏi.
       </div>
     )
@@ -71,20 +71,20 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
   return (
     <div className="w-full max-w-full h-full flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch overflow-hidden">
       {/* Left Panel: Compact Question Matrix & Filters */}
-      <div className="md:col-span-3 lg:col-span-3 xl:col-span-3 bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xs border border-gray-100 flex flex-col h-auto md:h-full min-h-0 overflow-hidden shrink-0">
+      <div className="md:col-span-3 lg:col-span-3 xl:col-span-3 bg-card rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xs border border-border flex flex-col h-auto md:h-full min-h-0 overflow-hidden shrink-0">
         {/* Header (Clickable toggle on mobile) */}
         <div 
           onClick={() => setIsMobileMatrixOpen(!isMobileMatrixOpen)}
-          className="flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-100 shrink-0 cursor-pointer md:cursor-default select-none"
+          className="flex items-center justify-between pb-2 sm:pb-3 border-b border-border shrink-0 cursor-pointer md:cursor-default select-none"
         >
-          <span className="text-[11px] sm:text-xs font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
-            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#5D7B6F]" />
+          <span className="text-[11px] sm:text-xs font-extrabold text-foreground uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
             Danh sách câu ({totalQuestions})
-            <span className="md:hidden inline-flex items-center text-[10px] font-bold text-[#5D7B6F] ml-1 bg-[#5D7B6F]/10 px-1.5 py-0.5 rounded">
+            <span className="md:hidden inline-flex items-center text-[10px] font-bold text-primary ml-1 bg-primary/10 px-1.5 py-0.5 rounded">
               {isMobileMatrixOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </span>
           </span>
-          <span className="text-[10px] sm:text-[11px] font-bold text-[#5D7B6F] bg-[#5D7B6F]/10 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] sm:text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             Đúng {correctCount}/{totalQuestions}
           </span>
         </div>
@@ -92,15 +92,15 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
         {/* Matrix content container: Hidden on mobile unless toggled open */}
         <div className={cn("flex flex-col flex-1 min-h-0 transition-all", !isMobileMatrixOpen && "hidden md:flex")}>
           {/* Filter Pills */}
-          <div className="grid grid-cols-4 gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-slate-100 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold select-none my-2 sm:my-3 shrink-0">
+          <div className="grid grid-cols-4 gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-muted rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold select-none my-2 sm:my-3 shrink-0">
             <button
               type="button"
               onClick={() => setFilter('all')}
               className={cn(
                 'py-1 rounded-md sm:rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'all'
-                  ? 'bg-white text-slate-800 shadow-xs font-black'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-card text-foreground shadow-xs font-black'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Tất cả ({totalQuestions})
@@ -246,27 +246,27 @@ function QuestionDetailCard({
   const hasExplanation = Boolean(q.explanation && q.explanation.trim().length > 0)
 
   return (
-    <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col h-full min-h-0 overflow-hidden">
+    <div className="bg-card rounded-2xl p-4 md:p-5 shadow-sm border border-border flex flex-col h-full min-h-0 overflow-hidden">
       {/* Question Header & Status */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-xl bg-[#5D7B6F]/10 text-[#5D7B6F] font-black text-xs uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary font-black text-xs uppercase tracking-wider">
             Câu {idx + 1} / {totalQuestions}
           </span>
         </div>
 
         <div>
           {notAnswered ? (
-            <Badge className="bg-slate-100 text-slate-600 border-none text-xs font-bold px-2.5 py-0.5 rounded-full">
-              <MinusCircle className="h-3.5 w-3.5 mr-1 inline text-slate-400" /> Chưa trả lời
+            <Badge className="bg-muted text-muted-foreground border-none text-xs font-bold px-2.5 py-0.5 rounded-full">
+              <MinusCircle className="h-3.5 w-3.5 mr-1 inline text-muted-foreground" /> Chưa trả lời
             </Badge>
           ) : q.is_correct ? (
-            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full">
-              <CheckCircle2 className="h-3.5 w-3.5 mr-1 inline text-emerald-500" /> Trả lời đúng
+            <Badge className="bg-success-bg/20 text-success-fg border border-success-fg/30 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1 inline text-success-fg" /> Trả lời đúng
             </Badge>
           ) : (
-            <Badge className="bg-red-50 text-red-600 border border-red-200 text-xs font-bold px-2.5 py-0.5 rounded-full">
-              <XCircle className="h-3.5 w-3.5 mr-1 inline text-red-500" /> Trả lời sai
+            <Badge className="bg-destructive/10 text-destructive border border-destructive/30 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              <XCircle className="h-3.5 w-3.5 mr-1 inline text-destructive" /> Trả lời sai
             </Badge>
           )}
         </div>
@@ -275,13 +275,13 @@ function QuestionDetailCard({
       {/* Main Scrollable Content Box (Question text + Image + Options + Explanation) */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4 my-3 scrollbar-thin">
         {/* Question Text - Anti-copy select-none */}
-        <p className="text-gray-900 font-medium text-sm md:text-base leading-relaxed whitespace-pre-wrap select-none pt-1">
+        <p className="text-foreground font-medium text-sm md:text-base leading-relaxed whitespace-pre-wrap select-none pt-1">
           {q.text}
         </p>
 
         {/* Question Image */}
         {q.image_url && (
-          <div className="flex justify-center rounded-xl bg-slate-50 p-2 border border-slate-100 select-none">
+          <div className="flex justify-center rounded-xl bg-muted p-2 border border-border select-none">
             <img
               src={
                 /^(https?:\/\/|\/|data:image\/)/i.test(q.image_url) && !/javascript:/i.test(q.image_url)
@@ -300,26 +300,26 @@ function QuestionDetailCard({
             const isCorrectAnswer = correctAnswers.includes(optIdx)
             const isSubmittedAnswer = submittedAnswers.includes(optIdx)
 
-            let borderColor = 'border-gray-100'
-            let bgColor = 'bg-slate-50/60'
-            let textColor = 'text-gray-700'
+            let borderColor = 'border-border'
+            let bgColor = 'bg-muted/60'
+            let textColor = 'text-foreground'
             let indicator = null
 
             if (isCorrectAnswer && isSubmittedAnswer) {
-              borderColor = 'border-emerald-400'
-              bgColor = 'bg-emerald-50'
-              textColor = 'text-emerald-900 font-semibold'
-              indicator = <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              borderColor = 'border-success-fg/80'
+              bgColor = 'bg-success-bg/20'
+              textColor = 'text-success-fg font-semibold'
+              indicator = <CheckCircle2 className="h-4 w-4 text-success-fg shrink-0" />
             } else if (isCorrectAnswer) {
-              borderColor = 'border-emerald-300'
-              bgColor = 'bg-emerald-50/60'
-              textColor = 'text-emerald-800 font-medium'
-              indicator = <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              borderColor = 'border-success-fg/50'
+              bgColor = 'bg-success-bg/10'
+              textColor = 'text-success-fg font-medium'
+              indicator = <CheckCircle2 className="h-4 w-4 text-success-fg shrink-0" />
             } else if (isSubmittedAnswer && !isCorrectAnswer) {
-              borderColor = 'border-red-300'
-              bgColor = 'bg-red-50'
-              textColor = 'text-red-800 font-medium'
-              indicator = <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+              borderColor = 'border-destructive/50'
+              bgColor = 'bg-destructive/10'
+              textColor = 'text-destructive font-medium'
+              indicator = <XCircle className="h-4 w-4 text-destructive shrink-0" />
             }
 
             return (
@@ -335,10 +335,10 @@ function QuestionDetailCard({
                   className={cn(
                     'flex-shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-black select-none',
                     isCorrectAnswer
-                      ? 'border-emerald-300 bg-emerald-500 text-white'
+                      ? 'border-success-fg bg-success-fg text-background'
                       : isSubmittedAnswer
-                        ? 'border-red-300 bg-red-500 text-white'
-                        : 'border-gray-200 bg-white text-gray-400'
+                        ? 'border-destructive bg-destructive text-destructive-foreground'
+                        : 'border-border bg-card text-muted-foreground'
                   )}
                 >
                   {String.fromCodePoint(65 + optIdx)}

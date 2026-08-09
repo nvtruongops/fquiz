@@ -1,0 +1,11 @@
+{
+  "id": "THEME_GOVERNANCE",
+  "name": "Theme & Design System Token Governance",
+  "category": "CODE_QUALITY",
+  "severity": "WARNING",
+  "version": "1.0.0",
+  "dependsOn": [],
+  "parallelizable": true,
+  "supportsFix": false,
+  "description": "Kiểm tra và ngăn chặn hardcoded hex colors (#xxx, #xxxxxx) và direct color palette trong components."
+}
