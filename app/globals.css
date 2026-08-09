@@ -3,231 +3,674 @@
 @tailwind utilities;
 
 @layer base {
+  /* ===================================================================
+     ☀️ THEME 1: .light — Clean Academic Identity 🌊
+     Primary: Royal Blue (#2563EB) | Background: Soft Ice White (#F8FAFC)
+     Focus/Pinned: Warm Gold Amber (#F59E0B / #FEF3C7) High Contrast
+     =================================================================== */
   :root,
   .light {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 222 47% 11%;
+    
+    /* Primary Brand: Royal Oceanic Blue */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 222 47% 18%;
-    --secondary-accent: 215 16% 75%;
-    --app-bg: 0 0% 100%;
-    --secondary: 220 14% 96%;
+    --primary-hover: 221 83% 45%;
+    --secondary-accent: 215 25% 75%;
+    --app-bg: 210 40% 98%;
+    --secondary: 214 32% 95%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 47% 11%;
+    --muted: 214 32% 95%;
+    --muted-foreground: 215 20% 45%;
+    --accent: 214 32% 93%;
+    --accent-foreground: 221 83% 53%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 90%;
-    --input: 220 13% 90%;
-    --ring: 222 47% 11%;
+    --border: 214 32% 90%;
+    --input: 214 32% 90%;
+    --ring: 221 83% 53%;
     --radius: 0.75rem;
 
-    --success-fg: 222 47% 11%;
-    --success-bg: 220 14% 94%;
-    --success-border: 220 13% 86%;
-    --info-fg: 222 47% 11%;
-    --info-bg: 220 14% 94%;
-    --info-border: 220 13% 86%;
-    --warning-fg: 24 90% 36%;
-    --warning-bg: 24 100% 95%;
-    --warning-border: 24 90% 84%;
+    --success-fg: 160 84% 39%;
+    --success-bg: 160 100% 96%;
+    --success-border: 160 65% 75%;
+    --info-fg: 221 83% 53%;
+    --info-bg: 217 100% 97%;
+    --info-border: 217 80% 80%;
+    --warning-fg: 38 92% 35%;
+    --warning-bg: 43 100% 95%;
+    --warning-border: 43 90% 78%;
     --incorrect-fg: 0 72% 35%;
     --incorrect-bg: 0 85% 95%;
     --incorrect-border: 0 70% 82%;
-    --attempted-fg: 222 47% 11%;
-    --attempted-bg: 220 14% 94%;
-    --attempted-border: 220 13% 86%;
+    --attempted-fg: 221 83% 53%;
+    --attempted-bg: 217 100% 97%;
+    --attempted-border: 217 80% 80%;
     --attempted-text: var(--attempted-fg);
-    --saved-badge-text: 222 47% 11%;
-    --draft-dot: 222 47% 11%;
+    --saved-badge-text: 221 83% 53%;
+    --draft-dot: 221 83% 53%;
 
     /* Semantic Disabled Tokens */
-    --disabled-bg: 220 14% 94%;
+    --disabled-bg: 214 32% 93%;
     --disabled-fg: 215 16% 65%;
-    --disabled-border: 220 13% 88%;
+    --disabled-border: 214 32% 88%;
 
     /* Interaction State Tokens */
-    --interactive-hover-bg: 220 14% 94%;
-    --interactive-active-bg: 220 14% 90%;
-    --interactive-selected-bg: 222 47% 11%;
+    --interactive-hover-bg: 214 32% 93%;
+    --interactive-active-bg: 214 32% 88%;
+    --interactive-selected-bg: 221 83% 53%;
     --interactive-selected-fg: 0 0% 100%;
 
-    /* Quiz Domain Tokens */
-    --question-unanswered-bg: 220 14% 96%;
-    --question-unanswered-fg: 215 16% 47%;
-    --question-unanswered-border: 220 13% 90%;
-    --question-attempted-bg: 220 14% 94%;
-    --question-attempted-fg: 222 47% 11%;
-    --question-attempted-border: 220 13% 86%;
-    --question-current-bg: 222 47% 11%;
+    /* Quiz Domain Tokens (LIGHT THEME — High-Contrast Gold Amber Pinned/Focus Tokens) */
+    --question-unanswered-bg: 214 32% 95%;
+    --question-unanswered-fg: 215 20% 45%;
+    --question-unanswered-border: 214 32% 90%;
+    --question-attempted-bg: 217 100% 97%;
+    --question-attempted-fg: 221 83% 53%;
+    --question-attempted-border: 217 80% 80%;
+    --question-current-bg: 221 83% 53%;
     --question-current-fg: 0 0% 100%;
-    --question-current-border: 222 47% 20%;
-    --question-correct-bg: 220 14% 94%;
-    --question-correct-fg: 222 47% 11%;
-    --question-correct-border: 220 13% 86%;
+    --question-current-border: 221 83% 40%;
+    --question-correct-bg: 160 100% 96%;
+    --question-correct-fg: 160 84% 20%;
+    --question-correct-border: 160 65% 75%;
     --question-incorrect-bg: 0 85% 95%;
     --question-incorrect-fg: 0 72% 35%;
     --question-incorrect-border: 0 70% 82%;
-    --question-flagged-bg: 220 14% 94%;
-    --question-flagged-fg: 222 47% 11%;
-    --question-flagged-border: 220 13% 86%;
+    --question-flagged-bg: 43 100% 95%;
+    --question-flagged-fg: 38 92% 35%;
+    --question-flagged-border: 43 90% 78%;
+
+    /* Learning Mastery Progression Triads */
+    --mastery-beginner-bg: 226 100% 97%;
+    --mastery-beginner-fg: 226 70% 38%;
+    --mastery-beginner-border: 226 80% 90%;
+    --mastery-intermediate-bg: 188 100% 95%;
+    --mastery-intermediate-fg: 188 85% 26%;
+    --mastery-intermediate-border: 188 70% 84%;
+    --mastery-mastered-bg: 160 100% 94%;
+    --mastery-mastered-fg: 160 80% 20%;
+    --mastery-mastered-border: 160 60% 82%;
+
+    /* Text Highlighting & Memory Focus Callouts */
+    --highlight-bg: 43 100% 95%;
+    --highlight-fg: 38 92% 35%;
+    --highlight-border: 43 90% 78%;
+
+    /* Flashcard Front vs Back Surface Contrast */
+    --flashcard-front-bg: 0 0% 100%;
+    --flashcard-front-fg: 222 47% 11%;
+    --flashcard-front-border: 214 32% 88%;
+    --flashcard-back-bg: 214 32% 96%;
+    --flashcard-back-fg: 222 47% 11%;
+    --flashcard-back-border: 214 32% 84%;
+
+    /* Learning Analytics Chart Palette */
+    --chart-1: 221 83% 53%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 189 94% 43%;
+    --chart-5: 262 83% 58%;
+
+    /* === Visual Role Layer 2: Surface Hierarchy System === */
+    --surface-page: 210 40% 98%;
+    --surface-base: 214 32% 95%;
+    --surface-card: 0 0% 100%;
+    --surface-card-elevated: 0 0% 100%;
+    --surface-card-muted: 214 32% 96%;
+    --surface-card-accent: 217 100% 97%;
+    --surface-inset: 214 32% 94%;
+    --surface-overlay: 0 0% 100%;
+
+    /* Layer 2.1: Border Hierarchy Palette */
+    --border-subtle: 214 32% 92%;
+    --border-default: 214 32% 88%;
+    --border-strong: 214 32% 78%;
+    --border-emphasis: 214 32% 65%;
+    --border-accent: 221 83% 53%;
+    --border-focus: 221 83% 53%;
+    --border-selected: 221 83% 53%;
+    --border-success: 160 65% 75%;
+    --border-warning: 43 90% 78%;
+    --border-danger: 0 70% 82%;
+    --border-info: 217 80% 80%;
+
+    /* Interaction Ring Tokens */
+    --ring-focus: 221 83% 53%;
+    --ring-selected: 221 83% 53%;
+
+    /* Layer 3: Content System (Typography Hierarchy) */
+    --text-secondary: 215 25% 27%;
+    --text-tertiary: 215 16% 45%;
+    --text-muted: 215 16% 47%;
+    --text-disabled: 215 16% 65%;
+    --text-placeholder: 215 16% 65%;
+    --text-on-accent: 0 0% 100%;
+    --text-on-brand: 0 0% 100%;
+
+    /* Layer 4: 8 Functional Color Families (LIGHT THEME — High-Contrast Modern Oceanic Hues) */
+    --accent-brand: 221 83% 53%;
+
+    --accent-learning: 221 83% 53%;
+    --accent-learning-subtle: 217 100% 97%;
+    --accent-learning-bg: 217 90% 93%;
+    --accent-learning-fg: 221 83% 38%;
+    --accent-learning-border: 217 80% 80%;
+
+    --accent-memory: 262 83% 58%;
+    --accent-memory-subtle: 262 100% 97%;
+    --accent-memory-bg: 262 85% 93%;
+    --accent-memory-fg: 262 80% 38%;
+    --accent-memory-border: 262 70% 82%;
+
+    --accent-progress: 189 94% 43%;
+    --accent-progress-subtle: 189 100% 96%;
+    --accent-progress-bg: 189 90% 90%;
+    --accent-progress-fg: 189 90% 25%;
+    --accent-progress-border: 189 70% 75%;
+
+    --accent-achievement: 160 84% 39%;
+    --accent-achievement-subtle: 160 100% 96%;
+    --accent-achievement-bg: 160 85% 90%;
+    --accent-achievement-fg: 160 80% 20%;
+    --accent-achievement-border: 160 65% 75%;
+
+    --accent-focus: 38 92% 50%;
+    --accent-focus-subtle: 43 100% 95%;
+    --accent-focus-bg: 43 100% 95%;
+    --accent-focus-fg: 38 92% 35%;
+    --accent-focus-border: 43 90% 78%;
+
+    --accent-discovery: 239 84% 67%;
+    --accent-discovery-subtle: 239 100% 97%;
+    --accent-discovery-bg: 239 90% 93%;
+    --accent-discovery-fg: 239 80% 40%;
+    --accent-discovery-border: 239 70% 82%;
+
+    --accent-community: 346 87% 65%;
+    --accent-community-subtle: 346 100% 97%;
+    --accent-community-bg: 346 90% 93%;
+    --accent-community-fg: 346 80% 40%;
+    --accent-community-border: 346 70% 82%;
+
+    --accent-classroom: 173 80% 40%;
+    --accent-classroom-subtle: 173 100% 96%;
+    --accent-classroom-bg: 173 80% 90%;
+    --accent-classroom-fg: 173 80% 22%;
+    --accent-classroom-border: 173 60% 75%;
+
+    /* Layer 6: Global EdTech Learning Domain Triads */
+    --learning-new-bg: 217 100% 97%;
+    --learning-new-fg: 217 90% 40%;
+    --learning-new-border: 217 80% 88%;
+    --learning-review-bg: 262 100% 97%;
+    --learning-review-fg: 262 80% 42%;
+    --learning-review-border: 262 70% 88%;
+    --learning-progress-bg: 189 100% 95%;
+    --learning-progress-fg: 189 90% 28%;
+    --learning-progress-border: 189 70% 82%;
+    --learning-mastered-bg: 160 80% 94%;
+    --learning-mastered-fg: 160 80% 20%;
+    --learning-mastered-border: 160 60% 80%;
+    --learning-struggling-bg: 0 85% 95%;
+    --learning-struggling-fg: 0 72% 35%;
+    --learning-struggling-border: 0 70% 82%;
+    --learning-discovery-bg: 239 100% 97%;
+    --learning-discovery-fg: 239 80% 42%;
+    --learning-discovery-border: 239 70% 88%;
   }
 
+  /* ===================================================================
+     🌙 THEME 2: .dark — Midnight Study & Learning Spectrum Identity 🌌
+     Primary: Electric Study Blue (#60A5FA) | Background: Midnight Navy (#070B14)
+     Focus/Pinned: Vivid Gold Star Accent (#FDE68A / #4F3A06 / #B3840F) High Contrast
+     =================================================================== */
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 240 10% 4%;
-    --card-foreground: 0 0% 100%;
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --primary-hover: 0 0% 90%;
-    --secondary-accent: 0 0% 30%;
-    --app-bg: 0 0% 0%;
-    --secondary: 240 6% 12%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 6% 12%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 6% 14%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 70% 40%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 240 6% 16%;
-    --input: 240 6% 16%;
-    --ring: 0 0% 100%;
+    --background: 223 50% 5%;          /* #070B14 Midnight Navy */
+    --foreground: 216 43% 96%;         /* #F3F6FA Soft White */
+    --card: 221 42% 11%;               /* #101827 Navy Card */
+    --card-foreground: 216 43% 96%;    /* #F3F6FA */
+    --popover: 219 40% 16%;            /* #19243A Overlay */
+    --popover-foreground: 216 43% 96%; /* #F3F6FA */
+    
+    /* Primary Brand: Electric Study Blue (#60A5FA) */
+    --primary: 213 94% 68%;            /* #60A5FA */
+    --primary-foreground: 217 60% 10%;  /* #0B1728 Deep Navy Text */
+    --primary-hover: 213 94% 78%;      /* #93C5FD */
+    --secondary-accent: 215 36% 23%;   /* #25354E */
+    --app-bg: 223 50% 5%;              /* #070B14 */
+    --secondary: 222 50% 8%;           /* #0A1020 */
+    --secondary-foreground: 216 43% 96%;
+    --muted: 221 47% 10%;              /* #0D1524 */
+    --muted-foreground: 215 18% 61%;   /* #8A99AD */
+    --accent: 218 50% 14%;             /* #111E34 */
+    --accent-foreground: 213 94% 68%;
+    --destructive: 351 95% 71%;
+    --destructive-foreground: 217 60% 10%;
+    --border: 215 36% 23%;             /* #25354E */
+    --input: 215 36% 23%;
+    --ring: 213 94% 68%;
 
-    --success-fg: 0 0% 100%;
-    --success-bg: 240 6% 16%;
-    --success-border: 240 6% 24%;
-    --info-fg: 0 0% 100%;
-    --info-bg: 240 6% 16%;
-    --info-border: 240 6% 24%;
-    --warning-fg: 45 100% 65%;
-    --warning-bg: 43 70% 12%;
-    --warning-border: 43 60% 22%;
-    --incorrect-fg: 0 85% 75%;
-    --incorrect-bg: 0 50% 15%;
-    --incorrect-border: 0 60% 30%;
-    --attempted-fg: 0 0% 100%;
-    --attempted-bg: 240 6% 16%;
-    --attempted-border: 240 6% 24%;
+    --success-fg: 154 72% 67%;         /* #6EE7B7 (Emerald Restricted to Success) */
+    --success-bg: 158 50% 9%;           /* #0B2119 */
+    --success-border: 155 52% 23%;      /* #1C5A40 */
+    --info-fg: 214 95% 87%;            /* #BFDBFE */
+    --info-bg: 215 57% 15%;            /* #10223B */
+    --info-border: 212 47% 36%;         /* #315987 */
+    --warning-fg: 48 96% 77%;          /* #FDE68A Vivid Gold Text */
+    --warning-bg: 43 90% 16%;          /* #4F3A06 Deep Gold Tint */
+    --warning-border: 43 85% 38%;      /* #B3840F Gold Border */
+    --incorrect-fg: 352 96% 81%;       /* #FDA4AF */
+    --incorrect-bg: 336 33% 12%;       /* #29151D */
+    --incorrect-border: 346 37% 28%;   /* #632D3A */
+    --attempted-fg: 213 94% 68%;
+    --attempted-bg: 215 57% 15%;
+    --attempted-border: 212 47% 36%;
     --attempted-text: var(--attempted-fg);
-    --saved-badge-text: 0 0% 100%;
-    --draft-dot: 0 0% 100%;
-
-    /* Semantic Disabled Tokens */
-    --disabled-bg: 240 6% 10%;
-    --disabled-fg: 240 5% 45%;
-    --disabled-border: 240 6% 14%;
-
-    /* Interaction State Tokens */
-    --interactive-hover-bg: 240 6% 14%;
-    --interactive-active-bg: 240 6% 18%;
-    --interactive-selected-bg: 0 0% 100%;
-    --interactive-selected-fg: 0 0% 0%;
-
-    /* Quiz Domain Tokens */
-    --question-unanswered-bg: 240 6% 12%;
-    --question-unanswered-fg: 240 5% 65%;
-    --question-unanswered-border: 240 6% 16%;
-    --question-attempted-bg: 240 6% 16%;
-    --question-attempted-fg: 0 0% 100%;
-    --question-attempted-border: 240 6% 24%;
-    --question-current-bg: 0 0% 100%;
-    --question-current-fg: 0 0% 0%;
-    --question-current-border: 0 0% 80%;
-    --question-correct-bg: 240 6% 16%;
-    --question-correct-fg: 0 0% 100%;
-    --question-correct-border: 240 6% 24%;
-    --question-incorrect-bg: 0 50% 15%;
-    --question-incorrect-fg: 0 85% 75%;
-    --question-incorrect-border: 0 60% 30%;
-    --question-flagged-bg: 240 6% 16%;
-    --question-flagged-fg: 0 0% 100%;
-    --question-flagged-border: 240 6% 24%;
-  }
-
-  .green {
-    --background: 49 26% 91%;
-    --foreground: 155 20% 12%;
-    --card: 60 15% 97%;
-    --card-foreground: 155 20% 12%;
-    --popover: 60 15% 97%;
-    --popover-foreground: 155 20% 12%;
-    --primary: 155 25% 38%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 155 25% 30%;
-    --secondary-accent: 117 23% 70%;
-    --app-bg: 49 26% 91%;
-    --secondary: 117 20% 86%;
-    --secondary-foreground: 155 20% 12%;
-    --muted: 117 20% 86%;
-    --muted-foreground: 155 15% 35%;
-    --accent: 117 23% 82%;
-    --accent-foreground: 155 20% 12%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 117 23% 78%;
-    --input: 117 23% 78%;
-    --ring: 155 25% 38%;
-
-    --success-fg: 147 65% 18%;
-    --success-bg: 138 35% 85%;
-    --success-border: 140 30% 70%;
-    --info-fg: 188 80% 22%;
-    --info-bg: 182 70% 88%;
-    --info-border: 188 50% 70%;
-    --warning-fg: 30 75% 26%;
-    --warning-bg: 38 45% 86%;
-    --warning-border: 38 40% 75%;
-    --incorrect-fg: 0 70% 32%;
-    --incorrect-bg: 0 60% 92%;
-    --incorrect-border: 0 50% 78%;
-    --attempted-fg: 225 60% 30%;
-    --attempted-bg: 214 80% 90%;
-    --attempted-border: 214 80% 82%;
-    --attempted-text: var(--attempted-fg);
-    --saved-badge-text: 147 65% 18%;
+    --saved-badge-text: 213 94% 68%;
     --draft-dot: 213 94% 68%;
 
     /* Semantic Disabled Tokens */
-    --disabled-bg: 117 20% 86%;
-    --disabled-fg: 155 15% 45%;
-    --disabled-border: 117 23% 78%;
+    --disabled-bg: 221 47% 10%;
+    --disabled-fg: 214 18% 36%;        /* #4B586B */
+    --disabled-border: 214 39% 17%;
 
     /* Interaction State Tokens */
-    --interactive-hover-bg: 117 20% 86%;
-    --interactive-active-bg: 117 20% 80%;
-    --interactive-selected-bg: 155 25% 38%;
-    --interactive-selected-fg: 0 0% 100%;
+    --interactive-hover-bg: 214 39% 17%; /* #1B2A3E */
+    --interactive-active-bg: 215 36% 23%;/* #25354E */
+    --interactive-selected-bg: 213 94% 68%; /* #60A5FA Study Blue */
+    --interactive-selected-fg: 217 60% 10%; /* #0B1728 */
 
-    /* Quiz Domain Tokens */
-    --question-unanswered-bg: 117 20% 86%;
-    --question-unanswered-fg: 155 15% 35%;
-    --question-unanswered-border: 117 23% 78%;
-    --question-attempted-bg: 214 80% 90%;
-    --question-attempted-fg: 225 60% 30%;
-    --question-attempted-border: 214 80% 82%;
-    --question-current-bg: 155 25% 38%;
-    --question-current-fg: 0 0% 100%;
-    --question-current-border: 155 25% 30%;
-    --question-correct-bg: 138 35% 85%;
-    --question-correct-fg: 147 65% 18%;
-    --question-correct-border: 0 60% 92%;
-    --question-incorrect-bg: 0 60% 92%;
+    /* Quiz Domain Tokens (DARK THEME — High-Contrast Gold Star Pinned/Focus Tokens) */
+    --question-unanswered-bg: 222 50% 8%;
+    --question-unanswered-fg: 215 18% 61%;
+    --question-unanswered-border: 214 39% 17%;
+    --question-attempted-bg: 215 57% 15%;
+    --question-attempted-fg: 214 95% 87%;
+    --question-attempted-border: 212 47% 36%;
+    --question-current-bg: 213 94% 68%;
+    --question-current-fg: 217 60% 10%;
+    --question-current-border: 213 94% 78%;
+    --question-correct-bg: 158 50% 9%;
+    --question-correct-fg: 154 72% 67%;
+    --question-correct-border: 155 52% 23%;
+    --question-incorrect-bg: 336 33% 12%;
+    --question-incorrect-fg: 352 96% 81%;
+    --question-incorrect-border: 346 37% 28%;
+    --question-flagged-bg: 43 90% 16%;  /* #4F3A06 Deep Gold Tint */
+    --question-flagged-fg: 48 96% 77%;  /* #FDE68A Vivid Gold Text */
+    --question-flagged-border: 43 85% 38%;/* #B3840F Gold Border */
+
+    /* Learning Mastery Progression Triads */
+    --mastery-beginner-bg: 215 57% 15%;
+    --mastery-beginner-fg: 214 95% 87%;
+    --mastery-beginner-border: 212 47% 36%;
+    --mastery-intermediate-bg: 202 56% 11%;
+    --mastery-intermediate-fg: 187 92% 69%;
+    --mastery-intermediate-border: 194 55% 25%;
+    --mastery-mastered-bg: 158 50% 9%;
+    --mastery-mastered-fg: 154 72% 67%;
+    --mastery-mastered-border: 155 52% 23%;
+
+    /* Text Highlighting & Memory Focus Callouts */
+    --highlight-bg: 43 90% 16%;
+    --highlight-fg: 48 96% 77%;
+    --highlight-border: 43 85% 38%;
+
+    /* Flashcard Front vs Back Surface Contrast */
+    --flashcard-front-bg: 221 42% 11%;
+    --flashcard-front-fg: 216 43% 96%;
+    --flashcard-front-border: 215 36% 23%;
+    --flashcard-back-bg: 219 42% 16%;
+    --flashcard-back-fg: 216 43% 96%;
+    --flashcard-back-border: 217 32% 30%;
+
+    /* Learning Analytics Chart Palette */
+    --chart-1: 213 94% 68%;
+    --chart-2: 235 89% 74%;
+    --chart-3: 187 85% 53%;
+    --chart-4: 48 96% 77%;
+    --chart-5: 158 64% 52%;
+
+    /* === Visual Role Layer 2: Surface Hierarchy System (Midnight Navy Surface Architecture) === */
+    --surface-page: 223 50% 5%;          /* #070B14 */
+    --surface-base: 222 50% 8%;          /* #0A1020 */
+    --surface-card: 221 42% 11%;         /* #101827 */
+    --surface-card-elevated: 219 42% 16%;/* #172238 */
+    --surface-card-muted: 221 47% 10%;   /* #0D1524 */
+    --surface-card-accent: 218 50% 14%;  /* #111E34 */
+    --surface-inset: 222 53% 7%;         /* #080F1C */
+    --surface-overlay: 219 40% 16%;      /* #19243A */
+
+    /* Layer 2.1: Border Hierarchy Palette (Midnight Navy Borders) */
+    --border-subtle: 214 39% 17%;        /* #1B2A3E */
+    --border-default: 215 36% 23%;       /* #25354E */
+    --border-strong: 217 32% 30%;        /* #344665 */
+    --border-emphasis: 218 28% 38%;      /* #45587C */
+    --border-accent: 213 94% 68%;        /* #60A5FA */
+    --border-focus: 213 94% 68%;
+    --border-selected: 213 94% 68%;
+    --border-success: 155 52% 23%;
+    --border-warning: 43 85% 38%;
+    --border-danger: 346 37% 28%;
+    --border-info: 212 47% 36%;
+
+    /* Interaction Ring Tokens */
+    --ring-focus: 213 94% 68%;
+    --ring-selected: 213 94% 68%;
+
+    /* Layer 3: Content System (Soft White Hierarchy) */
+    --text-secondary: 214 23% 80%;       /* #C1CBD8 */
+    --text-tertiary: 215 18% 61%;        /* #8A99AD */
+    --text-muted: 214 15% 50%;           /* #6D7D92 */
+    --text-disabled: 214 18% 36%;        /* #4B586B */
+    --text-placeholder: 214 18% 36%;
+    --text-on-accent: 217 60% 10%;
+    --text-on-brand: 217 60% 10%;
+
+    /* Layer 4: 8 Functional Color Families (DARK THEME — Midnight Study Spectrum) */
+    --accent-brand: 213 94% 68%;          /* #60A5FA Electric Study Blue */
+
+    --accent-learning: 213 94% 68%;       /* #60A5FA */
+    --accent-learning-subtle: 215 57% 15%;/* #10223B */
+    --accent-learning-bg: 215 57% 15%;    /* #10223B */
+    --accent-learning-fg: 214 95% 87%;    /* #BFDBFE */
+    --accent-learning-border: 212 47% 36%;/* #315987 */
+
+    --accent-memory: 257 91% 76%;         /* #A78BFA */
+    --accent-memory-subtle: 252 35% 15%;  /* #1C1832 */
+    --accent-memory-bg: 252 35% 15%;      /* #1C1832 */
+    --accent-memory-fg: 253 94% 85%;      /* #C4B5FD */
+    --accent-memory-border: 252 29% 35%;  /* #4B4075 */
+
+    --accent-progress: 187 85% 53%;       /* #22D3EE */
+    --accent-progress-subtle: 202 56% 11%;/* #0C202B */
+    --accent-progress-bg: 202 56% 11%;    /* #0C202B */
+    --accent-progress-fg: 187 92% 69%;    /* #67E8F9 */
+    --accent-progress-border: 194 55% 25%;/* #1D5263 */
+
+    --accent-discovery: 235 89% 74%;      /* #818CF8 */
+    --accent-discovery-subtle: 231 44% 15%;/* #151A36 */
+    --accent-discovery-bg: 231 44% 15%;   /* #151A36 */
+    --accent-discovery-fg: 231 93% 82%;   /* #A5B4FC */
+    --accent-discovery-border: 230 34% 36%;/* #3D477D */
+
+    --accent-focus: 43 96% 56%;           /* #FBBF24 (Gold Star Accent) */
+    --accent-focus-subtle: 43 90% 16%;     /* #4F3A06 */
+    --accent-focus-bg: 43 90% 16%;        /* #4F3A06 */
+    --accent-focus-fg: 48 96% 77%;        /* #FDE68A */
+    --accent-focus-border: 43 85% 38%;    /* #B3840F */
+
+    --accent-community: 351 95% 71%;      /* #FB7185 */
+    --accent-community-subtle: 336 33% 12%;/* #29151D */
+    --accent-community-bg: 336 33% 12%;   /* #29151D */
+    --accent-community-fg: 352 96% 81%;   /* #FDA4AF */
+    --accent-community-border: 346 37% 28%;/* #632D3A */
+
+    --accent-achievement: 158 64% 52%;    /* #34D399 (Emerald Success Only) */
+    --accent-achievement-subtle: 158 50% 9%;/* #0B2119 */
+    --accent-achievement-bg: 158 50% 9%; /* #0B2119 */
+    --accent-achievement-fg: 154 72% 67%; /* #6EE7B7 */
+    --accent-achievement-border: 155 52% 23%;/* #1C5A40 */
+
+    --accent-classroom: 173 65% 50%;      /* #2DD4BF */
+    --accent-classroom-subtle: 173 42% 9%;/* #0D201E */
+    --accent-classroom-bg: 173 42% 9%;   /* #0D201E */
+    --accent-classroom-fg: 172 82% 65%;   /* #5EEAD4 */
+    --accent-classroom-border: 172 48% 20%;/* #1B4D46 */
+
+    /* Layer 6: Global EdTech Learning Domain Triads */
+    --learning-new-bg: 215 57% 15%;
+    --learning-new-fg: 214 95% 87%;
+    --learning-new-border: 212 47% 36%;
+    --learning-review-bg: 252 35% 15%;
+    --learning-review-fg: 253 94% 85%;
+    --learning-review-border: 252 29% 35%;
+    --learning-progress-bg: 202 56% 11%;
+    --learning-progress-fg: 187 92% 69%;
+    --learning-progress-border: 194 55% 25%;
+    --learning-mastered-bg: 158 50% 9%;
+    --learning-mastered-fg: 154 72% 67%;
+    --learning-mastered-border: 155 52% 23%;
+    --learning-struggling-bg: 336 33% 12%;
+    --learning-struggling-fg: 352 96% 81%;
+    --learning-struggling-border: 346 37% 28%;
+    --learning-discovery-bg: 231 44% 15%;
+    --learning-discovery-fg: 231 93% 82%;
+    --learning-discovery-border: 230 34% 36%;
+  }
+
+  /* ===================================================================
+     🌿 THEME 3: .green — Vintage Botanical Paper & Deep Forest Sage Identity 🌲
+     Primary: Deep Forest Green (#2D5A47) | Background: Warm Vintage Paper (#ECE8DF)
+     Focus/Pinned: Warm Earth Ochre & Botanical Gold
+     =================================================================== */
+  .green {
+    --background: 45 20% 90%;
+    --foreground: 155 30% 12%;
+    --card: 50 25% 96%;
+    --card-foreground: 155 30% 12%;
+    --popover: 50 25% 96%;
+    --popover-foreground: 155 30% 12%;
+    
+    /* Primary Brand: Deep Forest Green */
+    --primary: 155 35% 30%;
+    --primary-foreground: 60 30% 98%;
+    --primary-hover: 155 35% 22%;
+    --secondary-accent: 45 18% 75%;
+    --app-bg: 45 20% 90%;
+    --secondary: 45 18% 86%;
+    --secondary-foreground: 155 30% 12%;
+    --muted: 45 18% 86%;
+    --muted-foreground: 155 15% 36%;
+    --accent: 45 20% 84%;
+    --accent-foreground: 155 35% 30%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 45 15% 80%;
+    --input: 45 15% 80%;
+    --ring: 155 35% 30%;
+
+    --success-fg: 155 45% 20%;
+    --success-bg: 145 30% 84%;
+    --success-border: 145 25% 72%;
+    --info-fg: 175 40% 22%;
+    --info-bg: 175 30% 86%;
+    --info-border: 175 28% 72%;
+    --warning-fg: 35 65% 24%;
+    --warning-bg: 35 45% 86%;
+    --warning-border: 35 40% 74%;
+    --incorrect-fg: 0 70% 32%;
+    --incorrect-bg: 0 50% 90%;
+    --incorrect-border: 0 45% 78%;
+    --attempted-fg: 155 35% 30%;
+    --attempted-bg: 155 25% 85%;
+    --attempted-border: 155 25% 75%;
+    --attempted-text: var(--attempted-fg);
+    --saved-badge-text: 155 35% 30%;
+    --draft-dot: 155 35% 30%;
+
+    /* Semantic Disabled Tokens */
+    --disabled-bg: 45 18% 86%;
+    --disabled-fg: 155 15% 48%;
+    --disabled-border: 45 15% 80%;
+
+    /* Interaction State Tokens */
+    --interactive-hover-bg: 45 18% 85%;
+    --interactive-active-bg: 45 18% 80%;
+    --interactive-selected-bg: 155 35% 30%;
+    --interactive-selected-fg: 60 30% 98%;
+
+    /* Quiz Domain Tokens (GREEN THEME — Botanical Warm Earth Ochre Pinned Tokens) */
+    --question-unanswered-bg: 45 18% 86%;
+    --question-unanswered-fg: 155 15% 36%;
+    --question-unanswered-border: 45 15% 80%;
+    --question-attempted-bg: 155 25% 85%;
+    --question-attempted-fg: 155 45% 20%;
+    --question-attempted-border: 155 25% 75%;
+    --question-current-bg: 155 35% 30%;
+    --question-current-fg: 60 30% 98%;
+    --question-current-border: 155 35% 20%;
+    --question-correct-bg: 145 30% 84%;
+    --question-correct-fg: 155 45% 20%;
+    --question-correct-border: 145 25% 72%;
+    --question-incorrect-bg: 0 50% 90%;
     --question-incorrect-fg: 0 70% 32%;
-    --question-incorrect-border: 0 50% 78%;
-    --question-flagged-bg: 42 35% 86%;
-    --question-flagged-fg: 35 60% 25%;
-    --question-flagged-border: 42 30% 74%;
+    --question-incorrect-border: 0 45% 78%;
+    --question-flagged-bg: 35 45% 86%;
+    --question-flagged-fg: 35 65% 24%;
+    --question-flagged-border: 35 40% 74%;
+
+    /* Learning Mastery Progression Triads */
+    --mastery-beginner-bg: 45 25% 86%;
+    --mastery-beginner-fg: 155 35% 25%;
+    --mastery-beginner-border: 45 20% 76%;
+    --mastery-intermediate-bg: 175 30% 86%;
+    --mastery-intermediate-fg: 175 40% 22%;
+    --mastery-intermediate-border: 175 28% 72%;
+    --mastery-mastered-bg: 145 30% 84%;
+    --mastery-mastered-fg: 155 45% 20%;
+    --mastery-mastered-border: 145 25% 72%;
+
+    /* Text Highlighting & Memory Focus Callouts */
+    --highlight-bg: 35 45% 86%;
+    --highlight-fg: 35 65% 22%;
+    --highlight-border: 35 40% 74%;
+
+    /* Flashcard Front vs Back Surface Contrast */
+    --flashcard-front-bg: 50 25% 96%;
+    --flashcard-front-fg: 155 30% 12%;
+    --flashcard-front-border: 45 15% 78%;
+    --flashcard-back-bg: 45 20% 86%;
+    --flashcard-back-fg: 155 30% 12%;
+    --flashcard-back-border: 45 15% 72%;
+
+    /* Learning Analytics Chart Palette */
+    --chart-1: 155 35% 30%;
+    --chart-2: 145 45% 28%;
+    --chart-3: 35 65% 32%;
+    --chart-4: 175 40% 30%;
+    --chart-5: 18 45% 38%;
+
+    /* === Visual Role Layer 2: Surface Hierarchy System === */
+    --surface-page: 45 20% 90%;
+    --surface-base: 45 18% 87%;
+    --surface-card: 50 25% 96%;
+    --surface-card-elevated: 0 0% 100%;
+    --surface-card-muted: 45 18% 87%;
+    --surface-card-accent: 155 20% 92%;
+    --surface-inset: 45 18% 85%;
+    --surface-overlay: 50 25% 96%;
+
+    /* Layer 2.1: Border Hierarchy Palette */
+    --border-subtle: 45 15% 82%;
+    --border-default: 45 15% 76%;
+    --border-strong: 45 15% 65%;
+    --border-emphasis: 45 15% 52%;
+    --border-accent: 155 35% 30%;
+    --border-focus: 155 35% 30%;
+    --border-selected: 155 35% 30%;
+    --border-success: 145 25% 72%;
+    --border-warning: 35 40% 74%;
+    --border-danger: 0 45% 78%;
+    --border-info: 175 28% 72%;
+
+    /* Interaction Ring Tokens */
+    --ring-focus: 155 35% 30%;
+    --ring-selected: 155 35% 30%;
+
+    /* Layer 3: Content System (Typography Hierarchy) */
+    --text-secondary: 155 25% 22%;
+    --text-tertiary: 155 15% 36%;
+    --text-muted: 155 15% 36%;
+    --text-disabled: 155 15% 55%;
+    --text-placeholder: 155 15% 55%;
+    --text-on-accent: 60 30% 98%;
+    --text-on-brand: 60 30% 98%;
+
+    /* Layer 4: 8 Functional Color Families (GREEN THEME — Vintage Sage & Paper Ground + Distinct Sage & Organic Earth Accents) */
+    --accent-brand: 155 35% 30%;
+
+    /* Learning -> Deep Forest Green */
+    --accent-learning: 155 40% 32%;
+    --accent-learning-subtle: 155 20% 86%;
+    --accent-learning-bg: 155 30% 80%;
+    --accent-learning-fg: 155 50% 20%;
+    --accent-learning-border: 155 30% 68%;
+
+    /* Memory -> Sage Olive */
+    --accent-memory: 140 30% 38%;
+    --accent-memory-subtle: 140 18% 86%;
+    --accent-memory-bg: 140 25% 81%;
+    --accent-memory-fg: 140 45% 22%;
+    --accent-memory-border: 140 25% 70%;
+
+    /* Progress -> Soft Pine Teal */
+    --accent-progress: 168 35% 35%;
+    --accent-progress-subtle: 168 20% 86%;
+    --accent-progress-bg: 168 30% 81%;
+    --accent-progress-fg: 168 50% 20%;
+    --accent-progress-border: 168 28% 70%;
+
+    /* Achievement -> Bright Sage */
+    --accent-achievement: 150 45% 35%;
+    --accent-achievement-subtle: 150 22% 86%;
+    --accent-achievement-bg: 150 35% 80%;
+    --accent-achievement-fg: 150 55% 18%;
+    --accent-achievement-border: 150 30% 68%;
+
+    /* Focus -> Warm Ochre / Earth Gold */
+    --accent-focus: 35 55% 38%;
+    --accent-focus-subtle: 35 30% 86%;
+    --accent-focus-bg: 35 45% 80%;
+    --accent-focus-fg: 35 65% 22%;
+    --accent-focus-border: 35 40% 70%;
+
+    /* Discovery -> Deep Moss */
+    --accent-discovery: 130 30% 35%;
+    --accent-discovery-subtle: 130 20% 86%;
+    --accent-discovery-bg: 130 30% 81%;
+    --accent-discovery-fg: 130 45% 22%;
+    --accent-discovery-border: 130 25% 70%;
+
+    /* Community -> Terracotta / Soft Clay */
+    --accent-community: 18 45% 42%;
+    --accent-community-subtle: 18 25% 87%;
+    --accent-community-bg: 18 35% 82%;
+    --accent-community-fg: 18 55% 24%;
+    --accent-community-border: 18 32% 72%;
+
+    /* Classroom -> Earthy Slate Teal */
+    --accent-classroom: 175 35% 34%;
+    --accent-classroom-subtle: 175 20% 86%;
+    --accent-classroom-bg: 175 30% 81%;
+    --accent-classroom-fg: 175 50% 20%;
+    --accent-classroom-border: 175 28% 70%;
+
+    /* Layer 6: Global EdTech Learning Domain Triads (Green Theme Organic Overrides) */
+    --learning-new-bg: 155 20% 86%;
+    --learning-new-fg: 155 50% 20%;
+    --learning-new-border: 155 30% 68%;
+    --learning-review-bg: 140 18% 86%;
+    --learning-review-fg: 140 45% 22%;
+    --learning-review-border: 140 25% 70%;
+    --learning-progress-bg: 168 20% 86%;
+    --learning-progress-fg: 168 50% 20%;
+    --learning-progress-border: 168 28% 70%;
+    --learning-mastered-bg: 150 22% 86%;
+    --learning-mastered-fg: 150 55% 18%;
+    --learning-mastered-border: 150 30% 68%;
+    --learning-struggling-bg: 18 25% 87%;
+    --learning-struggling-fg: 18 55% 24%;
+    --learning-struggling-border: 18 32% 72%;
+    --learning-discovery-bg: 130 20% 86%;
+    --learning-discovery-fg: 130 45% 22%;
+    --learning-discovery-border: 130 25% 70%;
   }
 }
 
@@ -236,41 +679,37 @@
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
+
   .perspective-1000 {
     perspective: 1000px;
   }
-  .perspective-2000 {
-    perspective: 2000px;
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
   }
 
-  /* Custom sleek scrollbar styles */
-  .custom-scrollbar::-webkit-scrollbar,
-  .scrollbar-thin::-webkit-scrollbar {
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Custom Theme-Native Sleek Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
-    height: 5px;
+    height: 6px;
   }
-  .custom-scrollbar::-webkit-scrollbar-track,
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.4);
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
     border-radius: 9999px;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb,
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.3);
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
     border-radius: 9999px;
-    transition: background 0.2s ease-in-out;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.6);
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
   }
-
-  /* Hide scrollbar utility */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
   }
 }

@@ -21,33 +21,53 @@ export async function GET(
   try {
     await connectDB()
 
-    // 1. Find category by exact match first (index hit), fallback to case-insensitive regex
-    let category = await Category.findOne({
-      $or: [{ name: code }, { name: code.toUpperCase() }],
-    }).lean()
+    const cleanCode = decodeURIComponent(code).trim()
+    const escapedCode = escapeRegex(cleanCode)
+    const codeRegex = new RegExp(`^${escapedCode}$`, 'i')
 
-    if (!category) {
-      const escapedCode = escapeRegex(code)
-      category = await Category.findOne({
-        name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
-      }).lean()
+    // 1. Find all matching categories (exact or case-insensitive)
+    const matchingCategories = await Category.find({
+      $or: [
+        { name: cleanCode },
+        { name: cleanCode.toUpperCase() },
+        { name: { $regex: codeRegex } },
+      ],
+    }).select('_id name').lean()
+
+    const categoryIds = matchingCategories.map((c) => c._id)
+    const categoryName = matchingCategories[0]?.name || cleanCode.toUpperCase()
+
+    // 2. Build comprehensive $or query to fetch ALL quizzes belonging to this course
+    const orConditions: any[] = [
+      { course_code: { $regex: codeRegex } },
+      { course_code: { $regex: new RegExp(escapedCode, 'i') } },
+      { title: { $regex: new RegExp(escapedCode, 'i') } },
+    ]
+
+    if (categoryIds.length > 0) {
+      orConditions.push({ category_id: { $in: categoryIds } })
     }
 
-    let query: any = { is_public: true, status: 'published', is_temp: { $ne: true } }
-    let categoryName = code.toUpperCase()
-
-    if (category) {
-      query.category_id = category._id
-      categoryName = category.name
-    } else {
-      const escapedCode = escapeRegex(code)
-      query.course_code = { $regex: new RegExp(`^${escapedCode}$`, 'i') }
+    const query: any = {
+      status: 'published',
+      is_public: { $ne: false },
+      is_temp: { $ne: true },
+      $or: orConditions,
     }
 
-    const quizzes = await Quiz.find(
+    const rawQuizzes = await Quiz.find(
       query,
-      { title: 1, questions: 1 }
+      { title: 1, questions: 1, course_code: 1, category_id: 1 }
     ).lean()
+
+    // Deduplicate quizzes by string ID
+    const seenIds = new Set<string>()
+    const quizzes = rawQuizzes.filter((q) => {
+      const idStr = q._id.toString()
+      if (seenIds.has(idStr)) return false
+      seenIds.add(idStr)
+      return true
+    })
 
     // Try to resolve authenticated user (optional auth)
     let studentId: mongoose.Types.ObjectId | null = null
@@ -72,9 +92,8 @@ export async function GET(
       const userDoc = (await User.findById(studentId).select('pinned_categories pinned_quizzes').lean()) as any
       if (userDoc) {
         pinnedQuizIds = userDoc.pinned_quizzes ?? []
-        if (category?._id) {
-          isCategoryPinned = (userDoc.pinned_categories ?? []).includes(category._id.toString())
-        }
+        const userPinnedCatSet = new Set(userDoc.pinned_categories ?? [])
+        isCategoryPinned = categoryIds.some((catId) => userPinnedCatSet.has(catId.toString()))
       }
 
       // Fetch best scores for all quizzes in one aggregation
@@ -129,7 +148,7 @@ export async function GET(
     })
 
     return NextResponse.json({
-      categoryId: category?._id?.toString() ?? null,
+      categoryId: matchingCategories[0]?._id?.toString() ?? null,
       categoryName,
       quizzes: result,
       savedQuizIds,

@@ -16,34 +16,38 @@ interface RecentActivitiesFeedProps {
 }
 
 export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ recentActivities }: RecentActivitiesFeedProps) {
+  const activities = (recentActivities || []).slice(0, 6)
+
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-card p-5 rounded-[24px] border border-border shadow-xs flex flex-col h-full space-y-4">
-        <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
-          <h3 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4" /> Hoạt Động Gần Đây
+      <div className="bg-surface-card p-4 sm:p-5 rounded-2xl border border-subtle shadow-xs flex flex-col h-full space-y-3">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-subtle pb-2.5 shrink-0">
+          <h3 className="text-xs font-black uppercase tracking-wider text-accentRole-learning flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-accentRole-learning" /> Dòng Thời Gian Học Tập
           </h3>
-          <Link href="/history" className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/history" className="text-[11px] font-bold text-accentRole-learning hover:underline transition-colors">
             Xem tất cả
           </Link>
         </div>
 
-        <div className="space-y-2.5 flex-1 overflow-y-auto pr-0.5 scrollbar-thin">
-          {!recentActivities || recentActivities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-8 gap-2.5 h-full my-auto">
-              <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground border border-border shadow-2xs">
-                <HelpCircle className="w-5 h-5 text-muted-foreground" />
+        {/* Timeline List Container */}
+        <div className="relative space-y-2.5 flex-1 overflow-y-auto pr-1 scrollbar-thin pl-0.5 pt-0.5">
+          {!activities || activities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-8 gap-2 h-full my-auto">
+              <div className="w-10 h-10 rounded-xl bg-surface-inset flex items-center justify-center text-text-tertiary border border-subtle shadow-2xs">
+                <HelpCircle className="w-5 h-5 text-text-tertiary" />
               </div>
-              <p className="text-xs text-muted-foreground font-bold italic">Chưa có lịch sử làm bài gần đây.</p>
-              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-8 px-4 rounded-xl shadow-xs transition-all mt-1">
+              <p className="text-[11px] text-text-tertiary font-bold italic">Chưa có lịch sử làm bài gần đây.</p>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-7 px-3 rounded-lg shadow-xs transition-all mt-1">
                 <Link href="/explore">
-                  Làm bài ngay <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  Làm bài ngay <ArrowRight className="w-3 h-3 ml-1" />
                 </Link>
               </Button>
             </div>
           ) : (
-            recentActivities.slice(0, 6).map((act) => (
-              <CompactActivityItem key={act.id} activity={act} />
+            activities.map((act, idx) => (
+              <CompactActivityItem key={act.id} activity={act} isLast={idx === activities.length - 1} />
             ))
           )}
         </div>
@@ -53,10 +57,10 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ r
 })
 
 function getScoreStyle(score: number) {
-  if (score >= 8) return 'bg-success-bg/20 text-success-fg border-success-fg/30'
-  if (score >= 6.5) return 'bg-primary/10 text-primary border-primary/20'
+  if (score >= 8) return 'bg-learning-mastered-bg text-learning-mastered-fg border-learning-mastered-border'
+  if (score >= 6.5) return 'bg-learning-progress-bg text-learning-progress-fg border-learning-progress-border'
   if (score >= 5) return 'bg-warning-bg text-warning-fg border-warning-border'
-  return 'bg-destructive/10 text-destructive border-destructive/30'
+  return 'bg-learning-struggling-bg text-learning-struggling-fg border-learning-struggling-border'
 }
 
 const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
@@ -70,20 +74,20 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
 }) {
   if (isResumable) {
     return (
-      <Badge className="bg-warning-bg text-warning-fg border border-warning-border text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+      <Badge className="bg-warning-bg/20 text-warning-fg border border-warning-border text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-2xs">
         Đang dở
       </Badge>
     )
   }
   if (formattedScore !== null && scoreNum !== null) {
     return (
-      <Badge className={cn('text-[10px] font-black border px-2 py-0.5 rounded-full', getScoreStyle(scoreNum))}>
+      <Badge className={cn('text-[9px] font-black border px-2 py-0.5 rounded-full shadow-2xs', getScoreStyle(scoreNum))}>
         {formattedScore}/10
       </Badge>
     )
   }
   return (
-    <Badge className="bg-success-bg/20 text-success-fg border border-success-fg/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+    <Badge className="bg-learning-mastered-bg text-learning-mastered-fg border border-learning-mastered-border text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-2xs">
       Xong
     </Badge>
   )
@@ -105,7 +109,7 @@ function formatActivityDetails(activity: ActivityItem) {
 
   const progressAnswered = activity.hasActiveSession ? (activity.activeAnsweredCount ?? 0) : (activity.correctCount ?? 0)
   const progressTotal = activity.hasActiveSession ? (activity.activeTotalCount ?? 0) : (activity.totalCount ?? 0)
-  const progressText = progressTotal > 0 ? ` • ${progressAnswered}/${progressTotal} câu` : ''
+  const progressText = progressTotal > 0 ? `${progressAnswered}/${progressTotal} câu` : ''
 
   const displayTime = activity.activityAt || activity.completedAt
   const timeAgo = displayTime ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: vi }) : 'Gần đây'
@@ -115,21 +119,25 @@ function formatActivityDetails(activity: ActivityItem) {
 
 const DeletedActivityItem = React.memo(function DeletedActivityItem({ title, timeAgo }: { title: string; timeAgo: string }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 opacity-50 cursor-not-allowed bg-muted border-border">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-primary/10 text-primary border-primary/20">
-          <Zap className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <h4 className="text-xs font-black text-card-foreground truncate leading-snug">{title}</h4>
-          <span className="text-[10px] text-muted-foreground font-semibold block mt-0.5">{timeAgo} • Đã xóa</span>
-        </div>
+    <div className="relative flex items-center gap-2.5 opacity-50 cursor-not-allowed">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-primary/10 text-primary border-primary/20 z-10">
+        <Zap className="w-3.5 h-3.5" />
+      </div>
+      <div className="flex-1 p-2.5 rounded-xl border bg-surface-card-muted border-subtle">
+        <h4 className="text-xs font-black text-foreground truncate leading-snug">{title}</h4>
+        <span className="text-[10px] text-text-tertiary font-semibold block mt-0.5">{timeAgo} • Đã xóa</span>
       </div>
     </div>
   )
 })
 
-const CompactActivityItem = React.memo(function CompactActivityItem({ activity }: { activity: ActivityItem }) {
+const CompactActivityItem = React.memo(function CompactActivityItem({
+  activity,
+  isLast = false,
+}: {
+  activity: ActivityItem
+  isLast?: boolean
+}) {
   const { isResumable, isFlashcard, scoreNum, formattedScore, progressText, timeAgo } = formatActivityDetails(activity)
 
   if (activity.quizDeleted) {
@@ -137,34 +145,50 @@ const CompactActivityItem = React.memo(function CompactActivityItem({ activity }
   }
 
   return (
-    <Link
-      href={getActivityHref(activity, isResumable)}
-      className="group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer hover:border-primary/50 hover:bg-muted/60 bg-card border-border shadow-2xs"
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          className={cn(
-            'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs',
-            isFlashcard ? 'bg-warning-bg text-warning-fg border-warning-border' : 'bg-primary/10 text-primary border-primary/20'
-          )}
-        >
-          {isFlashcard ? <Layers className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
-        </div>
+    <div className="relative flex items-center gap-2.5 group">
+      {/* Precise Segment Connector Line (Stopped cleanly at last item) */}
+      {!isLast && (
+        <div className="absolute left-[15px] top-[16px] bottom-[-10px] w-[2px] bg-border/70 pointer-events-none z-0" />
+      )}
 
-        <div className="min-w-0">
-          <h4 className="text-xs font-black text-card-foreground truncate group-hover:text-primary transition-colors leading-snug">
+      {/* Compact Timeline Node Icon */}
+      <div
+        className={cn(
+          'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs transition-transform group-hover:scale-105 z-10 bg-card',
+          isFlashcard
+            ? 'bg-accentRole-memory-bg text-accentRole-memory-fg border-accentRole-memory-border'
+            : 'bg-accentRole-learning-bg text-accentRole-learning-fg border-accentRole-learning-border'
+        )}
+      >
+        {isFlashcard ? <Layers className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+      </div>
+
+      {/* Sleek Compact Item Pill Card */}
+      <Link
+        href={getActivityHref(activity, isResumable)}
+        className="flex-1 min-w-0 flex items-center justify-between p-2.5 sm:p-3 rounded-xl border transition-all duration-200 cursor-pointer hover:border-strong hover:bg-surface-inset bg-surface-card border-subtle shadow-2xs relative z-10"
+      >
+        <div className="min-w-0 space-y-0.5">
+          <h4 className="text-xs font-black text-foreground truncate group-hover:text-primary transition-colors leading-snug">
             {activity.quizCode || 'QUIZ'} — {activity.quizTitle}
           </h4>
-          <span className="text-[10px] text-muted-foreground font-semibold block mt-0.5">
-            {timeAgo} • {isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}
-            {isResumable && <span className="text-warning-fg font-extrabold">{progressText}</span>}
-          </span>
+          <div className="text-[10px] text-text-tertiary font-bold flex items-center gap-1 flex-wrap">
+            <span>{timeAgo}</span>
+            <span>•</span>
+            <span>{isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}</span>
+            {progressText && (
+              <>
+                <span>•</span>
+                <span className="text-warning-fg font-black">{progressText}</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="shrink-0 ml-2">
-        <ActivityStatusBadge isResumable={isResumable} formattedScore={formattedScore} scoreNum={scoreNum} />
-      </div>
-    </Link>
+        <div className="shrink-0 ml-2.5">
+          <ActivityStatusBadge isResumable={isResumable} formattedScore={formattedScore} scoreNum={scoreNum} />
+        </div>
+      </Link>
+    </div>
   )
 })

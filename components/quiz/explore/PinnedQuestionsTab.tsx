@@ -86,8 +86,8 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] gap-3">
-        <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin" />
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải câu hỏi đã ghim...</p>
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Đang tải câu hỏi đã ghim...</p>
       </div>
     )
   }
@@ -299,15 +299,15 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                                 <span
                                   className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] flex-none mt-0.5 ${
                                     isCorrect
-                                      ? 'bg-emerald-500 text-white'
-                                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                      ? 'bg-success-fg text-primary-foreground'
+                                      : 'bg-muted text-muted-foreground'
                                   }`}
                                 >
                                   {String.fromCodePoint(65 + optIdx)}
                                 </span>
                                 <span className="flex-1 whitespace-pre-wrap">{opt}</span>
                                 {isCorrect && (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none self-center" />
+                                  <CheckCircle2 className="w-4 h-4 text-success-fg flex-none self-center" />
                                 )}
                               </div>
                             )
@@ -336,16 +336,16 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
       {/* Clear All Confirmation Dialog */}
       <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-        <DialogContent className="max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+        <DialogContent className="max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl text-card-foreground">
           <DialogHeader className="text-center sm:text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
               <Trash2 className="h-7 w-7" />
             </div>
-            <DialogTitle className="text-center text-lg font-black text-slate-900 dark:text-slate-100">
+            <DialogTitle className="text-center text-lg font-black text-card-foreground">
               Xóa tất cả câu đã ghim?
             </DialogTitle>
-            <DialogDescription className="text-center text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-              Bạn có chắc chắn muốn xóa toàn bộ <strong className="text-rose-600 font-bold">{pinnedQuestions.length} câu hỏi đã ghim</strong> của môn {normalizedCode} không? Thao tác này không thể hoàn tác.
+            <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
+              Bạn có chắc chắn muốn xóa toàn bộ <strong className="text-destructive font-bold">{pinnedQuestions.length} câu hỏi đã ghim</strong> của môn {normalizedCode} không? Thao tác này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -353,7 +353,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               type="button"
               variant="outline"
               onClick={() => setConfirmClearOpen(false)}
-              className="flex-1 h-11 rounded-xl border-slate-200 text-slate-700 font-semibold text-xs"
+              className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
             >
               Hủy bỏ
             </Button>
@@ -361,7 +361,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               type="button"
               onClick={handleConfirmClear}
               disabled={clearAllPinsMutation.isPending}
-              className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+              className="flex-1 h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold text-xs cursor-pointer"
             >
               {clearAllPinsMutation.isPending ? 'Đang xóa...' : 'Xóa tất cả'}
             </Button>
@@ -371,15 +371,15 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
       {/* Quota Exceeded Modal */}
       <Dialog open={quotaModalOpen} onOpenChange={setQuotaModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+        <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl text-card-foreground">
           <DialogHeader className="text-center sm:text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-warning-bg text-warning-fg">
               <AlertCircle className="h-7 w-7" />
             </div>
-            <DialogTitle className="text-center text-lg font-black text-slate-900 dark:text-slate-100">
+            <DialogTitle className="text-center text-lg font-black text-card-foreground">
               Đã đạt giới hạn Quota bộ đề
             </DialogTitle>
-            <DialogDescription className="text-center text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
               {quotaMessage || 'Tài khoản của bạn đã tạo đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại "Bộ đề của tôi" để tiếp tục tạo bài mới.'}
             </DialogDescription>
           </DialogHeader>
@@ -388,7 +388,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               type="button"
               variant="outline"
               onClick={() => setQuotaModalOpen(false)}
-              className="flex-1 h-11 rounded-xl border-slate-200 text-slate-700 font-semibold text-xs"
+              className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
             >
               Đóng
             </Button>
@@ -398,7 +398,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                 setQuotaModalOpen(false)
                 router.push('/my-quizzes')
               }}
-              className="flex-1 h-11 rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-xs"
+              className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer"
             >
               Đến Bộ đề của tôi
             </Button>

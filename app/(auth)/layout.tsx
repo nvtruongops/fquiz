@@ -24,7 +24,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
       >
         <button 
           onClick={() => router.push('/')}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-slate-600 hover:text-slate-900 transition-all hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:translate-y-0 font-bold text-[11px] sm:text-xs tracking-wider"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-xl border border-border shadow-xs text-card-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:translate-y-0 font-bold text-[11px] sm:text-xs tracking-wider cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Quay lại trang chủ</span>
@@ -55,7 +55,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.5 }}
         transition={{ duration: 1, delay: 0.5 }}
-        className="relative z-10 mt-4 sm:mt-10 flex items-center gap-2 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]"
+        className="relative z-10 mt-4 sm:mt-10 flex items-center gap-2 text-muted-foreground text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]"
       >
         <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         <span>Học tập thông minh</span>

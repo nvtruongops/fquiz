@@ -305,19 +305,19 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
                     <Info className="h-3.5 w-3.5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md p-6 rounded-2xl">
+                <DialogContent className="max-w-md p-6 rounded-2xl bg-card text-card-foreground border-border">
                   <DialogHeader>
-                    <DialogTitle className="text-base font-bold text-slate-800 dark:text-slate-100 text-center">
+                    <DialogTitle className="text-base font-bold text-card-foreground text-center">
                       Hướng dẫn thao tác Flashcard
                     </DialogTitle>
                   </DialogHeader>
                   
-                  <div className="space-y-3 mt-3 text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-medium">
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+                  <div className="space-y-3 mt-3 text-sm text-card-foreground leading-relaxed font-medium">
+                    <div className="p-3.5 rounded-xl bg-muted border border-border">
                       <p>1. Ấn <strong>1, 2</strong> hoặc <strong>kéo trái / phải</strong> để chọn Chưa biết hoặc Biết.</p>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+                    <div className="p-3.5 rounded-xl bg-muted border border-border">
                       <p>2. Ấn vào <strong>thẻ</strong> hoặc ấn <strong>Space</strong> để đổi mặt.</p>
                     </div>
                   </div>
@@ -358,7 +358,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
               {/* Toggle Explanation */}
               <div className="flex items-center gap-1.5 border-r border-border pr-2.5 shrink-0 whitespace-nowrap">
                 <Lightbulb className={`w-3.5 h-3.5 shrink-0 ${enableExplanation ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Giải thích</span>
+                <span className="text-xs font-semibold text-card-foreground whitespace-nowrap">Giải thích</span>
                 <Switch 
                   checked={enableExplanation} 
                   onCheckedChange={setEnableExplanation} 
@@ -369,7 +369,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
               {/* Toggle Animation */}
               <div className="flex items-center gap-1.5 border-r border-border pr-2.5 shrink-0 whitespace-nowrap">
                 <Sparkles className={`w-3.5 h-3.5 shrink-0 ${enableAnimation ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Hiệu ứng</span>
+                <span className="text-xs font-semibold text-card-foreground whitespace-nowrap">Hiệu ứng</span>
                 <Switch 
                   checked={enableAnimation} 
                   onCheckedChange={setEnableAnimation} 

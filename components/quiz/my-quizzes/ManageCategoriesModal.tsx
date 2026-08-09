@@ -113,7 +113,7 @@ export default function ManageCategoriesModal({
                             setEditingCategoryId(cat._id)
                             setEditingCategoryName(cat.name)
                           }}
-                          className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 rounded-lg"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-card-foreground rounded-lg cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </Button>
@@ -122,7 +122,7 @@ export default function ManageCategoriesModal({
                           size="sm"
                           onClick={() => deleteCatMutation.mutate(cat._id)}
                           disabled={deleteCatMutation.isPending}
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 rounded-lg"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>

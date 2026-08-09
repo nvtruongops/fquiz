@@ -155,7 +155,7 @@ function AnimatedExplanationView({
                 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase',
                 lastAnswerResult?.isCorrect
                   ? 'bg-success-bg text-success-fg border border-success-border'
-                  : 'bg-incorrect-bg text-incorrect-fg border border-incorrect-border'
+                  : 'bg-incorrect-bg text-destructive border border-incorrect-border'
               )}
             >
               {lastAnswerResult?.isCorrect ? (
@@ -165,7 +165,7 @@ function AnimatedExplanationView({
                 </>
               ) : (
                 <>
-                  <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                  <XCircle className="w-3 h-3 text-destructive" />
                   Sai
                 </>
               )}
@@ -176,7 +176,7 @@ function AnimatedExplanationView({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer"
               title="Thu gọn cột giải thích"
             >
               <ChevronRight className="w-4 h-4" />
@@ -194,14 +194,14 @@ function AnimatedExplanationView({
               className={cn(
                 'p-3.5 rounded-xl border flex items-start gap-3 shadow-xs',
                 lastAnswerResult?.isCorrect
-                  ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/50 text-emerald-900 dark:text-emerald-200'
-                  : 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/50 text-rose-900 dark:text-rose-200'
+                  ? 'bg-success-bg border-success-border text-success-fg'
+                  : 'bg-incorrect-bg border-incorrect-border text-destructive'
               )}
             >
               {lastAnswerResult?.isCorrect ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-success-fg shrink-0 mt-0.5" />
               ) : (
-                <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               )}
               <div className="space-y-0.5">
                 <h4 className="font-bold text-xs sm:text-sm">
@@ -210,7 +210,7 @@ function AnimatedExplanationView({
                     : 'Chưa đúng! Vui lòng đọc giải thích bên dưới.'}
                 </h4>
                 {correctLetters && (
-                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mt-1">
+                  <p className="text-xs font-semibold text-success-fg mt-1">
                     Đáp án đúng: {correctLetters}
                   </p>
                 )}
@@ -218,26 +218,26 @@ function AnimatedExplanationView({
             </div>
 
             {/* Detailed Explanation Content */}
-            <div className="bg-white/80 dark:bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-4 shadow-sm space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <div className="bg-card backdrop-blur-md rounded-2xl border border-border p-4 shadow-sm space-y-2 text-card-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-card-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-warning-fg" />
                 <span>Nội dung giải thích:</span>
               </div>
-              <div className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-wrap font-medium pt-1">
+              <div className="text-xs sm:text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap font-medium pt-1">
                 {explanationText || 'Hệ thống chưa cung cấp phần giải thích cho câu hỏi này.'}
               </div>
             </div>
           </div>
         ) : (
-          <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+          <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center bg-muted/50 rounded-2xl border border-dashed border-border space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
               <HelpCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <h4 className="text-xs font-bold text-card-foreground">
                 Chưa có giải thích
               </h4>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed max-w-[240px] mx-auto">
+              <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
                 Sau khi chọn đáp án ở chế độ luyện tập, giải thích chi tiết của câu hỏi sẽ hiển thị ngay tại đây.
               </p>
             </div>

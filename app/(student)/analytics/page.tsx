@@ -13,9 +13,9 @@ const TYPE_LABELS: Record<string, string> = {
   sentence: 'Mẫu câu',
 }
 
-const TYPE_COLORS = ['#5D7B6F', '#A4C3A2', '#8B9B90']
+const TYPE_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hsl(var(--border))']
 
-const MASTERY_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#5D7B6F', '#455A52']
+const MASTERY_COLORS = ['hsl(var(--destructive))', 'hsl(var(--warning-fg))', 'hsl(var(--warning-fg))', 'hsl(var(--success-fg))', 'hsl(var(--primary))', 'hsl(var(--primary))', 'hsl(var(--primary))']
 
 export default function AnalyticsPage() {
   const { data, isLoading } = useQuery({
@@ -38,8 +38,8 @@ export default function AnalyticsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-10 h-10 text-[#5D7B6F] animate-spin" />
-        <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Đang tính toán phân tích tiến độ học...</p>
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-xs font-black text-primary uppercase tracking-widest">Đang tính toán phân tích tiến độ học...</p>
       </div>
     )
   }
@@ -52,23 +52,23 @@ export default function AnalyticsPage() {
     <DevOnlyGuard featureName="Phân Tích Tiến Độ AI">
       <div className="w-full py-8 space-y-8">
       {/* Header Hero */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white/80 backdrop-blur-2xl p-8 md:p-10 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transform-gpu" />
+      <div className="relative overflow-hidden rounded-[32px] bg-card/80 backdrop-blur-2xl p-8 md:p-10 border border-border shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transform-gpu" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#5D7B6F]/10 text-[#5D7B6F] flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#5D7B6F]">FSRS Learning Analytics</p>
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Phân Tích Tiến Độ Học Tập</h1>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">FSRS Learning Analytics</p>
+                <h1 className="text-2xl md:text-3xl font-black text-card-foreground tracking-tight">Phân Tích Tiến Độ Học Tập</h1>
               </div>
             </div>
           </div>
 
-          <Badge className="bg-[#5D7B6F] text-white border-none px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider shadow-md shadow-[#5D7B6F]/20">
+          <Badge className="bg-primary text-primary-foreground border-none px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider shadow-md shadow-primary/20">
             Tổng {summary.total} thẻ học
           </Badge>
         </div>
@@ -77,17 +77,17 @@ export default function AnalyticsPage() {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng số mục học', value: summary.total, icon: Layers, color: 'text-slate-800', bg: 'bg-slate-50 border-slate-200' },
-          { label: 'Đã thành thạo', value: summary.mastered, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/80 border-emerald-200/60' },
-          { label: 'Đang học tập', value: summary.inProgress, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/80 border-amber-200/60' },
-          { label: 'Đến hạn ôn tập', value: summary.due, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50/80 border-red-200/60' },
+          { label: 'Tổng số mục học', value: summary.total, icon: Layers, color: 'text-foreground', bg: 'bg-surface-card border-subtle' },
+          { label: 'Đã thành thạo', value: summary.mastered, icon: CheckCircle2, color: 'text-learning-mastered-fg', bg: 'bg-learning-mastered-bg border-learning-mastered-border' },
+          { label: 'Đang học tập', value: summary.inProgress, icon: Clock, color: 'text-learning-progress-fg', bg: 'bg-learning-progress-bg border-learning-progress-border' },
+          { label: 'Đến hạn ôn tập', value: summary.due, icon: AlertTriangle, color: 'text-learning-review-fg', bg: 'bg-learning-review-bg border-learning-review-border' },
         ].map((card) => {
           const Icon = card.icon
           return (
-            <Card key={card.label} className={`rounded-3xl border ${card.bg} bg-white/70 backdrop-blur-2xl shadow-sm hover:shadow-md transition-all`}>
+            <Card key={card.label} className={`rounded-3xl border ${card.bg} backdrop-blur-2xl shadow-xs hover:shadow-md transition-all`}>
               <CardContent className="p-5 flex flex-col items-center justify-center text-center gap-2">
                 <Icon className={`w-5 h-5 ${card.color}`} />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{card.label}</span>
+                <span className="text-[10px] font-black text-text-tertiary uppercase tracking-wider">{card.label}</span>
                 <span className={`text-3xl font-black ${card.color} tracking-tight`}>{card.value}</span>
               </CardContent>
             </Card>
@@ -98,43 +98,43 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* By Learning Type */}
-        <Card className="rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
+        <Card className="rounded-[32px] border border-border bg-card/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <BarChart2 className="w-5 h-5 text-[#5D7B6F]" />
+            <h2 className="text-base font-black text-card-foreground uppercase tracking-wider flex items-center gap-2">
+              <BarChart2 className="w-5 h-5 text-primary" />
               Phân bố loại bài học
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={byType.map((t) => ({ ...t, name: TYPE_LABELS[t.loType] ?? t.loType }))}>
-              <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
+              <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 12, fontWeight: 700 }} />
+              <YAxis tick={{ fill: 'currentColor', fontSize: 12, fontWeight: 700 }} />
               <Tooltip
-                contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
-                labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
+                labelStyle={{ color: 'hsl(var(--card-foreground))', fontWeight: 'bold' }}
               />
-              <Bar dataKey="total" name="Tổng" fill="#5D7B6F" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="mastered" name="Thành thạo" fill="#10b981" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="inProgress" name="Đang học" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="total" name="Tổng" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="mastered" name="Thành thạo" fill="hsl(var(--success-fg))" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="inProgress" name="Đang học" fill="hsl(var(--warning-fg))" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
         {/* Mastery Distribution */}
-        <Card className="rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
+        <Card className="rounded-[32px] border border-border bg-card/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#5D7B6F]" />
+            <h2 className="text-base font-black text-card-foreground uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
               Mức độ thuộc bài (Mastery)
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={masteryDistribution}>
-              <XAxis dataKey="range" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
+              <XAxis dataKey="range" tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 700 }} />
+              <YAxis tick={{ fill: 'currentColor', fontSize: 12, fontWeight: 700 }} />
               <Tooltip
-                contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
-                labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
+                labelStyle={{ color: 'hsl(var(--card-foreground))', fontWeight: 'bold' }}
               />
               <Bar dataKey="count" name="Số thẻ" radius={[6, 6, 0, 0]}>
                 {masteryDistribution.map((_, i) => (
@@ -148,18 +148,18 @@ export default function AnalyticsPage() {
 
       {/* Memory Retrievability & Progress Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
-          <h2 className="text-base font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#5D7B6F]" />
+        <Card className="rounded-[32px] border border-border bg-card/80 backdrop-blur-2xl shadow-sm p-6 space-y-4">
+          <h2 className="text-base font-black text-card-foreground uppercase tracking-wider flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
             Khả năng gợi nhớ (Đường cong quên)
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={retrievabilityDistribution}>
-              <XAxis dataKey="range" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
+              <XAxis dataKey="range" tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 700 }} />
+              <YAxis tick={{ fill: 'currentColor', fontSize: 12, fontWeight: 700 }} />
               <Tooltip
-                contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
-                labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
+                labelStyle={{ color: 'hsl(var(--card-foreground))', fontWeight: 'bold' }}
               />
               <Bar dataKey="count" name="Số mục" radius={[6, 6, 0, 0]}>
                 {retrievabilityDistribution.map((_, i) => {
@@ -173,19 +173,19 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="rounded-[32px] border border-white/90 bg-white/80 backdrop-blur-2xl shadow-sm p-6 space-y-5">
-          <h2 className="text-base font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="w-5 h-5 text-[#5D7B6F]" />
+        <Card className="rounded-[32px] border border-border bg-card/80 backdrop-blur-2xl shadow-sm p-6 space-y-5">
+          <h2 className="text-base font-black text-card-foreground uppercase tracking-wider flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
             Chi tiết theo loại
           </h2>
           <div className="space-y-5">
-            {byType.map((t, i) => (
+            {byType.map((t) => (
               <div key={t.loType} className="space-y-1.5">
                 <div className="flex justify-between text-xs font-black uppercase tracking-wider">
-                  <span className="text-[#5D7B6F]">{TYPE_LABELS[t.loType] ?? t.loType}</span>
-                  <span className="text-slate-400">{t.total} mục</span>
+                  <span className="text-primary">{TYPE_LABELS[t.loType] ?? t.loType}</span>
+                  <span className="text-muted-foreground">{t.total} mục</span>
                 </div>
-                <div className="flex gap-1 h-3.5 bg-slate-100 rounded-full p-0.5 overflow-hidden">
+                <div className="flex gap-1 h-3.5 bg-muted rounded-full p-0.5 overflow-hidden">
                   <div
                     className="bg-emerald-500 rounded-full transition-all"
                     style={{ flex: Math.max(t.mastered, 0.01) }}
@@ -197,12 +197,12 @@ export default function AnalyticsPage() {
                     title={`Đang học: ${t.inProgress}`}
                   />
                   <div
-                    className="bg-slate-300 rounded-full transition-all"
+                    className="bg-muted-foreground/30 rounded-full transition-all"
                     style={{ flex: Math.max(t.total - t.mastered - t.inProgress, 0.01) }}
                     title={`Chưa học: ${t.total - t.mastered - t.inProgress}`}
                   />
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   <span>{t.mastered} thành thạo</span>
                   <span>{t.inProgress} đang học</span>
                   <span>{t.due} đến hạn</span>

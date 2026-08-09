@@ -74,8 +74,8 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <div className="max-w-md w-full p-8 text-center bg-card rounded-2xl border border-border shadow-xl">
-          <h2 className="text-xl font-extrabold text-foreground mb-2">Không tìm thấy kết quả</h2>
-          <p className="text-sm font-medium text-muted-foreground mb-6">
+          <h2 className="text-xl font-black text-foreground mb-2">Không tìm thấy kết quả</h2>
+          <p className="text-xs font-bold text-muted-foreground mb-6">
             Kết quả làm bài không tồn tại, phiên làm bài đã bị xóa hoặc bạn không có quyền truy cập bài làm này.
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -102,8 +102,6 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   return <StandardResultView quizId={quizId} sessionId={sessionId} data={data} />
 }
 
-
-
 import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
 
 function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
@@ -112,79 +110,80 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
   const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
   const scoreOnTen = totalQuestions > 0 ? (score / totalQuestions) * 10 : 0
   const scoreOnTenDisplay = scoreOnTen % 1 === 0 ? scoreOnTen.toFixed(0) : scoreOnTen.toFixed(1)
-  const completedDate = new Date(completed_at).toLocaleString('vi-VN', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
 
-  const gradeColor = percentage >= 80 ? 'text-[#5D7B6F]' : percentage >= 50 ? 'text-blue-600' : 'text-orange-500'
-  const gradeLabel = percentage >= 80 ? 'Xuất sắc!' : percentage >= 50 ? 'Khá tốt!' : 'Cần cố gắng thêm!'
+  const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
+  const gradeLabel = percentage >= 80 ? 'XUẤT SẮC!' : percentage >= 50 ? 'KHÁ TỐT!' : 'CẦN CỐ GẮNG THÊM!'
 
   return (
-    <div className="w-full max-w-full h-full flex flex-col gap-2 overflow-hidden px-2 sm:px-0">
+    <div className="w-full max-w-full min-h-[calc(100vh-4rem)] md:h-full flex flex-col gap-3 overflow-hidden px-1.5 sm:px-0">
       {/* Top Header Card Summary Toolbar */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-xl shadow-xs border border-white/90 p-2.5 sm:px-4 sm:py-3 shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3.5 w-full sm:w-auto">
-            <div className="flex items-center gap-2.5 sm:gap-3.5">
-              <div className="flex items-baseline gap-0.5 sm:gap-1">
-                <span className={`text-xl sm:text-3xl font-extrabold ${gradeColor} tracking-tight`}>{scoreOnTenDisplay}</span>
-                <span className="text-[10px] sm:text-xs font-bold text-gray-400">/10</span>
-              </div>
-              <div className="h-5 sm:h-6 w-px bg-slate-200" />
-              <div className="min-w-0">
-                <p className="text-[11px] sm:text-xs font-extrabold text-[#5D7B6F] uppercase tracking-wider">{gradeLabel}</p>
-                <p className="text-[9.5px] sm:text-[11px] font-medium text-gray-500 truncate">
-                  {score}/{totalQuestions} câu đúng · {percentage}%
-                </p>
-              </div>
+      <div className="relative overflow-hidden rounded-2xl bg-card backdrop-blur-xl shadow-2xs border border-border p-3.5 sm:px-5 sm:py-3.5 shrink-0 space-y-3">
+        {/* Top Summary Row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-baseline gap-1">
+              <span className={`text-2xl sm:text-3xl font-black ${gradeColor} tracking-tight`}>{scoreOnTenDisplay}</span>
+              <span className="text-xs font-black text-muted-foreground">/10</span>
             </div>
-
-            <Badge className="sm:hidden shrink-0 bg-[#5D7B6F] text-white border-none px-2 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wider rounded-full shadow-xs">
-              {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
-            </Badge>
+            <div className="h-6 w-px bg-border" />
+            <div className="min-w-0">
+              <p className="text-xs font-black text-foreground uppercase tracking-wider">{gradeLabel}</p>
+              <p className="text-[11px] font-bold text-muted-foreground truncate">
+                {score}/{totalQuestions} câu đúng · {percentage}%
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-            <Badge className="hidden sm:inline-flex bg-[#5D7B6F] text-white border-none px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-xs">
-              {mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'}
-            </Badge>
+          <Badge className="shrink-0 bg-primary text-primary-foreground border-none px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-full shadow-2xs">
+            {mode === 'immediate' ? 'LUYỆN TẬP' : 'KIỂM TRA'}
+          </Badge>
+        </div>
 
-            <RetryWrongButton quizId={quizId} sessionId={sessionId} wrongCount={wrongCount} />
+        {/* Action Buttons: Full-width stacked on mobile, inline on desktop */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1 border-t sm:border-t-0 border-border">
+          {wrongCount > 0 && (
+            <RetryWrongButton 
+              quizId={quizId} 
+              sessionId={sessionId} 
+              wrongCount={wrongCount} 
+              className="h-10 sm:h-8 w-full sm:w-auto text-xs sm:text-[11px] rounded-2xl sm:rounded-xl"
+            />
+          )}
 
-            <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
-              <Button className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[10px] sm:text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] cursor-pointer justify-center">
-                <RotateCcw className="mr-1 h-3 w-3 shrink-0" /> Làm lại toàn bộ
-              </Button>
-            </Link>
+          <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
+            <Button className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs sm:text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95 cursor-pointer justify-center">
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Làm lại toàn bộ
+            </Button>
+          </Link>
 
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button variant="outline" className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center text-slate-600">
-                <LayoutDashboard className="mr-1 h-3 w-3 shrink-0" /> Dashboard
+              <Button variant="outline" className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl border-border font-black text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
+                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Dashboard
               </Button>
             </Link>
 
             <Link href="/history" className="w-full sm:w-auto">
-              <Button variant="outline" className="h-7 sm:h-8 w-full px-2 sm:px-3 rounded-lg sm:rounded-xl border-slate-200 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer justify-center text-slate-600">
-                <BookOpen className="mr-1 h-3 w-3 shrink-0" /> Lịch sử
+              <Button variant="outline" className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl border-border font-black text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
+                <BookOpen className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Lịch sử
               </Button>
             </Link>
-
-            {is_temp && <ExitMixQuizButton sessionId={sessionId} />}
           </div>
+
+          {is_temp && <ExitMixQuizButton sessionId={sessionId} />}
         </div>
       </div>
 
       {is_temp && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-emerald-50/80 border border-emerald-200/80 rounded-xl px-3.5 py-2.5 shrink-0">
-          <div className="flex items-center gap-2 text-emerald-800">
-            <Trophy className="w-4 h-4 shrink-0 text-emerald-600" />
-            <p className="text-xs font-bold">
-              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="font-extrabold text-emerald-900 underline">Bộ đề của tôi → Tab Quiz Tự Tạo</span>!
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-success-bg border border-success-border text-success-fg rounded-2xl px-4 py-3 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <Trophy className="w-4 h-4 shrink-0 text-success-fg" />
+            <p className="text-xs font-black">
+              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="underline">Bộ đề của tôi → Tab Quiz Tự Tạo</span>!
             </p>
           </div>
           <Link href="/my-quizzes" className="shrink-0 w-full sm:w-auto">
-            <Button size="sm" className="h-7 w-full sm:w-auto px-3 rounded-lg bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-extrabold text-[10px] uppercase tracking-wider cursor-pointer">
+            <Button size="sm" className="h-8 w-full sm:w-auto px-3.5 rounded-2xl sm:rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-[10px] uppercase tracking-wider cursor-pointer">
               Xem Bộ đề của tôi
             </Button>
           </Link>
@@ -193,108 +192,6 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
 
       {/* Main Content Area: Interactive Question Matrix & Detail Viewer */}
       <InteractiveResultViewer questions={questions} />
-    </div>
-  )
-}
-
-function ResultQuestionItem({ question: q, index: idx }: { question: any; index: number }) {
-  const correctAnswers = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
-  const submittedAnswers = q.submitted_answer === null || q.submitted_answer === undefined
-    ? []
-    : Array.isArray(q.submitted_answer)
-      ? q.submitted_answer
-      : [q.submitted_answer]
-  const notAnswered = submittedAnswers.length === 0
-
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-start gap-3 mb-4">
-        <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold text-white ${
-          notAnswered ? 'bg-gray-300' : q.is_correct ? 'bg-emerald-500' : 'bg-red-400'
-        }`}>
-          {idx + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            {notAnswered ? (
-              <Badge className="bg-gray-100 text-gray-500 border-none text-xs font-medium">Chưa trả lời</Badge>
-            ) : q.is_correct ? (
-              <Badge className="bg-emerald-50 text-emerald-700 border-none text-xs font-medium">
-                <CheckCircle2 className="h-3 w-3 mr-1 inline" />Đúng
-              </Badge>
-            ) : (
-              <Badge className="bg-red-50 text-red-600 border-none text-xs font-medium">
-                <XCircle className="h-3 w-3 mr-1 inline" />Sai
-              </Badge>
-            )}
-          </div>
-          <p className="text-gray-800 font-medium leading-relaxed">{q.text}</p>
-        </div>
-      </div>
-
-      {q.image_url && (
-        <div className="mb-4 flex justify-center rounded-xl bg-gray-50 p-2">
-          <img
-            src={
-              /^(https?:\/\/|\/|data:image\/)/i.test(q.image_url) && !/javascript:/i.test(q.image_url)
-                ? q.image_url
-                : ''
-            }
-            alt="Question"
-            className="max-h-64 object-contain rounded-lg"
-          />
-        </div>
-      )}
-
-      <div className="space-y-2 ml-11">
-        {q.options.map((option: string, optIdx: number) => {
-          const isCorrectAnswer = correctAnswers.includes(optIdx)
-          const isSubmittedAnswer = submittedAnswers.includes(optIdx)
-
-          let borderColor = 'border-gray-100'
-          let bgColor = 'bg-gray-50'
-          let textColor = 'text-gray-600'
-          let indicator = null
-
-          if (isCorrectAnswer && isSubmittedAnswer) {
-            borderColor = 'border-emerald-300'
-            bgColor = 'bg-emerald-50'
-            textColor = 'text-emerald-800'
-            indicator = <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-          } else if (isCorrectAnswer) {
-            borderColor = 'border-emerald-200'
-            bgColor = 'bg-emerald-50/50'
-            textColor = 'text-emerald-700'
-            indicator = <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-          } else if (isSubmittedAnswer && !isCorrectAnswer) {
-            borderColor = 'border-red-300'
-            bgColor = 'bg-red-50'
-            textColor = 'text-red-700'
-            indicator = <XCircle className="h-4 w-4 text-red-400 shrink-0" />
-          }
-
-          return (
-            <div key={optIdx} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${borderColor} ${bgColor} transition-colors`}>
-              <span className={`flex-shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold ${
-                isCorrectAnswer ? 'border-emerald-300 bg-white text-emerald-600' :
-                isSubmittedAnswer ? 'border-red-300 bg-white text-red-500' :
-                'border-gray-200 bg-white text-gray-400'
-              }`}>
-                {String.fromCodePoint(65 + optIdx)}
-              </span>
-              <span className={`text-sm ${textColor} flex-1 font-medium`}>{option}</span>
-              {indicator}
-            </div>
-          )
-        })}
-      </div>
-
-      {q.explanation && (
-        <div className="mt-4 ml-11 p-4 rounded-xl bg-sky-50/50 border border-sky-100">
-          <p className="text-xs font-semibold text-sky-600 uppercase tracking-wider mb-1">Giải thích</p>
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{q.explanation}</p>
-        </div>
-      )}
     </div>
   )
 }

@@ -101,17 +101,17 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                 </div>
 
                 {displayTitle && displayTitle !== displayCourseCode && (
-                  <p className="text-[11px] font-bold text-slate-600 line-clamp-1" title={displayTitle}>
+                  <p className="text-[11px] font-bold text-muted-foreground line-clamp-1" title={displayTitle}>
                     {displayTitle}
                   </p>
                 )}
 
                 <div className="flex items-center gap-2.5">
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
-                    <BookOpen className="w-3 h-3 text-[#A4C3A2]" />
+                  <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground">
+                    <BookOpen className="w-3 h-3 text-primary" />
                     <span>{quiz.questionCount} CÂU</span>
                   </div>
-                  <div className={cn('flex items-center gap-1 text-[9px] font-bold', quiz.is_public ? 'text-emerald-600' : 'text-orange-500')}>
+                  <div className={cn('flex items-center gap-1 text-[9px] font-bold', quiz.is_public ? 'text-success-fg' : 'text-warning-fg')}>
                     {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                     <span>{quiz.is_public ? 'CÔNG KHAI' : 'CÁ NHÂN'}</span>
                   </div>
@@ -119,7 +119,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
               </div>
 
               {/* Middle Section */}
-              <div className="flex items-center justify-start sm:justify-center border-t sm:border-t-0 sm:border-l sm:border-r border-slate-100 pt-2 sm:pt-0 sm:px-4 min-w-0 sm:min-w-[150px]">
+              <div className="flex items-center justify-start sm:justify-center border-t sm:border-t-0 sm:border-l sm:border-r border-border pt-2 sm:pt-0 sm:px-4 min-w-0 sm:min-w-[150px]">
                 <QuizStatusBadge
                   quiz={quiz}
                   hasAttempt={hasAttempt}
@@ -131,15 +131,15 @@ export const QuizCardItem = React.memo(function QuizCardItem({
               </div>
 
               {/* Right Section */}
-              <div className="flex items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+              <div className="flex items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
                 {hasAttempt && (
                   <Button
                     asChild
                     variant="outline"
-                    className="rounded-lg sm:rounded-xl px-2 sm:px-2.5 py-1.5 h-8 sm:h-9 font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 flex items-center gap-1 transition-all active:scale-95 justify-center cursor-pointer"
+                    className="rounded-lg sm:rounded-xl px-2 sm:px-2.5 py-1.5 h-8 sm:h-9 font-bold text-xs border-border text-card-foreground hover:bg-muted flex items-center gap-1 transition-all active:scale-95 justify-center cursor-pointer"
                   >
                     <Link href={quiz.latestSessionId ? `/quiz/${quiz._id}/result/${quiz.latestSessionId}` : `/history?search=${encodeURIComponent(quiz.is_temp ? displayTitle : quiz.course_code)}`}>
-                      <History className="w-3.5 h-3.5 text-[#5D7B6F]" />
+                      <History className="w-3.5 h-3.5 text-primary" />
                       <span className="text-[11px] sm:text-xs font-bold">Lịch sử</span>
                     </Link>
                   </Button>
@@ -149,10 +149,10 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   asChild={!isSourceLocked}
                   disabled={isSourceLocked}
                   className={cn(
-                    'rounded-lg sm:rounded-xl px-3 py-1.5 sm:px-4 sm:py-2.5 h-8 sm:h-9 font-bold text-xs uppercase tracking-wider shadow-xs flex items-center gap-1 transition-all active:scale-95 justify-center',
+                    'rounded-lg sm:rounded-xl px-3 py-1.5 sm:px-4 sm:py-2.5 h-8 sm:h-9 font-bold text-xs uppercase tracking-wider shadow-xs flex items-center gap-1 transition-all active:scale-95 justify-center cursor-pointer',
                     isSourceLocked
-                      ? 'bg-gray-300 text-white cursor-not-allowed'
-                      : 'bg-[#5D7B6F] hover:bg-[#4A6359] text-white shadow-[#5D7B6F]/10'
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm'
                   )}
                 >
                   {isSourceLocked ? (
@@ -173,7 +173,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   size="icon"
                   onClick={() => setView('actions')}
                   disabled={isDeleting}
-                  className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 cursor-pointer shrink-0"
+                  className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground cursor-pointer shrink-0"
                 >
                   <MoreVertical className="w-3.5 h-3.5" />
                 </Button>
@@ -200,10 +200,10 @@ export const QuizCardItem = React.memo(function QuizCardItem({
 
                     <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border">
                       <Select value={moveCategoryId} onValueChange={(val) => setMoveCategoryId(val)}>
-                        <SelectTrigger className="w-[130px] h-8 rounded-lg border-none bg-card text-[11px] font-bold text-foreground shadow-xs focus:ring-0">
+                        <SelectTrigger className="w-[130px] h-8 rounded-lg border-none bg-card text-[11px] font-bold text-card-foreground shadow-xs focus:ring-0">
                           <SelectValue placeholder="Chuyển DM..." />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-border shadow-xl p-1 z-[100]">
+                        <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1 z-[100]">
                           {categories.map((cat) => (
                             <SelectItem key={cat._id} value={cat._id} className="text-xs font-bold py-2 rounded-lg cursor-pointer">
                               {cat.name}
@@ -243,7 +243,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                     }}
                     variant="outline"
                     disabled={isDeleting}
-                    className="h-9 px-4 rounded-full border-none bg-destructive text-destructive-foreground font-black hover:bg-destructive/90 shadow-sm gap-2 transition-all active:scale-95 text-xs"
+                    className="h-9 px-4 rounded-full border-none bg-destructive text-destructive-foreground font-black hover:bg-destructive/90 shadow-sm gap-2 transition-all active:scale-95 text-xs cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>{isDeleting ? 'Đang xóa...' : 'Xóa bài'}</span>
@@ -252,7 +252,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   <Button
                     onClick={() => setView('default')}
                     variant="outline"
-                    className="h-9 px-4 rounded-full border border-border bg-card text-muted-foreground font-bold hover:bg-muted text-xs"
+                    className="h-9 px-4 rounded-full border border-border bg-card text-muted-foreground font-bold hover:bg-muted text-xs cursor-pointer"
                   >
                     Hủy
                   </Button>
@@ -265,13 +265,13 @@ export const QuizCardItem = React.memo(function QuizCardItem({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-md rounded-2xl border border-border bg-card backdrop-blur-2xl shadow-xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md rounded-2xl border border-border bg-card backdrop-blur-2xl shadow-xl p-0 overflow-hidden text-card-foreground">
           <div className="p-6 flex flex-col items-center justify-center text-center">
             <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
               <AlertTriangle className="w-7 h-7" />
             </div>
 
-            <DialogTitle className="text-base font-black text-foreground mb-1">
+            <DialogTitle className="text-base font-black text-card-foreground mb-1">
               Xác nhận xóa bài này?
             </DialogTitle>
 
@@ -284,7 +284,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                 onClick={() => setShowDeleteDialog(false)}
                 variant="outline"
                 disabled={isDeleting}
-                className="h-11 rounded-xl border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-xs"
+                className="h-11 rounded-xl border-border font-bold text-muted-foreground hover:bg-muted text-xs cursor-pointer"
               >
                 Hủy
               </Button>
@@ -294,7 +294,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   setShowDeleteDialog(false)
                 }}
                 disabled={isDeleting}
-                className="h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-xs shadow-md active:scale-95 transition-all"
+                className="h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận xóa'}
               </Button>

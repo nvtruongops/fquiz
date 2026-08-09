@@ -120,24 +120,24 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 className={cn(
                   'w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 text-xs font-medium',
                   isSelected
-                    ? 'border-[#5D7B6F] bg-emerald-50/70 shadow-xs ring-1 ring-[#5D7B6F]'
+                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
                     : isKnown
-                    ? 'border-slate-100 bg-slate-50/50 hover:bg-slate-100 text-slate-700'
-                    : 'border-rose-100 bg-rose-50/30 hover:bg-rose-50 text-slate-800'
+                    ? 'border-border bg-muted/50 hover:bg-muted text-card-foreground'
+                    : 'border-incorrect-border bg-incorrect-bg hover:bg-incorrect-bg/80 text-card-foreground'
                 )}
               >
                 <div className="flex items-center gap-2 truncate">
                   <span className={cn(
                     'w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0',
-                    isKnown ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'
+                    isKnown ? 'bg-success-bg text-success-fg' : 'bg-incorrect-bg text-destructive'
                   )}>
                     {idx + 1}
                   </span>
-                  <span className="truncate font-semibold text-slate-800">{q.text}</span>
+                  <span className="truncate font-semibold text-card-foreground">{q.text}</span>
                 </div>
 
                 {isKnown ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
+                  <Badge className="bg-success-bg text-success-fg hover:bg-success-bg border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
                     <CheckCircle2 className="w-3 h-3 mr-0.5 inline" /> Đã nhớ
                   </Badge>
                 ) : (
@@ -256,13 +256,13 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               {showAnswer ? (
                 <div className="space-y-4 animate-in fade-in">
                   {/* Correct Answer Highlight */}
-                  <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-[#5D7B6F] block">
+                  <div className="bg-card p-4 rounded-xl border border-success-border shadow-xs space-y-1 text-card-foreground">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
                       Đáp án chính xác:
                     </span>
-                    <div className="flex items-center gap-2 text-sm font-black text-emerald-950">
+                    <div className="flex items-center gap-2 text-sm font-black text-success-fg">
                       {correctAnswerLetter && (
-                        <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-md text-xs">
+                        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-md text-xs">
                           {correctAnswerLetter}
                         </span>
                       )}
@@ -272,25 +272,25 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
 
                   {/* Explanation / Notes */}
                   {currentQuestion.explanation ? (
-                    <div className="bg-white/90 p-4 rounded-xl border border-emerald-100 space-y-1.5 text-xs text-slate-700 leading-relaxed">
-                      <span className="font-bold text-[#5D7B6F] uppercase tracking-wider text-[10px] flex items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5 text-emerald-600" /> Giải thích / Dịch nghĩa / Mẹo nhớ:
+                    <div className="bg-card p-4 rounded-xl border border-border space-y-1.5 text-xs text-card-foreground leading-relaxed">
+                      <span className="font-bold text-primary uppercase tracking-wider text-[10px] flex items-center gap-1">
+                        <BookOpen className="w-3.5 h-3.5 text-primary" /> Giải thích / Dịch nghĩa / Mẹo nhớ:
                       </span>
-                      <p className="whitespace-pre-line font-medium text-slate-800 pt-1">
+                      <p className="whitespace-pre-line font-medium text-card-foreground pt-1">
                         {currentQuestion.explanation}
                       </p>
                     </div>
                   ) : (
-                    <div className="p-4 rounded-xl bg-white/60 border border-emerald-100/60 text-xs text-slate-400 italic">
+                    <div className="p-4 rounded-xl bg-muted/60 border border-border text-xs text-muted-foreground italic">
                       Không có thêm phần giải thích cho câu hỏi này.
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="h-48 flex flex-col items-center justify-center text-center p-6 bg-white/60 rounded-xl border border-emerald-100 text-slate-400 space-y-2">
-                  <EyeOff className="w-8 h-8 text-emerald-400/60" />
-                  <p className="text-xs font-bold text-slate-600">Đáp án mặt sau đang ẩn</p>
-                  <p className="text-[11px] text-slate-400">Ấn nút "Hiện đáp án mặt sau" ở góc trên để mở đáp án.</p>
+                <div className="h-48 flex flex-col items-center justify-center text-center p-6 bg-muted/60 rounded-xl border border-border text-muted-foreground space-y-2">
+                  <EyeOff className="w-8 h-8 text-primary/60" />
+                  <p className="text-xs font-bold text-card-foreground">Đáp án mặt sau đang ẩn</p>
+                  <p className="text-[11px] text-muted-foreground">Ấn nút "Hiện đáp án mặt sau" ở góc trên để mở đáp án.</p>
                 </div>
               )}
             </div>

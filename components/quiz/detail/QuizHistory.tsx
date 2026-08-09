@@ -284,16 +284,16 @@ export function QuizHistory({
                 variant="outline"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={safePage === totalPages}
-                className="h-9 px-3.5 rounded-xl text-xs font-black border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 shadow-xs cursor-pointer"
+                className="h-9 px-3.5 rounded-xl text-xs font-black border-border bg-card hover:bg-muted disabled:opacity-40 shadow-xs cursor-pointer text-card-foreground"
               >
                 <span>Trang sau</span>
-                <ChevronRight className="w-4 h-4 ml-1 text-[#5D7B6F]" />
+                <ChevronRight className="w-4 h-4 ml-1 text-primary" />
               </Button>
             </div>
 
             <Link 
               href="/history" 
-              className="font-black text-[#5D7B6F] hover:text-[#4a6359] inline-flex items-center gap-1.5 text-xs bg-[#5D7B6F]/10 hover:bg-[#5D7B6F]/20 px-3.5 py-2 rounded-xl transition-all shadow-xs"
+              className="font-black text-primary hover:text-primary/90 inline-flex items-center gap-1.5 text-xs bg-primary/10 hover:bg-primary/20 px-3.5 py-2 rounded-xl transition-all shadow-xs"
             >
               <span>Xem tất cả lịch sử</span>
               <ArrowRight className="w-3.5 h-3.5" />

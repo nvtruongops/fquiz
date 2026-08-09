@@ -179,8 +179,8 @@ function getStatusConfig(checking: boolean, hasDiff: boolean, hasSame: boolean, 
     }
   }
   return {
-    style: 'border-gray-300 bg-white',
-    icon: <Database className="h-5 w-5 text-gray-400 mt-0.5" />,
+    style: 'border-border bg-card',
+    icon: <Database className="h-5 w-5 text-muted-foreground mt-0.5" />,
     text: 'Chưa có câu hỏi nào',
   }
 }

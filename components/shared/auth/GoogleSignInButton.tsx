@@ -161,10 +161,10 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
     <div className={className}>
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200/80" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
-          <span className="bg-white/90 backdrop-blur-md px-3 text-slate-400">hoặc tiếp tục với</span>
+          <span className="bg-card backdrop-blur-md px-3 text-muted-foreground">hoặc tiếp tục với</span>
         </div>
       </div>
 
@@ -173,8 +173,8 @@ export function GoogleSignInButton({ callbackUrl, className }: GoogleSignInButto
         className="relative w-full min-h-[44px] flex items-center justify-center"
       >
         {loading ? (
-          <div className="w-full h-11 rounded-xl bg-white/95 border border-[#5D7B6F]/30 shadow-xs flex items-center justify-center gap-2.5 text-xs font-bold text-[#5D7B6F]">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="w-full h-11 rounded-xl bg-card border border-primary/30 shadow-xs flex items-center justify-center gap-2.5 text-xs font-bold text-primary">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
             <span>Đang xác thực tài khoản Google...</span>
           </div>
         ) : (

@@ -320,7 +320,7 @@ function AnimatedQuestionView({
 export const QuestionDisplay = React.memo(function QuestionDisplay(props: QuestionDisplayProps) {
   if (!props.question || !Array.isArray(props.question.options)) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-slate-500 font-medium">
+      <div className="flex h-full items-center justify-center p-6 text-muted-foreground font-medium">
         Đang chuẩn bị câu hỏi...
       </div>
     )

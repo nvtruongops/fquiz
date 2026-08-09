@@ -16,11 +16,11 @@ export default function QuizSessionMobilePage() {
 
   if (ctrl.isPreloadError || ctrl.isInitialError) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F9F9F7] p-6">
-        <div className="w-full max-w-md rounded-2xl border-2 border-gray-100 bg-white p-8 text-center shadow-xl">
-          <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-          <h2 className="mb-2 text-xl font-black text-gray-900">Lỗi phòng thi</h2>
-          <p className="mb-6 text-sm text-gray-600">
+      <div className="flex h-screen items-center justify-center bg-page-bg p-6 text-card-foreground">
+        <div className="w-full max-w-md rounded-2xl border-2 border-border bg-card p-8 text-center shadow-xl">
+          <XCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
+          <h2 className="mb-2 text-xl font-black text-card-foreground">Lỗi phòng thi</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
             {(ctrl.initialError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -34,14 +34,14 @@ export default function QuizSessionMobilePage() {
                   ctrl.router.push('/dashboard')
                 }
               }}
-              className="w-full py-6 font-bold border-gray-300 text-gray-700"
+              className="w-full py-6 font-bold border-border text-card-foreground hover:bg-muted cursor-pointer"
             >
               Quay lại
             </Button>
             <Button
               type="button"
               onClick={() => ctrl.router.push('/dashboard')}
-              className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358] font-black"
+              className="w-full bg-primary py-6 text-primary-foreground hover:bg-primary/90 font-black cursor-pointer"
             >
               Về Dashboard
             </Button>
@@ -103,7 +103,7 @@ export default function QuizSessionMobilePage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#F9F9F7]">
+    <div className="flex h-screen flex-col bg-page-bg text-card-foreground">
       <QuizLoadingOverlay 
         isOpen={ctrl.sessionLoader.isOpen} 
         progress={ctrl.sessionLoader.progress} 
@@ -111,20 +111,20 @@ export default function QuizSessionMobilePage() {
       />
       
       {/* Mobile Header */}
-      <header className="sticky top-0 z-10 border-b-2 border-gray-200 bg-white shadow-sm">
+      <header className="sticky top-0 z-10 border-b border-border bg-card shadow-sm text-card-foreground">
         <div className="flex items-center justify-between px-2 py-3">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => ctrl.setQuestionMapOpen(true)}
-              className="h-10 w-10 rounded-xl bg-gray-50 text-[#5D7B6F] hover:bg-gray-100 cursor-pointer"
+              className="h-10 w-10 rounded-xl bg-muted text-primary hover:bg-muted/80 cursor-pointer"
             >
               <Menu className="h-5 w-5" />
             </Button>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{session.categoryName}</p>
-              <p className="text-sm font-black text-[#5D7B6F]">{session.courseCode}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{session.categoryName}</p>
+              <p className="text-sm font-black text-primary">{session.courseCode}</p>
             </div>
           </div>
           
@@ -138,7 +138,7 @@ export default function QuizSessionMobilePage() {
                 "h-10 w-10 rounded-xl transition-all flex items-center justify-center gap-0.5 cursor-pointer",
                 ctrl.isRightHanded
                   ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-sm"
-                  : "bg-gray-50 text-[#5D7B6F] hover:bg-gray-100 border border-transparent"
+                  : "bg-muted text-primary hover:bg-muted/80 border border-transparent"
               )}
             >
               <Hand className={cn("h-4 w-4 transition-transform duration-200", !ctrl.isRightHanded ? "scale-x-[-1]" : "")} />
@@ -151,9 +151,9 @@ export default function QuizSessionMobilePage() {
                 pausedAt={session.paused_at}
                 totalPausedDurationMs={session.total_paused_duration_ms}
                 sessionId={ctrl.resolvedSessionId}
-                className="text-[#5D7B6F] text-sm"
+                className="text-primary text-sm"
               />
-              <p className="text-[10px] font-bold text-gray-400">
+              <p className="text-[10px] font-bold text-muted-foreground">
                 {answeredCount}/{effectiveTotal} câu
               </p>
             </div>
@@ -161,15 +161,15 @@ export default function QuizSessionMobilePage() {
               variant="ghost"
               size="icon"
               onClick={() => ctrl.setExitConfirmOpen(true)}
-              className="h-10 w-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 cursor-pointer"
+              className="h-10 w-10 rounded-xl bg-incorrect-bg text-destructive hover:bg-incorrect-bg/80 cursor-pointer"
             >
               <XCircle className="h-5 w-5" />
             </Button>
           </div>
         </div>
-        <div className="h-1 bg-gray-100">
+        <div className="h-1 bg-muted">
           <div
-            className="h-full bg-[#5D7B6F] transition-all duration-300"
+            className="h-full bg-primary transition-all duration-300"
             style={{ width: `${(answeredCount / effectiveTotal) * 100}%` }}
           />
         </div>
@@ -182,20 +182,20 @@ export default function QuizSessionMobilePage() {
           onTouchStart={ctrl.handleTouchStart}
           onTouchMove={ctrl.handleTouchMove}
           onTouchEnd={ctrl.handleTouchEnd}
+          className="space-y-4 p-4 pb-20 select-none transition-transform duration-150 ease-out"
           style={{
             transform: ctrl.touchState.offsetX !== 0 ? `translateX(${ctrl.touchState.offsetX}px)` : undefined,
             transition: ctrl.touchState.isDragging ? 'none' : 'transform 0.2s ease-out',
           }}
-          className="space-y-6 p-4 pb-24 touch-pan-y select-none"
         >
-          {/* Question Number & Pin Button */}
+          {/* Question Meta Bar */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-gray-900">
+            <div>
+              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary border border-primary/20">
                 Câu {effectiveIndex + 1}/{effectiveTotal}
-              </h2>
-              <p className="text-xs font-bold text-gray-500">
-                {requiredSelectionCount === 1
+              </span>
+              <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+                {requiredSelectionCount <= 1
                   ? '• Chọn 1 đáp án'
                   : `• Chọn ${requiredSelectionCount} đáp án`}
                 <span className="hidden sm:inline"> • Vuốt 👈 👉 để lật câu</span>
@@ -209,7 +209,7 @@ export default function QuizSessionMobilePage() {
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0",
                 isQuestionPinned
                   ? "bg-amber-100 text-amber-800 border-amber-300"
-                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                  : "bg-card text-card-foreground border-border hover:bg-muted"
               )}
             >
               <Bookmark className={cn("w-3.5 h-3.5", isQuestionPinned && "fill-current text-amber-600")} />
@@ -218,17 +218,17 @@ export default function QuizSessionMobilePage() {
           </div>
 
           {/* Question Text */}
-          <div className="rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-sm">
-            <p className="whitespace-pre-wrap text-base leading-relaxed text-gray-900">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-card-foreground">
+            <p className="whitespace-pre-wrap text-base leading-relaxed text-card-foreground">
               {question.text}
             </p>
 
             {question.image_url && (
-              <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
+              <div className="mt-4 overflow-hidden rounded-xl border border-border">
                 <img
                   src={question.image_url}
                   alt="Question Attachment"
-                  className="max-h-64 w-full object-contain bg-gray-50"
+                  className="max-h-64 w-full object-contain bg-muted"
                 />
               </div>
             )}
@@ -238,17 +238,17 @@ export default function QuizSessionMobilePage() {
           <div className="space-y-3">
             {question.options.map((optText, optIndex) => {
               const isSelected = ctrl.selectedOptions.includes(optIndex)
-              let statusStyle = 'border-gray-200 bg-white text-gray-800 hover:border-gray-300 hover:bg-gray-50'
+              let statusStyle = 'border-border bg-card text-card-foreground hover:border-primary/50 hover:bg-muted'
 
               if (showImmediateFeedback) {
                 const isCorrect = correctAnswerSet.includes(optIndex)
                 if (isCorrect) {
-                  statusStyle = 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
+                  statusStyle = 'border-success-border bg-success-bg text-success-fg font-bold'
                 } else if (isSelected) {
-                  statusStyle = 'border-red-500 bg-red-50 text-red-900 font-bold'
+                  statusStyle = 'border-incorrect-border bg-incorrect-bg text-destructive font-bold'
                 }
               } else if (isSelected) {
-                statusStyle = 'border-[#5D7B6F] bg-[#5D7B6F]/10 text-[#5D7B6F] font-bold shadow-sm'
+                statusStyle = 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
               }
 
               return (
@@ -262,15 +262,15 @@ export default function QuizSessionMobilePage() {
                     statusStyle
                   )}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border font-bold text-xs">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border font-bold text-xs">
                     {String.fromCharCode(65 + optIndex)}
                   </div>
                   <span className="flex-1 text-sm font-medium leading-normal">{optText}</span>
                   {showImmediateFeedback && correctAnswerSet.includes(optIndex) && (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="h-5 w-5 text-success-fg shrink-0" />
                   )}
                   {showImmediateFeedback && !correctAnswerSet.includes(optIndex) && isSelected && (
-                    <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+                    <XCircle className="h-5 w-5 text-destructive shrink-0" />
                   )}
                 </button>
               )
@@ -280,13 +280,13 @@ export default function QuizSessionMobilePage() {
       </ScrollArea>
 
       {/* Navigation Footer */}
-      <footer className="sticky bottom-0 z-10 border-t-2 border-gray-200 bg-white p-3 shadow-lg">
+      <footer className="sticky bottom-0 z-10 border-t border-border bg-card p-3 shadow-lg text-card-foreground">
         <div className="flex items-center gap-2">
           {ctrl.isRightHanded && (
             <Button
               type="button"
               onClick={ctrl.handleSubmit}
-              className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold text-white hover:bg-[#4a6358] shadow-md cursor-pointer"
+              className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90 shadow-md cursor-pointer"
             >
               <span>Nộp bài</span>
             </Button>
@@ -297,7 +297,7 @@ export default function QuizSessionMobilePage() {
             variant="outline"
             disabled={effectiveIndex <= 0}
             onClick={() => ctrl.handleNavigate(effectiveIndex - 1)}
-            className="h-12 flex-1 rounded-xl font-bold border-gray-300 text-gray-700 cursor-pointer disabled:opacity-40"
+            className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
           >
             <ChevronLeft className="mr-1 h-5 w-5" />
             <span>Câu trước</span>
@@ -308,7 +308,7 @@ export default function QuizSessionMobilePage() {
             variant="outline"
             disabled={effectiveIndex >= effectiveTotal - 1}
             onClick={() => ctrl.handleNavigate(effectiveIndex + 1)}
-            className="h-12 flex-1 rounded-xl font-bold border-gray-300 text-gray-700 cursor-pointer disabled:opacity-40"
+            className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
           >
             <span>Câu sau</span>
             <ChevronRight className="ml-1 h-5 w-5" />
@@ -318,7 +318,7 @@ export default function QuizSessionMobilePage() {
             <Button
               type="button"
               onClick={ctrl.handleSubmit}
-              className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold text-white hover:bg-[#4a6358] shadow-md cursor-pointer"
+              className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90 shadow-md cursor-pointer"
             >
               <span>Nộp bài</span>
             </Button>
@@ -328,10 +328,10 @@ export default function QuizSessionMobilePage() {
 
       {/* Submit Confirmation Dialog */}
       <Dialog open={ctrl.confirmOpen} onOpenChange={ctrl.setConfirmOpen}>
-        <DialogContent className="max-w-xs rounded-2xl p-6">
+        <DialogContent className="max-w-xs rounded-2xl p-6 bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-gray-900">Xác nhận nộp bài</DialogTitle>
-            <DialogDescription className="text-center text-xs text-gray-500">
+            <DialogTitle className="text-center text-lg font-black text-card-foreground">Xác nhận nộp bài</DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
               Bạn đã hoàn thành {answeredCount}/{effectiveTotal} câu hỏi. Bạn có chắc chắn muốn nộp bài?
             </DialogDescription>
           </DialogHeader>
@@ -340,7 +340,7 @@ export default function QuizSessionMobilePage() {
               type="button"
               onClick={ctrl.handleConfirmSubmit}
               disabled={ctrl.finalizeMutation.isPending}
-              className="w-full bg-[#5D7B6F] py-5 font-bold text-white hover:bg-[#4a6358]"
+              className="w-full bg-primary py-5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
             >
               Đồng ý nộp bài
             </Button>

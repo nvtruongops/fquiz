@@ -128,17 +128,17 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
       <div className="lg:hidden relative">
         <button
           onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
-          className="w-full bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-xs flex items-center justify-between font-bold text-slate-800 text-sm"
+          className="w-full bg-card p-4 rounded-2xl border-2 border-border shadow-xs flex items-center justify-between font-bold text-card-foreground text-sm cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            {currentTabObj && <currentTabObj.icon className="w-4 h-4 text-[#5D7B6F]" />}
+            {currentTabObj && <currentTabObj.icon className="w-4 h-4 text-primary" />}
             <span>{currentTabObj?.label}</span>
           </div>
           <ChevronDown className={`w-4 h-4 transition-transform ${mobileDropdownOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {mobileDropdownOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-40 space-y-1">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-popover text-popover-foreground rounded-2xl border border-border shadow-xl p-2 z-40 space-y-1">
             {FEATURE_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -146,8 +146,8 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
                   setActiveTab(tab.id)
                   setMobileDropdownOpen(false)
                 }}
-                className={`w-full text-left p-3 rounded-xl flex items-center justify-between text-xs font-bold ${
-                  activeTab === tab.id ? 'bg-emerald-50 text-[#5D7B6F]' : 'text-slate-700 hover:bg-slate-50'
+                className={`w-full text-left p-3 rounded-xl flex items-center justify-between text-xs font-bold cursor-pointer ${
+                  activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-card-foreground hover:bg-muted'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -161,16 +161,16 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
       </div>
 
       {/* Global Configuration Bar (Target Lang, CEFR Level, Explanation Lang) */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-card text-card-foreground p-5 rounded-3xl border border-border shadow-xs grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 block mb-1.5">Ngôn ngữ cần Học / Biên soạn:</label>
+          <label className="text-xs font-bold text-muted-foreground block mb-1.5">Ngôn ngữ cần Học / Biên soạn:</label>
           <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-            <SelectTrigger className="h-11 rounded-2xl border-2 border-slate-200 font-bold text-xs bg-slate-50/50">
+            <SelectTrigger className="h-11 rounded-2xl border-2 border-border font-bold text-xs bg-muted/50 text-card-foreground">
               <SelectValue placeholder="Chọn ngôn ngữ..." />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl p-1.5 z-50">
+            <SelectContent className="rounded-2xl border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-50">
               {LANGUAGES.map((lang) => (
-                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50">
+                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-primary/10">
                   {lang.label}
                 </SelectItem>
               ))}
@@ -179,14 +179,14 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 block mb-1.5">Trình độ CEFR / Khung chuẩn:</label>
+          <label className="text-xs font-bold text-muted-foreground block mb-1.5">Trình độ CEFR / Khung chuẩn:</label>
           <Select value={cefrLevel} onValueChange={setCefrLevel}>
-            <SelectTrigger className="h-11 rounded-2xl border-2 border-slate-200 font-bold text-xs bg-slate-50/50">
+            <SelectTrigger className="h-11 rounded-2xl border-2 border-border font-bold text-xs bg-muted/50 text-card-foreground">
               <SelectValue placeholder="Chọn trình độ..." />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl p-1.5 z-50">
+            <SelectContent className="rounded-2xl border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-50">
               {activeLevelOptions.map((lvl) => (
-                <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50">
+                <SelectItem key={lvl.code} value={lvl.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-primary/10">
                   {lvl.label}
                 </SelectItem>
               ))}
@@ -195,14 +195,14 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 block mb-1.5">Ngôn ngữ Giải thích / Dịch nghĩa:</label>
+          <label className="text-xs font-bold text-muted-foreground block mb-1.5">Ngôn ngữ Giải thích / Dịch nghĩa:</label>
           <Select value={explanationLanguage} onValueChange={setExplanationLanguage}>
-            <SelectTrigger className="h-11 rounded-2xl border-2 border-slate-200 font-bold text-xs bg-slate-50/50">
+            <SelectTrigger className="h-11 rounded-2xl border-2 border-border font-bold text-xs bg-muted/50 text-card-foreground">
               <SelectValue placeholder="Ngôn ngữ giải thích..." />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl p-1.5 z-50">
+            <SelectContent className="rounded-2xl border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-50">
               {LANGUAGES.map((lang) => (
-                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-emerald-50">
+                <SelectItem key={lang.code} value={lang.code} className="rounded-xl font-bold py-2 cursor-pointer hover:bg-primary/10">
                   {lang.label}
                 </SelectItem>
               ))}

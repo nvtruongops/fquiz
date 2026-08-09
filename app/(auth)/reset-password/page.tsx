@@ -21,11 +21,11 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-8 text-center">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-gray-800 mb-2">Link không hợp lệ</h2>
-          <p className="text-sm text-gray-500 mb-4">Token đặt lại mật khẩu bị thiếu hoặc không hợp lệ.</p>
-          <Link href="/forgot-password" className="text-sm text-[#5D7B6F] font-medium hover:underline">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-sm border border-destructive/30 p-8 text-center">
+          <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-card-foreground mb-2">Link không hợp lệ</h2>
+          <p className="text-sm text-muted-foreground mb-4">Token đặt lại mật khẩu bị thiếu hoặc không hợp lệ.</p>
+          <Link href="/forgot-password" className="text-sm text-primary font-medium hover:underline">
             Yêu cầu link mới
           </Link>
         </div>
@@ -69,12 +69,12 @@ function ResetPasswordForm() {
   if (success) {
     return (
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-[#A4C3A2]/30 p-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-[#A4C3A2]/30 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-7 h-7 text-[#5D7B6F]" />
+        <div className="bg-card text-card-foreground rounded-2xl shadow-sm border border-success-border p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-7 h-7 text-success-fg" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Đặt lại thành công!</h2>
-          <p className="text-sm text-gray-500">Đang chuyển hướng đến trang đăng nhập…</p>
+          <h2 className="text-xl font-bold text-card-foreground mb-2">Đặt lại thành công!</h2>
+          <p className="text-sm text-muted-foreground">Đang chuyển hướng đến trang đăng nhập…</p>
         </div>
       </div>
     )
@@ -83,17 +83,17 @@ function ResetPasswordForm() {
   return (
     <div className="w-full relative group">
       {/* 3D Depth Layer */}
-      <div className="absolute inset-0 bg-[#5D7B6F]/10 rounded-[32px] translate-y-3 blur-md transition-all duration-500 group-hover:translate-y-4" />
+      <div className="absolute inset-0 bg-primary/10 rounded-[32px] translate-y-3 blur-md transition-all duration-500 group-hover:translate-y-4" />
       
-      <div className="relative bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 sm:p-10 transition-all duration-500">
+      <div className="relative bg-card text-card-foreground rounded-[32px] shadow-sm border border-border p-8 sm:p-10 transition-all duration-500">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Đặt lại mật khẩu</h1>
-          <p className="text-sm text-gray-500 mt-1">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+          <h1 className="text-2xl font-bold text-card-foreground">Đặt lại mật khẩu</h1>
+          <p className="text-sm text-muted-foreground mt-1">Nhập mật khẩu mới cho tài khoản của bạn.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="password" className="block text-sm font-medium text-card-foreground mb-1.5">
               Mật khẩu mới
             </label>
             <div className="relative">
@@ -104,23 +104,23 @@ function ResetPasswordForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tối thiểu 8 ký tự"
                 className={`w-full rounded-xl border px-3.5 py-2.5 pr-10 text-sm outline-none transition-colors
-                  focus:ring-2 focus:ring-[#5D7B6F]/30 focus:border-[#5D7B6F]
-                  ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'}`}
+                  focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
+                  ${errors.password ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground cursor-pointer"
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-destructive text-xs mt-1">{errors.password}</p>}
           </div>
 
           <div>
-            <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="confirm" className="block text-sm font-medium text-card-foreground mb-1.5">
               Xác nhận mật khẩu
             </label>
             <input
@@ -130,14 +130,14 @@ function ResetPasswordForm() {
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="Nhập lại mật khẩu"
               className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors
-                focus:ring-2 focus:ring-[#5D7B6F]/30 focus:border-[#5D7B6F]
-                ${errors.confirm ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'}`}
+                focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
+                ${errors.confirm ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
             />
-            {errors.confirm && <p className="text-red-500 text-xs mt-1">{errors.confirm}</p>}
+            {errors.confirm && <p className="text-destructive text-xs mt-1">{errors.confirm}</p>}
           </div>
 
           {serverError && (
-            <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-sm text-red-600">
+            <div className="rounded-xl bg-incorrect-bg border border-incorrect-border px-3.5 py-2.5 text-sm text-destructive">
               {serverError}
             </div>
           )}
@@ -145,10 +145,9 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl shadow-md transition-all disabled:opacity-60 cursor-pointer"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? 'Đang cập nhật…' : 'Đặt lại mật khẩu'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Đặt lại mật khẩu'}
           </button>
         </form>
       </div>
@@ -158,7 +157,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="w-full max-w-md bg-white rounded-2xl p-8 animate-pulse h-64" />}>
+    <Suspense fallback={<div className="w-full max-w-md bg-card rounded-2xl p-8 animate-pulse h-64" />}>
       <ResetPasswordForm />
     </Suspense>
   )

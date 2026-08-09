@@ -39,8 +39,8 @@ export default function CreatePostModal({
         <DialogTitle className="text-2xl font-black text-foreground mb-2">Tạo bài đăng mới</DialogTitle>
 
         {createPostMutation.isError && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-start gap-2.5 text-rose-700 text-xs font-semibold">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+          <div className="bg-incorrect-bg border border-incorrect-border rounded-xl p-3.5 flex items-start gap-2.5 text-destructive text-xs font-semibold">
+            <AlertCircle className="w-4 h-4 shrink-0 text-destructive mt-0.5" />
             <div className="flex-1">
               <span className="font-bold">Đăng bài không thành công:</span>{' '}
               {createPostMutation.error?.message || 'Có lỗi xảy ra, vui lòng thử lại.'}
@@ -51,10 +51,10 @@ export default function CreatePostModal({
         <div className="space-y-4 mt-2">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="post-title" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label htmlFor="post-title" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                 Tiêu đề câu hỏi / Chủ đề
               </label>
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-bold text-muted-foreground">
                 {postTitle.length}/150
               </span>
             </div>
@@ -64,16 +64,16 @@ export default function CreatePostModal({
               value={postTitle}
               onChange={(e) => setPostTitle(e.target.value)}
               maxLength={150}
-              className="h-12 rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
+              className="h-12 rounded-xl border-2 border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary font-medium bg-card text-card-foreground"
             />
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="post-content" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label htmlFor="post-content" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                 Nội dung chi tiết
               </label>
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-bold text-muted-foreground">
                 {postContent.length}/10000
               </span>
             </div>
@@ -83,12 +83,12 @@ export default function CreatePostModal({
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               maxLength={10000}
-              className="min-h-[130px] rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
+              className="min-h-[130px] rounded-xl border-2 border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary font-medium bg-card text-card-foreground"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="post-tags" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+            <label htmlFor="post-tags" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
               Tags (cách nhau bởi dấu phẩy)
             </label>
             <Input
@@ -96,14 +96,14 @@ export default function CreatePostModal({
               placeholder="VD: Toán rời rạc, Tiếng Anh B1, Flashcards"
               value={postTags}
               onChange={(e) => setPostTags(e.target.value)}
-              className="h-12 rounded-xl border-2 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] font-medium"
+              className="h-12 rounded-xl border-2 border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary font-medium bg-card text-card-foreground"
             />
           </div>
 
           <Button
             onClick={() => createPostMutation.mutate()}
             disabled={createPostMutation.isPending || !isTitleValid || !isContentValid}
-            className="w-full h-12 mt-4 bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl font-black text-sm transition-all shadow-md"
+            className="w-full h-12 mt-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-black text-sm transition-all shadow-md cursor-pointer"
           >
             {createPostMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Đăng bài ngay'}
           </Button>

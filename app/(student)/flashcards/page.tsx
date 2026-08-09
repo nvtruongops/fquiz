@@ -215,12 +215,12 @@ export default function FlashcardsPage() {
 
           {viewTab === 'notebook' && (
             <div className="relative w-full md:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm từ vựng, câu mẫu..."
-                className="pl-9 h-10 rounded-xl text-xs font-medium border-slate-200 focus:border-[#5D7B6F]"
+                className="pl-9 h-10 rounded-xl text-xs font-medium border-border focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground"
               />
             </div>
           )}
@@ -232,8 +232,8 @@ export default function FlashcardsPage() {
         <>
           {isDueLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
-              <Loader2 className="w-10 h-10 text-[#5D7B6F] animate-spin" />
-              <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-widest">Đang tải thẻ ghi nhớ đến hạn...</p>
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+              <p className="text-xs font-black text-primary uppercase tracking-widest">Đang tải thẻ ghi nhớ đến hạn...</p>
             </div>
           ) : dueItems.length === 0 ? (
             <div className="text-center py-16 px-4 bg-card backdrop-blur-2xl rounded-[32px] border border-border shadow-sm max-w-lg mx-auto space-y-4">

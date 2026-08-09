@@ -35,10 +35,10 @@ function SidebarContent({
   return (
     <>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-secondary-accent/30">
+      <div className="px-5 py-5 border-b border-border">
         <Link href="/admin" className="flex items-center gap-2" onClick={onNavigate}>
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <BookOpen className="w-3.5 h-3.5 text-white" />
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+            <BookOpen className="w-3.5 h-3.5" />
           </div>
           <span className="font-bold text-primary text-sm tracking-tight">FQuiz Admin</span>
         </Link>
@@ -98,21 +98,21 @@ export function AdminSidebar() {
   return (
     <>
       {/* ── Desktop sidebar (≥ md) ── */}
-      <aside className="hidden md:flex w-56 bg-white border-r border-secondary-accent/40 flex-col fixed h-full z-10">
+      <aside className="hidden md:flex w-56 bg-card border-r border-border flex-col fixed h-full z-10 text-card-foreground">
         <SidebarContent pathname={pathname} onLogout={handleLogout} />
       </aside>
 
       {/* ── Mobile top bar (< md) ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-secondary-accent/30 flex items-center justify-between px-4 h-14">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-card border-b border-border flex items-center justify-between px-4 h-14 text-card-foreground">
         <Link href="/admin" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <BookOpen className="w-3.5 h-3.5 text-white" />
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+            <BookOpen className="w-3.5 h-3.5" />
           </div>
           <span className="font-bold text-primary text-sm tracking-tight">FQuiz Admin</span>
         </Link>
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 rounded-lg text-gray-500 hover:bg-app-bg"
+          className="p-2 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
           aria-label="Mở menu"
         >
           <Menu className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function AdminSidebar() {
       {/* ── Mobile drawer overlay ── */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-30 bg-black/40"
+          className="md:hidden fixed inset-0 z-30 bg-background/80 backdrop-blur-xs"
           onClick={() => setMobileOpen(false)}
           role="presentation"
           onKeyDown={(e) => {
@@ -136,14 +136,14 @@ export function AdminSidebar() {
       {/* ── Mobile drawer ── */}
       <aside
         className={cn(
-          'md:hidden fixed top-0 left-0 h-full w-64 bg-white z-40 flex flex-col transition-transform duration-300',
+          'md:hidden fixed top-0 left-0 h-full w-64 bg-card text-card-foreground border-r border-border z-40 flex flex-col transition-transform duration-300',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex items-center justify-end px-4 py-3 border-b border-secondary-accent/30">
+        <div className="flex items-center justify-end px-4 py-3 border-b border-border">
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
             aria-label="Đóng menu"
           >
             <X className="w-5 h-5" />

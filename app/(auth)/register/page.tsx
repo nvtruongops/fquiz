@@ -171,10 +171,10 @@ export default function RegisterPage() {
   const passwordStrength = (() => {
     const p = form.password
     if (!p) return null
-    if (p.length < 8) return { label: 'Quá ngắn', color: 'bg-red-400', level: 1 }
-    if (p.length < 10) return { label: 'Yếu', color: 'bg-orange-400', level: 2 }
-    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Trung bình', color: 'bg-yellow-400', level: 3 }
-    return { label: 'Mạnh', color: 'bg-[#166534]', level: 4 }
+    if (p.length < 8) return { label: 'Quá ngắn', color: 'bg-destructive', level: 1 }
+    if (p.length < 10) return { label: 'Yếu', color: 'bg-warning-fg', level: 2 }
+    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Trung bình', color: 'bg-warning-fg', level: 3 }
+    return { label: 'Mạnh', color: 'bg-success-fg', level: 4 }
   })()
 
   let sendCodeLabel = 'Gửi mã'
@@ -184,14 +184,14 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="w-full text-center py-6 sm:py-8">
-        <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-white/80 p-6 sm:p-10">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#B0D4B8]/50 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
-            <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-[#166534]" />
+        <div className="bg-card/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-border p-6 sm:p-10">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
+            <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-success-fg" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 sm:mb-3 tracking-tight">Đăng ký thành công!</h2>
-          <p className="text-slate-500 text-xs sm:text-sm font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
+          <h2 className="text-xl sm:text-2xl font-black text-card-foreground mb-2 sm:mb-3 tracking-tight">Đăng ký thành công!</h2>
+          <p className="text-muted-foreground text-xs sm:text-sm font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
           <div className="mt-6 sm:mt-8 flex justify-center">
-            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-[#5D7B6F] animate-spin drop-shadow-2xs" />
+            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-primary animate-spin drop-shadow-2xs" />
           </div>
         </div>
       </div>
@@ -201,28 +201,28 @@ export default function RegisterPage() {
   const inputClasses = (error?: string) => cn(
     "w-full rounded-xl sm:rounded-2xl border-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[14px] outline-none transition-all duration-300 font-medium",
     error 
-      ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-500/10" 
-      : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-2xs"
+      ? "border-destructive/60 bg-incorrect-bg/50 text-card-foreground placeholder:text-destructive/50 focus:border-destructive focus:ring-2 focus:ring-destructive/10" 
+      : "border-border bg-card/80 text-card-foreground placeholder:text-muted-foreground hover:border-border/80 focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10 shadow-2xs"
   )
 
   return (
     <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2rem] sm:rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-[2rem] sm:rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-white/80 p-5 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-card/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-border p-5 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
         <div className="mb-4 sm:mb-6 text-center sm:text-left">
-          <h1 className="text-xl sm:text-[30px] font-black text-slate-800 tracking-tight leading-tight">Tạo tài khoản</h1>
-          <p className="text-slate-500 mt-1 text-xs sm:text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
+          <h1 className="text-xl sm:text-[30px] font-black text-card-foreground tracking-tight leading-tight">Tạo tài khoản</h1>
+          <p className="text-muted-foreground mt-1 text-xs sm:text-sm font-medium">Bắt đầu hành trình chinh phục kiến thức cùng FQuiz</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-3 sm:space-y-4">
           {/* Email - Full Width */}
           <div className="space-y-1">
-            <label htmlFor="email" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+            <label htmlFor="email" className="text-[11px] sm:text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
               Email
             </label>
             <div className="relative flex gap-2 items-center">
@@ -236,19 +236,19 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="shrink-0 rounded-xl sm:rounded-2xl bg-white border border-[#5D7B6F]/30 px-2 sm:px-3 py-2 sm:py-2.5 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed min-w-[65px] sm:min-w-[76px] flex justify-center items-center whitespace-nowrap cursor-pointer active:scale-95"
+                className="shrink-0 rounded-xl sm:rounded-2xl bg-card border border-primary/30 px-2 sm:px-3 py-2 sm:py-2.5 text-xs font-bold text-primary hover:bg-primary/5 hover:border-primary/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed min-w-[65px] sm:min-w-[76px] flex justify-center items-center whitespace-nowrap cursor-pointer active:scale-95"
               >
                 {sendingCode ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : sendCodeLabel}
               </button>
             </div>
-            {errors.email && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-destructive text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.email}</p>}
             <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             {/* Verification Code */}
             <div className="space-y-1">
-              <label htmlFor="verificationCode" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="verificationCode" className="text-[11px] sm:text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Mã xác thực
               </label>
               <div className="relative">
@@ -268,12 +268,12 @@ export default function RegisterPage() {
                   )}
                 />
               </div>
-              {errors.verificationCode && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.verificationCode}</p>}
+              {errors.verificationCode && <p className="text-destructive text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.verificationCode}</p>}
             </div>
 
             {/* Username */}
             <div className="space-y-1">
-              <label htmlFor="username" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="username" className="text-[11px] sm:text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Tên đăng nhập
               </label>
               <div className="relative">
@@ -284,7 +284,7 @@ export default function RegisterPage() {
                   className={inputClasses(errors.username)}
                 />
               </div>
-              {errors.username && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.username}</p>}
+              {errors.username && <p className="text-destructive text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.username}</p>}
             </div>
           </div>
 
@@ -292,7 +292,7 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             {/* Password */}
             <div className="space-y-1">
-              <label htmlFor="password" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="password" className="text-[11px] sm:text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Mật khẩu
               </label>
               <div className="relative">
@@ -307,7 +307,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors cursor-pointer"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -318,24 +318,24 @@ export default function RegisterPage() {
                 <div className="px-0.5 pt-1.5 pb-0.5">
                   <div className="flex gap-1 h-1 sm:h-1.5 w-full">
                     {[1, 2, 3, 4].map((level) => (
-                      <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
+                      <div key={level} className="flex-1 rounded-full bg-muted overflow-hidden">
                         <div 
                           className={cn("h-full rounded-full transition-all duration-300", passwordStrength.level >= level ? passwordStrength.color : "w-0")} 
                         />
                       </div>
                     ))}
                   </div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 ml-0.5">
-                    Độ mạnh: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
+                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1 ml-0.5">
+                    Độ mạnh: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-success-fg" : "")}>{passwordStrength.label}</span>
                   </p>
                 </div>
               )}
-              {errors.password && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.password}</p>}
+              {errors.password && <p className="text-destructive text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.password}</p>}
             </div>
 
             {/* Confirm Password */}
             <div className="space-y-1">
-              <label htmlFor="confirmPassword" className="text-[11px] sm:text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="confirmPassword" className="text-[11px] sm:text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Xác nhận MK
               </label>
               <div className="relative">
@@ -347,25 +347,25 @@ export default function RegisterPage() {
                   placeholder="Nhập lại mật khẩu"
                   className={cn(
                     inputClasses(errors.confirmPassword),
-                    form.confirmPassword && form.confirmPassword === form.password ? '!border-[#166534] !bg-[#B0D4B8]/10' : ''
+                    form.confirmPassword && form.confirmPassword === form.password ? '!border-success-border !bg-success-bg/10' : ''
                   )}
                 />
                 {form.confirmPassword && form.confirmPassword === form.password && (
                   <div className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2">
-                    <CheckCircle className="w-4 h-4 text-[#166534]" />
+                    <CheckCircle className="w-4 h-4 text-success-fg" />
                   </div>
                 )}
               </div>
-              {errors.confirmPassword && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && <p className="text-destructive text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_6px_16px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-5 cursor-pointer active:scale-[0.98]"
+            className="group relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_6px_16px_rgba(93,123,111,0.25)] border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-5 cursor-pointer active:scale-[0.98]"
           >
-            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+            <div className="absolute inset-0 bg-primary-foreground/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             {loading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin drop-shadow-2xs" />
             ) : (
@@ -379,16 +379,16 @@ export default function RegisterPage() {
 
         <GoogleSignInButton callbackUrl={getCallbackUrl()} />
 
-        <div className="mt-3.5 sm:mt-5 pt-3 border-t border-slate-200/50">
+        <div className="mt-3.5 sm:mt-5 pt-3 border-t border-border">
           {(() => {
             const cb = getCallbackUrl()
             const redirectParam = cb ? `?redirect=${encodeURIComponent(cb)}` : ''
             return (
-              <p className="text-center text-slate-500 font-medium text-xs sm:text-sm">
+              <p className="text-center text-muted-foreground font-medium text-xs sm:text-sm">
                 Bạn đã có tài khoản rồi?{' '}
                 <Link 
                   href={`/login${redirectParam}`}
-                  className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
+                  className="text-primary font-black hover:text-primary/90 transition-colors hover:underline decoration-2 underline-offset-4"
                 >
                   Đăng nhập ngay
                 </Link>

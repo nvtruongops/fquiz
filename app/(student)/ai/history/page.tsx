@@ -57,21 +57,21 @@ export default function AILearningHistoryPage() {
 
       {/* Content List / Skeletons */}
       {isLoading ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200/80 text-center space-y-3 shadow-xs">
-          <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin mx-auto" />
-          <p className="text-xs font-bold text-slate-400">Đang tải lịch sử học tập AI...</p>
+        <div className="bg-card p-12 rounded-3xl border border-border text-center space-y-3 shadow-xs text-card-foreground">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+          <p className="text-xs font-bold text-muted-foreground">Đang tải lịch sử học tập AI...</p>
         </div>
       ) : isError ? (
-        <div className="bg-rose-50 p-8 rounded-3xl border border-rose-200 text-center space-y-2">
-          <p className="text-xs font-bold text-rose-700">Không thể kết nối máy chủ để tải lịch sử.</p>
+        <div className="bg-incorrect-bg p-8 rounded-3xl border border-incorrect-border text-center space-y-2">
+          <p className="text-xs font-bold text-destructive">Không thể kết nối máy chủ để tải lịch sử.</p>
         </div>
       ) : data?.history?.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200/80 text-center space-y-3 shadow-xs">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#5D7B6F] flex items-center justify-center mx-auto border border-emerald-100">
+        <div className="bg-card p-12 rounded-3xl border border-border text-center space-y-3 shadow-xs text-card-foreground">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20">
             <Sparkles className="w-7 h-7" />
           </div>
-          <p className="text-sm font-bold text-slate-800">Chưa có lịch sử học AI nào</p>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-sm font-bold text-card-foreground">Chưa có lịch sử học AI nào</p>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {search || typeFilter !== 'all'
               ? 'Thử thay đổi từ khóa hoặc bộ lọc tìm kiếm.'
               : 'Hãy sử dụng Vocab Studio, Grammar, Luyện viết để AI tạo bài học đầu tiên!'}
@@ -106,7 +106,7 @@ export default function AILearningHistoryPage() {
           >
             <ChevronLeft className="w-4 h-4 mr-1" /> Trang trước
           </Button>
-          <span className="text-xs font-bold text-slate-600">
+          <span className="text-xs font-bold text-muted-foreground">
             Trang {page} / {data.totalPages}
           </span>
           <Button

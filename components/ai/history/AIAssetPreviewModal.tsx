@@ -62,18 +62,18 @@ export default function AIAssetPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] rounded-3xl p-6 overflow-hidden flex flex-col border border-slate-200 bg-white shadow-2xl z-50">
-        <DialogTitle className="text-lg sm:text-xl font-black text-slate-900 line-clamp-1">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] rounded-3xl p-6 overflow-hidden flex flex-col border border-border bg-card text-card-foreground shadow-2xl z-50">
+        <DialogTitle className="text-lg sm:text-xl font-black text-card-foreground line-clamp-1">
           {selectedLog.title}
         </DialogTitle>
-        <DialogDescription className="text-xs text-slate-500 flex items-center gap-2">
+        <DialogDescription className="text-xs text-muted-foreground flex items-center gap-2">
           <span>Tạo lúc: {createdDateStr}</span>
-          {selectedLog.language && <span className="uppercase font-bold text-[#5D7B6F]">({selectedLog.language})</span>}
+          {selectedLog.language && <span className="uppercase font-bold text-primary">({selectedLog.language})</span>}
         </DialogDescription>
 
         <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4">
           {!logContent ? (
-            <div className="bg-slate-50 p-6 rounded-2xl text-center text-xs font-bold text-slate-400">
+            <div className="bg-muted p-6 rounded-2xl text-center text-xs font-bold text-muted-foreground">
               Không thể hiển thị nội dung xem trước
             </div>
           ) : (
@@ -82,27 +82,27 @@ export default function AIAssetPreviewModal({
               {selectedLog.type === 'vocabulary' && (
                 <div className="space-y-3">
                   {(Array.isArray(logContent) ? logContent : [logContent]).map((wordItem: any, idx: number) => (
-                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
+                    <div key={idx} className="bg-muted/50 p-4 rounded-2xl border border-border space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-black text-slate-900">{wordItem.lemma || wordItem.display}</span>
-                        {wordItem.ipa && <span className="text-xs font-mono text-emerald-700">/{wordItem.ipa}/</span>}
+                        <span className="text-base font-black text-card-foreground">{wordItem.lemma || wordItem.display}</span>
+                        {wordItem.ipa && <span className="text-xs font-mono text-primary">/{wordItem.ipa}/</span>}
                       </div>
-                      <p className="text-xs font-semibold text-slate-700">{wordItem.definition}</p>
+                      <p className="text-xs font-semibold text-card-foreground">{wordItem.definition}</p>
                     </div>
                   ))}
                 </div>
               )}
 
               {selectedLog.type === 'grammar' && (
-                <div className="bg-[#5D7B6F]/5 p-4 rounded-2xl border border-[#5D7B6F]/20 space-y-2">
-                  <h4 className="text-sm font-black text-[#5D7B6F]">{logContent.patternName || 'Ngữ pháp'}</h4>
-                  <p className="text-xs font-bold text-slate-800">{logContent.explanation}</p>
+                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 space-y-2">
+                  <h4 className="text-sm font-black text-primary">{logContent.patternName || 'Ngữ pháp'}</h4>
+                  <p className="text-xs font-bold text-card-foreground">{logContent.explanation}</p>
                 </div>
               )}
 
               {/* Fallback display for JSON structure */}
               {!['vocabulary', 'grammar'].includes(selectedLog.type) && (
-                <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl overflow-x-auto text-[11px] font-mono leading-relaxed max-h-96">
+                <div className="bg-muted text-card-foreground p-4 rounded-2xl overflow-x-auto text-[11px] font-mono leading-relaxed max-h-96 border border-border">
                   <pre>{JSON.stringify(logContent, null, 2)}</pre>
                 </div>
               )}

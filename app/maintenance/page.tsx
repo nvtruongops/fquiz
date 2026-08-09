@@ -2,13 +2,13 @@ import Link from 'next/link'
 
 export default function MaintenancePage() {
   return (
-    <div className="min-h-screen bg-[#EAE7D6] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-page-bg flex items-center justify-center p-6 text-card-foreground">
       <div className="max-w-md w-full text-center space-y-6">
         {/* Icon */}
         <div className="flex justify-center">
-          <div className="w-24 h-24 bg-[#5D7B6F]/10 rounded-full flex items-center justify-center">
+          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
             <svg
-              className="w-12 h-12 text-[#5D7B6F]"
+              className="w-12 h-12 text-primary"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -25,24 +25,24 @@ export default function MaintenancePage() {
 
         {/* Text */}
         <div className="space-y-3">
-          <h1 className="text-3xl font-black text-[#5D7B6F]">
+          <h1 className="text-3xl font-black text-primary">
             Đang Nâng Cấp
           </h1>
-          <p className="text-gray-600 text-base leading-relaxed">
+          <p className="text-muted-foreground text-base leading-relaxed">
             Hệ thống đang được bảo trì để mang lại trải nghiệm tốt hơn.
             Vui lòng quay lại sau ít phút.
           </p>
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#5D7B6F]/20" />
+        <div className="border-t border-border" />
 
         {/* Footer */}
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Nếu bạn là quản trị viên,{' '}
           <Link
             href="/login?callbackUrl=%2Fadmin"
-            className="text-[#5D7B6F] font-semibold hover:underline"
+            className="text-primary font-semibold hover:underline"
           >
             đăng nhập tại đây
           </Link>

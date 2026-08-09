@@ -147,10 +147,10 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-card-foreground">
           Migration Ngân hàng Câu hỏi
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Quét và migrate câu hỏi từ các quiz hiện có vào ngân hàng môn học
         </p>
       </div>
@@ -163,21 +163,21 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           active={step === 'select'}
           completed={['scan', 'review', 'migrate'].includes(step)}
         />
-        <ArrowRight className="h-4 w-4 text-gray-400" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={2}
           label="Quét"
           active={step === 'scan'}
           completed={['review', 'migrate'].includes(step)}
         />
-        <ArrowRight className="h-4 w-4 text-gray-400" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={3}
           label="Xem xét"
           active={step === 'review'}
           completed={step === 'migrate'}
         />
-        <ArrowRight className="h-4 w-4 text-gray-400" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator number={4} label="Migrate" active={step === 'migrate'} completed={false} />
       </div>
 
@@ -235,7 +235,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
             <div className="flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
               <p className="text-lg font-medium">Đang quét câu hỏi...</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Môn học: {selectedCategoryName}
               </p>
             </div>
@@ -250,7 +250,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Tổng Quiz
                 </CardTitle>
               </CardHeader>
@@ -261,7 +261,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Tổng câu hỏi
                 </CardTitle>
               </CardHeader>
@@ -272,29 +272,29 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Câu duy nhất
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-3xl font-bold text-success-fg">
                   {scanResult.unique_questions}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Có thể migrate ngay</p>
+                <p className="text-xs text-muted-foreground mt-1">Có thể migrate ngay</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Conflicts
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-600">
+                <div className="text-3xl font-bold text-destructive">
                   {scanResult.conflicts}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Cần xem xét</p>
+                <p className="text-xs text-muted-foreground mt-1">Cần xem xét</p>
               </CardContent>
             </Card>
           </div>
@@ -353,7 +353,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
                     <ConflictPreview key={idx} conflict={conflict} />
                   ))}
                   {(scanResult.conflict_details?.length ?? 0) > 10 && (
-                    <p className="text-sm text-gray-500 text-center py-2">
+                    <p className="text-sm text-muted-foreground text-center py-2">
                       ... và {(scanResult.conflict_details?.length ?? 0) - 10} conflicts khác
                     </p>
                   )}
@@ -397,7 +397,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
             <div className="flex flex-col items-center justify-center gap-4">
               <CheckCircle2 className="h-16 w-16 text-green-600" />
               <p className="text-2xl font-bold">Migration hoàn tất!</p>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Câu hỏi đã được thêm vào ngân hàng môn học
               </p>
               <Button
@@ -433,17 +433,17 @@ function StepIndicator({
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
           completed
-            ? 'bg-green-600 text-white'
+            ? 'bg-success-fg text-primary-foreground'
             : active
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-200 text-gray-600'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground'
         }`}
       >
         {completed ? '✓' : number}
       </div>
       <span
         className={`text-sm font-medium ${
-          active ? 'text-gray-900' : 'text-gray-500'
+          active ? 'text-card-foreground' : 'text-muted-foreground'
         }`}
       >
         {label}
@@ -467,24 +467,24 @@ function ConflictPreview({
   }
 }) {
   return (
-    <div className="border rounded-lg p-4 bg-red-50 border-red-200">
+    <div className="border rounded-lg p-4 bg-incorrect-bg border-incorrect-border text-card-foreground">
       <div className="flex items-start justify-between mb-2">
-        <p className="font-medium text-gray-900">{conflict.text}</p>
+        <p className="font-medium text-card-foreground">{conflict.text}</p>
         <Badge variant="destructive">{conflict.variant_count} variants</Badge>
       </div>
 
       <div className="space-y-2 mt-3">
         {conflict.variants.slice(0, 3).map((variant, idx) => (
           <div key={idx} className="text-sm">
-            <span className="font-medium text-gray-700">{variant.course_code}:</span>{' '}
-            <span className="text-gray-600">
+            <span className="font-medium text-card-foreground">{variant.course_code}:</span>{' '}
+            <span className="text-muted-foreground">
               Đáp án:{' '}
               {variant.correct_answer.map((i) => variant.options[i]).join(', ')}
             </span>
           </div>
         ))}
         {conflict.variants.length > 3 && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             +{conflict.variants.length - 3} variants khác
           </p>
         )}

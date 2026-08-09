@@ -175,13 +175,13 @@ export default function FlashcardViewer({ initialCards }: Props) {
 
   if (finished) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/90 shadow-sm max-w-md mx-auto space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-card/80 backdrop-blur-2xl rounded-[32px] border border-border shadow-sm max-w-md mx-auto space-y-4 text-card-foreground">
         <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Hoàn thành phiên ôn tập!</h2>
-        <p className="text-xs font-bold text-slate-400">Bạn đã ôn luyện xong {cards.length} thẻ ghi nhớ trong phiên này.</p>
+        <h2 className="text-xl font-black text-card-foreground uppercase tracking-tight">Hoàn thành phiên ôn tập!</h2>
+        <p className="text-xs font-bold text-muted-foreground">Bạn đã ôn luyện xong {cards.length} thẻ ghi nhớ trong phiên này.</p>
         <button
           onClick={() => { setFinished(false); setIndex(0); setFlipped(false) }}
-          className="px-6 py-3 bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-[#5D7B6F]/20 transition-all active:scale-[0.98] cursor-pointer"
+          className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg transition-all active:scale-[0.98] cursor-pointer"
         >
           Ôn lại lần nữa
         </button>
@@ -191,10 +191,10 @@ export default function FlashcardViewer({ initialCards }: Props) {
 
   if (!current) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/90 shadow-sm max-w-md mx-auto space-y-3">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-card backdrop-blur-2xl rounded-[32px] border border-border shadow-sm max-w-md mx-auto space-y-3 text-card-foreground">
         <div className="text-5xl">✅</div>
-        <h2 className="text-xl font-black text-[#5D7B6F] uppercase tracking-tight">Tất cả đã hoàn thành!</h2>
-        <p className="text-xs font-bold text-slate-400">Không có thẻ nào đến hạn ôn tập tại thời điểm này.</p>
+        <h2 className="text-xl font-black text-primary uppercase tracking-tight">Tất cả đã hoàn thành!</h2>
+        <p className="text-xs font-bold text-muted-foreground">Không có thẻ nào đến hạn ôn tập tại thời điểm này.</p>
       </div>
     )
   }
@@ -203,10 +203,10 @@ export default function FlashcardViewer({ initialCards }: Props) {
     <div className="max-w-2xl mx-auto space-y-6" ref={containerRef}>
       {/* Progress Info Header */}
       <div className="space-y-2 px-2">
-        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-400">
+        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-muted-foreground">
           <span>Thẻ {index + 1} / {cards.length}</span>
           {current.masteryLevel > 0 && (
-            <span className="text-[#5D7B6F]">Độ nhớ: {current.masteryLevel}%</span>
+            <span className="text-primary">Độ nhớ: {current.masteryLevel}%</span>
           )}
           <span>Đã ôn: {current.reviewCount} lần</span>
         </div>
@@ -223,20 +223,20 @@ export default function FlashcardViewer({ initialCards }: Props) {
           style={{ minHeight: '340px' }}
         >
           {/* Front Side */}
-          <div className="absolute inset-0 rounded-[32px] p-8 md:p-12 flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-2xl border-2 border-white shadow-[0_12px_40px_rgba(0,0,0,0.05)] [backface-visibility:hidden]">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5D7B6F] bg-[#5D7B6F]/10 px-3 py-1 rounded-full mb-4">
+          <div className="absolute inset-0 rounded-[32px] p-8 md:p-12 flex flex-col items-center justify-center text-center bg-card backdrop-blur-2xl border-2 border-border shadow-sm [backface-visibility:hidden] text-card-foreground">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-3 py-1 rounded-full mb-4">
               {current.loType.toUpperCase()}
             </span>
-            <p className="text-2xl md:text-3xl font-black text-slate-800 leading-snug whitespace-pre-wrap">{current.front}</p>
-            <span className="mt-8 text-xs font-bold text-slate-400 animate-pulse">Nhấp hoặc nhấn Space để lật thẻ</span>
+            <p className="text-2xl md:text-3xl font-black text-card-foreground leading-snug whitespace-pre-wrap">{current.front}</p>
+            <span className="mt-8 text-xs font-bold text-muted-foreground animate-pulse">Nhấp hoặc nhấn Space để lật thẻ</span>
           </div>
 
           {/* Back Side */}
-          <div className="absolute inset-0 rounded-[32px] p-8 md:p-12 flex flex-col items-center justify-center text-center bg-gradient-to-br from-emerald-50/90 via-white/90 to-emerald-50/60 backdrop-blur-2xl border-2 border-[#5D7B6F]/30 shadow-[0_16px_45px_rgba(93,123,111,0.12)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full mb-4">
+          <div className="absolute inset-0 rounded-[32px] p-8 md:p-12 flex flex-col items-center justify-center text-center bg-card backdrop-blur-2xl border-2 border-primary/30 shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)] text-card-foreground">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success-fg bg-success-bg px-3 py-1 rounded-full mb-4">
               ĐÁP ÁN & NGHĨA
             </span>
-            <p className="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">{current.back}</p>
+            <p className="text-xl md:text-2xl font-bold text-card-foreground leading-relaxed whitespace-pre-wrap">{current.back}</p>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function FlashcardViewer({ initialCards }: Props) {
         ))}
       </div>
 
-      <p className="text-center text-[11px] font-bold text-slate-400 pt-2">
+      <p className="text-center text-[11px] font-bold text-muted-foreground pt-2">
         Nhấn phím 1-4 để đánh giá · Space để lật thẻ · Vuốt trái/phải trên màn hình cảm ứng
       </p>
     </div>

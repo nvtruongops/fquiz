@@ -67,7 +67,7 @@ export default async function ExplorePage() {
     <AppLayout user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}>
       {/* Background Glow */}
       <div className="absolute inset-x-0 top-0 h-[500px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center transform-gpu">
-        <div className="w-full max-w-5xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#5D7B6F]/20 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
+        <div className="w-full max-w-5xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-primary/10 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
       <div className="w-full pt-1 sm:pt-3 pb-10 lg:pb-16 relative z-10 space-y-3 sm:space-y-6">
@@ -84,7 +84,7 @@ export default async function ExplorePage() {
 
         <Suspense fallback={
           <div className="flex justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#A4C3A2]/30 border-t-[#5D7B6F]" />
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
           </div>
         }>
           <CategoryFilter initialCategories={categories} initialPinnedCategories={initialPinnedCategories} />

@@ -132,13 +132,13 @@ export function QuestionBankConflictResolver({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-card-foreground">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-card-foreground">
           Giải quyết Conflicts
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Xem và chọn đáp án đúng cho các câu hỏi có mâu thuẫn
         </p>
       </div>
@@ -168,7 +168,7 @@ export function QuestionBankConflictResolver({
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )}
 
@@ -227,17 +227,17 @@ export function QuestionBankConflictResolver({
                 <div className="space-y-6">
                   {/* Question Text */}
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
                       Câu hỏi:
                     </p>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-card-foreground">
                       {selectedConflict.text}
                     </p>
                   </div>
 
                   {/* Answer Variants */}
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-3">
+                    <p className="text-sm font-medium text-muted-foreground mb-3">
                       Chọn đáp án đúng:
                     </p>
                     <div className="space-y-3">
@@ -282,7 +282,7 @@ export function QuestionBankConflictResolver({
                   )}
 
                   {!updateAllQuizzes && (
-                    <p className="text-xs text-gray-500 px-1">
+                    <p className="text-xs text-muted-foreground px-1">
                       Nếu không tick, chỉ lưu vào Ngân hàng câu hỏi, các quiz giữ nguyên đáp án cũ.
                     </p>
                   )}
@@ -306,7 +306,7 @@ export function QuestionBankConflictResolver({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-muted-foreground">
                   Chọn một conflict để xem chi tiết
                 </div>
               )}
@@ -341,19 +341,19 @@ function ConflictCard({
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
           ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500'
-          : 'bg-white border-gray-200 hover:bg-gray-50'
+          : 'bg-card border-border hover:bg-muted'
       }`}
     >
-      <div className="flex items-start justify-between mb-2">
-        <p className="font-medium text-gray-900 text-sm line-clamp-2">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className="font-medium text-card-foreground text-sm line-clamp-2">
           {conflict.text}
         </p>
-        <Badge variant="destructive" className="ml-2 shrink-0">
+        <Badge variant="destructive" className="shrink-0">
           {conflict.answer_groups.length} đáp án
         </Badge>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>{conflict.total_variants} quiz</span>
         <span>•</span>
         <span>
@@ -396,7 +396,7 @@ function VariantCard({
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
         selected
           ? 'bg-green-50 border-green-300 ring-2 ring-green-500'
-          : 'bg-white border-gray-200 hover:bg-gray-50'
+          : 'bg-card border-border hover:bg-muted'
       }`}
     >
       <div className="flex items-center justify-between mb-3">
@@ -417,17 +417,17 @@ function VariantCard({
               key={idx}
               className={`px-3 py-2 rounded border text-sm flex items-center gap-2 ${
                 isCorrect
-                  ? 'bg-green-100 border-green-400 font-semibold text-green-900'
-                  : 'bg-gray-50 border-gray-200 text-gray-700'
+                  ? 'bg-success-bg border-success-border font-semibold text-success-fg'
+                  : 'bg-muted/40 border-border text-card-foreground'
               }`}
             >
               <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                isCorrect ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                isCorrect ? 'bg-success-fg text-primary-foreground' : 'bg-muted text-muted-foreground'
               }`}>
                 {String.fromCodePoint(65 + idx)}
               </span>
               <span className="flex-1">{option}</span>
-              {isCorrect && <span className="text-green-600 text-xs font-bold">✓</span>}
+              {isCorrect && <span className="text-success-fg text-xs font-bold">✓</span>}
             </div>
           )
         })}
@@ -435,15 +435,15 @@ function VariantCard({
 
       {/* Explanation */}
       {group.sample_variant.explanation && (
-        <div className="mt-3 pt-3 border-t">
-          <p className="text-xs text-gray-500 mb-1 font-medium">Giải thích:</p>
-          <p className="text-xs text-gray-700">{group.sample_variant.explanation}</p>
+        <div className="mt-3 pt-3 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-1 font-medium">Giải thích:</p>
+          <p className="text-xs text-card-foreground">{group.sample_variant.explanation}</p>
         </div>
       )}
 
       {/* Quizzes using this answer */}
-      <div className="mt-3 pt-3 border-t">
-        <p className="text-xs text-gray-500 mb-1 font-medium">
+      <div className="mt-3 pt-3 border-t border-border">
+        <p className="text-xs text-muted-foreground mb-1 font-medium">
           Đáp án này đang dùng trong:
         </p>
         <div className="flex flex-wrap gap-1">

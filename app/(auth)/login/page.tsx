@@ -147,21 +147,21 @@ function LoginForm() {
   return (
     <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/80 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-card/80 backdrop-blur-2xl rounded-[2.5rem] border border-border p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
         <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[32px] font-black text-slate-800 tracking-tight leading-tight">Đăng nhập</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Chào mừng bạn quay lại với FQuiz</p>
+          <h1 className="text-2xl sm:text-[32px] font-black text-card-foreground tracking-tight leading-tight">Đăng nhập</h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium">Chào mừng bạn quay lại với FQuiz</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Identifier Field */}
           <div className="space-y-1.5">
-            <label htmlFor="identifier" className="text-sm font-bold text-slate-700 ml-1">
+            <label htmlFor="identifier" className="text-sm font-bold text-card-foreground ml-1">
               Email hoặc Tên đăng nhập
             </label>
             <div className="relative">
@@ -175,13 +175,13 @@ function LoginForm() {
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.identifier 
-                    ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
-                    : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
+                    ? "border-destructive/60 bg-incorrect-bg/50 text-card-foreground placeholder:text-destructive/50 focus:border-destructive focus:ring-4 focus:ring-destructive/10" 
+                    : "border-border bg-card/80 text-card-foreground placeholder:text-muted-foreground hover:border-border/80 focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary/10 shadow-2xs"
                 )}
               />
             </div>
             {errors.identifier && (
-              <p className="text-red-600 text-xs font-bold ml-1 mt-1">
+              <p className="text-destructive text-xs font-bold ml-1 mt-1">
                 {errors.identifier}
               </p>
             )}
@@ -190,10 +190,10 @@ function LoginForm() {
           {/* Password Field */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between ml-1">
-              <label htmlFor="password" className="text-sm font-bold text-slate-700">
+              <label htmlFor="password" className="text-sm font-bold text-card-foreground">
                 Mật khẩu
               </label>
-              <Link href="/forgot-password" className="text-xs font-black text-[#5D7B6F] hover:text-[#4a6358] transition-colors">
+              <Link href="/forgot-password" className="text-xs font-black text-primary hover:text-primary/90 transition-colors">
                 Quên mật khẩu?
               </Link>
             </div>
@@ -208,21 +208,21 @@ function LoginForm() {
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 pr-12 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.password 
-                    ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10" 
-                    : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
+                    ? "border-destructive/60 bg-incorrect-bg/50 text-card-foreground placeholder:text-destructive/50 focus:border-destructive focus:ring-4 focus:ring-destructive/10" 
+                    : "border-border bg-card/80 text-card-foreground placeholder:text-muted-foreground hover:border-border/80 focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary/10 shadow-2xs"
                 )}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors cursor-pointer"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-red-600 text-xs font-bold ml-1 mt-1">
+              <p className="text-destructive text-xs font-bold ml-1 mt-1">
                 {errors.password}
               </p>
             )}
@@ -232,9 +232,9 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-4 cursor-pointer active:scale-[0.98]"
+            className="group relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-4 cursor-pointer active:scale-[0.98]"
           >
-            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+            <div className="absolute inset-0 bg-primary-foreground/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
@@ -250,12 +250,12 @@ function LoginForm() {
         <GoogleSignInButton callbackUrl={callbackUrl} />
 
         {/* Footer Link */}
-        <div className="mt-6 pt-4 border-t border-slate-200/50">
-          <p className="text-center text-slate-500 font-medium text-sm">
+        <div className="mt-6 pt-4 border-t border-border">
+          <p className="text-center text-muted-foreground font-medium text-sm">
             Bạn chưa có tài khoản?{' '}
             <Link 
               href={callbackUrl ? `/register?redirect=${encodeURIComponent(callbackUrl)}` : '/register'}
-              className="text-[#5D7B6F] font-black hover:text-[#4A6359] transition-colors hover:underline decoration-2 underline-offset-4"
+              className="text-primary font-black hover:text-primary/90 transition-colors hover:underline decoration-2 underline-offset-4"
             >
               Đăng ký miễn phí
             </Link>
@@ -270,16 +270,16 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="w-full relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/10 to-[#A4C3A2]/10 rounded-[2.5rem] blur-xl opacity-60" />
-        <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-lg">
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-primary/10 rounded-[2.5rem] blur-xl opacity-60" />
+        <div className="relative bg-card/70 backdrop-blur-2xl rounded-[2.5rem] border border-border p-8 sm:p-10 shadow-lg">
           <div className="mb-8 text-center sm:text-left">
-            <div className="h-8 w-40 bg-slate-200/50 animate-pulse rounded-lg mb-4" />
-            <div className="h-4 w-60 bg-slate-200/50 animate-pulse rounded-md" />
+            <div className="h-8 w-40 bg-muted animate-pulse rounded-lg mb-4" />
+            <div className="h-4 w-60 bg-muted animate-pulse rounded-md" />
           </div>
           <div className="space-y-6">
-            <div className="h-14 bg-slate-100/50 animate-pulse rounded-2xl" />
-            <div className="h-14 bg-slate-100/50 animate-pulse rounded-2xl" />
-            <div className="h-14 bg-[#5D7B6F]/20 animate-pulse rounded-2xl mt-4" />
+            <div className="h-14 bg-muted animate-pulse rounded-2xl" />
+            <div className="h-14 bg-muted animate-pulse rounded-2xl" />
+            <div className="h-14 bg-primary/20 animate-pulse rounded-2xl mt-4" />
           </div>
         </div>
       </div>

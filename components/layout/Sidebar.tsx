@@ -240,7 +240,7 @@ export function Sidebar({ user }: SidebarProps) {
                                 <Icon
                                   className={cn(
                                     'w-4.5 h-4.5 flex-shrink-0 relative z-10 transition-colors',
-                                    active ? sec.activeText : 'text-muted-foreground group-hover:text-foreground'
+                                    active ? sec.activeText : cn('text-text-tertiary group-hover:text-foreground', item.accentColor)
                                   )}
                                 />
                                 <span className="whitespace-nowrap overflow-hidden relative z-10 text-xs font-bold tracking-tight">
@@ -368,7 +368,7 @@ export function Sidebar({ user }: SidebarProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs lg:hidden"
+              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs lg:hidden"
             />
 
             <motion.aside

@@ -106,10 +106,10 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-card-foreground">
             Thống kê Ngân hàng Câu hỏi
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Phân tích mức độ sử dụng và chất lượng câu hỏi
           </p>
         </div>
@@ -117,7 +117,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
         <div className="flex flex-wrap items-center gap-3">
           {/* Search Bar */}
           <div className="relative w-full sm:w-[260px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm câu hỏi..."
               value={searchQuery}
@@ -128,7 +128,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -155,23 +155,23 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
       {/* Overview Stats */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
             {debouncedSearch ? 'Số câu hỏi tìm thấy' : 'Tổng câu hỏi'}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{data?.total_questions ?? 0}</div>
+          <div className="text-3xl font-bold text-card-foreground">{data?.total_questions ?? 0}</div>
         </CardContent>
       </Card>
 
       {/* Questions List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : !data || !data.questions || data.questions.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center text-gray-500">
+          <CardContent className="py-12 text-center text-muted-foreground">
             {debouncedSearch
               ? `Không tìm thấy câu hỏi phù hợp với từ khóa "${debouncedSearch}"`
               : selectedCategory !== 'all'
@@ -185,7 +185,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
             <div className="flex items-center justify-between">
               <CardTitle>Danh sách câu hỏi</CardTitle>
               {data.total_pages > 1 && (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   Trang {data.page} / {data.total_pages} (Tổng: {data.total_questions} câu)
                 </div>
               )}
@@ -230,7 +230,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
                       return (
                         <div key={page} className="flex items-center gap-1">
                           {showEllipsis && (
-                            <span className="px-2 text-gray-400">...</span>
+                            <span className="px-2 text-muted-foreground">...</span>
                           )}
                           <Button
                             variant={page === currentPage ? 'default' : 'outline'}
@@ -281,14 +281,14 @@ function QuestionItem({
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+      <div className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors text-card-foreground">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-start gap-3 mb-2">
-              <span className="text-sm font-bold text-gray-400 mt-1">
+              <span className="text-sm font-bold text-muted-foreground mt-1">
                 #{index + 1}
               </span>
-              <p className="font-medium text-gray-900 flex-1">{question.text}</p>
+              <p className="font-medium text-card-foreground flex-1">{question.text}</p>
             </div>
 
             {/* Stats */}
@@ -298,7 +298,7 @@ function QuestionItem({
               </Badge>
               {question.used_in_quizzes.length > 0 && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Trong:</span>
+                  <span className="text-xs text-muted-foreground">Trong:</span>
                   {question.used_in_quizzes.slice(0, 3).map((code) => (
                     <Badge key={code} variant="outline" className="text-[10px]">
                       {code}
@@ -332,7 +332,7 @@ function QuestionItem({
         </div>
 
         <CollapsibleContent className="mt-3 ml-8">
-          <div className="space-y-2 pt-2 border-t">
+          <div className="space-y-2 pt-2 border-t border-border">
             {question.options.map((option, idx) => {
               const isCorrect = question.correct_answer.includes(idx)
               return (
@@ -340,8 +340,8 @@ function QuestionItem({
                   key={idx}
                   className={`p-3 rounded border text-sm ${
                     isCorrect
-                      ? 'bg-green-50 border-green-300 font-medium'
-                      : 'bg-gray-50 border-gray-200'
+                      ? 'bg-success-bg border-success-border font-medium text-success-fg'
+                      : 'bg-muted/40 border-border text-card-foreground'
                   }`}
                 >
                   <span className="font-bold mr-2">
