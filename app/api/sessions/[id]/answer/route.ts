@@ -52,33 +52,23 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
 
-    // [SECURITY FIX]: Use atomic update to prevent TOCTOU race condition
     const targetIndex = typeof question_index === 'number' ? question_index : session.current_question_index
 
-    // Atomic: update only if this question hasn't been answered yet
-    const updated = await QuizSession.findOneAndUpdate(
-      { _id: id, 'user_answers.question_index': { $ne: targetIndex } },
-      { $push: { user_answers: { question_index: targetIndex, answer_index: submittedAnswerIndexes[0], answer_indexes: submittedAnswerIndexes, is_correct: false } } },
-      { new: true }
-    ).lean()
-
-    if (!updated) {
-      return NextResponse.json({ error: 'Câu hỏi này đã được ghi nhận câu trả lời.' }, { status: 400 })
+    // In immediate mode, reject if this question was already answered
+    if (session.mode === 'immediate') {
+      const alreadyAnswered = session.user_answers?.some((a: { question_index: number }) => a.question_index === targetIndex)
+      if (alreadyAnswered) {
+        return NextResponse.json({ error: 'Câu hỏi này đã được ghi nhận câu trả lời.' }, { status: 400 })
+      }
     }
 
-    // Reload session with full data for quiz engine
-    const freshSession = await QuizSession.findById(id)
-    if (!freshSession) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    }
-
-    // Delegate to quiz engine based on mode
-    if (freshSession.mode === 'immediate') {
-      const result = await processImmediateAnswer(freshSession, submittedAnswerIndexes, targetIndex)
+    // Delegate to quiz engine based on mode (processImmediateAnswer & processReviewAnswer handle atomic upsert via OCC)
+    if (session.mode === 'immediate') {
+      const result = await processImmediateAnswer(session, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     } else {
-      // review mode
-      const result = await processReviewAnswer(freshSession, submittedAnswerIndexes, targetIndex)
+      // review mode allows changing/updating answers before final submission
+      const result = await processReviewAnswer(session, submittedAnswerIndexes, targetIndex)
       return NextResponse.json(result, { status: 200 })
     }
   } catch (err) {

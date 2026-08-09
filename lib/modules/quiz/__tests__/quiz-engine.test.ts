@@ -170,6 +170,48 @@ describe('Quiz Engine', () => {
         })
       )
     })
+
+    it('should process immediate mode with sequential difficulty (default order)', async () => {
+      const sequentialSession = {
+        ...mockSession,
+        difficulty: 'sequential',
+        question_order: [0, 1],
+      }
+      mockSessionForFind = sequentialSession
+
+      const resultQ0 = await processImmediateAnswer(sequentialSession, [0], 0)
+      expect(resultQ0.isCorrect).toBe(true)
+      expect(resultQ0.correctAnswer).toBe(0)
+      expect(resultQ0.explanation).toBe('Exp 1')
+
+      const resultQ1 = await processImmediateAnswer(sequentialSession, [1], 1)
+      expect(resultQ1.isCorrect).toBe(true)
+      expect(resultQ1.correctAnswer).toBe(1)
+      expect(resultQ1.explanation).toBe('Exp 2')
+    })
+
+    it('should process immediate mode with random difficulty (shuffled order)', async () => {
+      // Question order [1, 0] means display index 0 maps to actual Q2 ({ correct_answer: [1] })
+      // and display index 1 maps to actual Q1 ({ correct_answer: 0 })
+      const randomSession = {
+        ...mockSession,
+        difficulty: 'random',
+        question_order: [1, 0],
+      }
+      mockSessionForFind = randomSession
+
+      // Answer display index 0 (which points to actual Q2 with correct_answer [1])
+      const resultDisplay0 = await processImmediateAnswer(randomSession, [1], 0)
+      expect(resultDisplay0.isCorrect).toBe(true)
+      expect(resultDisplay0.correctAnswer).toBe(1)
+      expect(resultDisplay0.explanation).toBe('Exp 2')
+
+      // Answer display index 1 (which points to actual Q1 with correct_answer 0)
+      const resultDisplay1 = await processImmediateAnswer(randomSession, [0], 1)
+      expect(resultDisplay1.isCorrect).toBe(true)
+      expect(resultDisplay1.correctAnswer).toBe(0)
+      expect(resultDisplay1.explanation).toBe('Exp 1')
+    })
   })
 
   describe('processReviewAnswer', () => {

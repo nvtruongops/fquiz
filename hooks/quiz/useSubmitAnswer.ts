@@ -123,7 +123,7 @@ export function useSubmitAnswer(sessionId: string) {
       // Timer is stored in a ref so it can be cleared on next mutation or unmount.
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+        queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'] })
       }, 500)
     },
 
