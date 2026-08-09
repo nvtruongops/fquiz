@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/modules/auth/auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
+import { User } from '@/lib/modules/auth/models/User'
 import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
 
@@ -63,8 +64,19 @@ export async function GET(
     let scoreMap = new Map<string, number>()
 
     let savedQuizIds: string[] = []
+    let pinnedQuizIds: string[] = []
+    let isCategoryPinned = false
 
     if (studentId) {
+      // Fetch user's pinned categories and pinned quizzes
+      const userDoc = (await User.findById(studentId).select('pinned_categories pinned_quizzes').lean()) as any
+      if (userDoc) {
+        pinnedQuizIds = userDoc.pinned_quizzes ?? []
+        if (category?._id) {
+          isCategoryPinned = (userDoc.pinned_categories ?? []).includes(category._id.toString())
+        }
+      }
+
       // Fetch best scores for all quizzes in one aggregation
       const bestScores: { _id: mongoose.Types.ObjectId; bestScore: number }[] =
         await QuizSession.aggregate([
@@ -121,6 +133,8 @@ export async function GET(
       categoryName,
       quizzes: result,
       savedQuizIds,
+      pinnedQuizIds,
+      isCategoryPinned,
     })
   } catch (err) {
     logger.error({ err }, `GET /api/courses/${code}/quizzes failed`)

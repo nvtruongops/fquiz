@@ -144,7 +144,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-[#5D7B6F]">
+        <div className="flex items-center gap-3 text-primary">
           <Loader2 className="w-5 h-5 animate-spin" />
           <span className="text-sm font-bold uppercase tracking-wider">Đang tải hồ sơ</span>
         </div>
@@ -154,15 +154,15 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-10 px-3 sm:px-6 md:px-10">
-      <section className="rounded-xl sm:rounded-[28px] bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground p-4 sm:p-6 md:p-8 shadow-xl">
+      <section className="rounded-xl sm:rounded-[28px] bg-primary text-primary-foreground p-4 sm:p-6 md:p-8 shadow-xl">
         <div className="flex items-center sm:items-start gap-3.5 sm:gap-6">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
-            <span className="font-extrabold text-xl sm:text-2xl md:text-3xl">{(profile?.username?.[0] ?? 'U').toUpperCase()}</span>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl bg-primary-foreground/20 border border-primary-foreground/30 flex items-center justify-center shrink-0 shadow-xs">
+            <span className="font-extrabold text-xl sm:text-2xl md:text-3xl text-primary-foreground">{(profile?.username?.[0] ?? 'U').toUpperCase()}</span>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-white/70 font-extrabold">Trang cá nhân</p>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mt-0.5 sm:mt-1 truncate">{profile?.username ?? 'Người dùng'}</h1>
-            <p className="text-xs sm:text-sm text-white/80 mt-1 sm:mt-2 max-w-xl font-medium leading-relaxed hidden sm:block">
+            <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-primary-foreground/70 font-extrabold">Trang cá nhân</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mt-0.5 sm:mt-1 truncate text-primary-foreground">{profile?.username ?? 'Người dùng'}</h1>
+            <p className="text-xs sm:text-sm text-primary-foreground/80 mt-1 sm:mt-2 max-w-xl font-medium leading-relaxed hidden sm:block">
               Quản lý thông tin cá nhân để hồ sơ của bạn nhất quán, tin cậy và dễ nhận diện trong hệ thống.
             </p>
           </div>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                 onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
                 maxLength={300}
                 rows={4}
-                className="mt-1.5 w-full rounded-xl sm:rounded-2xl border border-border bg-card text-foreground p-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none font-medium placeholder:text-muted-foreground"
+                className="mt-1.5 w-full rounded-xl sm:rounded-2xl border border-border bg-card text-foreground p-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none font-medium placeholder:text-muted-foreground"
                 placeholder="Chia sẻ ngắn về mục tiêu học tập của bạn..."
               />
               <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-1 text-right font-bold">{bioLength}/300</p>
@@ -215,7 +215,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border rounded-xl sm:rounded-3xl bg-card/60 shadow-xs">
+        <Card className="border-border rounded-xl sm:rounded-3xl bg-card shadow-xs">
           <CardHeader className="p-3.5 sm:p-6 pb-1 sm:pb-3">
             <CardTitle className="text-sm sm:text-base font-extrabold text-primary">Thông tin tài khoản</CardTitle>
           </CardHeader>
@@ -242,23 +242,23 @@ export default function ProfilePage() {
       </div>
 
       {/* Danger Zone: Account Deletion */}
-      <Card className="border-red-200 bg-red-50/30 rounded-xl sm:rounded-3xl shadow-xs">
+      <Card className="border-destructive/30 bg-destructive/5 rounded-xl sm:rounded-3xl shadow-xs">
         <CardHeader className="p-3.5 sm:p-6 pb-1 sm:pb-3">
-          <CardTitle className="text-sm sm:text-base font-extrabold text-red-600 flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-base font-extrabold text-destructive flex items-center gap-2">
             <Trash2 className="w-4 h-4" /> Khu vực nguy hiểm
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3.5 sm:p-6 pt-2 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h4 className="text-xs sm:text-sm font-extrabold text-gray-900">Xóa tài khoản cá nhân</h4>
-            <p className="text-[11px] sm:text-xs text-gray-500 mt-1 max-w-xl font-medium leading-relaxed">
-              Tài khoản sẽ được chuyển sang trạng thái chờ xóa và giữ trong <strong>72 giờ</strong>. Hệ thống sẽ gửi email chứa liên kết khôi phục giúp bạn hoàn tác bất kỳ lúc nào trong 72h.
+            <h4 className="text-xs sm:text-sm font-extrabold text-foreground">Xóa tài khoản cá nhân</h4>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 max-w-xl font-medium leading-relaxed">
+              Tài khoản sẽ được chuyển sang trạng thái chờ xóa và giữ trong <strong className="text-foreground">72 giờ</strong>. Hệ thống sẽ gửi email chứa liên kết khôi phục giúp bạn hoàn tác bất kỳ lúc nào trong 72h.
             </p>
           </div>
           <Button
             onClick={() => setDeleteDialogOpen(true)}
             variant="destructive"
-            className="h-9 sm:h-10 px-4 rounded-lg sm:rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shrink-0 shadow-xs cursor-pointer"
+            className="h-9 sm:h-10 px-4 rounded-lg sm:rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold text-xs sm:text-sm shrink-0 shadow-xs cursor-pointer"
           >
             <Trash2 className="w-4 h-4 mr-1.5" /> Xóa tài khoản
           </Button>
@@ -267,23 +267,23 @@ export default function ProfilePage() {
 
       {/* Password Confirmation Modal for Account Deletion */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-5 sm:p-6">
+        <DialogContent className="sm:max-w-md rounded-2xl p-5 sm:p-6 bg-card border-border text-card-foreground">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-red-600 flex items-center gap-2">
+            <DialogTitle className="text-lg font-black text-destructive flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" /> Xác nhận xóa tài khoản
             </DialogTitle>
-            <DialogDescription className="text-xs text-gray-600 font-medium leading-relaxed mt-2">
-              Tài khoản của bạn sẽ tạm dừng hoạt động và lên lịch xóa hoàn toàn sau <strong>72 giờ</strong>.<br />
+            <DialogDescription className="text-xs text-muted-foreground font-medium leading-relaxed mt-2">
+              Tài khoản của bạn sẽ tạm dừng hoạt động và lên lịch xóa hoàn toàn sau <strong className="text-foreground">72 giờ</strong>.<br />
               Vui lòng nhập mật khẩu hiện tại của bạn để tiếp tục.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 my-2">
-            <label htmlFor="confirm-delete-password" className="text-xs font-extrabold uppercase tracking-wider text-gray-600">
+            <label htmlFor="confirm-delete-password" className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
               Mật khẩu xác nhận:
             </label>
             <div className="relative">
-              <KeyRound className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <KeyRound className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 id="confirm-delete-password"
                 type="password"
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     handleRequestDeletion()
                   }
                 }}
-                className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-gray-300 font-medium"
+                className="pl-9 h-10 text-xs sm:text-sm rounded-xl border-input bg-muted text-foreground font-medium placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleting}
-              className="rounded-xl h-9 text-xs font-bold"
+              className="rounded-xl h-9 text-xs font-bold border-border text-foreground hover:bg-muted"
             >
               Hủy
             </Button>
@@ -313,7 +313,7 @@ export default function ProfilePage() {
               onClick={handleRequestDeletion}
               disabled={deleting || !deletePassword}
               variant="destructive"
-              className="rounded-xl h-9 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
+              className="rounded-xl h-9 text-xs font-bold bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
               Xác nhận xóa tài khoản

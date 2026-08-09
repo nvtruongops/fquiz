@@ -5,7 +5,7 @@ import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { Input } from '@/components/shared/ui/input'
 import { motion } from 'framer-motion'
-import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Search, Sparkles } from 'lucide-react'
+import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Search, Sparkles, Pin } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
@@ -22,6 +22,8 @@ interface CourseQuizzesResponse {
   categoryName: string
   quizzes: QuizItem[]
   savedQuizIds?: string[]
+  pinnedQuizIds?: string[]
+  isCategoryPinned?: boolean
 }
 
 async function fetchCourseQuizzes(code: string): Promise<CourseQuizzesResponse> {
@@ -66,6 +68,8 @@ export default function CourseQuizList({
 }) {
   const [savingQuizId, setSavingQuizId] = useState<string | null>(null)
   const [savedQuizIds, setSavedQuizIds] = useState<string[]>([])
+  const [pinnedQuizIds, setPinnedQuizIds] = useState<string[]>([])
+  const [pinningQuizId, setPinningQuizId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -87,7 +91,10 @@ export default function CourseQuizList({
     if (data?.savedQuizIds) {
       setSavedQuizIds(data.savedQuizIds)
     }
-  }, [data?.savedQuizIds])
+    if (data?.pinnedQuizIds) {
+      setPinnedQuizIds(data.pinnedQuizIds)
+    }
+  }, [data?.savedQuizIds, data?.pinnedQuizIds])
 
   const handleSaveQuiz = async (quizId: string) => {
     setSavingQuizId(quizId)
@@ -134,13 +141,60 @@ export default function CourseQuizList({
     }
   }
 
+  const handlePinQuiz = async (quizId: string) => {
+    setPinningQuizId(quizId)
+    try {
+      const res = await fetch('/api/student/pinned-quizzes', {
+        method: 'POST',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ quizId }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || 'Không thể ghim mã quiz')
+      } else {
+        const isPinned = Boolean(json.pinned)
+        const nextPinned = json.pinnedQuizzes || (
+          isPinned
+            ? [...pinnedQuizIds, quizId]
+            : pinnedQuizIds.filter((id) => id !== quizId)
+        )
+        setPinnedQuizIds(nextPinned)
+
+        queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            pinnedQuizIds: nextPinned,
+          }
+        })
+
+        toast.success(isPinned ? 'Đã ghim mã quiz lên đầu' : 'Đã bỏ ghim mã quiz')
+      }
+    } catch {
+      toast.error('Có lỗi khi ghim mã quiz')
+    } finally {
+      setPinningQuizId(null)
+    }
+  }
+
   const rawQuizzes = data?.quizzes ?? []
 
   const filteredQuizzes = useMemo(() => {
-    if (!searchQuery.trim()) return rawQuizzes
-    const q = searchQuery.trim().toLowerCase()
-    return rawQuizzes.filter((quiz) => quiz.title.toLowerCase().includes(q))
-  }, [rawQuizzes, searchQuery])
+    let list = rawQuizzes
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = rawQuizzes.filter((quiz) => quiz.title.toLowerCase().includes(q))
+    }
+    // Sort: Pinned quizzes float to the VERY TOP!
+    return [...list].sort((a, b) => {
+      const aPinned = pinnedQuizIds.includes(a._id)
+      const bPinned = pinnedQuizIds.includes(b._id)
+      if (aPinned && !bPinned) return -1
+      if (!aPinned && bPinned) return 1
+      return 0
+    })
+  }, [rawQuizzes, searchQuery, pinnedQuizIds])
 
   if (isLoading) return <QuizSkeleton />
 
@@ -196,7 +250,7 @@ export default function CourseQuizList({
 
       {filteredQuizzes.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-xs font-semibold bg-card/40 border border-border rounded-2xl">
-          Không tìm thấy bộ đề phù hợp với từ khóa "{searchQuery}"
+          Không tìm thấy bộ đề phù hợp với từ khóa &quot;{searchQuery}&quot;
         </div>
       ) : (
         <motion.div
@@ -208,10 +262,16 @@ export default function CourseQuizList({
           {filteredQuizzes.map((quiz) => {
             const isCompleted = quiz.bestScore !== null
             const isSaved = savedQuizIds.includes(quiz._id)
+            const isPinned = pinnedQuizIds.includes(quiz._id)
 
             return (
               <motion.div key={quiz._id} variants={itemVariants} className="h-full">
-                <Card className="h-full flex flex-col justify-between border border-border bg-card backdrop-blur-2xl rounded-2xl shadow-xs hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-4 sm:p-5 gap-4 relative">
+                <Card
+                  className={cn(
+                    'h-full flex flex-col justify-between border bg-card backdrop-blur-2xl rounded-2xl shadow-xs hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-4 sm:p-5 gap-4 relative',
+                    isPinned ? 'border-question-flagged-border shadow-xs' : 'border-border'
+                  )}
+                >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                   <div className="space-y-3.5 relative z-10">
@@ -226,12 +286,20 @@ export default function CourseQuizList({
                           <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                       )}
-                      <h3
-                        className="text-xs sm:text-sm font-extrabold text-foreground leading-snug tracking-tight group-hover:text-primary transition-colors duration-300 line-clamp-2"
-                        title={quiz.title}
-                      >
-                        {quiz.title}
-                      </h3>
+                      <div className="flex-1 space-y-1">
+                        <h3
+                          className="text-xs sm:text-sm font-extrabold text-foreground leading-snug tracking-tight group-hover:text-primary transition-colors duration-300 line-clamp-2"
+                          title={quiz.title}
+                        >
+                          {quiz.title}
+                        </h3>
+                        {isPinned && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border">
+                            <Pin className="w-2.5 h-2.5 fill-current" />
+                            Đã ghim
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Metadata & Status Badge */}
@@ -270,6 +338,29 @@ export default function CourseQuizList({
                       Vào làm bài
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handlePinQuiz(quiz._id)
+                      }}
+                      disabled={pinningQuizId === quiz._id}
+                      className={cn(
+                        'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
+                        isPinned
+                          ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs'
+                          : 'bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary border-border'
+                      )}
+                      title={isPinned ? 'Bỏ ghim mã quiz' : 'Ghim mã quiz lên đầu'}
+                    >
+                      {pinningQuizId === quiz._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      ) : (
+                        <Pin className={cn('w-4 h-4', isPinned && 'fill-current')} />
+                      )}
+                    </button>
 
                     <button
                       type="button"

@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { cn } from '@/lib/core/utils/cn'
 import {
   Home,
@@ -18,7 +19,11 @@ import {
   ChevronRight,
   School,
   X,
-  LogIn
+  LogIn,
+  UserPlus,
+  Sun,
+  Moon,
+  Palette
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLogout } from '@/hooks/useLogout'
@@ -33,6 +38,24 @@ export function MobileNav({ user }: MobileNavProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [examMenuOpen, setExamMenuOpen] = useState(false)
   const [avatarError, setAvatarError] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme)
+    if (user) {
+      fetch('/api/v1/user/theme', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: newTheme }),
+      }).catch(() => {})
+    }
+  }
 
   const { handleLogout: triggerLogout } = useLogout()
 
@@ -91,7 +114,7 @@ export function MobileNav({ user }: MobileNavProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="absolute bottom-[calc(100%+12px)] inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.22)] p-3 space-y-1.5 overflow-hidden z-50"
+              className="absolute bottom-full mb-3 inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl p-3 space-y-1.5 overflow-hidden z-50"
             >
               <div className="px-3 py-2 border-b border-border flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-primary">
@@ -162,7 +185,7 @@ export function MobileNav({ user }: MobileNavProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="absolute bottom-[calc(100%+12px)] inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.22)] p-3 space-y-1.5 overflow-hidden z-50"
+              className="absolute bottom-full mb-3 inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl p-3 space-y-1.5 overflow-hidden z-50"
             >
               {user ? (
                 <>
@@ -237,6 +260,51 @@ export function MobileNav({ user }: MobileNavProps) {
                       <span>Đăng xuất</span>
                     </div>
                   </button>
+
+                  {mounted && (
+                    <div className="pt-2 border-t border-border mt-1">
+                      <div className="flex items-center justify-between px-2 mb-1.5">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                          Giao diện
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('light')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'light' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Sun className="w-3.5 h-3.5" />
+                          <span>Sáng</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('dark')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'dark' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Moon className="w-3.5 h-3.5" />
+                          <span>Tối</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('green')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'green' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Palette className="w-3.5 h-3.5" />
+                          <span>Xanh</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -251,15 +319,71 @@ export function MobileNav({ user }: MobileNavProps) {
                     </button>
                   </div>
 
-                  <Link
-                    href="/login"
-                    prefetch={false}
-                    onClick={closeAllMenus}
-                    className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold bg-primary text-primary-foreground shadow-xs active:scale-98"
-                  >
-                    <LogIn className="w-4.5 h-4.5 shrink-0" />
-                    <span>Đăng nhập ngay</span>
-                  </Link>
+                  <div className="flex flex-col gap-2 pt-1">
+                    <Link
+                      href="/login"
+                      prefetch={false}
+                      onClick={closeAllMenus}
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-primary text-primary-foreground shadow-xs active:scale-98"
+                    >
+                      <LogIn className="w-4.5 h-4.5 shrink-0" />
+                      <span>Đăng nhập ngay</span>
+                    </Link>
+                    <Link
+                      href="/register"
+                      prefetch={false}
+                      onClick={closeAllMenus}
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-muted hover:bg-muted/80 text-foreground border border-border/60 shadow-xs active:scale-98"
+                    >
+                      <UserPlus className="w-4.5 h-4.5 shrink-0 text-primary" />
+                      <span>Đăng ký tài khoản mới</span>
+                    </Link>
+                  </div>
+
+                  {mounted && (
+                    <div className="pt-2 border-t border-border mt-1">
+                      <div className="flex items-center justify-between px-2 mb-1.5">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                          Giao diện
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('light')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'light' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Sun className="w-3.5 h-3.5" />
+                          <span>Sáng</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('dark')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'dark' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Moon className="w-3.5 h-3.5" />
+                          <span>Tối</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleThemeChange('green')}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                            theme === 'green' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Palette className="w-3.5 h-3.5" />
+                          <span>Xanh</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </motion.div>

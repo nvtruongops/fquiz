@@ -34,6 +34,7 @@ const UserSchema = new Schema<IUser>(
     token_version: { type: Number, required: true, default: 1 },
     google_id: { type: String, default: null, sparse: true },
     pinned_categories: { type: [String], default: [] },
+    pinned_quizzes: { type: [String], default: [] },
     deletion_requested_at: { type: Date, default: null },
     deletion_scheduled_for: { type: Date, default: null },
     deletion_token: { type: String, default: null },
@@ -43,7 +44,7 @@ const UserSchema = new Schema<IUser>(
 )
 
 const existingUserModel = mongoose.models.User
-if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories') || !existingUserModel.schema.path('deletion_token'))) {
+if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories') || !existingUserModel.schema.path('pinned_quizzes') || !existingUserModel.schema.path('deletion_token'))) {
   delete mongoose.models.User
 }
 
