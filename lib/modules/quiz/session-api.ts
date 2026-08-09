@@ -24,24 +24,14 @@ async function handleSessionResponse(res: Response, context: 'session' | 'questi
     throw new Error('Session expired. Redirecting to login...')
   }
   if (res.status === 404) {
-    const match = typeof window !== 'undefined' ? window.location.pathname.match(/\/quiz\/([^/]+)/) : null
-    const quizId = match ? match[1] : ''
-    const target = quizId ? `/quiz/${quizId}?reason=session_not_found` : '/my-quizzes?reason=session_not_found'
-    if (typeof window !== 'undefined') {
-      window.location.href = target
-    }
     const apiError = new Error('Phiên làm bài không tồn tại hoặc đã bị xóa.') as SessionApiError
     apiError.status = 404
     throw apiError
   }
   if (res.status === 410) {
-    const match = typeof window !== 'undefined' ? window.location.pathname.match(/\/quiz\/([^/]+)/) : null
-    const quizId = match ? match[1] : ''
-    const target = quizId ? `/quiz/${quizId}?reason=idle_timeout` : '/dashboard?reason=idle_timeout'
-    if (typeof window !== 'undefined') {
-      window.location.href = target
-    }
-    throw new Error('Phiên làm bài đã tự động kết thúc do tạm dừng quá 5 phút.')
+    const apiError = new Error('Phiên làm bài đã tự động kết thúc do tạm dừng quá 5 phút.') as SessionApiError
+    apiError.status = 410
+    throw apiError
   }
   const err = await res.json().catch(() => ({})) as { error?: string; code?: string }
   const defaultMsg = context === 'session' ? 'Failed to load session' : 'Failed to load questions'

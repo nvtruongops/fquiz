@@ -35,9 +35,9 @@
     --info-fg: 222 47% 11%;
     --info-bg: 220 14% 94%;
     --info-border: 220 13% 86%;
-    --warning-fg: 222 47% 11%;
-    --warning-bg: 220 14% 94%;
-    --warning-border: 220 13% 86%;
+    --warning-fg: 24 90% 36%;
+    --warning-bg: 24 100% 95%;
+    --warning-border: 24 90% 84%;
     --incorrect-fg: 0 72% 35%;
     --incorrect-bg: 0 85% 95%;
     --incorrect-border: 0 70% 82%;
@@ -110,9 +110,9 @@
     --info-fg: 0 0% 100%;
     --info-bg: 240 6% 16%;
     --info-border: 240 6% 24%;
-    --warning-fg: 0 0% 100%;
-    --warning-bg: 240 6% 16%;
-    --warning-border: 240 6% 24%;
+    --warning-fg: 45 100% 65%;
+    --warning-bg: 43 70% 12%;
+    --warning-border: 43 60% 22%;
     --incorrect-fg: 0 85% 75%;
     --incorrect-bg: 0 50% 15%;
     --incorrect-border: 0 60% 30%;
@@ -185,9 +185,9 @@
     --info-fg: 188 80% 22%;
     --info-bg: 182 70% 88%;
     --info-border: 188 50% 70%;
-    --warning-fg: 35 60% 25%;
-    --warning-bg: 42 35% 86%;
-    --warning-border: 42 30% 74%;
+    --warning-fg: 30 75% 26%;
+    --warning-bg: 38 45% 86%;
+    --warning-border: 38 40% 75%;
     --incorrect-fg: 0 70% 32%;
     --incorrect-bg: 0 60% 92%;
     --incorrect-border: 0 50% 78%;
@@ -228,5 +228,40 @@
     --question-flagged-bg: 42 35% 86%;
     --question-flagged-fg: 35 60% 25%;
     --question-flagged-border: 42 30% 74%;
+  }
+}
+
+@layer utilities {
+  .backface-hidden {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .perspective-2000 {
+    perspective: 2000px;
+  }
+
+  /* Custom sleek scrollbar styles */
+  .custom-scrollbar::-webkit-scrollbar,
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 5px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.4);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 9999px;
+    transition: background 0.2s ease-in-out;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
   }
 }

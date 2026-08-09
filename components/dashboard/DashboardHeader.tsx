@@ -54,15 +54,10 @@ export const DashboardHeader = React.memo(function DashboardHeader({
           onClick={onRefetch}
           variant="outline"
           size="sm"
-          className="h-10 w-10 p-0 rounded-2xl border-border text-muted-foreground hover:text-primary hover:bg-muted"
+          className="h-10 w-10 p-0 rounded-2xl border-border text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
           title="Làm mới dữ liệu"
         >
           <RefreshCw className={cn('w-4 h-4', isRefetching && 'animate-spin text-primary')} />
-        </Button>
-        <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-10 px-5 rounded-2xl shadow-xs transition-all">
-          <Link href="/explore">
-            <Compass className="w-4 h-4 mr-2" /> Khám phá đề thi
-          </Link>
         </Button>
       </div>
     </div>

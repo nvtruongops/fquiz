@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -143,14 +143,19 @@ export default function QuizDetailPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'sequential' | 'random'>('sequential')
   
   const { loadingOverlay, startLoading, completeLoading, stopLoading, updateStatus } = useQuizLoader()
+  const shownReasonRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (searchParams.get('reason') === 'session_expired') {
-      toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
-    } else if (searchParams.get('reason') === 'idle_timeout') {
-      toast.error('Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.')
-    } else if (searchParams.get('reason') === 'session_not_found') {
-      toast.error('Phiên làm bài không tồn tại hoặc đã bị xóa. Vui lòng bắt đầu phiên mới.')
+    const reason = searchParams.get('reason')
+    if (reason && shownReasonRef.current !== reason) {
+      shownReasonRef.current = reason
+      if (reason === 'session_expired') {
+        toast.error('Phiên làm bài đã hết hiệu lực. Vui lòng bắt đầu phiên mới.')
+      } else if (reason === 'idle_timeout') {
+        toast.error('Phiên làm bài đã tự động kết thúc do bạn tạm dừng hoặc rời trang quá 5 phút.')
+      } else if (reason === 'session_not_found') {
+        toast.error('Phiên làm bài không tồn tại hoặc đã bị xóa. Vui lòng bắt đầu phiên mới.')
+      }
     }
     if (searchParams.get('selectMode') === 'true') {
       setModeSelectOpen(true)
@@ -167,6 +172,10 @@ export default function QuizDetailPage() {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: (failureCount, err: any) => {
+      if (err?.status === 404 || err?.status === 403) return false
+      return failureCount < 1
+    },
   })
 
   const { data: authData, isLoading: isUserLoading } = useAuth()
@@ -179,10 +188,11 @@ export default function QuizDetailPage() {
       if (!res.ok) return { assessmentSession: null, learningSession: null }
       return res.json()
     },
-    enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
+    enabled: resolvedQuizId.length > 0 && !!currentUser?._id && !isError,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: false,
   })
 
   const { data: historyData, isLoading: isHistoryLoading } = useQuery({
@@ -192,10 +202,11 @@ export default function QuizDetailPage() {
       if (!res.ok) return null
       return res.json()
     },
-    enabled: resolvedQuizId.length > 0 && !!currentUser?._id,
+    enabled: resolvedQuizId.length > 0 && !!currentUser?._id && !isError,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: false,
   })
 
   const startSessionMutation = useMutation({
@@ -284,6 +295,20 @@ export default function QuizDetailPage() {
     }
   }
 
+  const handleResumeSession = useCallback((sessionId: string) => {
+    if (!sessionId) return
+    const isLearning = activeSessionData?.learningSession?.sessionId === sessionId
+    const activeMode = isLearning ? 'flashcard' : (activeSessionData?.assessmentSession?.mode || 'immediate')
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    const targetUrl = activeMode === 'flashcard'
+      ? (isMobile ? `/quiz/${resolvedQuizId}/session/${sessionId}/flashcard/mobile` : `/quiz/${resolvedQuizId}/session/${sessionId}/flashcard`)
+      : `/quiz/${resolvedQuizId}/session/${sessionId}`
+
+    startLoading('Đang tiếp tục bài làm...')
+    completeLoading()
+    setTimeout(() => router.push(targetUrl), 400)
+  }, [activeSessionData, resolvedQuizId, startLoading, completeLoading, router])
+
   if (isLoading) return <QuizDetailSkeleton />
 
   if (isError) return <QuizDetailErrorView error={error as any} router={router} />
@@ -351,6 +376,7 @@ export default function QuizDetailPage() {
                 historyData={historyData}
                 isLoading={isHistoryLoading}
                 currentUser={currentUser}
+                onResumeSession={handleResumeSession}
                 onAuthRequired={() => {
                   const safeCallback = encodeURIComponent(`/quiz/${resolvedQuizId}`)
                   router.push(`/login?callbackUrl=${safeCallback}`)
@@ -377,9 +403,12 @@ export default function QuizDetailPage() {
                 activeSessionInfo={activeSessionInfo}
                 onContinue={() => {
                   setResumeDialogOpen(false)
-                  if (activeSessionInfo?.cardsUnknown && activeSessionInfo?.cardsUnknown > 0 && activeSessionInfo?.sessionId) {
+                  const resumeSessionId = activeSessionInfo?.sessionId
+                  const resumeMode = activeSessionInfo?.mode || selectedMode
+
+                  if (activeSessionInfo?.cardsUnknown && activeSessionInfo?.cardsUnknown > 0 && resumeSessionId) {
                     startLoading('Đang chuẩn bị bộ câu hỏi chưa nhớ...')
-                    fetch(`/api/sessions/${activeSessionInfo.sessionId}/flashcard-review`, {
+                    fetch(`/api/sessions/${resumeSessionId}/flashcard-review`, {
                       method: 'POST',
                       headers: withCsrfHeaders(),
                     })
@@ -387,7 +416,6 @@ export default function QuizDetailPage() {
                         const data = await res.json()
                         if (!res.ok) throw new Error(data.error || 'Failed to restart review')
 
-                        // PRE-LOAD QUESTIONS AND SESSION FOR REVIEW
                         if (data.sessionId) {
                           try {
                             updateStatus('Đang tải câu hỏi ôn tập...')
@@ -420,9 +448,35 @@ export default function QuizDetailPage() {
                         stopLoading()
                         toast.error(err.message || 'Lỗi khi mở lại phiên ôn tập')
                       })
+                  } else if (resumeSessionId) {
+                    startLoading('Đang kết nối lại phiên học...')
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+                    const targetUrl = resumeMode === 'flashcard'
+                      ? (isMobile ? `/quiz/${quizId}/session/${resumeSessionId}/flashcard/mobile` : `/quiz/${quizId}/session/${resumeSessionId}/flashcard`)
+                      : `/quiz/${quizId}/session/${resumeSessionId}`
+
+                    Promise.all([
+                      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(resumeSessionId)}`),
+                      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${resumeSessionId}`)
+                    ])
+                      .then(async ([qRes, sRes]) => {
+                        if (qRes.ok) {
+                          const qData = await qRes.json()
+                          sessionStorage.setItem(`session_preload_${resumeSessionId}`, JSON.stringify(qData))
+                        }
+                        if (sRes.ok) {
+                          const sData = await sRes.json()
+                          sessionStorage.setItem(`session_initial_preload_${resumeSessionId}`, JSON.stringify(sData))
+                        }
+                      })
+                      .catch((e) => console.warn('Pre-load failed', e))
+                      .finally(() => {
+                        completeLoading()
+                        setTimeout(() => router.push(targetUrl), 400)
+                      })
                   } else {
                     startLoading('Đang kết nối lại...')
-                    startSessionMutation.mutate({ mode: activeSessionInfo?.mode, difficulty: activeSessionInfo?.difficulty, action: 'continue' })
+                    startSessionMutation.mutate({ mode: resumeMode, difficulty: activeSessionInfo?.difficulty || selectedDifficulty, action: 'continue' })
                   }
                 }}
                 onRestart={() => {
@@ -451,6 +505,7 @@ export default function QuizDetailPage() {
               historyData={historyData}
               isLoading={isHistoryLoading}
               currentUser={currentUser}
+              onResumeSession={handleResumeSession}
               onAuthRequired={() => {
                 const safeCallback = encodeURIComponent(`/quiz/${resolvedQuizId}`)
                 router.push(`/login?callbackUrl=${safeCallback}`)

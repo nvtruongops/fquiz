@@ -65,9 +65,25 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
               </Button>
             </>
           ) : (
-            <Button onClick={() => router.back()} className="col-span-2 w-full bg-primary text-primary-foreground py-6">
-              Quay lại
-            </Button>
+            <div className="grid grid-cols-2 gap-3 col-span-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.history.length > 1) {
+                    router.back()
+                  } else {
+                    router.push('/dashboard')
+                  }
+                }}
+                className="py-6 border-border"
+              >
+                Quay lại
+              </Button>
+              <Button asChild className="bg-primary text-primary-foreground py-6">
+                <Link href="/dashboard">Về Dashboard</Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>

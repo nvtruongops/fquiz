@@ -327,9 +327,6 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
         </div>
 
         <div className="relative z-10 flex items-center justify-center w-[340px] h-[340px] my-auto">
-          <div className={`absolute bottom-2 w-64 h-16 ${loaderColors.baseRingBg} rounded-full blur-md transform rotate-x-60`} />
-          <div className={`absolute bottom-4 w-48 h-10 ${loaderColors.baseRingGlow} rounded-full blur-xs`} />
-
           <svg className="w-[320px] h-[320px] transform -rotate-90">
             <circle
               cx="160"

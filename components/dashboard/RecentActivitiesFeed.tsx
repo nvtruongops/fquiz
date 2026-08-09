@@ -17,7 +17,7 @@ interface RecentActivitiesFeedProps {
 
 export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ recentActivities }: RecentActivitiesFeedProps) {
   return (
-    <div className="lg:col-span-4 flex flex-col justify-between">
+    <div className="flex flex-col h-full">
       <div className="bg-card p-5 rounded-[24px] border border-border shadow-xs flex flex-col h-full space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
@@ -145,7 +145,7 @@ const CompactActivityItem = React.memo(function CompactActivityItem({ activity }
         <div
           className={cn(
             'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs',
-            isFlashcard ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-primary/10 text-primary border-primary/20'
+            isFlashcard ? 'bg-warning-bg text-warning-fg border-warning-border' : 'bg-primary/10 text-primary border-primary/20'
           )}
         >
           {isFlashcard ? <Layers className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
@@ -157,7 +157,7 @@ const CompactActivityItem = React.memo(function CompactActivityItem({ activity }
           </h4>
           <span className="text-[10px] text-muted-foreground font-semibold block mt-0.5">
             {timeAgo} • {isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}
-            {isResumable && <span className="text-amber-400 font-bold">{progressText}</span>}
+            {isResumable && <span className="text-warning-fg font-extrabold">{progressText}</span>}
           </span>
         </div>
       </div>
