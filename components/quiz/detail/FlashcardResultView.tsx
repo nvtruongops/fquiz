@@ -133,24 +133,24 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   return (
     <div className="w-full max-w-full h-full flex flex-col gap-3 overflow-hidden relative">
       {/* Top Header Card Summary Toolbar */}
-      <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl shadow-xs border border-slate-200/80 px-4 py-2.5 shrink-0">
+      <div className="relative overflow-hidden rounded-2xl bg-card backdrop-blur-xl shadow-xs border border-border px-4 py-2.5 shrink-0">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3.5">
             <div className="flex items-baseline gap-1">
               <span className={`text-2xl sm:text-3xl font-black ${gradeColor} tracking-tight`}>{percentage}%</span>
-              <span className="text-xs font-black text-slate-400">nhớ bài</span>
+              <span className="text-xs font-black text-muted-foreground">nhớ bài</span>
             </div>
-            <div className="h-6 w-px bg-slate-200" />
+            <div className="h-6 w-px bg-border" />
             <div>
-              <p className="text-xs font-black text-[#5D7B6F] uppercase tracking-wider">{gradeLabel}</p>
-              <p className="text-[11px] font-bold text-slate-500">
-                Đã nhớ <strong className="text-emerald-700">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} thẻ · Cần ôn lại <strong className="text-rose-600">{flashcard_stats.cards_unknown}</strong> thẻ · {completedDate}
+              <p className="text-xs font-black text-primary uppercase tracking-wider">{gradeLabel}</p>
+              <p className="text-[11px] font-bold text-muted-foreground">
+                Đã nhớ <strong className="text-emerald-400">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} thẻ · Cần ôn lại <strong className="text-destructive">{flashcard_stats.cards_unknown}</strong> thẻ · {completedDate}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge className="bg-[#5D7B6F] text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-xs">
+            <Badge className="bg-primary text-primary-foreground border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-xs">
               Học Lật Thẻ (Flashcard)
             </Badge>
             {is_temp ? (
@@ -161,7 +161,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   type="button"
                   onClick={handleOnClickReview}
                   disabled={loadingUnknown || loadingAll}
-                  className="h-8 px-3 rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98]"
+                  className="h-8 px-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98]"
                 >
                   {loadingUnknown || loadingAll ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -172,12 +172,12 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                 </Button>
 
                 <Link href="/dashboard">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-slate-200 font-bold text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98]">
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-foreground font-bold text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-[0.98]">
                     <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> Dashboard
                   </Button>
                 </Link>
                 <Link href="/history">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-slate-200 font-bold text-[11px] uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-[0.98]">
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-foreground font-bold text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-[0.98]">
                     <BookOpen className="mr-1 h-3.5 w-3.5" /> Lịch sử
                   </Button>
                 </Link>
@@ -191,30 +191,30 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
       {questions && questions.length > 0 ? (
         <InteractiveFlashcardResultViewer questions={questions} />
       ) : (
-        <div className="grid grid-cols-3 gap-4 p-6 bg-white rounded-2xl border border-slate-200/80">
-          <div className="text-center p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
-            <p className="text-2xl sm:text-3xl font-black text-slate-800">{flashcard_stats.total_cards}</p>
-            <p className="text-[10px] text-slate-400 mt-1 font-black uppercase tracking-wider">Tổng thẻ</p>
+        <div className="grid grid-cols-3 gap-4 p-6 bg-card rounded-2xl border border-border">
+          <div className="text-center p-4 bg-muted/80 rounded-2xl border border-border">
+            <p className="text-2xl sm:text-3xl font-black text-foreground">{flashcard_stats.total_cards}</p>
+            <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">Tổng thẻ</p>
           </div>
-          <div className="text-center p-4 bg-emerald-50/80 rounded-2xl border border-emerald-100">
-            <p className="text-2xl sm:text-3xl font-black text-emerald-600">{flashcard_stats.cards_known}</p>
-            <p className="text-[10px] text-emerald-600/80 mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
+          <div className="text-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+            <p className="text-2xl sm:text-3xl font-black text-emerald-400">{flashcard_stats.cards_known}</p>
+            <p className="text-[10px] text-emerald-400 mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
           </div>
-          <div className="text-center p-4 bg-rose-50/80 rounded-2xl border border-rose-100">
-            <p className="text-2xl sm:text-3xl font-black text-rose-500">{flashcard_stats.cards_unknown}</p>
-            <p className="text-[10px] text-rose-500/80 mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
+          <div className="text-center p-4 bg-destructive/10 rounded-2xl border border-destructive/20">
+            <p className="text-2xl sm:text-3xl font-black text-destructive">{flashcard_stats.cards_unknown}</p>
+            <p className="text-[10px] text-destructive mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
           </div>
         </div>
       )}
 
       {/* Review Options Modal */}
       {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 relative animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-card rounded-3xl p-6 shadow-2xl border border-border space-y-5 relative animate-in zoom-in-95">
             <button
               type="button"
               onClick={() => setShowReviewModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-5 h-5" />
             </button>

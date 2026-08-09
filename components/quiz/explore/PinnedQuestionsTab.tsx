@@ -95,21 +95,21 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
   return (
     <div className="space-y-5">
       {/* Top Action Bar */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-card backdrop-blur-md border border-border rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#5D7B6F]/10 text-[#5D7B6F] font-bold">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
             <Bookmark className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+              <h2 className="text-base sm:text-lg font-black text-foreground uppercase tracking-tight">
                 Câu hỏi đã ghim ({pinnedQuestions.length})
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#5D7B6F]/15 text-[#5D7B6F]">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary">
                 {normalizedCode}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Danh sách các câu hỏi bạn đã ghim khi làm bài thuộc môn {normalizedCode}
             </p>
           </div>
@@ -122,16 +122,16 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               variant="outline"
               size="sm"
               onClick={toggleExpandAll}
-              className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs transition-all"
+              className="h-10 px-3.5 rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs transition-all"
             >
               {isAllExpanded ? (
                 <>
-                  <EyeOff className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                  <EyeOff className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                   Thu gọn tất cả
                 </>
               ) : (
                 <>
-                  <Eye className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                  <Eye className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                   Hiện tất cả đáp án
                 </>
               )}
@@ -143,7 +143,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               size="sm"
               onClick={() => setConfirmClearOpen(true)}
               disabled={clearAllPinsMutation.isPending}
-              className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-semibold text-xs transition-all"
+              className="h-10 px-3.5 rounded-xl border-border text-destructive hover:text-destructive-foreground hover:bg-destructive font-semibold text-xs transition-all"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
               Xóa tất cả
@@ -154,7 +154,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               size="sm"
               onClick={handleCreateQuiz}
               disabled={createQuizFromPinnedMutation.isPending}
-              className="h-10 px-4 rounded-xl bg-[#5D7B6F] hover:bg-[#4a6358] text-white font-bold text-xs shadow-md shadow-[#5D7B6F]/20 transition-all flex items-center gap-1.5"
+              className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
             >
               {createQuizFromPinnedMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -169,16 +169,16 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
       {/* Empty State */}
       {pinnedQuestions.length === 0 ? (
-        <div className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-10 sm:p-14 text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+        <div className="bg-card border border-border rounded-3xl p-10 sm:p-14 text-center space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <Bookmark className="w-8 h-8" />
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+            <h3 className="text-base font-bold text-foreground">
               Chưa có câu hỏi nào được ghim
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Trong quá trình ôn luyện làm bài môn <strong className="text-slate-700 dark:text-slate-300 font-semibold">{normalizedCode}</strong>, hãy nhấn nút icon Ghim trên từng câu hỏi để lưu lại các câu cần ôn tập tại đây.
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Trong quá trình ôn luyện làm bài môn <strong className="text-foreground font-semibold">{normalizedCode}</strong>, hãy nhấn nút icon Ghim trên từng câu hỏi để lưu lại các câu cần ôn tập tại đây.
             </p>
           </div>
         </div>
@@ -198,19 +198,19 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all space-y-3 relative group"
+                  className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all space-y-3 relative group"
                 >
                   {/* Top metadata header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#5D7B6F]/10 text-[#5D7B6F]">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-primary/10 text-primary">
                         Câu {index + 1}
                       </span>
 
                       {/* Display source quiz title / code */}
                       {item.quiz_title && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                          <FileText className="w-3 h-3 text-slate-400" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                          <FileText className="w-3 h-3 text-muted-foreground" />
                           <span>Mã quiz: <strong>{item.quiz_title}</strong></span>
                         </span>
                       )}
@@ -221,7 +221,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       type="button"
                       onClick={() => deletePinMutation.mutate(item._id)}
                       disabled={deletePinMutation.isPending}
-                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      className="p-1.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       title="Xóa câu ghim"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -234,13 +234,13 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       onClick={() => toggleExpand(item._id)}
                       className="cursor-pointer group/title"
                     >
-                      <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed group-hover/title:text-[#5D7B6F] transition-colors">
+                      <p className="text-sm sm:text-base font-bold text-foreground whitespace-pre-wrap leading-relaxed group-hover/title:text-primary transition-colors">
                         {item.text}
                       </p>
                     </div>
 
                     {item.image_url && (
-                      <div className="mt-2 max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 p-2 bg-slate-50 dark:bg-slate-850">
+                      <div className="mt-2 max-w-sm rounded-xl border border-border p-2 bg-muted/50">
                         <img
                           src={item.image_url}
                           alt="Minh họa"
@@ -255,7 +255,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                     <button
                       type="button"
                       onClick={() => toggleExpand(item._id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-[#5D7B6F] dark:text-[#7C9D8E] font-bold text-xs transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-primary font-bold text-xs transition-colors"
                     >
                       {isExpanded ? (
                         <>
@@ -281,7 +281,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 overflow-hidden"
+                        className="space-y-3 pt-3 border-t border-border overflow-hidden"
                       >
                         {/* Options List */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -292,8 +292,8 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                                 key={`${optIdx}-${opt}`}
                                 className={`p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 transition-colors ${
                                   isCorrect
-                                    ? 'border-emerald-500/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                    : 'border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300'
+                                    ? 'border-success-fg/80 bg-success-bg/20 text-success-fg font-semibold'
+                                    : 'border-border bg-muted/40 text-foreground'
                                 }`}
                               >
                                 <span

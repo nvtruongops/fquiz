@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Loader2, Mail, ArrowLeft, Send, KeyRound } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
-import { motion, AnimatePresence } from 'framer-motion'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
 
-
 export default function ForgotPasswordPage() {
   const { toast } = useToast()
+  const cardRef = useRef<HTMLDivElement>(null)
+
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -25,6 +27,21 @@ export default function ForgotPasswordPage() {
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [resetting, setResetting] = useState(false)
 
+  // GSAP entrance animation
+  useGSAP(
+    () => {
+      if (!cardRef.current) return
+      gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.fromTo(
+          cardRef.current,
+          { autoAlpha: 0, y: 16, scale: 0.98 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
+        )
+      })
+    },
+    { scope: cardRef }
+  )
+
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
 
@@ -32,7 +49,6 @@ export default function ForgotPasswordPage() {
       toast.error('Vui lòng nhập đúng định dạng email')
       return
     }
-
 
     setSendingCode(true)
     setRetryAfterSec(null)
@@ -150,16 +166,12 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  const inputClasses = "w-full rounded-2xl border-2 px-4 py-3.5 text-[14px] outline-none transition-all duration-300 font-medium border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-sm"
+  const inputClasses = "w-full rounded-2xl border-2 px-4 py-3.5 text-[14px] outline-none transition-all duration-300 font-medium border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
 
   if (done) {
     return (
       <div className="w-full text-center py-8">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/60 p-10"
-        >
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[2.5rem] shadow-xl border border-white/80 p-10">
           <div className="w-20 h-20 rounded-full bg-[#D7F9FA] flex items-center justify-center mx-auto mb-6 shadow-inner border border-white/50">
             <Mail className="w-10 h-10 text-[#0891b2]" />
           </div>
@@ -170,22 +182,22 @@ export default function ForgotPasswordPage() {
 
           <Link
             href="/login"
-            className="group inline-flex items-center gap-2 px-6 py-3 bg-white/80 border border-slate-200 rounded-full shadow-sm text-sm text-[#5D7B6F] font-black hover:text-[#4a6358] hover:shadow-md transition-all"
+            className="group inline-flex items-center gap-2 px-6 py-3 bg-white/80 border border-slate-200 rounded-full shadow-2xs text-sm text-[#5D7B6F] font-black hover:text-[#4a6358] hover:shadow-md transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Đăng nhập ngay</span>
           </Link>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full relative group">
+    <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
       <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/80 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
@@ -217,135 +229,120 @@ export default function ForgotPasswordPage() {
           </div>
 
           {!codeSent && (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
+            <button
               type="submit"
               disabled={sendingCode}
-              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2"
+              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {sendingCode ? (
-                <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" />
+                <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
               ) : (
                 <>
-                  <span className="tracking-wide drop-shadow-sm">Gửi mã xác thực</span>
-                  <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform drop-shadow-sm" />
+                  <span className="tracking-wide drop-shadow-2xs">Gửi mã xác thực</span>
+                  <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform drop-shadow-2xs" />
                 </>
               )}
-            </motion.button>
+            </button>
           )}
         </form>
 
-        <AnimatePresence>
-          {codeSent && !verified && (
-            <motion.form 
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.2 }}
-              onSubmit={handleVerifyCode} 
-              noValidate 
-              className="space-y-4 pt-4 border-t border-white/60 overflow-hidden"
-            >
-              <div className="space-y-1">
-                <label htmlFor="code" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-                  Mã xác thực
-                </label>
-                <div className="relative">
-                  <input
-                    id="code"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="Nhập 6 chữ số"
-                    className={cn(
-                      inputClasses,
-                      "placeholder:tracking-normal font-mono",
-                      code ? "tracking-[0.5em] text-center text-xl py-3" : "tracking-normal"
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleSendCode}
-                  disabled={sendingCode}
-                  className="flex-1 shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-4 py-3.5 text-sm font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {sendingCode ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Gửi lại mã'}
-                </button>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={verifyingCode}
-                  className="flex-[2] group relative flex items-center justify-center gap-2 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white font-black py-3.5 rounded-2xl transition-all duration-300 shadow-md border border-slate-700 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
-                >
-                  {verifyingCode ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" /> : <>
-                    <span className="drop-shadow-sm">Xác thực mã</span>
-                    <KeyRound className="w-4 h-4 drop-shadow-sm" />
-                  </>}
-                </motion.button>
-              </div>
-            </motion.form>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {verified && (
-            <motion.form 
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.2 }}
-              onSubmit={handleResetPassword} 
-              noValidate 
-              className="space-y-4 pt-4 border-t border-white/60 overflow-hidden"
-            >
-              <div className="space-y-1">
-                <label htmlFor="newPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-                  Mật khẩu mới
-                </label>
+        {codeSent && !verified && (
+          <form 
+            onSubmit={handleVerifyCode} 
+            noValidate 
+            className="space-y-4 pt-4 mt-4 border-t border-slate-200/80"
+          >
+            <div className="space-y-1">
+              <label htmlFor="code" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Mã xác thực
+              </label>
+              <div className="relative">
                 <input
-                  id="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Tối thiểu 8 ký tự"
-                  className={inputClasses}
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Nhập 6 chữ số"
+                  className={cn(
+                    inputClasses,
+                    "placeholder:tracking-normal font-mono",
+                    code ? "tracking-[0.5em] text-center text-xl py-3" : "tracking-normal"
+                  )}
                 />
               </div>
-              <div className="space-y-1">
-                <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Nhập lại mật khẩu mới"
-                  className={inputClasses}
-                />
-              </div>
+            </div>
 
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                disabled={resetting}
-                className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2"
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={sendingCode}
+                className="flex-1 shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-4 py-3.5 text-sm font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
-                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                {resetting ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-sm" /> : <span className="tracking-wide drop-shadow-sm">Cập nhật mật khẩu</span>}
-              </motion.button>
-            </motion.form>
-          )}
-        </AnimatePresence>
+                {sendingCode ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Gửi lại mã'}
+              </button>
+              <button
+                type="submit"
+                disabled={verifyingCode}
+                className="flex-[2] group relative flex items-center justify-center gap-2 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white font-black py-3.5 rounded-2xl transition-all duration-300 shadow-md border border-slate-700 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+              >
+                {verifyingCode ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" /> : <>
+                  <span className="drop-shadow-2xs">Xác thực mã</span>
+                  <KeyRound className="w-4 h-4 drop-shadow-2xs" />
+                </>}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {verified && (
+          <form 
+            onSubmit={handleResetPassword} 
+            noValidate 
+            className="space-y-4 pt-4 mt-4 border-t border-slate-200/80"
+          >
+            <div className="space-y-1">
+              <label htmlFor="newPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Mật khẩu mới
+              </label>
+              <input
+                id="newPassword"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Tối thiểu 8 ký tự"
+                className={inputClasses}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Nhập lại mật khẩu mới"
+                className={inputClasses}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={resetting}
+              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
+            >
+              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              {resetting ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" /> : <span className="tracking-wide drop-shadow-2xs">Cập nhật mật khẩu</span>}
+            </button>
+          </form>
+        )}
 
         <div className="mt-8 pt-5 border-t border-slate-200/50">
           <Link

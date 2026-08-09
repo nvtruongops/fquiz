@@ -135,9 +135,9 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
 
         <motion.div
           style={{ opacity: knownBadgeOpacity }}
-          className="absolute top-4 right-6 z-50 pointer-events-none bg-emerald-500 text-white px-4 py-2 rounded-2xl border-2 border-white shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
+          className="absolute top-4 right-6 z-50 pointer-events-none bg-success text-success-foreground px-4 py-2 rounded-2xl border-2 border-background shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider backdrop-blur-md"
         >
-          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Đã biết</span>
         </motion.div>
 
@@ -149,14 +149,14 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           onDragEnd={handleDragEnd}
           onClick={handleCardClick}
           style={{ x }}
-          className="w-full min-h-[420px] bg-white rounded-3xl border-2 border-slate-200 shadow-md p-6 sm:p-8 flex flex-col justify-between cursor-grab active:cursor-grabbing relative overflow-hidden transition-colors hover:border-[#5D7B6F]/40 touch-none select-none"
+          className="w-full min-h-[420px] bg-card text-card-foreground rounded-3xl border-2 border-border shadow-md p-6 sm:p-8 flex flex-col justify-between cursor-grab active:cursor-grabbing relative overflow-hidden transition-colors hover:border-ring touch-none select-none"
         >
           {/* Card Header */}
-          <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-100 pb-3">
-            <span className="flex items-center gap-1.5 text-[#5D7B6F]">
+          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-b border-border pb-3">
+            <span className="flex items-center gap-1.5 text-primary">
               <RotateCw className="w-3.5 h-3.5" /> Thẻ {questionNumber} / {totalQuestions}
             </span>
-            <span className="text-[10px] uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full font-extrabold text-slate-600">
+            <span className="text-[10px] uppercase tracking-wider bg-muted px-2.5 py-0.5 rounded-full font-black text-muted-foreground">
               {isFlipped ? 'Mặt Sau (Đáp án)' : 'Mặt Trước (Câu hỏi)'}
             </span>
           </div>
@@ -165,7 +165,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           <div className="my-auto py-4 space-y-4">
             {!isFlipped ? (
               <div className="space-y-4">
-                <h2 className={cn('font-black text-slate-900 leading-snug text-left', getQuestionFontSize(totalContentLength))}>
+                <h2 className={cn('font-black text-card-foreground leading-snug text-left', getQuestionFontSize(totalContentLength))}>
                   {question.text}
                 </h2>
 
@@ -174,12 +174,12 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                   {question.options.map((option, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-slate-100/80 transition-colors"
+                      className="flex items-start gap-2.5 p-3 rounded-xl border border-border bg-muted/60 hover:bg-muted transition-colors"
                     >
-                      <span className="flex-none flex items-center justify-center w-6 h-6 rounded-lg bg-[#5D7B6F]/10 text-[#5D7B6F] font-black text-xs">
+                      <span className="flex-none flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 text-primary font-black text-xs border border-primary/20">
                         {String.fromCodePoint(65 + idx)}
                       </span>
-                      <span className="text-xs sm:text-sm font-semibold text-slate-700 leading-relaxed min-w-0 break-words">
+                      <span className="text-xs sm:text-sm font-semibold text-card-foreground leading-relaxed min-w-0 break-words">
                         {option}
                       </span>
                     </div>
@@ -188,21 +188,26 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               </div>
             ) : (
               <div className="space-y-3 text-center">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 inline-block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-success-foreground bg-success/20 px-3 py-1 rounded-full border border-success/30 inline-block">
                   Đáp án chính xác
                 </span>
                 <div className="space-y-2">
                   {correctAnswers.map((ans, idx) => {
-                    const origIdx = answerIndices[idx] ?? idx
-                    const letter = String.fromCodePoint(65 + origIdx)
+                    const originalIdx = question.options.findIndex((opt) => opt === ans)
+                    const letter = originalIdx >= 0 ? String.fromCodePoint(65 + originalIdx) : ''
                     return (
-                      <div key={idx} className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-left">
-                        <span className="flex-none flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-xs">
-                          {letter}
-                        </span>
-                        <p className="text-sm sm:text-base font-bold text-emerald-950 leading-relaxed">
+                      <div
+                        key={idx}
+                        className="p-4 rounded-2xl bg-success/10 border border-success/20 text-success-foreground flex items-center justify-center gap-2"
+                      >
+                        {letter && (
+                          <span className="w-7 h-7 rounded-xl bg-success text-success-foreground border border-success font-black text-sm flex items-center justify-center shrink-0">
+                            {letter}
+                          </span>
+                        )}
+                        <span className="text-base sm:text-lg font-black text-left">
                           {ans}
-                        </p>
+                        </span>
                       </div>
                     )
                   })}

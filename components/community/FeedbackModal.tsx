@@ -55,25 +55,25 @@ export default function FeedbackModal({
 }: FeedbackModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-2xl rounded-[32px] p-6 sm:p-8 border border-white/80 bg-white/95 backdrop-blur-3xl shadow-2xl z-50">
-        <DialogTitle className="text-2xl font-black text-slate-800 mb-1">Góp ý phát triển FQuiz</DialogTitle>
-        <p className="text-xs font-medium text-slate-500 mb-5">Mỗi ý kiến đóng góp của bạn đều giúp FQuiz hoàn thiện hơn mỗi ngày.</p>
+      <DialogContent aria-describedby={undefined} className="sm:max-w-2xl rounded-[32px] p-6 sm:p-8 border border-border bg-card/95 backdrop-blur-3xl shadow-2xl z-50 text-card-foreground">
+        <DialogTitle className="text-2xl font-black text-foreground mb-1">Góp ý phát triển FQuiz</DialogTitle>
+        <p className="text-xs font-medium text-muted-foreground mb-5">Mỗi ý kiến đóng góp của bạn đều giúp FQuiz hoàn thiện hơn mỗi ngày.</p>
 
         {success ? (
           <div className="flex flex-col items-center justify-center text-center space-y-6 py-10">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner">
-              <CheckCircle2 className="w-8 h-8 text-[#5D7B6F]" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shadow-inner">
+              <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-slate-800">Cảm ơn bạn!</h3>
-              <p className="text-slate-500 font-medium text-xs">
+              <h3 className="text-xl font-black text-foreground">Cảm ơn bạn!</h3>
+              <p className="text-muted-foreground font-medium text-xs">
                 Góp ý của bạn đã được gửi đến đội ngũ phát triển.
               </p>
             </div>
             <Button
               onClick={() => setSuccess(false)}
               variant="outline"
-              className="rounded-xl px-6 border-slate-200 text-[#5D7B6F] font-bold text-xs"
+              className="rounded-xl px-6 border-border text-primary font-bold text-xs hover:bg-muted"
             >
               Gửi thêm góp ý
             </Button>
@@ -81,7 +81,7 @@ export default function FeedbackModal({
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="space-y-5">
             <div className="space-y-2">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1 block">
                 Phân loại
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -93,8 +93,8 @@ export default function FeedbackModal({
                     className={cn(
                       'flex flex-col items-center gap-2 px-2 py-3 rounded-2xl border-2 transition-all cursor-pointer',
                       type === value
-                        ? 'border-[#5D7B6F] bg-[#5D7B6F]/10 text-[#5D7B6F]'
-                        : 'border-slate-200 bg-white/50 text-slate-500 hover:border-slate-300'
+                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-2xs'
+                        : 'border-border bg-card text-muted-foreground hover:border-ring hover:bg-muted'
                     )}
                   >
                     <Icon className="w-5 h-5" strokeWidth={1.5} />

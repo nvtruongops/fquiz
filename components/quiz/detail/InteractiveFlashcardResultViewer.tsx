@@ -30,7 +30,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
 
   if (!questions || questions.length === 0) {
     return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 font-medium">
+      <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-medium">
         Không có thông tin chi tiết thẻ ghi nhớ.
       </div>
     )
@@ -52,27 +52,27 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
   return (
     <div className="w-full max-w-full h-full flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch overflow-hidden">
       {/* 1. Left Sidebar Panel: Flashcard List & Filter Matrix */}
-      <div className="md:col-span-4 lg:col-span-3 bg-white rounded-2xl p-3.5 shadow-xs border border-slate-200/80 flex flex-col h-full min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
-          <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-            <Layers className="h-4 w-4 text-[#5D7B6F]" />
+      <div className="md:col-span-4 lg:col-span-3 bg-card rounded-2xl p-3.5 shadow-xs border border-border flex flex-col h-full min-h-0 overflow-hidden">
+        <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
+          <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Layers className="h-4 w-4 text-primary" />
             Bộ thẻ ({totalCards})
           </span>
-          <span className="text-[11px] font-bold text-[#5D7B6F] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+          <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
             Đã nhớ {knownCount}/{totalCards}
           </span>
         </div>
 
         {/* Filter Pills */}
-        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl text-[10px] font-bold select-none my-3 shrink-0">
+        <div className="grid grid-cols-3 gap-1 p-1 bg-muted rounded-xl text-[10px] font-bold select-none my-3 shrink-0">
           <button
             type="button"
             onClick={() => setFilter('all')}
             className={cn(
               'py-1 rounded-lg transition-all text-center',
               filter === 'all'
-                ? 'bg-white text-slate-800 shadow-xs font-black'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-card text-foreground shadow-xs font-black'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Tất cả ({totalCards})
@@ -84,7 +84,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               'py-1 rounded-lg transition-all text-center',
               filter === 'known'
                 ? 'bg-emerald-600 text-white shadow-xs font-black'
-                : 'text-emerald-700 hover:bg-emerald-50'
+                : 'text-emerald-500 hover:bg-emerald-500/10'
             )}
           >
             Đã nhớ ({knownCount})
@@ -95,11 +95,11 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
             className={cn(
               'py-1 rounded-lg transition-all text-center',
               filter === 'unknown'
-                ? 'bg-rose-500 text-white shadow-xs font-black'
-                : 'text-rose-600 hover:bg-rose-50'
+                ? 'bg-destructive text-destructive-foreground shadow-xs font-black'
+                : 'text-destructive hover:bg-destructive/10'
             )}
           >
-            Ôn lại ({unknownCount})
+            Cần ôn lại ({unknownCount})
           </button>
         </div>
 
@@ -152,19 +152,19 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
       </div>
 
       {/* 2. Main Workspace: Split 2 Cards Side-by-Side (Front Card vs Back Card) */}
-      <div className="md:col-span-8 lg:col-span-9 bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 flex flex-col h-full min-h-0 overflow-hidden">
+      <div className="md:col-span-8 lg:col-span-9 bg-card rounded-2xl p-4 shadow-xs border border-border flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+            <span className="text-xs font-black uppercase tracking-wider text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">
               Thẻ {selectedIndex + 1} / {totalCards}
             </span>
             {currentQuestion.is_correct ? (
-              <Badge className="bg-emerald-100 text-emerald-800 border-none text-xs font-bold px-2.5 py-0.5">
+              <Badge className="bg-success-bg/20 text-success-fg border-none text-xs font-bold px-2.5 py-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline" /> Bạn đánh dấu: ĐÃ NHỚ
               </Badge>
             ) : (
-              <Badge className="bg-rose-100 text-rose-700 border-none text-xs font-bold px-2.5 py-0.5">
+              <Badge className="bg-destructive/10 text-destructive border-none text-xs font-bold px-2.5 py-0.5">
                 <RotateCcw className="w-3.5 h-3.5 mr-1 inline" /> Bạn đánh dấu: CẦN ÔN LẠI
               </Badge>
             )}
@@ -175,7 +175,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
             variant="ghost"
             size="sm"
             onClick={() => setShowAnswer(!showAnswer)}
-            className="text-xs font-bold text-[#5D7B6F] hover:bg-emerald-50 rounded-xl"
+            className="text-xs font-bold text-primary hover:bg-primary/10 rounded-xl"
           >
             {showAnswer ? (
               <><EyeOff className="w-3.5 h-3.5 mr-1" /> Ẩn đáp án mặt sau</>
@@ -188,18 +188,18 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
         {/* Side-by-Side Cards Grid (Left: Front Card with Question + Options A B C D | Right: Back Card with Answer & Explanation) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 pt-3 overflow-y-auto scrollbar-thin">
           {/* Card 1: MẶT TRƯỚC THẺ (Câu hỏi & Lựa chọn A, B, C, D) */}
-          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-3">
+          <div className="bg-muted/50 p-4 rounded-2xl border border-border flex flex-col justify-between space-y-3">
             <div>
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center justify-between pb-2 border-b border-border mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/60" />
                   Mặt trước thẻ (Đề bài & Lựa chọn)
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">Front</span>
+                <span className="text-[10px] font-mono text-muted-foreground bg-card px-2 py-0.5 rounded border border-border">Front</span>
               </div>
 
               {/* Question Text */}
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug mb-3">
+              <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug mb-3">
                 {currentQuestion.text}
               </h3>
 
@@ -209,7 +209,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                   <img
                     src={currentQuestion.image_url}
                     alt="Question"
-                    className="max-h-40 rounded-xl object-contain border border-slate-200 bg-white p-1"
+                    className="max-h-40 rounded-xl object-contain border border-border bg-card p-1"
                   />
                 </div>
               )}
@@ -217,7 +217,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               {/* Options A, B, C, D */}
               {Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
                 <div className="space-y-2 pt-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
                     Các phương án lựa chọn:
                   </span>
                   <div className="space-y-1.5">
@@ -227,9 +227,9 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                       return (
                         <div
                           key={optIdx}
-                          className="p-2.5 rounded-xl border border-slate-200/80 bg-white text-slate-800 text-xs font-medium flex items-center gap-2.5 shadow-xs"
+                          className="p-2.5 rounded-xl border border-border bg-card text-foreground text-xs font-medium flex items-center gap-2.5 shadow-xs"
                         >
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center text-xs font-black shrink-0">
+                          <span className="w-6 h-6 rounded-lg bg-muted text-muted-foreground border border-border flex items-center justify-center text-xs font-black shrink-0">
                             {letter}
                           </span>
                           <span className="leading-snug flex-1">{optText}</span>
@@ -243,11 +243,11 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
           </div>
 
           {/* Card 2: MẶT SAU THẺ (Đáp án chuẩn & Giải thích) */}
-          <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-200/80 flex flex-col justify-between space-y-3">
+          <div className="bg-success-bg/10 p-4 rounded-2xl border border-success-fg/30 flex flex-col justify-between space-y-3">
             <div>
-              <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#5D7B6F] flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="flex items-center justify-between pb-2 border-b border-success-fg/20 mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-success-fg flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-success-fg" />
                   Mặt sau thẻ (Đáp án & Gợi ý)
                 </span>
                 <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200 font-bold">Back</span>

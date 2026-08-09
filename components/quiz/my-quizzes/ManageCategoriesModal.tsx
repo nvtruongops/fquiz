@@ -42,9 +42,9 @@ export default function ManageCategoriesModal({
 }: ManageCategoriesModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-lg rounded-3xl p-6 border border-slate-200 bg-white shadow-2xl z-50">
-        <DialogTitle className="text-xl font-black text-slate-900 mb-1">Quản lý danh mục cá nhân</DialogTitle>
-        <DialogDescription className="text-xs text-slate-500 mb-4">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-lg rounded-3xl p-6 border border-border bg-card shadow-2xl z-50">
+        <DialogTitle className="text-xl font-black text-foreground mb-1">Quản lý danh mục cá nhân</DialogTitle>
+        <DialogDescription className="text-xs text-muted-foreground mb-4">
           Tạo và sắp xếp các danh mục bài thi cá nhân của bạn.
         </DialogDescription>
 
@@ -55,7 +55,7 @@ export default function ManageCategoriesModal({
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder="Tên danh mục mới..."
-              className="h-10 text-xs font-semibold rounded-xl border-2 border-slate-200"
+              className="h-10 text-xs font-semibold rounded-xl border-2 border-input bg-card text-foreground"
             />
             <Button
               disabled={!newCategoryName.trim() || createCatMutation.isPending}
@@ -64,7 +64,7 @@ export default function ManageCategoriesModal({
                   onSuccess: () => setNewCategoryName(''),
                 })
               }}
-              className="h-10 bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-bold text-xs rounded-xl px-4 shrink-0"
+              className="h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl px-4 shrink-0"
             >
               {createCatMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
               Tạo
@@ -74,22 +74,22 @@ export default function ManageCategoriesModal({
           {/* List of categories */}
           <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
             {privateCategories.length === 0 ? (
-              <p className="text-xs font-medium text-slate-400 text-center py-4">Chưa có danh mục cá nhân nào.</p>
+              <p className="text-xs font-medium text-muted-foreground text-center py-4">Chưa có danh mục cá nhân nào.</p>
             ) : (
               privateCategories.map((cat) => (
-                <div key={cat._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800">
+                <div key={cat._id} className="flex items-center justify-between p-3 rounded-xl bg-muted border border-border text-xs font-bold text-foreground">
                   {editingCategoryId === cat._id ? (
                     <div className="flex items-center gap-2 flex-1 mr-2">
                       <Input
                         value={editingCategoryName}
                         onChange={(e) => setEditingCategoryName(e.target.value)}
-                        className="h-8 text-xs font-semibold rounded-lg bg-white"
+                        className="h-8 text-xs font-semibold rounded-lg bg-card text-foreground"
                       />
                       <Button
                         size="sm"
                         onClick={() => updateCatMutation.mutate({ id: cat._id, name: editingCategoryName })}
                         disabled={updateCatMutation.isPending || !editingCategoryName.trim()}
-                        className="h-8 bg-[#5D7B6F] text-white text-[11px] font-bold rounded-lg px-3"
+                        className="h-8 bg-primary text-primary-foreground text-[11px] font-bold rounded-lg px-3"
                       >
                         Lưu
                       </Button>
@@ -97,7 +97,7 @@ export default function ManageCategoriesModal({
                         size="sm"
                         variant="ghost"
                         onClick={() => setEditingCategoryId(null)}
-                        className="h-8 text-slate-500 text-[11px] font-bold rounded-lg"
+                        className="h-8 text-muted-foreground text-[11px] font-bold rounded-lg"
                       >
                         Hủy
                       </Button>

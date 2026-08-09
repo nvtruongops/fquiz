@@ -150,20 +150,20 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
       >
         <div className="relative group">
           {/* Subtle Glow Behind Input */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#5D7B6F]/30 to-[#A4C3A2]/20 rounded-full blur-md opacity-30 group-hover:opacity-60 transition duration-500"></div>
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-primary/10 rounded-full blur-md opacity-30 group-hover:opacity-60 transition duration-500"></div>
 
           <div className="relative flex items-center">
-            <Search className="absolute left-3.5 sm:left-4 text-[#5D7B6F] h-4 w-4 pointer-events-none" />
+            <Search className="absolute left-3.5 sm:left-4 text-primary h-4 w-4 pointer-events-none" />
             <Input
               placeholder="Tìm kiếm môn học (VD: DBS401, PRN211)..."
-              className="w-full h-10 sm:h-12 pl-10 sm:pl-11 pr-9 text-xs sm:text-sm border border-slate-200/80 bg-white/80 backdrop-blur-xl rounded-full shadow-xs focus-visible:ring-2 focus-visible:ring-[#5D7B6F]/20 focus-visible:border-[#5D7B6F] transition-all duration-200 placeholder:text-slate-400 font-medium text-slate-800"
+              className="w-full h-10 sm:h-12 pl-10 sm:pl-11 pr-9 text-xs sm:text-sm border border-input bg-card/90 backdrop-blur-xl rounded-full shadow-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200 placeholder:text-muted-foreground font-medium text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="absolute right-3 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Xóa tìm kiếm"
               >
                 <X className="h-3.5 w-3.5" />
@@ -188,29 +188,27 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               >
                 <Card
                   className={cn(
-                    'min-h-[120px] sm:min-h-[195px] h-full flex flex-col justify-between cursor-pointer transition-all duration-300 active:scale-[0.98] hover:-translate-y-1.5 hover:shadow-[0_20px_45px_rgba(93,123,111,0.22)] border bg-gradient-to-b from-white/85 to-white/55 hover:from-white hover:to-white/80 backdrop-blur-2xl rounded-2xl sm:rounded-3xl overflow-hidden group relative',
-                    isPinned ? 'border-amber-400/80 shadow-md shadow-amber-500/10' : 'border-white/90 hover:border-[#5D7B6F]/50'
+                    'min-h-[120px] sm:min-h-[195px] h-full flex flex-col justify-between cursor-pointer transition-all duration-300 active:scale-[0.98] hover:-translate-y-1 hover:shadow-lg border bg-card backdrop-blur-2xl rounded-2xl sm:rounded-3xl overflow-hidden group relative',
+                    isPinned ? 'border-question-flagged-border shadow-xs' : 'border-border hover:border-primary/50'
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#5D7B6F]/10 via-[#A4C3A2]/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
-
                   {/* Subtle inner highlight */}
-                  <div className="absolute inset-0 border border-white rounded-2xl sm:rounded-3xl pointer-events-none opacity-60"></div>
+                  <div className="absolute inset-0 border border-border/30 rounded-2xl sm:rounded-3xl pointer-events-none opacity-60"></div>
 
                   <Link href={`/courses/${encodeURIComponent(cat.name.toLowerCase())}`} className="block h-full w-full outline-none">
                     <CardContent className="p-2.5 sm:p-5 flex flex-col items-center justify-between w-full h-full min-h-[120px] sm:min-h-[195px] relative z-10 gap-1.5 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-[#5D7B6F]/10 text-[#5D7B6F] flex items-center justify-center group-hover:scale-110 group-hover:bg-[#5D7B6F] group-hover:text-white transition-all duration-300 shadow-xs shrink-0 mt-0.5">
+                      <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 group-hover:text-primary transition-all duration-300 shadow-xs shrink-0 mt-0.5">
                         <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <div className="flex-1 flex items-center justify-center w-full px-0.5 py-0.5">
                         <span
-                          className="text-xs sm:text-base font-black text-center tracking-tight leading-tight sm:leading-snug break-words text-slate-800 group-hover:text-[#5D7B6F] transition-colors duration-300 line-clamp-2 sm:line-clamp-3 uppercase"
+                          className="text-xs sm:text-base font-black text-center tracking-tight leading-tight sm:leading-snug break-words text-card-foreground group-hover:text-primary transition-colors duration-300 line-clamp-2 sm:line-clamp-3 uppercase"
                         >
                           {cat.name}
                         </span>
                       </div>
                       {typeof cat.quizCount === 'number' && (
-                        <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-slate-100 text-[#5D7B6F] group-hover:bg-[#5D7B6F]/15 text-[9px] sm:text-xs font-black uppercase tracking-wider transition-colors shrink-0">
+                        <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-muted text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary text-[9px] sm:text-xs font-black uppercase tracking-wider transition-colors shrink-0 border border-border/40">
                           <Layers className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           {cat.quizCount} đề thi
                         </span>
@@ -226,8 +224,8 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
                     className={cn(
                       'absolute top-1.5 right-1.5 sm:top-3 sm:right-3 z-20 w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer active:scale-90',
                       isPinned
-                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-105'
-                        : 'bg-white/90 text-[#5D7B6F]/60 hover:text-amber-500 hover:bg-white shadow-xs'
+                        ? 'bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border shadow-xs scale-105'
+                        : 'bg-muted/80 text-muted-foreground hover:text-question-flagged-fg hover:bg-muted border border-border/50 shadow-xs'
                     )}
                     title={isPinned ? 'Bỏ ghim danh mục' : 'Ghim danh mục lên đầu'}
                   >

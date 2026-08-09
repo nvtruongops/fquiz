@@ -1,7 +1,7 @@
 ---
 name: fquiz-code-refactor-performance
-description: Code refactoring, line-count reduction, and performance optimization skill for FQuiz (Next.js + MongoDB/Mongoose + TanStack Query). Use when splitting fat pages (>250 lines), extracting custom hooks, optimizing re-renders, adding next/dynamic, optimizing MongoDB queries (.lean, batch $in), or improving bundle performance.
-version: 2.1
+description: Code refactoring, line-count reduction, card nesting elimination, and performance optimization skill for FQuiz (Next.js + MongoDB/Mongoose + TanStack Query). Use when splitting fat pages (>200 lines), eliminating nested cards, extracting custom hooks, optimizing re-renders, adding next/dynamic, optimizing MongoDB queries (.lean, batch $in), or improving bundle performance.
+version: 2.2
 priority: high
 ---
 
@@ -14,39 +14,46 @@ priority: high
 
 ---
 
-## The 3-Layer Split Pattern
-When any file exceeds ~250 lines, decompose it into 3 clear layers:
-1. **State & Logic (`hooks/use[Feature].ts`)**: State (Zustand/React), API queries (TanStack Query), handlers, effects.
-2. **Presentational Components (`components/[feature]/[SubComponent].tsx`)**: Small presentational components (`React.memo` where lists re-render).
-3. **Orchestrator (`page.tsx`)**: Imports hook and sub-components with minimal layout JSX (<100 lines).
+## 1. Card Nesting Elimination ("Giảm thẻ lồng thẻ")
+- **No Double Wrappers**: Never wrap inner `Card` or border components inside an outer `div` that duplicates `border`, `bg-white/40`, `backdrop-blur`, or `shadow`.
+- **Single-Layer Elevation**: Every UI section (Header, Stats, Action Card) must render as a clean single-layer card (`bg-white border border-slate-200/80 shadow-xs rounded-2xl`).
 
 ---
 
-## Key Performance Rules
+## 2. The 3-Layer Split Pattern
+When any page exceeds ~200 lines or component exceeds ~250 lines, decompose it into 3 layers:
+1. **State & Logic (`hooks/use[Feature].ts`)**: State (Zustand/React), API queries (TanStack Query), handlers, effects.
+2. **Presentational Components (`components/[feature]/[SubComponent].tsx`)**: Small presentational components (`React.memo` for list items).
+3. **Orchestrator (`page.tsx`)**: Imports hook and sub-components with minimal layout JSX (<100 lines).
 
-### 1. Client & React Render Optimization
-- **Lazy Loading**: Use `next/dynamic` for heavy client modals, drawers, charts, or tabs not visible on initial load.
-- **Memoization**: Wrap list items with `React.memo` and callbacks passed as props with `useCallback`. Wrap heavy transformations in `useMemo`.
-- **Derived State**: Derive state during render instead of syncing via `useEffect`.
+### Key Refactoring Targets:
+- `app/quiz/[id]/session/[sessionId]/mobile/page.tsx` (732 lines → split into `useMobileQuizSession`)
+- `components/quiz/question-bank/QuizImportPanel.tsx` (844 lines → split parser hook)
+- `app/(student)/history/page.tsx` (406 lines → split `useStudentHistory`)
+- `app/(student)/settings/page.tsx` (449 lines → split `useUserSettings`)
 
-### 2. Backend & Database Optimization (MongoDB / Mongoose)
-- **Read Queries**: ALWAYS append `.lean()` to eliminate document hydration overhead.
-- **Field Projection**: Use `.select('field1 field2')` to fetch only required fields.
-- **No Mongoose `.populate()`**: Use `$in` batch queries for application-level joins across collections.
-- **Query Parallelization**: Use `Promise.all()` for independent queries to avoid database waterfalls (`async-parallel`).
+---
 
-### 3. Assets & Images
-- Use `next/image` with explicit `width`/`height` for user-facing images to prevent layout shift.
-- Load fonts via `next/font`.
+## 3. Performance & Bundle Optimization
+- **Lazy Loading (`next/dynamic`)**: ALWAYS load heavy admin/teacher tools (`QuizImportPanel`, `QuestionBankConflictResolver`) and AI studios dynamically:
+  ```tsx
+  const QuizImportPanel = dynamic(() => import('@/components/quiz/question-bank/QuizImportPanel'), { ssr: false })
+  ```
+- **MongoDB / Mongoose Query Optimization**:
+  - Read queries MUST use `.lean()` to eliminate Mongoose document hydration.
+  - Use `.select('field1 field2')` to fetch required fields only.
+  - Avoid `.populate()` — use `$in` batch queries across collections.
+  - Parallelize independent queries via `Promise.all()`.
 
 ---
 
 ## Verification Protocol
-Run in exact sequence before marking task complete:
+Run in exact sequence before marking any refactoring task complete:
 ```bash
 npm run lint
 npm run build
 npm test
+node .agents/scripts/verify.js --strict
 ```
 
-> **Reference**: See [`references/refactor-example.md`](./references/refactor-example.md) for full step-by-step before/after code walkthrough.
+> **Reference**: See [`references/refactor-example.md`](./references/refactor-example.md) for step-by-step code walkthrough.

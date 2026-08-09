@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react'
 import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
-import { motion, AnimatePresence } from 'framer-motion'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
@@ -15,6 +16,8 @@ import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const cardRef = useRef<HTMLDivElement>(null)
+
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', verificationCode: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -24,6 +27,21 @@ export default function RegisterPage() {
   const [codeSent, setCodeSent] = useState(false)
   const [devCode, setDevCode] = useState('')
   const [retryAfterSec, setRetryAfterSec] = useState<number | null>(null)
+
+  // GSAP entrance animation
+  useGSAP(
+    () => {
+      if (!cardRef.current) return
+      gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.fromTo(
+          cardRef.current,
+          { autoAlpha: 0, y: 16, scale: 0.98 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
+        )
+      })
+    },
+    { scope: cardRef }
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -166,20 +184,16 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="w-full text-center py-6 sm:py-8">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-white/70 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-white/60 p-6 sm:p-10"
-        >
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-white/80 p-6 sm:p-10">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#B0D4B8]/50 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
             <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-[#166534]" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 sm:mb-3 tracking-tight">Đăng ký thành công!</h2>
           <p className="text-slate-500 text-xs sm:text-sm font-medium">Chào mừng bạn mới. Hệ thống đang tự động đăng nhập…</p>
           <div className="mt-6 sm:mt-8 flex justify-center">
-            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-[#5D7B6F] animate-spin drop-shadow-sm" />
+            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-[#5D7B6F] animate-spin drop-shadow-2xs" />
           </div>
-        </motion.div>
+        </div>
       </div>
     )
   }
@@ -187,32 +201,16 @@ export default function RegisterPage() {
   const inputClasses = (error?: string) => cn(
     "w-full rounded-xl sm:rounded-2xl border-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[14px] outline-none transition-all duration-300 font-medium",
     error 
-      ? "border-[#EF9A9A] bg-[#EF9A9A]/10 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-500/10" 
-      : "border-white/80 bg-white/50 text-slate-900 placeholder:text-slate-400 hover:border-slate-200 focus:border-[#5D7B6F] focus:bg-white focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-xs"
-  )
-
-  const ErrorMsg = ({ msg }: { msg?: string }) => (
-    <AnimatePresence>
-      {msg && (
-        <motion.p 
-          initial={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-          animate={{ opacity: 1, maxHeight: 40, marginTop: 3 }}
-          exit={{ opacity: 0, maxHeight: 0, marginTop: 0 }}
-          transition={{ duration: 0.2 }}
-          className="text-[#dc2626] text-[11px] sm:text-xs font-bold ml-1 overflow-hidden"
-        >
-          {msg}
-        </motion.p>
-      )}
-    </AnimatePresence>
+      ? "border-red-400 bg-red-50/50 text-slate-900 placeholder:text-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-500/10" 
+      : "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-2 focus:ring-[#5D7B6F]/10 shadow-2xs"
   )
 
   return (
-    <div className="w-full relative group">
+    <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
       <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2rem] sm:rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-white/60 p-5 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-white/80 p-5 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
@@ -234,17 +232,16 @@ export default function RegisterPage() {
                 placeholder="you@email.com"
                 className={cn(inputClasses(errors.email), "flex-1 min-w-0")}
               />
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="shrink-0 rounded-xl sm:rounded-2xl bg-white border border-[#5D7B6F]/30 px-2 sm:px-3 py-2 sm:py-2.5 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-xs disabled:opacity-60 disabled:cursor-not-allowed min-w-[65px] sm:min-w-[76px] flex justify-center items-center whitespace-nowrap"
+                className="shrink-0 rounded-xl sm:rounded-2xl bg-white border border-[#5D7B6F]/30 px-2 sm:px-3 py-2 sm:py-2.5 text-xs font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed min-w-[65px] sm:min-w-[76px] flex justify-center items-center whitespace-nowrap cursor-pointer active:scale-95"
               >
                 {sendingCode ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : sendCodeLabel}
-              </motion.button>
+              </button>
             </div>
-            <ErrorMsg msg={errors.email} />
+            {errors.email && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.email}</p>}
             <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
           </div>
 
@@ -271,7 +268,7 @@ export default function RegisterPage() {
                   )}
                 />
               </div>
-              <ErrorMsg msg={errors.verificationCode} />
+              {errors.verificationCode && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.verificationCode}</p>}
             </div>
 
             {/* Username */}
@@ -287,7 +284,7 @@ export default function RegisterPage() {
                   className={inputClasses(errors.username)}
                 />
               </div>
-              <ErrorMsg msg={errors.username} />
+              {errors.username && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.username}</p>}
             </div>
           </div>
 
@@ -310,41 +307,30 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#5D7B6F] transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               
               {/* Segmented Password Strength */}
-              <AnimatePresence>
-                {passwordStrength && (
-                  <motion.div 
-                    initial={{ opacity: 0, maxHeight: 0 }} 
-                    animate={{ opacity: 1, maxHeight: 80 }} 
-                    exit={{ opacity: 0, maxHeight: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="px-0.5 pt-1.5 pb-0.5 overflow-hidden"
-                  >
-                    <div className="flex gap-1 h-1 sm:h-1.5 w-full">
-                      {[1, 2, 3, 4].map((level) => (
-                        <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: passwordStrength.level >= level ? '100%' : '0%' }}
-                            transition={{ duration: 0.3 }}
-                            className={cn("h-full rounded-full", passwordStrength.color)} 
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 ml-0.5">
-                      Độ mạnh: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <ErrorMsg msg={errors.password} />
+              {passwordStrength && (
+                <div className="px-0.5 pt-1.5 pb-0.5">
+                  <div className="flex gap-1 h-1 sm:h-1.5 w-full">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div key={level} className="flex-1 rounded-full bg-slate-200 overflow-hidden">
+                        <div 
+                          className={cn("h-full rounded-full transition-all duration-300", passwordStrength.level >= level ? passwordStrength.color : "w-0")} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 ml-0.5">
+                    Độ mạnh: <span className={cn("transition-colors", passwordStrength.level === 4 ? "text-[#166534]" : "")}>{passwordStrength.label}</span>
+                  </p>
+                </div>
+              )}
+              {errors.password && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.password}</p>}
             </div>
 
             {/* Confirm Password */}
@@ -364,34 +350,31 @@ export default function RegisterPage() {
                     form.confirmPassword && form.confirmPassword === form.password ? '!border-[#166534] !bg-[#B0D4B8]/10' : ''
                   )}
                 />
-                <AnimatePresence>
-                  {form.confirmPassword && form.confirmPassword === form.password && (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2">
-                      <CheckCircle className="w-4 h-4 text-[#166534]" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {form.confirmPassword && form.confirmPassword === form.password && (
+                  <div className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2">
+                    <CheckCircle className="w-4 h-4 text-[#166534]" />
+                  </div>
+                )}
               </div>
-              <ErrorMsg msg={errors.confirmPassword} />
+              {errors.confirmPassword && <p className="text-red-600 text-[11px] sm:text-xs font-bold ml-1 mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
 
-          <motion.button
-            whileTap={{ scale: 0.98 }}
+          <button
             type="submit"
             disabled={loading}
-            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_6px_16px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-5"
+            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_6px_16px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-5 cursor-pointer active:scale-[0.98]"
           >
             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
             {loading ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin drop-shadow-sm" />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin drop-shadow-2xs" />
             ) : (
               <>
-                <span className="tracking-wide drop-shadow-sm">Đăng ký tài khoản</span>
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform drop-shadow-sm" />
+                <span className="tracking-wide drop-shadow-2xs">Đăng ký tài khoản</span>
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform drop-shadow-2xs" />
               </>
             )}
-          </motion.button>
+          </button>
         </form>
 
         <GoogleSignInButton callbackUrl={getCallbackUrl()} />

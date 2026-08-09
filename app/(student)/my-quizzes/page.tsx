@@ -15,16 +15,16 @@ const ManageCategoriesModal = dynamic(() => import('@/components/quiz/my-quizzes
 
 function QuizCardSkeleton() {
   return (
-    <Card className="w-full border border-slate-100 rounded-xl overflow-hidden bg-white shadow-xs animate-pulse">
+    <Card className="w-full border border-border rounded-xl overflow-hidden bg-card shadow-xs animate-pulse">
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-20 rounded bg-slate-100" />
-            <div className="h-5 w-36 rounded bg-slate-100" />
-            <div className="h-3 w-48 rounded bg-slate-100" />
+            <div className="h-4 w-20 rounded bg-muted" />
+            <div className="h-5 w-36 rounded bg-muted" />
+            <div className="h-3 w-48 rounded bg-muted" />
           </div>
-          <div className="w-28 h-10 rounded bg-slate-100" />
-          <div className="h-9 w-20 rounded bg-slate-200" />
+          <div className="w-28 h-10 rounded bg-muted" />
+          <div className="h-9 w-20 rounded bg-muted" />
         </div>
       </CardContent>
     </Card>
@@ -86,9 +86,9 @@ export default function MyQuizzesPage() {
           <QuizCardSkeleton />
         </div>
       ) : filteredQuizzes.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200/80 text-center space-y-3 shadow-xs">
-          <p className="text-sm font-bold text-slate-700">Chưa có bài quiz nào trong mục này</p>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+        <div className="bg-card p-12 rounded-3xl border border-border text-center space-y-3 shadow-xs">
+          <p className="text-sm font-bold text-foreground">Chưa có bài quiz nào trong mục này</p>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {search ? 'Thử tìm kiếm với từ khóa khác.' : 'Tạo mới bộ đề cá nhân hoặc khám phá bộ đề từ thư viện Explore.'}
           </p>
         </div>

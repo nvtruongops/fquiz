@@ -40,9 +40,9 @@ export default function StudentCreateQuizPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-8 text-slate-500 font-semibold gap-2">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5D7B6F]" />
-        <span className="text-xs font-bold text-slate-400">Đang chuẩn bị trình soạn thảo...</span>
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-8 text-muted-foreground font-semibold gap-2">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="text-xs font-bold text-muted-foreground">Đang chuẩn bị trình soạn thảo...</span>
       </div>
     )
   }
@@ -70,7 +70,7 @@ export default function StudentCreateQuizPage() {
     <div className="min-h-[calc(100vh-80px)] bg-background relative overflow-hidden px-4 sm:px-6 pt-3 pb-8">
       {/* Background Mesh Ambient */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden -z-10 transform-gpu">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#5D7B6F]/10 via-emerald-500/5 to-transparent blur-3xl opacity-40 transform-gpu" />
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-primary/5 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
       <div className="max-w-5xl mx-auto space-y-4 relative z-10">
@@ -79,14 +79,14 @@ export default function StudentCreateQuizPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center justify-between border-b border-slate-200/80 pb-3"
+          className="flex items-center justify-between border-b border-border pb-3"
         >
           <div className="space-y-0.5">
-            <div className="flex items-center gap-2 text-[#5D7B6F]">
-              <div className="h-1.5 w-1.5 rounded-full bg-[#5D7B6F]" />
+            <div className="flex items-center gap-2 text-primary">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">FQuiz · Soạn đề</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
               {quizId ? 'Chỉnh sửa bộ đề thi' : 'Tạo bộ đề thi mới'}
             </h1>
           </div>

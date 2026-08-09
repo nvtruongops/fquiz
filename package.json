@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint app components lib hooks store",
+    "verify:theme": "node .agents/scripts/verify.js --rule=THEME_GOVERNANCE",
     "scan": "npx fallow",
     "codegraph:sync": "codegraph sync",
     "test": "jest",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@gsap/react": "^2.1.2",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -64,6 +66,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "fsrs.js": "^1.2.2",
+    "gsap": "^3.15.0",
     "isomorphic-dompurify": "^2.14.0",
     "jose": "^6.2.2",
     "lucide-react": "^1.7.0",

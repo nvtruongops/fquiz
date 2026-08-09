@@ -35,21 +35,21 @@ export function EditorProgressHub({
   onScrollToQuestion
 }: EditorProgressHubProps) {
   return (
-    <Card className="bg-white border-none shadow-xl shadow-[#5D7B6F]/5 rounded-[32px] overflow-hidden ring-1 ring-gray-100">
-      <div className="p-5 bg-[#5D7B6F]/5 border-b border-gray-100 flex items-center justify-between">
+    <Card className="bg-card border border-border shadow-xs rounded-[32px] overflow-hidden">
+      <div className="p-5 bg-primary/10 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <LayoutDashboard className="w-4 h-4 text-[#5D7B6F]" />
-          <span className="text-sm font-black text-[#5D7B6F] uppercase tracking-tight">Bảng điều khiển hoàn thiện</span>
+          <LayoutDashboard className="w-4 h-4 text-primary" />
+          <span className="text-sm font-black text-primary uppercase tracking-tight">Bảng điều khiển hoàn thiện</span>
         </div>
         <div className="flex items-center gap-4">
           {autosaving ? (
-            <div className="flex items-center gap-1.5 text-[10px] text-gray-400 animate-pulse">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground animate-pulse">
               <Loader2 className="w-3 h-3 animate-spin" />
               Đang tự động lưu...
             </div>
           ) : lastSavedAt && (
-            <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-              <CheckCircle2 className="w-3 h-3 text-green-500" />
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <CheckCircle2 className="w-3 h-3 text-primary" />
               Đã lưu {lastSavedAt.toLocaleTimeString()}
             </div>
           )}
@@ -59,26 +59,23 @@ export function EditorProgressHub({
       <div className="p-5 space-y-6">
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-gray-600">Độ hoàn thiện</span>
-            <span className={cn(
-              "font-black",
-              diagnostics.percent === 100 ? "text-green-600" : "text-[#5D7B6F]"
-            )}>
+            <span className="font-bold text-foreground">Độ hoàn thiện</span>
+            <span className="font-black text-primary">
               {diagnostics.percent}%
             </span>
           </div>
-          <Progress value={diagnostics.percent} className="h-2 bg-gray-100" />
-          <p className="text-[10px] text-gray-400 text-center font-medium">
+          <Progress value={diagnostics.percent} className="h-2 bg-muted" />
+          <p className="text-[10px] text-muted-foreground text-center font-medium">
             {diagnostics.complete} / {diagnostics.total} câu hỏi đã hợp lệ
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Chỉ số chất lượng</span>
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Chỉ số chất lượng</span>
             <Badge variant="outline" className={cn(
               "text-[10px] uppercase font-bold",
-              diagnostics.isValid ? "bg-green-50 text-green-600 border-green-200" : "bg-orange-50 text-orange-600 border-orange-200"
+              diagnostics.isValid ? "bg-primary/10 text-primary border-primary/20" : "bg-destructive/10 text-destructive border-destructive/20"
             )}>
               {diagnostics.isValid ? 'Sẵn sàng công khai' : 'Cần hoàn thiện thêm'}
             </Badge>
@@ -88,8 +85,8 @@ export function EditorProgressHub({
             <div className="space-y-2">
               {diagnostics.errors.length === 0 ? (
                 <div className="py-8 text-center space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto opacity-20" />
-                  <p className="text-xs text-gray-400 font-medium">Tuyệt vời! Không có lỗi nào được tìm thấy.</p>
+                  <CheckCircle2 className="w-8 h-8 text-primary mx-auto opacity-30" />
+                  <p className="text-xs text-muted-foreground font-medium">Tuyệt vời! Không có lỗi nào được tìm thấy.</p>
                 </div>
               ) : (
                 diagnostics.errors.map((err, i) => (
@@ -97,8 +94,8 @@ export function EditorProgressHub({
                     key={i}
                     onClick={() => typeof err.questionIndex === 'number' && onScrollToQuestion(err.questionIndex)}
                     className={cn(
-                      "w-full text-left p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-95 group",
-                      err.severity === 'error' ? "bg-red-50 border-red-100 text-red-700" : "bg-orange-50 border-orange-100 text-orange-700"
+                      "w-full text-left p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-95 group cursor-pointer",
+                      err.severity === 'error' ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-warning-bg border-warning-border text-warning-fg"
                     )}
                   >
                     <div className="flex gap-2">
@@ -124,15 +121,15 @@ export function EditorProgressHub({
           </ScrollArea>
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
-           <div className="flex items-center gap-2 text-gray-400 mb-3">
+        <div className="pt-4 border-t border-border">
+           <div className="flex items-center gap-2 text-muted-foreground mb-3">
               <History className="w-3 h-3" />
               <span className="text-[10px] font-bold uppercase tracking-wider">Lịch sử thay đổi</span>
            </div>
            <div className="space-y-2">
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-500">Phiên bản hiện tại</span>
-                <span className="text-[10px] font-mono text-gray-400">v1.0.4</span>
+              <div className="p-3 bg-muted/50 rounded-xl border border-border flex items-center justify-between">
+                <span className="text-[10px] font-bold text-muted-foreground">Phiên bản hiện tại</span>
+                <span className="text-[10px] font-mono text-foreground">v1.0.4</span>
               </div>
            </div>
         </div>

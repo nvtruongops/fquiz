@@ -18,12 +18,12 @@ interface RecentActivitiesFeedProps {
 export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ recentActivities }: RecentActivitiesFeedProps) {
   return (
     <div className="lg:col-span-4 flex flex-col justify-between">
-      <div className="bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col h-full space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-          <h3 className="text-xs font-black uppercase tracking-wider text-[#5D7B6F] flex items-center gap-1.5">
+      <div className="bg-card p-5 rounded-[24px] border border-border shadow-xs flex flex-col h-full space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
+          <h3 className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4" /> Hoạt Động Gần Đây
           </h3>
-          <Link href="/history" className="text-[11px] font-bold text-slate-400 hover:text-[#5D7B6F] transition-colors">
+          <Link href="/history" className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors">
             Xem tất cả
           </Link>
         </div>
@@ -31,11 +31,11 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ r
         <div className="space-y-2.5 flex-1 overflow-y-auto pr-0.5 scrollbar-thin">
           {!recentActivities || recentActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-8 gap-2.5 h-full my-auto">
-              <div className="w-10 h-10 rounded-2xl bg-slate-100/80 flex items-center justify-center text-slate-400 border border-slate-200/60 shadow-2xs">
-                <HelpCircle className="w-5 h-5 text-slate-400" />
+              <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground border border-border shadow-2xs">
+                <HelpCircle className="w-5 h-5 text-muted-foreground" />
               </div>
-              <p className="text-xs text-slate-500 font-bold italic">Chưa có lịch sử làm bài gần đây.</p>
-              <Button asChild size="sm" className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-black text-xs h-8 px-4 rounded-xl shadow-xs transition-all mt-1">
+              <p className="text-xs text-muted-foreground font-bold italic">Chưa có lịch sử làm bài gần đây.</p>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-8 px-4 rounded-xl shadow-xs transition-all mt-1">
                 <Link href="/explore">
                   Làm bài ngay <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Link>
@@ -53,10 +53,10 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ r
 })
 
 function getScoreStyle(score: number) {
-  if (score >= 8) return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  if (score >= 6.5) return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (score >= 5) return 'bg-amber-50 text-amber-700 border-amber-200'
-  return 'bg-rose-50 text-rose-700 border-rose-200'
+  if (score >= 8) return 'bg-success-bg/20 text-success-fg border-success-fg/30'
+  if (score >= 6.5) return 'bg-primary/10 text-primary border-primary/20'
+  if (score >= 5) return 'bg-warning-bg text-warning-fg border-warning-border'
+  return 'bg-destructive/10 text-destructive border-destructive/30'
 }
 
 const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
@@ -70,7 +70,7 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
 }) {
   if (isResumable) {
     return (
-      <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+      <Badge className="bg-warning-bg text-warning-fg border border-warning-border text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full">
         Đang dở
       </Badge>
     )
@@ -83,7 +83,7 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
     )
   }
   return (
-    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+    <Badge className="bg-success-bg/20 text-success-fg border border-success-fg/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
       Xong
     </Badge>
   )
@@ -115,14 +115,14 @@ function formatActivityDetails(activity: ActivityItem) {
 
 const DeletedActivityItem = React.memo(function DeletedActivityItem({ title, timeAgo }: { title: string; timeAgo: string }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 opacity-50 cursor-not-allowed bg-slate-50 border-slate-200">
+    <div className="flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 opacity-50 cursor-not-allowed bg-muted border-border">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 text-[#5D7B6F] border-emerald-200">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-primary/10 text-primary border-primary/20">
           <Zap className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <h4 className="text-xs font-black text-slate-800 truncate leading-snug">{title}</h4>
-          <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{timeAgo} • Đã xóa</span>
+          <h4 className="text-xs font-black text-card-foreground truncate leading-snug">{title}</h4>
+          <span className="text-[10px] text-muted-foreground font-semibold block mt-0.5">{timeAgo} • Đã xóa</span>
         </div>
       </div>
     </div>
@@ -139,25 +139,25 @@ const CompactActivityItem = React.memo(function CompactActivityItem({ activity }
   return (
     <Link
       href={getActivityHref(activity, isResumable)}
-      className="group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer hover:border-[#5D7B6F]/50 hover:bg-slate-50/80 bg-white border-slate-200/80 shadow-2xs"
+      className="group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 cursor-pointer hover:border-primary/50 hover:bg-muted/60 bg-card border-border shadow-2xs"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={cn(
             'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs',
-            isFlashcard ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-[#5D7B6F] border-emerald-200'
+            isFlashcard ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-primary/10 text-primary border-primary/20'
           )}
         >
           {isFlashcard ? <Layers className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
         </div>
 
         <div className="min-w-0">
-          <h4 className="text-xs font-black text-slate-800 truncate group-hover:text-[#5D7B6F] transition-colors leading-snug">
+          <h4 className="text-xs font-black text-card-foreground truncate group-hover:text-primary transition-colors leading-snug">
             {activity.quizCode || 'QUIZ'} — {activity.quizTitle}
           </h4>
-          <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
+          <span className="text-[10px] text-muted-foreground font-semibold block mt-0.5">
             {timeAgo} • {isFlashcard ? 'Flashcard' : 'Trắc nghiệm'}
-            {isResumable && <span className="text-amber-600 font-bold">{progressText}</span>}
+            {isResumable && <span className="text-amber-400 font-bold">{progressText}</span>}
           </span>
         </div>
       </div>

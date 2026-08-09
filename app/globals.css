@@ -3,249 +3,230 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 60 11% 97%;
-    --foreground: 155 14% 15%;
+  :root,
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 155 14% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 155 14% 15%;
-    --primary: 155 14% 43%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 155 15% 34%;
-    --secondary-accent: 117 23% 70%;
-    --app-bg: 49 26% 88%;
-    --secondary: 117 23% 90%;
-    --secondary-foreground: 155 14% 20%;
-    --muted: 49 15% 94%;
-    --muted-foreground: 155 10% 40%;
-    --accent: 117 23% 85%;
-    --accent-foreground: 155 14% 20%;
+    --primary-hover: 222 47% 18%;
+    --secondary-accent: 215 16% 75%;
+    --app-bg: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 117 20% 85%;
-    --input: 117 20% 85%;
-    --ring: 155 14% 43%;
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 222 47% 11%;
     --radius: 0.75rem;
 
-    --success-fg: 142 64% 24%;
-    --success-bg: 133 28% 76%;
-    --info-bg: 182 86% 91%;
-    --warning-bg: 45 100% 75%;
-    --danger-bg: 0 71% 77%;
+    --success-fg: 222 47% 11%;
+    --success-bg: 220 14% 94%;
+    --success-border: 220 13% 86%;
+    --info-fg: 222 47% 11%;
+    --info-bg: 220 14% 94%;
+    --info-border: 220 13% 86%;
+    --warning-fg: 222 47% 11%;
+    --warning-bg: 220 14% 94%;
+    --warning-border: 220 13% 86%;
     --incorrect-fg: 0 72% 35%;
-    --incorrect-bg: 0 93% 94%;
-    --incorrect-border: 0 82% 63%;
-    --attempted-bg: 214 94% 93%;
-    --attempted-border: 214 95% 87%;
-    --attempted-text: 225 64% 33%;
-    --saved-badge-text: 142 76% 36%;
-    --draft-dot: 213 94% 68%;
+    --incorrect-bg: 0 85% 95%;
+    --incorrect-border: 0 70% 82%;
+    --attempted-fg: 222 47% 11%;
+    --attempted-bg: 220 14% 94%;
+    --attempted-border: 220 13% 86%;
+    --attempted-text: var(--attempted-fg);
+    --saved-badge-text: 222 47% 11%;
+    --draft-dot: 222 47% 11%;
+
+    /* Semantic Disabled Tokens */
+    --disabled-bg: 220 14% 94%;
+    --disabled-fg: 215 16% 65%;
+    --disabled-border: 220 13% 88%;
+
+    /* Interaction State Tokens */
+    --interactive-hover-bg: 220 14% 94%;
+    --interactive-active-bg: 220 14% 90%;
+    --interactive-selected-bg: 222 47% 11%;
+    --interactive-selected-fg: 0 0% 100%;
+
+    /* Quiz Domain Tokens */
+    --question-unanswered-bg: 220 14% 96%;
+    --question-unanswered-fg: 215 16% 47%;
+    --question-unanswered-border: 220 13% 90%;
+    --question-attempted-bg: 220 14% 94%;
+    --question-attempted-fg: 222 47% 11%;
+    --question-attempted-border: 220 13% 86%;
+    --question-current-bg: 222 47% 11%;
+    --question-current-fg: 0 0% 100%;
+    --question-current-border: 222 47% 20%;
+    --question-correct-bg: 220 14% 94%;
+    --question-correct-fg: 222 47% 11%;
+    --question-correct-border: 220 13% 86%;
+    --question-incorrect-bg: 0 85% 95%;
+    --question-incorrect-fg: 0 72% 35%;
+    --question-incorrect-border: 0 70% 82%;
+    --question-flagged-bg: 220 14% 94%;
+    --question-flagged-fg: 222 47% 11%;
+    --question-flagged-border: 220 13% 86%;
   }
 
   .dark {
-    --background: 155 15% 10%;
-    --foreground: 60 11% 95%;
-    --card: 155 15% 12%;
-    --card-foreground: 60 11% 95%;
-    --popover: 155 15% 12%;
-    --popover-foreground: 60 11% 95%;
-    --primary: 155 14% 53%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 155 15% 44%;
-    --secondary-accent: 117 23% 50%;
-    --app-bg: 155 15% 15%;
-    --secondary: 155 15% 18%;
-    --secondary-foreground: 60 11% 95%;
-    --muted: 155 15% 18%;
-    --muted-foreground: 155 10% 65%;
-    --accent: 155 15% 20%;
-    --accent-foreground: 60 11% 95%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 240 10% 4%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --primary-hover: 0 0% 90%;
+    --secondary-accent: 0 0% 30%;
+    --app-bg: 0 0% 0%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 6% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 6% 14%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 40%;
     --destructive-foreground: 210 40% 98%;
-    --border: 155 15% 22%;
-    --input: 155 15% 22%;
-    --ring: 155 14% 53%;
+    --border: 240 6% 16%;
+    --input: 240 6% 16%;
+    --ring: 0 0% 100%;
 
-    --success-fg: 142 64% 70%;
-    --success-bg: 142 30% 20%;
-    --info-bg: 182 50% 20%;
-    --warning-bg: 45 60% 25%;
-    --danger-bg: 0 50% 25%;
-    --incorrect-fg: 0 72% 75%;
-    --incorrect-bg: 0 50% 20%;
-    --incorrect-border: 0 82% 50%;
-    --attempted-bg: 214 50% 20%;
-    --attempted-border: 214 50% 30%;
-    --attempted-text: 214 90% 80%;
-    --saved-badge-text: 142 76% 60%;
+    --success-fg: 0 0% 100%;
+    --success-bg: 240 6% 16%;
+    --success-border: 240 6% 24%;
+    --info-fg: 0 0% 100%;
+    --info-bg: 240 6% 16%;
+    --info-border: 240 6% 24%;
+    --warning-fg: 0 0% 100%;
+    --warning-bg: 240 6% 16%;
+    --warning-border: 240 6% 24%;
+    --incorrect-fg: 0 85% 75%;
+    --incorrect-bg: 0 50% 15%;
+    --incorrect-border: 0 60% 30%;
+    --attempted-fg: 0 0% 100%;
+    --attempted-bg: 240 6% 16%;
+    --attempted-border: 240 6% 24%;
+    --attempted-text: var(--attempted-fg);
+    --saved-badge-text: 0 0% 100%;
+    --draft-dot: 0 0% 100%;
+
+    /* Semantic Disabled Tokens */
+    --disabled-bg: 240 6% 10%;
+    --disabled-fg: 240 5% 45%;
+    --disabled-border: 240 6% 14%;
+
+    /* Interaction State Tokens */
+    --interactive-hover-bg: 240 6% 14%;
+    --interactive-active-bg: 240 6% 18%;
+    --interactive-selected-bg: 0 0% 100%;
+    --interactive-selected-fg: 0 0% 0%;
+
+    /* Quiz Domain Tokens */
+    --question-unanswered-bg: 240 6% 12%;
+    --question-unanswered-fg: 240 5% 65%;
+    --question-unanswered-border: 240 6% 16%;
+    --question-attempted-bg: 240 6% 16%;
+    --question-attempted-fg: 0 0% 100%;
+    --question-attempted-border: 240 6% 24%;
+    --question-current-bg: 0 0% 100%;
+    --question-current-fg: 0 0% 0%;
+    --question-current-border: 0 0% 80%;
+    --question-correct-bg: 240 6% 16%;
+    --question-correct-fg: 0 0% 100%;
+    --question-correct-border: 240 6% 24%;
+    --question-incorrect-bg: 0 50% 15%;
+    --question-incorrect-fg: 0 85% 75%;
+    --question-incorrect-border: 0 60% 30%;
+    --question-flagged-bg: 240 6% 16%;
+    --question-flagged-fg: 0 0% 100%;
+    --question-flagged-border: 240 6% 24%;
+  }
+
+  .green {
+    --background: 49 26% 91%;
+    --foreground: 155 20% 12%;
+    --card: 60 15% 97%;
+    --card-foreground: 155 20% 12%;
+    --popover: 60 15% 97%;
+    --popover-foreground: 155 20% 12%;
+    --primary: 155 25% 38%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 155 25% 30%;
+    --secondary-accent: 117 23% 70%;
+    --app-bg: 49 26% 91%;
+    --secondary: 117 20% 86%;
+    --secondary-foreground: 155 20% 12%;
+    --muted: 117 20% 86%;
+    --muted-foreground: 155 15% 35%;
+    --accent: 117 23% 82%;
+    --accent-foreground: 155 20% 12%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 117 23% 78%;
+    --input: 117 23% 78%;
+    --ring: 155 25% 38%;
+
+    --success-fg: 147 65% 18%;
+    --success-bg: 138 35% 85%;
+    --success-border: 140 30% 70%;
+    --info-fg: 188 80% 22%;
+    --info-bg: 182 70% 88%;
+    --info-border: 188 50% 70%;
+    --warning-fg: 35 60% 25%;
+    --warning-bg: 42 35% 86%;
+    --warning-border: 42 30% 74%;
+    --incorrect-fg: 0 70% 32%;
+    --incorrect-bg: 0 60% 92%;
+    --incorrect-border: 0 50% 78%;
+    --attempted-fg: 225 60% 30%;
+    --attempted-bg: 214 80% 90%;
+    --attempted-border: 214 80% 82%;
+    --attempted-text: var(--attempted-fg);
+    --saved-badge-text: 147 65% 18%;
     --draft-dot: 213 94% 68%;
-  }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-    box-sizing: border-box;
-  }
-  html, body {
-    width: 100%;
-    overflow-x: hidden;
-    -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
-    position: relative;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-  }
-}
+    /* Semantic Disabled Tokens */
+    --disabled-bg: 117 20% 86%;
+    --disabled-fg: 155 15% 45%;
+    --disabled-border: 117 23% 78%;
 
-/* Flashcard 3D flip animation - Professional Horizontal Flip */
-.perspective-1000 {
-  perspective: 1000px;
-}
+    /* Interaction State Tokens */
+    --interactive-hover-bg: 117 20% 86%;
+    --interactive-active-bg: 117 20% 80%;
+    --interactive-selected-bg: 155 25% 38%;
+    --interactive-selected-fg: 0 0% 100%;
 
-.flashcard-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transform-style: preserve-3d;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
-
-.flashcard-face {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: 1rem;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Front face */
-.flashcard-face-front {
-  z-index: 2;
-  transform: rotateY(0deg);
-}
-
-/* Back face */
-.flashcard-face-back {
-  transform: rotateY(180deg);
-}
-
-.backface-hidden {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.preserve-3d {
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-}
-
-/* Smooth shadow transition for depth */
-.flashcard-shadow {
-  transition: box-shadow 0.5s ease-in-out;
-}
-
-.flashcard-inner:hover .flashcard-shadow {
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-/* Custom sleek scrollbar for webkit & firefox */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(93, 123, 111, 0.25);
-  border-radius: 8px;
-  transition: background 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(93, 123, 111, 0.5);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(93, 123, 111, 0.3) transparent;
-}
-
-/* Custom scrollbar utilities */
-.custom-scrollbar::-webkit-scrollbar,
-.scrollbar-thin::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track,
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb,
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(93, 123, 111, 0.3);
-  border-radius: 10px;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb,
-.dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover,
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(93, 123, 111, 0.6);
-}
-
-/* Animations */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
-}
-
-/* Mobile Safe Area & Dynamic Viewport Height Utilities */
-@layer utilities {
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 1rem);
-  }
-  .pt-safe {
-    padding-top: env(safe-area-inset-top, 0.5rem);
-  }
-  .h-dvh {
-    height: 100dvh;
-  }
-  .min-h-dvh {
-    min-height: 100dvh;
-  }
-  .max-h-dvh {
-    max-height: 100dvh;
-  }
-  .touch-target-lg {
-    min-height: 44px;
-    min-width: 44px;
+    /* Quiz Domain Tokens */
+    --question-unanswered-bg: 117 20% 86%;
+    --question-unanswered-fg: 155 15% 35%;
+    --question-unanswered-border: 117 23% 78%;
+    --question-attempted-bg: 214 80% 90%;
+    --question-attempted-fg: 225 60% 30%;
+    --question-attempted-border: 214 80% 82%;
+    --question-current-bg: 155 25% 38%;
+    --question-current-fg: 0 0% 100%;
+    --question-current-border: 155 25% 30%;
+    --question-correct-bg: 138 35% 85%;
+    --question-correct-fg: 147 65% 18%;
+    --question-correct-border: 0 60% 92%;
+    --question-incorrect-bg: 0 60% 92%;
+    --question-incorrect-fg: 0 70% 32%;
+    --question-incorrect-border: 0 50% 78%;
+    --question-flagged-bg: 42 35% 86%;
+    --question-flagged-fg: 35 60% 25%;
+    --question-flagged-border: 42 30% 74%;
   }
 }

@@ -76,7 +76,7 @@ export default async function ExplorePage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight"
+            className="text-xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight"
           >
             Khám phá Danh mục & Đề Thi
           </motion.h1>

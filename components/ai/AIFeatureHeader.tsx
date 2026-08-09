@@ -62,19 +62,19 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5D7B6F] to-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-700/20">
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/20">
             <Bot className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Xưởng Học Liệu AI Studio</h1>
-              <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#5D7B6F] border border-emerald-100">
+              <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Xưởng Học Liệu AI Studio</h1>
+              <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                 Multi-Lang
               </span>
             </div>
-            <p className="text-xs font-medium text-slate-500 mt-0.5">
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">
               Biên soạn bài học, phân tích ngữ pháp, đoạn văn & AI chấm bài viết tự động.
             </p>
           </div>
@@ -82,12 +82,12 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
 
         <div className="flex items-center gap-2">
           <Link href="/ai/history">
-            <Button variant="outline" className="rounded-2xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50">
+            <Button variant="outline" className="rounded-2xl text-xs font-bold border-border text-foreground hover:bg-muted">
               Lịch sử AI
             </Button>
           </Link>
           <Link href="/student/dashboard">
-            <Button variant="ghost" size="sm" className="rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900">
+            <Button variant="ghost" size="sm" className="rounded-2xl text-xs font-bold text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4 mr-1" /> Trang chủ
             </Button>
           </Link>
@@ -103,19 +103,19 @@ export const AIFeatureHeader = React.memo(function AIFeatureHeader({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between ${
+              className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-br from-emerald-900 to-[#5D7B6F] text-white border-transparent shadow-md transform -translate-y-0.5'
-                  : 'bg-white text-slate-700 border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-md transform -translate-y-0.5'
+                  : 'bg-card text-foreground border-border hover:border-primary/40 hover:bg-muted/50'
               }`}
             >
               <div className="flex items-center justify-between">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-200' : 'text-[#5D7B6F]'}`} />
-                {isActive && <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />}
+                <Icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground' : 'text-primary'}`} />
+                {isActive && <span className="w-2 h-2 rounded-full bg-primary-foreground animate-ping" />}
               </div>
               <div className="mt-3">
                 <h3 className="text-xs font-bold">{tab.label}</h3>
-                <p className={`text-[10px] mt-0.5 line-clamp-1 ${isActive ? 'text-emerald-100/80' : 'text-slate-400'}`}>
+                <p className={`text-[10px] mt-0.5 line-clamp-1 ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                   {tab.desc}
                 </p>
               </div>

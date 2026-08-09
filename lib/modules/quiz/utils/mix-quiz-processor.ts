@@ -43,10 +43,12 @@ function deduplicateQuizzesPools(validQuizzes: any[]): IQuestion[][] {
   const uniquePoolsPerQuiz: IQuestion[][] = validQuizzes.map((quiz) => {
     const pool: IQuestion[] = []
     for (const q of quiz.questions as IQuestion[]) {
-      const key = q.question_id ?? (q._id ? q._id.toString() : '')
+      if (!q.question_id) {
+        q.question_id = q._id ? q._id.toString() : generateQuestionId(q)
+      }
+      const key = q.question_id
       if (key && !seenKeys.has(key)) {
         seenKeys.add(key)
-        if (!q.question_id) q.question_id = generateQuestionId(q)
         pool.push(q)
       }
     }
@@ -93,11 +95,12 @@ function sampleProportionally(deduplicatedQuizzes: IQuestion[][], targetCount: n
     const opts = q.options || []
     const ca = Array.isArray(q.correct_answer)
       ? q.correct_answer
-      : typeof q.correct_answer === 'number'
-        ? [q.correct_answer]
-        : [0]
+      : (q.correct_answer !== undefined && q.correct_answer !== null ? [q.correct_answer] : [])
 
-    let validCa = ca.filter((i: any) => typeof i === 'number' && i >= 0 && i < opts.length)
+    let validCa = ca
+      .map((i: any) => (typeof i === 'number' ? i : parseInt(String(i), 10)))
+      .filter((i: number) => !isNaN(i) && i >= 0 && i < opts.length)
+
     if (validCa.length === 0 && opts.length > 0) {
       validCa = [0]
     }

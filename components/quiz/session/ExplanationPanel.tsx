@@ -29,42 +29,86 @@ function StaticExplanationView({
   onClose?: () => void
 }) {
   return (
-    <div className="flex h-full flex-col font-sans">
-      <div className="flex items-center justify-between border-b border-[#d4d4d4] pb-2 mb-3">
-        <h3 className="text-sm font-bold text-[#171717]">Giải thích chi tiết</h3>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs font-semibold text-[#525252] hover:underline"
-            title="Thu gọn"
-          >
-            [X] Thu gọn
-          </button>
-        )}
-      </div>
-      <div className="flex-1 overflow-y-auto quiz-scroll pr-1">
-        {showImmediateFeedback ? (
-          <div className="border border-[#d4d4d4] bg-white p-3 text-sm text-[#262626] space-y-2">
-            <div className="flex items-center gap-2 font-bold">
-              {lastAnswerResult?.isCorrect ? (
-                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-              ) : (
-                <XCircle className="h-4 w-4 text-red-600 shrink-0" />
-              )}
-              <span>{lastAnswerResult?.isCorrect ? 'Chính xác!' : 'Chưa đúng!'}</span>
-            </div>
-            {correctLetters && (
-              <p className="font-semibold text-green-700">
-                Đáp án đúng: {correctLetters}
-              </p>
-            )}
-            <p className="whitespace-pre-wrap leading-relaxed">
-              {explanationText || 'Hệ thống chưa có phần giải thích cho câu này.'}
+    <div className="flex h-full flex-col font-sans space-y-3 text-card-foreground">
+      {/* Panel Header */}
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
+            <Lightbulb className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground leading-none">
+              Giải thích chi tiết
+            </h3>
+            <p className="text-[10px] font-medium text-muted-foreground mt-1">
+              Phân tích đáp án & kiến thức
             </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {showImmediateFeedback && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase',
+                lastAnswerResult?.isCorrect
+                  ? 'bg-success-bg text-success-fg border border-success-border'
+                  : 'bg-incorrect-bg text-incorrect-fg border border-incorrect-border'
+              )}
+            >
+              {lastAnswerResult?.isCorrect ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-success-fg" />
+                  Đúng
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-3 h-3 text-destructive" />
+                  Sai
+                </>
+              )}
+            </span>
+          )}
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="Thu gọn cột giải thích"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto quiz-scroll pr-1 space-y-3">
+        {showImmediateFeedback ? (
+          <div className="space-y-3">
+            <div className="border border-border bg-card p-4 rounded-xl text-sm text-foreground space-y-2">
+              <div className="flex items-center gap-2 font-bold">
+                {lastAnswerResult?.isCorrect ? (
+                  <CheckCircle2 className="h-4 w-4 text-success-fg shrink-0" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                )}
+                <span className={lastAnswerResult?.isCorrect ? "text-success-fg" : "text-destructive"}>
+                  {lastAnswerResult?.isCorrect ? 'Chính xác!' : 'Chưa đúng!'}
+                </span>
+              </div>
+              {correctLetters && (
+                <p className="font-semibold text-success-fg">
+                  Đáp án đúng: {correctLetters}
+                </p>
+              )}
+              <p className="whitespace-pre-wrap leading-relaxed text-foreground">
+                {explanationText || 'Hệ thống chưa có phần giải thích cho câu này.'}
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="border border-dashed border-[#d4d4d4] bg-[#fafafa] p-3 text-xs text-[#737373]">
+          <div className="border border-dashed border-border bg-muted p-4 rounded-xl text-xs text-muted-foreground">
             <p>Chưa có giải thích. Sau khi nộp đáp án ở chế độ luyện tập, giải thích chi tiết sẽ hiển thị tại đây.</p>
           </div>
         )}
@@ -87,18 +131,18 @@ function AnimatedExplanationView({
   onClose?: () => void
 }) {
   return (
-    <div className="flex h-full flex-col font-sans space-y-3">
+    <div className="flex h-full flex-col font-sans space-y-3 text-card-foreground">
       {/* Panel Header */}
-      <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-slate-800/80 shrink-0">
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
             <Lightbulb className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">
+            <h3 className="text-sm font-bold text-foreground leading-none">
               Giải thích chi tiết
             </h3>
-            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+            <p className="text-[10px] font-medium text-muted-foreground mt-1">
               Phân tích đáp án & kiến thức
             </p>
           </div>
@@ -110,13 +154,13 @@ function AnimatedExplanationView({
               className={cn(
                 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase',
                 lastAnswerResult?.isCorrect
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                  : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
+                  ? 'bg-success-bg text-success-fg border border-success-border'
+                  : 'bg-incorrect-bg text-incorrect-fg border border-incorrect-border'
               )}
             >
               {lastAnswerResult?.isCorrect ? (
                 <>
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="w-3 h-3 text-success-fg" />
                   Đúng
                 </>
               ) : (

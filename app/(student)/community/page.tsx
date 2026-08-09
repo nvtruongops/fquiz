@@ -73,9 +73,9 @@ export default function CommunityPage() {
   } = useCommunityFeed()
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#F9F9F7] relative">
+    <div className="min-h-[calc(100vh-80px)] relative">
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden transform-gpu -z-10">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#5D7B6F]/15 via-[#A4C3A2]/10 to-transparent blur-3xl opacity-40 transform-gpu" />
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent blur-3xl opacity-40 transform-gpu" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 pt-1 sm:pt-2 md:pt-3 pb-6 md:pb-10 relative z-10 space-y-6 sm:space-y-8">
@@ -101,29 +101,29 @@ export default function CommunityPage() {
         {/* 2-Column Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <main className="lg:col-span-8 space-y-6">
-            <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+            <div className="bg-card backdrop-blur-xl border border-border rounded-2xl p-4 shadow-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-amber-500" />
-                <h2 className="text-lg font-black text-slate-800">Thảo luận mới nhất</h2>
-                {isRefetching && <Loader2 className="w-4 h-4 animate-spin text-[#5D7B6F] ml-1" />}
+                <Flame className="w-5 h-5 text-amber-400" />
+                <h2 className="text-lg font-black text-foreground">Thảo luận mới nhất</h2>
+                {isRefetching && <Loader2 className="w-4 h-4 animate-spin text-primary ml-1" />}
               </div>
             </div>
 
             {isLoadingPosts ? (
-              <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-12 text-center space-y-4 shadow-xs">
-                <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin mx-auto" />
-                <p className="text-xs font-bold text-slate-400">Đang tải danh sách thảo luận...</p>
+              <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-12 text-center space-y-4 shadow-xs">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                <p className="text-xs font-bold text-muted-foreground">Đang tải danh sách thảo luận...</p>
               </div>
             ) : postsData?.posts?.length === 0 ? (
-              <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-10 md:p-14 text-center space-y-4 shadow-sm">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#5D7B6F] flex items-center justify-center mx-auto border border-emerald-100 shadow-xs">
+              <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-10 md:p-14 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20 shadow-xs">
                   <MessageSquare className="w-8 h-8" />
                 </div>
                 <div className="space-y-1 max-w-md mx-auto">
-                  <h3 className="text-xl font-black text-slate-800">
+                  <h3 className="text-xl font-black text-foreground">
                     {searchQuery ? 'Không tìm thấy kết quả phù hợp' : 'Chưa có thảo luận nào'}
                   </h3>
-                  <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                  <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                     {searchQuery
                       ? `Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc tìm kiếm "${searchQuery}".`
                       : 'Hãy là người đầu tiên đặt câu hỏi hoặc chia sẻ góc nhìn học tập với cộng đồng FQuiz!'}
@@ -133,14 +133,14 @@ export default function CommunityPage() {
                   <Button
                     onClick={() => setSearchQuery('')}
                     variant="outline"
-                    className="rounded-xl text-xs font-bold text-[#5D7B6F] border-emerald-200"
+                    className="rounded-xl text-xs font-bold text-primary border-primary/20 hover:bg-muted"
                   >
                     <RefreshCw className="w-4 h-4 mr-1.5" /> Xóa bộ lọc tìm kiếm
                   </Button>
                 ) : (
                   <Button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl font-bold text-xs px-6 py-2.5 shadow-md"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs px-6 py-2.5 shadow-md"
                   >
                     <Plus className="w-4 h-4 mr-1.5" /> Tạo bài đăng đầu tiên
                   </Button>
@@ -177,7 +177,7 @@ export default function CommunityPage() {
                   onClick={loadMorePosts}
                   disabled={isLoadingPosts}
                   variant="outline"
-                  className="rounded-2xl px-8 py-3 bg-white/80 border-slate-200 text-[#5D7B6F] font-black hover:bg-white transition-all shadow-xs text-xs"
+                  className="rounded-2xl px-8 py-3 bg-card border-border text-primary font-black hover:bg-muted transition-all shadow-xs text-xs"
                 >
                   {isLoadingPosts ? (
                     <>

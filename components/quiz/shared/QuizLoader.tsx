@@ -173,6 +173,9 @@ export function useSessionLoader() {
   return { isOpen, progress, status, open, advance, complete, completeAndNavigate, close, setStatus }
 }
 
+import { useTheme } from 'next-themes'
+import { getLoaderThemeColors } from '@/components/shared/ui/page-transition-loader'
+
 // ── Unified High-End Quiz Loading Overlay Component ────────────────────────
 
 export function QuizLoadingOverlay({
@@ -184,7 +187,17 @@ export function QuizLoadingOverlay({
   progress: number
   status: string
 }) {
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   if (!isOpen) return null
+
+  const activeTheme = (theme === 'system' ? resolvedTheme : theme) || resolvedTheme || 'green'
+  const colors = getLoaderThemeColors(mounted ? activeTheme : 'green')
 
   const pct = Math.min(100, Math.round(progress))
 
@@ -200,31 +213,30 @@ export function QuizLoadingOverlay({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        className="fixed inset-0 z-[99999] bg-[#16231D]/95 backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-4 font-sans text-white select-none overflow-hidden"
+        className={`fixed inset-0 z-[99999] ${colors.bgOverlay} backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-4 font-sans select-none overflow-hidden`}
       >
-        {/* Background Ambient Glow - Calibrated with ui-colors.md */}
+        {/* Background Ambient Glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#5D7B6F]/40 via-[#A4C3A2]/25 to-transparent rounded-full blur-3xl opacity-75" />
-          <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-[#4A6359]/30 rounded-full blur-2xl animate-pulse" />
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr ${colors.glowGrad} rounded-full blur-3xl opacity-75`} />
         </div>
 
         {/* Top Header Section */}
         <div className="relative z-10 text-center space-y-1.5 pt-2">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-widest text-[#A4C3A2] drop-shadow-[0_0_16px_rgba(164,195,162,0.75)] uppercase">
+          <h1 className={`text-2xl sm:text-3xl font-black tracking-widest ${colors.headerText} uppercase`}>
             {status || 'ĐANG KHỞI TẠO QUIZ...'}
           </h1>
-          <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider text-[#B0D4B8]/90 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#A4C3A2]" />
+          <div className={`flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider ${colors.subText} uppercase`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
             <span>Vui lòng chờ trong giây lát • Loading Quiz Session</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#A4C3A2]" />
+            <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
           </div>
         </div>
 
         {/* Central Graphic Section (Mascot Robot + Circular Progress Ring) */}
         <div className="relative z-10 flex items-center justify-center w-[340px] h-[340px] my-auto">
           {/* Holographic Base Ring */}
-          <div className="absolute bottom-2 w-64 h-16 bg-[#A4C3A2]/15 rounded-full blur-md border border-[#A4C3A2]/40 transform rotate-x-60" />
-          <div className="absolute bottom-4 w-48 h-10 bg-[#5D7B6F]/30 rounded-full blur-xs" />
+          <div className={`absolute bottom-2 w-64 h-16 ${colors.baseRingBg} rounded-full blur-md transform rotate-x-60`} />
+          <div className={`absolute bottom-4 w-48 h-10 ${colors.baseRingGlow} rounded-full blur-xs`} />
 
           {/* SVG Circular Progress Bar */}
           <svg className="w-[320px] h-[320px] transform -rotate-90">
@@ -233,7 +245,7 @@ export function QuizLoadingOverlay({
               cx="160"
               cy="160"
               r={radius}
-              className="stroke-[#1E2E26]"
+              stroke={colors.trackStroke}
               strokeWidth="10"
               fill="transparent"
             />
@@ -242,71 +254,70 @@ export function QuizLoadingOverlay({
               cx="160"
               cy="160"
               r={radius}
-              className="stroke-[#A4C3A2] transition-all duration-300 ease-out"
+              stroke={colors.fillStroke}
+              className="transition-all duration-300 ease-out"
               strokeWidth="10"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               fill="transparent"
-              style={{ filter: 'drop-shadow(0 0 10px rgba(164, 195, 162, 0.85))' }}
+              style={{ filter: colors.fillDropShadow }}
             />
           </svg>
 
-          {/* Center Mascot: AI Robot Sprout with Proper Proportions & Glowing Core */}
+          {/* Center Mascot: AI Robot Sprout */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="relative w-48 h-48 flex items-center justify-center">
-              {/* Soft Ambient Glow under Mascot */}
-              <div className="absolute bottom-2 w-28 h-8 bg-[#A4C3A2]/25 rounded-full blur-md" />
+              <div className={`absolute bottom-2 w-28 h-8 ${colors.mascotGlow} rounded-full blur-md`} />
 
-              {/* Perfectly Proportioned Robot Mascot SVG based on Docs/ui-colors.md */}
-              <svg className="w-48 h-48 drop-shadow-[0_0_20px_rgba(164,195,162,0.55)]" viewBox="0 0 200 200" fill="none">
+              <svg className={`w-48 h-48 ${colors.mascotShadow}`} viewBox="0 0 200 200" fill="none">
                 {/* Sprout Leaves on Antenna */}
-                <path d="M100 24C92 10 76 8 66 16C56 24 74 38 100 38Z" fill="#A4C3A2" />
-                <path d="M100 24C108 10 124 8 134 16C144 24 126 38 100 38Z" fill="#B0D4B8" />
-                <line x1="100" y1="24" x2="100" y2="44" stroke="#5D7B6F" strokeWidth="3.5" strokeLinecap="round" />
+                <path d="M100 24C92 10 76 8 66 16C56 24 74 38 100 38Z" fill={colors.sproutLeaf1} />
+                <path d="M100 24C108 10 124 8 134 16C144 24 126 38 100 38Z" fill={colors.sproutLeaf2} />
+                <line x1="100" y1="24" x2="100" y2="44" stroke={colors.sproutStem} strokeWidth="3.5" strokeLinecap="round" />
 
                 {/* Robot Ears / Side Knobs */}
-                <rect x="36" y="66" width="12" height="24" rx="6" fill="#A4C3A2" stroke="#5D7B6F" strokeWidth="2.5" />
-                <rect x="152" y="66" width="12" height="24" rx="6" fill="#A4C3A2" stroke="#5D7B6F" strokeWidth="2.5" />
+                <rect x="36" y="66" width="12" height="24" rx="6" fill={colors.earFill} stroke={colors.earStroke} strokeWidth="2.5" />
+                <rect x="152" y="66" width="12" height="24" rx="6" fill={colors.earFill} stroke={colors.earStroke} strokeWidth="2.5" />
 
-                {/* Head Outer Shell - Bright White-Cream (#F9F9F7) */}
-                <rect x="44" y="44" width="112" height="76" rx="38" fill="#F9F9F7" stroke="#A4C3A2" strokeWidth="4" />
+                {/* Head Outer Shell */}
+                <rect x="44" y="44" width="112" height="76" rx="38" fill={colors.headFill} stroke={colors.headStroke} strokeWidth="4" />
 
-                {/* Face Screen - Glowing Bright Mint/Cyan Screen (#D7F9FA) */}
-                <rect x="54" y="53" width="92" height="58" rx="28" fill="#B0D4B8" stroke="#A4C3A2" strokeWidth="1.5" />
-                <rect x="57" y="56" width="86" height="52" rx="25" fill="#D7F9FA" />
+                {/* Face Screen */}
+                <rect x="54" y="53" width="92" height="58" rx="28" fill={colors.screenBorder} stroke={colors.headStroke} strokeWidth="1.5" />
+                <rect x="57" y="56" width="86" height="52" rx="25" fill={colors.screenFill} />
 
-                {/* Cute Eyes (#16231D) */}
-                <path d="M76 76C76 70 85 70 85 76" stroke="#16231D" strokeWidth="5" strokeLinecap="round" />
-                <path d="M115 76C115 70 124 70 124 76" stroke="#16231D" strokeWidth="5" strokeLinecap="round" />
+                {/* Eyes */}
+                <path d="M76 76C76 70 85 70 85 76" stroke={colors.eyeColor} strokeWidth="5" strokeLinecap="round" />
+                <path d="M115 76C115 70 124 70 124 76" stroke={colors.eyeColor} strokeWidth="5" strokeLinecap="round" />
 
                 {/* Smile */}
-                <path d="M94 88C97 92 103 92 106 88" stroke="#16231D" strokeWidth="3.5" strokeLinecap="round" />
+                <path d="M94 88C97 92 103 92 106 88" stroke={colors.smileColor} strokeWidth="3.5" strokeLinecap="round" />
 
                 {/* Blush Cheeks */}
-                <circle cx="70" cy="84" r="5" fill="#A4C3A2" opacity="0.75" />
-                <circle cx="130" cy="84" r="5" fill="#A4C3A2" opacity="0.75" />
+                <circle cx="70" cy="84" r="5" fill={colors.cheekColor} opacity="0.75" />
+                <circle cx="130" cy="84" r="5" fill={colors.cheekColor} opacity="0.75" />
 
                 {/* Neck Connector */}
-                <rect x="88" y="118" width="24" height="10" rx="4" fill="#A4C3A2" stroke="#5D7B6F" strokeWidth="2" />
+                <rect x="88" y="118" width="24" height="10" rx="4" fill={colors.neckFill} stroke={colors.neckStroke} strokeWidth="2" />
 
-                {/* Robot Arms (Left & Right) */}
-                <path d="M54 134C42 142 40 160 50 168C56 172 64 166 62 156" fill="#F9F9F7" stroke="#A4C3A2" strokeWidth="3.5" strokeLinecap="round" />
-                <path d="M146 134C158 142 160 160 150 168C144 172 136 166 138 156" fill="#F9F9F7" stroke="#A4C3A2" strokeWidth="3.5" strokeLinecap="round" />
+                {/* Robot Arms */}
+                <path d="M54 134C42 142 40 160 50 168C56 172 64 166 62 156" fill={colors.armFill} stroke={colors.armStroke} strokeWidth="3.5" strokeLinecap="round" />
+                <path d="M146 134C158 142 160 160 150 168C144 172 136 166 138 156" fill={colors.armFill} stroke={colors.armStroke} strokeWidth="3.5" strokeLinecap="round" />
 
-                {/* Body Torso - Bright White-Cream (#F9F9F7) */}
-                <rect x="62" y="126" width="76" height="50" rx="22" fill="#F9F9F7" stroke="#A4C3A2" strokeWidth="4" />
+                {/* Body Torso */}
+                <rect x="62" y="126" width="76" height="50" rx="22" fill={colors.bodyFill} stroke={colors.bodyStroke} strokeWidth="4" />
 
                 {/* Glowing Energy Core Orb on Chest */}
-                <circle cx="100" cy="151" r="14" fill="url(#coreGradQuizLoader)" stroke="#A4C3A2" strokeWidth="2" />
-                <circle cx="100" cy="151" r="7" fill="#F9F9F7" opacity="0.9" />
+                <circle cx="100" cy="151" r="14" fill="url(#coreGradQuizLoaderOverlay)" stroke={colors.bodyStroke} strokeWidth="2" />
+                <circle cx="100" cy="151" r="7" fill={colors.headFill} opacity="0.9" />
 
                 {/* Core Gradient */}
                 <defs>
-                  <radialGradient id="coreGradQuizLoader" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#D7F9FA" />
-                    <stop offset="60%" stopColor="#A4C3A2" />
-                    <stop offset="100%" stopColor="#5D7B6F" />
+                  <radialGradient id="coreGradQuizLoaderOverlay" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor={colors.coreGradStop1} />
+                    <stop offset="60%" stopColor={colors.coreGradStop2} />
+                    <stop offset="100%" stopColor={colors.coreGradStop3} />
                   </radialGradient>
                 </defs>
               </svg>
@@ -315,19 +326,19 @@ export function QuizLoadingOverlay({
 
           {/* Left Stats Indicator */}
           <div className="absolute left-[-60px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-end space-y-1 text-right">
-            <span className="text-[10px] font-black uppercase text-[#A4C3A2] tracking-wider">PREPARING</span>
-            <span className="text-2xl font-black text-white font-mono">{pct}%</span>
+            <span className={`text-[10px] font-black uppercase ${colors.statsTitle} tracking-wider`}>PREPARING</span>
+            <span className={`text-2xl font-black ${colors.percentageText} font-mono`}>{pct}%</span>
             <div className="flex gap-1">
-              <span className="w-1.5 h-3 bg-[#A4C3A2] rounded-xs animate-pulse" />
-              <span className="w-1.5 h-3 bg-[#A4C3A2]/60 rounded-xs" />
-              <span className="w-1.5 h-3 bg-[#A4C3A2]/30 rounded-xs" />
+              <span className={`w-1.5 h-3 ${colors.dotColor} rounded-xs animate-pulse`} />
+              <span className={`w-1.5 h-3 ${colors.dotColor}/60 rounded-xs`} />
+              <span className={`w-1.5 h-3 ${colors.dotColor}/30 rounded-xs`} />
             </div>
           </div>
 
           {/* Right Stats Indicator */}
           <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-start space-y-1 text-left">
-            <span className="text-[10px] font-black uppercase text-[#B0D4B8] tracking-wider">GENERATING...</span>
-            <span className="text-[11px] font-bold text-[#EAE7D6]/80 max-w-[100px] leading-tight">LOADING QUESTIONS PLEASE WAIT</span>
+            <span className={`text-[10px] font-black uppercase ${colors.statsTitle} tracking-wider`}>GENERATING...</span>
+            <span className={`text-[11px] font-bold ${colors.subText} max-w-[100px] leading-tight`}>LOADING QUESTIONS PLEASE WAIT</span>
           </div>
         </div>
 
@@ -335,14 +346,14 @@ export function QuizLoadingOverlay({
         <div className="relative z-10 w-full max-w-xl space-y-5 px-2">
           {/* Progress Bar & Percentage */}
           <div className="flex items-center gap-4">
-            <div className="flex-1 h-3.5 bg-[#1E2E26] rounded-full p-0.5 border border-[#A4C3A2]/30 overflow-hidden shadow-[inset_0_0_8px_rgba(0,0,0,0.8)]">
+            <div className={`flex-1 h-3.5 ${colors.progressTrackBg} rounded-full p-0.5 overflow-hidden shadow-[inset_0_0_8px_rgba(0,0,0,0.8)]`}>
               <motion.div
-                className="h-full bg-gradient-to-r from-[#5D7B6F] via-[#A4C3A2] to-[#B0D4B8] rounded-full shadow-[0_0_12px_rgba(164,195,162,0.9)]"
+                className={`h-full ${colors.progressFillBg} rounded-full shadow-md`}
                 style={{ width: `${pct}%` }}
                 transition={{ ease: 'easeOut', duration: 0.2 }}
               />
             </div>
-            <span className="text-xl font-black text-[#A4C3A2] font-mono tracking-wider w-14 text-right">
+            <span className={`text-xl font-black ${colors.percentageText} font-mono tracking-wider w-14 text-right`}>
               {pct}%
             </span>
           </div>
@@ -350,28 +361,28 @@ export function QuizLoadingOverlay({
           {/* Milestone Badges */}
           <div className="grid grid-cols-4 gap-2 pt-1 text-center">
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
-              pct >= 25 ? 'bg-[#1E2E26] border-[#A4C3A2]/50 text-[#A4C3A2]' : 'bg-[#0F1814]/60 border-slate-800 text-slate-600'
+              pct >= 25 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <ShieldCheck className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">SECURE</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
-              pct >= 50 ? 'bg-[#1E2E26] border-[#A4C3A2]/50 text-[#A4C3A2]' : 'bg-[#0F1814]/60 border-slate-800 text-slate-600'
+              pct >= 50 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Cpu className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">PROCESSING</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
-              pct >= 75 ? 'bg-[#1E2E26] border-[#A4C3A2]/50 text-[#A4C3A2]' : 'bg-[#0F1814]/60 border-slate-800 text-slate-600'
+              pct >= 75 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Database className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">LOAD QUESTIONS</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
-              pct >= 95 ? 'bg-[#1E2E26] border-[#A4C3A2]/50 text-[#A4C3A2]' : 'bg-[#0F1814]/60 border-slate-800 text-slate-600'
+              pct >= 95 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <CheckCircle2 className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">READY TO START</span>

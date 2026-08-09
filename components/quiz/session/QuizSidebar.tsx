@@ -74,100 +74,16 @@ const QuizSidebar = React.memo(function QuizSidebar({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentIndex, totalQuestions, onNavigate, options.length, focusedOption, isSubmitted])
 
-  // Reset focused option when question changes
   useEffect(() => {
     setFocusedOption(null)
   }, [currentIndex])
 
-  if (!enableAnimation) {
-    return (
-      <aside className="w-[200px] shrink-0 border-r border-[#d4d4d4] bg-[#fafafa] sm:w-[230px]">
-        <div className="quiz-scroll flex h-full flex-col overflow-y-auto">
-          <div className="p-3 sm:p-4">
-            <h3 className="mb-2 text-sm font-bold text-[#171717]">Chọn đáp án</h3>
-            <div className="space-y-1">
-              {options.map((option, idx) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={isSubmitted}
-                  onClick={() => onSelectOption(idx)}
-                  className={cn(
-                    'flex w-full items-center gap-2 border px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60',
-                    selectedOptions.includes(idx)
-                      ? 'border-[#5D7B6F] bg-[#5D7B6F]/10 font-semibold text-[#3d5c50]'
-                      : 'border-[#d4d4d4] bg-white text-[#404040] hover:border-[#a3a3a3]',
-                    focusedOption === idx && !isSubmitted && 'ring-1 ring-[#5D7B6F]'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center border text-[11px] font-bold',
-                      selectedOptions.includes(idx)
-                        ? 'border-[#5D7B6F] bg-[#5D7B6F] text-white'
-                        : 'border-[#a3a3a3] bg-white text-[#525252]'
-                    )}
-                  >
-                    {option}
-                  </span>
-                  {selectedOptions.includes(idx) && <span className="text-xs">Đã chọn</span>}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onNavigate(currentIndex - 1)}
-                disabled={currentIndex === 0}
-                className="h-9 rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-[#404040] hover:bg-[#f5f5f5]"
-                title="Câu trước (←)"
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" /> Trước
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onNavigate(currentIndex + 1)}
-                disabled={currentIndex === totalQuestions - 1}
-                className="h-9 rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-[#404040] hover:bg-[#f5f5f5]"
-                title="Câu sau (→)"
-              >
-                Sau <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-auto border-t border-[#d4d4d4] p-3 sm:p-4 space-y-2">
-            <p className="text-xs font-semibold text-[#525252]">
-              {answeredCount}/{totalQuestions} câu đã trả lời
-            </p>
-            <Button
-              type="button"
-              onClick={onSubmit}
-              disabled={isPending}
-              className="h-10 w-full rounded-none bg-[#5D7B6F] text-sm font-bold text-white hover:bg-[#4a6358]"
-            >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Nộp bài'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onExit}
-              className="h-9 w-full rounded-none border-[#d4d4d4] bg-white text-xs font-semibold text-red-600 hover:bg-red-50"
-            >
-              Thoát bài thi
-            </Button>
-          </div>
-        </div>
-      </aside>
-    )
-  }
-
-  // Modern Animated Sidebar Mode
+  // Modern Sidebar View (Supports both animated and static modes)
   return (
-    <aside className="w-[240px] shrink-0 border-r border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sm:w-[270px] flex flex-col z-10">
+    <aside className={cn(
+      "w-[240px] shrink-0 border-r border-border bg-card/95 backdrop-blur-md sm:w-[270px] flex flex-col z-10 text-card-foreground",
+      !enableAnimation && "backdrop-blur-none bg-card"
+    )}>
       <div className="quiz-scroll flex h-full flex-col overflow-y-auto p-4 space-y-5">
         
         {/* Navigation Buttons */}
@@ -177,7 +93,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             variant="outline"
             onClick={() => onNavigate(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs font-bold shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Câu trước (←)"
           >
             <ChevronLeft className="mr-1 h-4 w-4 text-primary" /> Trước
@@ -187,7 +103,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             variant="outline"
             onClick={() => onNavigate(currentIndex + 1)}
             disabled={currentIndex === totalQuestions - 1}
-            className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs font-bold shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Câu sau (→)"
           >
             Sau <ChevronRight className="ml-1 h-4 w-4 text-primary" />
@@ -195,12 +111,12 @@ const QuizSidebar = React.memo(function QuizSidebar({
         </div>
 
         {/* Question Grid Matrix (Interactive Navigator) */}
-        <div className="flex-1 min-h-0 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col">
+        <div className="flex-1 min-h-0 bg-muted/50 p-3 rounded-2xl border border-border flex flex-col">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Ma trận câu hỏi
             </h4>
-            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="text-[11px] font-black text-primary">
               {answeredCount}/{totalQuestions} câu
             </span>
           </div>
@@ -217,11 +133,11 @@ const QuizSidebar = React.memo(function QuizSidebar({
                     type="button"
                     onClick={() => onNavigate(i)}
                     className={cn(
-                      'h-7 rounded-lg font-bold text-[11px] flex items-center justify-center transition-all duration-200 relative',
+                      'h-7 rounded-lg font-bold text-[11px] flex items-center justify-center transition-all duration-200 relative cursor-pointer',
                       isAnswered
-                        ? 'bg-emerald-500 text-white shadow-xs hover:bg-emerald-600'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-400',
-                      isCurrent && 'ring-2 ring-primary ring-offset-1 dark:ring-offset-slate-900 font-extrabold z-10 scale-105'
+                        ? 'bg-primary text-primary-foreground font-black shadow-2xs'
+                        : 'bg-card text-card-foreground border border-border hover:border-primary/50 hover:bg-muted',
+                      isCurrent && 'ring-2 ring-primary ring-offset-1 ring-offset-card font-extrabold z-10 scale-105'
                     )}
 
                   >
@@ -239,7 +155,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             type="button"
             onClick={onSubmit}
             disabled={isPending}
-            className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-sm shadow-md transition-all cursor-pointer active:scale-98"
           >
             {isPending ? (
               <span className="flex items-center gap-2">
@@ -254,12 +170,11 @@ const QuizSidebar = React.memo(function QuizSidebar({
             type="button"
             variant="outline"
             onClick={onExit}
-            className="w-full h-10 rounded-xl border-2 border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 shadow-xs transition-all"
+            className="w-full h-10 rounded-xl border border-border bg-card text-destructive font-bold text-xs hover:bg-destructive/10 shadow-2xs transition-all cursor-pointer"
           >
             Tạm dừng & Thoát
           </Button>
         </div>
-
       </div>
     </aside>
   )

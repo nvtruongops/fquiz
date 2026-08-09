@@ -41,23 +41,23 @@ export function QuestionEditorCard({
 }: QuestionEditorCardProps) {
   return (
     <Card id={`q-card-${index}`} className={cn(
-      "bg-white border-[#A4C3A2] shadow-md group transition-all duration-300",
-      error ? "border-red-500 ring-1 ring-red-100" : "hover:shadow-lg"
+      "bg-card border-border shadow-xs group transition-all duration-300",
+      error ? "border-destructive ring-1 ring-destructive/20" : "hover:shadow-md"
     )}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#5D7B6F] flex items-center justify-center text-white font-bold shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-md">
               {index + 1}
             </div>
             {isQuestionBankMatch && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-full border border-blue-100 animate-pulse">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 animate-pulse">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Đã có trong ngân hàng</span>
               </div>
             )}
             {error && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-600 rounded-full border border-red-100">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-destructive/10 text-destructive rounded-full border border-destructive/20">
                 <AlertCircle className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">{error.message}</span>
               </div>
@@ -68,7 +68,7 @@ export function QuestionEditorCard({
             variant="ghost"
             size="icon"
             onClick={() => removeQuestion(index)}
-            className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
           >
             <Trash2 className="w-5 h-5" />
           </Button>
@@ -78,17 +78,17 @@ export function QuestionEditorCard({
           {/* Question Text & Image */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1 space-y-2">
-              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Nội dung câu hỏi</label>
+              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nội dung câu hỏi</label>
               <Textarea
                 id={`question-text-${index}`}
                 placeholder="Nhập câu hỏi tại đây..."
                 value={question.text}
                 onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                className="min-h-[120px] rounded-xl border-[#A4C3A2] focus:ring-[#5D7B6F] text-base"
+                className="min-h-[120px] rounded-xl border-border focus:ring-primary text-base bg-background text-foreground"
               />
             </div>
             <div className="w-full md:w-[240px] shrink-0">
-              <span className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Hình ảnh minh họa</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Hình ảnh minh họa</span>
               <ImageUpload
                 value={question.image_url}
                 onChange={(url) => updateQuestion(index, 'image_url', url)}
@@ -100,8 +100,8 @@ export function QuestionEditorCard({
           {/* Options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60">Các lựa chọn trả lời</span>
-              <span className="text-[10px] font-bold text-gray-400">Chọn tích xanh cho đáp án đúng (có thể chọn nhiều)</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Các lựa chọn trả lời</span>
+              <span className="text-[10px] font-bold text-muted-foreground">Chọn tích xanh cho đáp án đúng (có thể chọn nhiều)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {question.options.map((option, oi) => (
@@ -109,14 +109,14 @@ export function QuestionEditorCard({
                   <div className={cn(
                     "flex items-center gap-2 p-1.5 rounded-xl border-2 transition-all",
                     question.correct_answers.includes(oi) 
-                      ? "border-[#5D7B6F] bg-[#5D7B6F]/5" 
-                      : "border-gray-100 bg-gray-50"
+                      ? "border-primary bg-primary/10" 
+                      : "border-border bg-card"
                   )}>
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0",
                       question.correct_answers.includes(oi)
-                        ? "bg-[#5D7B6F] text-white"
-                        : "bg-white text-gray-400 border border-gray-200"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground border border-border"
                     )}>
                       {OPTION_LABELS[oi]}
                     </div>
@@ -124,7 +124,7 @@ export function QuestionEditorCard({
                       value={option}
                       onChange={(e) => updateOption(index, oi, e.target.value)}
                       placeholder={`Lựa chọn ${OPTION_LABELS[oi]}...`}
-                      className="border-none bg-transparent focus-visible:ring-0 text-sm py-2 min-h-[40px] resize-none overflow-hidden"
+                      className="border-none bg-transparent focus-visible:ring-0 text-sm py-2 min-h-[40px] resize-none overflow-hidden text-foreground"
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
@@ -136,10 +136,10 @@ export function QuestionEditorCard({
                         type="button"
                         onClick={() => toggleCorrect(index, oi)}
                         className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                          "w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer",
                           question.correct_answers.includes(oi)
-                            ? "text-[#5D7B6F] bg-[#5D7B6F]/10"
-                            : "text-gray-300 hover:text-[#5D7B6F] hover:bg-white"
+                            ? "text-primary bg-primary/15"
+                            : "text-muted-foreground hover:text-primary hover:bg-muted"
                         )}
                       >
                         <CheckCircle2 className="w-5 h-5" />
@@ -147,7 +147,7 @@ export function QuestionEditorCard({
                       <button
                         type="button"
                         onClick={() => removeOption(index, oi)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-white transition-all opacity-0 group-hover/opt:opacity-100"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover/opt:opacity-100 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -159,7 +159,7 @@ export function QuestionEditorCard({
                 <button
                   type="button"
                   onClick={() => addOption(index)}
-                  className="h-14 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-[#A4C3A2] hover:text-[#5D7B6F] hover:bg-[#A4C3A2]/5 flex items-center justify-center gap-2 transition-all"
+                  className="h-14 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm font-bold">Thêm lựa chọn</span>
@@ -169,14 +169,14 @@ export function QuestionEditorCard({
           </div>
 
           {/* Explanation */}
-          <div className="pt-4 border-t border-gray-100">
-            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-[#5D7B6F]/60 mb-2 block">Giải thích đáp án</label>
+          <div className="pt-4 border-t border-border">
+            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Giải thích đáp án</label>
             <Textarea
               id={`question-explanation-${index}`}
               placeholder="Tại sao đáp án này lại đúng? Giải thích giúp người học hiểu rõ hơn..."
               value={question.explanation}
               onChange={(e) => updateQuestion(index, 'explanation', e.target.value)}
-              className="rounded-xl border-[#A4C3A2] min-h-[80px] focus:ring-[#5D7B6F] bg-gray-50/50"
+              className="rounded-xl border-border min-h-[80px] focus:ring-primary bg-card text-foreground"
             />
           </div>
         </div>
