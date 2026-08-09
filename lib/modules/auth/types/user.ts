@@ -26,6 +26,7 @@ export interface IUser {
   token_version?: number
   google_id?: string | null
   pinned_categories?: string[]
+  pinned_quizzes?: string[]
   deletion_requested_at?: Date | null
   deletion_scheduled_for?: Date | null
   deletion_token?: string | null
