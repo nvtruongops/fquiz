@@ -18,6 +18,7 @@ interface FlashcardSessionData {
     mode: 'flashcard'
     status: 'active' | 'completed'
     current_question_index: number
+    user_answers?: Array<{ question_index: number; is_correct: boolean }>
     flashcard_stats?: {
       total_cards: number
       cards_known: number
@@ -234,6 +235,12 @@ export function useFlashcardSessionState(sessionId: string, quizId: string) {
     }
   }
 
+  const userAnswers = session?.user_answers || []
+  const currentAnswer = userAnswers.find((a: any) => a.question_index === actualIndex)
+  const taggedStatus: 'known' | 'unknown' | null = currentAnswer
+    ? (currentAnswer.is_correct ? 'known' : 'unknown')
+    : null
+
   return {
     session,
     question,
@@ -250,6 +257,7 @@ export function useFlashcardSessionState(sessionId: string, quizId: string) {
     enableAnimation,
     setEnableAnimation,
     actualIndex,
+    taggedStatus,
     handleBack,
     handleForward,
   }

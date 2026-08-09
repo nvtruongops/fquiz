@@ -23,13 +23,29 @@ export default function QuizSessionMobilePage() {
           <p className="mb-6 text-sm text-gray-600">
             {(ctrl.initialError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
           </p>
-          <Button
-            type="button"
-            onClick={() => ctrl.router.push(`/quiz/${ctrl.resolvedQuizId}`)}
-            className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358]"
-          >
-            Quay lại
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  ctrl.router.back()
+                } else {
+                  ctrl.router.push('/dashboard')
+                }
+              }}
+              className="w-full py-6 font-bold border-gray-300 text-gray-700"
+            >
+              Quay lại
+            </Button>
+            <Button
+              type="button"
+              onClick={() => ctrl.router.push('/dashboard')}
+              className="w-full bg-[#5D7B6F] py-6 text-white hover:bg-[#4a6358] font-black"
+            >
+              Về Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -265,7 +281,17 @@ export default function QuizSessionMobilePage() {
 
       {/* Navigation Footer */}
       <footer className="sticky bottom-0 z-10 border-t-2 border-gray-200 bg-white p-3 shadow-lg">
-        <div className={cn("flex items-center gap-2", ctrl.isRightHanded && "flex-row-reverse")}>
+        <div className="flex items-center gap-2">
+          {ctrl.isRightHanded && (
+            <Button
+              type="button"
+              onClick={ctrl.handleSubmit}
+              className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold text-white hover:bg-[#4a6358] shadow-md cursor-pointer"
+            >
+              <span>Nộp bài</span>
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="outline"
@@ -279,14 +305,6 @@ export default function QuizSessionMobilePage() {
 
           <Button
             type="button"
-            onClick={ctrl.handleSubmit}
-            className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold text-white hover:bg-[#4a6358] shadow-md cursor-pointer"
-          >
-            <span>Nộp bài</span>
-          </Button>
-
-          <Button
-            type="button"
             variant="outline"
             disabled={effectiveIndex >= effectiveTotal - 1}
             onClick={() => ctrl.handleNavigate(effectiveIndex + 1)}
@@ -295,6 +313,16 @@ export default function QuizSessionMobilePage() {
             <span>Câu sau</span>
             <ChevronRight className="ml-1 h-5 w-5" />
           </Button>
+
+          {!ctrl.isRightHanded && (
+            <Button
+              type="button"
+              onClick={ctrl.handleSubmit}
+              className="h-12 flex-1 rounded-xl bg-[#5D7B6F] font-bold text-white hover:bg-[#4a6358] shadow-md cursor-pointer"
+            >
+              <span>Nộp bài</span>
+            </Button>
+          )}
         </div>
       </footer>
 

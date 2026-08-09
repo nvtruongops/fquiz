@@ -190,15 +190,40 @@ function DesktopSessionContent({
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
 
   if (isPreloadError || isInitialError) {
+    const errorMsg = (initialError as any)?.message || 'Không thể tải dữ liệu phòng thi.'
     return (
-      <div className="flex h-screen items-center justify-center bg-[#f3f3f3] font-sans">
-        <div className="max-w-sm border-2 border-[#101010] bg-white p-6 text-center">
-          <XCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
-          <h2 className="text-[26px] font-bold text-[#111111]">Lỗi phòng thi</h2>
-          <p className="mt-2 text-[16px] text-[#444444]">
-            {(initialError as any)?.message || 'Không thể tải dữ liệu'}
+      <div className="flex min-h-screen items-center justify-center bg-background p-4 font-sans">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <XCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
+          <h2 className="mb-2 text-xl font-black uppercase tracking-tight text-foreground">
+            Lỗi phòng thi
+          </h2>
+          <p className="mb-6 text-sm font-medium text-muted-foreground">
+            {errorMsg}
           </p>
-          <Button type="button" onClick={() => router.back()} className="mt-5 rounded-none border-2 border-[#101010] bg-[#efefef] text-[18px] font-semibold text-[#111111] hover:bg-white">Quay lại</Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  router.back()
+                } else {
+                  router.push('/dashboard')
+                }
+              }}
+              className="h-11 rounded-xl border-border text-xs font-bold"
+            >
+              Quay lại
+            </Button>
+            <Button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              className="h-11 rounded-xl bg-primary text-primary-foreground text-xs font-black"
+            >
+              Về Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     )

@@ -30,14 +30,12 @@ export default function FlashcardSessionPage() {
   const resolvedQuizId = quizId ?? ''
   const resolvedSessionId = sessionId ?? ''
 
-  // Check mobile FIRST before calling any hooks
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.innerWidth < 768
-  })
+  const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
   
-  // Handle responsive check
+  // Handle responsive check after mount to prevent SSR hydration mismatch
   useEffect(() => {
+    setMounted(true)
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -61,7 +59,16 @@ export default function FlashcardSessionPage() {
     )
   }
 
-  // Early return for mobile - prevents desktop hooks from running
+  // Prevent hydration mismatch by waiting for client mount
+  if (!mounted) {
+    return (
+      <div className="h-[100dvh] flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Responsive rendering after client mount
   if (isMobile) {
     return <MobileFlashcardSessionPage />
   }
@@ -87,6 +94,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
     enableAnimation,
     setEnableAnimation,
     actualIndex,
+    taggedStatus,
     handleBack,
     handleForward,
   } = useFlashcardSessionState(sessionId, quizId)
@@ -182,49 +190,30 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Ignore if typing in an input or text area
       if (
         e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        e.target instanceof HTMLTextAreaElement ||
+        isSubmitting ||
+        !question
       ) {
         return
       }
 
-      if (isSubmitting || !question) {
-        return
+      const isSpace = e.key === ' ' || e.code === 'Space'
+      const isLeft = e.key === '1' || e.key === 'ArrowLeft'
+      const isRight = e.key === '2' || e.key === 'ArrowRight'
+
+      if (!isSpace && !isLeft && !isRight) return
+
+      e.preventDefault()
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
       }
 
-      // Space = flip
-      if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault() // Prevent scrolling & default focus ring/button activation
-        
-        // Remove focus from any focused element to remove black outline
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-
-        if (flashcardRef.current) {
-          flashcardRef.current.flip()
-        }
-        return
-      }
-      // 1 or ArrowLeft = doesn't know
-      if (e.key === '1' || e.key === 'ArrowLeft') {
-        e.preventDefault()
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-        handleAnswer(false)
-        return
-      }
-      // 2 or ArrowRight = knows
-      if (e.key === '2' || e.key === 'ArrowRight') {
-        e.preventDefault()
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-        handleAnswer(true)
-        return
+      if (isSpace) {
+        flashcardRef.current?.flip()
+      } else {
+        handleAnswer(isRight)
       }
     }
 
@@ -288,7 +277,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
-      {/* Compact Header Card */}
+      {/* Header Card (Top on PC/Desktop) */}
       <div role="none" className="container mx-auto px-4 mb-2 md:mb-4 flex-none" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <Card className="p-3 shadow-md">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 relative">
@@ -414,6 +403,7 @@ function DesktopFlashcardSession({ quizId, sessionId }: { quizId: string; sessio
             isLoading={isSubmitting}
             enableAnimation={enableAnimation}
             enableExplanation={enableExplanation}
+            taggedStatus={taggedStatus}
           />
         </div>
       </div>

@@ -29,28 +29,37 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-7 sm:space-y-8 font-sans text-foreground pb-10 p-4 sm:p-6 md:p-8">
+    <div className="w-full max-w-[1400px] mx-auto space-y-6 font-sans text-foreground pb-10 p-4 sm:p-6 md:p-8">
       <GsapStaggerContainer selector=".dash-section" stagger={0.08} y={16}>
-        {/* 1. Header Greeting Hero */}
-        <div className="dash-section">
-          <DashboardHeader
-            user={user}
-            userInitial={userInitial}
-            isDevOrAdmin={isDevOrAdmin}
-            isRefetching={isRefetching}
-            onRefetch={refetch}
-          />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Main Column: Header, Pinned Categories, Learning Studio Grid */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* 1. Header Greeting Hero */}
+            <div className="dash-section">
+              <DashboardHeader
+                user={user}
+                userInitial={userInitial}
+                isDevOrAdmin={isDevOrAdmin}
+                isRefetching={isRefetching}
+                onRefetch={refetch}
+              />
+            </div>
 
-        {/* 2. Pinned Categories — Quick Access */}
-        <div className="dash-section py-2 sm:py-3">
-          <PinnedCategoriesSection categories={pinnedCategories} />
-        </div>
+            {/* 2. Pinned Categories — Quick Access */}
+            <div className="dash-section">
+              <PinnedCategoriesSection categories={pinnedCategories} />
+            </div>
 
-        {/* 3. Quick Action Learning Hub & Recent Activities Grid */}
-        <div className="dash-section grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
-          <LearningStudioGrid isDevOrAdmin={isDevOrAdmin} />
-          <RecentActivitiesFeed recentActivities={recentActivities} />
+            {/* 3. Learning Studio Grid */}
+            <div className="dash-section">
+              <LearningStudioGrid isDevOrAdmin={isDevOrAdmin} />
+            </div>
+          </div>
+
+          {/* Right Sidebar Column: Recent Activities Feed */}
+          <div className="lg:col-span-4 dash-section h-full sticky top-6">
+            <RecentActivitiesFeed recentActivities={recentActivities} />
+          </div>
         </div>
       </GsapStaggerContainer>
     </div>

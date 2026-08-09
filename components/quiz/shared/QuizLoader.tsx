@@ -234,10 +234,6 @@ export function QuizLoadingOverlay({
 
         {/* Central Graphic Section (Mascot Robot + Circular Progress Ring) */}
         <div className="relative z-10 flex items-center justify-center w-[340px] h-[340px] my-auto">
-          {/* Holographic Base Ring */}
-          <div className={`absolute bottom-2 w-64 h-16 ${colors.baseRingBg} rounded-full blur-md transform rotate-x-60`} />
-          <div className={`absolute bottom-4 w-48 h-10 ${colors.baseRingGlow} rounded-full blur-xs`} />
-
           {/* SVG Circular Progress Bar */}
           <svg className="w-[320px] h-[320px] transform -rotate-90">
             {/* Background Track Ring */}

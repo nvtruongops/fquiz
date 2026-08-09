@@ -71,7 +71,28 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   const data = await getResult(sessionId)
 
   if (!data) {
-    redirect(`/quiz/${quizId}/session/${sessionId}`)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <div className="max-w-md w-full p-8 text-center bg-card rounded-2xl border border-border shadow-xl">
+          <h2 className="text-xl font-extrabold text-foreground mb-2">Không tìm thấy kết quả</h2>
+          <p className="text-sm font-medium text-muted-foreground mb-6">
+            Kết quả làm bài không tồn tại, phiên làm bài đã bị xóa hoặc bạn không có quyền truy cập bài làm này.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/dashboard">
+              <Button variant="outline" className="w-full h-11 rounded-xl text-xs font-bold border-border">
+                Về Dashboard
+              </Button>
+            </Link>
+            <Link href="/history">
+              <Button className="w-full h-11 rounded-xl text-xs font-black bg-primary text-primary-foreground">
+                Xem Lịch sử
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (data.mode === 'flashcard' && data.flashcard_stats) {

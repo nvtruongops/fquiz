@@ -110,7 +110,19 @@ export const GET = withAuth(async (
     const activeSession = activeList[0]
 
     if (quizSessions.length === 0 && quiz) {
-      if (!activeSession) return NextResponse.json({ error: 'No sessions found for this quiz' }, { status: 404 })
+      if (!activeSession) {
+        return NextResponse.json({
+          _id: null,
+          quiz_id: quiz._id,
+          quiz_title: quiz.title,
+          attempts: [],
+          has_active_session: false,
+          active_session_id: null,
+          active_answered_count: 0,
+          active_total_count: 0,
+          active_started_at: null,
+        })
+      }
       return handleActivePath(quiz, activeSession, payload)
     }
 

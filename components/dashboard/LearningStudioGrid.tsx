@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Zap, Bot, Sparkles, BookMarked, Layers, MessageSquare, BrainCircuit } from 'lucide-react'
+import { ArrowRight, Compass, Zap, Bot, Sparkles, BookMarked, Layers, MessageSquare, BrainCircuit } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import gsap from 'gsap'
@@ -38,7 +38,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
   })
 
   return (
-    <div ref={gridRef} className="lg:col-span-8 space-y-4">
+    <div ref={gridRef} className="space-y-4">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" /> Không Gian Luyện Tập & Sáng Tạo
@@ -46,7 +46,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-        {/* Bento 1: Mix Quiz (Feature Hero Card - Spans 7 columns) */}
+        {/* Bento 1: Khám Phá Đề Thi (Feature Hero Card - Spans 7 columns) */}
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
@@ -56,16 +56,16 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs">
-                <Zap className="w-5 h-5" />
+                <Compass className="w-5 h-5 text-primary" />
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20 font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full">
-                HOT • Phản xạ nhanh
+                HOT • Khám phá đề thi
               </Badge>
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground tracking-tight">Ôn Tập Ngẫu Nhiên (Mix Quiz)</h3>
+              <h3 className="text-lg font-black text-foreground tracking-tight">Khám Phá Đề Thi & Ôn Tập</h3>
               <p className="text-xs text-muted-foreground leading-relaxed mt-1.5 font-medium">
-                Trộn ngẫu nhiên hàng ngàn câu hỏi từ nhiều môn học để rèn luyện phản xạ thi đấu thực chiến và kiểm tra kiến thức tổng hợp.
+                Khám phá hàng ngàn đề thi trắc nghiệm chất lượng cao từ nhiều môn học, làm bài thi thử hoặc ôn tập trộn ngẫu nhiên.
               </p>
             </div>
             <div className="flex items-center gap-2 pt-1">
@@ -77,9 +77,9 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
               </Badge>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover font-black text-xs h-10 rounded-xl mt-5 shadow-xs w-fit relative z-10">
-            <Link href="/explore?tab=mix">
-              Tạo đề ngẫu nhiên <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover font-black text-xs h-10 rounded-xl mt-5 shadow-xs w-fit relative z-10 cursor-pointer">
+            <Link href="/explore">
+              Khám phá ngay <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </Button>
         </div>

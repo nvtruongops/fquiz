@@ -193,7 +193,7 @@ export function QuizHistory({
         <div className="text-center py-8 text-muted-foreground space-y-2">
           <History className="w-8 h-8 mx-auto text-muted-foreground/50" />
           <p className="text-xs font-bold">Chưa có lịch sử làm bài cho bộ đề này.</p>
-          <p className="text-[11px] text-muted-foreground">Hãy nhấn "Bắt đầu làm bài" ở trên để thực hiện lần thi đầu tiên!</p>
+          <p className="text-[11px] text-muted-foreground">Hãy nhấn &quot;Bắt đầu làm bài&quot; ở trên để thực hiện lần thi đầu tiên!</p>
         </div>
       ) : (
         <div className="space-y-3">
