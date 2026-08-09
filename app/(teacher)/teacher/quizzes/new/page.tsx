@@ -23,8 +23,8 @@ export default function TeacherCreateQuizPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex items-center gap-2 text-slate-500 font-semibold">
-        <Loader2 className="w-5 h-5 animate-spin text-[#5D7B6F]" />
+      <div className="p-8 flex items-center gap-2 text-muted-foreground font-semibold">
+        <Loader2 className="w-5 h-5 animate-spin text-primary" />
         Đang tải danh mục môn học...
       </div>
     )

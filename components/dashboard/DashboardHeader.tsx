@@ -24,11 +24,11 @@ export const DashboardHeader = React.memo(function DashboardHeader({
   onRefetch,
 }: DashboardHeaderProps) {
   return (
-    <div className="relative overflow-hidden bg-card backdrop-blur-xl p-5 sm:p-6 rounded-[28px] border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-full w-full">
+    <div className="relative overflow-hidden bg-surface-card-elevated backdrop-blur-xl p-5 sm:p-6 rounded-[28px] border border-strong shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-full w-full">
       <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="flex items-start sm:items-center gap-4 relative z-10">
-        <Avatar className="h-14 w-14 ring-4 ring-primary/15 shrink-0 shadow-xs">
+        <Avatar className="h-14 w-14 ring-4 ring-ring-focus/30 shrink-0 shadow-xs">
           {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.name || 'User'} />}
           <AvatarFallback className="bg-primary text-primary-foreground font-black text-lg">
             {userInitial}
@@ -43,7 +43,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
               {isDevOrAdmin ? (user?.role === 'admin' ? 'Administrator' : 'Developer') : 'Student Member'}
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+          <p className="text-xs sm:text-sm text-text-secondary font-medium">
             Sẵn sàng cho các thử thách trắc nghiệm & bài học hôm nay cùng FQuiz!
           </p>
         </div>
@@ -54,7 +54,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
           onClick={onRefetch}
           variant="outline"
           size="sm"
-          className="h-10 w-10 p-0 rounded-2xl border-border text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
+          className="h-10 w-10 p-0 rounded-2xl border-subtle text-text-tertiary hover:text-foreground hover:bg-surface-inset cursor-pointer"
           title="Làm mới dữ liệu"
         >
           <RefreshCw className={cn('w-4 h-4', isRefetching && 'animate-spin text-primary')} />

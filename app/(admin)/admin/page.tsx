@@ -42,10 +42,10 @@ async function getDashboardData() {
 }
 
 const statCards = [
-  { key: 'categories', label: 'Mã môn', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { key: 'quizzes', label: 'Mã quiz', icon: FileQuestion, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { key: 'users', label: 'Học viên', icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { key: 'sessions', label: 'Lượt thi', icon: ClipboardList, color: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'categories', label: 'Mã môn', icon: Layers, color: 'text-success-fg', bg: 'bg-success-bg' },
+  { key: 'quizzes', label: 'Mã quiz', icon: FileQuestion, color: 'text-info-fg', bg: 'bg-info-bg' },
+  { key: 'users', label: 'Học viên', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+  { key: 'sessions', label: 'Lượt thi', icon: ClipboardList, color: 'text-warning-fg', bg: 'bg-warning-bg' },
 ] as const
 
 export default async function AdminDashboardPage() {
@@ -61,21 +61,21 @@ export default async function AdminDashboardPage() {
     <div className="p-8">
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#5D7B6F]">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Tổng quan hệ thống FQuiz</p>
+          <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tổng quan hệ thống FQuiz</p>
         </div>
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {statCards.map(({ key, label, icon: Icon, color, bg }) => (
-            <Card key={key} className="bg-white border-[#A4C3A2]/50 shadow-sm hover:shadow-md transition-shadow">
+            <Card key={key} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow text-card-foreground">
               <CardContent className="pt-5 pb-5 flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
                   <Icon className={`w-6 h-6 ${color}`} />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-gray-900">{counts[key]}</p>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">{label}</p>
+                  <p className="text-3xl font-bold text-card-foreground">{counts[key]}</p>
+                  <p className="text-xs font-medium text-muted-foreground mt-0.5">{label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -84,25 +84,25 @@ export default async function AdminDashboardPage() {
 
         {/* Quick Links */}
         <div className="flex flex-wrap gap-3">
-          <Button asChild className="bg-[#5D7B6F] hover:bg-[#4a6358]">
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Link href="/admin/categories">Quản lý Categories</Link>
           </Button>
-          <Button asChild className="bg-[#5D7B6F] hover:bg-[#4a6358]">
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Link href="/admin/quizzes">Quản lý Quizzes</Link>
           </Button>
-          <Button asChild className="bg-[#5D7B6F] hover:bg-[#4a6358]">
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Link href="/admin/users">Quản lý Học viên</Link>
           </Button>
-          <Button asChild variant="outline" className="border-[#5D7B6F] text-[#5D7B6F]">
+          <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
             <Link href="/admin/settings">Cài đặt</Link>
           </Button>
         </div>
 
         {/* Recent Users */}
-        <Card className="bg-white border-[#A4C3A2]/50 shadow-sm">
+        <Card className="bg-card border-border shadow-sm text-card-foreground">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <CardTitle className="text-[#5D7B6F] text-lg">Đăng ký gần đây</CardTitle>
-            <Button asChild variant="ghost" size="sm" className="text-[#5D7B6F]">
+            <CardTitle className="text-primary text-lg">Đăng ký gần đây</CardTitle>
+            <Button asChild variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
               <Link href="/admin/users" className="flex items-center gap-1">
                 Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -110,11 +110,11 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {recentUsers.length === 0 ? (
-              <p className="text-gray-500 text-sm">Chưa có học viên nào.</p>
+              <p className="text-muted-foreground text-sm">Chưa có học viên nào.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                  <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                     <tr>
                       <th className="text-left py-3 px-2 font-bold">Username</th>
                       <th className="text-left py-3 px-2 font-bold">Email</th>
@@ -123,25 +123,25 @@ export default async function AdminDashboardPage() {
                       <th className="text-right py-3 px-2 font-bold">Ngày tạo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-border">
                     {recentUsers.map((u) => (
-                      <tr key={String(u._id)} className="hover:bg-gray-50/50">
-                        <td className="py-3 px-2 font-medium text-gray-900">{u.username}</td>
-                        <td className="py-3 px-2 text-gray-500">{u.email}</td>
+                      <tr key={String(u._id)} className="hover:bg-muted/50">
+                        <td className="py-3 px-2 font-medium text-card-foreground">{u.username}</td>
+                        <td className="py-3 px-2 text-muted-foreground">{u.email}</td>
                         <td className="py-3 px-2">
                           <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
-                            u.role === 'admin' ? 'bg-[#A4C3A2]/20 text-[#5D7B6F]' : 'bg-gray-100 text-gray-600'
+                            u.role === 'admin' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                           }`}>
                             {u.role === 'admin' ? 'Admin' : 'Student'}
                           </span>
                         </td>
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${u.status !== 'banned' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                            <span className="text-xs text-gray-500">{u.status === 'banned' ? 'Banned' : 'Active'}</span>
+                            <div className={`w-2 h-2 rounded-full ${u.status !== 'banned' ? 'bg-success-fg' : 'bg-destructive'}`} />
+                            <span className="text-xs text-muted-foreground">{u.status === 'banned' ? 'Banned' : 'Active'}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-2 text-right text-gray-500">
+                        <td className="py-3 px-2 text-right text-muted-foreground">
                           {new Date(u.created_at).toLocaleDateString('vi-VN')}
                         </td>
                       </tr>

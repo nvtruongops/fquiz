@@ -244,45 +244,45 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12 sm:py-16 px-4 bg-white/60 backdrop-blur-2xl rounded-3xl border border-white/80 shadow-sm max-w-md mx-auto"
+          className="text-center py-12 sm:py-16 px-4 bg-card/60 backdrop-blur-2xl rounded-3xl border border-border shadow-sm max-w-md mx-auto"
         >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
             <Search className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
-          <h3 className="text-sm sm:text-base font-black text-slate-800 uppercase tracking-tight">Không tìm thấy môn học</h3>
-          <p className="text-xs font-semibold text-slate-400 mt-1">Hãy thử tìm từ khóa khác như &quot;DBS&quot; hoặc &quot;PRN&quot;.</p>
+          <h3 className="text-sm sm:text-base font-black text-card-foreground uppercase tracking-tight">Không tìm thấy môn học</h3>
+          <p className="text-xs font-semibold text-muted-foreground mt-1">Hãy thử tìm từ khóa khác như &quot;DBS&quot; hoặc &quot;PRN&quot;.</p>
         </motion.div>
       )}
 
       {/* Notification Prompt Modal */}
       <Dialog open={!!notifyPromptCat} onOpenChange={(open) => { if (!open) handleCloseModal() }}>
-        <DialogContent className="sm:max-w-md rounded-3xl border border-[#5D7B6F]/20 p-6 bg-white shadow-2xl">
+        <DialogContent className="sm:max-w-md rounded-3xl border border-border p-6 bg-card text-card-foreground shadow-2xl">
           <DialogHeader className="flex flex-col items-center text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-[#5D7B6F]/10 text-[#5D7B6F] flex items-center justify-center mb-1">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-1">
               <BellRing className="w-6 h-6" />
             </div>
-            <DialogTitle className="text-lg font-black text-slate-800">
+            <DialogTitle className="text-lg font-black text-card-foreground">
               Bật thông báo email cho môn {notifyPromptCat?.name}?
             </DialogTitle>
-            <DialogDescription asChild className="text-xs text-slate-500 font-medium">
+            <DialogDescription asChild className="text-xs text-muted-foreground font-medium">
               <div className="space-y-1.5 pt-1 text-center">
                 <p>
-                  Bạn vừa ghim môn học <strong className="text-slate-800 font-extrabold">{notifyPromptCat?.name}</strong>.
+                  Bạn vừa ghim môn học <strong className="text-card-foreground font-extrabold">{notifyPromptCat?.name}</strong>.
                 </p>
-                <p className="text-slate-600 font-semibold">
+                <p className="text-muted-foreground font-semibold">
                   Bạn có muốn nhận email thông báo tự động mỗi khi môn học này có quiz mới không?
                 </p>
               </div>
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-3 flex items-center space-x-2 border-t border-b border-slate-100 my-2">
+          <div className="py-3 flex items-center space-x-2 border-t border-b border-border my-2">
             <Checkbox
               id="dont-show-again"
               checked={dontShowAgain}
               onCheckedChange={(checked) => setDontShowAgain(!!checked)}
             />
-            <label htmlFor="dont-show-again" className="text-xs font-bold text-slate-600 cursor-pointer select-none">
+            <label htmlFor="dont-show-again" className="text-xs font-bold text-muted-foreground cursor-pointer select-none">
               Không hiển thị lại đối với danh mục này
             </label>
           </div>
@@ -291,7 +291,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
             <button
               type="button"
               onClick={handleCloseModal}
-              className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Để sau / Bỏ qua
             </button>
@@ -299,7 +299,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               type="button"
               onClick={handleEnableNotifications}
               disabled={enablingNotify}
-              className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl bg-[#5D7B6F] hover:bg-[#4A6359] text-white text-xs font-black shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               {enablingNotify ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
               Bật thông báo email

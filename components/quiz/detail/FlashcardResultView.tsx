@@ -58,7 +58,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
     hour: '2-digit', minute: '2-digit',
   })
 
-  const gradeColor = percentage >= 80 ? 'text-[#5D7B6F]' : percentage >= 50 ? 'text-blue-600' : 'text-amber-500'
+  const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
   const gradeLabel = percentage >= 80 ? 'Xuất sắc!' : percentage >= 50 ? 'Khá tốt!' : 'Cần ôn luyện thêm!'
 
   // Handle Reviewing Only Unknown Cards
@@ -133,7 +133,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   return (
     <div className="w-full max-w-full h-full flex flex-col gap-3 overflow-hidden relative">
       {/* Top Header Card Summary Toolbar */}
-      <div className="relative overflow-hidden rounded-2xl bg-card backdrop-blur-xl shadow-xs border border-border px-4 py-2.5 shrink-0">
+      <div className="relative overflow-hidden rounded-2xl bg-card backdrop-blur-xl shadow-2xs border border-border px-4 py-2.5 shrink-0">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3.5">
             <div className="flex items-baseline gap-1">
@@ -144,13 +144,13 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-wider">{gradeLabel}</p>
               <p className="text-[11px] font-bold text-muted-foreground">
-                Đã nhớ <strong className="text-emerald-400">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} thẻ · Cần ôn lại <strong className="text-destructive">{flashcard_stats.cards_unknown}</strong> thẻ · {completedDate}
+                Đã nhớ <strong className="text-success-fg">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} thẻ · Cần ôn lại <strong className="text-incorrect-fg">{flashcard_stats.cards_unknown}</strong> thẻ · {completedDate}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge className="bg-primary text-primary-foreground border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-xs">
+            <Badge className="bg-primary text-primary-foreground border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-2xs">
               Học Lật Thẻ (Flashcard)
             </Badge>
             {is_temp ? (
@@ -161,7 +161,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   type="button"
                   onClick={handleOnClickReview}
                   disabled={loadingUnknown || loadingAll}
-                  className="h-8 px-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[11px] uppercase tracking-wider shadow-xs transition-all active:scale-[0.98]"
+                  className="h-8 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95"
                 >
                   {loadingUnknown || loadingAll ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -172,12 +172,12 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                 </Button>
 
                 <Link href="/dashboard">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-foreground font-bold text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-[0.98]">
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95">
                     <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> Dashboard
                   </Button>
                 </Link>
                 <Link href="/history">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-foreground font-bold text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-[0.98]">
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95">
                     <BookOpen className="mr-1 h-3.5 w-3.5" /> Lịch sử
                   </Button>
                 </Link>
@@ -196,99 +196,13 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
             <p className="text-2xl sm:text-3xl font-black text-foreground">{flashcard_stats.total_cards}</p>
             <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">Tổng thẻ</p>
           </div>
-          <div className="text-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-            <p className="text-2xl sm:text-3xl font-black text-emerald-400">{flashcard_stats.cards_known}</p>
-            <p className="text-[10px] text-emerald-400 mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
+          <div className="text-center p-4 bg-success-bg rounded-2xl border border-success-border">
+            <p className="text-2xl sm:text-3xl font-black text-success-fg">{flashcard_stats.cards_known}</p>
+            <p className="text-[10px] text-success-fg mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
           </div>
-          <div className="text-center p-4 bg-destructive/10 rounded-2xl border border-destructive/20">
-            <p className="text-2xl sm:text-3xl font-black text-destructive">{flashcard_stats.cards_unknown}</p>
-            <p className="text-[10px] text-destructive mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
-          </div>
-        </div>
-      )}
-
-      {/* Review Options Modal */}
-      {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-card rounded-3xl p-6 shadow-2xl border border-border space-y-5 relative animate-in zoom-in-95">
-            <button
-              type="button"
-              onClick={() => setShowReviewModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[#5D7B6F]">
-                <RotateCcw className="w-5 h-5 text-rose-500" />
-                <h3 className="text-base font-black text-slate-900">Ôn tập bài Học Lật Thẻ</h3>
-              </div>
-              <p className="text-xs text-slate-600 font-medium leading-relaxed pt-1">
-                Với Quiz này ở chế độ <strong className="text-[#5D7B6F]">Học Lật Thẻ (Flashcard)</strong>, bạn vẫn còn <strong className="text-rose-600 font-bold">{flashcard_stats.cards_unknown}/{flashcard_stats.total_cards} câu chưa nhớ</strong>. Bạn có muốn học tiếp hay làm mới?
-              </p>
-            </div>
-
-            <div className="space-y-2.5 pt-1">
-              {/* Option 1: Review Only Unknown Cards */}
-              <button
-                type="button"
-                onClick={handleReviewUnknown}
-                disabled={loadingUnknown || loadingAll}
-                className="w-full text-left p-3.5 rounded-2xl border-2 border-rose-200 bg-rose-50/50 hover:bg-rose-50 hover:border-rose-300 transition-all flex items-center justify-between gap-3 group"
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-slate-900 text-xs group-hover:text-rose-700 transition-colors">
-                      Học tiếp (Ôn lại {flashcard_stats.cards_unknown} câu chưa nhớ)
-                    </span>
-                    <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[9px] font-bold px-1.5 py-0">
-                      Khuyên dùng
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Luyện tập tập trung các thẻ chưa ghi nhớ
-                  </p>
-                </div>
-                {loadingUnknown ? (
-                  <Loader2 className="w-4 h-4 text-rose-600 animate-spin shrink-0" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 text-rose-500 group-hover:rotate-180 transition-transform duration-500 shrink-0" />
-                )}
-              </button>
-
-              {/* Option 2: Review All Cards From Scratch */}
-              <button
-                type="button"
-                onClick={handleReviewAll}
-                disabled={loadingUnknown || loadingAll}
-                className="w-full text-left p-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center justify-between gap-3 group"
-              >
-                <div className="space-y-0.5">
-                  <span className="font-black text-slate-900 text-xs group-hover:text-[#5D7B6F] transition-colors">
-                    Làm mới (Bắt đầu lại tất cả {flashcard_stats.total_cards} câu)
-                  </span>
-                  <p className="text-[11px] text-slate-500">
-                    Bắt đầu lại bộ thẻ từ câu đầu tiên
-                  </p>
-                </div>
-                {loadingAll ? (
-                  <Loader2 className="w-4 h-4 text-[#5D7B6F] animate-spin shrink-0" />
-                ) : (
-                  <Layers className="w-4 h-4 text-slate-400 group-hover:text-[#5D7B6F] transition-colors shrink-0" />
-                )}
-              </button>
-            </div>
-
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => setShowReviewModal(false)}
-                className="text-xs font-bold text-slate-400 hover:text-slate-600"
-              >
-                Hủy bỏ
-              </button>
-            </div>
+          <div className="text-center p-4 bg-incorrect-bg rounded-2xl border border-incorrect-border">
+            <p className="text-2xl sm:text-3xl font-black text-incorrect-fg">{flashcard_stats.cards_unknown}</p>
+            <p className="text-[10px] text-incorrect-fg mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
           </div>
         </div>
       )}

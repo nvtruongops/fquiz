@@ -37,7 +37,7 @@ export const QuizSearchSortBar = React.memo(function QuizSearchSortBar(props: Qu
               }`}
             >
               <span>{tab.label}</span>
-              <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
+              <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
                 {countText}
               </span>
             </button>

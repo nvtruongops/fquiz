@@ -25,8 +25,8 @@ export default async function QuestionBankPage() {
       <div className="p-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ngân hàng Câu hỏi</h1>
-            <p className="text-gray-500 mt-2">
+            <h1 className="text-3xl font-bold text-card-foreground">Ngân hàng Câu hỏi</h1>
+            <p className="text-muted-foreground mt-2">
               Quản lý, phân tích và đồng bộ câu hỏi theo môn học
             </p>
           </div>

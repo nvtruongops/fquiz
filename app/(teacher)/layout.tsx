@@ -36,7 +36,7 @@ export default async function TeacherLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] flex">
+    <div className="min-h-screen bg-page-bg flex text-foreground">
       <TeacherSidebar user={teacherUser} />
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="p-6 md:p-8 max-w-7xl mx-auto animate-in fade-in duration-300">

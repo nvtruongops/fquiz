@@ -270,10 +270,10 @@ export function QuestionConflictModal({
           {hasDifferentAnswers && (
             <button
               onClick={() => setSelectedTab('different')}
-              className={`px-4 py-2 font-medium transition-colors ${
+              className={`px-4 py-2 font-medium transition-colors cursor-pointer ${
                 selectedTab === 'different'
-                  ? 'border-b-2 border-red-500 text-red-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-destructive text-destructive'
+                  : 'text-muted-foreground hover:text-card-foreground'
               }`}
             >
               <span className="flex items-center gap-2">
@@ -285,10 +285,10 @@ export function QuestionConflictModal({
           {hasSameAnswers && (
             <button
               onClick={() => setSelectedTab('same')}
-              className={`px-4 py-2 font-medium transition-colors ${
+              className={`px-4 py-2 font-medium transition-colors cursor-pointer ${
                 selectedTab === 'same'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-card-foreground'
               }`}
             >
               <span className="flex items-center gap-2">
@@ -315,11 +315,11 @@ export function QuestionConflictModal({
               {allChoices.map(({ questionIndex, text, choices, conflict }) => {
                 const selected = selections[questionIndex] || 'current'
                 return (
-                  <div key={questionIndex} className="border rounded-lg p-4 space-y-3">
+                  <div key={questionIndex} className="border border-border bg-card rounded-lg p-4 space-y-3 text-card-foreground">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="destructive">Câu {questionIndex + 1}</Badge>
                     </div>
-                    <p className="font-medium text-gray-900">{text}</p>
+                    <p className="font-medium text-card-foreground">{text}</p>
                     <div className="space-y-2">
                       {choices.map((choice) => {
                         const isSelected = (choice.id.startsWith('current') && selected === 'current') ||
@@ -328,33 +328,33 @@ export function QuestionConflictModal({
                           <button
                             key={choice.id}
                             onClick={() => handleSelect(questionIndex, choice.id.startsWith('current') ? 'current' : 'bank')}
-                            className={`w-full text-left rounded-lg border-2 p-3 transition-all ${
+                            className={`w-full text-left rounded-lg border-2 p-3 transition-all cursor-pointer ${
                               isSelected
                                 ? choice.id.startsWith('current')
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : 'border-green-500 bg-green-50'
-                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-success-border bg-success-bg'
+                                : 'border-border bg-card hover:bg-muted'
                             }`}
                           >
                             <div className="flex items-center gap-3">
                               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                 isSelected
                                   ? choice.id.startsWith('current')
-                                    ? 'border-blue-500'
-                                    : 'border-green-500'
-                                  : 'border-gray-300'
+                                    ? 'border-primary'
+                                    : 'border-success-border'
+                                  : 'border-border'
                               }`}>
                                 {isSelected && (
                                   <div className={`w-3 h-3 rounded-full ${
-                                    choice.id.startsWith('current') ? 'bg-blue-500' : 'bg-green-500'
+                                    choice.id.startsWith('current') ? 'bg-primary' : 'bg-success-fg'
                                   }`} />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-sm">{choice.label}</span>
+                                  <span className="font-medium text-sm text-card-foreground">{choice.label}</span>
                                   {choice.id.startsWith('bank-') && choice.quizzes.length > 0 && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-muted-foreground">
                                       mã: {choice.quizzes.slice(0, 3).join(', ')}{choice.quizzes.length > 3 ? `, +${choice.quizzes.length - 3}` : ''}
                                     </span>
                                   )}
@@ -363,8 +363,8 @@ export function QuestionConflictModal({
                                   {choice.correct_answer.map((i) => (
                                     <li
                                       key={i}
-                                      className={`text-xs text-gray-800 rounded px-2 py-1 leading-snug break-words ${
-                                        choice.id.startsWith('current') ? 'bg-blue-100/60' : 'bg-green-100/60'
+                                      className={`text-xs text-card-foreground rounded px-2 py-1 leading-snug break-words ${
+                                        choice.id.startsWith('current') ? 'bg-primary/20' : 'bg-success-bg'
                                       }`}
                                     >
                                       {String.fromCodePoint(65 + i)}. {choice.options[i] ?? ''}
@@ -394,16 +394,16 @@ export function QuestionConflictModal({
               </Alert>
 
               {conflicts.same_answer.map((conflict, idx) => (
-                <div key={idx} className="border rounded-lg p-4 space-y-2">
+                <div key={idx} className="border border-border bg-card rounded-lg p-4 space-y-2 text-card-foreground">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant="default">Câu {conflict.questionIndex + 1}</Badge>
                     {conflict.existingQuestion && (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         Đã dùng {conflict.existingQuestion.usage_count} lần
                       </span>
                     )}
                   </div>
-                  <p className="font-medium text-gray-900">{conflict.question.text}</p>
+                  <p className="font-medium text-card-foreground">{conflict.question.text}</p>
                   <div className="flex flex-wrap gap-1">
                     {conflict.existingQuestion?.used_in_quizzes.slice(0, 5).map((code) => (
                       <Badge key={code} variant="outline" className="text-[10px]">

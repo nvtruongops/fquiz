@@ -62,52 +62,52 @@ export function QuestionBankStatus() {
         <button
           onClick={() => setFilter(filter === 'not_migrated' ? 'all' : 'not_migrated')}
           className={cn(
-            "p-4 rounded-xl border-2 text-left transition-all",
+            "p-4 rounded-xl border-2 text-left transition-all cursor-pointer",
             filter === 'not_migrated'
-              ? "border-red-400 bg-red-50"
-              : "border-red-200 bg-white hover:bg-red-50"
+              ? "border-incorrect-border bg-incorrect-bg"
+              : "border-incorrect-border/50 bg-card hover:bg-incorrect-bg/50"
           )}
         >
           <div className="flex items-center gap-2 mb-1">
-            <XCircle className="w-5 h-5 text-red-500" />
-            <span className="text-sm font-bold text-red-700">Chưa migration</span>
+            <XCircle className="w-5 h-5 text-destructive" />
+            <span className="text-sm font-bold text-destructive">Chưa migration</span>
           </div>
-          <p className="text-3xl font-black text-red-600">{data?.not_migrated ?? '—'}</p>
-          <p className="text-xs text-red-500 mt-1">môn học</p>
+          <p className="text-3xl font-black text-destructive">{data?.not_migrated ?? '—'}</p>
+          <p className="text-xs text-destructive mt-1">môn học</p>
         </button>
 
         <button
           onClick={() => setFilter(filter === 'partial' ? 'all' : 'partial')}
           className={cn(
-            "p-4 rounded-xl border-2 text-left transition-all",
+            "p-4 rounded-xl border-2 text-left transition-all cursor-pointer",
             filter === 'partial'
-              ? "border-orange-400 bg-orange-50"
-              : "border-orange-200 bg-white hover:bg-orange-50"
+              ? "border-warning-border bg-warning-bg"
+              : "border-warning-border/50 bg-card hover:bg-warning-bg/50"
           )}
         >
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <span className="text-sm font-bold text-orange-700">Có quiz mới</span>
+            <AlertTriangle className="w-5 h-5 text-warning-fg" />
+            <span className="text-sm font-bold text-warning-fg">Có quiz mới</span>
           </div>
-          <p className="text-3xl font-black text-orange-600">{data?.partial ?? '—'}</p>
-          <p className="text-xs text-orange-500 mt-1">môn học</p>
+          <p className="text-3xl font-black text-warning-fg">{data?.partial ?? '—'}</p>
+          <p className="text-xs text-warning-fg mt-1">môn học</p>
         </button>
 
         <button
           onClick={() => setFilter(filter === 'synced' ? 'all' : 'synced')}
           className={cn(
-            "p-4 rounded-xl border-2 text-left transition-all",
+            "p-4 rounded-xl border-2 text-left transition-all cursor-pointer",
             filter === 'synced'
-              ? "border-green-400 bg-green-50"
-              : "border-green-200 bg-white hover:bg-green-50"
+              ? "border-success-border bg-success-bg"
+              : "border-success-border/50 bg-card hover:bg-success-bg/50"
           )}
         >
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
-            <span className="text-sm font-bold text-green-700">Đã đồng bộ</span>
+            <CheckCircle2 className="w-5 h-5 text-success-fg" />
+            <span className="text-sm font-bold text-success-fg">Đã đồng bộ</span>
           </div>
-          <p className="text-3xl font-black text-green-600">{data?.synced ?? '—'}</p>
-          <p className="text-xs text-green-500 mt-1">môn học</p>
+          <p className="text-3xl font-black text-success-fg">{data?.synced ?? '—'}</p>
+          <p className="text-xs text-success-fg mt-1">môn học</p>
         </button>
       </div>
 
@@ -137,12 +137,12 @@ export function QuestionBankStatus() {
         <CardContent>
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               Không có môn học nào
             </div>
           )}
@@ -187,31 +187,31 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
     <div className={cn("border rounded-lg overflow-hidden", config.bg)}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-black/5 transition-colors"
+        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
       >
         {config.icon}
-        <span className="font-semibold text-gray-900 flex-1">{category.category_name}</span>
+        <span className="font-semibold text-card-foreground flex-1">{category.category_name}</span>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {category.total_quizzes} quiz • {category.total_bank_questions} câu trong ngân hàng
           </span>
           {config.badge}
-          <span className="text-gray-400 text-xs">{expanded ? '▲' : '▼'}</span>
+          <span className="text-muted-foreground text-xs">{expanded ? '▲' : '▼'}</span>
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-black/10 space-y-3">
+        <div className="px-4 pb-4 pt-1 border-t border-border space-y-3">
           {/* Not migrated quizzes */}
           {category.not_migrated_quiz_codes.length > 0 && (
             <div>
-              <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-destructive mb-2 flex items-center gap-1">
                 <XCircle className="w-3 h-3" />
                 Chưa migration ({category.not_migrated_quiz_codes.length} mã quiz):
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {category.not_migrated_quiz_codes.map(code => (
-                  <Badge key={code} variant="outline" className="text-xs border-red-300 text-red-700 bg-white">
+                  <Badge key={code} variant="outline" className="text-xs border-incorrect-border text-destructive bg-card">
                     {code}
                   </Badge>
                 ))}
@@ -222,13 +222,13 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
           {/* Migrated quizzes */}
           {category.migrated_quiz_codes.length > 0 && (
             <div>
-              <p className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-success-fg mb-2 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
                 Đã migration ({category.migrated_quiz_codes.length} mã quiz):
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {category.migrated_quiz_codes.map(code => (
-                  <Badge key={code} variant="outline" className="text-xs border-green-300 text-green-700 bg-white">
+                  <Badge key={code} variant="outline" className="text-xs border-success-border text-success-fg bg-card">
                     {code}
                   </Badge>
                 ))}

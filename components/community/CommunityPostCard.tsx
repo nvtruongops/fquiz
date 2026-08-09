@@ -241,13 +241,13 @@ function PostExpandedDetails({
                 <div key={comment._id} className="bg-muted/90 rounded-2xl p-3.5 border border-border space-y-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#5D7B6F] to-[#455A52] flex items-center justify-center text-white font-bold text-[10px]">
+                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-[10px]">
                         {comment.authorName ? comment.authorName.charAt(0).toUpperCase() : 'C'}
                       </div>
-                      <span className="text-xs font-bold text-slate-700">{comment.authorName}</span>
+                      <span className="text-xs font-bold text-card-foreground">{comment.authorName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400 font-medium">
+                      <span className="text-[10px] text-muted-foreground font-medium">
                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
                       </span>
                       {userId && (String(comment.authorId) === String(userId) || authRole === 'admin') && (
@@ -267,7 +267,7 @@ function PostExpandedDetails({
                                     setConfirmingDeleteCommentId(null)
                                   }}
                                   disabled={deleteCommentMutation.isPending}
-                                  className="px-2 py-0.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
+                                  className="px-2 py-0.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-md transition-colors shrink-0"
                                 >
                                   {deleteCommentMutation.isPending ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -278,7 +278,7 @@ function PostExpandedDetails({
                                     e.stopPropagation()
                                     setConfirmingDeleteCommentId(null)
                                   }}
-                                  className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded-md transition-colors shrink-0"
+                                  className="px-2 py-0.5 bg-muted text-muted-foreground text-[10px] font-bold rounded-md transition-colors shrink-0"
                                 >
                                   Hủy
                                 </button>
@@ -291,7 +291,7 @@ function PostExpandedDetails({
                               setConfirmingDeleteCommentId(confirmingDeleteCommentId === comment._id ? null : comment._id)
                             }}
                             title="Xóa bình luận"
-                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                            className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -299,7 +299,7 @@ function PostExpandedDetails({
                       )}
                     </div>
                   </div>
-                  <p className="text-xs font-medium text-slate-700 whitespace-pre-wrap pl-8">
+                  <p className="text-xs font-medium text-card-foreground whitespace-pre-wrap pl-8">
                     {comment.content}
                   </p>
                 </div>
@@ -310,7 +310,7 @@ function PostExpandedDetails({
 
         <div className="pt-2">
           {isAuthLoading ? (
-            <div className="h-10 bg-slate-100 rounded-xl animate-pulse" />
+            <div className="h-10 bg-muted rounded-xl animate-pulse" />
           ) : userId ? (
             <div className="flex items-center gap-2">
               <Input
@@ -325,7 +325,7 @@ function PostExpandedDetails({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Viết bình luận... (Nhấn Enter để gửi)"
-                className="h-10 text-xs font-medium rounded-xl border border-slate-200 bg-white focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F]"
+                className="h-10 text-xs font-medium rounded-xl border border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary placeholder:text-muted-foreground"
               />
               <Button
                 type="button"
@@ -336,7 +336,7 @@ function PostExpandedDetails({
                     createCommentMutation.mutate({ postId: post._id, content: commentContent })
                   }
                 }}
-                className="h-10 bg-[#5D7B6F] hover:bg-[#4A6359] text-white rounded-xl text-xs font-bold px-4 shrink-0"
+                className="h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold px-4 shrink-0 cursor-pointer"
               >
                 {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gửi'}
               </Button>
@@ -345,7 +345,7 @@ function PostExpandedDetails({
             <a
               href="/login"
               onClick={(e) => e.stopPropagation()}
-              className="text-xs font-bold text-[#5D7B6F] hover:underline block text-center py-2"
+              className="text-xs font-bold text-primary hover:underline block text-center py-2"
             >
               Đăng nhập để tham gia bình luận
             </a>

@@ -475,19 +475,19 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
   }
 
   return (
-    <Card id="quiz-import-panel" className="bg-white border-[#A4C3A2]">
+    <Card id="quiz-import-panel" className="bg-card border-border text-card-foreground">
       <CardHeader className="pb-3">
-        <CardTitle className="text-[#5D7B6F] text-lg flex items-center gap-2">
+        <CardTitle className="text-primary text-lg flex items-center gap-2">
           <Upload className="w-4 h-4" />
           Upload JSON/TXT Quiz
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => void handleDownloadSample('json')} disabled={downloading !== null}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void handleDownloadSample('json')} disabled={downloading !== null} className="border-border text-card-foreground">
             {downloading === 'json' ? 'Đang tải...' : 'Tải file mẫu (.json)'}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => void handleDownloadSample('txt')} disabled={downloading !== null}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void handleDownloadSample('txt')} disabled={downloading !== null} className="border-border text-card-foreground">
             {downloading === 'txt' ? 'Đang tải...' : 'Tải file mẫu (.txt)'}
           </Button>
         </div>
@@ -501,10 +501,10 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
             className={cn(
               "relative cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all text-center group",
               isDragging
-                ? "border-[#5D7B6F] bg-[#5D7B6F]/10 scale-[1.01]"
+                ? "border-primary bg-primary/10 scale-[1.01]"
                 : file
-                  ? "border-[#5D7B6F]/40 bg-[#5D7B6F]/5"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-gray-100/50 hover:border-[#5D7B6F]/50"
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border bg-muted/50 hover:bg-muted hover:border-primary/50"
             )}
           >
             <input
@@ -514,27 +514,27 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
               className="hidden"
               onChange={(e) => processSelectedFile(e.target.files?.[0] ?? null)}
             />
-            <div className="w-12 h-12 rounded-2xl bg-[#5D7B6F]/10 text-[#5D7B6F] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
               {file ? <FileText className="w-6 h-6" /> : <UploadCloud className="w-6 h-6" />}
             </div>
             {file ? (
               <div className="space-y-1">
-                <p className="font-bold text-sm text-[#5D7B6F]">{file.name}</p>
-                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB — Bấm hoặc kéo thả file khác để thay đổi</p>
+                <p className="font-bold text-sm text-primary">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB — Bấm hoặc kéo thả file khác để thay đổi</p>
               </div>
             ) : (
               <div className="space-y-1">
-                <p className="font-bold text-sm text-gray-700">
-                  Kéo & thả file <span className="text-[#5D7B6F]">.JSON</span> hoặc <span className="text-[#5D7B6F]">.TXT</span> vào đây
+                <p className="font-bold text-sm text-card-foreground">
+                  Kéo & thả file <span className="text-primary">.JSON</span> hoặc <span className="text-primary">.TXT</span> vào đây
                 </p>
-                <p className="text-xs text-gray-400">Hoặc bấm để chọn file từ máy tính</p>
+                <p className="text-xs text-muted-foreground">Hoặc bấm để chọn file từ máy tính</p>
               </div>
             )}
           </div>
 
           {file && (
             <div className="flex justify-end">
-              <Button type="button" onClick={handlePreview} disabled={!file || !fileSnapshot || loading || preparingFile} className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90 w-full sm:w-auto">
+              <Button type="button" onClick={handlePreview} disabled={!file || !fileSnapshot || loading || preparingFile} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto cursor-pointer">
                 {loading || preparingFile ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -549,39 +549,39 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
         </div>
 
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+          <div className="text-sm text-destructive bg-incorrect-bg border border-incorrect-border rounded-md p-2">
             {error}
           </div>
         )}
 
         {preview && (
-          <div className="space-y-3 rounded-md border border-[#A4C3A2]/30 p-3 bg-[#A4C3A2]/5">
+          <div className="space-y-3 rounded-md border border-border p-3 bg-primary/5">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant={preview.isValid ? 'default' : 'secondary'}>
                 {preview.isValid ? 'Hợp lệ' : 'Có lỗi'}
               </Badge>
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-muted-foreground">
                 Tổng: {preview.summary.totalQuestions} | Hợp lệ: {preview.summary.validQuestions} | Lỗi: {preview.summary.errors} | Cảnh báo: {preview.summary.warnings}
               </span>
             </div>
 
             {/* Question Bank Check Results */}
             {checkingBank && (
-              <div className="flex items-center gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-md p-2">
+              <div className="flex items-center gap-2 text-xs text-info-fg bg-info-bg border border-info-border rounded-md p-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Đang kiểm tra ngân hàng câu hỏi...
               </div>
             )}
 
             {bankCheck && bankCheck.summary.includes('Chưa chọn môn học') && (
-              <div className="bg-orange-50 border border-orange-300 rounded-md p-3">
+              <div className="bg-warning-bg border border-warning-border rounded-md p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-warning-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-orange-900 mb-1">
+                    <p className="font-bold text-warning-fg mb-1">
                        Chưa chọn môn học
                     </p>
-                    <p className="text-orange-700">
+                    <p className="text-warning-fg">
                       Vui lòng chọn môn học ở trên trước khi upload file để kiểm tra câu hỏi trùng lặp trong Question Bank.
                     </p>
                   </div>
@@ -590,14 +590,14 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
             )}
 
             {bankCheck && bankCheck.different_answer_conflicts > 0 && (
-              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+              <div className="bg-incorrect-bg border border-incorrect-border rounded-lg p-4">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0 text-xs">
-                    <p className="font-bold text-sm text-red-900 mb-0.5">
+                    <p className="font-bold text-sm text-destructive mb-0.5">
                       {bankCheck.different_answer_conflicts} câu hỏi có mâu thuẫn đáp án
                     </p>
-                    <p className="text-red-700 leading-relaxed mb-3">
+                    <p className="text-destructive leading-relaxed mb-3">
                       Cùng câu hỏi + cùng options nhưng đáp án khác với ngân hàng.
                       Chọn đáp án đúng rồi bấm <span className="font-semibold">&quot;Xác nhận lựa chọn đáp án&quot;</span> để đồng bộ.
                     </p>
@@ -625,12 +625,12 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                         return (
                           <div
                             key={c.questionIndex}
-                            className="rounded-lg border border-red-200 bg-white overflow-hidden"
+                            className="rounded-lg border border-incorrect-border bg-card overflow-hidden text-card-foreground"
                           >
                             {/* Question header */}
-                            <div className="bg-red-100/60 px-3 py-2 border-b border-red-200">
-                              <p className="font-semibold text-red-900 leading-snug">
-                                <span className="inline-flex items-center justify-center rounded bg-red-600 text-white px-1.5 py-0.5 mr-1.5 text-[10px] font-bold align-middle">
+                            <div className="bg-incorrect-bg px-3 py-2 border-b border-incorrect-border">
+                              <p className="font-semibold text-destructive leading-snug">
+                                <span className="inline-flex items-center justify-center rounded bg-destructive text-destructive-foreground px-1.5 py-0.5 mr-1.5 text-[10px] font-bold align-middle">
                                   Câu {c.questionIndex + 1}
                                 </span>
                                 {q?.text ?? ''}
@@ -643,7 +643,7 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                               const currentSelected = chosen.source === 'current'
                               return (
                                 <>
-                                  <p className="px-3 pt-2 text-[11px] text-gray-500">
+                                  <p className="px-3 pt-2 text-[11px] text-muted-foreground">
                                     Chọn đáp án đúng để đồng bộ (mặc định: giữ đáp án trong file):
                                   </p>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
@@ -653,19 +653,19 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                                       onClick={() =>
                                         handleConflictChoiceChange(c.questionIndex, { source: 'current', variantIdx: 0 })
                                       }
-                                      className={`text-left rounded-lg border-2 p-3 transition-all ${
+                                      className={`text-left rounded-lg border-2 p-3 transition-all cursor-pointer ${
                                         currentSelected
-                                          ? 'border-blue-500 bg-blue-50'
-                                          : 'border-gray-200 bg-white hover:border-gray-300'
+                                          ? 'border-info-border bg-info-bg'
+                                          : 'border-border bg-card hover:border-primary/50'
                                       }`}
                                     >
-                                      <p className="font-semibold text-blue-700 mb-1.5 flex items-center gap-1.5">
+                                      <p className="font-semibold text-info-fg mb-1.5 flex items-center gap-1.5">
                                         <span
                                           className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                                            currentSelected ? 'border-blue-500' : 'border-gray-300'
+                                            currentSelected ? 'border-info-fg' : 'border-border'
                                           }`}
                                         >
-                                          {currentSelected && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                                          {currentSelected && <span className="w-1.5 h-1.5 rounded-full bg-info-fg" />}
                                         </span>
                                         <span>Đáp án trong file (hiện tại)</span>
                                       </p>
@@ -674,13 +674,13 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                                           importedLines.map((line, li) => (
                                             <li
                                               key={li}
-                                              className="text-gray-800 bg-blue-50 rounded px-2 py-1 leading-snug break-words"
+                                              className="text-card-foreground bg-info-bg/50 rounded px-2 py-1 leading-snug break-words"
                                             >
                                               {line}
                                             </li>
                                           ))
                                         ) : (
-                                          <li className="text-gray-400 italic">(không xác định)</li>
+                                          <li className="text-muted-foreground italic">(không xác định)</li>
                                         )}
                                       </ul>
                                     </button>
@@ -698,23 +698,23 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                                           onClick={() =>
                                             handleConflictChoiceChange(c.questionIndex, { source: 'bank', variantIdx: vi })
                                           }
-                                          className={`text-left rounded-lg border-2 p-3 transition-all ${
+                                          className={`text-left rounded-lg border-2 p-3 transition-all cursor-pointer ${
                                             bankSelected
-                                              ? 'border-amber-500 bg-amber-50'
-                                              : 'border-gray-200 bg-white hover:border-gray-300'
+                                              ? 'border-warning-border bg-warning-bg'
+                                              : 'border-border bg-card hover:border-primary/50'
                                           }`}
                                         >
-                                          <p className="font-semibold text-amber-700 mb-1.5 flex items-center gap-1.5 flex-wrap">
+                                          <p className="font-semibold text-warning-fg mb-1.5 flex items-center gap-1.5 flex-wrap">
                                             <span
                                               className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                                                bankSelected ? 'border-amber-500' : 'border-gray-300'
+                                                bankSelected ? 'border-warning-fg' : 'border-border'
                                               }`}
                                             >
-                                              {bankSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                                              {bankSelected && <span className="w-1.5 h-1.5 rounded-full bg-warning-fg" />}
                                             </span>
                                             Đáp án trong ngân hàng
                                             {v.quizzes.length > 0 && (
-                                              <span className="font-normal text-gray-500">
+                                              <span className="font-normal text-muted-foreground">
                                                 (mã: {v.quizzes.slice(0, 5).join(', ')}
                                                 {v.quizzes.length > 5 ? ` +${v.quizzes.length - 5}` : ''})
                                               </span>
@@ -725,13 +725,13 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                                               lines.map((line, li) => (
                                                 <li
                                                   key={li}
-                                                  className="text-gray-800 bg-amber-50 rounded px-2 py-1 leading-snug break-words"
+                                                  className="text-card-foreground bg-warning-bg/50 rounded px-2 py-1 leading-snug break-words"
                                                 >
                                                   {line}
                                                 </li>
                                               ))
                                             ) : (
-                                              <li className="text-gray-400 italic">(không xác định)</li>
+                                              <li className="text-muted-foreground italic">(không xác định)</li>
                                             )}
                                           </ul>
                                         </button>
@@ -751,14 +751,14 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
             )}
 
             {bankCheck && bankCheck.same_answer_conflicts > 0 && (
-              <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
+              <div className="bg-warning-bg border border-warning-border rounded-md p-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-warning-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-yellow-900 mb-1">
+                    <p className="font-bold text-warning-fg mb-1">
                       ✓ {bankCheck.same_answer_conflicts} câu hỏi đã có trong ngân hàng
                     </p>
-                    <p className="text-yellow-700">
+                    <p className="text-warning-fg">
                       Các câu hỏi này đã tồn tại với cùng đáp án. Có thể tái sử dụng an toàn.
                     </p>
                   </div>
@@ -767,11 +767,11 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
             )}
 
             {bankCheck && bankCheck.conflicts_found === 0 && !bankCheck.summary.includes('Chưa chọn môn học') && (
-              <div className="bg-green-50 border border-green-300 rounded-md p-3">
+              <div className="bg-success-bg border border-success-border rounded-md p-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-success-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-green-900">✅ Tất cả câu hỏi đều mới</p>
+                    <p className="font-bold text-success-fg">✅ Tất cả câu hỏi đều mới</p>
                   </div>
                 </div>
               </div>
@@ -781,11 +781,11 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
               {preview.diagnostics.map((item, idx) => (
                 <div key={`${item.code}-${idx}`} className="text-xs flex items-start gap-2">
                   {item.level === 'error' ? (
-                    <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5" />
+                    <AlertCircle className="w-3.5 h-3.5 text-destructive mt-0.5" />
                   ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 mt-0.5" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-warning-fg mt-0.5" />
                   )}
-                  <span className={item.level === 'error' ? 'text-red-600' : 'text-amber-700'}>
+                  <span className={item.level === 'error' ? 'text-destructive' : 'text-warning-fg'}>
                     {item.questionIndex === undefined ? '' : `Câu ${item.questionIndex + 1}: `}
                     {item.message}
                   </span>
@@ -800,7 +800,7 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                   variant={conflictsConfirmed ? 'outline' : 'default'}
                   onClick={() => void handleConfirmConflictChoices()}
                   disabled={!preview.isValid || applying || confirmingConflicts || conflictsConfirmed}
-                  className={conflictsConfirmed ? '' : 'bg-blue-600 hover:bg-blue-700'}
+                  className={conflictsConfirmed ? 'border-border' : 'bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer'}
                 >
                   {confirmingConflicts ? (
                     <span className="flex items-center gap-2">
@@ -823,7 +823,7 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
                   confirmingConflicts ||
                   Boolean(bankCheck && bankCheck.different_answer_conflicts > 0 && !conflictsConfirmed)
                 }
-                className="bg-[#5D7B6F] hover:bg-[#5D7B6F]/90"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               >
                 {applying ? (
                   <span className="flex items-center gap-2">

@@ -42,15 +42,15 @@ const TYPE_LABELS: Record<string, string> = {
   bug: 'Báo lỗi', feature: 'Đề xuất tính năng', content: 'Góp ý nội dung', other: 'Khác',
 }
 const TYPE_COLORS: Record<string, string> = {
-  bug: 'bg-red-50 text-red-700 border-red-200',
-  feature: 'bg-blue-50 text-blue-700 border-blue-200',
-  content: 'bg-purple-50 text-purple-700 border-purple-200',
-  other: 'bg-gray-50 text-gray-700 border-gray-200',
+  bug: 'bg-incorrect-bg text-destructive border-incorrect-border',
+  feature: 'bg-info-bg text-info-fg border-info-border',
+  content: 'bg-primary/10 text-primary border-primary/20',
+  other: 'bg-muted text-muted-foreground border-border',
 }
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-orange-100 text-orange-700 border-orange-200',
-  reviewed: 'bg-blue-100 text-blue-700 border-blue-200',
-  resolved: 'bg-green-100 text-green-700 border-green-200',
+  pending: 'bg-warning-bg text-warning-fg border-warning-border',
+  reviewed: 'bg-info-bg text-info-fg border-info-border',
+  resolved: 'bg-success-bg text-success-fg border-success-border',
 }
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Chờ xem', reviewed: 'Đã xem', resolved: 'Đã phản hồi',
@@ -79,30 +79,30 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
 
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white transition-all hover:shadow-md',
+      'rounded-lg border-2 bg-card text-card-foreground transition-all hover:shadow-md',
       fb.status === 'pending' 
-        ? 'border-l-4 border-l-orange-500 border-t-2 border-r-2 border-b-2 border-gray-800 bg-orange-50/30' 
-        : 'border-gray-800 hover:border-gray-900'
+        ? 'border-l-4 border-l-warning-fg border-t-2 border-r-2 border-b-2 border-border bg-warning-bg/20' 
+        : 'border-border hover:border-primary/50'
     )}>
       {/* Header row — thanh thông tin chính */}
       <div className="flex items-center gap-3 px-4 py-3">
         {/* Expand toggle */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="text-xs font-semibold text-gray-600 hover:text-gray-900 shrink-0 transition-colors underline"
+          className="text-xs font-semibold text-muted-foreground hover:text-card-foreground shrink-0 transition-colors underline cursor-pointer"
         >
           {expanded ? 'Thu gọn' : 'Xem'}
         </button>
 
         {/* Info chính */}
         <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-          <span className="font-bold text-gray-900 text-sm">@{fb.username}</span>
-          <span className="text-xs text-gray-400">•</span>
+          <span className="font-bold text-card-foreground text-sm">@{fb.username}</span>
+          <span className="text-xs text-muted-foreground">•</span>
           <span className={cn('text-xs font-semibold px-2 py-0.5 rounded border', TYPE_COLORS[fb.type])}>
             {TYPE_LABELS[fb.type]}
           </span>
-          <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-600 font-medium">
+          <span className="text-xs text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground font-medium">
             {formatDistanceToNow(new Date(fb.created_at), { addSuffix: true, locale: vi })}
           </span>
         </div>
@@ -119,10 +119,10 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
             onClick={() => onStatusChange(fb._id, 'reviewed')}
             disabled={isUpdating || fb.status === 'reviewed' || fb.status === 'resolved'}
             className={cn(
-              'text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-all',
+              'text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-all cursor-pointer',
               fb.status === 'reviewed' || fb.status === 'resolved'
-                ? 'text-gray-400 border-gray-300 cursor-not-allowed bg-gray-50'
-                : 'text-blue-600 border-gray-800 hover:bg-blue-50 hover:border-blue-600'
+                ? 'text-muted-foreground border-border cursor-not-allowed bg-muted'
+                : 'text-info-fg border-border hover:bg-info-bg/50 hover:border-info-border'
             )}
           >
             {isUpdating ? 'Đang xử lý...' : 'Đã xem'}
@@ -133,10 +133,10 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
             <button
               onClick={() => { setReplyOpen(v => !v); if (!expanded) setExpanded(true) }}
               className={cn(
-                'text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-all',
+                'text-xs font-semibold px-3 py-1.5 rounded-lg border-2 transition-all cursor-pointer',
                 replyOpen 
-                  ? 'bg-[#5D7B6F] text-white border-[#5D7B6F]' 
-                  : 'text-[#5D7B6F] border-gray-800 hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]'
+                  ? 'bg-primary text-primary-foreground border-primary' 
+                  : 'text-primary border-border hover:bg-primary/5 hover:border-primary'
               )}
             >
               Phản hồi
@@ -147,7 +147,7 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
           <button
             onClick={() => onDelete(fb._id)}
             disabled={isDeleting}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 border-gray-800 text-red-600 hover:bg-red-50 hover:border-red-600 transition-all disabled:opacity-50"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border-2 border-border text-destructive hover:bg-incorrect-bg hover:border-incorrect-border transition-all disabled:opacity-50 cursor-pointer"
           >
             {isDeleting ? 'Đang xóa...' : 'Xóa'}
           </button>
@@ -156,11 +156,11 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
 
       {/* Expanded content */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t-2 border-gray-800 pt-3">
+        <div className="px-4 pb-4 space-y-3 border-t-2 border-border pt-3">
           {/* Nội dung góp ý */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">NỘI DUNG GÓP Ý</p>
-            <div className="text-sm text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-3 border-2 border-gray-800 whitespace-pre-wrap break-words">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">NỘI DUNG GÓP Ý</p>
+            <div className="text-sm text-card-foreground leading-relaxed bg-muted/50 rounded-lg p-3 border-2 border-border whitespace-pre-wrap break-words">
               {fb.type === 'other' && fb.message.includes('\n\n') ? (
                 // Nếu là loại "Khác" và có format lý do + nội dung
                 (() => {
@@ -168,13 +168,13 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
                   return (
                     <>
                       <div className="mb-3">
-                        <span className="font-bold text-gray-700">Lý do:</span>
-                        <div className="mt-1 pl-3 border-l-2 border-gray-400">{parts[0]}</div>
+                        <span className="font-bold text-card-foreground">Lý do:</span>
+                        <div className="mt-1 pl-3 border-l-2 border-border">{parts[0]}</div>
                       </div>
                       {parts[1] && (
                         <div>
-                          <span className="font-bold text-gray-700">Nội dung:</span>
-                          <div className="mt-1 pl-3 border-l-2 border-gray-400">{parts[1]}</div>
+                          <span className="font-bold text-card-foreground">Nội dung:</span>
+                          <div className="mt-1 pl-3 border-l-2 border-border">{parts[1]}</div>
                         </div>
                       )}
                     </>
@@ -189,15 +189,15 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
           {/* Hiển thị nội dung đã phản hồi nếu có */}
           {fb.status === 'resolved' && fb.reply_message && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-[#5D7B6F] uppercase tracking-wide">
+              <p className="text-xs font-bold text-primary uppercase tracking-wide">
                 NỘI DUNG ĐÃ PHẢN HỒI
                 {fb.replied_at && (
-                  <span className="text-gray-400 font-medium normal-case ml-2">
+                  <span className="text-muted-foreground font-medium normal-case ml-2">
                     • {formatDistanceToNow(new Date(fb.replied_at), { addSuffix: true, locale: vi })}
                   </span>
                 )}
               </p>
-              <div className="text-sm text-gray-800 leading-relaxed bg-[#5D7B6F]/5 rounded-lg p-3 border-2 border-[#5D7B6F] whitespace-pre-wrap break-words">
+              <div className="text-sm text-card-foreground leading-relaxed bg-primary/5 rounded-lg p-3 border-2 border-primary/30 whitespace-pre-wrap break-words">
                 {fb.reply_message}
               </div>
             </div>
@@ -205,12 +205,12 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
 
           {/* Reply form - chỉ hiện khi chưa phản hồi */}
           {replyOpen && fb.status !== 'resolved' && (
-            <div className="space-y-3 bg-[#5D7B6F]/5 rounded-lg p-4 border-2 border-gray-800">
+            <div className="space-y-3 bg-primary/5 rounded-lg p-4 border-2 border-border">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-[#5D7B6F]">
+                <p className="text-sm font-bold text-primary">
                   Phản hồi tới: {fb.user_email || fb.username}
                 </p>
-                <span className="text-[10px] text-gray-600 bg-white px-2 py-1 rounded border-2 border-gray-800 font-semibold">
+                <span className="text-[10px] text-muted-foreground bg-card px-2 py-1 rounded border-2 border-border font-semibold">
                   Email tự động
                 </span>
               </div>
@@ -219,11 +219,11 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
                 value={replyMsg}
                 onChange={(e) => setReplyMsg(e.target.value.slice(0, 2000))}
                 placeholder="Nhập nội dung phản hồi..."
-                className="min-h-[120px] rounded-lg border-2 border-gray-800 text-sm resize-none focus:border-[#5D7B6F] focus:ring-[#5D7B6F]"
+                className="min-h-[120px] rounded-lg border-2 border-border bg-card text-card-foreground text-sm resize-none focus:border-primary focus:ring-primary"
               />
               
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600 font-medium">
+                <span className="text-xs text-muted-foreground font-medium">
                   {replyMsg.length}/2000 ký tự
                 </span>
                 <div className="flex gap-2">
@@ -231,7 +231,7 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
                     size="sm"
                     variant="ghost"
                     onClick={() => { setReplyOpen(false); setReplyMsg('') }}
-                    className="rounded-lg text-xs h-8 font-semibold"
+                    className="rounded-lg text-xs h-8 font-semibold cursor-pointer"
                   >
                     Hủy
                   </Button>
@@ -243,7 +243,7 @@ function FeedbackRow({ fb, onStatusChange, onDelete, onReply, isUpdating, isDele
                       setReplyMsg('')
                     }}
                     disabled={isReplying || replyMsg.trim().length < 10}
-                    className="rounded-lg bg-[#5D7B6F] hover:bg-[#4A6359] text-xs h-8 font-semibold"
+                    className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 font-semibold cursor-pointer"
                   >
                     {isReplying ? 'Đang gửi...' : 'Gửi phản hồi'}
                   </Button>
@@ -348,24 +348,24 @@ export default function AdminFeedbackPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Quản lý góp ý</h1>
-          <p className="text-sm text-gray-600 mt-1">Xem và phản hồi góp ý từ người dùng</p>
+          <h1 className="text-2xl font-bold text-card-foreground tracking-tight">Quản lý góp ý</h1>
+          <p className="text-sm text-muted-foreground mt-1">Xem và phản hồi góp ý từ người dùng</p>
         </div>
         
         {/* Stats */}
         <div className="flex items-center gap-3">
           {pendingCount > 0 && (
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 font-semibold px-4 py-2 rounded-lg text-sm">
+            <div className="bg-warning-bg border border-warning-border text-warning-fg font-semibold px-4 py-2 rounded-lg text-sm">
               <span className="font-bold">{pendingCount}</span> chờ xem
             </div>
           )}
           {reviewedCount > 0 && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 font-semibold px-4 py-2 rounded-lg text-sm">
+            <div className="bg-info-bg border border-info-border text-info-fg font-semibold px-4 py-2 rounded-lg text-sm">
               <span className="font-bold">{reviewedCount}</span> đã xem
             </div>
           )}
           {resolvedCount > 0 && (
-            <div className="bg-green-50 border border-green-200 text-green-700 font-semibold px-4 py-2 rounded-lg text-sm">
+            <div className="bg-success-bg border border-success-border text-success-fg font-semibold px-4 py-2 rounded-lg text-sm">
               <span className="font-bold">{resolvedCount}</span> đã phản hồi
             </div>
           )}
@@ -373,38 +373,38 @@ export default function AdminFeedbackPage() {
       </div>
 
       {/* Bộ lọc 3 bậc - Thu gọn được */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
         {/* Header bộ lọc - luôn hiển thị */}
         <button
           onClick={() => setFilterExpanded(v => !v)}
-          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-muted transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-gray-800">Bộ lọc</span>
+            <span className="text-sm font-bold text-card-foreground">Bộ lọc</span>
             {hasActiveFilters && (
-              <span className="text-xs bg-[#5D7B6F] text-white px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-semibold">
                 Đang lọc
               </span>
             )}
           </div>
-          <span className="text-xs text-gray-500 font-medium">
+          <span className="text-xs text-muted-foreground font-medium">
             {filterExpanded ? 'Thu gọn' : 'Mở rộng'}
           </span>
         </button>
 
         {/* Nội dung bộ lọc - chỉ hiện khi mở rộng */}
         {filterExpanded && (
-          <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+          <div className="px-4 pb-4 space-y-4 border-t border-border">
             {/* Bậc 1: Lọc theo lý do (type) */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide block">
                 1. LỌC THEO LÝ DO
               </span>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full max-w-md rounded-lg h-9 font-medium text-sm border">
+                <SelectTrigger className="w-full max-w-md rounded-lg h-9 font-medium text-sm border-border bg-card text-card-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-border bg-popover text-popover-foreground">
                   <SelectItem value="all">Tất cả loại</SelectItem>
                   <SelectItem value="bug">Báo lỗi</SelectItem>
                   <SelectItem value="feature">Đề xuất tính năng</SelectItem>
@@ -417,14 +417,14 @@ export default function AdminFeedbackPage() {
             {/* Bậc 2: Lọc theo thời gian + trạng thái */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide block">
                   2. LỌC THEO THỜI GIAN
                 </span>
                 <Select value={timeFilter} onValueChange={setTimeFilter}>
-                  <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border">
+                  <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border-border bg-card text-card-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border bg-popover text-popover-foreground">
                     {TIME_OPTIONS.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -435,14 +435,14 @@ export default function AdminFeedbackPage() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide block">
                   LỌC THEO TRẠNG THÁI
                 </span>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border">
+                  <SelectTrigger className="w-full rounded-lg h-9 font-medium text-sm border-border bg-card text-card-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border bg-popover text-popover-foreground">
                     <SelectItem value="all">Tất cả trạng thái</SelectItem>
                     <SelectItem value="pending">Chờ xem</SelectItem>
                     <SelectItem value="reviewed">Đã xem</SelectItem>
@@ -454,7 +454,7 @@ export default function AdminFeedbackPage() {
 
             {/* Bậc 3: Tìm kiếm */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide block">
                 3. TÌM KIẾM
               </span>
               <div className="relative">
@@ -462,12 +462,12 @@ export default function AdminFeedbackPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm theo username hoặc nội dung góp ý..."
-                  className="h-9 rounded-lg border-gray-200 text-sm font-medium pr-16"
+                  className="h-9 rounded-lg border-border bg-card text-card-foreground text-sm font-medium pr-16"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 font-medium underline"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-card-foreground font-medium underline cursor-pointer"
                   >
                     Xóa
                   </button>
@@ -477,7 +477,7 @@ export default function AdminFeedbackPage() {
 
             {/* Reset filters */}
             {hasActiveFilters && (
-              <div className="pt-2 border-t border-gray-100">
+              <div className="pt-2 border-t border-border">
                 <button
                   onClick={() => {
                     setStatusFilter('all')
@@ -485,7 +485,7 @@ export default function AdminFeedbackPage() {
                     setTimeFilter('all')
                     setSearch('')
                   }}
-                  className="text-xs text-gray-600 hover:text-gray-900 font-semibold underline"
+                  className="text-xs text-muted-foreground hover:text-card-foreground font-semibold underline cursor-pointer"
                 >
                   Xóa tất cả bộ lọc
                 </button>
@@ -497,23 +497,23 @@ export default function AdminFeedbackPage() {
 
       {/* Danh sách */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border border-gray-200">
-          <div className="w-8 h-8 border-3 border-[#5D7B6F] border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-sm text-gray-600 font-medium">Đang tải góp ý...</p>
+        <div className="flex flex-col items-center justify-center py-16 bg-card text-card-foreground rounded-lg border border-border">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="text-sm text-muted-foreground font-medium">Đang tải góp ý...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
-            <span className="text-lg font-bold text-gray-400">0</span>
+        <div className="text-center py-16 bg-card text-card-foreground rounded-lg border border-border">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 border border-border">
+            <span className="text-lg font-bold text-muted-foreground">0</span>
           </div>
-          <p className="text-gray-800 font-semibold mb-1">Không có góp ý nào phù hợp</p>
-          <p className="text-sm text-gray-500">Thử điều chỉnh bộ lọc hoặc tìm kiếm</p>
+          <p className="text-card-foreground font-semibold mb-1">Không có góp ý nào phù hợp</p>
+          <p className="text-sm text-muted-foreground">Thử điều chỉnh bộ lọc hoặc tìm kiếm</p>
         </div>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <p className="text-sm text-gray-700 font-medium">
-              Hiển thị <span className="font-bold text-gray-900">{filtered.length}</span> góp ý
+            <p className="text-sm text-muted-foreground font-medium">
+              Hiển thị <span className="font-bold text-card-foreground">{filtered.length}</span> góp ý
             </p>
           </div>
           {filtered.map(fb => (
@@ -533,20 +533,20 @@ export default function AdminFeedbackPage() {
 
       {/* Dialog xác nhận xóa */}
       <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
-        <DialogContent className="rounded-lg">
+        <DialogContent className="rounded-lg bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-red-600">Xác nhận xóa góp ý</DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
-              Bạn có chắc chắn muốn xóa góp ý từ <span className="font-bold text-gray-900">@{feedbackToDelete?.username}</span>?
+            <DialogTitle className="text-xl font-bold text-destructive">Xác nhận xóa góp ý</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Bạn có chắc chắn muốn xóa góp ý từ <span className="font-bold text-card-foreground">@{feedbackToDelete?.username}</span>?
               <br />
               Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => setDeleteConfirmId(null)}
-              className="rounded-lg font-semibold"
+              className="rounded-lg font-semibold border-border"
             >
               Hủy
             </Button>
@@ -559,7 +559,7 @@ export default function AdminFeedbackPage() {
                 }
               }}
               disabled={deleteMutation.isPending}
-              className="rounded-lg font-semibold"
+              className="rounded-lg font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {deleteMutation.isPending ? 'Đang xóa...' : 'Xác nhận xóa'}
             </Button>

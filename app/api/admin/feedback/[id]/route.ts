@@ -116,10 +116,10 @@ export const POST = withAuth(async (
       subject: 'FQuiz - Phản hồi góp ý của bạn',
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:560px">
-          <h2 style="color:#5D7B6F">Cảm ơn bạn đã góp ý!</h2>
+          <h2 style="color:rgb(93,123,111)">Cảm ơn bạn đã góp ý!</h2>
           <p>Xin chào <strong>${feedback.username}</strong>,</p>
           <p>Chúng tôi đã nhận được góp ý <strong>${TYPE_VI[feedback.type] ?? feedback.type}</strong> của bạn và xin gửi phản hồi:</p>
-          <blockquote style="border-left:3px solid #5D7B6F;padding:12px 16px;background:#f9fafb;border-radius:4px;margin:16px 0">
+          <blockquote style="border-left:3px solid rgb(93,123,111);padding:12px 16px;background:#f9fafb;border-radius:4px;margin:16px 0">
             ${parsed.data.reply_message.replaceAll('\n', '<br>')}
           </blockquote>
           <p>Cảm ơn bạn đã đồng hành cùng FQuiz!</p>

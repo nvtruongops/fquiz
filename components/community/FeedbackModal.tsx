@@ -114,7 +114,7 @@ export default function FeedbackModal({
                   className="overflow-hidden"
                 >
                   <div className="space-y-1.5 pt-1">
-                    <label htmlFor="feedback-reason" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <label htmlFor="feedback-reason" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                       Lý do
                     </label>
                     <Textarea
@@ -122,7 +122,7 @@ export default function FeedbackModal({
                       value={reason}
                       onChange={(e) => setReason(e.target.value.slice(0, 200))}
                       placeholder="Cho chúng tôi biết lý do cụ thể..."
-                      className="h-[68px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] resize-none"
+                      className="h-[68px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary resize-none"
                     />
                   </div>
                 </motion.div>
@@ -130,7 +130,7 @@ export default function FeedbackModal({
             </AnimatePresence>
 
             <div className="space-y-1.5">
-              <label htmlFor="feedback-detail" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label htmlFor="feedback-detail" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                 Chi tiết góp ý
               </label>
               <Textarea
@@ -138,11 +138,11 @@ export default function FeedbackModal({
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
                 placeholder="Mô tả chi tiết góp ý của bạn..."
-                className="h-[130px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-slate-200 bg-white text-slate-900 focus-visible:ring-1 focus-visible:ring-[#5D7B6F] focus-visible:ring-offset-0 focus-visible:border-[#5D7B6F] focus:border-[#5D7B6F] resize-none"
+                className="h-[130px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary resize-none"
               />
               <div className="flex justify-between items-center mt-1">
-                {error ? <p className="text-xs font-bold text-red-500 ml-1">{error}</p> : <span />}
-                <p className="text-[10px] font-bold text-slate-400">
+                {error ? <p className="text-xs font-bold text-destructive ml-1">{error}</p> : <span />}
+                <p className="text-[10px] font-bold text-muted-foreground">
                   {1000 - message.length} ký tự còn lại
                 </p>
               </div>
@@ -151,7 +151,7 @@ export default function FeedbackModal({
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full flex items-center justify-center gap-2 bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-black py-3.5 rounded-2xl transition-all shadow-md disabled:opacity-60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3.5 rounded-2xl transition-all shadow-md disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

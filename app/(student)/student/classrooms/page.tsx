@@ -142,12 +142,12 @@ export default function StudentClassroomsPage() {
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               {c.is_pinned && <Pin className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />}
-                              <CardTitle className="text-sm font-extrabold text-slate-900 truncate" title={c.name}>
+                              <CardTitle className="text-sm font-extrabold text-card-foreground truncate" title={c.name}>
                                 {c.name}
                               </CardTitle>
                             </div>
-                            <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
-                              Mã lớp: <span className="text-slate-600 font-mono">{c.code}</span>
+                            <p className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
+                              Mã lớp: <span className="text-card-foreground font-mono">{c.code}</span>
                             </p>
                           </div>
                         </div>
@@ -156,13 +156,13 @@ export default function StudentClassroomsPage() {
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-xl text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 p-1.5 border-slate-200/80 rounded-2xl shadow-xl z-50 bg-white">
-                            <DropdownMenuItem onClick={(e) => handleTogglePin(c, e)} className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold cursor-pointer text-slate-700">
+                          <DropdownMenuContent align="end" className="w-48 p-1.5 border-border rounded-2xl shadow-xl z-50 bg-card">
+                            <DropdownMenuItem onClick={(e) => handleTogglePin(c, e)} className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold cursor-pointer text-card-foreground">
                               {c.is_pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
                               <span className="text-xs">{c.is_pinned ? 'Bỏ ghim lớp' : 'Ghim lớp lên đầu'}</span>
                             </DropdownMenuItem>
@@ -182,12 +182,12 @@ export default function StudentClassroomsPage() {
             {/* Right Panel: Assignments for selected classroom */}
             <div className="lg:col-span-2 space-y-3.5">
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#5D7B6F]" /> 
-                  Danh sách Bài tập: <span className="text-[#5D7B6F] font-bold">{selectedClassroom?.name ?? 'Tất cả'}</span> ({assignments.length})
+                <h2 className="text-sm font-black uppercase tracking-wider text-card-foreground flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-primary" /> 
+                  Danh sách Bài tập: <span className="text-primary font-bold">{selectedClassroom?.name ?? 'Tất cả'}</span> ({assignments.length})
                 </h2>
                 {assignments.length > 0 && (
-                  <div className="text-[11px] font-bold text-slate-500 flex items-center gap-3">
+                  <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-3">
                     <span>Đã nộp: <strong className="text-emerald-600">{completedAssignmentsCount}</strong></span>
                     <span>Chưa làm: <strong className="text-amber-600">{pendingAssignmentsCount}</strong></span>
                   </div>
@@ -195,7 +195,7 @@ export default function StudentClassroomsPage() {
               </div>
 
               {assignments.length === 0 ? (
-                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-3xl bg-white/70 backdrop-blur-md p-8 text-slate-500 font-semibold text-xs">
+                <div className="py-16 text-center border-2 border-dashed border-border rounded-3xl bg-card/70 backdrop-blur-md p-8 text-muted-foreground font-semibold text-xs">
                   Chưa có bài tập nào được giao trong lớp học này.
                 </div>
               ) : (
@@ -206,38 +206,38 @@ export default function StudentClassroomsPage() {
                     const dueAtFormatted = a.due_at ? new Date(a.due_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null
 
                     return (
-                      <Card key={a._id} className="border border-slate-200/80 p-5 rounded-2xl bg-white/90 backdrop-blur-md shadow-2xs hover:shadow-md transition-all duration-300">
+                      <Card key={a._id} className="border border-border p-5 rounded-2xl bg-card backdrop-blur-md shadow-2xs hover:shadow-md transition-all duration-300 text-card-foreground">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">{a.title}</h3>
+                              <h3 className="font-extrabold text-card-foreground text-sm sm:text-base">{a.title}</h3>
                             </div>
-                            {a.description && <p className="text-xs text-slate-500 leading-relaxed">{a.description}</p>}
+                            {a.description && <p className="text-xs text-muted-foreground leading-relaxed">{a.description}</p>}
                             {dueAtFormatted && (
-                              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 pt-1">
-                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Hạn nộp: <strong className="text-slate-600">{dueAtFormatted}</strong></span>
+                              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground pt-1">
+                                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>Hạn nộp: <strong className="text-card-foreground">{dueAtFormatted}</strong></span>
                               </div>
                             )}
                           </div>
 
                           {isCompleted ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0 self-start">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Đã nộp ({progress.best_score}%)
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-success-bg text-success-fg border border-success-border shrink-0 self-start">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-success-fg" /> Đã nộp ({progress.best_score}%)
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-800 border border-amber-200/80 shrink-0 self-start">
-                              <Clock className="w-3.5 h-3.5 text-amber-600" /> Chưa làm
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-warning-bg text-warning-fg border border-warning-border shrink-0 self-start">
+                              <Clock className="w-3.5 h-3.5 text-warning-fg" /> Chưa làm
                             </span>
                           )}
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                          <span className="text-xs text-slate-500 font-bold">
-                            Quy mô: <strong className="text-slate-800">{a.quiz?.questionCount ?? 0} câu hỏi</strong>
+                        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground font-bold">
+                            Quy mô: <strong className="text-card-foreground">{a.quiz?.questionCount ?? 0} câu hỏi</strong>
                           </span>
                           <Link href={`/quiz/${a.quiz_id}?assignment_id=${a._id}&classroom_id=${a.classroom_id}`}>
-                            <Button size="sm" className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl px-4 gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]">
+                            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs uppercase tracking-wider rounded-xl px-4 gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]">
                               {isCompleted ? 'Làm lại bài' : 'Bắt đầu làm bài'} <ArrowRight className="w-3.5 h-3.5" />
                             </Button>
                           </Link>
@@ -253,26 +253,26 @@ export default function StudentClassroomsPage() {
 
         {/* Join Code Modal */}
         <Dialog open={joinModalOpen} onOpenChange={setJoinModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-3xl p-6">
+          <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card text-card-foreground border-border">
             <DialogHeader className="space-y-1">
-              <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-[#5D7B6F]" /> Tham gia Lớp học
+              <DialogTitle className="text-lg font-black text-card-foreground flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" /> Tham gia Lớp học
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
+              <DialogDescription className="text-xs text-muted-foreground">
                 Nhập mã gia nhập gồm 6 ký tự và mật khẩu lớp (nếu có) do Giáo viên cấp.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleJoinClass} className="space-y-4 pt-2">
               {errorMessage && (
-                <div className="p-3 bg-rose-50 text-rose-800 text-xs font-bold rounded-xl border border-rose-200 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <div className="p-3 bg-incorrect-bg text-destructive text-xs font-bold rounded-xl border border-incorrect-border flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                   Mã Lớp học (6 ký tự) (*)
                 </label>
                 <Input
@@ -280,12 +280,12 @@ export default function StudentClassroomsPage() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   maxLength={6}
-                  className="font-mono text-center text-2xl tracking-[0.3em] uppercase font-black rounded-2xl h-12 border-slate-200 focus:border-[#5D7B6F] focus:ring-2 focus:ring-[#5D7B6F]/20"
+                  className="font-mono text-center text-2xl tracking-[0.3em] uppercase font-black rounded-2xl h-12 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 bg-card text-card-foreground"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                   Mật khẩu Lớp học (Nếu có)
                 </label>
                 <div className="relative">
@@ -294,12 +294,12 @@ export default function StudentClassroomsPage() {
                     placeholder="Nhập mật khẩu lớp học..."
                     value={joinPassword}
                     onChange={(e) => setJoinPassword(e.target.value)}
-                    className="rounded-xl text-xs pr-10 h-10 border-slate-200 focus:border-[#5D7B6F]"
+                    className="rounded-xl text-xs pr-10 h-10 border-border focus:border-primary bg-card text-card-foreground"
                   />
                   <button
                     type="button"
                     onClick={() => setShowJoinPassword(!showJoinPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground transition-colors cursor-pointer"
                     title={showJoinPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
                     {showJoinPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -311,7 +311,7 @@ export default function StudentClassroomsPage() {
                 <Button type="button" variant="outline" onClick={() => setJoinModalOpen(false)} className="rounded-xl text-xs font-bold">
                   Hủy
                 </Button>
-                <Button type="submit" disabled={joining} className="bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer">
+                <Button type="submit" disabled={joining} className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer">
                   {joining ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
                   {joining ? 'Đang gia nhập...' : 'Tham gia Lớp'}
                 </Button>
@@ -322,10 +322,10 @@ export default function StudentClassroomsPage() {
 
         {/* Leave Classroom Confirm Dialog */}
         <Dialog open={!!confirmLeaveId} onOpenChange={(open) => !open && setConfirmLeaveId(null)}>
-          <DialogContent className="sm:max-w-md rounded-3xl p-6">
+          <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card text-card-foreground border-border">
             <DialogHeader className="space-y-1">
-              <DialogTitle className="text-lg font-black text-slate-900">Xác nhận rời khỏi lớp</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
+              <DialogTitle className="text-lg font-black text-card-foreground">Xác nhận rời khỏi lớp</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
                 Bạn có chắc chắn muốn rời khỏi lớp học này không? Mọi bài tập trong lớp sẽ bị bỏ theo dõi.
               </DialogDescription>
             </DialogHeader>
@@ -336,7 +336,7 @@ export default function StudentClassroomsPage() {
               <Button
                 type="button"
                 onClick={() => confirmLeaveId && handleLeaveClass(confirmLeaveId)}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer"
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer"
               >
                 Rời khỏi lớp
               </Button>

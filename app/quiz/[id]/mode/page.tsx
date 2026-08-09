@@ -15,8 +15,8 @@ export default function QuizModeRedirectPage() {
   }, [id, router])
 
   return (
-    <div className="flex h-screen items-center justify-center bg-[#F9F9F7]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5D7B6F]"></div>
+    <div className="flex h-screen items-center justify-center bg-page-bg">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
   )
 }

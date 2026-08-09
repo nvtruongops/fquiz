@@ -31,11 +31,11 @@ function SwipeIndicator({
 
   return (
     <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-between px-10">
-      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
-        <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
-      </div>
-      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
+      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20" style={{ opacity: swipeOffset < -40 ? 1 : 0 }}>
         <XCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
+      </div>
+      <div className="h-16 w-16 flex items-center justify-center rounded-full bg-green-500/10 border border-green-500/20" style={{ opacity: swipeOffset > 40 ? 1 : 0 }}>
+        <CheckCircle2 className="h-8 w-8 text-green-500" strokeWidth={2.5} />
       </div>
     </div>
   )
@@ -152,7 +152,7 @@ function MobileFlashcardView({
     } else if (absX > absY && absX > threshold) {
       setIsFlipped(false)
       setShowExplanation(false)
-      onAnswer(diffX <= 0)
+      onAnswer(diffX > 0)
     }
     setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
   }
@@ -434,20 +434,20 @@ export default function MobileFlashcardSessionPage() {
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden fixed inset-0 overscroll-none select-none">
       {/* Top Header matching Image */}
-      <header className="sticky top-0 z-20 border-b border-[#E2E8F0] bg-[#F9F9F7] dark:bg-card shadow-xs flex-none">
+      <header className="sticky top-0 z-20 border-b border-border bg-card text-card-foreground shadow-xs flex-none">
         <div className="flex items-center justify-between px-3 py-3">
           {/* Left: Menu & Quiz Code */}
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               onClick={() => setQuestionMapOpen(true)}
-              className="h-11 w-11 rounded-2xl bg-[#E3ECE6] dark:bg-muted text-[#5D7B6F] dark:text-primary hover:bg-[#D5E4DA] flex items-center justify-center shrink-0 border border-[#D5E4DA]/60 cursor-pointer transition-colors"
+              className="h-11 w-11 rounded-2xl bg-muted text-primary hover:bg-muted/80 flex items-center justify-center shrink-0 border border-border cursor-pointer transition-colors"
               title="Danh sách câu"
             >
-              <Menu className="h-5 w-5 text-[#5D7B6F] dark:text-primary" strokeWidth={2.2} />
+              <Menu className="h-5 w-5 text-primary" strokeWidth={2.2} />
             </button>
             <div className="min-w-0">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#5D7B6F] dark:text-muted-foreground truncate leading-none mb-0.5">{session.categoryName}</p>
-              <p className="text-sm font-black text-[#5D7B6F] dark:text-primary truncate max-w-[150px] leading-tight">{session.courseCode || session.title}</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground truncate leading-none mb-0.5">{session.categoryName}</p>
+              <p className="text-sm font-black text-primary truncate max-w-[150px] leading-tight">{session.courseCode || session.title}</p>
             </div>
           </div>
           
@@ -455,29 +455,29 @@ export default function MobileFlashcardSessionPage() {
           <div className="flex items-center gap-2 shrink-0">
             <div className="flex flex-col items-center justify-center">
               <div className="flex items-center text-xs font-black tracking-tight">
-                <span className="text-[#00875A] dark:text-emerald-400 font-black">{stats.known} Biết</span>
-                <span className="text-gray-300 font-normal mx-1">|</span>
-                <span className="text-[#E53E3E] dark:text-rose-400 font-black">{stats.unknown} Chưa</span>
+                <span className="text-success-fg font-black">{stats.known} Biết</span>
+                <span className="text-muted-foreground font-normal mx-1">|</span>
+                <span className="text-destructive font-black">{stats.unknown} Chưa</span>
               </div>
-              <p className="text-[11px] font-bold text-[#2B6CB0] dark:text-sky-400 mt-0.5">
+              <p className="text-[11px] font-bold text-primary mt-0.5">
                 {actualIndex + 1}/{effectiveTotal} câu
               </p>
             </div>
 
             <button
               onClick={() => setExitConfirmOpen(true)}
-              className="h-11 w-11 rounded-full bg-[#FFF5F5] dark:bg-rose-950/40 hover:bg-rose-100 text-[#E53E3E] flex items-center justify-center shrink-0 cursor-pointer transition-colors border border-rose-100/80 ml-1"
+              className="h-11 w-11 rounded-full bg-incorrect-bg hover:bg-incorrect-bg/80 text-destructive flex items-center justify-center shrink-0 cursor-pointer transition-colors border border-incorrect-border ml-1"
               title="Thoát"
             >
-              <XCircle className="h-6 w-6 text-[#E53E3E]" strokeWidth={1.8} />
+              <XCircle className="h-6 w-6 text-destructive" strokeWidth={1.8} />
             </button>
           </div>
         </div>
 
         {/* Top Progress Line */}
-        <div className="h-1 bg-[#E3ECE6] dark:bg-muted">
+        <div className="h-1 bg-muted">
           <div
-            className="h-full bg-[#5D7B6F] dark:bg-primary transition-all duration-300"
+            className="h-full bg-primary transition-all duration-300"
             style={{ width: `${((actualIndex + 1) / effectiveTotal) * 100}%` }}
           />
         </div>

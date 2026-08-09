@@ -54,37 +54,37 @@ function RestoreAccountContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#5D7B6F]" />
-        <h2 className="text-lg font-black text-slate-700">Đang xác thực và khôi phục tài khoản...</h2>
-        <p className="text-xs text-slate-500 font-medium">Vui lòng chờ trong giây lát.</p>
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <h2 className="text-lg font-black text-card-foreground">Đang xác thực và khôi phục tài khoản...</h2>
+        <p className="text-xs text-muted-foreground font-medium">Vui lòng chờ trong giây lát.</p>
       </div>
     )
   }
 
   return (
-    <div className="p-6 sm:p-8 space-y-6">
+    <div className="p-6 sm:p-8 space-y-6 text-card-foreground">
       <div className="text-center space-y-2">
-        <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md border border-slate-100">
+        <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center bg-card shadow-md border border-border">
           {success ? (
-            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <CheckCircle2 className="w-8 h-8 text-success-fg" />
           ) : (
-            <XCircle className="w-8 h-8 text-rose-600" />
+            <XCircle className="w-8 h-8 text-destructive" />
           )}
         </div>
-        <h1 className="text-xl sm:text-2xl font-black text-slate-800">
+        <h1 className="text-xl sm:text-2xl font-black text-card-foreground">
           {success ? 'Khôi phục tài khoản thành công!' : 'Khôi phục thất bại'}
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-sm mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed">
           {message}
         </p>
       </div>
 
       {success && (
-        <div className="rounded-2xl bg-emerald-50/60 border border-emerald-200/80 p-4 space-y-2 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-emerald-800 font-bold text-xs">
+        <div className="rounded-2xl bg-success-bg border border-success-border p-4 space-y-2 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-success-fg font-bold text-xs">
             <ShieldCheck className="w-4 h-4" /> Tài khoản đã an toàn
           </div>
-          <p className="text-[11px] text-emerald-700 font-medium">
+          <p className="text-[11px] text-success-fg font-medium">
             Lịch xóa tài khoản trong 72 giờ đã được hủy bỏ hoàn toàn. Bạn có thể đăng nhập lại ngay bây giờ.
           </p>
         </div>
@@ -93,7 +93,7 @@ function RestoreAccountContent() {
       <div className="pt-2">
         <Link
           href="/login"
-          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-[#5D7B6F] hover:bg-[#4A6359] text-white font-bold text-sm shadow-md transition-all"
+          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-md transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Trở về trang đăng nhập
         </Link>
@@ -104,13 +104,13 @@ function RestoreAccountContent() {
 
 export default function RestoreAccountPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50/50 px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-page-bg px-4 py-8">
+      <div className="w-full max-w-md bg-card text-card-foreground rounded-3xl border border-border shadow-xl overflow-hidden">
         <Suspense
           fallback={
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
-              <Loader2 className="w-8 h-8 animate-spin text-[#5D7B6F]" />
-              <p className="text-xs text-slate-500 font-medium">Đang tải...</p>
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground font-medium">Đang tải...</p>
             </div>
           }
         >

@@ -35,9 +35,9 @@ export const AIHistoryFilterBar = React.memo(function AIHistoryFilterBar({
   setPage,
 }: AIHistoryFilterBarProps) {
   return (
-    <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <div className="bg-card text-card-foreground p-4 rounded-3xl border border-border shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <div className="relative flex-1">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => {
@@ -45,7 +45,7 @@ export const AIHistoryFilterBar = React.memo(function AIHistoryFilterBar({
             setPage(1)
           }}
           placeholder="Tìm theo chủ đề, tiêu đề..."
-          className="pl-10 h-10 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-[#5D7B6F] bg-slate-50/50"
+          className="pl-10 h-10 rounded-2xl border-2 border-border text-xs font-semibold focus:border-primary bg-muted/50 text-card-foreground placeholder:text-muted-foreground"
         />
       </div>
 
@@ -57,7 +57,7 @@ export const AIHistoryFilterBar = React.memo(function AIHistoryFilterBar({
             setPage(1)
           }}
         >
-          <SelectTrigger className="h-10 rounded-2xl border-2 border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-700">
+          <SelectTrigger className="h-10 rounded-2xl border-2 border-border bg-muted/50 text-xs font-bold text-card-foreground">
             <SelectValue placeholder="Chọn loại bài" />
           </SelectTrigger>
           <SelectContent className="rounded-2xl border-slate-200 shadow-xl">

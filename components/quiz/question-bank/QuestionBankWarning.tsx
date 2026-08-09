@@ -146,9 +146,9 @@ export function QuestionBankWarning({
           )}
 
           {/* Question Preview */}
-          <div className="border rounded-lg p-4 bg-gray-50">
+          <div className="border border-border rounded-lg p-4 bg-muted">
             <p className="font-medium mb-2">Nội dung câu hỏi:</p>
-            <p className="text-sm text-gray-700">{newQuestion.text}</p>
+            <p className="text-sm text-card-foreground">{newQuestion.text}</p>
           </div>
         </div>
 

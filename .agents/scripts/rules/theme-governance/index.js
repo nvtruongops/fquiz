@@ -96,6 +96,12 @@ module.exports = {
     }
 
     scanDirs.forEach(dir => scanDir(dir));
+
+    if (policy.severity === 'ERROR' && (hardcodedHexCount > 0 || hardcodedClassCount > 0)) {
+      ctx.logger.error(`THEME_SOURCE_FAIL: Phát hiện ${hardcodedHexCount} hardcoded hex và ${hardcodedClassCount} hardcoded light classes trong source code. Yêu cầu chuyển 100% sang semantic design tokens.`);
+      return { passed: false };
+    }
+
     ctx.logger.pass(`[TIER 1 SOURCE]: Audit source code hoàn tất. Hardcoded Hex: ${hardcodedHexCount}, Hardcoded Light Classes: ${hardcodedClassCount}.`);
 
     // ──────────────────────────────────────────────────────────────────────────

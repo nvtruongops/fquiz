@@ -46,7 +46,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
                   <div className="flex items-center gap-2 shrink-0 ml-2">
                     <span className={cn(
                       'inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full',
-                      isActive ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+                      isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
                     )}>
                       <Eye className="w-3 h-3" /> {topic.totalViews}
                     </span>

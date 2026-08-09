@@ -166,23 +166,23 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  const inputClasses = "w-full rounded-2xl border-2 px-4 py-3.5 text-[14px] outline-none transition-all duration-300 font-medium border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5D7B6F] focus:bg-white focus:ring-4 focus:ring-[#5D7B6F]/10 shadow-2xs"
+  const inputClasses = "w-full rounded-2xl border-2 px-4 py-3.5 text-[14px] outline-none transition-all duration-300 font-medium border-border bg-card/80 text-card-foreground placeholder:text-muted-foreground hover:border-border/80 focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary/10 shadow-2xs"
 
   if (done) {
     return (
       <div className="w-full text-center py-8">
-        <div className="bg-white/80 backdrop-blur-2xl rounded-[2.5rem] shadow-xl border border-white/80 p-10">
-          <div className="w-20 h-20 rounded-full bg-[#D7F9FA] flex items-center justify-center mx-auto mb-6 shadow-inner border border-white/50">
-            <Mail className="w-10 h-10 text-[#0891b2]" />
+        <div className="bg-card/80 backdrop-blur-2xl rounded-[2.5rem] shadow-xl border border-border p-10">
+          <div className="w-20 h-20 rounded-full bg-info-bg flex items-center justify-center mx-auto mb-6 shadow-inner border border-info-border">
+            <Mail className="w-10 h-10 text-info-fg" />
           </div>
-          <h2 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">Cập nhật thành công</h2>
-          <p className="text-slate-500 font-medium mb-8 max-w-[280px] mx-auto leading-relaxed">
-            Mật khẩu của tài khoản <br/><span className="text-slate-800 font-black">{email}</span><br/> đã được thiết lập lại.
+          <h2 className="text-2xl font-black text-card-foreground mb-3 tracking-tight">Cập nhật thành công</h2>
+          <p className="text-muted-foreground font-medium mb-8 max-w-[280px] mx-auto leading-relaxed">
+            Mật khẩu của tài khoản <br/><span className="text-card-foreground font-black">{email}</span><br/> đã được thiết lập lại.
           </p>
 
           <Link
             href="/login"
-            className="group inline-flex items-center gap-2 px-6 py-3 bg-white/80 border border-slate-200 rounded-full shadow-2xs text-sm text-[#5D7B6F] font-black hover:text-[#4a6358] hover:shadow-md transition-all cursor-pointer"
+            className="group inline-flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-full shadow-2xs text-sm text-primary font-black hover:text-primary/90 hover:shadow-md transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Đăng nhập ngay</span>
@@ -195,22 +195,22 @@ export default function ForgotPasswordPage() {
   return (
     <div ref={cardRef} className="w-full relative group opacity-0">
       {/* Glow behind the card */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-[#5D7B6F]/20 to-[#A4C3A2]/20 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
-      <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/80 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
+      <div className="relative bg-card/80 backdrop-blur-2xl rounded-[2.5rem] border border-border p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
         {/* Top inner highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
         <div className="mb-6 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[32px] font-black text-slate-800 tracking-tight leading-tight">Khôi phục mật khẩu</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">
+          <h1 className="text-2xl sm:text-[32px] font-black text-card-foreground tracking-tight leading-tight">Khôi phục mật khẩu</h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium">
             Điền email để nhận mã xác thực và thiết lập mật khẩu mới.
           </p>
         </div>
 
         <form onSubmit={handleSendCode} noValidate className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="email" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+            <label htmlFor="email" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
               Email đăng ký
             </label>
             <div className="relative">
@@ -222,7 +222,7 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 disabled={verified}
-                className={cn(inputClasses, verified && "opacity-60 cursor-not-allowed bg-slate-50")}
+                className={cn(inputClasses, verified && "opacity-60 cursor-not-allowed bg-muted")}
               />
             </div>
             <DevCodeAndRetryMessage retryAfterSec={retryAfterSec} devCode={devCode} />
@@ -232,9 +232,9 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={sendingCode}
-              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
+              className="group relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
             >
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              <div className="absolute inset-0 bg-primary-foreground/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {sendingCode ? (
                 <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
               ) : (
@@ -251,10 +251,10 @@ export default function ForgotPasswordPage() {
           <form 
             onSubmit={handleVerifyCode} 
             noValidate 
-            className="space-y-4 pt-4 mt-4 border-t border-slate-200/80"
+            className="space-y-4 pt-4 mt-4 border-t border-border"
           >
             <div className="space-y-1">
-              <label htmlFor="code" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="code" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Mã xác thực
               </label>
               <div className="relative">
@@ -280,14 +280,14 @@ export default function ForgotPasswordPage() {
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode}
-                className="flex-1 shrink-0 rounded-2xl bg-white border border-[#5D7B6F]/30 px-4 py-3.5 text-sm font-bold text-[#5D7B6F] hover:bg-[#5D7B6F]/5 hover:border-[#5D7B6F]/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 shrink-0 rounded-2xl bg-card border border-primary/30 px-4 py-3.5 text-sm font-bold text-primary hover:bg-primary/5 hover:border-primary/50 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {sendingCode ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Gửi lại mã'}
               </button>
               <button
                 type="submit"
                 disabled={verifyingCode}
-                className="flex-[2] group relative flex items-center justify-center gap-2 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white font-black py-3.5 rounded-2xl transition-all duration-300 shadow-md border border-slate-700 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+                className="flex-[2] group relative flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3.5 rounded-2xl transition-all duration-300 shadow-md border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
               >
                 {verifyingCode ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" /> : <>
                   <span className="drop-shadow-2xs">Xác thực mã</span>
@@ -302,10 +302,10 @@ export default function ForgotPasswordPage() {
           <form 
             onSubmit={handleResetPassword} 
             noValidate 
-            className="space-y-4 pt-4 mt-4 border-t border-slate-200/80"
+            className="space-y-4 pt-4 mt-4 border-t border-border"
           >
             <div className="space-y-1">
-              <label htmlFor="newPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="newPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Mật khẩu mới
               </label>
               <input
@@ -319,7 +319,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700 ml-1 uppercase tracking-wider">
+              <label htmlFor="confirmPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
                 Xác nhận mật khẩu mới
               </label>
               <input
@@ -336,18 +336,18 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={resetting}
-              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#6B8D7F] to-[#5D7B6F] hover:from-[#5D7B6F] hover:to-[#4A6359] text-white font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-[#7BA090]/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
+              className="group relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-2 cursor-pointer active:scale-[0.98]"
             >
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              <div className="absolute inset-0 bg-primary-foreground/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {resetting ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" /> : <span className="tracking-wide drop-shadow-2xs">Cập nhật mật khẩu</span>}
             </button>
           </form>
         )}
 
-        <div className="mt-8 pt-5 border-t border-slate-200/50">
+        <div className="mt-8 pt-5 border-t border-border">
           <Link
             href="/login"
-            className="group flex items-center justify-center gap-2 text-sm text-slate-500 font-bold hover:text-[#5D7B6F] transition-all"
+            className="group flex items-center justify-center gap-2 text-sm text-muted-foreground font-bold hover:text-primary transition-all"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Quay lại trang đăng nhập</span>

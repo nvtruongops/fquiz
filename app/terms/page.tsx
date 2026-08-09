@@ -54,64 +54,64 @@ export default async function TermsPage() {
                 </p>
               </div>
 
-              <hr className="border-slate-100" />
+              <hr className="border-border" />
 
               {/* Table of Contents Navigation */}
               <nav className="space-y-1.5">
-                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-2">Mục lục nhanh</p>
+                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Mục lục nhanh</p>
                 <a
                   href="#account"
-                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-[#5D7B6F]/10 hover:text-[#5D7B6F] transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-[#5D7B6F]" />
+                    <ShieldCheck className="w-4 h-4 text-primary" />
                     <span>1. Đăng ký & Bảo mật</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
 
                 <a
                   href="#copyright"
-                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-[#5D7B6F]/10 hover:text-[#5D7B6F] transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <Copyright className="w-4 h-4 text-emerald-600" />
+                    <Copyright className="w-4 h-4 text-success-fg" />
                     <span>2. Bản quyền nội dung</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
 
                 <a
                   href="#disclaimer"
-                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-[#5D7B6F]/10 hover:text-[#5D7B6F] transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <AlertTriangle className="w-4 h-4 text-warning-fg" />
                     <span>3. Miễn trừ trách nhiệm</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
 
                 <a
                   href="#changes"
-                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-[#5D7B6F]/10 hover:text-[#5D7B6F] transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <RefreshCw className="w-4 h-4 text-blue-500" />
+                    <RefreshCw className="w-4 h-4 text-primary" />
                     <span>4. Thay đổi điều khoản</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
               </nav>
 
-              <hr className="border-slate-100" />
+              <hr className="border-border" />
 
               {/* Quick Link to Privacy */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-2">
-                <p className="text-[11px] font-bold text-slate-600">Bạn muốn xem Chính sách bảo mật?</p>
+              <div className="bg-muted p-4 rounded-2xl border border-border space-y-2">
+                <p className="text-[11px] font-bold text-muted-foreground">Bạn muốn xem Chính sách bảo mật?</p>
                 <Link
                   href="/privacy"
-                  className="inline-flex items-center gap-1.5 text-xs font-black text-[#5D7B6F] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline"
                 >
                   <Shield className="w-3.5 h-3.5" />
                   <span>Xem Chính sách bảo mật</span>
@@ -188,11 +188,11 @@ export default async function TermsPage() {
                   <RefreshCw className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">Điều 04</span>
-                  <h2 className="text-lg sm:text-xl font-black text-slate-900">Thay đổi điều khoản</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 04</span>
+                  <h2 className="text-lg sm:text-xl font-black text-card-foreground">Thay đổi điều khoản</h2>
                 </div>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
                 FQuiz bảo lưu quyền cập nhật Điều khoản sử dụng bất cứ lúc nào để phù hợp với sự phát triển của hệ thống và tuân thủ pháp luật. Phiên bản mới sẽ có hiệu lực ngay khi được đăng tải trên trang này.
               </p>
             </section>

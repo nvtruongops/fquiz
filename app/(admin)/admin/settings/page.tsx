@@ -24,7 +24,7 @@ export default function AdminSettingsPage() {
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-[#5D7B6F] animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     )
   }
@@ -37,8 +37,8 @@ export default function AdminSettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#5D7B6F]">Cấu hình Hệ thống</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý tham số toàn cục, bảo mật và dịch vụ AI/LLM</p>
+            <h1 className="text-2xl font-bold text-primary">Cấu hình Hệ thống</h1>
+            <p className="text-sm text-muted-foreground mt-1">Quản lý tham số toàn cục, bảo mật và dịch vụ AI/LLM</p>
           </div>
         </div>
 
@@ -51,12 +51,12 @@ export default function AdminSettingsPage() {
           >
             <div className="flex items-center justify-between px-2 pb-1">
               {!isSidebarCollapsed && (
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Danh mục</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Danh mục</span>
               )}
               <button
                 type="button"
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="p-1.5 rounded-lg text-gray-500 hover:bg-[#EAE7D6] hover:text-[#5D7B6F] transition-colors ml-auto hidden md:block"
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors ml-auto hidden md:block cursor-pointer"
                 title={isSidebarCollapsed ? 'Mở rộng sidebar' : 'Thu nhỏ sidebar'}
               >
                 {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -66,10 +66,10 @@ export default function AdminSettingsPage() {
             <button
               onClick={() => setActiveTab('general')}
               title="Hiển thị chung"
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
                 ${activeTab === 'general'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'text-gray-600 hover:bg-[#EAE7D6] hover:text-[#5D7B6F]'}`}
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-card-foreground hover:bg-muted hover:text-primary'}`}
             >
               <SlidersHorizontal className="w-4 h-4 shrink-0" />
               {!isSidebarCollapsed && <span>Hiển thị chung</span>}
@@ -78,10 +78,10 @@ export default function AdminSettingsPage() {
             <button
               onClick={() => setActiveTab('security')}
               title="Bảo mật & Thi cử"
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
                 ${activeTab === 'security'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'text-gray-600 hover:bg-[#EAE7D6] hover:text-[#5D7B6F]'}`}
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-card-foreground hover:bg-muted hover:text-primary'}`}
             >
               <ShieldAlert className="w-4 h-4 shrink-0" />
               {!isSidebarCollapsed && <span>Bảo mật &amp; Thi cử</span>}
@@ -90,10 +90,10 @@ export default function AdminSettingsPage() {
             <button
               onClick={() => setActiveTab('llm')}
               title="Cấu hình LLM / AI"
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
                 ${activeTab === 'llm'
-                  ? 'bg-[#5D7B6F] text-white shadow-md shadow-[#5D7B6F]/20'
-                  : 'text-gray-600 hover:bg-[#EAE7D6] hover:text-[#5D7B6F]'}`}
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-card-foreground hover:bg-muted hover:text-primary'}`}
             >
               <Bot className="w-4 h-4 shrink-0" />
               {!isSidebarCollapsed && <span>Cấu hình LLM / AI</span>}
@@ -126,12 +126,12 @@ export default function AdminSettingsPage() {
             {/* LLM Tab */}
             {activeTab === 'llm' && (
               <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                <Card className="border-[#A4C3A2] shadow-sm">
+                <Card className="border-border bg-card shadow-sm text-card-foreground">
                   <CardHeader>
-                    <CardTitle className="text-[#5D7B6F] text-lg flex items-center gap-2">
+                    <CardTitle className="text-primary text-lg flex items-center gap-2">
                       <Bot className="w-5 h-5" /> Provider AI đang kích hoạt
                     </CardTitle>
-                    <CardDescription>Chọn Provider AI sẽ xử lý các yêu cầu tự động trong toàn hệ thống</CardDescription>
+                    <CardDescription className="text-muted-foreground">Chọn Provider AI sẽ xử lý các yêu cầu tự động trong toàn hệ thống</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -140,14 +140,14 @@ export default function AdminSettingsPage() {
                           key={p}
                           type="button"
                           onClick={() => setActiveProvider(p)}
-                          className={`p-4 rounded-xl border-2 font-bold text-xs capitalize flex items-center justify-between transition-all ${
+                          className={`p-4 rounded-xl border-2 font-bold text-xs capitalize flex items-center justify-between transition-all cursor-pointer ${
                             llmConfig.active_provider === p
-                              ? 'border-[#5D7B6F] bg-emerald-50/50 text-[#5D7B6F]'
-                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-card-foreground hover:bg-muted'
                           }`}
                         >
                           <span>{p}</span>
-                          {llmConfig.active_provider === p && <span className="w-2.5 h-2.5 bg-[#5D7B6F] rounded-full animate-pulse" />}
+                          {llmConfig.active_provider === p && <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />}
                         </button>
                       ))}
                     </div>
@@ -158,7 +158,7 @@ export default function AdminSettingsPage() {
                   <Button
                     onClick={() => handleSaveAll('general')}
                     disabled={saveMutation.isPending}
-                    className="bg-[#5D7B6F] hover:bg-[#4a6358] shadow-md px-6 rounded-xl"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md px-6 rounded-xl cursor-pointer"
                   >
                     {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                     Lưu tất cả cấu hình
