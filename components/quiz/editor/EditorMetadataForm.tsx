@@ -18,13 +18,15 @@ interface EditorMetadataFormProps {
   setForm: React.Dispatch<React.SetStateAction<QuizFormData>>
   categories: Category[]
   isStudentMode: boolean
+  quizId?: string
 }
 
 export function EditorMetadataForm({ 
   form, 
   setForm, 
   categories, 
-  isStudentMode 
+  isStudentMode,
+  quizId
 }: EditorMetadataFormProps) {
   const [isCreating, setIsCreating] = React.useState(false)
   const [newCatName, setNewCatName] = React.useState('')
@@ -48,7 +50,8 @@ export function EditorMetadataForm({
     setCheckingCode(true)
 
     const csrfToken = getCsrfTokenFromCookie()
-    fetch(`/api/admin/quizzes/check-code?code=${encodeURIComponent(code)}`, {
+    const excludeParam = quizId ? `&excludeId=${encodeURIComponent(quizId)}` : ''
+    fetch(`/api/admin/quizzes/check-code?code=${encodeURIComponent(code)}${excludeParam}`, {
       headers: {
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
       },

@@ -84,16 +84,9 @@ export function Sidebar({ user }: SidebarProps) {
   const isDevOrAdmin = user?.role === 'admin' || user?.role === 'dev'
   const isTeacher = user?.role === 'teacher'
 
-  // Filter sections and items based on role
-  const visibleNavSections = navSections.filter((sec) => {
-    if (sec.id === 'ai-learning' && !isDevOrAdmin) {
-      return false
-    }
-    if (sec.id === 'classroom-section' && isTeacher) {
-      return false
-    }
-    return true
-  })
+  const visibleNavSections = navSections.filter(
+    (sec) => !(sec.id === 'ai-learning' && !isDevOrAdmin) && !(sec.id === 'classroom-section' && isTeacher)
+  )
 
   // Single active section state: opening a section closes all other sections
   const [openSectionId, setOpenSectionId] = useState<string | null>(null)

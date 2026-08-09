@@ -71,8 +71,8 @@ export default async function QuestionBankPage() {
     return (
       <div className="p-8">
         <div className="text-center py-12">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Lỗi tải trang</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl font-bold text-destructive mb-2">Lỗi tải trang</h2>
+          <p className="text-muted-foreground">
             Không thể tải dữ liệu. Vui lòng kiểm tra kết nối database.
           </p>
         </div>

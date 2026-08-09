@@ -283,12 +283,10 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
         usage_count: updatedQuizIds.length,
       }
 
-      if (!sameAnswer && resolve_conflicts === 'keep_most_used') {
-        if (associatedQuizzes.length > (existing.usage_count || 0)) {
-          updateData.correct_answer = q.correct_answer || []
-          updateData.options = q.options
-          if (q.explanation) updateData.explanation = q.explanation
-        }
+      if (!sameAnswer && resolve_conflicts === 'keep_most_used' && associatedQuizzes.length > (existing.usage_count || 0)) {
+        updateData.correct_answer = q.correct_answer || []
+        updateData.options = q.options
+        if (q.explanation) updateData.explanation = q.explanation
       }
 
       bulkOps.push({

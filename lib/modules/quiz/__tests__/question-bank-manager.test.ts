@@ -136,6 +136,32 @@ describe('Question Bank Manager', () => {
       expect(result.get(0)?.conflictType).toBe('different_answer')
       expect(result.get(1)).toBeUndefined()
     })
+
+    it('should NOT generate conflict if question text matches generic stem but options differ completely', async () => {
+      const questions = [
+        { text: 'Hồ Chí Minh cho rằng:', options: ['Đạo đức cách mạng là...', 'Ý B'], correct_answer: 0 },
+      ]
+
+      const mockExisting = [
+        {
+          _id: 'doc-existing',
+          category_id: 'cat-123',
+          question_id: 'q_other_hash',
+          text: 'Hồ Chí Minh cho rằng:',
+          options: ['Văn hoá là tổng hợp...', 'Ý D'],
+          correct_answer: [0],
+          used_in_quizzes: ['COURSE1'],
+          usage_count: 1,
+        },
+      ]
+
+      ;(QuestionBank.find as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue(mockExisting),
+      })
+
+      const result = await checkQuestionsInBank('cat-123', questions)
+      expect(result.size).toBe(0) // No conflict! Treated as new question!
+    })
   })
 
   describe('addOrUpdateQuestionInBank', () => {

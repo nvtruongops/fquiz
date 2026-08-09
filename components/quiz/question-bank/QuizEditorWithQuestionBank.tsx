@@ -5,7 +5,7 @@
  * Sử dụng component này thay vì QuizEditor trực tiếp
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
 import { QuestionConflictModal, type ResolvedAnswer } from '@/components/quiz/question-bank/QuestionConflictModal'
 import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
@@ -40,6 +40,9 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
     ((resolutions: ResolvedAnswer[]) => void) | null
   >(null)
 
+  // Flag to skip duplicate conflict modal when admin has already confirmed choices
+  const skipNextConflictCheckRef = useRef(false)
+
   // Derive formData from props.initialData so useQuestionBankCheck runs immediately
   const [formData, setFormData] = useState<any>(() => {
     if (props.initialData) {
@@ -73,6 +76,11 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
   const handleBeforeSubmit = (data: any) => {
     setFormData(data)
 
+    if (skipNextConflictCheckRef.current) {
+      skipNextConflictCheckRef.current = false
+      return true
+    }
+
     if (hasDifferentAnswerConflicts && result && result.different_answer_conflicts > 0) {
       setConflictData({
         conflicts: result.conflicts,
@@ -99,9 +107,24 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
     if (action === 'force' || action === 'skip') {
       // Apply the chosen answers to the form, then re-submit (skipping the
       // conflict gate since conflicts are now resolved).
+      skipNextConflictCheckRef.current = true
       applyResolutionsRef.current?.(resolutions ?? [])
     }
   }
+
+  const handleFormChange = useCallback((data: any) => {
+    setFormData((prev: any) => {
+      if (
+        prev?.category_id === data.category_id &&
+        prev?.questions?.length === data.questions?.length &&
+        JSON.stringify(prev) === JSON.stringify(data)
+      ) {
+        return prev
+      }
+      skipNextConflictCheckRef.current = false
+      return data
+    })
+  }, [])
 
   return (
     <div className="relative">
@@ -119,7 +142,10 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
       <QuizEditor
         {...props}
         onBeforeSubmit={handleBeforeSubmit}
-        onFormChange={setFormData}
+        onFormChange={handleFormChange}
+        onConflictsResolved={() => {
+          skipNextConflictCheckRef.current = true
+        }}
         registerApplyResolutions={(fn) => {
           applyResolutionsRef.current = fn
         }}
@@ -152,34 +178,34 @@ export function QuizEditorWithQuestionBank(props: QuizEditorWithQuestionBankProp
 function getStatusConfig(checking: boolean, hasDiff: boolean, hasSame: boolean, hasAny: boolean, result: any) {
   if (checking) {
     return {
-      style: 'border-blue-300 bg-blue-50',
-      icon: <Loader2 className="h-5 w-5 animate-spin text-blue-600 mt-0.5" />,
+      style: 'border-info-border bg-info-bg text-info-fg',
+      icon: <Loader2 className="h-5 w-5 animate-spin text-info-fg mt-0.5" />,
       text: 'Đang kiểm tra...',
     }
   }
   if (hasDiff) {
     return {
-      style: 'border-red-300 bg-red-50',
-      icon: <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />,
-      text: <span className="text-red-700 font-medium">{result?.different_answer_conflicts} câu có mâu thuẫn đáp án!</span>,
+      style: 'border-incorrect-border bg-incorrect-bg text-destructive',
+      icon: <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />,
+      text: <span className="text-destructive font-medium">{result?.different_answer_conflicts} câu có mâu thuẫn đáp án!</span>,
     }
   }
   if (hasSame) {
     return {
-      style: 'border-yellow-300 bg-yellow-50',
-      icon: <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />,
-      text: <span className="text-yellow-700">✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)</span>,
+      style: 'border-warning-border bg-warning-bg text-warning-fg',
+      icon: <CheckCircle2 className="h-5 w-5 text-warning-fg mt-0.5" />,
+      text: <span className="text-warning-fg font-medium">✓ {result?.same_answer_conflicts} câu đã tồn tại (có thể tái sử dụng)</span>,
     }
   }
   if (hasAny) {
     return {
-      style: 'border-green-300 bg-green-50',
-      icon: <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />,
-      text: <span className="text-green-700">✓ Tất cả câu hỏi hợp lệ</span>,
+      style: 'border-success-border bg-success-bg text-success-fg',
+      icon: <CheckCircle2 className="h-5 w-5 text-success-fg mt-0.5" />,
+      text: <span className="text-success-fg font-medium">✓ Tất cả câu hỏi hợp lệ</span>,
     }
   }
   return {
-    style: 'border-border bg-card',
+    style: 'border-border bg-card text-card-foreground',
     icon: <Database className="h-5 w-5 text-muted-foreground mt-0.5" />,
     text: 'Chưa có câu hỏi nào',
   }
@@ -201,20 +227,20 @@ function QuestionBankStatusBar({
   const config = getStatusConfig(checking, hasDifferentAnswerConflicts, hasSameAnswerConflicts, hasAnyConflicts, result)
 
   return (
-    <div className="fixed top-20 right-8 z-50 w-80">
-      <Alert className={`shadow-lg ${config.style}`}>
+    <div className="mb-4 w-full">
+      <Alert className={`shadow-xs ${config.style}`}>
         <div className="flex items-start gap-3">
           {config.icon}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold">Ngân hàng câu hỏi</span>
+              <span className="text-sm font-bold text-current">Ngân hàng câu hỏi</span>
               {result && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs border-current/30 text-current">
                   {result.total_questions} câu
                 </Badge>
               )}
             </div>
-            <AlertDescription className="text-xs">
+            <AlertDescription className="text-xs text-current">
               {config.text}
             </AlertDescription>
           </div>

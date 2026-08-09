@@ -41,11 +41,15 @@ function hasQuestionError(diags: ImportDiagnostic[], questionIndex: number): boo
   return diags.some((item) => item.level === 'error' && item.questionIndex === questionIndex)
 }
 
-export function validateImportedQuiz(raw: ImportRawQuizPayload, normalized: NormalizedQuiz): ImportPreviewResult {
+export function validateImportedQuiz(
+  raw: ImportRawQuizPayload,
+  normalized: NormalizedQuiz,
+  context?: { category_id?: string; course_code?: string; description?: string }
+): ImportPreviewResult {
   const diagnostics: ImportDiagnostic[] = []
 
   validateTopLevel(raw, diagnostics)
-  validateMetadata(raw, normalized, diagnostics)
+  validateMetadata(raw, normalized, diagnostics, context)
   
   if (normalized.questions.length === 0) {
     diagnostics.push(diagnostic('error', 'NO_QUESTIONS', 'Cần ít nhất 1 câu hỏi', { field: 'questions' }))
@@ -84,20 +88,34 @@ function validateTopLevel(raw: ImportRawQuizPayload, diagnostics: ImportDiagnost
   }
 }
 
-function validateMetadata(raw: ImportRawQuizPayload, normalized: NormalizedQuiz, diagnostics: ImportDiagnostic[]) {
-  if (!normalized.course_code) {
+import { analyzeQuestionStructure } from '@/lib/modules/quiz/quiz-import/analyzer'
+
+function validateMetadata(
+  raw: ImportRawQuizPayload,
+  normalized: NormalizedQuiz,
+  diagnostics: ImportDiagnostic[],
+  context?: { category_id?: string; course_code?: string; description?: string }
+) {
+  const hasCourseCode = !!(normalized.course_code || context?.course_code)
+  const hasCategoryId = !!(normalized.category_id || context?.category_id)
+  const hasDescription = !!(normalized.description || context?.description)
+
+  if (!hasCourseCode) {
     diagnostics.push(diagnostic('warning', 'MISSING_COURSE_CODE', 'Thiếu Fquiz code (quizMeta.course_code) - có thể nhập thủ công trong form trước khi lưu', { field: 'quizMeta.course_code' }))
-  } else if (normalized.course_code.length > COURSE_CODE_MAX_LENGTH) {
+  } else if (normalized.course_code && normalized.course_code.length > COURSE_CODE_MAX_LENGTH) {
     diagnostics.push(diagnostic('error', 'COURSE_CODE_TOO_LONG', COURSE_CODE_MAX_LENGTH_MESSAGE, { field: 'quizMeta.course_code' }))
-  } else if (!COURSE_CODE_PATTERN.test(normalized.course_code)) {
+  } else if (normalized.course_code && !COURSE_CODE_PATTERN.test(normalized.course_code)) {
     diagnostics.push(diagnostic('error', 'INVALID_COURSE_CODE', COURSE_CODE_ALLOWED_MESSAGE, { field: 'quizMeta.course_code' }))
   }
-  if (!normalized.category_id) {
+
+  if (!hasCategoryId) {
     diagnostics.push(diagnostic('warning', 'MISSING_CATEGORY_ID', 'Thiếu category_id - có thể chọn môn học trong form trước khi lưu', { field: 'quizMeta.category_id' }))
   }
-  if (!normalized.description) {
+
+  if (!hasDescription) {
     diagnostics.push(diagnostic('warning', 'MISSING_DESCRIPTION', 'Thiếu quiz description (quizMeta.description) - có thể bỏ qua hoặc nhập thêm trong form', { field: 'quizMeta.description' }))
   }
+
   if (normalized.category_id && !validateObjectId(normalized.category_id)) {
     diagnostics.push(diagnostic('warning', 'CATEGORY_ID_NOT_OBJECT_ID', 'category_id không đúng định dạng ObjectId, hãy chọn lại môn học trước khi lưu', { field: 'quizMeta.category_id' }))
   }
@@ -180,10 +198,13 @@ function finalizePreview(normalized: NormalizedQuiz, diagnostics: ImportDiagnost
     warnings: diagnostics.filter((item) => item.level === 'warning').length,
   }
 
+  const structureReport = analyzeQuestionStructure(normalized.questions)
+
   return {
     normalizedQuiz: normalized,
     diagnostics,
     summary,
     isValid: summary.errors === 0,
+    structureReport,
   }
 }

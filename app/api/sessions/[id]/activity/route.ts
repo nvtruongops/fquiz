@@ -51,13 +51,11 @@ export const POST = withAuth(async (
     const updateQuery: Record<string, any> = { $set: setPayload }
 
     // Handle resume event - calculate accumulated paused duration and clear paused_at
-    if (body.event === 'resume') {
-      if (session.paused_at) {
-        const pausedDuration = Math.max(0, now.getTime() - new Date(session.paused_at).getTime())
-        const currentPausedTotal = session.total_paused_duration_ms || 0
-        setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
-        updateQuery.$unset = { paused_at: 1 }
-      }
+    if (body.event === 'resume' && session.paused_at) {
+      const pausedDuration = Math.max(0, now.getTime() - new Date(session.paused_at).getTime())
+      const currentPausedTotal = session.total_paused_duration_ms || 0
+      setPayload.total_paused_duration_ms = currentPausedTotal + pausedDuration
+      updateQuery.$unset = { paused_at: 1 }
     }
 
     await QuizSession.updateOne({ _id: session._id }, updateQuery)

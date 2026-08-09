@@ -62,7 +62,9 @@ export const GET = withAuth(
             try {
               const resObj = JSON.parse(log.response)
               st = resObj.sourceText || ''
-            } catch {}
+            } catch (_parseErr) {
+              /* ignore invalid JSON response */
+            }
           }
           const snippet = st ? st.trim().slice(0, 50) : ''
           if (snippet && evalSourceTexts.has(snippet)) {

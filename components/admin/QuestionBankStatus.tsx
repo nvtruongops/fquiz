@@ -165,19 +165,19 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
 
   const statusConfig = {
     not_migrated: {
-      icon: <XCircle className="w-4 h-4 text-red-500" />,
-      badge: <Badge className="bg-red-100 text-red-700 border-red-300 text-xs">Chưa migration</Badge>,
-      bg: 'border-red-200 bg-red-50/50',
+      icon: <XCircle className="w-4 h-4 text-destructive" />,
+      badge: <Badge className="bg-incorrect-bg text-incorrect-fg border-incorrect-border text-xs">Chưa migration</Badge>,
+      bg: 'border-incorrect-border/40 bg-incorrect-bg/20',
     },
     partial: {
-      icon: <AlertTriangle className="w-4 h-4 text-orange-500" />,
-      badge: <Badge className="bg-orange-100 text-orange-700 border-orange-300 text-xs">Có quiz mới</Badge>,
-      bg: 'border-orange-200 bg-orange-50/50',
+      icon: <AlertTriangle className="w-4 h-4 text-warning-fg" />,
+      badge: <Badge className="bg-warning-bg text-warning-fg border-warning-border text-xs">Có quiz mới</Badge>,
+      bg: 'border-warning-border/40 bg-warning-bg/20',
     },
     synced: {
-      icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-      badge: <Badge className="bg-green-100 text-green-700 border-green-300 text-xs">Đã đồng bộ</Badge>,
-      bg: 'border-green-200 bg-green-50/50',
+      icon: <CheckCircle2 className="w-4 h-4 text-success-fg" />,
+      badge: <Badge className="bg-success-bg text-success-fg border-success-border text-xs">Đã đồng bộ</Badge>,
+      bg: 'border-success-border/40 bg-success-bg/20',
     },
   }
 

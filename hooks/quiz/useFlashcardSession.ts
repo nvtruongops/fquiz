@@ -64,7 +64,9 @@ export function useFlashcardSession(sessionId: string) {
             return parsed as FlashcardSessionData
           }
         }
-      } catch {}
+      } catch (_cacheErr) {
+        /* ignore cache read error */
+      }
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`
       )
@@ -95,7 +97,9 @@ export function useFlashcardSession(sessionId: string) {
             return parsed as { questions: FlashcardQuestion[] }
           }
         }
-      } catch {}
+      } catch (_cacheErr) {
+        /* ignore cache read error */
+      }
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`
       )

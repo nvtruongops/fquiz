@@ -205,7 +205,7 @@ export default function AdminCategoriesPage() {
           <DialogHeader>
             <DialogTitle className="text-primary">Xác nhận xóa danh mục</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-card-foreground">"{deleteTarget?.name}"</span>?
+              Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-card-foreground">&quot;{deleteTarget?.name}&quot;</span>?
               {deleteTarget && (deleteTarget.quizCount > 0 || (deleteTarget.questionBankCount ?? 0) > 0) && (
                 <span className="block text-destructive font-semibold mt-2">
                   ⚠️ Danh mục này hiện đang chứa {deleteTarget.quizCount} bài quiz và {deleteTarget.questionBankCount ?? 0} câu hỏi ngân hàng. Không thể xóa danh mục đang có dữ liệu liên kết.

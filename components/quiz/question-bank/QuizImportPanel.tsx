@@ -39,6 +39,8 @@ interface ImportDiagnostic {
   questionIndex?: number
 }
 
+import type { QuestionStructureReport } from '@/lib/modules/quiz/quiz-import/types'
+
 interface ImportPreviewResponse {
   normalizedQuiz: ImportedQuiz
   diagnostics: ImportDiagnostic[]
@@ -50,6 +52,7 @@ interface ImportPreviewResponse {
     warnings: number
   }
   isValid: boolean
+  structureReport?: QuestionStructureReport
 }
 
 interface BankCheckResult {
@@ -92,16 +95,32 @@ interface BankCheckResult {
   summary: string
 }
 
+import { QuestionStructureReportCard } from '@/components/quiz/question-bank/QuestionStructureReportCard'
+
 interface Props {
-  onApply: (quiz: ImportedQuiz) => void
+  onApply: (
+    quiz: ImportedQuiz,
+    importInfo?: {
+      bankCheck?: BankCheckResult | null
+      previewSummary?: {
+        totalQuestions: number
+        validQuestions: number
+        errors: number
+        warnings: number
+      }
+      diagnostics?: ImportDiagnostic[]
+    }
+  ) => void
   onValidationStateChange?: (hasBlockingErrors: boolean) => void
   onPreviewDiagnosticsChange?: (errors: ImportDiagnostic[]) => void
   onProcessingStateChange?: (isProcessing: boolean) => void
   categoryId?: string
+  courseCode?: string
+  description?: string
   mode?: 'admin' | 'student'
 }
 
-export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange, categoryId, mode = 'admin' }: Readonly<Props>) {
+export function QuizImportPanel({ onApply, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange, categoryId, courseCode, description, mode = 'admin' }: Readonly<Props>) {
   const [file, setFile] = React.useState<File | null>(null)
   const [fileSnapshot, setFileSnapshot] = React.useState<File | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -318,7 +337,13 @@ function mapQuestionForBankCheck(q: ImportedQuestion) {
     try {
       const form = new FormData()
       form.append('file', fileSnapshot)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/import/quiz/preview`, {
+      const queryParams = new URLSearchParams()
+      if (categoryId) queryParams.set('category_id', categoryId)
+      if (courseCode) queryParams.set('course_code', courseCode)
+      if (description) queryParams.set('description', description)
+
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/import/quiz/preview?${queryParams.toString()}`
+      const res = await fetch(url, {
         method: 'POST',
         credentials: 'include',
         headers: withCsrfHeaders(),
@@ -340,10 +365,26 @@ function mapQuestionForBankCheck(q: ImportedQuestion) {
       }
 
       const nextPreview = data as ImportPreviewResponse
-      setPreview(nextPreview)
-      void performBankCheck(nextPreview, categoryId)
-      onValidationStateChange?.(!nextPreview.isValid)
-      onPreviewDiagnosticsChange?.(nextPreview.diagnostics.filter((item) => item.level === 'error'))
+      const filteredDiagnostics = nextPreview.diagnostics.filter((d) =>
+        !(d.code === 'MISSING_CATEGORY_ID' && (categoryId || nextPreview.normalizedQuiz.category_id)) &&
+        !(d.code === 'MISSING_COURSE_CODE' && (courseCode || nextPreview.normalizedQuiz.course_code)) &&
+        !(d.code === 'MISSING_DESCRIPTION' && (description || nextPreview.normalizedQuiz.description))
+      )
+
+      const cleanedPreview: ImportPreviewResponse = {
+        ...nextPreview,
+        diagnostics: filteredDiagnostics,
+        summary: {
+          ...nextPreview.summary,
+          warnings: filteredDiagnostics.filter((item) => item.level === 'warning').length,
+          errors: filteredDiagnostics.filter((item) => item.level === 'error').length,
+        },
+      }
+
+      setPreview(cleanedPreview)
+      void performBankCheck(cleanedPreview, categoryId)
+      onValidationStateChange?.(!cleanedPreview.isValid)
+      onPreviewDiagnosticsChange?.(cleanedPreview.diagnostics.filter((item) => item.level === 'error'))
     } catch (err) {
       handlePreviewCatchError(err)
     } finally {
@@ -360,7 +401,7 @@ function mapQuestionForBankCheck(q: ImportedQuestion) {
     const diffConflicts = bankCheck?.conflicts.different_answer ?? []
 
     if (diffConflicts.length === 0) {
-      onApply(quiz)
+      onApply(quiz, { bankCheck, previewSummary: preview.summary, diagnostics: preview.diagnostics })
       return
     }
 
@@ -381,7 +422,7 @@ function mapQuestionForBankCheck(q: ImportedQuestion) {
         }
       }
 
-      onApply({ ...quiz, questions })
+      onApply({ ...quiz, questions }, { bankCheck, previewSummary: preview.summary, diagnostics: preview.diagnostics })
     } catch (err) {
       console.error('Apply with conflict resolution failed:', err)
       setError('Không thể áp dụng đáp án đã chọn. Vui lòng thử lại.')
@@ -556,14 +597,27 @@ async function syncSingleConflictQuestion(fileQ: ImportedQuestion, categoryId: s
 
         {preview && (
           <div className="space-y-3 rounded-md border border-border p-3 bg-primary/5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={preview.isValid ? 'default' : 'secondary'}>
-                {preview.isValid ? 'Hợp lệ' : 'Có lỗi'}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Tổng: {preview.summary.totalQuestions} | Hợp lệ: {preview.summary.validQuestions} | Lỗi: {preview.summary.errors} | Cảnh báo: {preview.summary.warnings}
-              </span>
-            </div>
+            {preview.structureReport && (
+              <QuestionStructureReportCard
+                report={preview.structureReport}
+                importSummary={{
+                  totalQuestions: preview.summary.totalQuestions,
+                  validQuestions: preview.summary.validQuestions,
+                  errors: preview.summary.errors,
+                  warnings: preview.summary.warnings,
+                  isValid: preview.isValid,
+                }}
+                bankStatus={
+                  bankCheck
+                    ? {
+                        sameAnswerCount: bankCheck.same_answer_conflicts,
+                        differentAnswerCount: bankCheck.different_answer_conflicts,
+                      }
+                    : undefined
+                }
+                diagnostics={preview.diagnostics}
+              />
+            )}
 
             {/* Question Bank Check Results */}
             {checkingBank && (

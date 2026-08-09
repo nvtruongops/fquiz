@@ -89,7 +89,9 @@ export async function POST(request: Request) {
         await User.findByIdAndUpdate(user._id, { status: 'banned', ban_reason: 'anti_sharing' })
         return NextResponse.json({ error: 'Tài khoản đã bị khóa do vi phạm chia sẻ.' }, { status: 403 })
       }
-    } catch {}
+    } catch (antiSharingErr) {
+      console.warn('[LoginRoute] Anti-sharing check failed:', antiSharingErr)
+    }
 
     const token = await signToken(user._id.toString(), user.role, user.token_version || 1, {
       username: user.username,

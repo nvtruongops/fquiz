@@ -14,7 +14,7 @@ import { useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/Q
 
 function triggerVibration() {
   if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-    try { navigator.vibrate(30) } catch {}
+    try { navigator.vibrate(30) } catch (_vibErr) { /* ignore vibration error */ }
   }
 }
 

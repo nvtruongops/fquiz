@@ -233,7 +233,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
         <Card>
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <p className="text-lg font-medium">Đang quét câu hỏi...</p>
               <p className="text-sm text-muted-foreground">
                 Môn học: {selectedCategoryName}
@@ -395,7 +395,7 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
         <Card>
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
-              <CheckCircle2 className="h-16 w-16 text-green-600" />
+              <CheckCircle2 className="h-16 w-16 text-success-fg" />
               <p className="text-2xl font-bold">Migration hoàn tất!</p>
               <p className="text-muted-foreground">
                 Câu hỏi đã được thêm vào ngân hàng môn học

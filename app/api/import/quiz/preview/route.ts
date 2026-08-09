@@ -52,8 +52,15 @@ async function parseRequestPayload(req: Request): Promise<unknown> {
 
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
+    const url = new URL(req.url)
+    const context = {
+      category_id: url.searchParams.get('category_id') || undefined,
+      course_code: url.searchParams.get('course_code') || undefined,
+      description: url.searchParams.get('description') || undefined,
+    }
+
     const input = await parseRequestPayload(req)
-    const preview = buildQuizImportPreview(input)
+    const preview = buildQuizImportPreview(input, context)
     await connectDB()
 
     const categoryToken = preview.normalizedQuiz.category_id?.trim()

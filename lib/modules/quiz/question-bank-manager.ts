@@ -1,8 +1,19 @@
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
-import { normalizeTextAST } from '@/lib/modules/quiz/utils/ast-normalizer'
+import { normalizeTextAST, normalizeOptionAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 import { ensureArray } from '@/lib/core/utils/array-utils'
 import type { Types } from 'mongoose'
+
+function hasOptionOverlap(opts1: string[], opts2: string[]): boolean {
+  if (!opts1 || !opts2 || opts1.length === 0 || opts2.length === 0) return false
+  const set2 = new Set(opts2.map(o => normalizeOptionAST(o)).filter(Boolean))
+  let matches = 0
+  for (const o of opts1) {
+    const norm = normalizeOptionAST(o)
+    if (norm && set2.has(norm)) matches++
+  }
+  return matches >= 1 || (matches / Math.max(opts1.length, opts2.length)) >= 0.3
+}
 
 export interface QuestionInput {
   text: string
@@ -137,7 +148,14 @@ export async function checkQuestionsInBank(
   questions.forEach((question, index) => {
     const questionId = generateQuestionId(question)
     const normalizedText = normalizeTextAST(question.text)
-    const existing = existingIdMap.get(questionId) || existingTextMap.get(normalizedText)
+
+    let existing = existingIdMap.get(questionId)
+    if (!existing && normalizedText) {
+      const candidate = existingTextMap.get(normalizedText)
+      if (candidate && hasOptionOverlap(question.options, candidate.options)) {
+        existing = candidate
+      }
+    }
 
     if (!existing) {
       return // Không có conflict

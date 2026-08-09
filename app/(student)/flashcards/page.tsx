@@ -314,7 +314,7 @@ export default function FlashcardsPage() {
                         <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">Ví dụ:</span>
                         {item.examples.slice(0, 2).map((ex, idx) => (
                           <p key={idx} className="text-xs text-foreground italic">
-                            "{ex}"
+                            &quot;{ex}&quot;
                           </p>
                         ))}
                       </div>

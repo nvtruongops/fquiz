@@ -150,7 +150,9 @@ export const POST = withAuth(
               },
             })
           }
-        } catch {}
+        } catch (logErr) {
+          console.warn('[AI Generate] Failed to log activity:', logErr)
+        }
       }
 
       return NextResponse.json({

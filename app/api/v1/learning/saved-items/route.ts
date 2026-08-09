@@ -118,7 +118,8 @@ export const GET = withAuth(
           const doc = vocabMap.get(id)
           if (!doc) continue
           front = doc.display || doc.lemma
-          back = `${doc.partOfSpeech ? `(${doc.partOfSpeech}) ` : ''}${doc.definition}`
+          const posPrefix = doc.partOfSpeech ? `(${doc.partOfSpeech}) ` : ''
+          back = `${posPrefix}${doc.definition}`
           examples = doc.examples
           cefrLevel = doc.cefrLevel
         } else if (item.loType === 'sentence') {

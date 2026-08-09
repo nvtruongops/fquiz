@@ -44,7 +44,9 @@ export function useQuizSessionQueries(
             return parsed as SessionData
           }
         }
-      } catch {}
+      } catch (_cacheErr) {
+        /* ignore cache read error */
+      }
       return fetchSession(resolvedSessionId)
     },
     enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
@@ -80,7 +82,9 @@ export function useQuizSessionQueries(
             return parsed as PreloadedQuestions
           }
         }
-      } catch {}
+      } catch (_cacheErr) {
+        /* ignore cache read error */
+      }
       return fetchAllQuestions(resolvedSessionId)
     },
     enabled: resolvedSessionId.length > 0 &&

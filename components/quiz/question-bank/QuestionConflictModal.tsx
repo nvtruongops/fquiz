@@ -201,12 +201,12 @@ export function QuestionConflictModal({
     if (currentChoices.length > 0 && categoryId) {
       setSyncing(true)
       try {
-        for (const choice of currentChoices) {
+        const csrfToken = getCsrfTokenFromCookie()
+        const syncPromises = currentChoices.map((choice) => {
           const conflict = differentConflicts.find((c) => c.questionIndex === choice.questionIndex)
-          if (!conflict) continue
+          if (!conflict) return Promise.resolve()
 
-          const csrfToken = getCsrfTokenFromCookie()
-          await fetch('/api/question-bank/sync-update', {
+          return fetch('/api/question-bank/sync-update', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -223,6 +223,11 @@ export function QuestionConflictModal({
               },
             }),
           })
+        })
+        const results = await Promise.allSettled(syncPromises)
+        const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value && !r.value.ok)).length
+        if (failedCount > 0) {
+          console.warn(`${failedCount} câu hỏi không thể đồng bộ tự động lên ngân hàng.`)
         }
       } catch (e) {
         console.error('Failed to sync bank:', e)
