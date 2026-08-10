@@ -72,3 +72,12 @@ This skill enforces **Theme as Code** governance, **3 Official Themes** (`light`
 10. **Theme-Adaptive Bento Cards & Theme-Native Hover Borders**:
    - All Bento/Studio cards MUST use semantic tokens (`bg-card text-card-foreground border-border hover:border-ring`) so that cards switch color 100% with the active theme.
    - Use `hover:border-ring` for card hover states: Dark Theme highlights with **Crisp White Border (`#FFFFFF`)**, Light Theme highlights with **Jade Green (`#2D5A46`)**, Green Theme highlights with **Olive Pine (`#1E5638`)**.
+
+11. **Button Elevation & Soft Shadow Governance**:
+   - Primary and Destructive CTA Buttons MUST possess soft elevation shadows (`shadow-sm shadow-primary/25` / `shadow-sm shadow-destructive/20`) and micro-interaction hover states (`hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-xs`) configured centrally in the core `Button` component (`components/shared/ui/button.tsx`). Avoid scattering ad-hoc shadow classes inside individual page components.
+
+12. **Glassmorphism & Ambient Glow Governance**:
+   - Bento Cards, Studio Containers, and Sticky Headers SHOULD utilize `.glass-card` (`backdrop-filter: blur(16px) saturate(150%)`) or `.glass-card-elevated` (`backdrop-filter: blur(24px) saturate(160%)`) for frosted glass visual depth.
+   - Combine glassmorphism cards with `.ambient-glow-sphere` and `.rail-glow-*` to provide subtle background light diffusion while maintaining 100% WCAG 2.2 AA text contrast standards.
+
+

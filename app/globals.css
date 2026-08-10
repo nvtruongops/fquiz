@@ -26,13 +26,13 @@
     --secondary: 214 32% 95%;
     --secondary-foreground: 222 47% 11%;
     --muted: 214 32% 95%;
-    --muted-foreground: 215 20% 45%;
+    --muted-foreground: 215 25% 36%;
     --accent: 214 32% 93%;
     --accent-foreground: 221 83% 53%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 90%;
-    --input: 214 32% 90%;
+    --border: 214 25% 82%;
+    --input: 214 25% 82%;
     --ring: 221 83% 53%;
     --radius: 0.75rem;
 
@@ -247,13 +247,13 @@
     --secondary: 222 50% 8%;           /* #0A1020 */
     --secondary-foreground: 216 43% 96%;
     --muted: 221 47% 10%;              /* #0D1524 */
-    --muted-foreground: 215 18% 61%;   /* #8A99AD */
+    --muted-foreground: 214 22% 70%;   /* #A1B2C6 High Contrast Muted Text */
     --accent: 218 50% 14%;             /* #111E34 */
     --accent-foreground: 223 76% 55%;
     --destructive: 351 95% 71%;
     --destructive-foreground: 0 0% 100%;
-    --border: 215 36% 23%;             /* #25354E */
-    --input: 215 36% 23%;
+    --border: 215 32% 28%;             /* #30425C Crisp High Contrast Border */
+    --input: 215 32% 28%;
     --ring: 223 76% 55%;
 
     --success-fg: 154 72% 67%;         /* #6EE7B7 (Emerald Restricted to Success) */
@@ -467,13 +467,13 @@
     --secondary: 45 18% 86%;
     --secondary-foreground: 155 30% 12%;
     --muted: 45 18% 86%;
-    --muted-foreground: 155 15% 36%;
+    --muted-foreground: 155 22% 28%;
     --accent: 45 20% 84%;
     --accent-foreground: 155 35% 30%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 45 15% 80%;
-    --input: 45 15% 80%;
+    --border: 45 18% 70%;
+    --input: 45 18% 70%;
     --ring: 155 35% 30%;
 
     --success-fg: 155 45% 20%;
@@ -695,13 +695,13 @@
     --secondary: 348 40% 94%;          /* #FAEAED */
     --secondary-foreground: 348 30% 13%;
     --muted: 348 35% 92%;              /* #F6E2E5 Soft Blush Tint */
-    --muted-foreground: 348 20% 45%;   /* #8A5762 Dusty Rose Gray */
+    --muted-foreground: 348 25% 34%;   /* #693E47 Deep High-Contrast Muted Rose */
     --accent: 348 45% 92%;             /* #F8E3E6 */
     --accent-foreground: 348 55% 64%;
     --destructive: 351 95% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 348 30% 86%;             /* #E8C3C9 Crisp Soft Rose Border */
-    --input: 348 30% 86%;
+    --border: 348 30% 78%;             /* #D9ACBA Crisp Soft Rose Border */
+    --input: 348 30% 78%;
     --ring: 348 55% 64%;
 
     --success-fg: 154 72% 23%;         /* #145A32 */
@@ -955,6 +955,40 @@
   input, textarea, select, [contenteditable="true"] {
     scroll-margin-bottom: 25vh;
     scroll-margin-top: 15vh;
+  }
+
+  /* Glassmorphism & Ambient Glow Theme Extensions */
+  .glass-card {
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    background-color: hsl(var(--card) / 0.9);
+  }
+
+  .glass-card-elevated {
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    background-color: hsl(var(--surface-card-elevated) / 0.92);
+  }
+
+  .ambient-glow-sphere {
+    pointer-events: none;
+    border-radius: 9999px;
+    filter: blur(48px);
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+  }
+
+  .rail-glow-learning::before {
+    box-shadow: 0 0 10px hsl(var(--accent-learning) / 0.6);
+  }
+  .rail-glow-discovery::before {
+    box-shadow: 0 0 10px hsl(var(--accent-discovery) / 0.6);
+  }
+  .rail-glow-community::before {
+    box-shadow: 0 0 10px hsl(var(--accent-community) / 0.6);
+  }
+  .rail-glow-memory::before {
+    box-shadow: 0 0 10px hsl(var(--accent-memory) / 0.6);
   }
 }
 
