@@ -15,20 +15,20 @@ export function normalizeTextAST(text: string): string {
   const normalized = text
     // 1. Lowercase
     .toLowerCase()
-    // 2. Decode HTML entities (&nbsp;, &amp;, &lt;, &gt;, &quot;, &#39;)
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
+    // 2. Strip HTML tags first to prevent unescape-then-strip bypasses
+    .replace(/<[^>]*>/g, ' ')
+    // 3. Decode HTML entities in a single-pass lookup map
+    .replace(/&(nbsp|amp|lt|gt|quot|#39|apos);/gi, (_, entity) => {
+      const entMap: Record<string, string> = {
+        nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'"
+      }
+      return entMap[entity.toLowerCase()] || ' '
+    })
     .replace(/&[a-z0-9#]+;/gi, ' ')
-    // 3. Normalize quotes and zero-width spaces
+    // 4. Normalize quotes and zero-width spaces
     .replace(/[“”«»‟]/g, '"')
     .replace(/[‘’`′]/g, "'")
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    // 4. Strip HTML tags
-    .replace(/<[^>]*>/g, ' ')
     // 5. Collapse all whitespace characters (\n, \r, \t, \u00a0, etc.)
     .replace(/[\r\n\t\f\v\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\s]+/g, ' ')
     .trim()

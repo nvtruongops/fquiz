@@ -4,7 +4,7 @@ import { stripHtml, MongoIdSchema } from '@/lib/core/schemas/common'
 export const COURSE_CODE_MAX_LENGTH = 150
 export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Mã môn / Mã đề tối đa ${COURSE_CODE_MAX_LENGTH} ký tự`
 export const COURSE_CODE_ALLOWED_MESSAGE = 'Mã môn / Mã đề chỉ được chứa chữ cái, số, dấu cách, dấu gạch dưới (_), dấu hai chấm (:) và dấu gạch ngang (-)'
-export const COURSE_CODE_PATTERN = /^[a-zA-Z0-9_ :ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ-]+$/
+export const COURSE_CODE_PATTERN = /^[a-zA-Z0-9_ :ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỂưạảấầẩẫậắằẳẵặẹẻẽềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸỳỵỷỹ-]+$/
 
 export const QuestionSchema = z.object({
   question_id: z.string().optional(), // Auto-generated content-based ID
