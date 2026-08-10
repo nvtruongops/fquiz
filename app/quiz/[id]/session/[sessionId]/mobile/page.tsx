@@ -187,7 +187,7 @@ export default function QuizSessionMobilePage() {
           className="space-y-4 p-4 pb-20 select-none transition-transform duration-150 ease-out"
         >
           {/* Question Meta Bar */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             <div>
               <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary border border-primary/20">
                 Câu {effectiveIndex + 1}/{effectiveTotal}
@@ -199,20 +199,31 @@ export default function QuizSessionMobilePage() {
                 <span className="hidden sm:inline"> • Vuốt 👈 👉 để lật câu</span>
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleTogglePin}
-              disabled={ctrl.togglePinMutation.isPending}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0",
-                isQuestionPinned
-                  ? "bg-amber-100 text-amber-800 border-amber-300"
-                  : "bg-card text-card-foreground border-border hover:bg-muted"
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleTogglePin}
+                disabled={ctrl.togglePinMutation.isPending}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0",
+                  isQuestionPinned
+                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                    : "bg-card text-card-foreground border-border hover:bg-muted"
+                )}
+              >
+                <Bookmark className={cn("w-3.5 h-3.5", isQuestionPinned && "fill-current text-amber-600")} />
+                <span>{isQuestionPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+              </button>
+
+              {(session.mode === 'immediate' || (session.mode === 'review' && ctrl.submitted)) && (
+                <UsageBadge
+                  count={question.usage_count}
+                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (session.courseCode ? [session.courseCode] : [])}
+                  size="sm"
+                  align="right"
+                />
               )}
-            >
-              <Bookmark className={cn("w-3.5 h-3.5", isQuestionPinned && "fill-current text-amber-600")} />
-              <span>{isQuestionPinned ? 'Đã ghim' : 'Ghim câu'}</span>
-            </button>
+            </div>
           </div>
 
           {/* Question Text */}
@@ -227,16 +238,6 @@ export default function QuizSessionMobilePage() {
                   src={question.image_url}
                   alt="Question Attachment"
                   className="max-h-64 w-full object-contain bg-muted"
-                />
-              </div>
-            )}
-
-            {(session.mode === 'immediate' || (session.mode === 'review' && ctrl.submitted)) && (
-              <div className="mt-3">
-                <UsageBadge
-                  count={question.usage_count}
-                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (session.courseCode ? [session.courseCode] : [])}
-                  size="sm"
                 />
               </div>
             )}

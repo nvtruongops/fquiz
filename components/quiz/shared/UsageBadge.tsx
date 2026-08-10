@@ -10,9 +10,10 @@ interface UsageBadgeProps {
   used_in_quizzes?: string[]
   size?: 'sm' | 'md'
   className?: string
+  align?: 'left' | 'right' | 'center'
 }
 
-export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', className }: UsageBadgeProps) {
+export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', className, align = 'right' }: UsageBadgeProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   
@@ -62,13 +63,18 @@ export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', class
         </button>
       </span>
 
-      {/* Dropdown Panel (Sổ xuống ngay bên dưới Badge) */}
+      {/* Dropdown Panel (Sổ xuống theo vị trí alignment) */}
       {open && (
         <div
           role="dialog"
           aria-label="Mã đề liên quan"
-          className="absolute top-full right-0 mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+          className={cn(
+            "usage-badge-dropdown absolute top-full mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200",
+            align === 'center' ? "left-1/2 -translate-x-1/2" : align === 'left' ? "left-0" : "right-0"
+          )}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between border-b border-border pb-1.5 mb-2">
             <span className="text-[11px] font-bold text-foreground">

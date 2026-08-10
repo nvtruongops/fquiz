@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useStudentClassrooms, Classroom, Assignment } from '@/hooks/useStudentClassrooms'
+import { ClassroomsSkeleton } from '@/components/student/classrooms/ClassroomsSkeleton'
 
 export default function StudentClassroomsPage() {
   const {
@@ -83,10 +84,7 @@ export default function StudentClassroomsPage() {
         )}
 
         {loading ? (
-          <div className="py-20 text-center text-muted-foreground font-semibold">
-            <Loader2 className="w-7 h-7 animate-spin mx-auto text-primary" />
-            <p className="text-xs mt-2 font-bold text-muted-foreground">Đang tải thông tin lớp học...</p>
-          </div>
+          <ClassroomsSkeleton />
         ) : classrooms.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}

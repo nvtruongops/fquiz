@@ -10,6 +10,7 @@ import { CommunityHeader } from '@/components/community/CommunityHeader'
 import { CommunitySearchFilterBar } from '@/components/community/CommunitySearchFilterBar'
 import { CommunityPostCard } from '@/components/community/CommunityPostCard'
 import { CommunitySidebar } from '@/components/community/CommunitySidebar'
+import { CommunitySkeleton } from '@/components/community/CommunitySkeleton'
 
 const CreatePostModal = dynamic(() => import('@/components/community/CreatePostModal'), {
   loading: () => <Skeleton className="h-64 w-full" />,
@@ -72,6 +73,10 @@ export default function CommunityPage() {
     handleCloseFeedbackModal,
   } = useCommunityFeed()
 
+  if (isLoadingPosts) {
+    return <CommunitySkeleton />
+  }
+
   return (
     <div className="min-h-[calc(100vh-80px)] relative">
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden transform-gpu -z-10">
@@ -109,12 +114,7 @@ export default function CommunityPage() {
               </div>
             </div>
 
-            {isLoadingPosts ? (
-              <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-12 text-center space-y-4 shadow-xs">
-                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
-                <p className="text-xs font-bold text-muted-foreground">Đang tải danh sách thảo luận...</p>
-              </div>
-            ) : postsData?.posts?.length === 0 ? (
+            {postsData?.posts?.length === 0 ? (
               <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-10 md:p-14 text-center space-y-4 shadow-sm">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20 shadow-xs">
                   <MessageSquare className="w-8 h-8" />
