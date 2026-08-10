@@ -209,25 +209,7 @@ async function processMigrateQuestion(
   return { outcome: 'created' as const }
 }
 
-async function handleMigrate(body: Record<string, unknown>, userId: string) {
-  const parsed = MigrateSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
-  }
-
-  const { category_id, resolve_conflicts } = parsed.data
-  const categoryObjectId = new mongoose.Types.ObjectId(category_id)
-  const quizzes = await loadQuizzes(categoryObjectId)
-  const createdBy = new mongoose.Types.ObjectId(userId)
-
-  // 1. Tải toàn bộ QuestionBank hiện tại trong môn học bằng 1 query duy nhất (Batch query)
-  const existingBankDocs = await QuestionBank.find({ category_id: categoryObjectId }).lean()
-  const bankMap = new Map<string, any>()
-  for (const doc of existingBankDocs) {
-    bankMap.set(doc.question_id, doc)
-  }
-
-  // 2. Gom tất cả câu hỏi từ các quiz theo question_id trong Memory
+function buildIncomingQuestionMap(quizzes: any[]) {
   const incomingMap = new Map<string, { q: any; quizzes: Array<{ _id: any; course_code: string }> }>()
   for (const quiz of quizzes) {
     if (!Array.isArray(quiz.questions)) continue
@@ -243,6 +225,108 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
       }
     }
   }
+  return incomingMap
+}
+
+function processMigrateEntry(
+  qid: string,
+  q: any,
+  associatedQuizzes: Array<{ _id: any; course_code: string }>,
+  existing: any,
+  resolve_conflicts: string,
+  categoryObjectId: mongoose.Types.ObjectId,
+  createdBy: mongoose.Types.ObjectId
+) {
+  if (existing) {
+    const sameAnswer = areAnswersSame(
+      { options: q.options as string[], correct_answer: (q.correct_answer ?? []) as number | number[] },
+      { options: existing.options, correct_answer: existing.correct_answer }
+    )
+
+    if (!sameAnswer && resolve_conflicts === 'skip') {
+      return { skipped: true }
+    }
+
+    const existingQuizIds = (existing.used_in_quiz_ids || []).map((id: any) => String(id))
+    const existingCodes = new Set<string>(existing.used_in_quizzes || [])
+    const updatedQuizIds = [...(existing.used_in_quiz_ids || [])]
+
+    for (const quiz of associatedQuizzes) {
+      const qidStr = String(quiz._id)
+      if (!existingQuizIds.includes(qidStr)) {
+        existingQuizIds.push(qidStr)
+        updatedQuizIds.push(quiz._id)
+        existingCodes.add(quiz.course_code)
+      }
+    }
+
+    const updateData: any = {
+      used_in_quizzes: Array.from(existingCodes),
+      used_in_quiz_ids: updatedQuizIds,
+      usage_count: updatedQuizIds.length,
+    }
+
+    if (!sameAnswer && resolve_conflicts === 'keep_most_used' && associatedQuizzes.length > (existing.usage_count || 0)) {
+      updateData.correct_answer = q.correct_answer || []
+      updateData.options = q.options
+      if (q.explanation) updateData.explanation = q.explanation
+    }
+
+    return {
+      op: {
+        updateOne: {
+          filter: { _id: existing._id },
+          update: { $set: updateData },
+        },
+      },
+      isExisting: true,
+    }
+  }
+
+  const courseCodes = Array.from(new Set(associatedQuizzes.map(q => q.course_code)))
+  const quizIds = associatedQuizzes.map(q => q._id)
+
+  return {
+    op: {
+      insertOne: {
+        document: {
+          category_id: categoryObjectId,
+          question_id: qid,
+          text: q.text,
+          options: q.options,
+          correct_answer: q.correct_answer || [],
+          explanation: q.explanation,
+          image_url: q.image_url,
+          created_by: createdBy,
+          usage_count: quizIds.length,
+          used_in_quizzes: courseCodes,
+          used_in_quiz_ids: quizIds,
+          has_conflicts: false,
+        },
+      },
+    },
+    isNew: true,
+  }
+}
+
+async function handleMigrate(body: Record<string, unknown>, userId: string) {
+  const parsed = MigrateSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+
+  const { category_id, resolve_conflicts } = parsed.data
+  const categoryObjectId = new mongoose.Types.ObjectId(category_id)
+  const quizzes = await loadQuizzes(categoryObjectId)
+  const createdBy = new mongoose.Types.ObjectId(userId)
+
+  const existingBankDocs = await QuestionBank.find({ category_id: categoryObjectId }).lean()
+  const bankMap = new Map<string, any>()
+  for (const doc of existingBankDocs) {
+    bankMap.set(doc.question_id, doc)
+  }
+
+  const incomingMap = buildIncomingQuestionMap(quizzes)
 
   let newQuestions = 0
   let existingQuestions = 0
@@ -251,73 +335,15 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
 
   for (const [qid, { q, quizzes: associatedQuizzes }] of incomingMap) {
     const existing = bankMap.get(qid)
+    const result = processMigrateEntry(qid, q, associatedQuizzes, existing, resolve_conflicts, categoryObjectId, createdBy)
 
-    if (existing) {
-      const sameAnswer = areAnswersSame(
-        { options: q.options as string[], correct_answer: (q.correct_answer ?? []) as number | number[] },
-        { options: existing.options, correct_answer: existing.correct_answer }
-      )
-
-      if (!sameAnswer && resolve_conflicts === 'skip') {
-        skippedConflicts++
-        continue
-      }
-
-      // Hợp nhất list quiz_ids và course_codes
-      const existingQuizIds = (existing.used_in_quiz_ids || []).map((id: any) => String(id))
-      const existingCodes = new Set<string>(existing.used_in_quizzes || [])
-      const updatedQuizIds = [...(existing.used_in_quiz_ids || [])]
-
-      for (const quiz of associatedQuizzes) {
-        const qidStr = String(quiz._id)
-        if (!existingQuizIds.includes(qidStr)) {
-          existingQuizIds.push(qidStr)
-          updatedQuizIds.push(quiz._id)
-          existingCodes.add(quiz.course_code)
-        }
-      }
-
-      const updateData: any = {
-        used_in_quizzes: Array.from(existingCodes),
-        used_in_quiz_ids: updatedQuizIds,
-        usage_count: updatedQuizIds.length,
-      }
-
-      if (!sameAnswer && resolve_conflicts === 'keep_most_used' && associatedQuizzes.length > (existing.usage_count || 0)) {
-        updateData.correct_answer = q.correct_answer || []
-        updateData.options = q.options
-        if (q.explanation) updateData.explanation = q.explanation
-      }
-
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: existing._id },
-          update: { $set: updateData },
-        },
-      })
+    if (result.skipped) {
+      skippedConflicts++
+    } else if (result.isExisting) {
+      bulkOps.push(result.op)
       existingQuestions++
-    } else {
-      const courseCodes = Array.from(new Set(associatedQuizzes.map(q => q.course_code)))
-      const quizIds = associatedQuizzes.map(q => q._id)
-
-      bulkOps.push({
-        insertOne: {
-          document: {
-            category_id: categoryObjectId,
-            question_id: qid,
-            text: q.text,
-            options: q.options,
-            correct_answer: q.correct_answer || [],
-            explanation: q.explanation,
-            image_url: q.image_url,
-            created_by: createdBy,
-            usage_count: quizIds.length,
-            used_in_quizzes: courseCodes,
-            used_in_quiz_ids: quizIds,
-            has_conflicts: false,
-          },
-        },
-      })
+    } else if (result.isNew) {
+      bulkOps.push(result.op)
       newQuestions++
     }
   }

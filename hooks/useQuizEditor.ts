@@ -775,7 +775,7 @@ export function useQuizEditor(options: QuizEditorOptions) {
     } else {
       toast.success(`Đã cập nhật vị trí mới: Còn ${errorCount} lỗi và ${warningCount} cảnh báo.`)
     }
-  }, [form.questions, form.course_code, form.category_id, form.description, appliedImportSummary])
+  }, [form.questions, form.course_code, form.category_id, form.description, appliedImportSummary, toast])
 
   return {
     activeQuizId,

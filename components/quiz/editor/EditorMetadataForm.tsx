@@ -77,7 +77,7 @@ export function EditorMetadataForm({
     return () => {
       isMounted = false
     }
-  }, [debouncedCourseCode])
+  }, [debouncedCourseCode, quizId])
 
   const createCatMutation = useCreateCategory({
     onSuccess: (data) => {

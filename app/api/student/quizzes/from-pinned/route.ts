@@ -49,6 +49,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     // 2. Resolve Category (Auto-create category if missing)
     const targetCategory = await ensureCategoryForCourseCode(normalizedCourseCode, userObjectId)
     const escapedCode = course_code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // eslint-disable-next-line security/detect-non-literal-regexp
     const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
 
     let categoryQuizIds: Types.ObjectId[] = []

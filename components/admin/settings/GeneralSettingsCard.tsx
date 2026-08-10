@@ -45,8 +45,16 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
               id="app_description"
               rows={3}
               value={formState.app_description ?? ''}
+              onFocus={(e) => {
+                if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+                  const target = e.currentTarget
+                  setTimeout(() => {
+                    try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch (_err) { /* ignore */ }
+                  }, 250)
+                }
+              }}
               onChange={(e) => setFormState((s) => ({ ...s, app_description: e.target.value }))}
-              className="w-full resize-none border-2 px-4 py-3 text-[15px] outline-none transition-all duration-200 border-border focus:border-primary rounded-xl bg-card text-card-foreground"
+              className="w-full resize-none border-2 px-4 py-3 text-[15px] outline-none transition-all duration-200 border-border focus:border-primary rounded-xl bg-card text-card-foreground scroll-m-20"
             />
           </div>
         </CardContent>

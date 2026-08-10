@@ -48,6 +48,81 @@ function isValidLLMUrl(raw: string): { valid: true; url: string } | { valid: fal
   return { valid: true, url: parsed.origin }
 }
 
+async function testGemini(apiKey?: string, model?: string, dbSettings?: any) {
+  let key = apiKey
+  if (!key || key.startsWith('••••')) {
+    key = decryptSecret(dbSettings?.llm_config?.gemini?.apiKey || '') || process.env.GEMINI_API_KEY
+  }
+  if (!key) {
+    return NextResponse.json({ error: 'Chưa cấu hình Gemini API Key' }, { status: 400 })
+  }
+  const modelName = model || dbSettings?.llm_config?.gemini?.model || 'gemini-2.0-flash-001'
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}?key=${key}`)
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}))
+    return NextResponse.json(
+      { error: errData.error?.message || `Lỗi Gemini API (HTTP ${res.status})` },
+      { status: 400 }
+    )
+  }
+  return NextResponse.json({ success: true, message: `Kết nối thành công tới Gemini (${modelName})!` })
+}
+
+async function testOpenAI(apiKey?: string, dbSettings?: any) {
+  let key = apiKey
+  if (!key || key.startsWith('••••')) {
+    key = decryptSecret(dbSettings?.llm_config?.openai?.apiKey || '') || process.env.OPENAI_API_KEY
+  }
+  if (!key) {
+    return NextResponse.json({ error: 'Chưa cấu hình OpenAI API Key' }, { status: 400 })
+  }
+  const res = await fetch('https://api.openai.com/v1/models', {
+    headers: { Authorization: `Bearer ${key}` },
+  })
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}))
+    return NextResponse.json(
+      { error: errData.error?.message || `Lỗi OpenAI API (HTTP ${res.status})` },
+      { status: 400 }
+    )
+  }
+  return NextResponse.json({ success: true, message: 'Kết nối thành công tới OpenAI API!' })
+}
+
+async function testCustom(apiKey?: string, baseUrl?: string, dbSettings?: any) {
+  let key = apiKey
+  if (!key || key.startsWith('••••')) {
+    key = decryptSecret(dbSettings?.llm_config?.custom?.apiKey || '')
+  }
+  const targetUrl = baseUrl || dbSettings?.llm_config?.custom?.baseUrl
+  if (!targetUrl) {
+    return NextResponse.json({ error: 'Chưa nhập Base URL cho Custom LLM' }, { status: 400 })
+  }
+
+  const validation = isValidLLMUrl(targetUrl)
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 })
+  }
+
+  const cleanUrl = validation.url
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (key) {
+    headers['Authorization'] = `Bearer ${key}`
+  }
+
+  const res = await fetch(`${cleanUrl}/models`, { headers, method: 'GET' })
+  if (!res.ok) {
+    const res2 = await fetch(cleanUrl, { headers, method: 'GET' }).catch(() => null)
+    if (!res2 || !res2.ok) {
+      return NextResponse.json(
+        { error: `Không thể kết nối tới Custom LLM tại ${cleanUrl} (HTTP ${res.status})` },
+        { status: 400 }
+      )
+    }
+  }
+  return NextResponse.json({ success: true, message: `Kết nối thành công tới Custom LLM (${cleanUrl})!` })
+}
+
 export const POST = withAuth(
   async (req: Request) => {
     try {
@@ -66,84 +141,16 @@ export const POST = withAuth(
 
       const dbSettings = await getSettings()
 
-      if (provider === 'gemini') {
-        let key = apiKey
-        if (!key || key.startsWith('••••')) {
-          key = decryptSecret(dbSettings.llm_config?.gemini?.apiKey || '') || process.env.GEMINI_API_KEY
-        }
-        if (!key) {
-          return NextResponse.json({ error: 'Chưa cấu hình Gemini API Key' }, { status: 400 })
-        }
-        const modelName = model || dbSettings.llm_config?.gemini?.model || 'gemini-2.0-flash-001'
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}?key=${key}`
-        )
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
-          return NextResponse.json(
-            { error: errData.error?.message || `Lỗi Gemini API (HTTP ${res.status})` },
-            { status: 400 }
-          )
-        }
-        return NextResponse.json({ success: true, message: `Kết nối thành công tới Gemini (${modelName})!` })
+      switch (provider) {
+        case 'gemini':
+          return await testGemini(apiKey, model, dbSettings)
+        case 'openai':
+          return await testOpenAI(apiKey, dbSettings)
+        case 'custom':
+          return await testCustom(apiKey, baseUrl, dbSettings)
+        default:
+          return NextResponse.json({ error: 'Provider không hợp lệ' }, { status: 400 })
       }
-
-      if (provider === 'openai') {
-        let key = apiKey
-        if (!key || key.startsWith('••••')) {
-          key = decryptSecret(dbSettings.llm_config?.openai?.apiKey || '') || process.env.OPENAI_API_KEY
-        }
-        if (!key) {
-          return NextResponse.json({ error: 'Chưa cấu hình OpenAI API Key' }, { status: 400 })
-        }
-        const res = await fetch('https://api.openai.com/v1/models', {
-          headers: { Authorization: `Bearer ${key}` },
-        })
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
-          return NextResponse.json(
-            { error: errData.error?.message || `Lỗi OpenAI API (HTTP ${res.status})` },
-            { status: 400 }
-          )
-        }
-        return NextResponse.json({ success: true, message: 'Kết nối thành công tới OpenAI API!' })
-      }
-
-      if (provider === 'custom') {
-        let key = apiKey
-        if (!key || key.startsWith('••••')) {
-          key = decryptSecret(dbSettings.llm_config?.custom?.apiKey || '')
-        }
-        const targetUrl = baseUrl || dbSettings.llm_config?.custom?.baseUrl
-        if (!targetUrl) {
-          return NextResponse.json({ error: 'Chưa nhập Base URL cho Custom LLM' }, { status: 400 })
-        }
-
-        const validation = isValidLLMUrl(targetUrl)
-        if (!validation.valid) {
-          return NextResponse.json({ error: validation.error }, { status: 400 })
-        }
-
-        const cleanUrl = validation.url
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-        if (key) {
-          headers['Authorization'] = `Bearer ${key}`
-        }
-
-        const res = await fetch(`${cleanUrl}/models`, { headers, method: 'GET' })
-        if (!res.ok) {
-          const res2 = await fetch(cleanUrl, { headers, method: 'GET' }).catch(() => null)
-          if (!res2 || !res2.ok) {
-            return NextResponse.json(
-              { error: `Không thể kết nối tới Custom LLM tại ${cleanUrl} (HTTP ${res.status})` },
-              { status: 400 }
-            )
-          }
-        }
-        return NextResponse.json({ success: true, message: `Kết nối thành công tới Custom LLM (${cleanUrl})!` })
-      }
-
-      return NextResponse.json({ error: 'Provider không hợp lệ' }, { status: 400 })
     } catch (err: any) {
       return NextResponse.json({ error: err.message || 'Lỗi kiểm tra kết nối' }, { status: 500 })
     }

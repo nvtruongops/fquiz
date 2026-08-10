@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { User, LogOut, Settings, ChevronDown, Sparkles, School, GraduationCap, Sun, Moon, Monitor, Palette } from 'lucide-react'
+import { User, LogOut, Settings, ChevronDown, Sparkles, School, GraduationCap, Sun, Moon, Monitor, Palette, Heart, Leaf, Check } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +14,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/shared/ui/dropdown-menu'
-import { Check } from 'lucide-react'
 
 import { useLogout } from '@/hooks/useLogout'
 import { cn } from '@/lib/core/utils/cn'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface UserDropdownProps {
   user: { name: string; role: string; avatarUrl?: string }
@@ -31,6 +32,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
   const [mounted, setMounted] = useState(false)
   const { handleLogout } = useLogout()
   const { theme, setTheme } = useTheme()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     setMounted(true)
@@ -40,9 +42,13 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
     setTheme(newTheme)
     fetch('/api/v1/user/theme', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ theme: newTheme }),
-    }).catch(() => { })
+    })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['auth-user'] })
+      })
+      .catch(() => { })
   }
 
   const isTeacherRoute = pathname?.startsWith('/teacher')
@@ -216,7 +222,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   {theme === 'dark' ? (
                     <Moon className="w-4 h-4 text-primary" />
-                  ) : theme === 'green' ? (
+                  ) : theme === 'green' || theme === 'pink' ? (
                     <Palette className="w-4 h-4 text-primary" />
                   ) : (
                     <Sun className="w-4 h-4 text-primary" />
@@ -225,11 +231,17 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 <div className="flex flex-col min-w-0 text-left">
                   <span className="text-sm font-semibold truncate">Giao diện</span>
                   <span className="text-[10px] text-muted-foreground font-bold truncate">
-                    {theme === 'dark' ? 'Giao diện Tối' : theme === 'green' ? 'Giao diện Xanh' : 'Giao diện Sáng'}
+                    {theme === 'dark'
+                      ? 'Giao diện Tối'
+                      : theme === 'green'
+                      ? 'Tùy chỉnh: Green'
+                      : theme === 'pink'
+                      ? 'Tùy chỉnh: Pink'
+                      : 'Giao diện Sáng'}
                   </span>
                 </div>
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent sideOffset={8} className="w-56 p-1.5 bg-card border-border rounded-2xl shadow-xl z-50">
+              <DropdownMenuSubContent sideOffset={8} className="w-56 p-1.5 bg-card border border-border rounded-2xl shadow-xl z-50">
                 <DropdownMenuItem
                   onClick={() => handleThemeChange('light')}
                   className={cn(
@@ -258,19 +270,48 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   {theme === 'dark' && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  onClick={() => handleThemeChange('green')}
-                  className={cn(
-                    "flex items-center justify-between cursor-pointer py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors",
-                    theme === 'green' ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Palette className="w-4 h-4 text-primary" />
-                    <span>Giao diện Xanh</span>
-                  </div>
-                  {theme === 'green' && <Check className="w-4 h-4 text-primary" />}
-                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger
+                    className={cn(
+                      "flex items-center justify-between cursor-pointer py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors",
+                      theme === 'green' || theme === 'pink' ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Palette className="w-4 h-4 text-primary" />
+                      <span>Tùy chỉnh (Custom)</span>
+                    </div>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent sideOffset={8} className="w-48 p-1.5 bg-card border border-border rounded-2xl shadow-xl z-50">
+                    <DropdownMenuItem
+                      onClick={() => handleThemeChange('green')}
+                      className={cn(
+                        "flex items-center justify-between cursor-pointer py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors",
+                        theme === 'green' ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Green Theme</span>
+                      </div>
+                      {theme === 'green' && <Check className="w-4 h-4 text-primary" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => handleThemeChange('pink')}
+                      className={cn(
+                        "flex items-center justify-between cursor-pointer py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors",
+                        theme === 'pink' ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>Pink Theme</span>
+                      </div>
+                      {theme === 'pink' && <Check className="w-4 h-4 text-primary" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </div>

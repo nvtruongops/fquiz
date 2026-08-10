@@ -119,7 +119,7 @@ export function useMixQuizGenerator(
       setSelectedCategoryId(target)
       setSelectedQuizIds(new Set())
     }
-  }, [initialCategoryId, categoryIdParam])
+  }, [initialCategoryId, categoryIdParam, selectedCategoryId])
 
   // Pre-load from mix_from
   useEffect(() => {

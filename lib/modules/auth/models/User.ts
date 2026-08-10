@@ -23,7 +23,7 @@ const UserSchema = new Schema<IUser>(
     sharing_violations: { type: Number, required: true, default: 0 },
     timezone: { type: String, required: true, default: 'Asia/Ho_Chi_Minh' },
     language: { type: String, enum: ['vi', 'en'], required: true, default: 'vi' },
-    theme_preference: { type: String, enum: ['light', 'dark', 'green'], required: true, default: 'light' },
+    theme_preference: { type: String, enum: ['light', 'dark', 'green', 'pink'], required: true, default: 'light' },
     notify_email: { type: Boolean, required: true, default: true },
     notify_quiz_reminder: { type: Boolean, required: true, default: true },
     privacy_share_activity: { type: Boolean, required: true, default: true },

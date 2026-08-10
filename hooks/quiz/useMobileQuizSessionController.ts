@@ -123,10 +123,11 @@ export function useMobileQuizSessionController() {
 
   const sessionLoaderStartedRef = useRef(false)
 
-  const [touchState, setTouchState] = useState({
+  const cardContainerRef = useRef<HTMLDivElement | null>(null)
+  const touchCoordsRef = useRef({
     startX: 0,
     startY: 0,
-    offsetX: 0,
+    dx: 0,
     isDragging: false,
   })
 
@@ -155,7 +156,11 @@ export function useMobileQuizSessionController() {
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
 
   useEffect(() => {
-    setTouchState({ startX: 0, startY: 0, offsetX: 0, isDragging: false })
+    touchCoordsRef.current = { startX: 0, startY: 0, dx: 0, isDragging: false }
+    if (cardContainerRef.current) {
+      cardContainerRef.current.style.transform = ''
+      cardContainerRef.current.style.transition = 'transform 0.2s ease-out'
+    }
   }, [currentQuestionIndex])
 
   const handleSubmit = useCallback(() => {
@@ -199,45 +204,52 @@ export function useMobileQuizSessionController() {
     setQuestionMapOpen(false)
   }, [isHydratedFromServer, activeData?.session.totalQuestions, navigateToQuestion])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return
-    setTouchState({
+    touchCoordsRef.current = {
       startX: e.touches[0].clientX,
       startY: e.touches[0].clientY,
-      offsetX: 0,
+      dx: 0,
       isDragging: true,
-    })
-  }
+    }
+    if (cardContainerRef.current) {
+      cardContainerRef.current.style.transition = 'none'
+    }
+  }, [])
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchState.isDragging || e.touches.length !== 1) return
-    const dx = e.touches[0].clientX - touchState.startX
-    const dy = e.touches[0].clientY - touchState.startY
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchCoordsRef.current.isDragging || e.touches.length !== 1) return
+    const dx = e.touches[0].clientX - touchCoordsRef.current.startX
+    const dy = e.touches[0].clientY - touchCoordsRef.current.startY
 
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-      setTouchState((prev) => ({
-        ...prev,
-        offsetX: dx,
-      }))
+      touchCoordsRef.current.dx = dx
+      if (cardContainerRef.current) {
+        cardContainerRef.current.style.transform = `translateX(${dx}px)`
+      }
     }
-  }
+  }, [])
 
-  const handleTouchEnd = () => {
-    if (!touchState.isDragging) return
-    const { offsetX } = touchState
+  const handleTouchEnd = useCallback(() => {
+    if (!touchCoordsRef.current.isDragging) return
+    const { dx } = touchCoordsRef.current
+    touchCoordsRef.current.isDragging = false
     const threshold = 50
     const effectiveTotal = activeData?.session?.totalQuestions || 0
 
-    if (offsetX < -threshold && currentQuestionIndex < effectiveTotal - 1) {
+    if (cardContainerRef.current) {
+      cardContainerRef.current.style.transition = 'transform 0.2s ease-out'
+      cardContainerRef.current.style.transform = ''
+    }
+
+    if (dx < -threshold && currentQuestionIndex < effectiveTotal - 1) {
       triggerVibration()
       handleNavigate(currentQuestionIndex + 1)
-    } else if (offsetX > threshold && currentQuestionIndex > 0) {
+    } else if (dx > threshold && currentQuestionIndex > 0) {
       triggerVibration()
       handleNavigate(currentQuestionIndex - 1)
     }
-
-    setTouchState({ startX: 0, startY: 0, offsetX: 0, isDragging: false })
-  }
+  }, [activeData?.session?.totalQuestions, currentQuestionIndex, handleNavigate])
 
   return {
     resolvedQuizId,
@@ -272,7 +284,7 @@ export function useMobileQuizSessionController() {
     togglePinMutation,
     isRightHanded,
     toggleHandedness,
-    touchState,
+    cardContainerRef,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,

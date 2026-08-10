@@ -5,6 +5,8 @@ import AppLayout from '@/components/layout/AppLayout'
 import { ArrowLeft, ShieldCheck, Copyright, AlertTriangle, RefreshCw, Shield, ChevronRight } from 'lucide-react'
 import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Điều khoản sử dụng — FQuiz',
   description: 'Quy định và Điều khoản sử dụng dịch vụ ôn thi trắc nghiệm FQuiz.',

@@ -9,6 +9,8 @@ export interface AuthUser {
   email?: string
   role: string
   avatarUrl?: string
+  themePreference?: string
+  theme_preference?: string
 }
 
 export interface AuthResponse {

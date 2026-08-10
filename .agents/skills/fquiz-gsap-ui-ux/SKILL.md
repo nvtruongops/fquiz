@@ -32,6 +32,17 @@ priority: high
 
 ---
 
+## Theme-Native Custom Scrollbar Standards
+
+1. **Automatic Theme Alignment**: All scrollbars MUST use semantic CSS variables (`hsl(var(--primary))`, `hsl(var(--muted-foreground))`) to dynamically match Light, Dark, and custom theme modes.
+2. **Inner Container Scrollbars**: Apply `.custom-scrollbar` on internal scrollable containers (e.g. `overflow-y-auto custom-scrollbar`) for sleek 6px trackless scrollbars.
+3. **Cross-Browser Support**:
+   - Webkit browsers: Custom `::-webkit-scrollbar-thumb` using HSL opacity (`hsl(var(--primary) / 0.35)` default, `hsl(var(--primary) / 0.75)` hover).
+   - Firefox: `scrollbar-width: thin; scrollbar-color: hsl(var(--primary) / 0.35) transparent;`.
+
+
+---
+
 ## Mandatory Verification Protocol
 
 Execute before declaring any GSAP UI/UX work complete:

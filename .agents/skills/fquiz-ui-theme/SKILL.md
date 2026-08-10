@@ -14,13 +14,14 @@ This skill enforces **Theme as Code** governance, **3 Official Themes** (`light`
 
 ---
 
-## Official 3 Themes
+## Official 4 Themes
 
-`fquiz` supports 3 official themes configured via `next-themes` and CSS variables:
+`fquiz` supports 4 official themes configured via `next-themes` and CSS variables:
 
-1. ☀️ **Light Theme (`light`)**: Pure White background (`#FFFFFF`), Crisp Slate Black text (`#0F172A`), Slate Black primary (`#0F172A`).
-2. 🌙 **Dark Theme (`dark`)**: OLED Obsidian Black background (`#000000`), Crisp Pure White text (`#FFFFFF`), Crisp White primary (`#FFFFFF`).
-3. 🌿 **Green Theme (`green`)**: Warm Vintage Paper Beige background (`#EAE7D6`), Deep Sage Green text (`#1A2922`), Sage Green primary (`#396150`).
+1. ☀️ **Light Theme (`light`)** [Default]: Soft Slate White background (`#F8FAFC`), Crisp Slate Black text (`#0F172A`), Oceanic Royal Blue primary (`#2563EB`).
+2. 🌙 **Dark Theme (`dark`)**: Midnight Navy background (`#070B14`), Crisp Soft White text (`#F3F6FA`), Royal Study Blue primary (`#3768E2`) & Vivid Amber Gold accent (`#FBC444`).
+3. 🌿 **Green Theme (`green`)** [Custom]: Warm Vintage Paper Beige background (`#ECE8DF`), Deep Sage Green text (`#153020`), Deep Forest Green primary (`#2D5A47`).
+4. 🌸 **Pink Theme (`pink`)** [Custom]: Soft Blush Cloud background (`#FDF6F7`), Deep Obsidian Rose text (`#2B1619`), Aesthetic Blush Rose primary (`#D47385`).
 
 ---
 

@@ -14,8 +14,8 @@ export interface IUser {
   sharing_violations: number
   timezone?: string
   language?: 'vi' | 'en'
-  themePreference?: 'light' | 'dark' | 'green'
-  theme_preference?: 'light' | 'dark' | 'green'
+  themePreference?: 'light' | 'dark' | 'green' | 'pink'
+  theme_preference?: 'light' | 'dark' | 'green' | 'pink'
   notify_email?: boolean
   notify_quiz_reminder?: boolean
   privacy_share_activity?: boolean

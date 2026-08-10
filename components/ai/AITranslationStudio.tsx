@@ -219,10 +219,18 @@ export const AITranslationStudio = React.memo(function AITranslationStudio({
         <label className="text-xs font-bold text-muted-foreground block mb-1.5">Văn bản / Câu cần dịch & phân tích:</label>
         <textarea
           value={translationText}
+          onFocus={(e) => {
+            if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+              const target = e.currentTarget
+              setTimeout(() => {
+                try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch (_err) { /* ignore */ }
+              }, 250)
+            }
+          }}
           onChange={(e) => setTranslationText(e.target.value)}
           placeholder="Nhập văn bản cần dịch tại đây..."
           rows={4}
-          className="w-full border-2 border-border focus:border-primary rounded-2xl p-4 text-xs font-medium bg-muted/50 outline-none leading-relaxed text-card-foreground"
+          className="w-full border-2 border-border focus:border-primary rounded-2xl p-4 text-xs font-medium bg-muted/50 outline-none leading-relaxed text-card-foreground scroll-m-20"
         />
       </div>
 
