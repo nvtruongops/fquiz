@@ -50,9 +50,9 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-          className="bento-card sm:col-span-7 bg-surface-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-strong min-h-[220px] before:w-1.5 before:bg-accentRole-discovery before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full"
+          className="bento-card sm:col-span-7 glass-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-accentRole-discovery/50 hover:shadow-xl hover:shadow-accentRole-discovery/10 min-h-[220px] before:w-1.5 before:bg-accentRole-discovery before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full rail-glow-discovery"
         >
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-accentRole-discovery/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-accentRole-discovery/15 ambient-glow-sphere" />
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-11 h-11 rounded-2xl bg-accentRole-discovery-bg text-accentRole-discovery-fg border border-accentRole-discovery-border flex items-center justify-center shadow-xs">
@@ -89,9 +89,9 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
           <div
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}
-            className="bento-card sm:col-span-5 bg-surface-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-strong min-h-[220px] before:w-1.5 before:bg-accentRole-learning before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full"
+            className="bento-card sm:col-span-5 glass-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-accentRole-learning/50 hover:shadow-xl hover:shadow-accentRole-learning/10 min-h-[220px] before:w-1.5 before:bg-accentRole-learning before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full rail-glow-learning"
           >
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-accentRole-learning/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-accentRole-learning/15 ambient-glow-sphere" />
             <div className="space-y-3.5 relative z-10">
               <div className="w-11 h-11 rounded-2xl bg-accentRole-learning-bg text-accentRole-learning-fg border border-accentRole-learning-border flex items-center justify-center shadow-xs">
                 <Bot className="w-5 h-5" />
@@ -118,9 +118,9 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
           <div
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}
-            className="bento-card sm:col-span-5 bg-surface-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-strong min-h-[220px] before:w-1.5 before:bg-accentRole-community before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full"
+            className="bento-card sm:col-span-5 glass-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-accentRole-community/50 hover:shadow-xl hover:shadow-accentRole-community/10 min-h-[220px] before:w-1.5 before:bg-accentRole-community before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full rail-glow-community"
           >
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-accentRole-community/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-accentRole-community/15 ambient-glow-sphere" />
             <div className="space-y-3.5 relative z-10">
               <div className="w-11 h-11 rounded-2xl bg-accentRole-community-bg text-accentRole-community-fg border border-accentRole-community-border flex items-center justify-center shadow-xs">
                 <Sparkles className="w-5 h-5" />
@@ -145,7 +145,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
           <div
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}
-            className="bento-card sm:col-span-6 bg-surface-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-strong before:w-1.5 before:bg-accentRole-community before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full"
+            className="bento-card sm:col-span-6 glass-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-accentRole-community/50 hover:shadow-xl hover:shadow-accentRole-community/10 before:w-1.5 before:bg-accentRole-community before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full rail-glow-community"
           >
             <div className="space-y-3 relative z-10">
               <div className="flex items-center justify-between">
@@ -176,7 +176,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({ isDev
           <div
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}
-            className="bento-card sm:col-span-6 bg-surface-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-strong before:w-1.5 before:bg-accentRole-memory before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full"
+            className="bento-card sm:col-span-6 glass-card text-foreground rounded-[28px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-accentRole-memory/50 hover:shadow-xl hover:shadow-accentRole-memory/10 before:w-1.5 before:bg-accentRole-memory before:absolute before:left-0 before:top-4 before:bottom-4 before:rounded-r-full rail-glow-memory"
           >
             <div className="space-y-3 relative z-10">
               <div className="flex items-center justify-between">

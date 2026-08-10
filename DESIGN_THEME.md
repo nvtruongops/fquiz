@@ -96,4 +96,32 @@ surface-page           ──> #070B14 (Background Midnight Navy)
 
 ---
 
+## 🔘 7. Button Elevation & Shadow System (Cấu Hình Độ Bóng Nút Bấm)
+
+Chuẩn hóa hệ thống độ bóng (Box-Shadow) và hiệu ứng tương tác (Micro-Interactions) cho các nút bấm trong toàn bộ ứng dụng qua [`button.tsx`](file:///e:/Code/fquiz/components/shared/ui/button.tsx):
+
+| Biến Thể Button (`variant`) | Cấu Hình Elevation / Shadow | Hover State (Micro-Interaction) | Active / Pressed State |
+|---|---|---|---|
+| **`default` (Primary CTA)** | `shadow-sm shadow-primary/25` | `hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5` | `active:translate-y-0 active:shadow-xs active:scale-[0.98]` |
+| **`destructive`** | `shadow-sm shadow-destructive/20` | `hover:shadow-md hover:shadow-destructive/30 hover:-translate-y-0.5` | `active:translate-y-0 active:shadow-xs active:scale-[0.98]` |
+| **`outline`** | `shadow-2xs` | `hover:shadow-sm` | `active:scale-[0.98]` |
+| **`secondary`** | `shadow-2xs` | `hover:shadow-sm` | `active:scale-[0.98]` |
+| **`ghost` / `link`** | Flat (Không shadow) | Transitions màu nền/gạch chân | `active:scale-[0.98]` |
+
+---
+
+## 🪟 8. Glassmorphism, Backdrop Blur & Ambient Glow Architecture
+
+Hệ thống bổ sung lớp hiệu ứng thị giác Kính mờ (Frosted Glassmorphism) và Quầng sáng Ambient Glow nhằm nâng cao trải nghiệm visual depth mà vẫn duy trì 100% WCAG 2.2 AA Contrast:
+
+1. **Utility Glass Cards**:
+   - **`.glass-card`**: `backdrop-filter: blur(16px) saturate(150%)` kết hợp `bg-card/90` cho Bento Cards, Sidebar Panels & Category Items.
+   - **`.glass-card-elevated`**: `backdrop-filter: blur(24px) saturate(160%)` kết hợp `bg-surface-card-elevated/92` cho Hero Header & Sticky Containers.
+2. **Ambient Glow Spheres (`.ambient-glow-sphere`)**:
+   - Đốm sáng radial gradient phân tán `blur-3xl opacity-60` được đặt ẩn bên dưới các Bento Cards theo tone màu thương hiệu từng tính năng (`accentRole-discovery`, `accentRole-learning`, `accentRole-community`, `accentRole-memory`).
+3. **Accent Rail Light (`.rail-glow-*`)**:
+   - Thanh chỉ thị dọc 4px (`▌ Accent Rail`) sở hữu quầng sáng neon mờ dịu nhẹ (`box-shadow: 0 0 10px hsl(var(--accent-*)/0.6)`).
+
+---
+
 *Hợp đồng Kiến trúc Hợp đồng Thiết kế được cập nhật tự động bởi Antigravity System Architecture.*

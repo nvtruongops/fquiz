@@ -20,7 +20,7 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({ r
 
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-surface-card p-4 sm:p-5 rounded-2xl border border-subtle shadow-xs flex flex-col h-full space-y-3">
+      <div className="glass-card p-4 sm:p-5 rounded-2xl border border-subtle shadow-xs flex flex-col h-full space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-subtle pb-2.5 shrink-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-accentRole-learning flex items-center gap-1.5">

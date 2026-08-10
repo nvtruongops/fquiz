@@ -78,7 +78,7 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
             key={cat.id}
             href={`/courses/${encodeURIComponent(cat.name.toLowerCase())}`}
             onClick={handleCardClick}
-            className="group relative flex items-center gap-2.5 px-3.5 py-3 rounded-2xl bg-surface-card border border-subtle shadow-2xs hover:border-strong hover:shadow-md hover:-translate-y-0.5 hover:z-10 active:scale-[0.98] transition-all duration-200 shrink-0 min-w-[150px] max-w-[200px] snap-start"
+            className="group relative flex items-center gap-2.5 px-3.5 py-3 rounded-2xl glass-card border border-subtle shadow-2xs hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5 hover:z-10 active:scale-[0.98] transition-all duration-200 shrink-0 min-w-[150px] max-w-[200px] snap-start"
             title={cat.name}
           >
             <span className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">

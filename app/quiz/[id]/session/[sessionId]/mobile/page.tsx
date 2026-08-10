@@ -356,7 +356,7 @@ export default function QuizSessionMobilePage() {
               type="button"
               variant="ghost"
               onClick={() => ctrl.setConfirmOpen(false)}
-              className="w-full py-5 font-bold text-gray-500"
+              className="w-full py-5 font-bold text-muted-foreground"
             >
               Làm tiếp
             </Button>
@@ -368,16 +368,17 @@ export default function QuizSessionMobilePage() {
       <Dialog open={ctrl.exitConfirmOpen} onOpenChange={ctrl.setExitConfirmOpen}>
         <DialogContent className="max-w-xs rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-gray-900">Thoát phòng thi?</DialogTitle>
-            <DialogDescription className="text-center text-xs text-gray-500">
+            <DialogTitle className="text-center text-lg font-black text-foreground">Thoát phòng thi?</DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
               Tiến trình làm bài của bạn sẽ được lưu tự động. Bạn có thể tiếp tục làm lại sau.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2">
             <Button
               type="button"
+              variant="destructive"
               onClick={ctrl.handleConfirmExitQuiz}
-              className="w-full bg-red-600 py-5 font-bold text-white hover:bg-red-700"
+              className="w-full py-5 font-bold"
             >
               Thoát phòng thi
             </Button>
@@ -385,7 +386,7 @@ export default function QuizSessionMobilePage() {
               type="button"
               variant="ghost"
               onClick={() => ctrl.setExitConfirmOpen(false)}
-              className="w-full py-5 font-bold text-gray-500"
+              className="w-full py-5 font-bold text-muted-foreground"
             >
               Ở lại làm tiếp
             </Button>

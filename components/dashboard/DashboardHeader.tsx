@@ -24,11 +24,11 @@ export const DashboardHeader = React.memo(function DashboardHeader({
   onRefetch,
 }: DashboardHeaderProps) {
   return (
-    <div className="relative overflow-hidden bg-surface-card-elevated backdrop-blur-xl p-5 sm:p-6 rounded-[28px] border border-strong shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-full w-full">
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden glass-card-elevated p-5 sm:p-6 rounded-[28px] border border-strong shadow-lg shadow-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-full w-full">
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent ambient-glow-sphere" />
 
       <div className="flex items-start sm:items-center gap-4 relative z-10">
-        <Avatar className="h-14 w-14 ring-4 ring-ring-focus/30 shrink-0 shadow-xs">
+        <Avatar className="h-14 w-14 ring-4 ring-primary/30 shrink-0 shadow-md shadow-primary/20">
           {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.name || 'User'} />}
           <AvatarFallback className="bg-primary text-primary-foreground font-black text-lg">
             {userInitial}
