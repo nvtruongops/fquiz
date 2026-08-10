@@ -161,6 +161,12 @@ export function useMobileQuizSessionController() {
       cardContainerRef.current.style.transform = ''
       cardContainerRef.current.style.transition = 'transform 0.2s ease-out'
     }
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
   }, [currentQuestionIndex])
 
   const handleSubmit = useCallback(() => {
@@ -204,6 +210,8 @@ export function useMobileQuizSessionController() {
     setQuestionMapOpen(false)
   }, [isHydratedFromServer, activeData?.session.totalQuestions, navigateToQuestion])
 
+  const rafRef = useRef<number | null>(null)
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return
     touchCoordsRef.current = {
@@ -219,19 +227,30 @@ export function useMobileQuizSessionController() {
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!touchCoordsRef.current.isDragging || e.touches.length !== 1) return
-    const dx = e.touches[0].clientX - touchCoordsRef.current.startX
-    const dy = e.touches[0].clientY - touchCoordsRef.current.startY
+    const currentX = e.touches[0].clientX
+    const currentY = e.touches[0].clientY
+    const dx = currentX - touchCoordsRef.current.startX
+    const dy = currentY - touchCoordsRef.current.startY
 
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
       touchCoordsRef.current.dx = dx
-      if (cardContainerRef.current) {
-        cardContainerRef.current.style.transform = `translateX(${dx}px)`
-      }
+      if (rafRef.current !== null) return
+
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null
+        if (cardContainerRef.current) {
+          cardContainerRef.current.style.transform = `translate3d(${touchCoordsRef.current.dx}px, 0, 0)`
+        }
+      })
     }
   }, [])
 
   const handleTouchEnd = useCallback(() => {
     if (!touchCoordsRef.current.isDragging) return
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
     const { dx } = touchCoordsRef.current
     touchCoordsRef.current.isDragging = false
     const threshold = 50
