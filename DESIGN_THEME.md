@@ -28,13 +28,14 @@ Tài liệu này đóng vai trò là **Bản vẽ Kiến trúc Hợp đồng Thi
 
 ## 🌗 2. Hệ Thống 3 Theme Modes & 3 Môi Trường Thị Giác Độc Lập
 
-Cả 3 Theme Modes sở hữu cùng cấu trúc Semantic Token, nhưng được re-map Brand & Palette riêng biệt để tạo **3 Môi Trường Thị Giác Hoàn Toàn Khác Nhau**:
+Cả 4 Theme Modes sở hữu cùng cấu trúc Semantic Token, nhưng được re-map Brand & Palette riêng biệt để tạo **4 Môi Trường Thị Giác Hoàn Toàn Khác Nhau**:
 
 | Mode Name | Class Trigger | Triết lý & Nền tổng thể | Primary Brand & Personality |
 |---|---|---|---|
 | **Light Theme** | `.light` (default) | **Clean Academic** (Nền `#F8FAFC`, Chữ `#0F172A`) | **Oceanic Royal Blue (`#2563EB`)**: Trong trẻo, học thuật, tương phản cao |
-| **Dark Theme** | `.dark` | **Midnight Study** (Nền Midnight Navy `#070B14`, Chữ Soft White `#F3F6FA`) | **Electric Study Blue (`#60A5FA`)**: Tập trung ban đêm, Midnight Navy & Indigo |
-| **Green Theme** | `.green` | **Vintage Study** (Nền Giấy Be `#ECE8DF`, Chữ Deep Forest `#153020`) | **Deep Forest Green (`#2D5A47`)**: Ấm áp, thư thái, cảm giác đọc sách cổ điển |
+| **Dark Theme** | `.dark` | **Midnight Study** (Nền Midnight Navy `#070B14`, Chữ Soft White `#F3F6FA`) | **Royal Study Blue (`#3768E2`) & Gold Accent (`#FBC444`)**: Dịu mắt, tinh tế ban đêm, tương phản hài hòa |
+| **Green Theme** | `.green` (Custom) | **Vintage Study** (Nền Giấy Be `#ECE8DF`, Chữ Deep Forest `#153020`) | **Deep Forest Green (`#2D5A47`)**: Ấm áp, thư thái, cảm giác đọc sách cổ điển |
+| **Pink Theme** | `.pink` (Custom) | **Blush & Black Identity** (Nền Soft Blush `#FDF6F7`, Chữ Obsidian Rose `#2B1619`) | **Aesthetic Blush Rose (`#D47385`)**: Ngọt ngào, hiện đại, thẩm mỹ cao |
 
 ---
 

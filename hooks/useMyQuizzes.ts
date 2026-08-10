@@ -70,7 +70,7 @@ export function useMyQuizzes() {
     refetchOnWindowFocus: false,
   })
 
-  const categories: Category[] = catData?.categories || []
+  const categories: Category[] = useMemo(() => catData?.categories || [], [catData?.categories])
   const privateCategories = useMemo(
     () => categories.filter((c) => c.type === 'private'),
     [categories]
@@ -92,7 +92,7 @@ export function useMyQuizzes() {
     refetchOnWindowFocus: false,
   })
 
-  const allQuizzes: Quiz[] = quizData?.quizzes || []
+  const allQuizzes: Quiz[] = useMemo(() => quizData?.quizzes || [], [quizData?.quizzes])
   const ownQuizTotal = useMemo(() => allQuizzes.filter((q) => !q.is_saved_from_explore).length, [allQuizzes])
   const savedQuizTotal = useMemo(() => allQuizzes.filter((q) => q.is_saved_from_explore).length, [allQuizzes])
   const mixQuizTotal = useMemo(() => allQuizzes.filter((q) => q.is_temp).length, [allQuizzes])

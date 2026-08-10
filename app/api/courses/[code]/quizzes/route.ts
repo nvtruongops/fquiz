@@ -23,6 +23,7 @@ export async function GET(
 
     const cleanCode = decodeURIComponent(code).trim()
     const escapedCode = escapeRegex(cleanCode)
+    // eslint-disable-next-line security/detect-non-literal-regexp
     const codeRegex = new RegExp(`^${escapedCode}$`, 'i')
 
     // 1. Find all matching categories (exact or case-insensitive)
@@ -40,7 +41,9 @@ export async function GET(
     // 2. Build comprehensive $or query to fetch ALL quizzes belonging to this course
     const orConditions: any[] = [
       { course_code: { $regex: codeRegex } },
+      // eslint-disable-next-line security/detect-non-literal-regexp
       { course_code: { $regex: new RegExp(escapedCode, 'i') } },
+      // eslint-disable-next-line security/detect-non-literal-regexp
       { title: { $regex: new RegExp(escapedCode, 'i') } },
     ]
 

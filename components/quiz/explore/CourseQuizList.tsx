@@ -181,7 +181,7 @@ export default function CourseQuizList({
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState<number | 'all'>(8)
 
-  const rawQuizzes = data?.quizzes ?? []
+  const rawQuizzes = useMemo(() => data?.quizzes ?? [], [data?.quizzes])
 
   const filteredQuizzes = useMemo(() => {
     let list = rawQuizzes
@@ -249,23 +249,23 @@ export default function CourseQuizList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Search Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-border shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 bg-card/80 backdrop-blur-xl p-3 sm:p-4 rounded-3xl border border-border/80 shadow-sm">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-primary absolute left-4 top-1/2 -translate-y-1/2" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm bộ đề theo tên (VD: SP25, FE, RE)..."
-            className="pl-10 h-10 rounded-xl border-border text-xs bg-card font-medium text-foreground"
+            className="pl-11 h-11 rounded-2xl border-border/80 text-xs bg-card font-medium text-foreground focus:ring-2 focus:ring-primary/30 transition-all"
           />
         </div>
         
         <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
           {/* Page Size Selector */}
-          <div className="flex items-center gap-1 bg-muted p-1 rounded-xl text-[11px] font-bold">
-            <span className="text-muted-foreground px-1.5 hidden md:inline">Hiển thị:</span>
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl text-[11px] font-bold border border-border/60">
+            <span className="text-muted-foreground px-2 hidden md:inline">Hiển thị:</span>
             {[8, 20, 'all'].map((size) => (
               <button
                 key={String(size)}
@@ -275,7 +275,7 @@ export default function CourseQuizList({
                   setCurrentPage(1)
                 }}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg transition-all font-bold cursor-pointer',
+                  'px-3 py-1 rounded-xl transition-all font-bold cursor-pointer select-none',
                   pageSize === size
                     ? 'bg-primary text-primary-foreground shadow-2xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -286,7 +286,7 @@ export default function CourseQuizList({
             ))}
           </div>
 
-          <div className="text-xs font-bold text-muted-foreground px-2 flex items-center gap-1.5 shrink-0">
+          <div className="text-xs font-bold text-muted-foreground px-2 flex items-center gap-1.5 shrink-0 bg-muted/40 py-1.5 px-3 rounded-2xl border border-border/60">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span className="text-primary font-black">
               {filteredQuizzes.length > 0 ? `${startIndex}-${endIndex}` : 0}
@@ -297,7 +297,7 @@ export default function CourseQuizList({
       </div>
 
       {filteredQuizzes.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground text-xs font-semibold bg-card/40 border border-border rounded-2xl">
+        <div className="text-center py-14 text-muted-foreground text-xs font-semibold bg-card/40 border border-border/80 rounded-3xl backdrop-blur-md">
           Không tìm thấy bộ đề phù hợp với từ khóa &quot;{searchQuery}&quot;
         </div>
       ) : (
@@ -318,25 +318,25 @@ export default function CourseQuizList({
                 <motion.div key={quiz._id} variants={itemVariants} className="h-full min-w-0">
                   <Card
                     className={cn(
-                      'h-full flex flex-col justify-between border bg-card backdrop-blur-2xl rounded-2xl shadow-xs hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-4 sm:p-5 gap-4 relative',
-                      isPinned ? 'border-question-flagged-border shadow-xs' : 'border-border'
+                      'h-full flex flex-col justify-between border bg-card/90 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden p-5 gap-4 relative',
+                      isPinned ? 'border-question-flagged-border shadow-sm ring-1 ring-question-flagged-border/40' : 'border-border/80'
                     )}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                     <div className="space-y-3.5 relative z-10">
                       {/* Header: Icon & Title */}
                       <div className="flex items-start gap-3">
                         {isCompleted ? (
-                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-success/10 text-success flex items-center justify-center shrink-0 border border-success/20 shadow-2xs">
-                            <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <div className="w-10 h-10 rounded-2xl bg-success/15 text-success-fg flex items-center justify-center shrink-0 border border-success/30 shadow-2xs">
+                            <Trophy className="w-5 h-5" />
                           </div>
                         ) : (
-                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center shrink-0 border border-border shadow-2xs">
-                            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <div className="w-10 h-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center shrink-0 border border-border shadow-2xs">
+                            <HelpCircle className="w-5 h-5" />
                           </div>
                         )}
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 space-y-1 min-w-0">
                           <h3
                             className="text-xs sm:text-sm font-extrabold text-foreground leading-snug tracking-tight group-hover:text-primary transition-colors duration-300 line-clamp-2"
                             title={quiz.title}
@@ -345,7 +345,7 @@ export default function CourseQuizList({
                           </h3>
                           {isPinned && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border">
-                              <Pin className="w-2.5 h-2.5 fill-current" />
+                              <Pin className="w-2.5 h-2.5 fill-current rotate-45" />
                               Đã ghim
                             </span>
                           )}
@@ -354,14 +354,14 @@ export default function CourseQuizList({
 
                       {/* Metadata & Status Badge */}
                       <div className="space-y-2">
-                        <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <div className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-primary" />
                           {quiz.questionCount} câu hỏi
                         </div>
 
                         <div>
                           {isCompleted ? (
-                            <Badge className="border-0 text-white font-extrabold text-[10px] px-3 py-1 rounded-full bg-success shadow-2xs uppercase tracking-wider whitespace-nowrap">
+                            <Badge className="border-0 text-white font-black text-[10px] px-3 py-1 rounded-full bg-success shadow-2xs uppercase tracking-wider whitespace-nowrap">
                               Điểm cao nhất: {(() => {
                                 const val = (quiz.bestScore! / quiz.questionCount) * 10
                                 return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
@@ -370,7 +370,7 @@ export default function CourseQuizList({
                           ) : (
                             <Badge
                               variant="outline"
-                              className="text-[10px] text-muted-foreground border-border font-bold px-3 py-1 rounded-full bg-muted uppercase tracking-wider whitespace-nowrap"
+                              className="text-[10px] text-muted-foreground border-border font-extrabold px-3 py-1 rounded-full bg-muted uppercase tracking-wider whitespace-nowrap"
                             >
                               Chưa thử sức
                             </Badge>
@@ -380,10 +380,10 @@ export default function CourseQuizList({
                     </div>
 
                     {/* Actions Bar */}
-                    <div className="pt-3 border-t border-border relative z-10 flex items-center gap-2">
+                    <div className="pt-3 border-t border-border/80 relative z-10 flex items-center gap-2">
                       <Link
                         href={`/quiz/${quiz._id}`}
-                        className="flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
+                        className="flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
                       >
                         Vào làm bài
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -398,17 +398,17 @@ export default function CourseQuizList({
                         }}
                         disabled={pinningQuizId === quiz._id}
                         className={cn(
-                          'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
+                          'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isPinned
                             ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs'
-                            : 'bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary border-border'
+                            : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
                         title={isPinned ? 'Bỏ ghim mã quiz' : 'Ghim mã quiz lên đầu'}
                       >
                         {pinningQuizId === quiz._id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         ) : (
-                          <Pin className={cn('w-4 h-4', isPinned && 'fill-current')} />
+                          <Pin className={cn('w-4 h-4', isPinned && 'fill-current rotate-45')} />
                         )}
                       </button>
 
@@ -421,17 +421,17 @@ export default function CourseQuizList({
                         }}
                         disabled={savingQuizId === quiz._id}
                         className={cn(
-                          'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0',
+                          'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isSaved
-                            ? 'bg-warning-bg/20 text-warning-bg border-warning-bg/40 shadow-2xs'
-                            : 'bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary border-border'
+                            ? 'bg-warning-bg/30 text-warning-fg border-warning-border shadow-2xs'
+                            : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
                         title="Lưu bộ đề vào kho của tôi"
                       >
                         {savingQuizId === quiz._id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         ) : (
-                          <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-warning-bg')} />
+                          <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-warning-fg')} />
                         )}
                       </button>
                     </div>

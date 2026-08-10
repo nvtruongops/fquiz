@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
@@ -45,6 +45,14 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-visual',
+}
+
 import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -76,15 +84,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased min-h-screen bg-app-bg text-foreground font-sans" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="green" themes={['light', 'dark', 'green']} enableSystem={false}>
-          <QueryProvider>
+        <QueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" themes={['light', 'dark', 'green', 'pink']} enableSystem={false}>
             <PageTransitionLoader />
             <div className="w-full min-h-screen flex flex-col bg-background relative">
               {children}
             </div>
             <ToastProvider />
-          </QueryProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </QueryProvider>
         <Analytics />
         <SpeedInsights />
       </body>

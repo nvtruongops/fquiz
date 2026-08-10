@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
+import { useQueryClient } from '@tanstack/react-query'
+import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
 import {
   Home,
@@ -23,7 +25,9 @@ import {
   UserPlus,
   Sun,
   Moon,
-  Palette
+  Sparkles,
+  Heart,
+  Leaf
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLogout } from '@/hooks/useLogout'
@@ -40,7 +44,9 @@ export function MobileNav({ user }: MobileNavProps) {
   const [avatarError, setAvatarError] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  const [showCustomThemes, setShowCustomThemes] = useState(false)
   const { theme, setTheme } = useTheme()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     setMounted(true)
@@ -51,9 +57,13 @@ export function MobileNav({ user }: MobileNavProps) {
     if (user) {
       fetch('/api/v1/user/theme', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ theme: newTheme }),
-      }).catch(() => {})
+      })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['auth-user'] })
+        })
+        .catch(() => {})
     }
   }
 
@@ -271,7 +281,10 @@ export function MobileNav({ user }: MobileNavProps) {
                       <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('light')}
+                          onClick={() => {
+                            handleThemeChange('light')
+                            setShowCustomThemes(false)
+                          }}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
                             theme === 'light' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
@@ -282,7 +295,10 @@ export function MobileNav({ user }: MobileNavProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('dark')}
+                          onClick={() => {
+                            handleThemeChange('dark')
+                            setShowCustomThemes(false)
+                          }}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
                             theme === 'dark' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
@@ -293,16 +309,43 @@ export function MobileNav({ user }: MobileNavProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('green')}
+                          onClick={() => setShowCustomThemes(prev => !prev)}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
-                            theme === 'green' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                            theme === 'green' || theme === 'pink' || showCustomThemes ? "bg-card text-primary shadow-xs font-black" : "text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          <Palette className="w-3.5 h-3.5" />
-                          <span>Xanh</span>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Tùy chỉnh</span>
                         </button>
                       </div>
+
+                      {(showCustomThemes || theme === 'green' || theme === 'pink') && (
+                        <div className="grid grid-cols-2 gap-1.5 bg-muted/40 p-1.5 rounded-2xl border border-border/50 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleThemeChange('green')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                              theme === 'green' ? "bg-primary text-primary-foreground shadow-xs" : "bg-card text-foreground hover:bg-muted border border-border/60"
+                            )}
+                          >
+                            <Leaf className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Green</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleThemeChange('pink')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                              theme === 'pink' ? "bg-primary text-primary-foreground shadow-xs" : "bg-card text-foreground hover:bg-muted border border-border/60"
+                            )}
+                          >
+                            <Heart className="w-3.5 h-3.5 text-rose-500" />
+                            <span>Pink</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -350,7 +393,10 @@ export function MobileNav({ user }: MobileNavProps) {
                       <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('light')}
+                          onClick={() => {
+                            handleThemeChange('light')
+                            setShowCustomThemes(false)
+                          }}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
                             theme === 'light' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
@@ -361,7 +407,10 @@ export function MobileNav({ user }: MobileNavProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('dark')}
+                          onClick={() => {
+                            handleThemeChange('dark')
+                            setShowCustomThemes(false)
+                          }}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
                             theme === 'dark' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
@@ -372,16 +421,43 @@ export function MobileNav({ user }: MobileNavProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleThemeChange('green')}
+                          onClick={() => setShowCustomThemes(prev => !prev)}
                           className={cn(
                             "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
-                            theme === 'green' ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                            theme === 'green' || theme === 'pink' || showCustomThemes ? "bg-card text-primary shadow-xs font-black" : "text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          <Palette className="w-3.5 h-3.5" />
-                          <span>Xanh</span>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Tùy chỉnh</span>
                         </button>
                       </div>
+
+                      {(showCustomThemes || theme === 'green' || theme === 'pink') && (
+                        <div className="grid grid-cols-2 gap-1.5 bg-muted/40 p-1.5 rounded-2xl border border-border/50 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleThemeChange('green')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                              theme === 'green' ? "bg-primary text-primary-foreground shadow-xs" : "bg-card text-foreground hover:bg-muted border border-border/60"
+                            )}
+                          >
+                            <Leaf className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Green</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleThemeChange('pink')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+                              theme === 'pink' ? "bg-primary text-primary-foreground shadow-xs" : "bg-card text-foreground hover:bg-muted border border-border/60"
+                            )}
+                          >
+                            <Heart className="w-3.5 h-3.5 text-rose-500" />
+                            <span>Pink</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -400,11 +476,7 @@ export function MobileNav({ user }: MobileNavProps) {
             className="relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 transition-all duration-300 min-h-[48px] rounded-2xl group outline-none active:scale-95 select-none"
           >
             {isHomeActive && (
-              <motion.div
-                layoutId="mobile-nav-active"
-                className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10 transition-all duration-200" />
             )}
             <div className={cn(
               "relative flex items-center justify-center transition-all duration-300",
@@ -431,11 +503,7 @@ export function MobileNav({ user }: MobileNavProps) {
             className="relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 transition-all duration-300 min-h-[48px] rounded-2xl group outline-none active:scale-95 select-none cursor-pointer"
           >
             {(isExamActive || examMenuOpen) && (
-              <motion.div
-                layoutId="mobile-nav-active"
-                className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10 transition-all duration-200" />
             )}
             <div className={cn(
               "relative flex items-center justify-center transition-all duration-300",
@@ -462,11 +530,7 @@ export function MobileNav({ user }: MobileNavProps) {
             className="relative flex-1 flex flex-col items-center justify-center py-1 px-1 transition-all duration-300 min-h-[48px] rounded-2xl group outline-none active:scale-95 select-none cursor-pointer"
           >
             {(isUserActive || userMenuOpen) && (
-              <motion.div
-                layoutId="mobile-nav-active"
-                className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10 transition-all duration-200" />
             )}
             <div className={cn(
               "relative flex items-center justify-center transition-all duration-300",
@@ -511,11 +575,7 @@ export function MobileNav({ user }: MobileNavProps) {
             className="relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 transition-all duration-300 min-h-[48px] rounded-2xl group outline-none active:scale-95 select-none"
           >
             {isClassroomActive && (
-              <motion.div
-                layoutId="mobile-nav-active"
-                className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10 transition-all duration-200" />
             )}
             <div className={cn(
               "relative flex items-center justify-center transition-all duration-300",
@@ -544,11 +604,7 @@ export function MobileNav({ user }: MobileNavProps) {
             className="relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 transition-all duration-300 min-h-[48px] rounded-2xl group outline-none active:scale-95 select-none"
           >
             {isCommunityActive && (
-              <motion.div
-                layoutId="mobile-nav-active"
-                className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl shadow-xs border border-primary/20 -z-10 transition-all duration-200" />
             )}
             <div className={cn(
               "relative flex items-center justify-center transition-all duration-300",

@@ -19,3 +19,11 @@ export function formatStudyDuration(minutes: number, short = false): string {
   }
   return rem === 0 ? `${hours} giờ` : `${hours} giờ ${rem} phút`
 }
+
+/**
+ * Escapes special regex characters in a string.
+ */
+export function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+

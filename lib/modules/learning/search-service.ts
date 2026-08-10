@@ -14,6 +14,7 @@ export class SearchService {
   async search(query: string, options?: SearchOptions & { collection?: SearchCollection }): Promise<SearchResult[]> {
     await connectDB()
     const limit = options?.limit ?? 20
+    // eslint-disable-next-line security/detect-non-literal-regexp
     const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
     const results: SearchResult[] = []
 
@@ -197,6 +198,7 @@ export class SearchService {
 
   async autocomplete(prefix: string, options?: SearchOptions): Promise<string[]> {
     await connectDB()
+    // eslint-disable-next-line security/detect-non-literal-regexp
     const regex = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
 
     const [vocabResults, sentenceResults] = await Promise.all([

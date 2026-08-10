@@ -14,11 +14,13 @@ export async function GET(request: Request) {
 
   try {
     await connectDB()
-    const user = await User.findById(payload.userId).select('username role avatar_url avatarUrl token_version status').lean() as {
+    const user = await User.findById(payload.userId).select('username role avatar_url avatarUrl theme_preference themePreference token_version status').lean() as {
       username: string
       role: string
       avatar_url?: string | null
       avatarUrl?: string | null
+      theme_preference?: string | null
+      themePreference?: string | null
       token_version?: number
       status?: string
     } | null
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
     }
 
     const avatarUrl = user.avatar_url ?? user.avatarUrl ?? ''
+    const themePreference = user.theme_preference ?? user.themePreference ?? 'light'
 
     const response = NextResponse.json({
       user: {
@@ -42,6 +45,7 @@ export async function GET(request: Request) {
         name: user.username,
         role: user.role,
         avatarUrl,
+        themePreference,
       },
     })
 

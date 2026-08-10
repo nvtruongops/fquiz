@@ -91,6 +91,7 @@ export async function POST(request: Request) {
       user = await User.findOne({
         $or: [
           { email: emailClean },
+          // eslint-disable-next-line security/detect-non-literal-regexp
           { email: { $regex: new RegExp(`^${emailClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
         ]
       })

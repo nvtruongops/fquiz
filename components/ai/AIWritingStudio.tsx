@@ -148,6 +148,14 @@ export const AIWritingStudio = React.memo(function AIWritingStudio({
 
           <textarea
             value={userWritingInput}
+            onFocus={(e) => {
+              if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+                const target = e.currentTarget
+                setTimeout(() => {
+                  try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch (_err) { /* ignore */ }
+                }, 250)
+              }
+            }}
             onChange={(e) => {
               const val = e.target.value
               setUserWritingInput(val)
@@ -162,7 +170,7 @@ export const AIWritingStudio = React.memo(function AIWritingStudio({
             }}
             placeholder={'Nhập bài viết hoặc bài dịch của bạn bằng ' + (userSubmissionLanguage || content.targetLanguage) + ' tại đây...'}
             rows={10}
-            className="w-full border-2 border-border focus:border-primary focus:ring-4 focus:ring-ring/20 rounded-2xl p-5 text-base font-medium bg-muted/30 outline-none resize-y leading-relaxed text-card-foreground min-h-[240px]"
+            className="w-full border-2 border-border focus:border-primary focus:ring-4 focus:ring-ring/20 rounded-2xl p-5 text-base font-medium bg-muted/30 outline-none resize-y leading-relaxed text-card-foreground min-h-[240px] scroll-m-20"
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">

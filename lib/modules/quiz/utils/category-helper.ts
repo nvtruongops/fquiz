@@ -22,6 +22,7 @@ export async function ensureCategoryForCourseCode(
 
   // 1. Look for public category matching this name
   let category = (await Category.findOne({
+    // eslint-disable-next-line security/detect-non-literal-regexp
     name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
     $or: [{ type: 'public' }, { is_public: true }, { owner_id: null }],
   }).lean()) as any
@@ -29,6 +30,7 @@ export async function ensureCategoryForCourseCode(
   // 2. Fallback to any category matching this name
   if (!category) {
     category = (await Category.findOne({
+      // eslint-disable-next-line security/detect-non-literal-regexp
       name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
     }).lean()) as any
   }

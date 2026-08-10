@@ -165,6 +165,7 @@ export default function TeacherClassroomDetailPage() {
       fetchAssignments()
       fetchMyQuizzes()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classroomId])
 
   const handleCopyCode = () => {

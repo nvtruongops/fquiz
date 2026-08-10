@@ -9,8 +9,8 @@ async function handleThemeUpdate(req: Request, payload: JWTPayload) {
     const body = await req.json()
     const theme = body.themePreference || body.theme
 
-    if (!theme || !['light', 'dark', 'green'].includes(theme)) {
-      return NextResponse.json({ error: 'Theme hợp lệ bao gồm: light, dark, green' }, { status: 400 })
+    if (!theme || !['light', 'dark', 'green', 'pink'].includes(theme)) {
+      return NextResponse.json({ error: 'Theme hợp lệ bao gồm: light, dark, green, pink' }, { status: 400 })
     }
 
     await connectDB()

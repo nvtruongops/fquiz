@@ -179,14 +179,11 @@ export default function QuizSessionMobilePage() {
       <ScrollArea className="flex-1">
         <div
           key={question._id || effectiveIndex}
+          ref={ctrl.cardContainerRef}
           onTouchStart={ctrl.handleTouchStart}
           onTouchMove={ctrl.handleTouchMove}
           onTouchEnd={ctrl.handleTouchEnd}
           className="space-y-4 p-4 pb-20 select-none transition-transform duration-150 ease-out"
-          style={{
-            transform: ctrl.touchState.offsetX !== 0 ? `translateX(${ctrl.touchState.offsetX}px)` : undefined,
-            transition: ctrl.touchState.isDragging ? 'none' : 'transform 0.2s ease-out',
-          }}
         >
           {/* Question Meta Bar */}
           <div className="flex items-center justify-between gap-2">

@@ -32,14 +32,29 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       if (onInput) onInput(e)
     }
 
+    const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        const target = e.currentTarget
+        setTimeout(() => {
+          try {
+            target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          } catch (_err) {
+            /* ignore scroll error */
+          }
+        }, 250)
+      }
+      if (props.onFocus) props.onFocus(e)
+    }
+
     return (
       <textarea
         className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none",
+          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none scroll-m-20",
           autoResize && "overflow-hidden",
           className
         )}
         onInput={handleInput}
+        onFocus={handleFocus}
         ref={combinedRef}
         {...props}
       />

@@ -238,7 +238,7 @@ function enforceRoleRouting(pathname: string, role: string, request: NextRequest
 }
 
 function handleMobileRedirect(request: NextRequest, pathname: string) {
-  const quizSessionPattern = /^\/quiz\/[^/]+\/session\/[^/]+$/
+  const quizSessionPattern = /^\/quiz\/[^/]+\/session\/[^/]+(\/flashcard)?$/
   const isMobilePath = pathname.includes('/mobile')
 
   if (quizSessionPattern.test(pathname) && !isMobilePath) {

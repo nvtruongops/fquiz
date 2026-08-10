@@ -20,10 +20,12 @@ async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeP
 
   const cleanCode = courseCodeParam.trim()
   const escapedCode = escapeRegex(cleanCode)
+  // eslint-disable-next-line security/detect-non-literal-regexp
   const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
 
   // Find Category by name
   const category = await Category.findOne({
+    // eslint-disable-next-line security/detect-non-literal-regexp
     name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
   }).select('_id').lean()
 

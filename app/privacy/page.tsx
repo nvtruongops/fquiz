@@ -5,6 +5,8 @@ import AppLayout from '@/components/layout/AppLayout'
 import { ArrowLeft, ShieldCheck, Lock, Cookie, UserCheck, FileText, ChevronRight } from 'lucide-react'
 import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Chính sách bảo mật — FQuiz',
   description: 'Chính sách bảo mật và cam kết an toàn dữ liệu cá nhân của người dùng trên nền tảng FQuiz.',
