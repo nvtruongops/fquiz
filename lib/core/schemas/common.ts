@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 // Improved regex patterns
 export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-export const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/
+export const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&=/]*)$/
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/
 // Password must have at least 8 chars, 1 uppercase, 1 lowercase, 1 digit
 // Allow common special characters

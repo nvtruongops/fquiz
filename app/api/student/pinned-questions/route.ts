@@ -317,8 +317,6 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     })
 
     return NextResponse.json({ pinned: true, item: newPin, message: 'Đã ghim câu hỏi.' }, { status: 201 })
-
-    return NextResponse.json({ pinned: true, item: newPin, message: 'Đã ghim câu hỏi.' }, { status: 201 })
   } catch (error) {
     console.error('Error toggling pinned question:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
