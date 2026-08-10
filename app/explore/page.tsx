@@ -8,7 +8,6 @@ import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
 import { Sparkles, Compass } from 'lucide-react'
-import * as motion from 'framer-motion/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,14 +71,9 @@ export default async function ExplorePage() {
 
       <div className="w-full pt-1 sm:pt-3 pb-10 lg:pb-16 relative z-10 space-y-3 sm:space-y-6">
         <div className="text-center max-w-3xl mx-auto px-2">
-          <motion.h1 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight"
-          >
+          <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-3 duration-500">
             Khám phá Danh mục & Đề Thi
-          </motion.h1>
+          </h1>
         </div>
 
         <Suspense fallback={

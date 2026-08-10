@@ -13,6 +13,7 @@
     "codegraph:sync": "codegraph sync",
     "test": "jest",
     "push": "tsx scripts/autopush.ts",
+    "benchmark:mobile": "tsx --env-file=.env.local scripts/benchmark-mobile-perf.ts",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "test:performance": "tsx --env-file=.env.local scripts/test-quiz-performance.ts",
@@ -86,6 +87,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",

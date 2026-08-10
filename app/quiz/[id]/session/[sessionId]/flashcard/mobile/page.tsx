@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, CheckCircle2, XCircle, Lightbulb, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
@@ -101,49 +101,83 @@ function MobileFlashcardView({
 }) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showExplanation, setShowExplanation] = useState(false)
-  const [swipeState, setSwipeState] = useState<SwipeState>({
-    startX: 0,
-    startY: 0,
-    currentX: 0,
-    currentY: 0,
-    isDragging: false,
-  })
+  const touchCoordsRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
+  const cardTransformRef = useRef<HTMLDivElement | null>(null)
+  const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
     setIsFlipped(false)
     setShowExplanation(false)
-    setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
+    touchCoordsRef.current = { startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false }
+    if (cardTransformRef.current) {
+      cardTransformRef.current.style.transform = ''
+      cardTransformRef.current.style.opacity = '1'
+      cardTransformRef.current.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s'
+    }
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
   }, [question._id, questionNumber])
 
   const correctAnswers = useMemo(() => getMobileCorrectAnswers(question), [question])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isLoading) return
-    setSwipeState({ 
-      startX: e.touches[0].clientX, 
+    touchCoordsRef.current = {
+      startX: e.touches[0].clientX,
       startY: e.touches[0].clientY,
-      currentX: e.touches[0].clientX, 
+      currentX: e.touches[0].clientX,
       currentY: e.touches[0].clientY,
-      isDragging: true 
-    })
+      isDragging: true,
+    }
+    if (cardTransformRef.current) {
+      cardTransformRef.current.style.transition = 'none'
+    }
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!swipeState.isDragging || isLoading) return
-    setSwipeState((prev) => ({ 
-      ...prev, 
-      currentX: e.touches[0].clientX,
-      currentY: e.touches[0].clientY
-    }))
+    if (!touchCoordsRef.current.isDragging || isLoading) return
+    touchCoordsRef.current.currentX = e.touches[0].clientX
+    touchCoordsRef.current.currentY = e.touches[0].clientY
+
+    if (rafRef.current !== null) return
+
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null
+      if (!cardTransformRef.current || !touchCoordsRef.current.isDragging) return
+      const diffX = touchCoordsRef.current.currentX - touchCoordsRef.current.startX
+      const diffY = touchCoordsRef.current.currentY - touchCoordsRef.current.startY
+      const isHorizontal = Math.abs(diffX) > Math.abs(diffY)
+      const swipeOpacity = 1 - (isHorizontal ? Math.abs(diffX) : Math.abs(diffY)) / 500
+      const rotZ = isHorizontal ? diffX / 30 : 0
+      const scale = !isHorizontal ? 1 - Math.abs(diffY) / 2000 : 1
+
+      cardTransformRef.current.style.transform = `translate3d(${diffX}px, ${diffY}px, 0) rotateZ(${rotZ}deg) scale(${scale})`
+      cardTransformRef.current.style.opacity = `${swipeOpacity}`
+    })
   }
 
   const handleTouchEnd = () => {
-    if (!swipeState.isDragging || isLoading) return
-    const diffX = swipeState.currentX - swipeState.startX
-    const diffY = swipeState.currentY - swipeState.startY
+    if (!touchCoordsRef.current.isDragging || isLoading) return
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+    const diffX = touchCoordsRef.current.currentX - touchCoordsRef.current.startX
+    const diffY = touchCoordsRef.current.currentY - touchCoordsRef.current.startY
     const absX = Math.abs(diffX)
     const absY = Math.abs(diffY)
     const threshold = 60
+    touchCoordsRef.current.isDragging = false
+
+    if (cardTransformRef.current) {
+      cardTransformRef.current.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s'
+      cardTransformRef.current.style.transform = ''
+      cardTransformRef.current.style.opacity = '1'
+    }
 
     if ('vibrate' in navigator && (absX > threshold || absY > threshold)) {
       navigator.vibrate(40)
@@ -157,22 +191,15 @@ function MobileFlashcardView({
       setShowExplanation(false)
       onAnswer(diffX > 0)
     }
-    setSwipeState({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
   }
 
   const handleTap = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return
-    if (!isLoading && !swipeState.isDragging) {
+    if (!isLoading && !touchCoordsRef.current.isDragging) {
       if ('vibrate' in navigator) navigator.vibrate(10)
       setIsFlipped(!isFlipped)
     }
   }
-
-  const swipeOffset = swipeState.isDragging ? swipeState.currentX - swipeState.startX : 0
-  const swipeOffsetY = swipeState.isDragging ? swipeState.currentY - swipeState.startY : 0
-  const isHorizontalSwipe = Math.abs(swipeOffset) > Math.abs(swipeOffsetY)
-  const swipeOpacity = 1 - (isHorizontalSwipe ? Math.abs(swipeOffset) : Math.abs(swipeOffsetY)) / 500
-  const transformOrigin = isHorizontalSwipe ? 'center center' : (swipeOffsetY > 0 ? 'top center' : 'bottom center')
 
   const questionFontSize = getQuestionFontSize(question.text)
   const optionFontSize = getOptionFontSize(question.options)
@@ -192,15 +219,15 @@ function MobileFlashcardView({
         setIsFlipped={setIsFlipped}
         showExplanation={showExplanation}
         setShowExplanation={setShowExplanation}
-        swipeState={swipeState}
+        swipeState={{ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false }}
         handleTouchStart={handleTouchStart}
         handleTouchMove={handleTouchMove}
         handleTouchEnd={handleTouchEnd}
-        swipeOffset={swipeOffset}
-        swipeOffsetY={swipeOffsetY}
-        isHorizontalSwipe={isHorizontalSwipe}
-        swipeOpacity={swipeOpacity}
-        transformOrigin={transformOrigin}
+        swipeOffset={0}
+        swipeOffsetY={0}
+        isHorizontalSwipe={true}
+        swipeOpacity={1}
+        transformOrigin="center center"
         questionFontSize={questionFontSize}
         optionFontSize={optionFontSize}
       />
@@ -208,18 +235,13 @@ function MobileFlashcardView({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-background select-none touch-none overflow-hidden overscroll-none">
+    <div className="w-full h-full flex flex-col bg-background select-none touch-pan-y overflow-hidden overscroll-none">
       {/* Card Area - Full Height */}
       <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 perspective-2000 overflow-hidden relative">
         <div
           key={question._id || questionNumber}
-          className="relative w-full h-full max-h-[85vh] animate-in fade-in slide-in-from-bottom-6 duration-300"
-          style={{
-            transform: `translate(${swipeOffset}px, ${swipeOffsetY}px) rotateZ(${isHorizontalSwipe ? swipeOffset / 30 : 0}deg) scale(${!isHorizontalSwipe ? 1 - Math.abs(swipeOffsetY) / 2000 : 1})`,
-            transformOrigin,
-            opacity: swipeOpacity,
-            transition: swipeState.isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s',
-          }}
+          ref={cardTransformRef}
+          className="relative w-full h-full max-h-[85vh] animate-in fade-in slide-in-from-bottom-6 duration-300 transform-gpu"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -379,7 +401,7 @@ function MobileFlashcardView({
           </div>
         </div>
 
-        <SwipeIndicator isDragging={swipeState.isDragging} isHorizontalSwipe={isHorizontalSwipe} swipeOffset={swipeOffset} />
+        <SwipeIndicator isDragging={false} isHorizontalSwipe={false} swipeOffset={0} />
       </div>
     </div>
   )
