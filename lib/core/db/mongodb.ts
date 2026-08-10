@@ -35,12 +35,6 @@ import '@/lib/modules/learning'
 import '@/lib/modules/ai'
 import '@/lib/modules/classroom'
 
-const MONGODB_URI = process.env.MONGODB_URI!
-
-if (!MONGODB_URI) {
-  throw new Error('MONGODB_URI environment variable is not defined')
-}
-
 declare global {
   // eslint-disable-next-line no-var
   var mongooseCache: {
@@ -53,6 +47,11 @@ const cached = global.mongooseCache ?? { conn: null, promise: null }
 global.mongooseCache = cached
 
 export async function connectDB(): Promise<typeof mongoose> {
+  const mongodbUri = process.env.MONGODB_URI
+
+  if (!mongodbUri) {
+    throw new Error('MONGODB_URI environment variable is not defined')
+  }
   // Reuse existing connection immediately — no reconnect, no log
   if (cached.conn) {
     return cached.conn
@@ -70,7 +69,7 @@ export async function connectDB(): Promise<typeof mongoose> {
     }
 
     cached.promise = mongoose
-      .connect(MONGODB_URI, connectOptions)
+      .connect(mongodbUri, connectOptions)
       .catch(async (err) => {
         // If the SRV/TXT DNS lookup was refused by the system resolver, retry
         // once using public DNS (8.8.8.8 / 1.1.1.1) before giving up.
@@ -81,7 +80,7 @@ export async function connectDB(): Promise<typeof mongoose> {
           )
           try {
             dns.setServers(PUBLIC_DNS)
-            return await mongoose.connect(MONGODB_URI, connectOptions)
+            return await mongoose.connect(mongodbUri, connectOptions)
           } finally {
             // Restore the original resolver so we don't affect other lookups
             if (systemDnsServers.length > 0) {
