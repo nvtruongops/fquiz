@@ -66,7 +66,7 @@ export function useSessionHydration({
   useEffect(() => {
     const err = initialError as SessionApiError | undefined
     if (!quizId || !err) return
-    const validQuizId = (quizId && quizId !== 'undefined' && quizId !== 'mix') ? quizId : null
+    const validQuizId = (quizId !== 'undefined' && quizId !== 'mix') ? quizId : null
     const targetUrl = validQuizId ? `/quiz/${validQuizId}` : '/my-quizzes'
     if (err.status === 404) {
       router.replace(`${targetUrl}?reason=session_not_found`)

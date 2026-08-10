@@ -202,12 +202,12 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
     if (forcedLoading) {
       if (isQuizLoaderActive()) return
       startProgress()
-    } else if (isLoading && !forcedLoading && !isNavigatingRef.current) {
+    } else if (isLoading && !isNavigatingRef.current) {
       finishLoading()
     }
   }, [forcedLoading, isLoading, startProgress, finishLoading])
 
-  if (!isLoading || isQuizLoaderActive() || (forcedLoading && isQuizLoaderActive())) return null
+  if (!isLoading || isQuizLoaderActive()) return null
 
   const radius = 130
   const circumference = 2 * Math.PI * radius

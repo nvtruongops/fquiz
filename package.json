@@ -9,6 +9,7 @@
     "lint": "eslint app components lib hooks store",
     "verify:theme": "node .agents/scripts/verify.js --rule=THEME_GOVERNANCE",
     "scan": "npx fallow",
+    "scan:codeql": "codeql database create .codeql-db --language=javascript-typescript --overwrite && codeql database analyze .codeql-db codeql/javascript-queries --format=sarif-latest --output=codeql-results.sarif",
     "codegraph:sync": "codegraph sync",
     "test": "jest",
     "push": "tsx scripts/autopush.ts",
