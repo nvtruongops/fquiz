@@ -1,4 +1,37 @@
+# Dependencies & Build Outputs
+node_modules/
+.next/
+out/
+dist/
+build/
+.vercel/
+
+# Version Control & Local Databases
+.git/
+.codeql-db/
+.codegraph/
+.scannerwork/
+coverage/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files & secrets
+.env
+.env.*
 .env.local
-.env.production
-.vercel
-node_modules
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Temporary & Uploads
+tmp/
+temp/
+*.log
+logs/
+uploads/
+public/uploads/
+.nyc_output/
+test-results/

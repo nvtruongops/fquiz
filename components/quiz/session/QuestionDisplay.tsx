@@ -109,20 +109,28 @@ function StandardQuestionView({
           <p className="text-sm font-bold text-foreground">
             Câu {safeDisplayIndex}/{totalQuestions}
           </p>
-          <button
-            type="button"
-            onClick={handleTogglePin}
-            disabled={togglePinMutation.isPending}
-            className={cn(
-              "flex items-center gap-1 border px-2 py-1 text-xs font-semibold cursor-pointer rounded-lg transition-colors",
-              isPinned
-                ? "border-amber-400/50 bg-amber-500/10 text-amber-500"
-                : "border-border bg-card text-muted-foreground hover:bg-muted"
+          <div className="flex items-center gap-2">
+            {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
+              <UsageBadge
+                count={question.usage_count}
+                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (courseCode ? [courseCode] : [])}
+              />
             )}
-          >
-            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
-            <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleTogglePin}
+              disabled={togglePinMutation.isPending}
+              className={cn(
+                "flex items-center gap-1 border px-2 py-1 text-xs font-semibold cursor-pointer rounded-lg transition-colors",
+                isPinned
+                  ? "border-amber-400/50 bg-amber-500/10 text-amber-500"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
+              <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+            </button>
+          </div>
         </div>
         <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
           {question.text}
@@ -137,12 +145,6 @@ function StandardQuestionView({
                 className="h-full max-h-[420px] w-full object-contain"
               />
             </div>
-          </div>
-        )}
-
-        {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
-          <div className="mt-3">
-            <UsageBadge count={question.usage_count ?? 0} />
           </div>
         )}
 
@@ -235,20 +237,28 @@ function AnimatedQuestionView({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleTogglePin}
-            disabled={togglePinMutation.isPending}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border",
-              isPinned
-                ? "bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border hover:bg-question-flagged-bg/80"
-                : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+          <div className="flex items-center gap-2">
+            {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
+              <UsageBadge
+                count={question.usage_count}
+                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (courseCode ? [courseCode] : [])}
+              />
             )}
-          >
-            <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-question-flagged-fg")} />
-            <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleTogglePin}
+              disabled={togglePinMutation.isPending}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border",
+                isPinned
+                  ? "bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border hover:bg-question-flagged-bg/80"
+                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+              )}
+            >
+              <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-question-flagged-fg")} />
+              <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+            </button>
+          </div>
         </div>
 
         <h2 className="text-lg sm:text-xl font-bold leading-relaxed text-foreground whitespace-pre-wrap">
@@ -264,12 +274,6 @@ function AnimatedQuestionView({
                 className="h-full max-h-[420px] w-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-          </div>
-        )}
-
-        {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
-          <div className="mt-4">
-            <UsageBadge count={question.usage_count ?? 0} size="md" />
           </div>
         )}
 

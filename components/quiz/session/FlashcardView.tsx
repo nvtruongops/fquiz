@@ -5,6 +5,7 @@ import { cn } from '@/lib/core/utils/cn'
 import { RotateCw, CheckCircle, XCircle, MousePointerClick } from 'lucide-react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { FlashcardActionButtons } from './FlashcardActionButtons'
+import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 
 interface FlashcardViewProps {
   question: {
@@ -15,6 +16,7 @@ interface FlashcardViewProps {
     explanation?: string
     image_url?: string
     usage_count?: number
+    used_in_quizzes?: string[]
   }
   questionNumber: number
   totalQuestions: number
@@ -166,18 +168,28 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           onClick={handleCardClick}
           style={enableAnimation ? { x, rotate } : undefined}
           className={cn(
-            "w-full min-h-[420px] bg-card text-card-foreground rounded-3xl border-2 border-border p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden select-none touch-none",
+            "w-full min-h-[420px] bg-card text-card-foreground rounded-3xl border-2 border-border p-6 sm:p-8 flex flex-col justify-between relative overflow-visible z-10 select-none touch-none",
             enableAnimation 
               ? "cursor-grab active:cursor-grabbing shadow-md hover:shadow-xl hover:border-ring will-change-transform transform-gpu transition-colors duration-150" 
               : "cursor-pointer shadow-sm transition-none"
           )}
         >
           {/* Card Header */}
-          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-b border-border pb-3">
-            <span className="flex items-center gap-1.5 text-primary font-extrabold">
+          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-b border-border pb-3 gap-2 relative z-20">
+            <span className="flex items-center gap-1.5 text-primary font-extrabold shrink-0">
               <RotateCw className={cn("w-3.5 h-3.5", enableAnimation && "transition-transform duration-500", enableAnimation && isFlipped && "rotate-180")} /> Thẻ {questionNumber} / {totalQuestions}
             </span>
-            <div className="flex items-center gap-2">
+
+            {/* Center Badge: UsageBadge */}
+            <div className="flex items-center justify-center flex-1 mx-1.5 min-w-0">
+              <UsageBadge
+                count={question.usage_count}
+                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                size="sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
               {taggedStatus === 'known' && (
                 <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20 shadow-2xs animate-in fade-in">
                   <CheckCircle className="w-3 h-3 text-primary" /> Đã thuộc

@@ -5,6 +5,8 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Question } from '@/lib/modules/quiz/models/Question'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
@@ -70,12 +72,18 @@ function formatSessionPayload(session: any, quiz: any, categoryName: string, tot
   }
 }
 
-function formatQuestionResponse(rawQuestion: IQuestion, shouldShowAnswers: boolean) {
+function formatQuestionResponse(
+  rawQuestion: IQuestion,
+  shouldShowAnswers: boolean,
+  usageInfo?: { usage_count: number; used_in_quizzes: string[] }
+) {
   const base = {
     _id: rawQuestion._id,
     text: rawQuestion.text,
     options: rawQuestion.options,
     answer_selection_count: getAnswerSelectionCount(rawQuestion),
+    usage_count: usageInfo?.usage_count ?? 1,
+    used_in_quizzes: usageInfo?.used_in_quizzes ?? [],
     ...(rawQuestion.image_url ? { image_url: rawQuestion.image_url } : {}),
   }
   if (shouldShowAnswers) {
@@ -188,6 +196,25 @@ export const GET = withAuth(async (
 
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
+    const questionId = (rawQuestion as any).question_id || generateQuestionId(rawQuestion as any)
+    let usageCount = 1
+    let usedInQuizzes: string[] = [quiz.course_code]
+
+    if (questionId) {
+      const bankQuery: any = { question_id: questionId }
+      if (quiz.category_id) {
+        bankQuery.category_id = quiz.category_id
+      }
+      const bankDoc = await QuestionBank.findOne(bankQuery).select('usage_count used_in_quizzes').lean() as any
+
+      if (bankDoc) {
+        usageCount = bankDoc.usage_count || 1
+        if (Array.isArray(bankDoc.used_in_quizzes) && bankDoc.used_in_quizzes.length > 0) {
+          usedInQuizzes = bankDoc.used_in_quizzes
+        }
+      }
+    }
+
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'
     const isImmediateMode = session.mode === 'immediate'
@@ -198,7 +225,10 @@ export const GET = withAuth(async (
 
     return NextResponse.json({
       session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
-      question: formatQuestionResponse(rawQuestion, shouldShowAnswers),
+      question: formatQuestionResponse(rawQuestion, shouldShowAnswers, {
+        usage_count: usageCount,
+        used_in_quizzes: usedInQuizzes,
+      }),
     }, { status: 200 })
   } catch (err) {
     console.error('GET /api/sessions/[id] error:', err)

@@ -110,35 +110,36 @@ export function MobileNav({ user }: MobileNavProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeAllMenus}
-            className="fixed inset-0 bg-background/60 backdrop-blur-xs z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-3 inset-x-3 z-50 lg:hidden max-w-lg mx-auto">
-        {/* ─── POPUP MENU 1: ÔN THI TRẮC NGHIỆM (ATTACHED BLOCK ABOVE NAVBAR) ── */}
-        <AnimatePresence>
-          {examMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="absolute bottom-full mb-3 inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl p-3 space-y-1.5 overflow-hidden z-50"
-            >
-              <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-primary">
-                  Ôn thi trắc nghiệm
-                </span>
-                <button
-                  type="button"
-                  onClick={closeAllMenus}
-                  className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+      {/* ─── BOTTOM SHEET 1: ÔN THI TRẮC NGHIỆM ────────────────── */}
+      <AnimatePresence>
+        {examMenuOpen && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="fixed bottom-0 inset-x-0 w-full max-w-lg mx-auto bg-card border-t border-border rounded-t-[28px] shadow-2xl p-4 sm:p-5 space-y-2 overflow-hidden z-50 max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          >
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mx-auto mb-1 shrink-0" />
+            <div className="px-2 py-2 border-b border-border flex items-center justify-between shrink-0">
+              <span className="text-xs font-black uppercase tracking-wider text-primary">
+                Ôn thi trắc nghiệm
+              </span>
+              <button
+                type="button"
+                onClick={closeAllMenus}
+                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
+            <div className="space-y-1.5 pt-1 pb-24 sm:pb-28 overflow-y-auto custom-scrollbar flex-1 min-h-0">
               <Link
                 href="/explore"
                 prefetch={false}
@@ -183,54 +184,57 @@ export function MobileNav({ user }: MobileNavProps) {
                 <Clock className="w-4.5 h-4.5 text-primary shrink-0" />
                 <span>Lịch sử làm bài</span>
               </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* ─── POPUP MENU 2: TÀI KHOẢN USER (ATTACHED BLOCK ABOVE NAVBAR) ── */}
-        <AnimatePresence>
-          {userMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="absolute bottom-full mb-3 inset-x-0 w-full bg-card/95 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl p-3 space-y-1.5 overflow-hidden z-50"
-            >
-              {user ? (
-                <>
-                  <div className="px-3.5 py-3 border-b border-border flex items-center justify-between bg-muted/50 rounded-2xl mb-1">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {hasAvatar ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.name}
-                          referrerPolicy="no-referrer"
-                          onError={() => setAvatarError(true)}
-                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary/30 shadow-xs shrink-0"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-base shrink-0 shadow-xs">
-                          {initial}
-                        </div>
-                      )}
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-black text-foreground truncate">{user.name}</span>
-                        <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider">
-                          {roleLabel}
-                        </span>
+      {/* ─── BOTTOM SHEET 2: TÀI KHOẢN USER ────────────────────── */}
+      <AnimatePresence>
+        {userMenuOpen && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="fixed bottom-0 inset-x-0 w-full max-w-lg mx-auto bg-card border-t border-border rounded-t-[28px] shadow-2xl p-4 sm:p-5 space-y-2 overflow-y-auto custom-scrollbar z-50 max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          >
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mx-auto mb-1 shrink-0" />
+            {user ? (
+              <>
+                <div className="px-3.5 py-3 border-b border-border flex items-center justify-between bg-muted/50 rounded-2xl mb-1 shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {hasAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        referrerPolicy="no-referrer"
+                        onError={() => setAvatarError(true)}
+                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary/30 shadow-xs shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-base shrink-0 shadow-xs">
+                        {initial}
                       </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-black text-foreground truncate">{user.name}</span>
+                      <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider">
+                        {roleLabel}
+                      </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={closeAllMenus}
-                      className="w-6 h-6 rounded-full bg-card flex items-center justify-center text-muted-foreground hover:text-foreground shadow-xs shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={closeAllMenus}
+                    className="w-7 h-7 rounded-full bg-card flex items-center justify-center text-muted-foreground hover:text-foreground shadow-xs shrink-0 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
+                <div className="space-y-1 pb-24 sm:pb-28 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                   <Link
                     href="/profile"
                     prefetch={false}
@@ -272,7 +276,7 @@ export function MobileNav({ user }: MobileNavProps) {
                   </button>
 
                   {mounted && (
-                    <div className="pt-2 border-t border-border mt-1">
+                    <div className="pt-3 border-t border-border mt-2">
                       <div className="flex items-center justify-between px-2 mb-1.5">
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                           Giao diện
@@ -348,43 +352,43 @@ export function MobileNav({ user }: MobileNavProps) {
                       )}
                     </div>
                   )}
-                </>
-              ) : (
-                <>
-                  <div className="px-3 py-1.5 border-b border-border flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">Tài khoản FQuiz</span>
-                    <button
-                      type="button"
-                      onClick={closeAllMenus}
-                      className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-3 py-1.5 border-b border-border flex items-center justify-between shrink-0">
+                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">Tài khoản FQuiz</span>
+                  <button
+                    type="button"
+                    onClick={closeAllMenus}
+                    className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                  <div className="flex flex-col gap-2 pt-1">
-                    <Link
-                      href="/login"
-                      prefetch={false}
-                      onClick={closeAllMenus}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-primary text-primary-foreground shadow-xs active:scale-98"
-                    >
-                      <LogIn className="w-4.5 h-4.5 shrink-0" />
-                      <span>Đăng nhập ngay</span>
-                    </Link>
-                    <Link
-                      href="/register"
-                      prefetch={false}
-                      onClick={closeAllMenus}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-muted hover:bg-muted/80 text-foreground border border-border/60 shadow-xs active:scale-98"
-                    >
-                      <UserPlus className="w-4.5 h-4.5 shrink-0 text-primary" />
-                      <span>Đăng ký tài khoản mới</span>
-                    </Link>
-                  </div>
+                <div className="flex flex-col gap-2 pt-1 pb-24 sm:pb-28 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                  <Link
+                    href="/login"
+                    prefetch={false}
+                    onClick={closeAllMenus}
+                    className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-primary text-primary-foreground shadow-xs active:scale-98"
+                  >
+                    <LogIn className="w-4.5 h-4.5 shrink-0" />
+                    <span>Đăng nhập ngay</span>
+                  </Link>
+                  <Link
+                    href="/register"
+                    prefetch={false}
+                    onClick={closeAllMenus}
+                    className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-muted hover:bg-muted/80 text-foreground border border-border/60 shadow-xs active:scale-98"
+                  >
+                    <UserPlus className="w-4.5 h-4.5 shrink-0 text-primary" />
+                    <span>Đăng ký tài khoản mới</span>
+                  </Link>
 
                   {mounted && (
-                    <div className="pt-2 border-t border-border mt-1">
+                    <div className="pt-3 border-t border-border mt-2">
                       <div className="flex items-center justify-between px-2 mb-1.5">
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                           Giao diện
@@ -460,13 +464,14 @@ export function MobileNav({ user }: MobileNavProps) {
                       )}
                     </div>
                   )}
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </div>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* ─── MAIN FLOATING DOCK BAR (5 ICONS) ────────────────── */}
+      <div className="fixed bottom-3 inset-x-3 z-50 lg:hidden max-w-lg mx-auto">
         <nav className="relative bg-card/90 backdrop-blur-2xl border border-border rounded-[2rem] shadow-[0_16px_40px_rgba(0,0,0,0.18)] p-1.5 flex items-center justify-between gap-1">
           {/* ICON 1: TRANG CHỦ / DASHBOARD */}
           <Link

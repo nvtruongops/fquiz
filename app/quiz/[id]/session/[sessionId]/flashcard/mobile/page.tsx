@@ -9,6 +9,7 @@ import { Button } from '@/components/shared/ui/button'
 import { Switch } from '@/components/shared/ui/switch'
 import { cn } from '@/lib/core/utils/cn'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
+import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 
 interface SwipeState {
   startX: number
@@ -86,6 +87,8 @@ function MobileFlashcardView({
     correct_answer: number | number[]
     explanation?: string
     image_url?: string
+    usage_count?: number
+    used_in_quizzes?: string[]
   }
   questionNumber: number
   totalQuestions: number
@@ -209,7 +212,8 @@ function MobileFlashcardView({
       {/* Card Area - Full Height */}
       <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 perspective-2000 overflow-hidden relative">
         <div
-          className="relative w-full h-full max-h-[85vh]"
+          key={question._id || questionNumber}
+          className="relative w-full h-full max-h-[85vh] animate-in fade-in slide-in-from-bottom-6 duration-300"
           style={{
             transform: `translate(${swipeOffset}px, ${swipeOffsetY}px) rotateZ(${isHorizontalSwipe ? swipeOffset / 30 : 0}deg) scale(${!isHorizontalSwipe ? 1 - Math.abs(swipeOffsetY) / 2000 : 1})`,
             transformOrigin,
@@ -257,6 +261,13 @@ function MobileFlashcardView({
                     <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
                   )}
                   
+                  <div className="flex justify-center mb-1">
+                    <UsageBadge
+                      count={question.usage_count}
+                      used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                    />
+                  </div>
+
                   <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
                     {question.text}
                   </h2>
@@ -629,7 +640,8 @@ function StaticMobileFlashcardCard({
         onTouchEnd={handleTouchEnd}
       >
         <div 
-          className="flex-1 bg-card text-card-foreground rounded-[2rem] p-5 sm:p-7 flex flex-col shadow-md border-2 border-border overflow-hidden"
+          key={question._id || questionNumber}
+          className="flex-1 bg-card text-card-foreground rounded-[2rem] p-5 sm:p-7 flex flex-col shadow-md border-2 border-border overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300"
           style={{
             transform: `translate(${swipeOffset}px, ${swipeOffsetY}px) rotateZ(${isHorizontalSwipe ? swipeOffset / 30 : 0}deg) scale(${!isHorizontalSwipe ? 1 - Math.abs(swipeOffsetY) / 2000 : 1})`,
             transformOrigin,
