@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { QuizLoadingOverlay, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useMobileQuizSessionController } from '@/hooks/quiz/useMobileQuizSessionController'
+import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 
 /* eslint-disable sonarjs/cognitive-complexity */
 export default function QuizSessionMobilePage() {
@@ -229,6 +230,16 @@ export default function QuizSessionMobilePage() {
                 />
               </div>
             )}
+
+            {(session.mode === 'immediate' || (session.mode === 'review' && ctrl.submitted)) && (
+              <div className="mt-3">
+                <UsageBadge
+                  count={question.usage_count}
+                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (session.courseCode ? [session.courseCode] : [])}
+                  size="sm"
+                />
+              </div>
+            )}
           </div>
 
           {/* Options List */}
@@ -377,6 +388,45 @@ export default function QuizSessionMobilePage() {
               className="w-full py-5 font-bold text-gray-500"
             >
               Ở lại làm tiếp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Map Dialog (Danh sách câu hỏi 3 gạch menu) */}
+      <Dialog open={ctrl.questionMapOpen} onOpenChange={ctrl.setQuestionMapOpen}>
+        <DialogContent className="max-w-xs rounded-2xl p-5 bg-card text-card-foreground border-border">
+          <DialogHeader>
+            <DialogTitle className="text-center text-base font-black text-card-foreground">Danh sách câu hỏi</DialogTitle>
+          </DialogHeader>
+          <div className="my-3 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-5 gap-2">
+              {Array.from({ length: effectiveTotal }, (_, i) => {
+                const isCurrent = i === effectiveIndex
+                const isAnswered = answeredFromSession.has(i)
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => ctrl.handleNavigate(i)}
+                    className={cn(
+                      "h-10 rounded-xl font-black text-xs border transition-all active:scale-95 cursor-pointer flex items-center justify-center relative",
+                      isCurrent
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs ring-2 ring-primary/30"
+                        : isAnswered
+                          ? "bg-primary/10 text-primary border-primary/30 font-bold"
+                          : "bg-muted text-card-foreground border-border hover:bg-muted/80"
+                    )}
+                  >
+                    {i + 1}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => ctrl.setQuestionMapOpen(false)} className="w-full h-10 rounded-xl font-bold border-border text-card-foreground">
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>

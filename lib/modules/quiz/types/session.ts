@@ -64,6 +64,7 @@ export interface SessionQuestion {
   correct_answer?: number | number[]
   explanation?: string
   usage_count?: number
+  used_in_quizzes?: string[]
 }
 
 /**

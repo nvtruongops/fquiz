@@ -1,39 +1,107 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
+import { Info, X } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
+import { Badge } from '@/components/shared/ui/badge'
 
 interface UsageBadgeProps {
-  count: number
+  count?: number
+  used_in_quizzes?: string[]
   size?: 'sm' | 'md'
+  className?: string
 }
 
-const LEVELS = [
-  { max: 2, label: 'Cơ bản', color: 'text-green-700 bg-green-50 border-green-200' },
-  { max: 4, label: 'Phổ biến', color: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
-  { max: 5, label: 'Trọng tâm', color: 'text-orange-700 bg-orange-50 border-orange-200' },
-  { max: Infinity, label: 'Rất phổ biến', color: 'text-red-700 bg-red-50 border-red-200' },
-]
+export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', className }: UsageBadgeProps) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  
+  const uniqueQuizzes = Array.from(new Set((used_in_quizzes || []).filter((c): c is string => typeof c === 'string' && c.trim().length > 0)))
+  const displayCount = Math.max(count || 0, uniqueQuizzes.length, 1)
 
-function getLevel(count: number) {
-  return LEVELS.find((l) => count <= l.max) ?? LEVELS[LEVELS.length - 1]
-}
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setOpen((prev) => !prev)
+  }
 
-export function UsageBadge({ count, size = 'sm' }: UsageBadgeProps) {
-  if (!count || count <= 0) return null
-
-  const level = getLevel(count)
+  // Close dropdown on click outside
+  useEffect(() => {
+    if (!open) return
+    const handleClickOutside = (event: Event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [open])
 
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border font-medium',
-        level.color,
-        size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'
-      )}
-    >
-      <span>
-        {count} đề · {level.label}
+    <div ref={containerRef} className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full border font-bold bg-primary/10 text-primary border-primary/20 shadow-2xs select-none',
+          size === 'sm' ? 'px-2.5 py-0.5 text-[10px] sm:text-[10.5px]' : 'px-3 py-1 text-xs',
+          className
+        )}
+      >
+        <span className="truncate max-w-[200px] sm:max-w-none">Câu này đang có trong {displayCount} mã đề</span>
+        <button
+          type="button"
+          onClick={toggleDropdown}
+          className="inline-flex items-center justify-center p-0.5 rounded-full hover:bg-primary/20 transition-colors text-primary cursor-pointer focus:outline-none shrink-0"
+          title="Xem danh sách mã đề"
+          aria-label="Xem danh sách mã đề"
+        >
+          <Info className={cn('shrink-0', size === 'sm' ? 'w-3 h-3' : 'w-4 h-4')} />
+        </button>
       </span>
-    </span>
+
+      {/* Dropdown Panel (Sổ xuống ngay bên dưới Badge) */}
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Mã đề liên quan"
+          className="absolute top-full right-0 mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-border pb-1.5 mb-2">
+            <span className="text-[11px] font-bold text-foreground">
+              Mã đề chứa câu hỏi này ({displayCount}):
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="p-0.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+            {uniqueQuizzes.length > 0 ? (
+              uniqueQuizzes.map((code) => (
+                <Badge
+                  key={code}
+                  variant="secondary"
+                  className="px-2 py-0.5 text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 rounded-md"
+                >
+                  {code}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-[11px] font-medium text-muted-foreground italic">
+                {displayCount > 1 ? `Đã dùng trong ${displayCount} mã đề` : 'Không có mã đề liên kết khác'}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
