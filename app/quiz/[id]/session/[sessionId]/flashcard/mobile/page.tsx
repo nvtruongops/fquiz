@@ -194,7 +194,8 @@ function MobileFlashcardView({
   }
 
   const handleTap = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('[role="dialog"]') || target.closest('.usage-badge-dropdown')) return
     if (!isLoading && !touchCoordsRef.current.isDragging) {
       if ('vibrate' in navigator) navigator.vibrate(10)
       setIsFlipped(!isFlipped)
@@ -263,32 +264,34 @@ function MobileFlashcardView({
             <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] bg-card text-card-foreground rounded-[2rem] p-5 sm:p-7 flex flex-col shadow-md border-2 border-border overflow-hidden">
               <ScrollArea className="flex-1 w-full h-full pr-1">
                 <div className="flex flex-col min-h-full justify-center space-y-4 pb-8">
-                  {/* Status header */}
-                  {taggedStatus && (
-                    <div className="flex items-center justify-end border-b border-border pb-2 mb-2">
-                      {taggedStatus === 'known' && (
-                        <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                          <CheckCircle2 className="w-3 h-3 text-primary" /> Đã thuộc
-                        </span>
-                      )}
-                      {taggedStatus === 'unknown' && (
-                        <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
-                          <XCircle className="w-3 h-3 text-destructive" /> Chưa thuộc
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {/* Status & Usage Header Bar */}
+                  <div className="flex items-center justify-between border-b border-border pb-2 mb-2 gap-2">
+                    <UsageBadge
+                      count={question.usage_count}
+                      used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                      size="sm"
+                      align="left"
+                    />
+
+                    {taggedStatus && (
+                      <div className="flex items-center justify-end">
+                        {taggedStatus === 'known' && (
+                          <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                            <CheckCircle2 className="w-3 h-3 text-primary" /> Đã thuộc
+                          </span>
+                        )}
+                        {taggedStatus === 'unknown' && (
+                          <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
+                            <XCircle className="w-3 h-3 text-destructive" /> Chưa thuộc
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {question.image_url && (
                     <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
                   )}
-                  
-                  <div className="flex justify-center mb-1">
-                    <UsageBadge
-                      count={question.usage_count}
-                      used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
-                    />
-                  </div>
 
                   <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
                     {question.text}
@@ -673,20 +676,29 @@ function StaticMobileFlashcardCard({
         >
           <ScrollArea className="flex-1 w-full h-full pr-1">
             <div className="flex flex-col min-h-full space-y-4 pb-8">
-              {taggedStatus && (
-                <div className="flex items-center justify-end border-b border-border pb-2">
-                  {taggedStatus === 'known' && (
-                    <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                      <CheckCircle2 className="w-3 h-3 text-primary" /> Đã thuộc
-                    </span>
-                  )}
-                  {taggedStatus === 'unknown' && (
-                    <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
-                      <XCircle className="w-3 h-3 text-destructive" /> Chưa thuộc
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Header Bar */}
+              <div className="flex items-center justify-between border-b border-border pb-2 mb-2 gap-2">
+                <UsageBadge
+                  count={question.usage_count}
+                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                  size="sm"
+                  align="left"
+                />
+                {taggedStatus && (
+                  <div className="flex items-center justify-end">
+                    {taggedStatus === 'known' && (
+                      <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                        <CheckCircle2 className="w-3 h-3 text-primary" /> Đã thuộc
+                      </span>
+                    )}
+                    {taggedStatus === 'unknown' && (
+                      <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
+                        <XCircle className="w-3 h-3 text-destructive" /> Chưa thuộc
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {question.image_url && (
                 <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />

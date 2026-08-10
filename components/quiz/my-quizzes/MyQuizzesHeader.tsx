@@ -17,12 +17,12 @@ export const MyQuizzesHeader = React.memo(function MyQuizzesHeader({
   const isWarning = ownQuizTotal >= 8 && ownQuizTotal < 10
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
-          <Library className="w-6 h-6" />
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-5 sm:p-6 rounded-3xl border border-border shadow-xs overflow-hidden">
+      <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+          <Library className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Kho Đề Của Tôi</h1>
             <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -36,23 +36,23 @@ export const MyQuizzesHeader = React.memo(function MyQuizzesHeader({
               <span>Dung lượng: {ownQuizTotal}/10 bộ đề</span>
             </div>
           </div>
-          <p className="text-xs font-medium text-muted-foreground mt-0.5">
+          <p className="text-xs font-medium text-muted-foreground leading-relaxed">
             Quản lý bộ đề tự tạo, quiz lưu từ Explore và bài thi trộn ngẫu nhiên.
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
         <Button
           onClick={onOpenManageCategories}
           variant="outline"
-          className="rounded-2xl text-xs font-bold border-border text-foreground hover:bg-muted"
+          className="flex-1 sm:flex-initial rounded-2xl text-xs font-bold border-border text-foreground hover:bg-muted justify-center h-10"
         >
           <FolderTree className="w-4 h-4 mr-1.5 text-primary" /> Quản lý danh mục
         </Button>
 
-        <Link href="/create">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-2xl shadow-md px-5">
+        <Link href="/create" className="flex-1 sm:flex-initial">
+          <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-2xl shadow-md px-5 justify-center h-10">
             <Plus className="w-4 h-4 mr-1.5" /> Tạo Quiz mới
           </Button>
         </Link>

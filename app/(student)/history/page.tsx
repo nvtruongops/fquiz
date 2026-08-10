@@ -27,6 +27,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Input } from '@/components/shared/ui/input'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { cn } from '@/lib/core/utils/cn'
+import { HistorySkeleton } from '@/components/history/HistorySkeleton'
 import { isToday, isYesterday, format } from 'date-fns'
 
 interface HistoryItem {
@@ -90,54 +91,6 @@ function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
       <Icon className="w-2.5 h-2.5 mr-1 text-primary" />
       {label}
     </Badge>
-  )
-}
-
-function HistorySkeleton() {
-  return (
-    <div className="space-y-6 animate-pulse">
-      {/* Date group 1 */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="h-3.5 w-24 bg-muted/80 rounded-full" />
-          <div className="h-px w-full bg-border/60" />
-        </div>
-        <div className="space-y-2.5">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 rounded-2xl sm:rounded-3xl border border-border/60 bg-card/60 p-3 px-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-muted/80 shrink-0" />
-                <div className="w-16 h-4 bg-muted/80 rounded-md shrink-0" />
-                <div className="w-32 sm:w-44 h-4 bg-muted/80 rounded-md shrink-0" />
-                <div className="w-48 h-3.5 bg-muted/50 rounded-md ml-auto hidden sm:block" />
-              </div>
-              <div className="w-8 h-8 rounded-full bg-muted/80 shrink-0" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Date group 2 */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="h-3.5 w-28 bg-muted/80 rounded-full" />
-          <div className="h-px w-full bg-border/60" />
-        </div>
-        <div className="space-y-2.5">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-14 rounded-2xl sm:rounded-3xl border border-border/60 bg-card/60 p-3 px-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-muted/80 shrink-0" />
-                <div className="w-16 h-4 bg-muted/80 rounded-md shrink-0" />
-                <div className="w-36 sm:w-48 h-4 bg-muted/80 rounded-md shrink-0" />
-                <div className="w-40 h-3.5 bg-muted/50 rounded-md ml-auto hidden sm:block" />
-              </div>
-              <div className="w-8 h-8 rounded-full bg-muted/80 shrink-0" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   )
 }
 

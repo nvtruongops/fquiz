@@ -7,7 +7,7 @@ import { User } from '@/lib/modules/auth/models/User'
 import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
-import { Sparkles, Compass } from 'lucide-react'
+import { ExploreSkeleton } from '@/components/quiz/explore/ExploreSkeleton'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,11 +76,7 @@ export default async function ExplorePage() {
           </h1>
         </div>
 
-        <Suspense fallback={
-          <div className="flex justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-          </div>
-        }>
+        <Suspense fallback={<ExploreSkeleton />}>
           <CategoryFilter initialCategories={categories} initialPinnedCategories={initialPinnedCategories} />
         </Suspense>
       </div>

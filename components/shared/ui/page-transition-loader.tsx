@@ -16,9 +16,14 @@ interface PageTransitionLoaderProps {
 function isExcludedPath(path: string): boolean {
   if (!path) return false
   const cleanPath = path.split('?')[0].split('#')[0]
-  const isStatic = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/maintenance'].includes(cleanPath)
+  const excludedPrefixes = [
+    '/', '/explore', '/my-quizzes', '/history', '/student', '/community',
+    '/dashboard', '/login', '/register', '/forgot-password', '/reset-password',
+    '/restore-account', '/terms', '/privacy', '/maintenance', '/profile', '/settings', '/ai', '/courses'
+  ]
+  const isExcluded = excludedPrefixes.some(prefix => cleanPath === prefix || cleanPath.startsWith(prefix + '/'))
   const isQuizRoute = cleanPath.startsWith('/quiz/') || cleanPath.includes('/session/') || cleanPath.includes('/mode') || cleanPath.includes('/result/')
-  return isStatic || isQuizRoute
+  return isExcluded || isQuizRoute
 }
 
 export function getLoaderThemeColors(_theme?: string) {

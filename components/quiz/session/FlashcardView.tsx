@@ -186,6 +186,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 count={question.usage_count}
                 used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
                 size="sm"
+                align="center"
               />
             </div>
 

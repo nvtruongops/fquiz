@@ -42,20 +42,20 @@ export default function ManageCategoriesModal({
 }: ManageCategoriesModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-lg rounded-3xl p-6 border border-border bg-card shadow-2xl z-50">
-        <DialogTitle className="text-xl font-black text-foreground mb-1">Quản lý danh mục cá nhân</DialogTitle>
-        <DialogDescription className="text-xs text-muted-foreground mb-4">
+      <DialogContent aria-describedby={undefined} className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border bg-card shadow-2xl z-50">
+        <DialogTitle className="text-base sm:text-lg font-black text-foreground mb-0.5">Quản lý danh mục cá nhân</DialogTitle>
+        <DialogDescription className="text-xs text-muted-foreground mb-3">
           Tạo và sắp xếp các danh mục bài thi cá nhân của bạn.
         </DialogDescription>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Create Category Bar */}
           <div className="flex items-center gap-2">
             <Input
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder="Tên danh mục mới..."
-              className="h-10 text-xs font-semibold rounded-xl border-2 border-input bg-card text-foreground"
+              className="h-9 sm:h-10 text-xs font-semibold rounded-xl border-2 border-input bg-card text-foreground"
             />
             <Button
               disabled={!newCategoryName.trim() || createCatMutation.isPending}
@@ -64,7 +64,7 @@ export default function ManageCategoriesModal({
                   onSuccess: () => setNewCategoryName(''),
                 })
               }}
-              className="h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl px-4 shrink-0"
+              className="h-9 sm:h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl px-3.5 sm:px-4 shrink-0"
             >
               {createCatMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
               Tạo
@@ -72,9 +72,9 @@ export default function ManageCategoriesModal({
           </div>
 
           {/* List of categories */}
-          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
             {privateCategories.length === 0 ? (
-              <p className="text-xs font-medium text-muted-foreground text-center py-4">Chưa có danh mục cá nhân nào.</p>
+              <p className="text-xs font-medium text-muted-foreground text-center py-3">Chưa có danh mục cá nhân nào.</p>
             ) : (
               privateCategories.map((cat) => (
                 <div key={cat._id} className="flex items-center justify-between p-3 rounded-xl bg-muted border border-border text-xs font-bold text-foreground">
