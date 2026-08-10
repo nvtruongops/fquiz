@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { signToken } from '@/lib/modules/auth/auth'
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
         if (!existing) {
           isUnique = true
         } else {
-          const randSuffix = Math.floor(100 + Math.random() * 900)
+          const randSuffix = crypto.randomInt(100, 1000)
           candidateUsername = `${baseUsername.substring(0, 10)}${randSuffix}`
           attempts++
         }

@@ -82,7 +82,12 @@ export class OpenAIProvider implements IAIProvider {
   }
 
   async getProviderName(): Promise<string> {
-    return this.baseUrl.includes('openai.com') ? 'openai' : 'custom'
+    try {
+      const hostname = new URL(this.baseUrl).hostname.toLowerCase()
+      return (hostname === 'api.openai.com' || hostname.endsWith('.openai.com')) ? 'openai' : 'custom'
+    } catch {
+      return 'custom'
+    }
   }
 
   async generate<T>(

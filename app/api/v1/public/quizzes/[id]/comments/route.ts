@@ -49,8 +49,20 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'Nội dung bình luận không được để trống' }, { status: 400 })
     }
     
-    // Sanitization: Strip HTML tags
-    content = content.replace(/<[^>]*>?/gm, '').trim()
+    // Sanitization: Multi-pass HTML tag stripping & entity escaping to neutralize XSS
+    let sanitizedContent = String(content)
+    let previousContent = ''
+    while (previousContent !== sanitizedContent) {
+      previousContent = sanitizedContent
+      sanitizedContent = sanitizedContent.replace(/<[^>]*>/g, '')
+    }
+    content = sanitizedContent
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .trim()
     
     if (content.length === 0) {
       return NextResponse.json({ error: 'Nội dung bình luận không hợp lệ' }, { status: 400 })

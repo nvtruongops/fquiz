@@ -139,6 +139,10 @@ async function handleSend(
   return NextResponse.json({ message: genericMessage })
 }
 
+const ActionTypeSchema = z.object({
+  action: z.enum(['send', 'verify']).optional().default('send')
+})
+
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || 'unknown'
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
@@ -150,10 +154,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
 
-    const action = (body as { action?: unknown })?.action
+    const actionParsed = ActionTypeSchema.safeParse(body)
+    if (!actionParsed.success) {
+      return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 })
+    }
+
     await connectDB()
 
-    if (action === 'verify') {
+    if (actionParsed.data.action === 'verify') {
       return handleVerify(body, ip)
     }
 
