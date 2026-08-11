@@ -35,22 +35,15 @@ const QuizHeader = React.memo(function QuizHeader({
 
   if (!enableAnimation) {
     return (
-      <header className="shrink-0 border-b border-border bg-card text-card-foreground px-3 py-2 sm:px-4">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {/* Left: Quiz info */}
-          <div className="min-w-0 shrink-0">
-            <p className="truncate text-sm font-bold text-foreground">{categoryName || 'Chưa phân loại'}</p>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">{courseCode || 'N/A'}</p>
-          </div>
-
-          {/* Center: Progress */}
-          <div className="min-w-[180px] flex-1">
-            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-              <span>Đã trả lời {answeredCount}/{totalQuestions || 0} câu ({progressPercent}%)</span>
-              <span>Câu hiện tại: {Math.min(currentIndex + 1, Math.max(totalQuestions, 1))}</span>
-            </div>
-            <div className="mt-1 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary" style={{ width: `${progressPercent}%` }} />
+      <header className="shrink-0 border-b border-border bg-card text-card-foreground px-4 py-2 text-xs font-sans">
+        <div className="flex items-center justify-between gap-4">
+          {/* Center: EOS Progress Bar & Status Text */}
+          <div className="flex-1 max-w-xl flex items-center justify-center gap-2 mx-auto">
+            <span className="text-xs font-medium text-foreground shrink-0">
+              There are <strong className="font-bold">{totalQuestions}</strong> questions, and your progress of answering is
+            </span>
+            <div className="flex-1 h-3.5 bg-muted border border-border rounded-xs overflow-hidden">
+              <div className="h-full bg-emerald-500 transition-none" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
 
@@ -60,14 +53,14 @@ const QuizHeader = React.memo(function QuizHeader({
               <button
                 type="button"
                 onClick={onToggleExplanation}
-                className="flex items-center gap-1 border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted rounded-lg"
+                className="flex items-center gap-1 border border-border bg-card px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted rounded"
               >
                 <Lightbulb className="w-3.5 h-3.5" />
                 {isExplanationOpen ? 'Đóng giải thích' : 'Giải thích'}
               </button>
             )}
             {onToggleAnimation && (
-              <div className="flex items-center gap-1.5 border border-border bg-card px-2.5 py-1 rounded-lg" title="Bật/Tắt hiệu ứng giao diện">
+              <div className="flex items-center gap-1.5 border border-border bg-card px-2 py-1 rounded" title="Bật/Tắt hiệu ứng giao diện">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Hiệu ứng</span>
                 <Switch 

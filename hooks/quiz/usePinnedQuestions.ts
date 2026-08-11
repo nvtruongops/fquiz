@@ -150,8 +150,15 @@ export function usePinnedQuestions(courseCode?: string) {
     },
   })
 
+  const isQuestionPinned = (questionId?: string, text?: string) => {
+    return pinnedQuestions.some(
+      (p) => (questionId && p.question_id === questionId) || (text && p.text === text)
+    )
+  }
+
   return {
     pinnedQuestions,
+    isQuestionPinned,
     isLoading,
     isError,
     refetch,

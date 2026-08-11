@@ -112,4 +112,71 @@ describe('useQuizKeyboardNavigation Hook Test Suite', () => {
     handleKeyDown({ key: 'ArrowRight', preventDefault, target: {} })
     expect(onNavigate).toHaveBeenCalledWith(2)
   })
+
+  test('allows arrow navigation when focused target is a checkbox input', () => {
+    const onNavigate = jest.fn()
+    const onSelectOption = jest.fn()
+
+    useQuizKeyboardNavigation({
+      currentIndex: 1,
+      totalQuestions: 5,
+      optionCount: 4,
+      disabled: false,
+      onNavigate,
+      onSelectOption,
+    })
+
+    const handleKeyDown = listeners.keydown
+    const preventDefault = jest.fn()
+
+    handleKeyDown({ key: 'ArrowRight', preventDefault, target: { tagName: 'INPUT', type: 'checkbox' } })
+    expect(onNavigate).toHaveBeenCalledWith(2)
+  })
+
+  test('blocks arrow navigation when focused target is a text input', () => {
+    const onNavigate = jest.fn()
+    const onSelectOption = jest.fn()
+
+    useQuizKeyboardNavigation({
+      currentIndex: 1,
+      totalQuestions: 5,
+      optionCount: 4,
+      disabled: false,
+      onNavigate,
+      onSelectOption,
+    })
+
+    const handleKeyDown = listeners.keydown
+    const preventDefault = jest.fn()
+
+    handleKeyDown({ key: 'ArrowRight', preventDefault, target: { tagName: 'INPUT', type: 'text' } })
+    expect(onNavigate).not.toHaveBeenCalled()
+  })
+
+  test('allows ArrowLeft and ArrowRight navigation even when disabled is true (submitted question)', () => {
+    const onNavigate = jest.fn()
+    const onSelectOption = jest.fn()
+
+    useQuizKeyboardNavigation({
+      currentIndex: 1,
+      totalQuestions: 5,
+      optionCount: 4,
+      disabled: true, // Submitted question
+      onNavigate,
+      onSelectOption,
+    })
+
+    const handleKeyDown = listeners.keydown
+    const preventDefault = jest.fn()
+
+    // ArrowRight should STILL navigate to question 2
+    handleKeyDown({ key: 'ArrowRight', preventDefault, target: {} })
+    expect(onNavigate).toHaveBeenCalledWith(2)
+
+    setFocusedOptionMock.mockClear()
+
+    // ArrowUp should NOT focus option when disabled
+    handleKeyDown({ key: 'ArrowUp', preventDefault, target: {} })
+    expect(setFocusedOptionMock).not.toHaveBeenCalled()
+  })
 })
