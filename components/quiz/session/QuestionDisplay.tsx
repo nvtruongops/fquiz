@@ -144,7 +144,7 @@ function StandardQuestionView({
   })
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden select-none bg-background text-foreground font-sans">
+    <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden select-none bg-background text-foreground font-[Arial,sans-serif]">
       {/* Upper Split View: Answer Panel | Red Line | Question Content */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         {/* Left Column: Quick Answer Selector Panel (EOS Exam style) */}
@@ -247,8 +247,8 @@ function StandardQuestionView({
 
           {/* Question Body & Options - Constrained max-w-3xl to avoid eye fatigue */}
           <div className="max-w-3xl w-full space-y-4">
-            {/* Flat Question Text */}
-            <p className="whitespace-pre-wrap text-sm sm:text-base font-normal leading-relaxed text-foreground font-sans">
+            {/* Flat Question Text (Arial Regular) */}
+            <p className="whitespace-pre-wrap text-sm sm:text-base font-normal leading-relaxed text-foreground font-[Arial,sans-serif]">
               {question.text}
             </p>
 
@@ -263,7 +263,7 @@ function StandardQuestionView({
               </div>
             )}
 
-            {/* Flat Option List A., B., C., D. */}
+            {/* Flat Option List A., B., C., D. (Arial Regular) */}
             <div className="space-y-2.5 pt-2">
               {question.options.map((option, idx) => {
                 const isSelected = selectedOptions.includes(idx)
@@ -277,14 +277,14 @@ function StandardQuestionView({
                     key={idx}
                     onClick={() => !isDisabled && onSelectOption(idx)}
                     className={cn(
-                      "p-2.5 rounded text-sm leading-relaxed cursor-pointer font-sans transition-none border",
-                      isCorrect && "border-success-fg bg-success-bg/20 text-success-fg font-semibold",
-                      isWrongSelected && "border-incorrect-border bg-incorrect-bg text-incorrect-fg font-semibold",
-                      !isCorrect && !isWrongSelected && isSelected && "border-primary bg-primary/10 font-semibold text-primary",
+                      "p-2.5 rounded text-sm font-normal leading-relaxed cursor-pointer font-[Arial,sans-serif] transition-none border",
+                      isCorrect && "border-success-fg bg-success-bg/20 text-success-fg font-normal",
+                      isWrongSelected && "border-incorrect-border bg-incorrect-bg text-incorrect-fg font-normal",
+                      !isCorrect && !isWrongSelected && isSelected && "border-primary bg-primary/10 text-primary font-normal",
                       !isCorrect && !isWrongSelected && !isSelected && "border-transparent text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <span className="font-bold mr-2">{letter}.</span>
+                    <span className="font-normal mr-2">{letter}.</span>
                     <span>{option}</span>
                   </div>
                 )
