@@ -5,6 +5,7 @@ import QuizHeader from '@/components/quiz/session/QuizHeader'
 import QuizSidebar from '@/components/quiz/session/QuizSidebar'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { SessionData } from '@/lib/modules/quiz/types/session'
+import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigation'
 
 import { cn } from '@/lib/core/utils/cn'
 
@@ -47,6 +48,15 @@ export const SessionLayout = React.memo(function SessionLayout({
   const [isExplanationOpen, setIsExplanationOpen] = React.useState(false)
   const toggleExplanation = React.useCallback(() => setIsExplanationOpen(prev => !prev), [])
 
+  const { focusedOption } = useQuizKeyboardNavigation({
+    currentIndex: currentQuestionIndex,
+    totalQuestions: effectiveTotal,
+    optionCount: question?.options?.length ?? 0,
+    disabled: submitted || isPending,
+    onNavigate,
+    onSelectOption,
+  })
+
   const answeredSet = React.useMemo(() => {
     const set = new Set<number>()
     session.user_answers?.forEach((ans) => {
@@ -58,12 +68,13 @@ export const SessionLayout = React.memo(function SessionLayout({
     return set
   }, [session.user_answers, selectedOptions, currentQuestionIndex])
 
-  // Inject explanation toggle props into children (QuestionDisplay & SessionModals)
+  // Inject explanation toggle props & focusedOption into children (QuestionDisplay & SessionModals)
   const augmentedChildren = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, {
         isExplanationOpen,
         onToggleExplanation: toggleExplanation,
+        focusedOption,
       } as any)
     }
     return child
@@ -102,15 +113,11 @@ export const SessionLayout = React.memo(function SessionLayout({
       <div className="flex flex-1 min-h-0 min-w-0 w-full overflow-hidden">
         {/* Column 1: Left Quiz Sidebar & Navigator */}
         <QuizSidebar
-          onSelectOption={onSelectOption}
           onNavigate={onNavigate}
           onSubmit={onSubmit}
           onExit={onExit}
           currentIndex={currentQuestionIndex}
           totalQuestions={effectiveTotal}
-          selectedOptions={selectedOptions}
-          optionCount={question?.options?.length ?? 0}
-          isSubmitted={submitted}
           isPending={isPending}
           answeredCount={answeredCount}
           enableAnimation={enableAnimation}

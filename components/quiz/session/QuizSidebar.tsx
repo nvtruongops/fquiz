@@ -6,14 +6,10 @@ import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 
 interface QuizSidebarProps {
-  onSelectOption: (idx: number) => void
   onNavigate: (index: number) => void
   onSubmit: () => void
   currentIndex: number
   totalQuestions: number
-  selectedOptions: number[]
-  optionCount: number
-  isSubmitted: boolean
   isPending: boolean
   answeredCount: number
   enableAnimation?: boolean
@@ -22,62 +18,16 @@ interface QuizSidebarProps {
 }
 
 const QuizSidebar = React.memo(function QuizSidebar({
-  onSelectOption,
   onNavigate,
   onSubmit,
   currentIndex,
   totalQuestions,
-  selectedOptions,
-  optionCount,
-  isSubmitted,
   isPending,
   answeredCount,
   enableAnimation = true,
   answeredSet,
   onExit,
 }: Readonly<QuizSidebarProps>) {
-  const options = Array.from({ length: Math.max(optionCount, 1) }, (_, i) => String.fromCodePoint(65 + i))
-  const [focusedOption, setFocusedOption] = useState<number | null>(null)
-
-  // Ref to stabilize the callback — avoids re-attaching the keyboard listener
-  const onSelectOptionRef = useRef(onSelectOption)
-  onSelectOptionRef.current = onSelectOption
-
-  // Keyboard navigation: ← → for Back/Next, ↑↓ for options, Enter to select
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          if (currentIndex > 0) onNavigate(currentIndex - 1)
-          break
-        case 'ArrowRight':
-          if (currentIndex < totalQuestions - 1) onNavigate(currentIndex + 1)
-          break
-        case 'ArrowUp':
-          e.preventDefault()
-          setFocusedOption(prev => prev === null ? options.length - 1 : Math.max(0, prev - 1))
-          break
-        case 'ArrowDown':
-          e.preventDefault()
-          setFocusedOption(prev => prev === null ? 0 : Math.min(options.length - 1, prev + 1))
-          break
-        case 'Enter':
-          if (focusedOption !== null && !isSubmitted) {
-            onSelectOptionRef.current(focusedOption)
-          }
-          break
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentIndex, totalQuestions, onNavigate, options.length, focusedOption, isSubmitted])
-
-  useEffect(() => {
-    setFocusedOption(null)
-  }, [currentIndex])
-
   // Modern Sidebar View (Supports both animated and static modes)
   return (
     <aside className={cn(

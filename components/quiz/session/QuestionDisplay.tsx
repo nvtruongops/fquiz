@@ -24,6 +24,7 @@ interface QuestionDisplayProps {
   courseCode?: string
   quizTitle?: string
   quizId?: string
+  focusedOption?: number | null
 }
 
 // Shared pin logic for both static & animated views
@@ -79,6 +80,7 @@ function StandardQuestionView({
   courseCode,
   quizTitle,
   quizId,
+  focusedOption,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const rawCorrect = lastAnswerResult?.correctAnswers ??
@@ -153,6 +155,7 @@ function StandardQuestionView({
             const isSelected = selectedOptions.includes(idx)
             const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
             const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
+            const isFocused = focusedOption === idx
             const optionKey = `${idx}-${option}`
             const isDisabled = submitted || isPending
 
@@ -166,6 +169,7 @@ function StandardQuestionView({
                   'w-full select-none border px-3.5 py-2.5 text-left text-sm leading-relaxed rounded-xl transition-all flex items-center justify-between gap-3',
                   isDisabled && 'cursor-not-allowed opacity-60',
                   !isDisabled && 'cursor-pointer',
+                  isFocused && 'ring-2 ring-primary ring-offset-2 border-primary shadow-sm',
                   isCorrect && 'border-success-fg/50 bg-success-bg/20 font-semibold text-success-fg',
                   isWrongSelected && 'border-incorrect-border bg-incorrect-bg font-semibold text-incorrect-fg',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary',
@@ -201,6 +205,7 @@ function AnimatedQuestionView({
   courseCode,
   quizTitle,
   quizId,
+  focusedOption,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const rawCorrect = lastAnswerResult?.correctAnswers ??
@@ -220,23 +225,18 @@ function AnimatedQuestionView({
   })
 
   return (
-    <div className="flex h-full flex-col bg-background quiz-scroll overflow-y-auto px-4 py-6 sm:px-8">
-      <div 
-        key={question._id || currentIndex}
-        className="max-w-4xl mx-auto w-full border border-border bg-card backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl"
-      >
-        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary tracking-wide">
-              Câu {safeDisplayIndex} / {totalQuestions}
-            </span>
-            <p className="text-xs font-medium text-muted-foreground italic">
-              {requiredSelectionCount === 1
-                ? '• Chọn 1 đáp án đúng'
-                : `• Chọn ${requiredSelectionCount} đáp án đúng`}
-            </p>
-          </div>
+    <div className="question-view-animated flex h-full flex-col quiz-scroll overflow-y-auto px-4 py-4 sm:px-6">
+      <p className="mb-2 text-xs text-muted-foreground">
+        {requiredSelectionCount === 1
+          ? '(Chọn 1 đáp án)'
+          : `(Chọn ${requiredSelectionCount} đáp án)`}
+      </p>
 
+      <div className="question-card-inner max-w-3xl border border-border bg-card p-4 sm:p-6 rounded-2xl shadow-md transition-all duration-300">
+        <div className="mb-4 flex items-center justify-between gap-2 border-b border-border pb-3">
+          <p className="text-sm font-bold text-foreground">
+            Câu {safeDisplayIndex}/{totalQuestions}
+          </p>
           <div className="flex items-center gap-2">
             {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
               <UsageBadge
@@ -249,24 +249,24 @@ function AnimatedQuestionView({
               onClick={handleTogglePin}
               disabled={togglePinMutation.isPending}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border",
+                "flex items-center gap-1.5 border px-2.5 py-1 text-xs font-semibold cursor-pointer rounded-lg transition-all active:scale-95",
                 isPinned
-                  ? "bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border hover:bg-question-flagged-bg/80"
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                  ? "border-amber-400/50 bg-amber-500/10 text-amber-500 shadow-2xs"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <Bookmark className={cn("w-3.5 h-3.5", isPinned && "fill-current text-question-flagged-fg")} />
+              <Bookmark className={cn("w-3.5 h-3.5 transition-transform", isPinned && "fill-current scale-110")} />
               <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
             </button>
           </div>
         </div>
 
-        <h2 className="text-lg sm:text-xl font-bold leading-relaxed text-foreground whitespace-pre-wrap">
+        <p className="question-text-animated whitespace-pre-wrap text-base sm:text-lg font-medium leading-relaxed text-foreground tracking-tight">
           {question.text}
-        </h2>
+        </p>
 
         {question.image_url && (
-          <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3 overflow-hidden shadow-inner group">
+          <div className="mt-4 border border-border bg-muted/30 p-2 rounded-xl">
             <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-lg bg-background">
               <img
                 src={question.image_url}
@@ -282,6 +282,7 @@ function AnimatedQuestionView({
             const isSelected = selectedOptions.includes(idx)
             const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
             const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
+            const isFocused = focusedOption === idx
             const optionKey = `${idx}-${option}`
             const isDisabled = submitted || isPending
 
@@ -294,6 +295,7 @@ function AnimatedQuestionView({
                   'option-card w-full select-none p-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-300 rounded-xl border-2 flex items-start gap-3 relative overflow-hidden group',
                   isDisabled && 'cursor-not-allowed opacity-75',
                   !isDisabled && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
+                  isFocused && 'ring-2 ring-primary ring-offset-2 border-primary shadow-md',
                   isCorrect && 'border-success-fg/60 bg-success-bg/25 text-success-fg font-medium shadow-sm animate-in zoom-in-95 duration-200',
                   isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium animate-in shake duration-200',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',

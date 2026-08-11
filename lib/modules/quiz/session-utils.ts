@@ -122,10 +122,17 @@ export async function getQuizSessionResult(sessionId: string, userId?: string) {
   if (userId && session.student_id?.toString() !== userId) return null
   if (session.status !== 'completed') return null
 
+  const quizDoc = (await Quiz.findById(session.quiz_id).select('questions updatedAt').lean()) as any
   const hasCachedQuestions = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
-  const quiz = hasCachedQuestions ? null : ((await Quiz.findById(session.quiz_id).select('questions').lean()) as any)
+  const quiz = hasCachedQuestions ? null : quizDoc
 
   if (!hasCachedQuestions && !quiz) return null
+
+  const quizUpdatedAfterStart = Boolean(
+    quizDoc?.updatedAt &&
+    session.started_at &&
+    new Date(quizDoc.updatedAt).getTime() > new Date(session.started_at).getTime()
+  )
 
   const allQuestions = (hasCachedQuestions ? session.questions_cache : (quiz?.questions ?? [])) as IQuestion[]
   const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
@@ -163,6 +170,7 @@ export async function getQuizSessionResult(sessionId: string, userId?: string) {
     user_answers: sessionAnswers,
     questions,
     is_temp: session.is_temp ?? false,
+    quiz_updated_after_start: quizUpdatedAfterStart,
     flashcard_stats: session.mode === 'flashcard' ? session.flashcard_stats : undefined,
   }
 }
