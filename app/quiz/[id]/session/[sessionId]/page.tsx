@@ -300,6 +300,7 @@ function DesktopSessionContent({
           showImmediateFeedback={showImmediateFeedback}
           lastAnswerResult={lastAnswerResult}
           onSelectOption={handleSelectOption}
+          onNavigate={navigateToQuestion}
           isPending={finalizeMutation.isPending}
           sessionMode={session.mode}
           enableAnimation={enableAnimation}

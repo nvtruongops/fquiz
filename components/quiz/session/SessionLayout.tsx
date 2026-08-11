@@ -75,6 +75,9 @@ export const SessionLayout = React.memo(function SessionLayout({
         isExplanationOpen,
         onToggleExplanation: toggleExplanation,
         focusedOption,
+        onNavigate,
+        onSubmit,
+        onExit,
       } as any)
     }
     return child
@@ -111,21 +114,23 @@ export const SessionLayout = React.memo(function SessionLayout({
 
       {/* 3-Column Vertical Panels Workspace */}
       <div className="flex flex-1 min-h-0 min-w-0 w-full overflow-hidden">
-        {/* Column 1: Left Quiz Sidebar & Navigator */}
-        <QuizSidebar
-          onNavigate={onNavigate}
-          onSubmit={onSubmit}
-          onExit={onExit}
-          currentIndex={currentQuestionIndex}
-          totalQuestions={effectiveTotal}
-          isPending={isPending}
-          answeredCount={answeredCount}
-          enableAnimation={enableAnimation}
-          answeredSet={answeredSet}
-        />
+        {/* Column 1: Left Quiz Sidebar & Navigator (Only in Animated / Modern UI mode) */}
+        {enableAnimation && (
+          <QuizSidebar
+            onNavigate={onNavigate}
+            onSubmit={onSubmit}
+            onExit={onExit}
+            currentIndex={currentQuestionIndex}
+            totalQuestions={effectiveTotal}
+            isPending={isPending}
+            answeredCount={answeredCount}
+            enableAnimation={enableAnimation}
+            answeredSet={answeredSet}
+          />
+        )}
 
         {/* Column 2: Center Question & Options Display */}
-        <main className="flex-1 min-w-0 h-full overflow-y-auto quiz-scroll border-l border-r border-border bg-background">
+        <main className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-background">
           {augmentedChildren}
         </main>
 

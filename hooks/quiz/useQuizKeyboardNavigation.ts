@@ -18,6 +18,19 @@ interface UseQuizKeyboardNavigationOptions {
   onSelectOption: (optionIndex: number) => void
 }
 
+function isTextInputTarget(target: any): boolean {
+  if (!target) return false
+  const tagName = target.tagName?.toUpperCase()
+  if (tagName === 'TEXTAREA') return true
+  if (target.isContentEditable) return true
+  if (tagName === 'INPUT') {
+    const type = (target.type || 'text').toLowerCase()
+    const nonTextTypes = ['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'image', 'color', 'range']
+    return !nonTextTypes.includes(type)
+  }
+  return false
+}
+
 export function useQuizKeyboardNavigation({
   currentIndex,
   totalQuestions,
@@ -39,21 +52,11 @@ export function useQuizKeyboardNavigation({
   }, [currentIndex])
 
   useEffect(() => {
-    if (disabled) return
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is actively typing in an input, textarea, or contenteditable element (prevents text input bugs if essay/tự luận questions are added)
-      const target = e.target as any
-      const isInput =
-        (typeof HTMLInputElement !== 'undefined' && target instanceof HTMLInputElement) ||
-        (typeof HTMLTextAreaElement !== 'undefined' && target instanceof HTMLTextAreaElement) ||
-        (typeof HTMLElement !== 'undefined' && target instanceof HTMLElement && target.isContentEditable) ||
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA'
+      // Ignore keydown ONLY if user is actively typing in a text input, textarea, or contenteditable element
+      if (isTextInputTarget(e.target)) return
 
-      if (isInput) return
-
-      // Arrow navigation & Enter/Space selection ONLY (no 1-4 / A-D direct shortcuts)
+      // ArrowLeft and ArrowRight (question navigation) ALWAYS work even if current question is submitted/disabled
       switch (e.key) {
         case 'ArrowLeft':
           if (currentIndex > 0) {
@@ -68,16 +71,20 @@ export function useQuizKeyboardNavigation({
           }
           break
         case 'ArrowUp':
-          e.preventDefault()
-          setFocusedOption((prev) => (prev === null ? optionCount - 1 : Math.max(0, prev - 1)))
+          if (!disabled) {
+            e.preventDefault()
+            setFocusedOption((prev) => (prev === null ? optionCount - 1 : Math.max(0, prev - 1)))
+          }
           break
         case 'ArrowDown':
-          e.preventDefault()
-          setFocusedOption((prev) => (prev === null ? 0 : Math.min(optionCount - 1, prev + 1)))
+          if (!disabled) {
+            e.preventDefault()
+            setFocusedOption((prev) => (prev === null ? 0 : Math.min(optionCount - 1, prev + 1)))
+          }
           break
         case 'Enter':
         case ' ':
-          if (focusedOption !== null) {
+          if (!disabled && focusedOption !== null) {
             e.preventDefault()
             onSelectOptionRef.current(focusedOption)
           }
