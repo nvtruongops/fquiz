@@ -1,5 +1,5 @@
 import { inferSourceType, sourceLabelFromType, mixQuizDisplayCode, resolveSourceCreatorId } from '../quiz-source-utils'
-import { validateQuizSessionRequest } from '../session-utils'
+import { validateQuizSessionRequest, getQuizSessionResult } from '../session-utils'
 import { Types } from 'mongoose'
 
 jest.mock('@/lib/core/db/mongodb', () => ({
@@ -12,7 +12,14 @@ jest.mock('../models/QuizSession', () => ({
   },
 }))
 
+jest.mock('../models/Quiz', () => ({
+  Quiz: {
+    findById: jest.fn(),
+  },
+}))
+
 import { QuizSession } from '../models/QuizSession'
+import { Quiz } from '../models/Quiz'
 
 describe('Quiz Source & Session Utilities Test Suite', () => {
   describe('inferSourceType', () => {
@@ -124,4 +131,85 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
       }
     })
   })
+
+  describe('getQuizSessionResult', () => {
+    test('returns quiz_updated_after_start: true when quiz was updated after session started', async () => {
+      const sessionId = new Types.ObjectId().toString()
+      const quizId = new Types.ObjectId().toString()
+      const studentId = new Types.ObjectId().toString()
+      const startedAt = new Date('2026-01-01T10:00:00Z')
+      const quizUpdatedAt = new Date('2026-01-01T11:00:00Z')
+
+      ;(QuizSession.findById as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: new Types.ObjectId(sessionId),
+          quiz_id: new Types.ObjectId(quizId),
+          student_id: new Types.ObjectId(studentId),
+          status: 'completed',
+          mode: 'immediate',
+          score: 1,
+          started_at: startedAt,
+          completed_at: new Date('2026-01-01T10:15:00Z'),
+          questions_cache: [
+            { _id: new Types.ObjectId(), text: 'Q1', options: ['A', 'B'], correct_answer: 0 },
+          ],
+          user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+          question_order: [0],
+        }),
+      })
+
+      ;(Quiz.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: new Types.ObjectId(quizId),
+            updatedAt: quizUpdatedAt,
+          }),
+        }),
+      })
+
+      const res = await getQuizSessionResult(sessionId)
+      expect(res).not.toBeNull()
+      expect(res?.quiz_updated_after_start).toBe(true)
+    })
+
+    test('returns quiz_updated_after_start: false when quiz was updated before session started', async () => {
+      const sessionId = new Types.ObjectId().toString()
+      const quizId = new Types.ObjectId().toString()
+      const studentId = new Types.ObjectId().toString()
+      const startedAt = new Date('2026-01-01T12:00:00Z')
+      const quizUpdatedAt = new Date('2026-01-01T11:00:00Z')
+
+      ;(QuizSession.findById as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: new Types.ObjectId(sessionId),
+          quiz_id: new Types.ObjectId(quizId),
+          student_id: new Types.ObjectId(studentId),
+          status: 'completed',
+          mode: 'immediate',
+          score: 1,
+          started_at: startedAt,
+          completed_at: new Date('2026-01-01T12:15:00Z'),
+          questions_cache: [
+            { _id: new Types.ObjectId(), text: 'Q1', options: ['A', 'B'], correct_answer: 0 },
+          ],
+          user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+          question_order: [0],
+        }),
+      })
+
+      ;(Quiz.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: new Types.ObjectId(quizId),
+            updatedAt: quizUpdatedAt,
+          }),
+        }),
+      })
+
+      const res = await getQuizSessionResult(sessionId)
+      expect(res).not.toBeNull()
+      expect(res?.quiz_updated_after_start).toBe(false)
+    })
+  })
 })
+

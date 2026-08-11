@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { RotateCcw, LayoutDashboard, BookOpen, Sparkles, Loader2, RefreshCw, X, Layers, AlertCircle } from 'lucide-react'
+import { RotateCcw, LayoutDashboard, BookOpen, Sparkles, Loader2, RefreshCw, X, Layers, AlertCircle, Info } from 'lucide-react'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'
@@ -32,6 +32,7 @@ interface ResultData {
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: ResultQuestion[]
   is_temp?: boolean
+  quiz_updated_after_start?: boolean
   flashcard_stats?: {
     total_cards: number
     cards_known: number
@@ -186,6 +187,15 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
           </div>
         </div>
       </div>
+
+      {data.quiz_updated_after_start && (
+        <div className="flex items-start sm:items-center gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-2xl px-4 py-3 shrink-0">
+          <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
+          <p className="text-xs font-medium leading-relaxed">
+            Bài quiz này đã được Admin cập nhật nội dung mới sau khi bạn bắt đầu. Kết quả dưới đây được tính theo đề thi tại thời điểm bạn tạo phiên làm bài. Bạn có thể bấm <span className="font-bold underline">Ôn lại</span> để học bộ thẻ mới nhất.
+          </p>
+        </div>
+      )}
 
       {/* Main Content Area: Interactive Flashcard Question Matrix & Detail Viewer */}
       {questions && questions.length > 0 ? (
