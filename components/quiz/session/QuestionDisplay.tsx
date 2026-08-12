@@ -403,6 +403,7 @@ function AnimatedQuestionView({
               <UsageBadge
                 count={question.usage_count}
                 used_in_quizzes={question.used_in_quizzes}
+                currentCourseCode={courseCode}
               />
             )}
             <button

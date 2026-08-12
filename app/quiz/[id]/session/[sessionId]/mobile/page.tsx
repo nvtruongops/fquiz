@@ -252,6 +252,7 @@ export default function QuizSessionMobilePage() {
                 <UsageBadge
                   count={question.usage_count}
                   used_in_quizzes={question.used_in_quizzes}
+                  currentCourseCode={session.courseCode}
                   size="sm"
                   align="right"
                 />

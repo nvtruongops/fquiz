@@ -8,6 +8,7 @@ import { Badge } from '@/components/shared/ui/badge'
 interface UsageBadgeProps {
   count?: number
   used_in_quizzes?: string[]
+  currentCourseCode?: string
   size?: 'sm' | 'md'
   className?: string
   align?: 'left' | 'right' | 'center'
@@ -15,12 +16,15 @@ interface UsageBadgeProps {
 
 export function UsageBadge({
   used_in_quizzes = [],
+  currentCourseCode,
   size = 'sm',
   className,
   align = 'right',
 }: UsageBadgeProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const normalizedCurrentCode = (currentCourseCode || '').trim().toUpperCase()
 
   const uniqueQuizzes = Array.from(
     new Set(
@@ -109,15 +113,23 @@ export function UsageBadge({
           </div>
 
           <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-            {uniqueQuizzes.map((code) => (
-              <Badge
-                key={code}
-                variant="secondary"
-                className="px-2 py-0.5 text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 rounded-md"
-              >
-                {code}
-              </Badge>
-            ))}
+            {uniqueQuizzes.map((code) => {
+              const isCurrent = Boolean(normalizedCurrentCode && code === normalizedCurrentCode)
+              return (
+                <Badge
+                  key={code}
+                  variant={isCurrent ? 'default' : 'secondary'}
+                  className={cn(
+                    'px-2 py-0.5 text-[11px] font-bold rounded-md transition-all',
+                    isCurrent
+                      ? 'bg-primary text-primary-foreground border border-primary shadow-2xs'
+                      : 'bg-primary/10 text-primary border border-primary/20'
+                  )}
+                >
+                  {code} {isCurrent && <span className="ml-1 text-[9.5px] opacity-90">(Đề này)</span>}
+                </Badge>
+              )
+            })}
           </div>
         </div>
       )}

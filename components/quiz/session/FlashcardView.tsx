@@ -21,6 +21,7 @@ interface FlashcardViewProps {
   }
   questionNumber: number
   totalQuestions: number
+  courseCode?: string
   onAnswer: (knows: boolean) => void
   isLoading?: boolean
   enableAnimation?: boolean
@@ -56,6 +57,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   question,
   questionNumber,
   totalQuestions,
+  courseCode,
   onAnswer,
   isLoading = false,
   enableAnimation = true,
@@ -186,6 +188,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               <UsageBadge
                 count={question.usage_count}
                 used_in_quizzes={question.used_in_quizzes}
+                currentCourseCode={courseCode}
                 size="sm"
                 align="center"
               />
