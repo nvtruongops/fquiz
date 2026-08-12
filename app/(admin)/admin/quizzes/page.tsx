@@ -223,8 +223,13 @@ export default function AdminQuizzesPage() {
 
                     <div className="flex flex-col">
                       <p className="text-lg font-bold text-card-foreground leading-tight">
-                        {quiz.course_code}
+                        {quiz.title || quiz.course_code}
                       </p>
+                      {quiz.title && quiz.course_code && quiz.title !== quiz.course_code && (
+                        <span className="text-xs text-muted-foreground font-mono font-medium pt-0.5">
+                          {quiz.course_code}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium pt-1">
