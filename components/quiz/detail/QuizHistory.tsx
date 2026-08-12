@@ -88,6 +88,13 @@ export function QuizHistory({
   className,
 }: QuizHistoryProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const listContainerRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTop = 0
+    }
+  }, [currentPage])
 
   if (!currentUser) {
     return (
@@ -197,7 +204,7 @@ export function QuizHistory({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="space-y-2.5">
+          <div ref={listContainerRef} className="space-y-2.5 max-h-[380px] overflow-y-auto quiz-scroll pr-1.5 scroll-smooth">
             {displayedAttempts.map((attempt, idx) => {
               const attemptIndexInTotal = startIndex + idx
               const attemptNumber = attempts.length - attemptIndexInTotal
