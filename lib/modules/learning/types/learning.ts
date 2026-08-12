@@ -174,10 +174,30 @@ export interface IParagraphSentence extends IBaseEntity {
   order: number
 }
 
-// ============================================================
-// LearningProgress (Phase 2.1)
-// ============================================================
 export type LearningObjectType = 'vocabulary' | 'grammar' | 'sentence' | 'lesson'
+
+export interface ILearningEncounter {
+  expression: string
+  contextSentence?: string
+  sourceType?: 'quiz' | 'flashcard' | 'lesson' | 'manual'
+  sourceId?: string
+  customTranslation?: string
+  createdAt?: Date | string
+}
+
+export interface IUserVocabContext {
+  expression: string
+  normalizedExpression: string
+  entryType?: 'word' | 'phrase' | 'expression'
+  sourceLanguageId?: string
+  targetLanguageId?: string
+  contextSentence?: string
+  customTranslation?: string
+  personalNote?: string
+  sourceType?: 'quiz' | 'flashcard' | 'lesson' | 'manual'
+  sourceId?: string
+  encounters?: ILearningEncounter[]
+}
 
 export interface ILearningProgress extends IBaseEntity {
   userId: Types.ObjectId
@@ -193,6 +213,7 @@ export interface ILearningProgress extends IBaseEntity {
   nextReviewAt?: Date
   completedAt?: Date
   lastResult?: 'correct' | 'incorrect' | 'partial'
+  userContext?: IUserVocabContext
 }
 
 // ============================================================

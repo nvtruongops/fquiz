@@ -18,6 +18,28 @@ const LearningProgressSchema = new Schema<ILearningProgress>(
     nextReviewAt: { type: Date, default: null, index: true, sparse: true },
     completedAt: { type: Date, default: null },
     lastResult: { type: String, enum: ['correct', 'incorrect', 'partial'], default: null },
+    userContext: {
+      expression: { type: String, trim: true },
+      normalizedExpression: { type: String, trim: true, lowercase: true },
+      entryType: { type: String, enum: ['word', 'phrase', 'expression'], default: 'word' },
+      sourceLanguageId: { type: String, default: null },
+      targetLanguageId: { type: String, default: null },
+      contextSentence: { type: String, default: null },
+      customTranslation: { type: String, default: null },
+      personalNote: { type: String, default: null },
+      sourceType: { type: String, enum: ['quiz', 'flashcard', 'lesson', 'manual'], default: 'manual' },
+      sourceId: { type: String, default: null },
+      encounters: [
+        {
+          expression: { type: String, trim: true },
+          contextSentence: { type: String, default: null },
+          sourceType: { type: String, default: 'quiz' },
+          sourceId: { type: String, default: null },
+          customTranslation: { type: String, default: null },
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+    },
   },
   BaseEntityOptions
 )

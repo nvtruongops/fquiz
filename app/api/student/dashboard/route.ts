@@ -205,18 +205,38 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     // Matches the dashboard UI feed window (page slices recentActivities.slice(0, 6)).
     const RECENT_ACTIVITIES_LIMIT = 6
-    const allActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
+    const MAX_IN_PROGRESS_IN_FEED = 2
+    const sortedActivities = [...enhancedCompletedActivities, ...activeOnlyActivities]
       .sort((a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime())
 
-    // In-progress sessions (đang dở) must never be silently dropped by the feed limit:
-    // they surface first (most recent first), then recent completed fill remaining slots.
-    // Previously an older unsubmitted session disappeared from /dashboard while still
-    // visible in /history once 5+ newer completed activities existed.
     const isInProgressActivity = (a: any) => a.status === 'active' || a.hasActiveSession === true
-    const recentActivities = [
-      ...allActivities.filter(isInProgressActivity),
-      ...allActivities.filter((a) => !isInProgressActivity(a)),
-    ].slice(0, RECENT_ACTIVITIES_LIMIT)
+
+    const recentActivities: any[] = []
+    let inProgressCount = 0
+
+    // First pass: add activities chronologically, capping in-progress sessions (max 2) to preserve space for completed quizzes
+    for (const activity of sortedActivities) {
+      if (recentActivities.length >= RECENT_ACTIVITIES_LIMIT) break
+
+      if (isInProgressActivity(activity)) {
+        if (inProgressCount < MAX_IN_PROGRESS_IN_FEED) {
+          recentActivities.push(activity)
+          inProgressCount++
+        }
+      } else {
+        recentActivities.push(activity)
+      }
+    }
+
+    // Second pass: fill remaining slots with remaining activities if completed quizzes are fewer than limit
+    if (recentActivities.length < RECENT_ACTIVITIES_LIMIT) {
+      for (const activity of sortedActivities) {
+        if (recentActivities.length >= RECENT_ACTIVITIES_LIMIT) break
+        if (!recentActivities.includes(activity)) {
+          recentActivities.push(activity)
+        }
+      }
+    }
 
     return NextResponse.json({
       recentActivities,

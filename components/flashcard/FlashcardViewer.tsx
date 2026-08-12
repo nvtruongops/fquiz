@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { GsapProgressBar } from '@/components/shared/gsap/GsapProgressBar'
+import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 
 interface FlashcardItem {
   progressId: string
@@ -227,7 +228,9 @@ export default function FlashcardViewer({ initialCards }: Props) {
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-3 py-1 rounded-full mb-4">
               {current.loType.toUpperCase()}
             </span>
-            <p className="text-2xl md:text-3xl font-black text-card-foreground leading-snug whitespace-pre-wrap">{current.front}</p>
+            <p className="text-2xl md:text-3xl font-black text-card-foreground leading-snug whitespace-pre-wrap">
+              <InteractiveText content={current.front} sourceType="flashcard" sourceId={current.learningObjectId} />
+            </p>
             <span className="mt-8 text-xs font-bold text-muted-foreground animate-pulse">Nhấp hoặc nhấn Space để lật thẻ</span>
           </div>
 
@@ -236,7 +239,9 @@ export default function FlashcardViewer({ initialCards }: Props) {
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success-fg bg-success-bg px-3 py-1 rounded-full mb-4">
               ĐÁP ÁN & NGHĨA
             </span>
-            <p className="text-xl md:text-2xl font-bold text-card-foreground leading-relaxed whitespace-pre-wrap">{current.back}</p>
+            <p className="text-xl md:text-2xl font-bold text-card-foreground leading-relaxed whitespace-pre-wrap">
+              <InteractiveText content={current.back} sourceType="flashcard" sourceId={current.learningObjectId} />
+            </p>
           </div>
         </div>
       </div>

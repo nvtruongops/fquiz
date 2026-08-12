@@ -6,6 +6,7 @@ import { RotateCw, CheckCircle, XCircle, MousePointerClick } from 'lucide-react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { FlashcardActionButtons } from './FlashcardActionButtons'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
+import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 
 interface FlashcardViewProps {
   question: {
@@ -215,7 +216,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             {!isFlipped ? (
               <div className="space-y-4">
                 <h2 className={cn('font-normal text-card-foreground leading-relaxed text-left', getQuestionFontSize(totalContentLength))}>
-                  {question.text}
+                  <InteractiveText content={question.text} sourceType="flashcard" sourceId={question._id} />
                 </h2>
 
                 {/* Choices A, B, C, D */}
@@ -232,7 +233,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                         {String.fromCodePoint(65 + idx)}
                       </span>
                       <span className="text-xs sm:text-sm font-medium text-card-foreground leading-relaxed min-w-0 break-words">
-                        {option}
+                        <InteractiveText content={option} sourceType="flashcard" sourceId={question._id} />
                       </span>
                     </div>
                   ))}

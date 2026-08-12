@@ -6,6 +6,7 @@ import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
+import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
@@ -249,7 +250,7 @@ function StandardQuestionView({
           <div className="max-w-3xl w-full space-y-4">
             {/* Flat Question Text (Arial Regular) */}
             <p className="whitespace-pre-wrap text-sm sm:text-base font-normal leading-relaxed text-foreground font-[Arial,sans-serif]">
-              {question.text}
+              <InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} />
             </p>
 
             {/* Image if present */}
@@ -285,7 +286,7 @@ function StandardQuestionView({
                     )}
                   >
                     <span className="font-normal mr-2">{letter}.</span>
-                    <span>{option}</span>
+                    <span><InteractiveText content={option} sourceType="quiz" sourceId={question._id} /></span>
                   </div>
                 )
               })}
@@ -411,7 +412,7 @@ function AnimatedQuestionView({
         </div>
 
         <p className="question-text-animated whitespace-pre-wrap text-base sm:text-lg font-normal leading-relaxed text-foreground tracking-tight">
-          {question.text}
+          <InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} />
         </p>
 
         {question.image_url && (
@@ -460,7 +461,9 @@ function AnimatedQuestionView({
                 )}>
                   {String.fromCodePoint(65 + idx)}
                 </span>
-                <span className="flex-1 whitespace-pre-wrap">{option}</span>
+                <span className="flex-1 whitespace-pre-wrap">
+                  <InteractiveText content={option} sourceType="quiz" sourceId={question._id} />
+                </span>
                 {isCorrect && <CheckCircle2 className="w-5 h-5 text-success-fg flex-none self-center animate-in zoom-in duration-300" />}
                 {isWrongSelected && <XCircle className="w-5 h-5 text-incorrect-fg flex-none self-center animate-in zoom-in duration-300" />}
               </button>
