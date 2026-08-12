@@ -3,6 +3,7 @@
 import React from 'react'
 import QuizHeader from '@/components/quiz/session/QuizHeader'
 import QuizSidebar from '@/components/quiz/session/QuizSidebar'
+import { useAuth } from '@/hooks/auth/useAuth'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { SessionData } from '@/lib/modules/quiz/types/session'
 import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigation'
@@ -45,8 +46,14 @@ export const SessionLayout = React.memo(function SessionLayout({
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
 
-  const isNoteMode = useQuizSessionStore((s) => s.isNoteMode)
+  const { data: authData } = useAuth()
+  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
+
+  const rawNoteMode = useQuizSessionStore((s) => s.isNoteMode)
   const toggleNoteMode = useQuizSessionStore((s) => s.toggleNoteMode)
+
+  const isNoteMode = isDevOrAdmin ? rawNoteMode : false
+  const handleToggleNoteMode = isDevOrAdmin ? toggleNoteMode : undefined
 
   const [isExplanationOpen, setIsExplanationOpen] = React.useState(false)
   const toggleExplanation = React.useCallback(() => setIsExplanationOpen(prev => !prev), [])
@@ -78,7 +85,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         isExplanationOpen,
         onToggleExplanation: toggleExplanation,
         isNoteMode,
-        onToggleNoteMode: toggleNoteMode,
+        onToggleNoteMode: handleToggleNoteMode,
         focusedOption,
         onNavigate,
         onSubmit,
@@ -108,7 +115,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         isExplanationOpen={isExplanationOpen}
         onToggleExplanation={toggleExplanation}
         isNoteMode={isNoteMode}
-        onToggleNoteMode={toggleNoteMode}
+        onToggleNoteMode={handleToggleNoteMode}
       >
         <QuizTimer
           startedAt={session.started_at}
