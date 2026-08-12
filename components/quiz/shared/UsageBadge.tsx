@@ -13,12 +13,24 @@ interface UsageBadgeProps {
   align?: 'left' | 'right' | 'center'
 }
 
-export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', className, align = 'right' }: UsageBadgeProps) {
+export function UsageBadge({
+  used_in_quizzes = [],
+  size = 'sm',
+  className,
+  align = 'right',
+}: UsageBadgeProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  
-  const uniqueQuizzes = Array.from(new Set((used_in_quizzes || []).filter((c): c is string => typeof c === 'string' && c.trim().length > 0)))
-  const displayCount = Math.max(count || 0, uniqueQuizzes.length, 1)
+
+  const uniqueQuizzes = Array.from(
+    new Set(
+      (used_in_quizzes || [])
+        .map((c) => (typeof c === 'string' ? c.trim().toUpperCase() : ''))
+        .filter((c) => c.length > 0 && !c.startsWith('MIX_') && !c.startsWith('TEMP_'))
+    )
+  )
+
+  const displayCount = uniqueQuizzes.length
 
   const toggleDropdown = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -42,6 +54,11 @@ export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', class
     }
   }, [open])
 
+  // Pure UI: If there are no public test codes linked, don't render misleading badge
+  if (displayCount === 0) {
+    return null
+  }
+
   return (
     <div ref={containerRef} className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
       <span
@@ -51,7 +68,9 @@ export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', class
           className
         )}
       >
-        <span className="truncate max-w-[200px] sm:max-w-none">Câu này đang có trong {displayCount} mã đề</span>
+        <span className="truncate max-w-[200px] sm:max-w-none">
+          Câu này đang có trong {displayCount} mã đề
+        </span>
         <button
           type="button"
           onClick={toggleDropdown}
@@ -63,14 +82,14 @@ export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', class
         </button>
       </span>
 
-      {/* Dropdown Panel (Sổ xuống theo vị trí alignment) */}
+      {/* Dropdown Panel */}
       {open && (
         <div
           role="dialog"
           aria-label="Mã đề liên quan"
           className={cn(
-            "usage-badge-dropdown absolute top-full mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200",
-            align === 'center' ? "left-1/2 -translate-x-1/2" : align === 'left' ? "left-0" : "right-0"
+            'usage-badge-dropdown absolute top-full mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200',
+            align === 'center' ? 'left-1/2 -translate-x-1/2' : align === 'left' ? 'left-0' : 'right-0'
           )}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -90,21 +109,15 @@ export function UsageBadge({ count = 1, used_in_quizzes = [], size = 'sm', class
           </div>
 
           <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-            {uniqueQuizzes.length > 0 ? (
-              uniqueQuizzes.map((code) => (
-                <Badge
-                  key={code}
-                  variant="secondary"
-                  className="px-2 py-0.5 text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 rounded-md"
-                >
-                  {code}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-[11px] font-medium text-muted-foreground italic">
-                {displayCount > 1 ? `Đã dùng trong ${displayCount} mã đề` : 'Không có mã đề liên kết khác'}
-              </span>
-            )}
+            {uniqueQuizzes.map((code) => (
+              <Badge
+                key={code}
+                variant="secondary"
+                className="px-2 py-0.5 text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 rounded-md"
+              >
+                {code}
+              </Badge>
+            ))}
           </div>
         </div>
       )}

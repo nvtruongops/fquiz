@@ -54,11 +54,17 @@ export const POST = withAuth(async (
 
     const targetIndex = typeof question_index === 'number' ? question_index : session.current_question_index
 
-    // In immediate mode, reject if this question was already answered
+    // In immediate mode, if this question was already answered, return the answer result & explanation gracefully (200 OK)
     if (session.mode === 'immediate') {
-      const alreadyAnswered = session.user_answers?.some((a: { question_index: number }) => a.question_index === targetIndex)
-      if (alreadyAnswered) {
-        return NextResponse.json({ error: 'Câu hỏi này đã được ghi nhận câu trả lời.' }, { status: 400 })
+      const existingAnswer = session.user_answers?.find((a: { question_index: number }) => a.question_index === targetIndex)
+      if (existingAnswer) {
+        const indexesToProcess = existingAnswer.answer_indexes && existingAnswer.answer_indexes.length > 0
+          ? existingAnswer.answer_indexes
+          : typeof existingAnswer.answer_index === 'number'
+          ? [existingAnswer.answer_index]
+          : submittedAnswerIndexes
+        const result = await processImmediateAnswer(session, indexesToProcess, targetIndex)
+        return NextResponse.json(result, { status: 200 })
       }
     }
 

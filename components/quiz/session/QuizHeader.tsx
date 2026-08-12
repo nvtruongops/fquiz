@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Sparkles, BookOpen, Hash, Layers, Lightbulb } from 'lucide-react'
+import { Sparkles, BookOpen, Hash, Layers, Lightbulb, PenTool } from 'lucide-react'
 import { Switch } from '@/components/shared/ui/switch'
 import { cn } from '@/lib/core/utils/cn'
 
@@ -15,6 +15,8 @@ interface QuizHeaderProps {
   onToggleAnimation?: (enabled: boolean) => void
   isExplanationOpen?: boolean
   onToggleExplanation?: () => void
+  isNoteMode?: boolean
+  onToggleNoteMode?: () => void
   children?: React.ReactNode
 }
 
@@ -28,6 +30,8 @@ const QuizHeader = React.memo(function QuizHeader({
   onToggleAnimation,
   isExplanationOpen = false,
   onToggleExplanation,
+  isNoteMode = false,
+  onToggleNoteMode,
   children
 }: Readonly<QuizHeaderProps>) {
   const safeTotal = totalQuestions > 0 ? totalQuestions : 1
@@ -49,6 +53,21 @@ const QuizHeader = React.memo(function QuizHeader({
 
           {/* Right: Controls & Timer */}
           <div className="flex items-center gap-2 shrink-0">
+            {onToggleNoteMode && (
+              <button
+                type="button"
+                onClick={onToggleNoteMode}
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center border rounded transition-all cursor-pointer",
+                  isNoteMode
+                    ? "border-amber-500 bg-amber-500 text-white font-bold animate-pulse ring-2 ring-amber-400/50"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                title={isNoteMode ? "Đang bật Bút Tra Từ: Bôi đen text để tra từ (Nhấn để tắt và quay lại làm bài)" : "Bật Bút Tra Từ (Bôi đen text để tra từ không lo chọn nhầm đáp án)"}
+              >
+                <PenTool className="w-3.5 h-3.5" />
+              </button>
+            )}
             {onToggleExplanation && (
               <button
                 type="button"
@@ -114,6 +133,21 @@ const QuizHeader = React.memo(function QuizHeader({
 
         {/* Right: Controls & Timer */}
         <div className="flex items-center gap-3 shrink-0 justify-end">
+          {onToggleNoteMode && (
+            <button
+              type="button"
+              onClick={onToggleNoteMode}
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95",
+                isNoteMode
+                  ? "bg-amber-500 text-white shadow-xs animate-pulse ring-2 ring-amber-400/50"
+                  : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
+              )}
+              title={isNoteMode ? "Đang bật Bút Tra Từ: Bôi đen text để tra từ (Nhấn để tắt và quay lại làm bài)" : "Bật Bút Tra Từ (Bôi đen text để tra từ không lo chọn nhầm đáp án)"}
+            >
+              <PenTool className="w-4 h-4" />
+            </button>
+          )}
           {onToggleExplanation && (
             <button
               type="button"

@@ -5,7 +5,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Question } from '@/lib/modules/quiz/models/Question'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { QuestionUsageService } from '@/lib/modules/quiz/services/question-usage.service'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
@@ -197,23 +197,9 @@ export const GET = withAuth(async (
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
     const questionId = (rawQuestion as any).question_id || generateQuestionId(rawQuestion as any)
-    let usageCount = 1
-    let usedInQuizzes: string[] = [quiz.course_code]
-
-    if (questionId) {
-      const bankQuery: any = { question_id: questionId }
-      if (quiz.category_id) {
-        bankQuery.category_id = quiz.category_id
-      }
-      const bankDoc = await QuestionBank.findOne(bankQuery).select('usage_count used_in_quizzes').lean() as any
-
-      if (bankDoc) {
-        usageCount = bankDoc.usage_count || 1
-        if (Array.isArray(bankDoc.used_in_quizzes) && bankDoc.used_in_quizzes.length > 0) {
-          usedInQuizzes = bankDoc.used_in_quizzes
-        }
-      }
-    }
+    const usageInfo = questionId
+      ? await QuestionUsageService.getQuestionPublicUsage(questionId)
+      : { count: 0, quizzes: [] }
 
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'
@@ -226,8 +212,8 @@ export const GET = withAuth(async (
     return NextResponse.json({
       session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
       question: formatQuestionResponse(rawQuestion, shouldShowAnswers, {
-        usage_count: usageCount,
-        used_in_quizzes: usedInQuizzes,
+        usage_count: usageInfo.count,
+        used_in_quizzes: usageInfo.quizzes,
       }),
     }, { status: 200 })
   } catch (err) {

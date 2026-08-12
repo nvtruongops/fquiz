@@ -5,6 +5,8 @@ import { User } from '@/lib/modules/auth/models/User'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
+
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await checkPublicApiRateLimit(request)
   if (rateLimitResponse) return rateLimitResponse
@@ -31,8 +33,7 @@ export async function GET(request: NextRequest) {
     const offset = Number.parseInt(searchParams.get('offset') || '0', 10)
 
     const query: Record<string, unknown> = {
-      is_public: true,
-      status: 'published'
+      ...getPublicQuizFilter(),
     }
 
     if (categoryId) {

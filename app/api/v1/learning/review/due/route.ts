@@ -101,9 +101,14 @@ export const GET = withAuth(
 
         if (item.loType === 'vocabulary') {
           const doc = vocabMap.get(id)
-          if (!doc) continue
-          front = doc.lemma
-          back = `${doc.definition}${doc.examples?.length ? '\n\nExamples:\n' + doc.examples.join('\n') : ''}`
+          front = (item as any).userContext?.expression || doc?.display || doc?.lemma || ''
+          const translation = (item as any).userContext?.customTranslation || doc?.definition || ''
+          const contextEx = (item as any).userContext?.contextSentence
+            ? `\n\nNgữ cảnh:\n"${(item as any).userContext.contextSentence}"`
+            : doc?.examples?.length
+              ? '\n\nVí dụ:\n' + doc.examples.join('\n')
+              : ''
+          back = `${translation}${contextEx}`
         } else if (item.loType === 'sentence') {
           const doc = sentenceMap.get(id)
           if (!doc) continue

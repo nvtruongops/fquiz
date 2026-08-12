@@ -267,8 +267,70 @@ describe('GET /api/student/dashboard', () => {
     const active = res.body.recentActivities.find((a: any) => a.status === 'active')
     expect(active).toBeDefined()
     expect(active.id).toBe(activeSessionId)
-    // In-progress sessions surface ahead of completed ones
-    expect(res.body.recentActivities[0].status).toBe('active')
-    expect(res.body.recentActivities.length).toBeLessThanOrEqual(6)
+    // Most recent completed sessions appear first chronologically
+    expect(res.body.recentActivities[0].status).toBe('completed')
+    expect(res.body.recentActivities.length).toBe(6)
+  })
+
+  it('should cap in-progress sessions at 2 so completed quizzes are not drowned out', async () => {
+    // 6 active sessions (older) and 2 completed sessions (newer)
+    const activeIds = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6']
+    const completedIds = ['c1', 'c2']
+
+    const activeSessions = activeIds.map((id, i) => ({
+      _id: new Types.ObjectId(`507f1f77bcf86cd79943900${i}`),
+      quiz_id: new Types.ObjectId(`507f1f77bcf86cd79943910${i}`),
+      mode: 'immediate',
+      status: 'active',
+      score: 0,
+      user_answers: [],
+      started_at: new Date(`2026-08-01T0${i}:00:00Z`),
+      is_temp: false,
+    }))
+
+    const completedSessions = completedIds.map((id, i) => ({
+      _id: new Types.ObjectId(`607f1f77bcf86cd79943900${i}`),
+      quiz_id: new Types.ObjectId(`607f1f77bcf86cd79943920${i}`),
+      mode: 'immediate',
+      status: 'completed',
+      score: 10,
+      user_answers: [],
+      started_at: new Date(`2026-08-02T0${i}:00:00Z`),
+      completed_at: new Date(`2026-08-02T0${i}:30:00Z`),
+      is_temp: false,
+    }))
+
+    const allSessions = [...activeSessions, ...completedSessions]
+    const quizzes = allSessions.map((s) => ({
+      _id: s.quiz_id,
+      title: `Quiz ${s.quiz_id.toString().slice(-2)}`,
+      course_code: 'TEST',
+      questionCount: 10,
+      category_id: null,
+      created_by: null,
+      is_saved_from_explore: false,
+      original_quiz_id: null,
+    }))
+
+    ;(QuizSession.aggregate as jest.Mock)
+      .mockResolvedValueOnce(completedSessions.map((s) => ({ latestSessionId: s._id })))
+      .mockResolvedValueOnce(activeSessions.map((s) => ({ latestSessionId: s._id })))
+      .mockResolvedValueOnce(completedSessions.map((s) => ({ _id: { quiz_id: s.quiz_id, mode_group: 'assessment' } })))
+
+    ;(QuizSession.find as jest.Mock).mockImplementation((query: any) => {
+      const ids: any[] = query?._id?.$in ?? []
+      const docs = allSessions.filter((s) => ids.some((id) => String(id) === String(s._id)))
+      return { sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(docs) }) }
+    })
+    ;(Quiz.find as jest.Mock).mockReturnValue({ lean: jest.fn().mockResolvedValue(quizzes) })
+
+    const req = new Request('http://localhost/api/student/dashboard')
+    const res = await (GET as any)(req, { params: {} })
+
+    expect(res.status).toBe(200)
+    expect(res.body.recentActivities).toHaveLength(6)
+    // Both completed sessions should be included in the feed, not drowned out by 6 active sessions
+    const completedCount = res.body.recentActivities.filter((a: any) => a.status === 'completed').length
+    expect(completedCount).toBe(2)
   })
 })

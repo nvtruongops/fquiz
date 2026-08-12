@@ -116,12 +116,14 @@ export const GET = withAuth(
 
         if (item.loType === 'vocabulary') {
           const doc = vocabMap.get(id)
-          if (!doc) continue
-          front = doc.display || doc.lemma
-          const posPrefix = doc.partOfSpeech ? `(${doc.partOfSpeech}) ` : ''
-          back = `${posPrefix}${doc.definition}`
-          examples = doc.examples
-          cefrLevel = doc.cefrLevel
+          front = (item as any).userContext?.expression || doc?.display || doc?.lemma || ''
+          const posPrefix = doc?.partOfSpeech ? `(${doc.partOfSpeech}) ` : ''
+          const translation = (item as any).userContext?.customTranslation || doc?.definition || ''
+          back = `${posPrefix}${translation}`
+          examples = (item as any).userContext?.contextSentence
+            ? [(item as any).userContext.contextSentence]
+            : (doc?.examples || [])
+          cefrLevel = doc?.cefrLevel
         } else if (item.loType === 'sentence') {
           const doc = sentenceMap.get(id)
           if (!doc) continue
