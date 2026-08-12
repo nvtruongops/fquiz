@@ -9,6 +9,7 @@ import { SelectionToolbar } from './SelectionToolbar'
 import { QuickSaveVocabModal } from './QuickSaveVocabModal'
 import { VocabPopover } from './VocabPopover'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 interface InteractiveTextProps {
   content: string
@@ -29,10 +30,13 @@ export function InteractiveText({
 }: InteractiveTextProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
+  const { data: authData } = useAuth()
+  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
   const storeNoteMode = useQuizSessionStore((s) => s.isNoteMode)
-  const activeNoteMode = sourceType === 'quiz'
+  const rawNoteMode = sourceType === 'quiz'
     ? (isNoteModeProp !== undefined ? isNoteModeProp : storeNoteMode)
     : true
+  const activeNoteMode = isDevOrAdmin && rawNoteMode
 
   useEffect(() => {
     setMounted(true)

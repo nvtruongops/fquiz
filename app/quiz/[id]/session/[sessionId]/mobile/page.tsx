@@ -12,12 +12,16 @@ import { useMobileQuizSessionController } from '@/hooks/quiz/useMobileQuizSessio
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 /* eslint-disable sonarjs/cognitive-complexity */
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
-  const isNoteMode = useQuizSessionStore((s) => s.isNoteMode)
+  const { data: authData } = useAuth()
+  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
+  const rawNoteMode = useQuizSessionStore((s) => s.isNoteMode)
   const toggleNoteMode = useQuizSessionStore((s) => s.toggleNoteMode)
+  const isNoteMode = isDevOrAdmin ? rawNoteMode : false
 
   if (ctrl.isPreloadError || ctrl.isInitialError) {
     return (
@@ -134,20 +138,22 @@ export default function QuizSessionMobilePage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleNoteMode}
-              title={isNoteMode ? 'Đang bật Bút Tra Từ (Nhấn để quay lại làm bài)' : 'Bật Bút Tra Từ (Để bôi đen tra từ không lo chọn nhầm đáp án)'}
-              className={cn(
-                "h-10 w-10 rounded-xl transition-all flex items-center justify-center cursor-pointer",
-                isNoteMode
-                  ? "bg-amber-500 text-white border border-amber-400 shadow-sm animate-pulse"
-                  : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
-              )}
-            >
-              <PenTool className="h-4 w-4" />
-            </Button>
+            {isDevOrAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleNoteMode}
+                title={isNoteMode ? 'Đang bật Bút Tra Từ (Nhấn để quay lại làm bài)' : 'Bật Bút Tra Từ (Để bôi đen tra từ không lo chọn nhầm đáp án)'}
+                className={cn(
+                  "h-10 w-10 rounded-xl transition-all flex items-center justify-center cursor-pointer",
+                  isNoteMode
+                    ? "bg-amber-500 text-white border border-amber-400 shadow-sm animate-pulse"
+                    : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
+                )}
+              >
+                <PenTool className="h-4 w-4" />
+              </Button>
+            )}
 
             <Button
               variant="ghost"
