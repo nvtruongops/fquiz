@@ -49,14 +49,17 @@ export const POST = withAuth(
         ...(langId ? { languageId: langId } : {}),
       })
 
+      const entryType = trimmedExpr.includes(' ') ? 'phrase' : 'word'
+
       if (!vocab) {
         try {
           vocab = await Vocabulary.create({
             lemma: trimmedExpr,
             normalizedLemma: normalizedExpr,
             display: trimmedExpr,
+            entryType,
             definition: customTranslation || trimmedExpr,
-            partOfSpeech: trimmedExpr.includes(' ') ? 'noun' : 'noun',
+            partOfSpeech: null,
             examples: contextSentence ? [contextSentence] : [],
             languageId: langId,
             source: 'user_created',
@@ -73,8 +76,7 @@ export const POST = withAuth(
         }
       }
 
-      // 3. Upsert LearningProgress cho User với userContext & encounters
-      const entryType = trimmedExpr.includes(' ') ? 'phrase' : 'word'
+      // 3. Upsert LearningProgress cho User với userContext & encounters (Idempotent)
       const newEncounter = {
         expression: trimmedExpr,
         contextSentence: contextSentence || null,
@@ -97,7 +99,37 @@ export const POST = withAuth(
         sourceId: sourceId || null,
       }
 
-      const nextReviewDate = new Date()
+      // Check existing progress to prevent duplicate encounters for exact same source
+      const existingProgress = await LearningProgress.findOne({
+        userId: payload.userId,
+        learningObjectId: vocab._id,
+        loType: 'vocabulary',
+      }).lean()
+
+      const hasDuplicateEncounter = (existingProgress as any)?.userContext?.encounters?.some(
+        (enc: any) => enc.sourceId === (sourceId || null) && enc.contextSentence === (contextSentence || null)
+      )
+
+      const updateOp: Record<string, unknown> = {
+        $set: {
+          userContext: userContextData,
+          status: 'published',
+          updatedBy: payload.userId,
+        },
+        $setOnInsert: {
+          learningStrategy: 'fsrs',
+          strategyState: { state: 'new', reps: 0, lapses: 0, stability: 1, difficulty: 5 },
+          masteryLevel: 0,
+          reviewCount: 0,
+          nextReviewAt: new Date(),
+          firstReviewedAt: new Date(),
+          createdBy: payload.userId,
+        },
+      }
+
+      if (!hasDuplicateEncounter) {
+        updateOp.$push = { 'userContext.encounters': newEncounter }
+      }
 
       const progress = await LearningProgress.findOneAndUpdate(
         {
@@ -105,25 +137,7 @@ export const POST = withAuth(
           learningObjectId: vocab._id,
           loType: 'vocabulary',
         },
-        {
-          $set: {
-            userContext: userContextData,
-            status: 'published',
-            updatedBy: payload.userId,
-          },
-          $push: {
-            'userContext.encounters': newEncounter,
-          },
-          $setOnInsert: {
-            learningStrategy: 'fsrs',
-            strategyState: { state: 'new', reps: 0, lapses: 0, stability: 1, difficulty: 5 },
-            masteryLevel: 0,
-            reviewCount: 0,
-            nextReviewAt: nextReviewDate,
-            firstReviewedAt: new Date(),
-            createdBy: payload.userId,
-          },
-        },
+        updateOp,
         { upsert: true, new: true }
       )
 

@@ -68,21 +68,21 @@ export function QuickSaveVocabModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl text-card-foreground">
-        <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+      <div className="w-full max-w-md max-h-[90vh] flex flex-col rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xl text-card-foreground overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border pb-3 mb-4 shrink-0">
           <div className="flex items-center gap-2 font-semibold text-base">
             <BookMarked className="h-5 w-5 text-primary" />
             <span>Lưu từ vựng / Cụm từ cá nhân</span>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1 hover:bg-accent text-muted-foreground transition-colors"
+            className="rounded-md p-1 hover:bg-accent text-muted-foreground transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4 overflow-y-auto flex-1 px-1.5 py-1 -mx-1 text-card-foreground">
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1">
               Từ / Cụm từ gốc
@@ -97,8 +97,8 @@ export function QuickSaveVocabModal({
               <label className="text-xs font-medium text-muted-foreground block mb-1">
                 Ngữ cảnh trong câu
               </label>
-              <p className="text-xs italic text-muted-foreground bg-muted/50 p-2 rounded border border-border/50">
-                "{contextSentence}"
+              <p className="text-xs italic text-muted-foreground bg-muted/50 p-2 rounded border border-border/50 max-h-24 overflow-y-auto">
+                &quot;{contextSentence}&quot;
               </p>
             </div>
           )}
@@ -112,7 +112,7 @@ export function QuickSaveVocabModal({
               value={translation}
               onChange={(e) => setTranslation(e.target.value)}
               placeholder="Nhập nghĩa bằng tiếng Việt hoặc tiếng Anh..."
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40 transition-all"
             />
           </div>
 
@@ -125,7 +125,7 @@ export function QuickSaveVocabModal({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Ví dụ: dùng trong ngữ cảnh trang trọng..."
               rows={2}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40 transition-all resize-none max-h-24"
             />
           </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, XCircle, Bookmark, ChevronRight } from 'lucide-react'
+import { CheckCircle2, XCircle, Bookmark, ChevronRight, PenTool } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
@@ -25,6 +25,8 @@ interface QuestionDisplayProps {
   enableAnimation?: boolean
   isExplanationOpen?: boolean
   onToggleExplanation?: () => void
+  isNoteMode?: boolean
+  onToggleNoteMode?: () => void
   courseCode?: string
   quizTitle?: string
   quizId?: string
@@ -95,6 +97,7 @@ function StandardQuestionView({
   quizTitle,
   quizId,
   focusedOption,
+  isNoteMode,
 }: QuestionDisplayProps) {
   const [leftWidth, setLeftWidth] = React.useState<number>(220)
   const [wantFinish, setWantFinish] = React.useState<boolean>(false)
@@ -145,7 +148,7 @@ function StandardQuestionView({
   })
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden select-none bg-background text-foreground font-[Arial,sans-serif]">
+    <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden bg-background text-foreground font-[Arial,sans-serif]">
       {/* Upper Split View: Answer Panel | Red Line | Question Content */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         {/* Left Column: Quick Answer Selector Panel (EOS Exam style) */}
@@ -241,7 +244,7 @@ function StandardQuestionView({
             {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
               <UsageBadge
                 count={question.usage_count}
-                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (courseCode ? [courseCode] : [])}
+                used_in_quizzes={question.used_in_quizzes}
               />
             )}
           </div>
@@ -271,18 +274,25 @@ function StandardQuestionView({
                 const isCorrect = showImmediateFeedback && correctAnswerSet.includes(idx)
                 const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
                 const letter = String.fromCodePoint(65 + idx)
-                const isDisabled = submitted || isPending
+                const isAnswerDisabled = submitted || isPending
+                const isNoteActive = Boolean(isNoteMode)
 
                 return (
                   <div
                     key={idx}
-                    onClick={() => !isDisabled && onSelectOption(idx)}
+                    onClick={() => {
+                      if (isAnswerDisabled || isNoteActive) return
+                      onSelectOption(idx)
+                    }}
                     className={cn(
-                      "p-2.5 rounded text-sm font-normal leading-relaxed cursor-pointer font-[Arial,sans-serif] transition-none border",
+                      "p-2.5 rounded text-sm font-normal leading-relaxed font-[Arial,sans-serif] transition-none border",
+                      !isAnswerDisabled && !isNoteActive && "cursor-pointer",
+                      isAnswerDisabled && "cursor-not-allowed opacity-60",
+                      isNoteActive && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
                       isCorrect && "border-success-fg bg-success-bg/20 text-success-fg font-normal",
                       isWrongSelected && "border-incorrect-border bg-incorrect-bg text-incorrect-fg font-normal",
                       !isCorrect && !isWrongSelected && isSelected && "border-primary bg-primary/10 text-primary font-normal",
-                      !isCorrect && !isWrongSelected && !isSelected && "border-transparent text-foreground hover:bg-muted/50"
+                      !isCorrect && !isWrongSelected && !isSelected && !isNoteActive && "border-transparent text-foreground hover:bg-muted/50"
                     )}
                   >
                     <span className="font-normal mr-2">{letter}.</span>
@@ -356,6 +366,7 @@ function AnimatedQuestionView({
   quizTitle,
   quizId,
   focusedOption,
+  isNoteMode,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const rawCorrect = lastAnswerResult?.correctAnswers ??
@@ -391,7 +402,7 @@ function AnimatedQuestionView({
             {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
               <UsageBadge
                 count={question.usage_count}
-                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (courseCode ? [courseCode] : [])}
+                used_in_quizzes={question.used_in_quizzes}
               />
             )}
             <button
@@ -410,6 +421,16 @@ function AnimatedQuestionView({
             </button>
           </div>
         </div>
+
+        {/* Note Mode Banner Alert */}
+        {isNoteMode && (
+          <div className="mb-4 flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold animate-in fade-in zoom-in-95 duration-200">
+            <span className="flex items-center gap-2">
+              <PenTool className="w-4 h-4 text-amber-500 animate-bounce" />
+              <span>Chế độ Tra từ vựng đang bật: Thoải mái bôi đen text để tra từ (đáp án tạm ngưng click chọn).</span>
+            </span>
+          </div>
+        )}
 
         <p className="question-text-animated whitespace-pre-wrap text-base sm:text-lg font-normal leading-relaxed text-foreground tracking-tight">
           <InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} />
@@ -434,22 +455,27 @@ function AnimatedQuestionView({
             const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
             const isFocused = focusedOption === idx
             const optionKey = `${idx}-${option}`
-            const isDisabled = submitted || isPending
+            const isAnswerDisabled = submitted || isPending
+            const isNoteActive = Boolean(isNoteMode)
 
             return (
               <button
                 key={optionKey}
-                onClick={() => !isDisabled && onSelectOption(idx)}
-                disabled={isDisabled}
+                onClick={() => {
+                  if (isAnswerDisabled || isNoteActive) return
+                  onSelectOption(idx)
+                }}
+                disabled={isAnswerDisabled}
                 className={cn(
-                  'option-card w-full select-none min-h-[50px] py-2.5 px-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-200 rounded-xl border-2 flex items-center gap-3.5 relative overflow-hidden group shadow-2xs',
-                  isDisabled && 'cursor-not-allowed opacity-75',
-                  !isDisabled && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
+                  'option-card w-full min-h-[50px] py-2.5 px-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-200 rounded-xl border-2 flex items-center gap-3.5 relative overflow-hidden group shadow-2xs',
+                  isAnswerDisabled && 'cursor-not-allowed opacity-75',
+                  !isAnswerDisabled && !isNoteActive && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
+                  isNoteActive && 'cursor-text border-dashed border-amber-500/40 bg-amber-500/5',
                   isFocused && 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary shadow-md',
                   isCorrect && 'border-success-fg/60 bg-success-bg/25 text-success-fg font-medium shadow-sm animate-in zoom-in-95 duration-200',
                   isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium animate-in shake duration-200',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
-                  !isCorrect && !isWrongSelected && !isSelected && 'border-border bg-card/80 text-foreground hover:border-primary/50 hover:bg-muted/60'
+                  !isCorrect && !isWrongSelected && !isSelected && !isNoteActive && 'border-border bg-card/80 text-foreground hover:border-primary/50 hover:bg-muted/60'
                 )}
               >
                 <span className={cn(

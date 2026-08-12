@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark, Hand } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark, Hand, PenTool } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { cn } from '@/lib/core/utils/cn'
@@ -10,10 +10,14 @@ import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { QuizLoadingOverlay, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useMobileQuizSessionController } from '@/hooks/quiz/useMobileQuizSessionController'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
+import { InteractiveText } from '@/components/shared/selection/InteractiveText'
+import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 
 /* eslint-disable sonarjs/cognitive-complexity */
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
+  const isNoteMode = useQuizSessionStore((s) => s.isNoteMode)
+  const toggleNoteMode = useQuizSessionStore((s) => s.toggleNoteMode)
 
   if (ctrl.isPreloadError || ctrl.isInitialError) {
     return (
@@ -133,6 +137,21 @@ export default function QuizSessionMobilePage() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={toggleNoteMode}
+              title={isNoteMode ? 'Đang bật Bút Tra Từ (Nhấn để quay lại làm bài)' : 'Bật Bút Tra Từ (Để bôi đen tra từ không lo chọn nhầm đáp án)'}
+              className={cn(
+                "h-10 w-10 rounded-xl transition-all flex items-center justify-center cursor-pointer",
+                isNoteMode
+                  ? "bg-amber-500 text-white border border-amber-400 shadow-sm animate-pulse"
+                  : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
+              )}
+            >
+              <PenTool className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={ctrl.toggleHandedness}
               title={ctrl.isRightHanded ? 'Đang ở chế độ Tay phải (Nhấn để đổi Tay trái)' : 'Đang ở chế độ Tay trái (Nhấn để đổi Tay phải)'}
               className={cn(
@@ -184,8 +203,16 @@ export default function QuizSessionMobilePage() {
           onTouchStart={ctrl.handleTouchStart}
           onTouchMove={ctrl.handleTouchMove}
           onTouchEnd={ctrl.handleTouchEnd}
-          className="space-y-4 p-4 pb-20 select-none transition-transform duration-150 ease-out"
+          className="space-y-4 p-4 pb-20 transition-transform duration-150 ease-out"
         >
+          {/* Note Mode Alert Banner */}
+          {isNoteMode && (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <PenTool className="h-4 w-4 text-amber-500 shrink-0 animate-bounce" />
+              <span>Chế độ Tra từ đang bật: Bạn có thể tự do bôi đen text để tra từ (đáp án tạm ngưng click chọn).</span>
+            </div>
+          )}
+
           {/* Question Meta Bar */}
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -218,7 +245,7 @@ export default function QuizSessionMobilePage() {
               {(session.mode === 'immediate' || (session.mode === 'review' && ctrl.submitted)) && (
                 <UsageBadge
                   count={question.usage_count}
-                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (session.courseCode ? [session.courseCode] : [])}
+                  used_in_quizzes={question.used_in_quizzes}
                   size="sm"
                   align="right"
                 />
@@ -229,7 +256,7 @@ export default function QuizSessionMobilePage() {
           {/* Question Text */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-card-foreground">
             <p className="whitespace-pre-wrap text-base leading-relaxed text-card-foreground">
-              {question.text}
+              <InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} />
             </p>
 
             {question.image_url && (
@@ -264,17 +291,23 @@ export default function QuizSessionMobilePage() {
                 <button
                   key={optIndex}
                   type="button"
-                  onClick={() => ctrl.handleSelectOption(optIndex)}
-                  disabled={ctrl.submitted || ctrl.submitMutation.isPending}
+                  onClick={() => {
+                    if (isNoteMode) return
+                    ctrl.handleSelectOption(optIndex)
+                  }}
+                  disabled={ctrl.submitted || ctrl.submitMutation.isPending || isNoteMode}
                   className={cn(
-                    "flex w-full items-center gap-3.5 rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.99] cursor-pointer",
+                    "flex w-full items-center gap-3.5 rounded-2xl border-2 p-4 text-left transition-all cursor-pointer",
+                    isNoteMode && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
                     statusStyle
                   )}
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border font-bold text-xs">
                     {String.fromCharCode(65 + optIndex)}
                   </div>
-                  <span className="flex-1 text-sm font-medium leading-normal">{optText}</span>
+                  <span className="flex-1 text-sm font-medium leading-normal">
+                    <InteractiveText content={optText} sourceType="quiz" sourceId={question._id} />
+                  </span>
                   {showImmediateFeedback && correctAnswerSet.includes(optIndex) && (
                     <CheckCircle2 className="h-5 w-5 text-success-fg shrink-0" />
                   )}

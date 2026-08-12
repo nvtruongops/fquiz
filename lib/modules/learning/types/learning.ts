@@ -109,15 +109,17 @@ export interface IGrammarSentence extends IBaseEntity {
 // ============================================================
 // Vocabulary
 // ============================================================
+export type EntryType = 'word' | 'phrase' | 'expression'
 export type PartOfSpeech = 'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition' | 'conjunction' | 'pronoun' | 'interjection'
 
 export interface IVocabulary extends IBaseEntity, IDomainMetadata, ISearchMetadata, IAIMetadata {
   lemma: string
   normalizedLemma: string
   display: string
+  entryType?: EntryType
   ipa?: string
   definition: string
-  partOfSpeech: PartOfSpeech
+  partOfSpeech?: PartOfSpeech | string | null
   examples: string[]
 }
 

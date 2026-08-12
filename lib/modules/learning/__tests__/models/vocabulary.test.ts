@@ -12,9 +12,9 @@ describe('Vocabulary Model', () => {
     expect(v.normalizedLemma).toBe('cafe')
   })
 
-  it('should require lemma + languageId unique', () => {
+  it('should require normalizedLemma + languageId unique', () => {
     expect(Vocabulary.schema.indexes().some((i: any) =>
-      JSON.stringify(i[0]) === JSON.stringify({ lemma: 1, languageId: 1 }) && i[1]?.unique
+      JSON.stringify(i[0]) === JSON.stringify({ normalizedLemma: 1, languageId: 1 }) && i[1]?.unique
     )).toBe(true)
   })
 

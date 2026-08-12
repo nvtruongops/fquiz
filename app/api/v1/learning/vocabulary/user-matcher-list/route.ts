@@ -15,7 +15,7 @@ export interface UserMatcherItem {
   partOfSpeech?: string
   contextSentence?: string
   personalNote?: string
-  reviewStatus: 'saved' | 'needs_review'
+  reviewStatus: 'saved' | 'needs_review' | 'temp'
 }
 
 /**

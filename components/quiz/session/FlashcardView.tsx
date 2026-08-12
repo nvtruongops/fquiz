@@ -185,7 +185,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             <div className="flex items-center justify-center flex-1 mx-1.5 min-w-0">
               <UsageBadge
                 count={question.usage_count}
-                used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                used_in_quizzes={question.used_in_quizzes}
                 size="sm"
                 align="center"
               />
@@ -254,7 +254,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                         {item.letter}
                       </span>
                       <span className="text-base sm:text-lg font-semibold text-foreground text-left leading-snug">
-                        {item.text}
+                        <InteractiveText content={item.text} sourceType="flashcard" sourceId={question._id} />
                       </span>
                     </div>
                   ))}
