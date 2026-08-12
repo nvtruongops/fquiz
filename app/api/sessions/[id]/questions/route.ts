@@ -52,8 +52,10 @@ export const GET = withAuth(async (
 
     // Resolve raw questions list (cached in session, embedded in quiz, or referenced)
     let rawQuestions: any[] = []
+    let isFromSessionCache = false
     if (Array.isArray(session.questions_cache) && session.questions_cache.length > 0) {
       rawQuestions = session.questions_cache
+      isFromSessionCache = true
     } else if (Array.isArray(quiz.questions) && quiz.questions.length > 0) {
       rawQuestions = quiz.questions
     } else if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > 0) {
@@ -74,8 +76,8 @@ export const GET = withAuth(async (
         hasMissingId = true
       }
     }
-    // Tự động repair DB nếu có câu thiếu question_id (cho embedded questions)
-    if (hasMissingId && Array.isArray(quiz.questions) && quiz.questions.length > 0) {
+    // Tự động repair DB nếu có câu thiếu question_id (chỉ sửa khi rawQuestions lấy trực tiếp từ Quiz gốc)
+    if (hasMissingId && !isFromSessionCache && Array.isArray(quiz.questions) && quiz.questions.length === rawQuestions.length) {
       await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 

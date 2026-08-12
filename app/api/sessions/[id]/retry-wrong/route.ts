@@ -10,6 +10,8 @@ import { secureShuffle } from '@/lib/core/utils/shuffle'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 
+import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+
 /**
  * POST /api/sessions/[id]/retry-wrong
  * Creates a new quiz session containing only the questions answered incorrectly in a previous completed session.
@@ -70,6 +72,7 @@ export const POST = withAuth(async (
       const q = allQuestions[actualIdx]
       return {
         _id: q._id,
+        question_id: q.question_id || generateQuestionId(q),
         text: q.text,
         options: q.options,
         correct_answer: q.correct_answer,
