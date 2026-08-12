@@ -21,12 +21,14 @@ function StaticExplanationView({
   lastAnswerResult,
   explanationText,
   correctLetters,
+  questionId,
   onClose,
 }: {
   showImmediateFeedback: boolean
   lastAnswerResult: QuestionFeedback | null
   explanationText?: string
   correctLetters?: string
+  questionId?: string
   onClose?: () => void
 }) {
   return (
@@ -104,7 +106,7 @@ function StaticExplanationView({
                 </p>
               )}
               <p className="whitespace-pre-wrap leading-relaxed text-foreground">
-                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" /> : 'Hệ thống chưa có phần giải thích cho câu này.'}
+                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : 'Hệ thống chưa có phần giải thích cho câu này.'}
               </p>
             </div>
           </div>
@@ -123,12 +125,14 @@ function AnimatedExplanationView({
   lastAnswerResult,
   explanationText,
   correctLetters,
+  questionId,
   onClose,
 }: {
   showImmediateFeedback: boolean
   lastAnswerResult: QuestionFeedback | null
   explanationText?: string
   correctLetters?: string
+  questionId?: string
   onClose?: () => void
 }) {
   return (
@@ -225,7 +229,7 @@ function AnimatedExplanationView({
                 <span>Nội dung giải thích:</span>
               </div>
               <div className="text-xs sm:text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap font-medium pt-1">
-                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" /> : 'Hệ thống chưa cung cấp phần giải thích cho câu hỏi này.'}
+                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : 'Hệ thống chưa cung cấp phần giải thích cho câu hỏi này.'}
               </div>
             </div>
           </div>
@@ -274,6 +278,7 @@ export const ExplanationPanel = React.memo(function ExplanationPanel({
         lastAnswerResult={lastAnswerResult}
         explanationText={explanationText}
         correctLetters={correctLetters}
+        questionId={question?._id}
         onClose={onClose}
       />
     )
@@ -285,6 +290,7 @@ export const ExplanationPanel = React.memo(function ExplanationPanel({
       lastAnswerResult={lastAnswerResult}
       explanationText={explanationText}
       correctLetters={correctLetters}
+      questionId={question?._id}
       onClose={onClose}
     />
   )

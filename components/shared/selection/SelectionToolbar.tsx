@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { BookMarked, Search, X } from 'lucide-react'
 
 interface SelectionToolbarProps {
@@ -18,7 +18,7 @@ export function SelectionToolbar({
   onLookup,
   onClose,
 }: SelectionToolbarProps) {
-  const toolbarRef = useRef<HTMLDivElement>(null)
+  const toolbarRef = useRef<HTMLSpanElement>(null)
 
   // Đóng toolbar khi click ra ngoài
   useEffect(() => {
@@ -31,42 +31,50 @@ export function SelectionToolbar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [onClose])
 
-  if (!selectedText) return null
+  if (!selectedText || selectedText.length < 2 || selectedText.length > 500) {
+    return null
+  }
 
   return (
-    <div
+    <span
       ref={toolbarRef}
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
-      className="fixed z-50 -translate-x-1/2 -translate-y-full mb-2 flex items-center gap-1.5 rounded-lg border border-border bg-popover/95 p-1 text-popover-foreground shadow-lg backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150 select-none"
+      className="selection-toolbar-container fixed z-50 -translate-x-1/2 -translate-y-full mb-2 flex items-center gap-1 rounded-full border border-primary/20 bg-background/95 p-1 text-foreground shadow-xl backdrop-blur-md animate-in fade-in zoom-in-90 duration-150 select-none"
     >
+      {/* Small action icon trigger button for Quick Save */}
       <button
+        type="button"
         onClick={onSave}
-        className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xs cursor-pointer"
+        title="Lưu từ vựng này vào Sổ tay bài học"
       >
         <BookMarked className="h-3.5 w-3.5" />
-        <span>Lưu từ vựng</span>
+        <span>Lưu từ</span>
       </button>
 
+      {/* Lookup translation button */}
       <button
+        type="button"
         onClick={onLookup}
-        className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        title="Xem nghĩa / Dịch nhanh"
       >
-        <Search className="h-3.5 w-3.5" />
+        <Search className="h-3.5 w-3.5 text-primary" />
         <span>Xem nghĩa</span>
       </button>
 
-      <div className="h-4 w-px bg-border mx-0.5" />
-
       <button
+        type="button"
         onClick={onClose}
-        className="rounded-md p-1 hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors"
+        className="rounded-full p-1 hover:bg-muted text-muted-foreground transition-colors cursor-pointer ml-0.5"
         title="Đóng"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3 w-3" />
       </button>
-    </div>
+    </span>
   )
 }
+

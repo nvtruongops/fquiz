@@ -21,12 +21,13 @@ const VocabularySchema = new Schema<IVocabulary>(
     },
     normalizedLemma: { type: String, required: true, lowercase: true, trim: true, index: true },
     display: { type: String, required: true, trim: true },
+    entryType: { type: String, enum: ['word', 'phrase', 'expression'], default: 'word' },
     ipa: { type: String, default: null },
     definition: { type: String, required: true },
     partOfSpeech: {
       type: String,
       enum: ['noun', 'verb', 'adjective', 'adverb', 'preposition', 'conjunction', 'pronoun', 'interjection'],
-      required: true,
+      default: null,
     },
     examples: [{ type: String }],
     // DomainMetadata
@@ -63,10 +64,9 @@ const VocabularySchema = new Schema<IVocabulary>(
   BaseEntityOptions
 )
 
-VocabularySchema.index({ lemma: 1, languageId: 1 }, { unique: true })
+VocabularySchema.index({ normalizedLemma: 1, languageId: 1 }, { unique: true })
 VocabularySchema.index({ languageId: 1, cefrLevel: 1, difficulty: 1 })
 VocabularySchema.index({ lemma: 'text', definition: 'text', examples: 'text' })
-VocabularySchema.index({ normalizedLemma: 1, languageId: 1 })
 
 VocabularySchema.pre('validate', function () {
   if (this.lemma) {

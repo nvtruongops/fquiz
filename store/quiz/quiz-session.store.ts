@@ -27,6 +27,9 @@ interface QuizSessionState {
   // Optimistic answer tracking
   pendingAnswerIndex: number | null
 
+  // Note & Vocab Lookup mode (Bút Highlight)
+  isNoteMode: boolean
+
   // Actions
   initSession: (sessionId: string, quizId: string, mode: string, total: number) => void
   resumeSession: (sessionId: string, quizId: string, mode: string, total: number, currentIndex: number, answered: Set<number>) => void
@@ -37,6 +40,7 @@ interface QuizSessionState {
   rollbackOptimisticAnswer: (questionIndex: number) => void
   confirmAnswer: (questionIndex: number) => void
   setLastAnswerResult: (result: LastAnswerResult | null) => void
+  toggleNoteMode: () => void
   resetSession: () => void
 }
 
@@ -60,6 +64,7 @@ export const useQuizSessionStore = create<QuizSessionState>()(
       answeredQuestions: new Set(),
       lastAnswerResult: null,
       pendingAnswerIndex: null,
+      isNoteMode: false,
 
       initSession: (sessionId, quizId, mode, total) =>
         set({
@@ -111,6 +116,8 @@ export const useQuizSessionStore = create<QuizSessionState>()(
       confirmAnswer: (_questionIndex) => set({ pendingAnswerIndex: null }),
 
       setLastAnswerResult: (result) => set({ lastAnswerResult: result }),
+
+      toggleNoteMode: () => set((state) => ({ isNoteMode: !state.isNoteMode })),
 
       resetSession: () =>
         set({

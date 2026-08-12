@@ -9,7 +9,7 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { CreateQuizSchema, SaveDraftQuizSchema, AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
-import { removeQuizFromBank, renameQuizCodeInBank } from '@/lib/modules/quiz/question-bank-manager'
+import { removeQuizFromBank, renameQuizCodeInBank, syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
 import { notifyPinnedUsersNewQuiz } from '@/lib/modules/quiz/utils/quiz-notification'
 
 export const GET = withAuth(async (
@@ -154,6 +154,26 @@ export const PUT = withAuth(async (
       }
     }
 
+    if (status === 'published') {
+      try {
+        await syncQuizToQuestionBank(
+          category_id,
+          normalizedCourseCode,
+          processedQuestions,
+          payload.userId,
+          id
+        )
+      } catch (syncErr) {
+        console.error('Failed to sync updated quiz to question bank:', syncErr)
+      }
+    } else {
+      try {
+        await removeQuizFromBank(category_id, normalizedCourseCode, id)
+      } catch (removeErr) {
+        console.error('Failed to remove draft quiz from question bank:', removeErr)
+      }
+    }
+
     // Count affected completed sessions for FE warning
     const affectedSessionCount = await QuizSession.countDocuments({
       quiz_id: id,
@@ -215,6 +235,21 @@ export const PATCH = withAuth(async (
     if (status === 'published') {
       notifyPinnedUsersNewQuiz(quiz).catch((err) => {
         console.error('Failed to send quiz notifications:', err)
+      })
+      if (Array.isArray(quiz.questions) && quiz.questions.length > 0) {
+        syncQuizToQuestionBank(
+          quiz.category_id,
+          quiz.course_code,
+          quiz.questions,
+          payload.userId,
+          id
+        ).catch((err) => {
+          console.error('Failed to sync published quiz to question bank:', err)
+        })
+      }
+    } else {
+      removeQuizFromBank(quiz.category_id, quiz.course_code, id).catch((err) => {
+        console.error('Failed to remove unpublished quiz from question bank:', err)
       })
     }
 
