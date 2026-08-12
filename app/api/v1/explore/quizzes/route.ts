@@ -7,6 +7,8 @@ import '@/lib/modules/quiz/models/Category'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { Types } from 'mongoose'
 
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
+
 export const dynamic = 'force-dynamic'
 
 /**
@@ -25,8 +27,7 @@ export async function GET(request: NextRequest) {
     const offset = Number.parseInt(searchParams.get('offset') || '0', 10)
 
     const query: Record<string, unknown> = {
-      is_public: true,
-      status: 'published',
+      ...getPublicQuizFilter(),
     }
     if (categoryId) query.category_id = categoryId
     if (search) {

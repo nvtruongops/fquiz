@@ -268,7 +268,7 @@ function MobileFlashcardView({
                   <div className="flex items-center justify-between border-b border-border pb-2 mb-2 gap-2">
                     <UsageBadge
                       count={question.usage_count}
-                      used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                      used_in_quizzes={question.used_in_quizzes}
                       size="sm"
                       align="left"
                     />
@@ -680,7 +680,7 @@ function StaticMobileFlashcardCard({
               <div className="flex items-center justify-between border-b border-border pb-2 mb-2 gap-2">
                 <UsageBadge
                   count={question.usage_count}
-                  used_in_quizzes={question.used_in_quizzes?.length ? question.used_in_quizzes : (question.used_in_quizzes || [])}
+                  used_in_quizzes={question.used_in_quizzes}
                   size="sm"
                   align="left"
                 />

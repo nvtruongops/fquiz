@@ -109,15 +109,17 @@ export interface IGrammarSentence extends IBaseEntity {
 // ============================================================
 // Vocabulary
 // ============================================================
+export type EntryType = 'word' | 'phrase' | 'expression'
 export type PartOfSpeech = 'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition' | 'conjunction' | 'pronoun' | 'interjection'
 
 export interface IVocabulary extends IBaseEntity, IDomainMetadata, ISearchMetadata, IAIMetadata {
   lemma: string
   normalizedLemma: string
   display: string
+  entryType?: EntryType
   ipa?: string
   definition: string
-  partOfSpeech: PartOfSpeech
+  partOfSpeech?: PartOfSpeech | string | null
   examples: string[]
 }
 
@@ -174,10 +176,30 @@ export interface IParagraphSentence extends IBaseEntity {
   order: number
 }
 
-// ============================================================
-// LearningProgress (Phase 2.1)
-// ============================================================
 export type LearningObjectType = 'vocabulary' | 'grammar' | 'sentence' | 'lesson'
+
+export interface ILearningEncounter {
+  expression: string
+  contextSentence?: string
+  sourceType?: 'quiz' | 'flashcard' | 'lesson' | 'manual'
+  sourceId?: string
+  customTranslation?: string
+  createdAt?: Date | string
+}
+
+export interface IUserVocabContext {
+  expression: string
+  normalizedExpression: string
+  entryType?: 'word' | 'phrase' | 'expression'
+  sourceLanguageId?: string
+  targetLanguageId?: string
+  contextSentence?: string
+  customTranslation?: string
+  personalNote?: string
+  sourceType?: 'quiz' | 'flashcard' | 'lesson' | 'manual'
+  sourceId?: string
+  encounters?: ILearningEncounter[]
+}
 
 export interface ILearningProgress extends IBaseEntity {
   userId: Types.ObjectId
@@ -193,6 +215,7 @@ export interface ILearningProgress extends IBaseEntity {
   nextReviewAt?: Date
   completedAt?: Date
   lastResult?: 'correct' | 'incorrect' | 'partial'
+  userContext?: IUserVocabContext
 }
 
 // ============================================================

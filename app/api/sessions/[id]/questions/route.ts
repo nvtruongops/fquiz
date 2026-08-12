@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { QuestionUsageService } from '@/lib/modules/quiz/services/question-usage.service'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
@@ -81,29 +81,14 @@ export const GET = withAuth(async (
       await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 
-    // Batch lookup usage_count từ QuestionBank (nếu có category_id thì filter theo category, nếu không thì filter theo question_id)
+    // Batch lookup public usage via QuestionUsageService (Single Source of Truth)
     const questionIds = questionOrder.map((i: number) => rawQuestions[i]?.question_id).filter(Boolean)
-    const usageMap = new Map<string, { count: number; quizzes: string[] }>()
-    if (questionIds.length > 0) {
-      const bankQuery: any = { question_id: { $in: questionIds } }
-      if (quiz.category_id) {
-        bankQuery.category_id = quiz.category_id
-      }
-      const bankDocs = await QuestionBank.find(bankQuery).select('question_id usage_count used_in_quizzes').lean()
-      for (const doc of bankDocs) {
-        usageMap.set(doc.question_id, {
-          count: doc.usage_count || 1,
-          quizzes: doc.used_in_quizzes || [],
-        })
-      }
-    }
+    const usageMap = await QuestionUsageService.getBatchQuestionPublicUsage(questionIds)
 
     // Set of display indexes that have already been answered by the student
     const answeredDisplayIndexes = new Set(
       (session.user_answers || []).map((ua: any) => ua.question_index)
     )
-
-    const defaultQuizzesFallback = quiz.course_code ? [quiz.course_code] : []
 
     // For immediate mode (only already answered) or completed/flashcard sessions: include correct_answer and explanation
     // Otherwise: exclude correct_answer and explanation
@@ -123,8 +108,8 @@ export const GET = withAuth(async (
 
       const questionWithUsage = {
         ...baseQuestion,
-        usage_count: usageInfo?.count ?? 1,
-        used_in_quizzes: usageInfo?.quizzes?.length ? usageInfo.quizzes : defaultQuizzesFallback,
+        usage_count: usageInfo?.count ?? 0,
+        used_in_quizzes: usageInfo?.quizzes ?? [],
       }
 
       // Include answers for immediate mode (only if already answered), completed sessions, or flashcard mode
