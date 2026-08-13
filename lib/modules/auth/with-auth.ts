@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import { expandAllowedRoles } from '@/lib/modules/auth/constants'
 
 type Handler<P = any> = (
   req: Request,
@@ -30,10 +31,8 @@ export function withAuth<P = any>(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     if (options.roles) {
-      const allowedRoles = options.roles.includes('student')
-        ? Array.from(new Set([...options.roles, 'admin', 'dev']))
-        : options.roles
-      if (!allowedRoles.includes(payload.role)) {
+      const allowedRoles = expandAllowedRoles(options.roles)
+      if (allowedRoles && !allowedRoles.includes(payload.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

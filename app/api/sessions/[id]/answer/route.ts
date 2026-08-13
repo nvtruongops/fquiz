@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SubmitAnswerSchema } from '@/lib/modules/quiz/schemas/quiz'
-import { processImmediateAnswer, processReviewAnswer } from '@/lib/modules/quiz/quiz-engine'
+import { processImmediateAnswer, processReviewAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * POST /api/sessions/[id]/answer
@@ -53,18 +53,24 @@ export const POST = withAuth(async (
     }
 
     const targetIndex = typeof question_index === 'number' ? question_index : session.current_question_index
+    const totalQuestions = session.question_count ?? session.question_order?.length ?? session.questions_cache?.length ?? 0
 
-    // In immediate mode, if this question was already answered, return the answer result & explanation gracefully (200 OK)
+    if (totalQuestions > 0 && (targetIndex < 0 || targetIndex >= totalQuestions)) {
+      return NextResponse.json({ error: 'Question index out of bounds' }, { status: 400 })
+    }
+
+    // In immediate mode:
+    // 1. If this question was already answered, return cached result read-only without side-effects (200 OK)
+    // 2. If answering a new question, enforce that client cannot jump to an arbitrary unanswered index
     if (session.mode === 'immediate') {
       const existingAnswer = session.user_answers?.find((a: { question_index: number }) => a.question_index === targetIndex)
       if (existingAnswer) {
-        const indexesToProcess = existingAnswer.answer_indexes && existingAnswer.answer_indexes.length > 0
-          ? existingAnswer.answer_indexes
-          : typeof existingAnswer.answer_index === 'number'
-          ? [existingAnswer.answer_index]
-          : submittedAnswerIndexes
-        const result = await processImmediateAnswer(session, indexesToProcess, targetIndex)
+        const result = await getImmediateAnswerResult(session, targetIndex)
         return NextResponse.json(result, { status: 200 })
+      }
+
+      if (typeof question_index === 'number' && question_index !== session.current_question_index) {
+        return NextResponse.json({ error: 'Can only submit answer for current question in immediate mode' }, { status: 400 })
       }
     }
 
