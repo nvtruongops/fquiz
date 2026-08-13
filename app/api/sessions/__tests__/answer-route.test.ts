@@ -22,6 +22,12 @@ jest.mock('@/lib/modules/quiz/session-utils', () => ({
   validateQuizSessionRequest: jest.fn(),
 }))
 
+jest.mock('@/lib/modules/quiz/models/QuizSession', () => ({
+  QuizSession: {
+    updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+  },
+}))
+
 jest.mock('@/lib/modules/quiz/quiz-engine', () => ({
   processImmediateAnswer: jest.fn(),
   processReviewAnswer: jest.fn(),
@@ -61,7 +67,8 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
     expect(res.body.error).toContain('out of bounds')
   })
 
-  it('should return read-only cached result without calling processImmediateAnswer when question is already answered', async () => {
+  it('should return read-only cached result without calling processImmediateAnswer or updating DB when question is already answered', async () => {
+    const { QuizSession } = require('@/lib/modules/quiz/models/QuizSession')
     const mockSession = {
       _id: 'session-123',
       status: 'active',
@@ -96,6 +103,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
     expect(res.status).toBe(200)
     expect(getImmediateAnswerResult).toHaveBeenCalledWith(mockSession, 0)
     expect(processImmediateAnswer).not.toHaveBeenCalled()
+    expect(QuizSession.updateOne).not.toHaveBeenCalled()
   })
 
   it('should reject answering an arbitrary future unanswered question in immediate mode', async () => {

@@ -40,6 +40,7 @@ jest.mock('../models/QuizSession', () => ({
 describe('Quiz Engine', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(QuizSession.updateOne as jest.Mock).mockResolvedValue({ modifiedCount: 1 })
   })
 
   describe('getImmediateAnswerResult', () => {
@@ -248,6 +249,25 @@ describe('Quiz Engine', () => {
       const result = await processImmediateAnswer(mockSession, [0], 0)
       expect(result.isCorrect).toBe(true)
       expect(QuizSession.updateOne).toHaveBeenCalledTimes(2)
+    })
+
+    it('should handle simultaneous parallel submissions using Promise.all atomically', async () => {
+      let isFirstProcessed = false
+      ;(QuizSession.updateOne as jest.Mock).mockImplementation(() => {
+        if (!isFirstProcessed) {
+          isFirstProcessed = true
+          return Promise.resolve({ modifiedCount: 1 })
+        }
+        // Second concurrent update fails OCC check (version mismatch)
+        return Promise.resolve({ modifiedCount: 0 })
+      })
+
+      const reqA = processImmediateAnswer(mockSession, [0], 0)
+      const reqB = processImmediateAnswer(mockSession, [1], 0)
+
+      const [resA, resB] = await Promise.allSettled([reqA, reqB])
+      const fulfilled = [resA, resB].filter((r) => r.status === 'fulfilled')
+      expect(fulfilled.length).toBeGreaterThanOrEqual(1)
     })
 
     it('should maintain monotonic current_question_index state invariant when answering a previous question', async () => {

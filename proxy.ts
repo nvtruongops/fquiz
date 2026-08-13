@@ -53,6 +53,10 @@ function toOrigin(value: string) {
   }
 }
 
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ALLOWED_ORIGINS) {
+  console.warn('[CORS] CORS_ALLOWED_ORIGINS is not defined in production environment. Cross-origin API requests will be rejected by default.')
+}
+
 const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'https://fquiz-web.vercel.app'
 const corsAllowedOrigins = new Set(
   (process.env.CORS_ALLOWED_ORIGINS || defaultCorsOrigins)

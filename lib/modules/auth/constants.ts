@@ -1,25 +1,33 @@
 /**
- * Role hierarchy for explicit permission matching.
- * Higher/elevated roles include access rights to lower roles.
+ * Role access map: Maps a minimum required role to all user roles (identities)
+ * that possess equal or elevated access rights to satisfy the requirement.
+ * 
+ * Example:
+ * - Requiring 'student' access permits 'student', 'teacher', 'admin', and 'dev'.
+ * - Requiring 'admin' access permits only 'admin' and 'dev'.
  */
-export const ROLE_HIERARCHY: Record<string, string[]> = {
+export const ROLE_ACCESS_HIERARCHY: Record<string, string[]> = {
   student: ['student', 'teacher', 'admin', 'dev'],
   teacher: ['teacher', 'admin', 'dev'],
   admin: ['admin', 'dev'],
   dev: ['dev'],
 }
 
+/** Backward compatibility alias */
+export const ROLE_HIERARCHY = ROLE_ACCESS_HIERARCHY
+
 /**
- * Returns all roles that satisfy the required roles (including elevated roles).
+ * Returns all user identity roles that are permitted to satisfy the minimum required roles.
+ * Returns undefined if no specific role requirement is specified.
  */
 export function expandAllowedRoles(requiredRoles?: string[]): string[] | undefined {
   if (!requiredRoles || requiredRoles.length === 0) return undefined
-  const expanded = new Set<string>()
+  const allowedIdentities = new Set<string>()
   for (const role of requiredRoles) {
-    const inherited = ROLE_HIERARCHY[role] ?? [role]
-    for (const r of inherited) {
-      expanded.add(r)
+    const matchingIdentities = ROLE_ACCESS_HIERARCHY[role] ?? [role]
+    for (const identity of matchingIdentities) {
+      allowedIdentities.add(identity)
     }
   }
-  return Array.from(expanded)
+  return Array.from(allowedIdentities)
 }
