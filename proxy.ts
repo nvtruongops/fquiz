@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
+import { getSettings, clearSettingsCache } from '@/lib/modules/auth/models/SiteSettings'
+import { verifyToken } from '@/lib/modules/auth/auth'
 import { safeCompare } from '@/lib/core/security/csrf'
 import { 
   checkRateLimit, 
@@ -19,30 +19,18 @@ import {
 
 // proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
 
-// ── In-memory cache for maintenance mode ──────────────────────────────
-// Avoids a MongoDB query on every request when maintenance is off.
-const MAINTENANCE_CACHE_TTL = 30_000 // 30 seconds
-let maintenanceCache: { value: boolean; expiry: number } | null = null
-
 async function getMaintenanceStatus(): Promise<boolean> {
-  const now = Date.now()
-  if (maintenanceCache && now < maintenanceCache.expiry) {
-    return maintenanceCache.value
-  }
   try {
     await connectDB()
     const settings = await getSettings()
-    const value = settings.maintenance_mode === true
-    maintenanceCache = { value, expiry: now + MAINTENANCE_CACHE_TTL }
-    return value
+    return settings.maintenance_mode === true
   } catch {
-    maintenanceCache = { value: false, expiry: now + MAINTENANCE_CACHE_TTL }
     return false
   }
 }
 
 export function resetMaintenanceCache() {
-  maintenanceCache = null
+  clearSettingsCache()
 }
 
 const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
@@ -65,24 +53,17 @@ function toOrigin(value: string) {
   }
 }
 
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ALLOWED_ORIGINS) {
+  console.warn('[CORS] CORS_ALLOWED_ORIGINS is not defined in production environment. Cross-origin API requests will be rejected by default.')
+}
+
+const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'https://fquiz-web.vercel.app'
 const corsAllowedOrigins = new Set(
-  (process.env.CORS_ALLOWED_ORIGINS || 'https://fquiz-web.vercel.app')
+  (process.env.CORS_ALLOWED_ORIGINS || defaultCorsOrigins)
     .split(',')
     .map((item) => toOrigin(item))
     .filter((item): item is string => Boolean(item))
 )
-
-let cachedSecrets: Uint8Array[] | null = null
-
-function getSecrets(): Uint8Array[] {
-  if (cachedSecrets) return cachedSecrets
-  const secrets: Uint8Array[] = []
-  const encoder = new TextEncoder()
-  if (process.env.JWT_SECRET) secrets.push(encoder.encode(process.env.JWT_SECRET))
-  if (process.env.JWT_SECRET_PREV) secrets.push(encoder.encode(process.env.JWT_SECRET_PREV))
-  cachedSecrets = secrets
-  return secrets
-}
 
 function applyCors(request: NextRequest, response: NextResponse) {
   const { pathname } = request.nextUrl
@@ -190,21 +171,6 @@ function ensureCsrfCookie(request: NextRequest, response: NextResponse) {
   }
 }
 
-async function verifyPayload(token: string): Promise<Record<string, unknown> | null> {
-  const secrets = getSecrets()
-
-  for (const secret of secrets) {
-    try {
-      const { payload } = await jwtVerify(token, secret)
-      return payload as Record<string, unknown>
-    } catch {
-      // Try next secret in rotation set.
-    }
-  }
-
-  return null
-}
-
 function enforceRoleRouting(pathname: string, role: string, request: NextRequest, requestId: string) {
   if (pathname.startsWith('/admin') && role !== 'admin') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -282,7 +248,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
 
   let isAdmin = false
   if (token) {
-    const p = await verifyPayload(token)
+    const p = await verifyToken(request)
     isAdmin = p?.role === 'admin'
   }
 
@@ -324,15 +290,7 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
     return response
   }
 
-  const token =
-    request.cookies.get(AUTH_COOKIE_NAME)?.value ??
-    request.headers.get('Authorization')?.replace('Bearer ', '')
-
-  if (!token) {
-    return applyCors(request, getUnauthorizedOrRedirect(pathname, request, requestId))
-  }
-
-  const payload = await verifyPayload(token)
+  const payload = await verifyToken(request)
   if (!payload) {
     return applyCors(request, getUnauthorizedOrRedirect(pathname, request, requestId))
   }
