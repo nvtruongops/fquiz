@@ -85,13 +85,15 @@ async function tryPersistAnswerIteration(
   }
 
   const versionFilter = getVersionFilter(currentSession.answer_version)
+  const targetNextIndex = isLast ? questionIndex : nextIndex
+  const updatedCurrentIndex = Math.max(currentSession.current_question_index ?? 0, targetNextIndex)
 
   const result = await QuizSession.updateOne(
     { _id: sessionId, ...versionFilter },
     {
       $set: {
         user_answers: updatedAnswers,
-        current_question_index: isLast ? questionIndex : nextIndex,
+        current_question_index: updatedCurrentIndex,
         ...(updateScore ? { score } : {}),
         last_activity_at: new Date(),
         paused_at: null,
@@ -248,6 +250,39 @@ export async function processImmediateAnswer(
     throw new Error(
       `processImmediateAnswer failed: ${(err as Error).message}`
     )
+  }
+}
+
+/**
+ * Read-only evaluation of an existing answer in immediate mode.
+ * Returns correctness, correct answers, and explanation WITHOUT writing to DB or altering current_question_index.
+ */
+export async function getImmediateAnswerResult(
+  session: IQuizSession,
+  questionIndex: number
+): Promise<ImmediateAnswerResult> {
+  const { question } = await resolveQuestion(session, questionIndex)
+
+  const correctAnswerIndexes = normalizeIndexes(
+    Array.isArray(question.correct_answer)
+      ? question.correct_answer
+      : [question.correct_answer]
+  )
+
+  const existingAnswer = session.user_answers?.find((a) => a.question_index === questionIndex)
+  const submittedIndexes = existingAnswer?.answer_indexes && existingAnswer.answer_indexes.length > 0
+    ? existingAnswer.answer_indexes
+    : typeof existingAnswer?.answer_index === 'number'
+    ? [existingAnswer.answer_index]
+    : []
+
+  const isCorrect = existingAnswer?.is_correct ?? isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
+
+  return {
+    isCorrect,
+    correctAnswer: correctAnswerIndexes[0],
+    correctAnswers: correctAnswerIndexes,
+    explanation: question.explanation,
   }
 }
 

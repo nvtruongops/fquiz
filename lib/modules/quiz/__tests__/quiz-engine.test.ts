@@ -2,6 +2,7 @@ import {
   syncUniqueStudentCount,
   processImmediateAnswer,
   processReviewAnswer,
+  getImmediateAnswerResult,
   calculateScore,
   atomicCompleteSession,
 } from '../quiz-engine'
@@ -39,6 +40,27 @@ jest.mock('../models/QuizSession', () => ({
 describe('Quiz Engine', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  describe('getImmediateAnswerResult', () => {
+    it('should return answer result read-only without calling updateOne', async () => {
+      const mockSession = {
+        _id: 'session-123',
+        quiz_id: 'quiz-123',
+        current_question_index: 0,
+        question_order: [0],
+        user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+        questions_cache: [
+          { _id: 'q1', text: 'Q1', options: ['A', 'B'], correct_answer: 0, explanation: 'Exp 1' },
+        ],
+      }
+
+      const result = await getImmediateAnswerResult(mockSession as any, 0)
+      expect(result.isCorrect).toBe(true)
+      expect(result.correctAnswer).toBe(0)
+      expect(result.explanation).toBe('Exp 1')
+      expect(QuizSession.updateOne).not.toHaveBeenCalled()
+    })
   })
 
   describe('syncUniqueStudentCount', () => {
@@ -211,6 +233,41 @@ describe('Quiz Engine', () => {
       expect(resultDisplay1.isCorrect).toBe(true)
       expect(resultDisplay1.correctAnswer).toBe(0)
       expect(resultDisplay1.explanation).toBe('Exp 1')
+    })
+
+    it('should enforce OCC concurrency control when answer_version changes during submit', async () => {
+      let callCount = 0
+      ;(QuizSession.updateOne as jest.Mock).mockImplementation(() => {
+        callCount++
+        // First update fails (simulating concurrent update changing answer_version)
+        if (callCount === 1) return Promise.resolve({ modifiedCount: 0 })
+        // Second retry succeeds
+        return Promise.resolve({ modifiedCount: 1 })
+      })
+
+      const result = await processImmediateAnswer(mockSession, [0], 0)
+      expect(result.isCorrect).toBe(true)
+      expect(QuizSession.updateOne).toHaveBeenCalledTimes(2)
+    })
+
+    it('should maintain monotonic current_question_index state invariant when answering a previous question', async () => {
+      const advancedSession = {
+        ...mockSession,
+        current_question_index: 2,
+        user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+      }
+      mockSessionForFind = advancedSession
+
+      await processImmediateAnswer(advancedSession, [0], 0)
+
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(
+        { _id: 'session-123', answer_version: 1 },
+        expect.objectContaining({
+          $set: expect.objectContaining({
+            current_question_index: 2, // Must remain 2, NOT rollback to 1
+          }),
+        })
+      )
     })
   })
 
