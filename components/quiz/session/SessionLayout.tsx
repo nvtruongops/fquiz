@@ -9,6 +9,7 @@ import { SessionData } from '@/lib/modules/quiz/types/session'
 import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigation'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { cn } from '@/lib/core/utils/cn'
+import { QuizAIAssistantDrawer } from '@/components/quiz/session/QuizAIAssistantDrawer'
 
 interface SessionLayoutProps {
   sessionData: SessionData
@@ -157,6 +158,13 @@ export const SessionLayout = React.memo(function SessionLayout({
             {augmentedExplanation}
           </aside>
         )}
+
+        {/* Dev Only AI Assistant Drawer */}
+        <QuizAIAssistantDrawer
+          sessionId={session._id || (session as any).id}
+          currentQuestionIndex={currentQuestionIndex}
+          currentQuestion={question}
+        />
       </div>
     </div>
   )

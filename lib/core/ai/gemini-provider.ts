@@ -9,7 +9,7 @@ import type {
   AIModerationResult,
 } from '@/lib/core/ai/ai-provider-interface'
 
-const DEFAULT_MODEL = 'gemini-2.0-flash-001'
+const DEFAULT_MODEL = 'gemini-1.5-flash'
 const EMBEDDING_MODEL = 'text-embedding-004'
 
 export function parseGeminiTokenUsage(usage: any, textLength?: number): { input: number; output: number } {
@@ -43,88 +43,177 @@ export function parseGeminiTokenUsage(usage: any, textLength?: number): { input:
 }
 
 export class GeminiProvider implements IAIProvider {
-  private client: GoogleGenerativeAI
-  private apiKey: string
+  private apiKeys: string[]
+  private static globalKeyIndex = 0
   private defaultModel: string
 
   constructor(apiKey?: string, defaultModel?: string) {
-    this.apiKey = apiKey || process.env.GEMINI_API_KEY || ''
+    const rawKeys = apiKey || process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || ''
+    this.apiKeys = rawKeys
+      .split(/[,;\n]+/)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0)
+
     this.defaultModel = defaultModel || DEFAULT_MODEL
-    if (!this.apiKey) {
+    if (this.apiKeys.length === 0) {
       console.warn('[GeminiProvider] GEMINI_API_KEY not set — provider will fail at runtime')
     }
-    this.client = new GoogleGenerativeAI(this.apiKey)
   }
 
   async getProviderName(): Promise<string> {
     return 'gemini'
   }
 
+  private getNextClient(): { client: GoogleGenerativeAI; key: string; index: number } {
+    if (this.apiKeys.length === 0) {
+      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
+    }
+    const index = (GeminiProvider.globalKeyIndex++) % this.apiKeys.length
+    const key = this.apiKeys[index]
+    return { client: new GoogleGenerativeAI(key), key, index }
+  }
+
   async generate<T>(
     prompt: string,
     options?: AIGenerationOptions
   ): Promise<AIGenerationResult<T>> {
-    const startTime = Date.now()
-    const modelName = options?.model ?? this.defaultModel
-    const genModel = this.client.getGenerativeModel({
-      model: modelName,
-      generationConfig: {
-        temperature: options?.temperature,
-        maxOutputTokens: options?.maxTokens,
-        responseMimeType: options?.responseSchema ? 'application/json' : undefined,
-      },
-    })
-
-    if (!this.apiKey) {
+    if (this.apiKeys.length === 0) {
       throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
     }
 
-    const result = await genModel.generateContent(prompt)
-    const response = result.response
-    const rawText = response.text()
-    const cleanText = extractJsonString(rawText)
-    const usage = response.usageMetadata
-    const tokensUsed = parseGeminiTokenUsage(usage, cleanText.length)
+    const startTime = Date.now()
+    const modelName = options?.model ?? this.defaultModel
+    const maxAttempts = Math.max(1, this.apiKeys.length)
+    let lastError: unknown
 
-    let content: T
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { client, index } = this.getNextClient()
+      try {
+        const genModel = client.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            temperature: options?.temperature,
+            maxOutputTokens: options?.maxTokens,
+            responseMimeType: options?.responseSchema ? 'application/json' : undefined,
+          },
+        })
 
-    if (options?.responseSchema) {
-      const schema = options.responseSchema as ZodSchema<T>
-      content = schema.parse(JSON.parse(cleanText))
-    } else {
-      content = cleanText as unknown as T
+        const result = await genModel.generateContent(prompt)
+        const response = result.response
+        const rawText = response.text()
+        const cleanText = extractJsonString(rawText)
+        const usage = response.usageMetadata
+        const tokensUsed = parseGeminiTokenUsage(usage, cleanText.length)
+
+        let content: T
+
+        if (options?.responseSchema) {
+          const schema = options.responseSchema as ZodSchema<T>
+          content = schema.parse(JSON.parse(cleanText))
+        } else {
+          content = cleanText as unknown as T
+        }
+
+        return {
+          content,
+          model: modelName,
+          tokensUsed,
+          cost: this.estimateCost(tokensUsed.input, tokensUsed.output, modelName),
+          durationMs: Date.now() - startTime,
+        }
+      } catch (err) {
+        lastError = err
+        const errStr = err instanceof Error ? err.message : String(err)
+        console.warn(`[GeminiProvider] Key index ${index} failed (attempt ${attempt + 1}/${maxAttempts}): ${errStr}. Rotating to next key...`)
+
+        // If the model is 404 / unavailable for this key tier, attempt fallback to gemini-1.5-flash
+        if (errStr.includes('404') || errStr.includes('no longer available')) {
+          try {
+            const fallbackModelName = 'gemini-1.5-flash'
+            const fallbackModel = client.getGenerativeModel({
+              model: fallbackModelName,
+              generationConfig: {
+                temperature: options?.temperature,
+                maxOutputTokens: options?.maxTokens,
+                responseMimeType: options?.responseSchema ? 'application/json' : undefined,
+              },
+            })
+
+            const result = await fallbackModel.generateContent(prompt)
+            const response = result.response
+            const rawText = response.text()
+            const cleanText = extractJsonString(rawText)
+            const usage = response.usageMetadata
+            const tokensUsed = parseGeminiTokenUsage(usage, cleanText.length)
+
+            let content: T
+
+            if (options?.responseSchema) {
+              const schema = options.responseSchema as ZodSchema<T>
+              content = schema.parse(JSON.parse(cleanText))
+            } else {
+              content = cleanText as unknown as T
+            }
+
+            return {
+              content,
+              model: fallbackModelName,
+              tokensUsed,
+              cost: this.estimateCost(tokensUsed.input, tokensUsed.output, fallbackModelName),
+              durationMs: Date.now() - startTime,
+            }
+          } catch (fallbackErr) {
+            console.warn(`[GeminiProvider] Key index ${index} fallback model gemini-1.5-flash also failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`)
+          }
+        }
+      }
     }
 
-    return {
-      content,
-      model: modelName,
-      tokensUsed,
-      cost: this.estimateCost(tokensUsed.input, tokensUsed.output, modelName),
-      durationMs: Date.now() - startTime,
-    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError))
   }
 
   async embed(text: string): Promise<AIEmbeddingResult> {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: `models/${EMBEDDING_MODEL}`,
-          content: { parts: [{ text }] },
-        }),
-      }
-    )
-
-    const data = await resp.json()
-    const embedding: number[] = data.embedding?.values ?? []
-
-    return {
-      embedding,
-      model: EMBEDDING_MODEL,
-      tokensUsed: data.usageMetadata?.promptTokenCount ?? 0,
+    if (this.apiKeys.length === 0) {
+      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
     }
+
+    const maxAttempts = Math.max(1, this.apiKeys.length)
+    let lastError: unknown
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { key, index } = this.getNextClient()
+      try {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: `models/${EMBEDDING_MODEL}`,
+              content: { parts: [{ text }] },
+            }),
+          }
+        )
+
+        const data = await resp.json()
+        if (!resp.ok) {
+          throw new Error(data.error?.message || `HTTP ${resp.status}`)
+        }
+
+        const embedding: number[] = data.embedding?.values ?? []
+
+        return {
+          embedding,
+          model: EMBEDDING_MODEL,
+          tokensUsed: data.usageMetadata?.promptTokenCount ?? 0,
+        }
+      } catch (err) {
+        lastError = err
+        console.warn(`[GeminiProvider.embed] Key index ${index} failed (attempt ${attempt + 1}/${maxAttempts}): ${err instanceof Error ? err.message : String(err)}. Rotating to next key...`)
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError))
   }
 
   async moderate(_text: string): Promise<AIModerationResult> {

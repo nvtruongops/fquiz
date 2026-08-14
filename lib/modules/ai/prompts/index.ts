@@ -1,4 +1,4 @@
-﻿export { vocabularyGeneration, GeneratedVocabularySchema } from './vocabulary-generation'
+export { vocabularyGeneration, GeneratedVocabularySchema } from './vocabulary-generation'
 export { sentenceGeneration, GeneratedSentenceSchema } from './sentence-generation'
 export { paragraphGeneration, GeneratedParagraphSchema } from './paragraph-generation'
 export { grammarGeneration, GeneratedGrammarSchema } from './grammar-generation'
@@ -9,6 +9,7 @@ export { dialogueGeneration, GeneratedDialogueSchema } from './dialogue-generati
 export { storyGeneration, GeneratedStorySchema } from './story-generation'
 export { writingGeneration, GeneratedWritingPromptSchema } from './writing-generation'
 export { writingEvaluation, GeneratedWritingEvalSchema } from './writing-evaluation'
+export { quizAssistantPrompt, QuizAssistantSchema } from './quiz-assistant.prompt'
 
 export type { PromptDefinition, PromptMap } from './types'
 export type { VocabularyPromptParams, GeneratedVocabulary } from './vocabulary-generation'
@@ -22,3 +23,4 @@ export type { DialoguePromptParams, GeneratedDialogue } from './dialogue-generat
 export type { StoryPromptParams, GeneratedStory } from './story-generation'
 export type { WritingPromptParams, GeneratedWritingPrompt } from './writing-generation'
 export type { WritingEvalPromptParams, GeneratedWritingEval } from './writing-evaluation'
+export type { QuizAssistantPromptParams, QuizAssistantResult } from './quiz-assistant.prompt'

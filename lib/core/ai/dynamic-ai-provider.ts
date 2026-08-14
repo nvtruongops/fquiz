@@ -28,7 +28,7 @@ export class DynamicAIProvider implements IAIProvider {
 
       if (activeProvider === 'openai') {
         const rawKey = llmConfig?.openai?.apiKey || process.env.OPENAI_API_KEY
-        const apiKey = decryptSecret(rawKey || '')
+        const apiKey = decryptSecret(rawKey || '') || rawKey
         const baseUrl = (llmConfig?.openai as { baseUrl?: string })?.baseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
         const model = llmConfig?.openai?.model || process.env.OPENAI_MODEL || 'AI'
         return new OpenAIProvider(apiKey, baseUrl, model)
@@ -36,16 +36,16 @@ export class DynamicAIProvider implements IAIProvider {
 
       if (activeProvider === 'custom') {
         const rawKey = llmConfig?.custom?.apiKey || process.env.OPENAI_API_KEY
-        const apiKey = decryptSecret(rawKey || '')
+        const apiKey = decryptSecret(rawKey || '') || rawKey
         const baseUrl = llmConfig?.custom?.baseUrl || process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1'
         const model = llmConfig?.custom?.model || process.env.OPENAI_MODEL || 'AI'
         return new OpenAIProvider(apiKey, baseUrl, model)
       }
 
       // Default: gemini
-      const rawKey = llmConfig?.gemini?.apiKey || process.env.GEMINI_API_KEY
-      const apiKey = decryptSecret(rawKey || '')
-      const model = llmConfig?.gemini?.model || 'gemini-2.0-flash-001'
+      const rawKey = llmConfig?.gemini?.apiKey || process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY
+      const apiKey = decryptSecret(rawKey || '') || rawKey
+      const model = llmConfig?.gemini?.model || 'gemini-1.5-flash'
       return new GeminiProvider(apiKey, model)
     } catch {
       return new GeminiProvider()

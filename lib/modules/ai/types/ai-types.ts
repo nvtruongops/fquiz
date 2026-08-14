@@ -1,4 +1,4 @@
-﻿import type { Types } from 'mongoose'
+import type { Types } from 'mongoose'
 import type { IBaseEntity } from '@/lib/core/types/base-entity'
 
 export type AIAssetStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
@@ -36,3 +36,4 @@ export type AIGenerationType =
   | 'example_sentences'
   | 'writing'
   | 'writing_eval'
+  | 'quiz_assistant'
