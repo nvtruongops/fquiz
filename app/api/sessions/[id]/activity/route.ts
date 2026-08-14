@@ -41,7 +41,7 @@ export const POST = withAuth(async (
     if (body.event === 'pause') {
       const currentQuestionIndex = body.current_question_index
       if (typeof currentQuestionIndex === 'number' && Number.isInteger(currentQuestionIndex) && currentQuestionIndex >= 0) {
-        setPayload.current_question_index = currentQuestionIndex
+        setPayload.current_question_index = Math.max(session.current_question_index ?? 0, currentQuestionIndex)
       }
       setPayload.paused_at = now
     }

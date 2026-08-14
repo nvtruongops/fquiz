@@ -69,7 +69,8 @@ export const POST = withAuth(async (
         return NextResponse.json(result, { status: 200 })
       }
 
-      if (typeof question_index === 'number' && question_index !== session.current_question_index) {
+      const effectiveCurrentIndex = Math.max(session.current_question_index ?? 0, session.user_answers?.length ?? 0)
+      if (typeof question_index === 'number' && question_index !== effectiveCurrentIndex) {
         return NextResponse.json({ error: 'Can only submit answer for current question in immediate mode' }, { status: 400 })
       }
     }

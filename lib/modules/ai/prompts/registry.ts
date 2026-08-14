@@ -1,4 +1,4 @@
-﻿import {
+import {
   vocabularyGeneration,
   sentenceGeneration,
   paragraphGeneration,
@@ -10,6 +10,7 @@
   storyGeneration,
   writingGeneration,
   writingEvaluation,
+  quizAssistantPrompt,
 } from './index'
 
 export const promptRegistry = {
@@ -24,6 +25,7 @@ export const promptRegistry = {
   story: storyGeneration,
   writing: writingGeneration,
   writing_eval: writingEvaluation,
+  quiz_assistant: quizAssistantPrompt,
 } as const
 
 export type PromptType = keyof typeof promptRegistry

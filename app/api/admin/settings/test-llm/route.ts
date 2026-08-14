@@ -56,7 +56,7 @@ async function testGemini(apiKey?: string, model?: string, dbSettings?: any) {
   if (!key) {
     return NextResponse.json({ error: 'Chưa cấu hình Gemini API Key' }, { status: 400 })
   }
-  const modelName = model || dbSettings?.llm_config?.gemini?.model || 'gemini-2.0-flash-001'
+  const modelName = model || dbSettings?.llm_config?.gemini?.model || 'gemini-1.5-flash'
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}?key=${key}`)
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}))
