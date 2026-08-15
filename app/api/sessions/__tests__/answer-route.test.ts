@@ -106,7 +106,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
     expect(QuizSession.updateOne).not.toHaveBeenCalled()
   })
 
-  it('should reject answering an arbitrary future unanswered question in immediate mode', async () => {
+  it('should allow answering an out-of-order unanswered question in immediate mode', async () => {
     const mockSession = {
       _id: 'session-123',
       status: 'active',
@@ -124,6 +124,12 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
       session: mockSession,
     })
 
+    ;(processImmediateAnswer as jest.Mock).mockResolvedValue({
+      isCorrect: true,
+      correctAnswer: 0,
+      explanation: 'Explanation for Q3',
+    })
+
     const req = new Request('http://localhost/api/sessions/session-123/answer', {
       method: 'POST',
       body: JSON.stringify({ question_index: 3, answer_index: 0 }),
@@ -131,9 +137,8 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
 
     const res = await POST(req, { params: mockParams })
 
-    expect(res.status).toBe(400)
-    expect(res.body.error).toContain('Can only submit answer for current question')
-    expect(processImmediateAnswer).not.toHaveBeenCalled()
+    expect(res.status).toBe(200)
+    expect(processImmediateAnswer).toHaveBeenCalledWith(mockSession, [0], 3)
   })
 
   it('should process a valid answer for current question in immediate mode', async () => {

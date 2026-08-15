@@ -60,18 +60,12 @@ export const POST = withAuth(async (
     }
 
     // In immediate mode:
-    // 1. If this question was already answered, return cached result read-only without side-effects (200 OK)
-    // 2. If answering a new question, enforce that client cannot jump to an arbitrary unanswered index
+    // If this question was already answered, return cached result read-only without side-effects (200 OK)
     if (session.mode === 'immediate') {
       const existingAnswer = session.user_answers?.find((a: { question_index: number }) => a.question_index === targetIndex)
       if (existingAnswer) {
         const result = await getImmediateAnswerResult(session, targetIndex)
         return NextResponse.json(result, { status: 200 })
-      }
-
-      const effectiveCurrentIndex = Math.max(session.current_question_index ?? 0, session.user_answers?.length ?? 0)
-      if (typeof question_index === 'number' && question_index !== effectiveCurrentIndex) {
-        return NextResponse.json({ error: 'Can only submit answer for current question in immediate mode' }, { status: 400 })
       }
     }
 
