@@ -104,7 +104,12 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     }
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      query.text = { $regex: escaped, $options: 'i' }
+      const searchRegex = { $regex: escaped, $options: 'i' }
+      query.$or = [
+        { text: searchRegex },
+        { options: searchRegex },
+        { used_in_quizzes: searchRegex },
+      ]
     }
 
     const totalQuestions = await QuestionBank.countDocuments(query)

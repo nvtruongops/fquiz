@@ -47,7 +47,12 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const query: any = { category_id }
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      query.text = { $regex: escaped, $options: 'i' }
+      const searchRegex = { $regex: escaped, $options: 'i' }
+      query.$or = [
+        { text: searchRegex },
+        { options: searchRegex },
+        { used_in_quizzes: searchRegex },
+      ]
     }
 
     // Build sort

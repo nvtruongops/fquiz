@@ -119,7 +119,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm kiếm câu hỏi..."
+              placeholder="Tìm câu hỏi, đáp án, mã môn..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-8 text-sm"
