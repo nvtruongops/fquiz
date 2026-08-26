@@ -316,15 +316,15 @@ function StandardQuestionView({
               onChange={(e) => setWantFinish(e.target.checked)}
               className="w-3.5 h-3.5 rounded-xs accent-blue-600 cursor-pointer"
             />
-            <span>I want to finish the exam.</span>
+            <span>Tôi muốn nộp bài (I want to finish the exam).</span>
           </label>
           <button
             type="button"
             onClick={onSubmit}
             disabled={!wantFinish}
-            className="px-3 py-1 rounded border border-border bg-muted hover:bg-muted/80 text-xs font-semibold text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-none"
+            className="px-3 py-1 rounded border border-border bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-none"
           >
-            Finish
+            Nộp bài (Finish)
           </button>
         </div>
 
@@ -336,7 +336,7 @@ function StandardQuestionView({
               onClick={onExit}
               className="px-3 py-1 rounded border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-none"
             >
-              Exit
+              Thoát (Exit)
             </button>
           )}
         </div>

@@ -5,32 +5,25 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/shared/ui/dialog'
 import {
   Shuffle, BookOpen, Globe, Lock, History, ArrowRight, MoreVertical,
-  Edit3, Trash2, ArrowRightLeft, Loader2, AlertCircle, AlertTriangle
+  Trash2, Loader2, AlertCircle, AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
-import { Quiz, Category } from '@/hooks/useMyQuizzes'
+import { Quiz } from '@/hooks/useMyQuizzes'
 import { QuizStatusBadge } from './QuizStatusBadge'
 
 interface QuizCardItemProps {
   quiz: Quiz
   onDelete: (id: string) => void
   isDeleting: boolean
-  categories: Category[]
-  onMoveCategory: (quizId: string, categoryId: string) => Promise<unknown>
-  isMovingCategory: boolean
 }
 
 export const QuizCardItem = React.memo(function QuizCardItem({
   quiz,
   onDelete,
   isDeleting,
-  categories,
-  onMoveCategory,
-  isMovingCategory,
 }: QuizCardItemProps) {
   const [view, setView] = useState<'default' | 'actions'>('default')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -53,16 +46,6 @@ export const QuizCardItem = React.memo(function QuizCardItem({
     ? quiz.title.slice('Quiz Trộn · '.length)
     : quiz.title
 
-  const currentCategoryId = typeof quiz.category_id === 'string' ? quiz.category_id : quiz.category_id?._id
-  const matchedCat = categories.find((cat) => cat._id === currentCategoryId || cat._id.split(',').includes(currentCategoryId || ''))
-  const matchedCatId = matchedCat?._id ?? currentCategoryId ?? ''
-  const [moveCategoryId, setMoveCategoryId] = useState(matchedCatId)
-
-  useEffect(() => {
-    if (matchedCatId) setMoveCategoryId(matchedCatId)
-  }, [matchedCatId])
-
-  const isPinnedQuiz = Boolean(quiz.title && (quiz.title.includes('GHIM') || quiz.title.includes('Ghim')))
   const displayCourseCode = quiz.is_temp
     ? (quiz.course_code && !quiz.course_code.startsWith('TEMP_') ? quiz.course_code : (categoryName !== 'Chưa phân loại' ? categoryName : 'TRỘN'))
     : quiz.course_code
@@ -82,11 +65,6 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   {quiz.is_temp && (
                     <Badge variant="outline" className="rounded-md px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 font-extrabold text-[9px] uppercase">
                       <Shuffle className="w-2.5 h-2.5 mr-1" /> Quiz Trộn
-                    </Badge>
-                  )}
-                  {isPinnedQuiz && !quiz.is_temp && (
-                    <Badge variant="outline" className="rounded-md px-2 py-0.5 bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border font-extrabold text-[9px] uppercase">
-                      📌 Quiz Ghim
                     </Badge>
                   )}
                 </div>
@@ -113,7 +91,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                   </div>
                   <div className={cn('flex items-center gap-1 text-[9px] font-bold', quiz.is_public ? 'text-success-fg' : 'text-warning-fg')}>
                     {quiz.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                    <span>{quiz.is_public ? 'CÔNG KHAI' : 'CÁ NHÂN'}</span>
+                    <span>{quiz.is_public ? 'CÔNG KHAI' : 'ĐÃ LƯU'}</span>
                   </div>
                 </div>
               </div>
@@ -185,53 +163,11 @@ export const QuizCardItem = React.memo(function QuizCardItem({
           {view === 'actions' && !isDeleting && (
             <div className="absolute inset-0 bg-card/95 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-3 animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
               <div className="relative w-full max-w-2xl flex flex-wrap items-center justify-center gap-2 sm:gap-4 py-1 px-2">
-                {!quiz.is_saved_from_explore && !quiz.is_temp && !isPinnedQuiz ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      asChild
-                      className="h-9 px-4 rounded-xl border-none bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-xs gap-2 transition-all active:scale-95 text-xs cursor-pointer"
-                    >
-                      <Link href={`/create?id=${quiz._id}`}>
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Chỉnh sửa</span>
-                      </Link>
-                    </Button>
-
-                    <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border">
-                      <Select value={moveCategoryId} onValueChange={(val) => setMoveCategoryId(val)}>
-                        <SelectTrigger className="w-[130px] h-8 rounded-lg border-none bg-card text-[11px] font-bold text-card-foreground shadow-xs focus:ring-0">
-                          <SelectValue placeholder="Chuyển DM..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1 z-[100]">
-                          {categories.map((cat) => (
-                            <SelectItem key={cat._id} value={cat._id} className="text-xs font-bold py-2 rounded-lg cursor-pointer">
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        onClick={async () => {
-                          await onMoveCategory(quiz._id, moveCategoryId)
-                          setView('default')
-                        }}
-                        disabled={isMovingCategory || !moveCategoryId || moveCategoryId === (currentCategoryId || '')}
-                        className="h-8 w-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-90 cursor-pointer"
-                      >
-                        {isMovingCategory ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRightLeft className="w-3 h-3" />}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 bg-question-flagged-bg px-4 py-1.5 rounded-full border border-question-flagged-border">
-                    <AlertCircle className="w-3.5 h-3.5 text-question-flagged-fg opacity-80" />
-                    <span className="text-[10px] font-black text-question-flagged-fg uppercase tracking-wider">
-                      {quiz.is_temp ? 'Quiz Trộn Tạm Thời' : isPinnedQuiz ? 'Quiz Ghim Tự Tạo' : 'Saved from Explore'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 bg-muted px-4 py-1.5 rounded-full border border-border">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                    {quiz.is_temp ? 'Quiz Trộn Tạm Thời' : 'Đã lưu từ Explore'}
+                  </span>
+                </div>
 
                 <div className="hidden sm:block w-px h-6 bg-border mx-1" />
 
@@ -246,7 +182,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                     className="h-9 px-4 rounded-full border-none bg-destructive text-destructive-foreground font-black hover:bg-destructive/90 shadow-sm gap-2 transition-all active:scale-95 text-xs cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>{isDeleting ? 'Đang xóa...' : 'Xóa bài'}</span>
+                    <span>{isDeleting ? 'Đang gỡ...' : 'Gỡ khỏi danh sách'}</span>
                   </Button>
 
                   <Button
@@ -272,11 +208,11 @@ export const QuizCardItem = React.memo(function QuizCardItem({
             </div>
 
             <DialogTitle className="text-base font-black text-card-foreground mb-1">
-              Xác nhận xóa bài này?
+              Xác nhận gỡ bộ đề này?
             </DialogTitle>
 
             <DialogDescription className="text-xs font-bold text-muted-foreground mb-6 px-4 leading-relaxed">
-              Bộ đề này sẽ bị gỡ bỏ vĩnh viễn khỏi kho lưu trữ và giải phóng Quota tài khoản.
+              Bộ đề này sẽ được gỡ khỏi danh sách đề thi đã lưu của bạn. Bạn luôn có thể tìm và lưu lại từ Thư viện Khám phá.
             </DialogDescription>
 
             <div className="grid grid-cols-2 gap-3 w-full">
@@ -296,7 +232,7 @@ export const QuizCardItem = React.memo(function QuizCardItem({
                 disabled={isDeleting}
                 className="h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
               >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận xóa'}
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận gỡ'}
               </Button>
             </div>
           </div>

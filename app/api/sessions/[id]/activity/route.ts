@@ -67,4 +67,4 @@ export const POST = withAuth(async (
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

@@ -51,7 +51,7 @@ export function useQuizSessionQueries(
     },
     enabled: resolvedSessionId.length > 0 && resolvedSessionId !== 'undefined',
     staleTime: 30_000,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     retry: (failureCount, error) => {
       const err = error as SessionApiError
       if (err?.status === 404 || err?.status === 410 || err?.status === 401) {

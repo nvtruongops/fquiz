@@ -1332,7 +1332,8 @@ Fallback: Gemini nếu active provider không khả dụng
 | `dialogueGeneration` | Hội thoại theo ngữ cảnh | `GeneratedDialogueSchema` |
 | `storyGeneration` | Truyện ngắn theo trình độ | `GeneratedStorySchema` |
 | `writingGeneration` | Đề bài viết + gợi ý | `GeneratedWritingPromptSchema` |
-| `writingEvaluation` | Chấm bài viết + feedback | `GeneratedWritingEvalSchema` |
+| `writingEvaluation` | Chấm bài viết + feedback (100% tiếng Việt) | `GeneratedWritingEvalSchema` |
+| `quizAssistantPrompt` | Giải đáp câu hỏi thi trắc nghiệm & đối chiếu ngân hàng đề | `QuizAssistantSchema` |
 
 ### AIContentService
 
@@ -1378,6 +1379,18 @@ generate() request
   ├─ 8. Emit AIAssetGenerated event (EventBus)
   └─ 9. Return AIContentResult<T>
 ```
+
+### Quiz AI Assistant (Knowledge Retrieval Engine)
+
+Phân hệ trợ lý AI giải đáp thắc mắc câu hỏi thi trắc nghiệm theo thời gian thực:
+- **Kiến trúc phân lớp (Clean Layered Architecture)**:
+  `route.ts (Thin Controller)` $\rightarrow$ `QuizAIOrchestrator` $\rightarrow$ `QuizContextResolver` $\rightarrow$ `IRetrievalEngine` (`MongoQuestionRetriever`) $\rightarrow$ `PromptEngine` (4-Tier Evidence) $\rightarrow$ `ConfidenceEngine` $\rightarrow$ `IAIProvider`.
+- **Cơ chế chống Hallucination**:
+  - `ConfidenceEngine`: Độ tin cậy (`high` / `medium` / `low`) do Backend tính toán tất định dựa trên số lượng bằng chứng và relevance score.
+  - `evidenceUsed`: Đính kèm trực tiếp từ `RetrievalResult[]` ở backend, không để LLM tự sinh ID nguồn.
+  - Graceful Fallback: Tự động chuyển sang DB-generated structured response khi LLM lỗi hoặc mất mạng.
+- **Tài liệu nhiệm vụ**: Xem chi tiết tại [`tasks/quiz-ai-assistant/`](file:///e:/Code/fquiz/tasks/quiz-ai-assistant/) (theo dõi tại [conversation://1a6932e6-bb2a-4f64-a8f1-b33ef94a17c1](conversation://1a6932e6-bb2a-4f64-a8f1-b33ef94a17c1)).
+
 
 ---
 

@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select'
 import { Input } from '@/components/shared/ui/input'
 import { Textarea } from '@/components/shared/ui/textarea'
-import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
 import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
-import { Plus, Check, X, Loader2, AlertCircle } from 'lucide-react'
-import { useCreateCategory } from '@/hooks/quiz/useCreateCategory'
+import { Check, Loader2, AlertCircle } from 'lucide-react'
 import { useDebounce } from '@/hooks/shared/useDebounce'
 import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 
@@ -17,7 +15,7 @@ interface EditorMetadataFormProps {
   form: QuizFormData
   setForm: React.Dispatch<React.SetStateAction<QuizFormData>>
   categories: Category[]
-  isStudentMode: boolean
+  isStudentMode?: boolean
   quizId?: string
 }
 
@@ -25,11 +23,9 @@ export function EditorMetadataForm({
   form, 
   setForm, 
   categories, 
-  isStudentMode,
+  isStudentMode = false,
   quizId
 }: EditorMetadataFormProps) {
-  const [isCreating, setIsCreating] = React.useState(false)
-  const [newCatName, setNewCatName] = React.useState('')
   const [checkingCode, setCheckingCode] = React.useState(false)
   const [codeDuplicate, setCodeDuplicate] = React.useState<{
     exists: boolean
@@ -79,133 +75,70 @@ export function EditorMetadataForm({
     }
   }, [debouncedCourseCode, quizId])
 
-  const createCatMutation = useCreateCategory({
-    onSuccess: (data) => {
-      setForm(p => ({ ...p, category_id: data.category._id }))
-      setIsCreating(false)
-      setNewCatName('')
-    },
-  })
-
-  const handleCreate = () => {
-    if (!newCatName.trim()) return
-    createCatMutation.mutate(newCatName.trim())
-  }
-
   return (
     <div className="space-y-6">
-        <Card className={cn(
-          "bg-card border border-border shadow-xs rounded-[32px] overflow-hidden",
-          !form.category_id ? "ring-2 ring-amber-500/50 bg-amber-500/5" : ""
-        )}>
-          <CardHeader className="pb-3 px-6 sm:px-8">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shadow-md transition-all",
-                !form.category_id ? "bg-amber-500 shadow-amber-500/20" : "bg-primary shadow-primary/20"
-              )}>
-                1
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-primary text-lg font-black uppercase tracking-tight flex items-center justify-between">
-                  <span>Chọn Môn học {!form.category_id && <span className="text-destructive">*</span>}</span>
-                  {isStudentMode && !isCreating && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setIsCreating(true)}
-                      className="h-8 px-3 rounded-xl bg-primary/10 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Tạo danh mục mới
-                    </Button>
-                  )}
-                </CardTitle>
-                {!form.category_id && !isCreating && (
-                  <p className="text-[11px] font-bold text-amber-500 mt-0.5">
-                     Bắt buộc: Vui lòng chọn môn học trước khi tiếp tục
-                  </p>
-                )}
-              </div>
+      <Card className={cn(
+        "bg-card border border-border shadow-xs rounded-[32px] overflow-hidden",
+        !form.category_id ? "ring-2 ring-amber-500/50 bg-amber-500/5" : ""
+      )}>
+        <CardHeader className="pb-3 px-6 sm:px-8">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shadow-md transition-all",
+              !form.category_id ? "bg-amber-500 shadow-amber-500/20" : "bg-primary shadow-primary/20"
+            )}>
+              1
             </div>
-          </CardHeader>
-          <CardContent className="pb-8">
-            {isCreating ? (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex-1 relative">
-                  <Input 
-                    autoFocus
-                    placeholder="Nhập tên môn học mới..." 
-                    className="h-14 rounded-2xl border-2 border-primary pl-5 pr-12 font-bold text-foreground bg-background shadow-inner"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreate()
-                      if (e.key === 'Escape') setIsCreating(false)
-                    }}
-                    disabled={createCatMutation.isPending}
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    {createCatMutation.isPending ? (
-                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                    ) : (
-                      <>
-                        <button 
-                          onClick={handleCreate}
-                          className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover transition-colors cursor-pointer"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setIsCreating(false)}
-                          className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Select
-                value={form.category_id || undefined}
-                onValueChange={(v) => {
-                  if (v && v !== '__placeholder__') {
-                    setForm((p) => ({ ...p, category_id: v }))
-                  }
-                }}
-              >
-                <SelectTrigger className={cn(
-                  "h-14 rounded-2xl text-base font-bold shadow-2xs transition-all",
-                  !form.category_id 
-                    ? "border-2 border-amber-500/80 bg-card text-muted-foreground" 
-                    : "border-border bg-card text-foreground focus:ring-2 focus:ring-primary/20"
-                )}>
-                  <SelectValue placeholder="— Chọn môn học để bắt đầu —" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl p-2">
-                  {categories.length === 0 ? (
-                    <SelectItem value="__no_category__" disabled className="font-bold text-muted-foreground italic">
-                      — Chưa có môn học —
+            <div className="flex-1">
+              <CardTitle className="text-primary text-lg font-black uppercase tracking-tight flex items-center justify-between">
+                <span>Chọn Môn học {!form.category_id && <span className="text-destructive">*</span>}</span>
+              </CardTitle>
+              {!form.category_id && (
+                <p className="text-[11px] font-bold text-amber-500 mt-0.5">
+                   Bắt buộc: Vui lòng chọn môn học trước khi tiếp tục
+                </p>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pb-8">
+          <Select
+            value={form.category_id || undefined}
+            onValueChange={(v) => {
+              if (v && v !== '__placeholder__') {
+                setForm((p) => ({ ...p, category_id: v }))
+              }
+            }}
+          >
+            <SelectTrigger className={cn(
+              "h-14 rounded-2xl text-base font-bold shadow-2xs transition-all",
+              !form.category_id 
+                ? "border-2 border-amber-500/80 bg-card text-muted-foreground" 
+                : "border-border bg-card text-foreground focus:ring-2 focus:ring-primary/20"
+            )}>
+              <SelectValue placeholder="— Chọn môn học để bắt đầu —" />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl p-2">
+              {categories.length === 0 ? (
+                <SelectItem value="__no_category__" disabled className="font-bold text-muted-foreground italic">
+                  — Chưa có môn học —
+                </SelectItem>
+              ) : (
+                <>
+                  <SelectItem value="__placeholder__" disabled className="text-muted-foreground font-bold">
+                    — Chọn môn học —
+                  </SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id} className="font-bold text-foreground rounded-xl hover:bg-primary/10 transition-colors cursor-pointer">
+                      {cat.name}
                     </SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="__placeholder__" disabled className="text-muted-foreground font-bold">
-                        — Chọn môn học —
-                      </SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id} className="font-bold text-foreground rounded-xl hover:bg-primary/10 transition-colors cursor-pointer">
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       {(isStudentMode || form.category_id) && (
         <Card className="bg-card border border-border shadow-xs rounded-[32px] overflow-hidden">
@@ -252,22 +185,15 @@ export function EditorMetadataForm({
               <div className="space-y-2">
                 <span className="text-[11px] font-black text-primary uppercase tracking-wider block">Chế độ hiển thị</span>
                 <Select
-                  value={isStudentMode ? 'private' : form.status}
+                  value={form.status}
                   onValueChange={(v: any) => setForm(p => ({ ...p, status: v }))}
-                  disabled={isStudentMode}
                 >
                   <SelectTrigger className="h-12 rounded-2xl border-border bg-background font-bold text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
-                    {isStudentMode ? (
-                      <SelectItem value="private" className="font-bold text-xs">Riêng tư (Chỉ mình tôi)</SelectItem>
-                    ) : (
-                      <>
-                        <SelectItem value="published" className="font-bold text-xs">Công khai (Published)</SelectItem>
-                        <SelectItem value="draft" className="font-bold text-xs">Bản nháp (Draft)</SelectItem>
-                      </>
-                    )}
+                    <SelectItem value="published" className="font-bold text-xs">Công khai (Published)</SelectItem>
+                    <SelectItem value="draft" className="font-bold text-xs">Bản nháp (Draft)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

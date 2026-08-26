@@ -55,9 +55,13 @@ type QuizDetailApiError = Error & { status?: number; code?: string; hint?: strin
 type StartSessionError = Error & { status?: number; code?: string; activeSession?: ActiveSessionPayload }
 
 async function fetchQuizDetail(id: string): Promise<QuizDetail> {
-  const studentDetail = await fetchStudentQuizDetail(id)
-  if (studentDetail) return studentDetail
-  return fetchPublicQuizDetail(id)
+  try {
+    return await fetchPublicQuizDetail(id)
+  } catch (publicErr) {
+    const studentDetail = await fetchStudentQuizDetail(id)
+    if (studentDetail) return studentDetail
+    throw publicErr
+  }
 }
 
 async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {

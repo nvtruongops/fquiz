@@ -1,15 +1,14 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { CheckCircle2, XCircle, MinusCircle, BookOpen, LayoutDashboard, RotateCcw, Trophy, Target, Clock, Info } from 'lucide-react'
-import { Progress } from '@/components/shared/ui/progress'
+import { CheckCircle2, XCircle, BookOpen, LayoutDashboard, RotateCcw, Trophy, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'
-import { FlashcardReviewButton } from '@/components/quiz/shared/FlashcardReviewButton'
-import { ScrollToTopButton } from '@/components/shared/ui/ScrollToTopButton'
 import { InteractiveResultViewer } from '@/components/quiz/detail/InteractiveResultViewer'
 import { FlashcardResultView } from '@/components/quiz/detail/FlashcardResultView'
+import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
+import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
+import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
 
 interface ResultQuestion {
   _id: string
@@ -32,7 +31,7 @@ interface ResultData {
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: ResultQuestion[]
   is_temp?: boolean
-  quiz_updated_after_start?: boolean
+  is_guest?: boolean
   flashcard_stats?: {
     total_cards: number
     cards_known: number
@@ -41,8 +40,6 @@ interface ResultData {
     current_round: number
   }
 }
-
-import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
   try {
@@ -74,20 +71,20 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="max-w-md w-full p-8 text-center bg-card rounded-2xl border border-border shadow-xl">
-          <h2 className="text-xl font-black text-foreground mb-2">Không tìm thấy kết quả</h2>
-          <p className="text-xs font-bold text-muted-foreground mb-6">
+        <div className="max-w-md w-full p-8 text-center bg-card rounded-2xl border border-border shadow-xl space-y-4">
+          <h2 className="text-xl font-black text-foreground">Không tìm thấy kết quả</h2>
+          <p className="text-xs font-medium text-muted-foreground">
             Kết quả làm bài không tồn tại, phiên làm bài đã bị xóa hoặc bạn không có quyền truy cập bài làm này.
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <Link href="/dashboard">
-              <Button variant="outline" className="w-full h-11 rounded-xl text-xs font-bold border-border">
+              <Button variant="outline" className="w-full h-10 rounded-xl text-xs font-bold border-border">
                 Về Dashboard
               </Button>
             </Link>
-            <Link href="/history">
-              <Button className="w-full h-11 rounded-xl text-xs font-black bg-primary text-primary-foreground">
-                Xem Lịch sử
+            <Link href="/explore">
+              <Button className="w-full h-10 rounded-xl text-xs font-black bg-primary text-primary-foreground">
+                Khám phá đề thi
               </Button>
             </Link>
           </div>
@@ -103,10 +100,8 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   return <StandardResultView quizId={quizId} sessionId={sessionId} data={data} />
 }
 
-import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
-
 function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
-  const { score, totalQuestions, mode, questions, completed_at, is_temp } = data
+  const { score, totalQuestions, mode, questions, is_temp, is_guest } = data
   const wrongCount = totalQuestions > score ? totalQuestions - score : 0
   const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
   const scoreOnTen = totalQuestions > 0 ? (score / totalQuestions) * 10 : 0
@@ -116,15 +111,15 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
   const gradeLabel = percentage >= 80 ? 'XUẤT SẮC!' : percentage >= 50 ? 'KHÁ TỐT!' : 'CẦN CỐ GẮNG THÊM!'
 
   return (
-    <div className="w-full max-w-full min-h-[calc(100vh-4rem)] md:h-full flex flex-col gap-3 overflow-hidden px-1.5 sm:px-0">
-      {/* Top Header Card Summary Toolbar */}
-      <div className="relative overflow-hidden rounded-2xl bg-card backdrop-blur-xl shadow-2xs border border-border p-3.5 sm:px-5 sm:py-3.5 shrink-0 space-y-3">
+    <div className="w-full max-w-full min-h-[calc(100vh-4rem)] md:h-full flex flex-col gap-3 overflow-hidden px-1 sm:px-0">
+      {/* Top Header Summary Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xs border border-border p-3.5 sm:px-5 sm:py-3.5 shrink-0 space-y-3">
         {/* Top Summary Row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex items-baseline gap-1">
               <span className={`text-2xl sm:text-3xl font-black ${gradeColor} tracking-tight`}>{scoreOnTenDisplay}</span>
-              <span className="text-xs font-black text-muted-foreground">/10</span>
+              <span className="text-xs font-bold text-muted-foreground">/10</span>
             </div>
             <div className="h-6 w-px bg-border" />
             <div className="min-w-0">
@@ -135,37 +130,37 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
             </div>
           </div>
 
-          <Badge className="shrink-0 bg-primary text-primary-foreground border-none px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-full shadow-2xs">
+          <Badge variant="outline" className="shrink-0 bg-primary/10 text-primary border-primary/25 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full">
             {mode === 'immediate' ? 'LUYỆN TẬP' : 'KIỂM TRA'}
           </Badge>
         </div>
 
-        {/* Action Buttons: Full-width stacked on mobile, inline on desktop */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1 border-t sm:border-t-0 border-border">
+        {/* Action Buttons Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-border/70">
           {wrongCount > 0 && (
             <RetryWrongButton 
               quizId={quizId} 
               sessionId={sessionId} 
               wrongCount={wrongCount} 
-              className="h-10 sm:h-8 w-full sm:w-auto text-xs sm:text-[11px] rounded-2xl sm:rounded-xl"
+              className="h-9 sm:h-8 w-full sm:w-auto text-xs sm:text-[11px] rounded-xl"
             />
           )}
 
           <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
-            <Button className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs sm:text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95 cursor-pointer justify-center">
+            <Button className="h-9 sm:h-8 w-full px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs sm:text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95 cursor-pointer justify-center">
               <RotateCcw className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Làm lại toàn bộ
             </Button>
           </Link>
 
           <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-            <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button variant="outline" className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl border-border font-black text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
-                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Dashboard
+            <Link href={is_guest ? "/explore" : "/dashboard"} className="w-full sm:w-auto">
+              <Button variant="outline" className="h-9 sm:h-8 w-full px-3 rounded-xl border-border font-bold text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
+                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5 shrink-0" /> {is_guest ? "Khám phá" : "Dashboard"}
               </Button>
             </Link>
 
             <Link href="/history" className="w-full sm:w-auto">
-              <Button variant="outline" className="h-10 sm:h-8 w-full px-3 rounded-2xl sm:rounded-xl border-border font-black text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
+              <Button variant="outline" className="h-9 sm:h-8 w-full px-3 rounded-xl border-border font-bold text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
                 <BookOpen className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Lịch sử
               </Button>
             </Link>
@@ -175,29 +170,13 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
         </div>
       </div>
 
-      {is_temp && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-success-bg border border-success-border text-success-fg rounded-2xl px-4 py-3 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Trophy className="w-4 h-4 shrink-0 text-success-fg" />
-            <p className="text-xs font-black">
-              Bài Quiz Trộn này đã được tự động lưu trữ tại <span className="underline">Bộ đề của tôi → Tab Quiz Tự Tạo</span>!
-            </p>
-          </div>
-          <Link href="/my-quizzes" className="shrink-0 w-full sm:w-auto">
-            <Button size="sm" className="h-8 w-full sm:w-auto px-3.5 rounded-2xl sm:rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-[10px] uppercase tracking-wider cursor-pointer">
-              Xem Bộ đề của tôi
-            </Button>
-          </Link>
-        </div>
-      )}
-
-      {data.quiz_updated_after_start && (
-        <div className="flex items-start sm:items-center gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-2xl px-4 py-3 shrink-0">
-          <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
-          <p className="text-xs font-medium leading-relaxed">
-            Bài quiz này đã được Admin cập nhật nội dung mới sau khi bạn bắt đầu. Kết quả dưới đây được tính theo đề thi tại thời điểm bạn tạo phiên làm bài. Bạn có thể bấm <span className="font-bold underline">Làm lại toàn bộ</span> để thử sức với bộ câu hỏi mới nhất.
-          </p>
-        </div>
+      {is_guest && (
+        <GuestClaimBanner
+          sessionId={sessionId}
+          quizId={quizId}
+          score={score}
+          totalQuestions={totalQuestions}
+        />
       )}
 
       {/* Main Content Area: Interactive Question Matrix & Detail Viewer */}

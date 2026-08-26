@@ -8,6 +8,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'
 import { InteractiveFlashcardResultViewer } from '@/components/quiz/detail/InteractiveFlashcardResultViewer'
+import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
 
@@ -32,6 +33,7 @@ interface ResultData {
   user_answers: Array<{ question_index: number; answer_index: number; is_correct: boolean }>
   questions: ResultQuestion[]
   is_temp?: boolean
+  is_guest?: boolean
   quiz_updated_after_start?: boolean
   flashcard_stats?: {
     total_cards: number
@@ -50,7 +52,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   const [loadingUnknown, setLoadingUnknown] = useState(false)
   const [loadingAll, setLoadingAll] = useState(false)
 
-  const { flashcard_stats, completed_at, is_temp, questions } = data
+  const { flashcard_stats, completed_at, is_temp, is_guest, questions } = data
   if (!flashcard_stats) return null
 
   const percentage = Math.round((flashcard_stats.cards_known / flashcard_stats.total_cards) * 100)
@@ -60,31 +62,28 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   })
 
   const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
-  const gradeLabel = percentage >= 80 ? 'Xuất sắc!' : percentage >= 50 ? 'Khá tốt!' : 'Cần ôn luyện thêm!'
+  const gradeLabel = percentage >= 80 ? 'XUẤT SẮC!' : percentage >= 50 ? 'KHÁ TỐT!' : 'CẦN CỐ GẮNG THÊM!'
 
-  // Handle Reviewing Only Unknown Cards
+  // Handle Reviewing only Unknown Cards (reuses session)
   const handleReviewUnknown = async () => {
     setLoadingUnknown(true)
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/flashcard-review`,
-        {
-          method: 'POST',
-          headers: withCsrfHeaders(),
-        }
-      )
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/flashcard-review`, {
+        method: 'POST',
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+      })
       const resData = await res.json()
       if (!res.ok) {
-        throw new Error(resData.error || 'Không thể tạo phiên ôn lại câu chưa nhớ')
+        throw new Error(resData.error || 'Không thể thiết lập ôn tập thẻ chưa nhớ')
       }
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
       const reviewUrl = isMobile
-        ? `/quiz/${quizId}/session/${resData.sessionId}/flashcard/mobile`
-        : `/quiz/${quizId}/session/${resData.sessionId}/flashcard`
-      
+        ? `/quiz/${quizId}/session/${sessionId}/flashcard/mobile`
+        : `/quiz/${quizId}/session/${sessionId}/flashcard`
+
       router.push(reviewUrl)
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi mở phiên ôn tập')
+      toast.error(err.message || 'Lỗi khi thiết lập ôn tập')
     } finally {
       setLoadingUnknown(false)
       setShowReviewModal(false)
@@ -125,7 +124,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   // Click handler for top "Ôn lại" button
   const handleOnClickReview = () => {
     if (flashcard_stats.cards_unknown > 0) {
-      setShowReviewModal(true)
+      handleReviewUnknown()
     } else {
       handleReviewAll()
     }
@@ -162,7 +161,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   type="button"
                   onClick={handleOnClickReview}
                   disabled={loadingUnknown || loadingAll}
-                  className="h-8 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95"
+                  className="h-8 px-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95 cursor-pointer"
                 >
                   {loadingUnknown || loadingAll ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -172,13 +171,13 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   Ôn lại
                 </Button>
 
-                <Link href="/dashboard">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95">
-                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> Dashboard
+                <Link href={is_guest ? "/explore" : "/dashboard"}>
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
+                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> {is_guest ? "Khám phá" : "Dashboard"}
                   </Button>
                 </Link>
                 <Link href="/history">
-                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95">
+                  <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
                     <BookOpen className="mr-1 h-3.5 w-3.5" /> Lịch sử
                   </Button>
                 </Link>
@@ -188,14 +187,16 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
         </div>
       </div>
 
-      {data.quiz_updated_after_start && (
-        <div className="flex items-start sm:items-center gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-2xl px-4 py-3 shrink-0">
-          <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
-          <p className="text-xs font-medium leading-relaxed">
-            Bài quiz này đã được Admin cập nhật nội dung mới sau khi bạn bắt đầu. Kết quả dưới đây được tính theo đề thi tại thời điểm bạn tạo phiên làm bài. Bạn có thể bấm <span className="font-bold underline">Ôn lại</span> để học bộ thẻ mới nhất.
-          </p>
-        </div>
+      {is_guest && (
+        <GuestClaimBanner
+          sessionId={sessionId}
+          quizId={quizId}
+          score={flashcard_stats.cards_known}
+          totalQuestions={flashcard_stats.total_cards}
+        />
       )}
+
+
 
       {/* Main Content Area: Interactive Flashcard Question Matrix & Detail Viewer */}
       {questions && questions.length > 0 ? (

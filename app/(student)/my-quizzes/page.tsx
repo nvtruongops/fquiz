@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import dynamic from 'next/dynamic'
 import { useMyQuizzes, Quiz } from '@/hooks/useMyQuizzes'
 import { MyQuizzesHeader } from '@/components/quiz/my-quizzes/MyQuizzesHeader'
 import { CategoryFilterTabs } from '@/components/quiz/my-quizzes/CategoryFilterTabs'
@@ -9,33 +8,17 @@ import { QuizSearchSortBar } from '@/components/quiz/my-quizzes/QuizSearchSortBa
 import { QuizCardItem } from '@/components/quiz/my-quizzes/QuizCardItem'
 import { MyQuizzesSkeleton } from '@/components/quiz/my-quizzes/MyQuizzesSkeleton'
 
-const ManageCategoriesModal = dynamic(() => import('@/components/quiz/my-quizzes/ManageCategoriesModal'), {
-  ssr: false,
-})
-
 export default function MyQuizzesPage() {
   const {
-    selectedCategoryId, setSelectedCategoryId,
-    activeTab, setActiveTab,
-    search, setSearch,
-    isManageCategoriesOpen, setIsManageCategoriesOpen,
-    confirmDeleteCatId, setConfirmDeleteCatId,
-    newCategoryName, setNewCategoryName,
-    editingCategoryId, setEditingCategoryId,
-    editingCategoryName, setEditingCategoryName,
+    selectedCategoryId,
+    setSelectedCategoryId,
+    search,
+    setSearch,
     categories,
-    privateCategories,
     quizzesLoading,
     filteredQuizzes,
-    ownQuizTotal,
     savedQuizTotal,
-    mixQuizTotal,
     deleteQuizMutation,
-    createCatMutation,
-    updateCatMutation,
-    deleteCatMutation,
-    moveQuizCategoryMutation,
-    handleMoveCategory,
   } = useMyQuizzes()
 
   if (quizzesLoading) {
@@ -44,8 +27,8 @@ export default function MyQuizzesPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 pb-24 sm:p-6 sm:pb-10 space-y-6 min-h-screen">
-      {/* Header & Main Navigation */}
-      <MyQuizzesHeader onOpenManageCategories={() => setIsManageCategoriesOpen(true)} ownQuizTotal={ownQuizTotal} />
+      {/* Header & Explore Shortcut */}
+      <MyQuizzesHeader savedQuizTotal={savedQuizTotal} />
 
       {/* Category Tabs */}
       <CategoryFilterTabs
@@ -54,13 +37,10 @@ export default function MyQuizzesPage() {
         setSelectedCategoryId={setSelectedCategoryId}
       />
 
-      {/* Search & Active Tab Switcher Bar */}
+      {/* Search Bar */}
       <QuizSearchSortBar
         search={search}
         setSearch={setSearch}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        ownQuizTotal={ownQuizTotal}
         savedQuizTotal={savedQuizTotal}
       />
 
@@ -69,7 +49,7 @@ export default function MyQuizzesPage() {
         <div className="bg-card p-12 rounded-3xl border border-border text-center space-y-3 shadow-xs">
           <p className="text-sm font-bold text-foreground">Chưa có bài quiz nào trong mục này</p>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            {search ? 'Thử tìm kiếm với từ khóa khác.' : 'Tạo mới bộ đề cá nhân hoặc khám phá bộ đề từ thư viện Explore.'}
+            {search ? 'Thử tìm kiếm với từ khóa khác.' : 'Khám phá và lưu bộ đề từ thư viện Khám Phá để ôn tập.'}
           </p>
         </div>
       ) : (
@@ -80,32 +60,9 @@ export default function MyQuizzesPage() {
               quiz={quiz}
               onDelete={(id) => deleteQuizMutation.mutate(id)}
               isDeleting={deleteQuizMutation.isPending && deleteQuizMutation.variables === quiz._id}
-              categories={privateCategories}
-              onMoveCategory={handleMoveCategory}
-              isMovingCategory={moveQuizCategoryMutation.isPending}
             />
           ))}
         </div>
-      )}
-
-      {/* Manage Categories Modal (Code-Split) */}
-      {isManageCategoriesOpen && (
-        <ManageCategoriesModal
-          isOpen={isManageCategoriesOpen}
-          onClose={() => setIsManageCategoriesOpen(false)}
-          privateCategories={privateCategories}
-          newCategoryName={newCategoryName}
-          setNewCategoryName={setNewCategoryName}
-          createCatMutation={createCatMutation}
-          editingCategoryId={editingCategoryId}
-          setEditingCategoryId={setEditingCategoryId}
-          editingCategoryName={editingCategoryName}
-          setEditingCategoryName={setEditingCategoryName}
-          updateCatMutation={updateCatMutation}
-          confirmDeleteCatId={confirmDeleteCatId}
-          setConfirmDeleteCatId={setConfirmDeleteCatId}
-          deleteCatMutation={deleteCatMutation}
-        />
       )}
     </div>
   )

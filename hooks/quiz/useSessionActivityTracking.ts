@@ -34,6 +34,7 @@ export function useSessionActivityTracking({
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [inactivityPauseOpen, setInactivityPauseOpen] = useState(false)
   const isExitingRef = useRef(false)
+  const lastReportRef = useRef<{ event: string; time: number; index: number }>({ event: '', time: 0, index: -1 })
 
   const markExiting = useCallback(() => {
     isExitingRef.current = true
@@ -42,6 +43,16 @@ export function useSessionActivityTracking({
   const reportSessionActivity = useCallback(
     async (event: 'pause' | 'resume') => {
       if (!sessionId) return
+      const now = Date.now()
+      if (
+        lastReportRef.current.event === event &&
+        lastReportRef.current.index === currentQuestionIndex &&
+        now - lastReportRef.current.time < 1500
+      ) {
+        return
+      }
+      lastReportRef.current = { event, time: now, index: currentQuestionIndex }
+
       const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
       try {

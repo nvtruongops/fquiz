@@ -27,7 +27,14 @@ const config: Config = {
     '**/*.test.tsx',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/.kilo/', '/.codeql-db/'],
-  modulePathIgnorePatterns: ['<rootDir>/.codeql-db'],
+  watchPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/.next/',
+    '<rootDir>/.kilo/',
+    '<rootDir>/.codeql-db/',
+    '<rootDir>/test-results/',
+  ],
+  modulePathIgnorePatterns: ['<rootDir>/.codeql-db', '<rootDir>/.next'],
   transformIgnorePatterns: [
     '/node_modules/(?!(jose)/)',
   ],

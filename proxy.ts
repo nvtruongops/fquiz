@@ -34,8 +34,8 @@ export function resetMaintenanceCache() {
 }
 
 const PUBLIC_PATHS = new Set(['/', '/explore', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
-const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/ai-generator', '/api/jobs/cleanup-deleted-accounts'])
-const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/create', '/community', '/profile', '/settings', '/quiz']
+const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/mail', '/api/jobs/cleanup-deleted-accounts', '/api/security/csp-report'])
+const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/community', '/profile', '/settings', '/quiz']
 const TEACHER_PATHS = ['/teacher']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -125,21 +125,26 @@ function getUnauthorizedOrRedirect(pathname: string, request: NextRequest, reque
 }
 
 function isPublicRoute(pathname: string) {
-  // Allow viewing quiz detail page without auth (but starting quiz requires auth)
-  const isPublicQuizDetail = /^\/quiz\/[a-zA-Z0-9_-]+$/.test(pathname)
+  // Allow viewing quiz detail, mode selection, quiz sessions, and results without auth
+  const isPublicQuizFlow = /^\/quiz\/[a-zA-Z0-9_-]+(\/(mode|session\/[a-zA-Z0-9_-]+(\/mobile|\/flashcard(\/mobile)?)?|result\/[a-zA-Z0-9_-]+))?$/.test(pathname)
   // Allow browsing course listing and detail pages without auth
   const isPublicCourse = pathname.startsWith('/courses')
   const isStaticAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp|html|txt|xml)$/i.test(pathname)
-  return PUBLIC_PATHS.has(pathname) || isPublicQuizDetail || isPublicCourse || isStaticAsset
+  return PUBLIC_PATHS.has(pathname) || isPublicQuizFlow || isPublicCourse || isStaticAsset
 }
 
-function shouldSkipAuth(pathname: string) {
+function shouldSkipAuth(pathname: string, request?: NextRequest) {
+  const isPinnedGet = pathname === '/api/student/pinned-categories' && (!request || request.method === 'GET')
   return pathname.startsWith('/api/v1/public/') || 
          pathname.startsWith('/api/v1/explore/') || // optional auth - handles auth internally
          pathname.startsWith('/api/public/') ||
+         pathname.startsWith('/api/sessions') || // supports guest & student quiz sessions
          pathname.startsWith('/api/courses/') ||
          pathname.startsWith('/api/auth/') ||
-         pathname.startsWith('/api/jobs/')
+         pathname.startsWith('/api/jobs/') ||
+         pathname.startsWith('/api/security/') ||
+         pathname.startsWith('/_vercel') ||
+         isPinnedGet
 }
 
 
@@ -286,7 +291,7 @@ function handleLegacyHistoryRedirect(request: NextRequest, pathname: string) {
 }
 
 async function handleAuthAndRole(request: NextRequest, pathname: string, requestId: string, response: NextResponse) {
-  if (isPublicRoute(pathname) || shouldSkipAuth(pathname)) {
+  if (isPublicRoute(pathname) || shouldSkipAuth(pathname, request)) {
     return response
   }
 
@@ -339,7 +344,7 @@ function getRateLimitTier(request: NextRequest, pathname: string) {
 }
 
 function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
-  if (!pathname.startsWith('/api/') || pathname.startsWith('/api/jobs/')) return null
+  if (!pathname.startsWith('/api/') || pathname.startsWith('/api/jobs/') || pathname.startsWith('/api/security/')) return null
   const tier = getRateLimitTier(request, pathname)
   const status = checkRateLimit(request, tier)
   return status.success ? null : createRateLimitErrorResponse(status)
@@ -348,6 +353,10 @@ function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResp
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const requestId = request.headers.get('x-request-id') || generateId()
+
+  if (pathname.startsWith('/_vercel') || pathname.startsWith('/_next')) {
+    return NextResponse.next()
+  }
 
   const mobileRedirect = handleMobileRedirect(request, pathname)
   if (mobileRedirect) return mobileRedirect
@@ -386,5 +395,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|eot|html|txt|xml)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|_vercel|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|eot|html|txt|xml)$).*)'],
 }

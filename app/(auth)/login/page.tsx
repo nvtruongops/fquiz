@@ -247,7 +247,7 @@ function LoginForm() {
           </button>
         </form>
 
-        <GoogleSignInButton callbackUrl={callbackUrl} />
+        <GoogleSignInButton callbackUrl={callbackUrl} text="Đăng nhập với Google" />
 
         {/* Footer Link */}
         <div className="mt-6 pt-4 border-t border-border">

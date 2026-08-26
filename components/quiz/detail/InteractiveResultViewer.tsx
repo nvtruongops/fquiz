@@ -72,15 +72,15 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
     <div className="w-full max-w-full h-full flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch overflow-hidden">
       {/* Left Panel: Compact Question Matrix & Filters */}
       <div className="md:col-span-3 lg:col-span-3 xl:col-span-3 bg-card rounded-2xl p-3 sm:p-3.5 shadow-2xs border border-border flex flex-col h-auto md:h-full min-h-0 overflow-hidden shrink-0">
-        {/* Header (Clickable toggle on mobile) */}
+        {/* Header (Clickable toggle on mobile only) */}
         <div 
           onClick={() => setIsMobileMatrixOpen(!isMobileMatrixOpen)}
-          className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border shrink-0 cursor-pointer select-none"
+          className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border shrink-0 cursor-pointer md:cursor-default select-none"
         >
           <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <BookOpen className="h-4 w-4 text-primary shrink-0" />
             Danh sách câu ({totalQuestions})
-            <span className="inline-flex items-center text-[10px] font-black text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full border border-border">
+            <span className="inline-flex md:hidden items-center text-[10px] font-black text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full border border-border">
               {isMobileMatrixOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </span>
           </span>

@@ -61,7 +61,7 @@ export function DashboardSkeleton() {
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
               {/* Bento 1: Khám Phá Đề Thi */}
-              <div className="sm:col-span-7 glass-card rounded-[28px] p-5 sm:p-6 border border-subtle min-h-[200px] flex flex-col justify-between space-y-4 overflow-hidden">
+              <div className="sm:col-span-7 glass-card rounded-[24px] p-5 sm:p-6 border border-subtle min-h-[200px] flex flex-col justify-between space-y-4 overflow-hidden">
                 <div className="space-y-3.5 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <Skeleton className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0" />
@@ -70,66 +70,41 @@ export function DashboardSkeleton() {
                   <div className="space-y-2 min-w-0">
                     <Skeleton className="h-5 w-44 sm:w-52 rounded-lg max-w-full" />
                     <Skeleton className="h-3.5 w-full rounded-md" />
-                    <Skeleton className="h-3.5 w-3/4 rounded-md" />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <Skeleton className="h-5 w-20 sm:w-24 rounded-md" />
-                    <Skeleton className="h-5 w-24 sm:w-28 rounded-md" />
                   </div>
                 </div>
                 <Skeleton className="h-10 w-32 sm:w-36 rounded-xl mt-4 shrink-0" />
               </div>
 
-              {/* Bento 2: AI Studio / Community */}
-              <div className="sm:col-span-5 glass-card rounded-[28px] p-5 sm:p-6 border border-subtle min-h-[200px] flex flex-col justify-between space-y-4 overflow-hidden">
+              {/* Bento 2: Lớp Học */}
+              <div className="sm:col-span-5 glass-card rounded-[24px] p-5 sm:p-6 border border-subtle min-h-[200px] flex flex-col justify-between space-y-4 overflow-hidden">
                 <div className="space-y-3.5 min-w-0">
                   <Skeleton className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0" />
                   <div className="space-y-2 min-w-0">
                     <Skeleton className="h-5 w-36 sm:w-40 rounded-lg max-w-full" />
                     <Skeleton className="h-3.5 w-full rounded-md" />
-                    <Skeleton className="h-3.5 w-4/5 rounded-md" />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Skeleton className="h-4 w-12 rounded-md" />
-                    <Skeleton className="h-4 w-14 rounded-md" />
-                    <Skeleton className="h-4 w-14 rounded-md" />
                   </div>
                 </div>
                 <Skeleton className="h-10 w-32 sm:w-36 rounded-xl mt-4 shrink-0" />
               </div>
 
-              {/* Bento 3: Community Forum */}
-              <div className="sm:col-span-6 glass-card rounded-[28px] p-5 sm:p-6 border border-subtle min-h-[180px] flex flex-col justify-between space-y-4 overflow-hidden">
+              {/* Bento 3: Bộ Đề Của Tôi */}
+              <div className="sm:col-span-6 glass-card rounded-[24px] p-5 sm:p-6 border border-subtle min-h-[180px] flex flex-col justify-between space-y-4 overflow-hidden">
                 <div className="space-y-3 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <Skeleton className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0" />
-                    <Skeleton className="h-5 w-24 sm:w-28 rounded-full shrink-0" />
-                  </div>
-                  <div className="space-y-2 min-w-0">
-                    <Skeleton className="h-5 w-40 sm:w-44 rounded-lg max-w-full" />
-                    <Skeleton className="h-3.5 w-full rounded-md" />
-                  </div>
+                  <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                  <Skeleton className="h-5 w-36 rounded-lg" />
+                  <Skeleton className="h-3.5 w-full rounded-md" />
                 </div>
-                <Skeleton className="h-10 w-32 rounded-xl mt-4 shrink-0" />
+                <Skeleton className="h-9 w-28 rounded-xl mt-3 shrink-0" />
               </div>
 
-              {/* Bento 4: CEFR Language Pathway */}
-              <div className="sm:col-span-6 glass-card rounded-[28px] p-5 sm:p-6 border border-subtle min-h-[180px] flex flex-col justify-between space-y-4 overflow-hidden">
+              {/* Bento 4: Diễn Đàn Cộng Đồng */}
+              <div className="sm:col-span-6 glass-card rounded-[24px] p-5 sm:p-6 border border-subtle min-h-[180px] flex flex-col justify-between space-y-4 overflow-hidden">
                 <div className="space-y-3 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <Skeleton className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0" />
-                    <div className="flex items-center gap-1 shrink-0">
-                      {Array.from({ length: 6 }).map((_, idx) => (
-                        <Skeleton key={idx} className="h-4 w-4 sm:w-5 rounded" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2 min-w-0">
-                    <Skeleton className="h-5 w-44 sm:w-48 rounded-lg max-w-full" />
-                    <Skeleton className="h-3.5 w-full rounded-md" />
-                  </div>
+                  <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                  <Skeleton className="h-5 w-40 rounded-lg" />
+                  <Skeleton className="h-3.5 w-full rounded-md" />
                 </div>
-                <Skeleton className="h-10 w-32 sm:w-36 rounded-xl mt-4 shrink-0" />
+                <Skeleton className="h-9 w-28 rounded-xl mt-3 shrink-0" />
               </div>
             </div>
           </div>
@@ -168,5 +143,3 @@ export function DashboardSkeleton() {
     </div>
   )
 }
-
-

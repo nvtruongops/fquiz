@@ -4,13 +4,8 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { Category } from '@/lib/modules/quiz/models/Category'
-import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { validateObjectId } from '@/lib/core/schemas/common'
-import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
-import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
-import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
 
 function buildSourceMappings(quizzes: any[]) {
   const sourceQuizIdByDisplayId = new Map<string, string>()
@@ -169,14 +164,14 @@ function mapQuizzesForResponse(
   })
 }
 
-const quizLimiter = providerFactory.createProvider(5, 60 * 1000)
+const quizLimiter = providerFactory.createProvider(30, 60 * 1000)
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const rateLimitResult = await quizLimiter.check(payload.userId)
     if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: 'Too many quiz creation requests. Please try again later.' },
+        { error: 'Too many requests. Please try again later.' },
         {
           status: 429,
           headers: {
@@ -192,8 +187,11 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
 
-    // Lấy tất cả bộ đề của user (bao gồm cả bộ soạn thảo, bộ lưu và bài trộn)
-    const query: any = { created_by: new Types.ObjectId(payload.userId) }
+    // Chỉ lấy bộ đề đã lưu từ Explore của user
+    const query: any = { 
+      created_by: new Types.ObjectId(payload.userId),
+      is_saved_from_explore: true,
+    }
     if (categoryId) {
       const catIds = categoryId.split(',').map((s) => s.trim()).filter(validateObjectId)
       if (catIds.length === 1) {
@@ -203,7 +201,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
     }
 
-    const rawQuizzes = await Quiz.find(query)
+    const quizzes = await Quiz.find(query)
       .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore is_temp')
       .populate('category_id', 'name')
       .populate({
@@ -212,19 +210,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       })
       .sort({ created_at: -1 })
       .lean() as any[]
-
-    // Auto-heal missing category_id for student's quizzes
-    for (const q of rawQuizzes) {
-      if (!q.category_id && q.course_code) {
-        const cat = await ensureCategoryForCourseCode(q.course_code, payload.userId)
-        if (cat?._id) {
-          await Quiz.updateOne({ _id: q._id }, { $set: { category_id: cat._id } })
-          q.category_id = { _id: cat._id, name: cat.name }
-        }
-      }
-    }
-
-    const quizzes = rawQuizzes
 
     const { sourceQuizIdByDisplayId, originalSourceIds } = buildSourceMappings(quizzes as any[])
     const sourceAvailabilityByOriginalId = await fetchSourceAvailabilityMap(originalSourceIds)
@@ -240,103 +225,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({ quizzes: formattedQuizzes })
   } catch (error) {
     console.error('Error fetching student quizzes:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}, { roles: ['student'] })
-
-export const POST = withAuth(async (req: Request, { payload }) => {
-  try {
-    await connectDB()
-    const body = await parseJsonBody(req)
-    if (body instanceof NextResponse) return body
-
-    // Validate with schema
-    const parsed = CreateStudentQuizSchema.safeParse(body)
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error)
-    }
-
-    const { course_code, category_id, questions, description } = parsed.data
-    const normalizedCourseCode = course_code.trim().toUpperCase()
-    const userObjectId = new Types.ObjectId(payload.userId)
-
-    // 1. Quota Check — Max 10 (created + mix quizzes combined across account)
-    const totalCreatedAndMix = await Quiz.countDocuments({
-      created_by: userObjectId,
-      is_saved_from_explore: { $ne: true },
-    })
-
-    if (totalCreatedAndMix >= 10) {
-      return NextResponse.json(
-        {
-          error: 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để tạo bài mới.',
-          quotaExceeded: true,
-          code: 'TOTAL_QUOTA_EXCEEDED',
-        },
-        { status: 409 }
-      )
-    }
-
-    const existingOwnedQuiz = await Quiz.findOne({
-      created_by: new Types.ObjectId(payload.userId),
-      is_saved_from_explore: { $ne: true },
-      course_code: normalizedCourseCode,
-    })
-      .select('_id')
-      .lean()
-
-    if (existingOwnedQuiz) {
-      return NextResponse.json(
-        { error: `Mã quiz ${normalizedCourseCode} đã tồn tại trong bộ đề tự tạo của bạn.` },
-        { status: 409 }
-      )
-    }
-
-    // Verify or auto-create category
-    let category = category_id ? await Category.findById(category_id) : null
-    if (!category) {
-      category = await ensureCategoryForCourseCode(normalizedCourseCode, payload.userId)
-    }
-
-    const finalCategoryId = category?._id || (category as any)?.id
-
-    // 1. Generate quiz ID first for image folder organization
-    const quizId = new Types.ObjectId()
-
-    // 2. Process questions (base64 images are no longer supported)
-    const processedQuestions = questions.map((q) => {
-      // Only accept direct image URLs, not base64
-      const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
-
-      return {
-        text: q.text || '',
-        options: q.options || [],
-        correct_answer: q.correct_answer || [],
-        explanation: q.explanation || '',
-        image_url: finalImageUrl || '',
-        question_id: generateQuestionId(q),
-      }
-    })
-
-    const quiz = await Quiz.create({
-      _id: quizId,
-      title: normalizedCourseCode,
-      course_code: normalizedCourseCode,
-      description: description || '',
-      category_id: finalCategoryId,
-      created_by: new Types.ObjectId(payload.userId),
-      is_public: false, // Default to private for students
-      status: 'published',
-      questions: processedQuestions,
-      questionCount: processedQuestions.length
-    })
-
-    return NextResponse.json({ quiz }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating quiz:', error)
-    if ((error as { code?: number }).code === 11000) {
-      return NextResponse.json({ error: 'Mã quiz đã tồn tại trong bộ đề tự tạo của bạn.' }, { status: 409 })
-    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['student'] })
