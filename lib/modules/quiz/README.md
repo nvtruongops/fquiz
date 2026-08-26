@@ -13,6 +13,7 @@ quiz/
 │   ├── QuizComment.ts         # QuizComment (quiz_id, user_id, content)
 │   ├── Question.ts            # Question standalone
 │   ├── QuestionBank.ts        # QuestionBank (question_id hash, usage_count, conflicts)
+│   ├── PinnedQuestion.ts      # PinnedQuestion (student_id, question_id, bookmarking)
 │   └── MigrationLog.ts        # Migration tracking
 ├── types/
 │   ├── quiz.ts                # IQuestion, IQuiz, ICategory, form types
@@ -21,17 +22,23 @@ quiz/
 │   ├── quiz.ts                # QuestionSchema, CreateQuizSchema, SubmitAnswerSchema...
 │   └── category.ts            # CategorySchema, CreateCategorySchema...
 ├── services/
-│   └── IUserService.ts        # Cross-module interface (implemented by auth module)
+│   ├── IUserService.ts        # Cross-module interface (implemented by auth module)
+│   └── question-usage.service.ts # Tracks question bank usage and occurrences
 ├── constants/
 │   └── mix-quiz.ts            # MIX_QUIZ_MAX_SELECT, rate limits...
-├── quiz-engine.ts             # Server-side answer processing (450 lines)
+├── utils/
+│   ├── ast-normalizer.ts      # Normalizes markdown/HTML math and text AST
+│   ├── mix-quiz-processor.ts  # Shuffles and mixes questions from multiple quizzes
+│   ├── question-selection-helper.ts # Smart question selection algorithm
+│   └── quiz-similarity.ts     # Computes cosine similarity between quizzes
+├── quiz-engine.ts             # Server-side answer processing
 ├── session-api.ts             # Session management API
 ├── session-utils.ts           # Session utilities
 ├── question-id-generator.ts   # SHA-256 question ID generation
 ├── question-validator.ts      # Question validation
 ├── feedback-utils.ts          # Feedback helpers
 ├── quiz-analyzer.ts           # Validation error codes + analysis
-├── index.ts                   # registerModel() bootstrap (7 models)
+├── index.ts                   # registerModel() bootstrap (8 models)
 ├── quiz-import/               # Import sub-module
 │   ├── index.ts               # buildQuizImportPreview() pipeline
 │   ├── parser.ts              # parseImportPayload()

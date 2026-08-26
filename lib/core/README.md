@@ -16,7 +16,10 @@ core/
 │   ├── cache-interface.ts         # ICache (TTL + tag invalidation)
 │   ├── in-memory-cache.ts         # InMemoryCache implementation
 │   └── index.ts
-├── constants/                # Cookie names, max age, etc.
+├── constants/                # Cookie names, max age, API routes, navigation
+│   ├── api-routes.ts              # Central API endpoints registry
+│   ├── navigation.ts              # Route groups and role-based paths
+│   └── index.ts
 ├── db/
 │   ├── mongodb.ts                 # Singleton connection + DNS SRV fallback
 │   ├── model-registry.ts          # Lazy model bootstrap
@@ -32,23 +35,24 @@ core/
 │   └── index.ts
 ├── mail/
 │   └── mail.ts                    # Nodemailer + templates
-├── queue/
-│   └── qstash.ts                  # Upstash QStash wrapper
 ├── schemas/
 │   └── common.ts                  # Zod shared schemas
 ├── search/                   # Search provider abstraction
 │   ├── search-provider-interface.ts # ISearchProvider
 │   ├── atlas-search-provider.ts     # AtlasSearchProvider
 │   └── index.ts
-├── security/                 # CSRF, rate-limit
-│   ├── csrf.ts
-│   └── rate-limit/
+├── security/                 # CSRF, rate-limit, crypto
+│   ├── csrf.ts                    # Double-submit CSRF cookie validator
+│   ├── crypto.ts                  # Encryption and hashing helpers
+│   └── rate-limit/                # Sliding window & rate limit provider
+├── services/
+│   └── user-cleanup-registry.ts   # Cascading user deletion registry
 ├── types/                    # Shared types
 │   ├── base-entity.ts             # IBaseEntity, EntityStatus, IBaseMetadata
 │   └── domain-metadata.ts         # IDomainMetadata, IAIMetadata, CEFRLevel
-├── utils/                    # cn(), logger (Pino), formatters
-├── validation/
-├── api-helpers.ts
+├── utils/                    # cn(), logger (Pino), formatters, url-utils, shuffle, array-utils
+├── validation/               # Client-side validation helpers
+├── api-helpers.ts            # Success / Error API response helpers
 └── __tests__/
 ```
 
@@ -100,17 +104,13 @@ class Container {
 
 ### Wiring (`di/index.ts`)
 
-**Singletons**:
+**Registered Services & Providers**:
 | Token | Implementation |
 |-------|---------------|
 | `IEventBus` | `InMemoryEventBus` |
 | `ICache` | `InMemoryCache` |
 | `ISearchProvider` | `AtlasSearchProvider` |
 | `IAIProvider` | `DynamicAIProvider` |
-
-**Transient** (10 repos + 6 services):
-- Learning repositories (Language, Topic, Course, Module, Lesson, Vocabulary, Grammar, Sentence, Paragraph, LearningProgress, SentenceRead)
-- Services: VocabularyService, SentenceService, LearningProgressService, LessonLearningService, CourseLearningService, AIContentService
 
 ## AI Providers (`ai/`)
 
@@ -155,7 +155,7 @@ class EventBus {
   reset(): void
 }
 ```
-Still used by AIContentService and VocabularyService directly via singleton `eventBus`.
+Still used by AIContentService directly via singleton `eventBus`.
 
 ## Cache (`cache/`)
 

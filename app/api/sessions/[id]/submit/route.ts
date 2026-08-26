@@ -6,11 +6,11 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest, pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
-import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
+import { calculateScore, syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * POST /api/sessions/[id]/submit
- * Finalize an active session and offload housekeeping to queue.
+ * Finalize an active session and perform post-submit housekeeping.
  */
 export const POST = withAuth(async (
   req: Request,
@@ -66,19 +66,10 @@ export const POST = withAuth(async (
       pruneCompletedSessions(session.student_id, session.quiz_id, session.mode)
         .catch(err => console.error('Failed inline pruneCompletedSessions:', err))
 
-      // --- HEAVY OPERATIONS OFFLOADED TO QUEUE ---
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      try {
-        const { publishJob } = await import('@/lib/core/queue/qstash')
-        publishJob(`${appUrl}/api/jobs/quiz-post-submit`, {
-          studentId: session.student_id,
-          quizId: session.quiz_id
-        }).catch(err => console.error('Failed to queue housekeeping:', err))
-      } catch (e) {
-        console.error('QStash module import failed:', e)
-      }
+      // Sync global unique student stats in background
+      syncUniqueStudentCount(session.quiz_id)
+        .catch(err => console.error('Failed to sync student count on submit:', err))
     }
-    // -------------------------------------------
 
     return NextResponse.json(
       {

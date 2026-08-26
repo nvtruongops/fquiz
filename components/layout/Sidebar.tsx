@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserDropdown } from '@/components/layout/UserDropdown'
-import FQuizLogo from '@/components/shared/ui/FQuizLogo'
 import { NAV_SECTIONS, Section, NavItem } from '@/lib/core/constants/navigation'
 
 export type { NavItem, Section }
@@ -102,31 +101,22 @@ export function Sidebar({ user }: SidebarProps) {
           {/* Brand Header */}
           <div className={cn(
             "h-16 flex items-center border-b border-border flex-shrink-0 transition-all",
-            collapsed ? "justify-center px-2" : "justify-between px-4"
+            collapsed ? "justify-center px-2" : "px-6"
           )}>
-            <Link href="/" prefetch={false} className="flex items-center gap-3 group overflow-hidden">
-              <FQuizLogo size={32} />
-              {!collapsed && (
-                <div className="flex flex-col whitespace-nowrap overflow-hidden">
-                  <span className="text-base font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
+            <Link href="/" prefetch={false} className="flex items-center gap-2 group overflow-hidden">
+              {collapsed ? (
+                <span className="text-xl font-black text-primary">F</span>
+              ) : (
+                <div className="flex items-baseline gap-2 whitespace-nowrap overflow-hidden">
+                  <span className="text-xl font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
                     FQuiz
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-primary mt-0.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded-md border border-primary/20 leading-none">
                     Platform
                   </span>
                 </div>
               )}
             </Link>
-
-            {!collapsed && (
-              <button
-                onClick={toggleCollapsed}
-                className="w-7 h-7 rounded-xl bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Thu gọn Sidebar"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {/* Scrollable Navigation Items */}
@@ -303,8 +293,7 @@ export function Sidebar({ user }: SidebarProps) {
               className="fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border flex flex-col overflow-hidden lg:hidden shadow-2xl"
             >
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <FQuizLogo size={32} />
+                <div className="flex items-center gap-2">
                   <span className="font-black text-foreground text-base">FQuiz Menu</span>
                 </div>
                 <button

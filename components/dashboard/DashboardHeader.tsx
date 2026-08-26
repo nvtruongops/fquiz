@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
-import { Compass, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/shared/ui/avatar'
@@ -25,10 +24,10 @@ export const DashboardHeader = React.memo(function DashboardHeader({
 }: DashboardHeaderProps) {
   return (
     <div className="relative overflow-hidden glass-card-elevated p-5 sm:p-6 rounded-[28px] border border-strong shadow-lg shadow-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-full w-full">
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent ambient-glow-sphere" />
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent ambient-glow-sphere pointer-events-none" />
 
       <div className="flex items-start sm:items-center gap-4 relative z-10">
-        <Avatar className="h-14 w-14 ring-4 ring-primary/30 shrink-0 shadow-md shadow-primary/20">
+        <Avatar className="h-13 w-13 sm:h-14 sm:w-14 ring-4 ring-primary/30 shrink-0 shadow-md shadow-primary/20">
           {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.name || 'User'} />}
           <AvatarFallback className="bg-primary text-primary-foreground font-black text-lg">
             {userInitial}
@@ -49,7 +48,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 relative z-10 self-start md:self-auto">
+      <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0 relative z-10">
         <Button
           onClick={onRefetch}
           variant="outline"

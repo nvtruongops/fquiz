@@ -3,7 +3,6 @@ import type { IDomainEvent, EventHandler } from '@/lib/core/events/domain-event'
 
 /**
  * InMemoryEventBus — Non-persistent event bus for development & testing.
- * Phase 3: replace with QStashEventBus or RedisEventBus without changing services.
  */
 export class InMemoryEventBus implements IEventBus {
   private domainHandlers = new Map<string, EventHandler[]>()

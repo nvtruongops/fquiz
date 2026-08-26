@@ -9,9 +9,8 @@ import type { IDomainEvent, EventHandler } from '@/lib/core/events/domain-event'
  *
  * Implementations:
  * - InMemoryEventBus (hiện tại)
- * - QStashEventBus (Phase 3)
- * - RedisEventBus (Phase 3)
- * - KafkaEventBus (Phase 4)
+ * - RedisEventBus (tùy chọn)
+ * - KafkaEventBus (tùy chọn)
  */
 
 export interface IEventBus {

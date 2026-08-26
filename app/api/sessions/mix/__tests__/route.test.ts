@@ -31,9 +31,6 @@ jest.mock('@/lib/core/schemas/common', () => ({
 jest.mock('@/lib/core/security/rate-limit/provider', () => ({
   providerFactory: { createProvider: () => ({ check: jest.fn(() => ({ success: true })) }) },
 }))
-jest.mock('@/lib/core/queue/qstash', () => ({
-  publishJob: jest.fn().mockResolvedValue({ success: true, messageId: 'msg-1' }),
-}))
 
 import { POST } from '../route'
 
