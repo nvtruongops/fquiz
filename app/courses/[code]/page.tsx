@@ -14,7 +14,7 @@ export async function generateMetadata({
 
   return {
     title: `Đề thi Trắc nghiệm ${courseCodeUpper} — Ôn thi ${courseCodeUpper} | FQuiz`,
-    description: `Ngân hàng đề thi trắc nghiệm môn ${courseCodeUpper} đầy đủ đáp án, hỗ trợ trộn đề ngẫu nhiên và luyện tập Flashcard FSRS trên FQuiz.`,
+    description: `Ngân hàng đề thi trắc nghiệm môn ${courseCodeUpper} đầy đủ đáp án, hỗ trợ trộn đề ngẫu nhiên và luyện tập Flashcard thông minh trên FQuiz.`,
     keywords: [
       courseCodeUpper,
       `đề thi ${courseCodeUpper}`,

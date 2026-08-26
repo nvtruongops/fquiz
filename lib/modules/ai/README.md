@@ -1,6 +1,6 @@
 # AI Module (`lib/modules/ai/`)
 
-Module quản lý nội dung sinh bởi AI (Gemini/OpenAI) cho dịch vụ học ngôn ngữ.
+Module quản lý nội dung sinh bởi AI (Gemini/OpenAI) và phân hệ Trợ lý phòng thi Quiz AI Assistant.
 
 ## Cấu trúc
 
@@ -102,12 +102,18 @@ generate(request)
 | 11 | `writingEvaluation` | Chấm bài viết + feedback (100% tiếng Việt) |
 | 12 | `quizAssistantPrompt` | Giải đáp câu hỏi thi trắc nghiệm & đối chiếu ngân hàng đề |
 
-## Quiz AI Assistant (Knowledge Retrieval Engine)
+## Quiz AI Assistant (Real-time Exam Room Assistant)
 
-Phân hệ trợ lý AI giải đáp thắc mắc và đối chiếu tri thức theo thời gian thực trong phòng thi trắc nghiệm:
-- **Kiến trúc**: `QuizAIOrchestrator` $\rightarrow$ `QuizContextResolver` $\rightarrow$ `IRetrievalEngine` (`MongoQuestionRetriever`) $\rightarrow$ `PromptEngine` (4-Tier Evidence) $\rightarrow$ `ConfidenceEngine` $\rightarrow$ `IAIProvider`.
-- **Cơ chế**: Tra cứu đa cấp (QuestionBank theo `category_id` + Quizzes theo `course_code`), tính toán độ tin cậy (`confidence`) và đính kèm `evidenceUsed` trực tiếp từ backend để chống hallucination. Có cơ chế DB Fallback an toàn khi LLM offline.
-- **Tài liệu nhiệm vụ**: Xem chi tiết tại [`tasks/quiz-ai-assistant/`](file:///e:/Code/fquiz/tasks/quiz-ai-assistant/) (`requirements.md`, `design.md`, `tasks.md`, `SUMMARY.md`).
+Phân hệ trợ lý AI giải đáp thắc mắc và đối chiếu tri thức theo thời gian thực trong phòng thi trắc nghiệm (`lib/modules/ai/quiz-assistant/`):
+- **Cấu trúc Sub-package**:
+  - `orchestrator.ts`: `QuizAIOrchestrator` phối hợp toàn bộ luồng xử lý từ lúc nhận yêu cầu đến lúc phản hồi.
+  - `intent/intent-resolver.ts`: Phân loại ý định của học sinh (Explain, Compare, Formula, Similar Question, Solve, General).
+  - `context/quiz-context-resolver.ts`: Trích xuất và làm giàu ngữ cảnh câu hỏi, bài thi và lựa chọn của học viên.
+  - `retrieval/mongo-question-retriever.ts` & `ranking.ts`: Tra cứu đa cấp từ Question Bank theo `category_id` và đề thi theo `course_code`.
+  - `confidence/confidence-engine.ts`: Đánh giá độ tin cậy của câu trả lời trước khi gửi phản hồi.
+  - `prompt/prompt-engine.ts` & `templates/`: 4-Tier Evidence prompt templates chống hallucination.
+  - `telemetry/quiz-ai-telemetry.ts`: Theo dõi độ trễ, token usage và tỷ lệ thành công.
+- **Tài liệu nhiệm vụ**: Xem chi tiết tại [`tasks/quiz-ai-assistant/`](../../../tasks/quiz-ai-assistant/) (`requirements.md`, `design.md`, `tasks.md`, `SUMMARY.md`).
 
 ## Dependencies
 
@@ -118,7 +124,7 @@ Phân hệ trợ lý AI giải đáp thắc mắc và đối chiếu tri thức 
 
 ## Module Rules
 
-- No cross-module model imports
-- `index.ts` chỉ chứa `registerModel()` calls
-- Zod schemas trong prompts/ validate structured JSON từ AI
+- Không import model từ module khác (trừ models trong `ai/models/`)
+- AI output luôn luôn được validate qua Zod schemas trước khi lưu trữ hoặc trả về
+- Đăng ký model đầy đủ qua `registerModel()` trong `index.ts`
 

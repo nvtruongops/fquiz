@@ -104,9 +104,7 @@ export const PUT = withAuth(async (
       )
     }
 
-    const oldImageUrls: string[] = [] // No longer tracking Cloudinary images
-
-    // Process new questions (base64 images are no longer supported)
+    // Process new questions (base64 images are not supported)
     const processedQuestions = questions.map((q) => {
       // Only accept direct image URLs, not base64
       const finalImageUrl = q.image_url?.startsWith('data:image') ? '' : q.image_url
@@ -117,8 +115,6 @@ export const PUT = withAuth(async (
         image_url: finalImageUrl || '',
       }
     })
-
-    // No cleanup needed since we're not using Cloudinary anymore
 
     // 3. Atomic Update with Lock
     const quiz = await Quiz.findOneAndUpdate(

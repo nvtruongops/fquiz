@@ -2,7 +2,7 @@
 
 Single Next.js 16 App Router project (not monorepo). MongoDB/Mongoose (Atlas), React 18, Tailwind CSS 3, shadcn/ui.
 
-> **Key docs**: [`DESIGN.md`](./DESIGN.md) (full technical design), module READMEs at [`lib/modules/*/README.md`](./lib/modules/), [`lib/core/README.md`](./lib/core/README.md).
+> **Key docs**: [`docs/README.md`](../docs/README.md) (Central Docs Hub), [`DESIGN.md`](../DESIGN.md) (Full technical design), [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), module READMEs at [`lib/modules/*/README.md`](../lib/modules/), [`lib/core/README.md`](../lib/core/README.md).
 
 ## Commands
 
@@ -13,26 +13,23 @@ Single Next.js 16 App Router project (not monorepo). MongoDB/Mongoose (Atlas), R
 | `npm run lint` | ESLint (`app components lib hooks store`) |
 | `npm test` | Jest (Node env, unit tests only) |
 | `npm run test:coverage` | Jest with coverage |
-| `npm run seed:<target>` | Seed scripts (`language`, `topic`, `vocabulary`, `public-quizzes`, `users`). Always pass `--env-file=.env.local` (handled in package.json). |
+| `npm run seed:<target>` | Seed scripts (`public-quizzes`, `users`). Always pass `--env-file=.env.local` (handled in package.json). |
 | `npm run migrate:*` | Migration scripts, also need `.env.local` |
 | `codegraph sync` | Sync CodeGraph symbol index in `.codegraph/` |
 | `node .agents/scripts/verify.js --strict` | Rule Engine Verification (Strict Mode) |
 
-Seed order: `seed:language` → `seed:topic`. `seed:learning` runs both.
-
 ## Architecture
 
-- **Route groups**: `(auth)`, `(student)`, `(admin)/admin`
+- **Route groups**: `(auth)`, `(student)`, `(teacher)`, `(admin)/admin`
 - **Middleware**: `proxy.ts` (Node.js runtime). Handles: mobile redirect, CORS, maintenance mode, CSRF double-submit cookie, JWT auth, role routing (student vs admin). Matches all paths.
 - **Auth**: JWT with rotation (`JWT_SECRET` + `JWT_SECRET_PREV`). Cookie + Bearer token. Token version bumps on ban/password change.
-- **CSRF**: Double-submit cookie. `csrf-token` cookie (httpOnly:false, sameSite:strict). Mutations must include `x-csrf-token` header matching the cookie. Exempt: public paths + auth endpoints + mail job.
-- **API routes**: `app/api/`. Admin routes at `/api/admin/*`. Public API v1 at `/api/v1/public/*`, `/api/v1/explore/*`. Learning API at `/api/v1/learning/*`. AI API at `/api/v1/ai/*`. Community at `/api/community/*`.
-- **DI container**: `lib/core/di/` — lightweight (no decorators). Registers `IEventBus`, `ICache`, `ISearchProvider`, `IAIProvider`. Learning module uses DI for repos/services.
-- **Event bus**: `lib/core/events/` — `IEventBus` (domain/integration) + `InMemoryEventBus`. Legacy `EventBus` (simple on/emit) still used by AIContentService, VocabularyService.
-- **Cache**: `lib/core/cache/` — `InMemoryCache` (Map-based, TTL + tag invalidation). Used for lesson content, course structure caching.
+- **CSRF**: Double-submit cookie. `csrf-token` cookie (httpOnly:false, sameSite:strict). Mutations must include `x-csrf-token` header matching the cookie. Exempt: public paths + auth endpoints + cron jobs.
+- **API routes**: `app/api/`. Admin routes at `/api/admin/*`. Public API v1 at `/api/v1/public/*`, `/api/v1/explore/*`. AI API at `/api/v1/ai/*`. Community at `/api/community/*`.
+- **DI container**: `lib/core/di/` — lightweight (no decorators). Registers `IEventBus`, `ICache`, `ISearchProvider`, `IAIProvider`.
+- **Event bus**: `lib/core/events/` — `IEventBus` (domain/integration) + `InMemoryEventBus`. Legacy `EventBus` (simple on/emit) still used by AIContentService.
+- **Cache**: `lib/core/cache/` — `InMemoryCache` (Map-based, TTL + tag invalidation).
 - **State**: TanStack Query v5 (server state) + Zustand v5 (client state, `quiz-session` persisted to localStorage).
 - **Quiz engine**: `lib/modules/quiz/quiz-engine.ts`. Server-side answer processing only. Never trusts client state. Race condition prevention uses `findOneAndUpdate` with `{ status: { $ne: 'completed' } }`.
-- **Learning engine**: `lib/modules/learning/` — 15 models (IBaseEntity), 10 repositories, 5 services, FSRS review engine, wired via DI. See [`lib/modules/learning/README.md`](./lib/modules/learning/README.md).
 
 ## Code Intelligence & Navigation (`.codegraph`)
 
@@ -56,9 +53,9 @@ Seed order: `seed:language` → `seed:topic`. `seed:learning` runs both.
 
 ## Module Architecture
 
-- **No cross-module model imports**. Modules (quiz, auth, learning, community, ai) may only import their own `models/`. Cross-module data access uses pure ObjectId references + application-level joins via repository/service interfaces.
+- **No cross-module model imports**. Modules (quiz, auth, classroom, community, ai) may only import their own `models/`. Cross-module data access uses pure ObjectId references + application-level joins via repository/service interfaces.
 - **No Mongoose `.populate()`** in module code. Use batch queries with `$in` for application-level joins.
-- **Dependency inversion**: Services depend on interfaces, wired via `lib/core/di/` container. Learning module follows this; legacy modules (quiz, auth) import directly.
+- **Dependency inversion**: Services depend on interfaces, wired via `lib/core/di/` container.
 - **Model Registry** (`lib/core/db/model-registry.ts`): Modules register models via `registerModel()`. `bootstrapModels()` runs on connect to prevent MissingSchemaError in serverless routes.
 - **Base entity** (`lib/core/types/base-entity.ts`): All Phase 2+ models extend `IBaseEntity` (adds `createdBy`, `updatedBy`, `deletedAt`, `status: draft|pending|published|archived|deleted`).
 

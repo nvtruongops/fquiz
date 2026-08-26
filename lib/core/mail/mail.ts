@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer'
 import logger from '@/lib/core/utils/logger'
-import { publishJob } from '@/lib/core/queue/qstash'
 import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 
 export type MailJobType = 'reset-password' | 'verification-code' | 'account-deletion-notice' | 'new-quiz-notification'
@@ -230,21 +229,12 @@ export async function sendNewQuizNotificationMail({ to, username, courseCode, qu
 }
 
 /**
- * Enqueue a mail job to QStash for background processing
+ * Enqueue a mail job for background/direct processing
  */
 export async function enqueueMail(type: MailJobType, data: any) {
-  const appUrl = resolveAppBaseUrl()
-  const destination = `${appUrl}/api/jobs/mail`
-  
-  // If no QStash token, fallback to direct (sync) sending for local dev convenience
-  if (!process.env.QSTASH_TOKEN) {
-    logger.info({ type, to: data.to }, 'QStash not configured, sending mail synchronously')
-    if (type === 'reset-password') return sendResetPasswordMail(data)
-    if (type === 'verification-code') return sendVerificationCodeMail(data)
-    if (type === 'account-deletion-notice') return sendAccountDeletionNoticeMail(data)
-    if (type === 'new-quiz-notification') return sendNewQuizNotificationMail(data)
-    return
-  }
-
-  return publishJob(destination, { type, data })
+  logger.info({ type, to: data?.to }, 'Dispatching mail job')
+  if (type === 'reset-password') return sendResetPasswordMail(data)
+  if (type === 'verification-code') return sendVerificationCodeMail(data)
+  if (type === 'account-deletion-notice') return sendAccountDeletionNoticeMail(data)
+  if (type === 'new-quiz-notification') return sendNewQuizNotificationMail(data)
 }

@@ -197,13 +197,10 @@ export const POST = withAuth(async (req, { payload }) => {
         total_paused_duration_ms: 0
       })
 
-      // Count 1 attempt immediately on creation and queue async stats sync
+      // Count 1 attempt immediately on creation and sync stats
       await Quiz.updateOne({ _id: effective.id }, { $inc: { studentCount: 1 } })
-
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      const { publishJob } = await import('@/lib/core/queue/qstash')
-      publishJob(`${appUrl}/api/jobs/quiz-stats-sync`, { quizId: effective.id })
-        .catch(err => console.error('Failed to queue stats sync for guest session:', err))
+      syncUniqueStudentCount(effective.id)
+        .catch(err => console.error('Failed to sync stats for guest session:', err))
 
       return NextResponse.json({
         sessionId: session._id,
@@ -280,12 +277,9 @@ export const POST = withAuth(async (req, { payload }) => {
       total_paused_duration_ms: 0
     })
 
-    // --- STATS SYNC OFFLOADED TO QUEUE ---
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const { publishJob } = await import('@/lib/core/queue/qstash')
-    publishJob(`${appUrl}/api/jobs/quiz-stats-sync`, { quizId: effective.id })
-      .catch(err => console.error('Failed to queue stats sync:', err))
-    // --------------------------------------
+    // Sync stats in background
+    syncUniqueStudentCount(effective.id)
+      .catch(err => console.error('Failed to sync stats:', err))
     return NextResponse.json({ sessionId: session._id, mode: session.mode, difficulty: session.difficulty, totalQuestions: effective.questions.length }, { status: 201 })
   } catch (err) {
     console.error('POST /api/sessions error:', err)

@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { JWTPayload } from '@/lib/modules/auth/auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
+import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 
 /**
  * POST /api/sessions/[id]/claim
@@ -56,16 +57,8 @@ export const POST = withAuth(async (
       pruneCompletedSessions(studentObjectId, session.quiz_id, session.mode)
         .catch(err => console.error('Failed pruneCompletedSessions during claim:', err))
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      try {
-        const { publishJob } = await import('@/lib/core/queue/qstash')
-        publishJob(`${appUrl}/api/jobs/quiz-post-submit`, {
-          studentId: studentObjectId.toString(),
-          quizId: session.quiz_id.toString(),
-        }).catch(err => console.error('Failed to queue housekeeping during claim:', err))
-      } catch (e) {
-        console.error('QStash module import failed during claim:', e)
-      }
+      syncUniqueStudentCount(session.quiz_id)
+        .catch(err => console.error('Failed to sync student count during claim:', err))
     }
 
     return NextResponse.json({
