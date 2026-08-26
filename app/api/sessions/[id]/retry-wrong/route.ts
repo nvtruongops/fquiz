@@ -88,7 +88,9 @@ export const POST = withAuth(async (
       : Array.from({ length: wrongQuestionsCache.length }, (_, i) => i)
 
     const newSession = await QuizSession.create({
-      student_id: parentSession.student_id,
+      student_id: parentSession.student_id || null,
+      is_guest: Boolean(parentSession.is_guest),
+      guest_id: parentSession.guest_id,
       quiz_id: parentSession.quiz_id,
       mode: parentSession.mode,
       difficulty,
@@ -112,6 +114,7 @@ export const POST = withAuth(async (
         difficulty: newSession.difficulty,
         totalQuestions: wrongQuestionsCache.length,
         resumed: false,
+        isGuest: Boolean(parentSession.is_guest),
       },
       { status: 201 }
     )
@@ -119,4 +122,4 @@ export const POST = withAuth(async (
     console.error('POST /api/sessions/[id]/retry-wrong error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

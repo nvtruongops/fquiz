@@ -32,22 +32,28 @@ export const POST = withAuth(async (
     const userAnswers = (session.user_answers ?? []) as UserAnswer[]
     const score = calculateScore(userAnswers, questions, session.question_order)
 
+    const updateDoc: Record<string, any> = {
+      $set: {
+        status: 'completed',
+        score,
+        current_question_index: questions.length,
+        completed_at: new Date(),
+      },
+    }
+
+    if (!session.is_guest) {
+      updateDoc.$unset = { expires_at: 1 }
+    } else {
+      // Keep 24h retention for completed guest sessions before auto-purge
+      updateDoc.$set.expires_at = new Date(Date.now() + 86400000)
+    }
+
     const completed = await QuizSession.findOneAndUpdate(
       {
         _id: id,
         status: { $ne: 'completed' },
       },
-      {
-        $set: {
-          status: 'completed',
-          score,
-          current_question_index: questions.length,
-          completed_at: new Date(),
-        },
-        $unset: {
-          expires_at: 1,
-        },
-      },
+      updateDoc,
       { new: true }
     )
 
@@ -55,20 +61,22 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
     }
 
-    // Prune old completed sessions inline (guarantees retention limit even if QStash is offline)
-    pruneCompletedSessions(session.student_id, session.quiz_id, session.mode)
-      .catch(err => console.error('Failed inline pruneCompletedSessions:', err))
+    // Prune old completed sessions inline (for authenticated students)
+    if (session.student_id) {
+      pruneCompletedSessions(session.student_id, session.quiz_id, session.mode)
+        .catch(err => console.error('Failed inline pruneCompletedSessions:', err))
 
-    // --- HEAVY OPERATIONS OFFLOADED TO QUEUE ---
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    try {
-      const { publishJob } = await import('@/lib/core/queue/qstash')
-      publishJob(`${appUrl}/api/jobs/quiz-post-submit`, {
-        studentId: session.student_id,
-        quizId: session.quiz_id
-      }).catch(err => console.error('Failed to queue housekeeping:', err))
-    } catch (e) {
-      console.error('QStash module import failed:', e)
+      // --- HEAVY OPERATIONS OFFLOADED TO QUEUE ---
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      try {
+        const { publishJob } = await import('@/lib/core/queue/qstash')
+        publishJob(`${appUrl}/api/jobs/quiz-post-submit`, {
+          studentId: session.student_id,
+          quizId: session.quiz_id
+        }).catch(err => console.error('Failed to queue housekeeping:', err))
+      } catch (e) {
+        console.error('QStash module import failed:', e)
+      }
     }
     // -------------------------------------------
 
@@ -77,6 +85,7 @@ export const POST = withAuth(async (
         completed: true,
         score,
         totalQuestions: questions.length,
+        isGuest: Boolean(session.is_guest),
       },
       { status: 200 }
     )
@@ -84,4 +93,4 @@ export const POST = withAuth(async (
     console.error('POST /api/sessions/[id]/submit error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

@@ -38,8 +38,8 @@ export async function validateQuizSessionRequest(
     }
   }
 
-  // Verify session belongs to the requesting student
-  if (session.student_id.toString() !== payload.userId) {
+  // Verify session belongs to the requesting student (unless it is a guest session)
+  if (!session.is_guest && (!payload.userId || session.student_id?.toString() !== payload.userId)) {
     return {
       isValid: false,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
@@ -75,10 +75,11 @@ export const MAX_COMPLETED_SESSIONS_PER_QUIZ = 20
  * if the total completed count exceeds MAX_COMPLETED_SESSIONS_PER_QUIZ.
  */
 export async function pruneCompletedSessions(
-  studentId: mongoose.Types.ObjectId | string,
+  studentId: mongoose.Types.ObjectId | string | undefined | null,
   quizId: mongoose.Types.ObjectId | string,
   mode: string
 ): Promise<number> {
+  if (!studentId) return 0
   try {
     await connectDB()
     const studentObjectId = typeof studentId === 'string' ? new mongoose.Types.ObjectId(studentId) : studentId
@@ -119,7 +120,7 @@ export async function getQuizSessionResult(sessionId: string, userId?: string) {
 
   const session = (await QuizSession.findById(sessionId).lean()) as any
   if (!session) return null
-  if (userId && session.student_id?.toString() !== userId) return null
+  if (!session.is_guest && userId && session.student_id?.toString() !== userId) return null
   if (session.status !== 'completed') return null
 
   const quizDoc = (await Quiz.findById(session.quiz_id).select('questions updatedAt').lean()) as any
@@ -170,6 +171,7 @@ export async function getQuizSessionResult(sessionId: string, userId?: string) {
     user_answers: sessionAnswers,
     questions,
     is_temp: session.is_temp ?? false,
+    is_guest: Boolean(session.is_guest),
     quiz_updated_after_start: quizUpdatedAfterStart,
     flashcard_stats: session.mode === 'flashcard' ? session.flashcard_stats : undefined,
   }

@@ -14,7 +14,6 @@ import { cn } from '@/lib/core/utils/cn'
 
 const navItems = [
   { href: '/admin',                      label: 'Dashboard',           icon: LayoutDashboard, exact: true },
-  { href: '/admin/ai-usage',             label: 'Quản lý AI Token',    icon: Sparkles,        exact: false },
   { href: '/admin/categories',           label: 'Categories',          icon: Layers,          exact: false },
   { href: '/admin/quizzes',              label: 'Quizzes',             icon: FileQuestion,    exact: false },
   { href: '/admin/question-bank',        label: 'Ngân hàng câu hỏi',   icon: Database,        exact: false },

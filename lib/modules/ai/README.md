@@ -85,7 +85,7 @@ generate(request)
 
 ## Prompts
 
-11 prompt types, each with Zod schema for output validation:
+12 prompt types (11 học liệu + 1 quiz assistant), mỗi loại có Zod schema validate structured JSON output từ AI:
 
 | # | Prompt | Output |
 |---|--------|--------|
@@ -99,7 +99,15 @@ generate(request)
 | 8 | `dialogueGeneration` | Hội thoại theo ngữ cảnh |
 | 9 | `storyGeneration` | Truyện ngắn theo trình độ |
 | 10 | `writingGeneration` | Đề bài viết + gợi ý |
-| 11 | `writingEvaluation` | Chấm bài viết + feedback |
+| 11 | `writingEvaluation` | Chấm bài viết + feedback (100% tiếng Việt) |
+| 12 | `quizAssistantPrompt` | Giải đáp câu hỏi thi trắc nghiệm & đối chiếu ngân hàng đề |
+
+## Quiz AI Assistant (Knowledge Retrieval Engine)
+
+Phân hệ trợ lý AI giải đáp thắc mắc và đối chiếu tri thức theo thời gian thực trong phòng thi trắc nghiệm:
+- **Kiến trúc**: `QuizAIOrchestrator` $\rightarrow$ `QuizContextResolver` $\rightarrow$ `IRetrievalEngine` (`MongoQuestionRetriever`) $\rightarrow$ `PromptEngine` (4-Tier Evidence) $\rightarrow$ `ConfidenceEngine` $\rightarrow$ `IAIProvider`.
+- **Cơ chế**: Tra cứu đa cấp (QuestionBank theo `category_id` + Quizzes theo `course_code`), tính toán độ tin cậy (`confidence`) và đính kèm `evidenceUsed` trực tiếp từ backend để chống hallucination. Có cơ chế DB Fallback an toàn khi LLM offline.
+- **Tài liệu nhiệm vụ**: Xem chi tiết tại [`tasks/quiz-ai-assistant/`](file:///e:/Code/fquiz/tasks/quiz-ai-assistant/) (`requirements.md`, `design.md`, `tasks.md`, `SUMMARY.md`).
 
 ## Dependencies
 
@@ -113,3 +121,4 @@ generate(request)
 - No cross-module model imports
 - `index.ts` chỉ chứa `registerModel()` calls
 - Zod schemas trong prompts/ validate structured JSON từ AI
+

@@ -41,7 +41,9 @@ const QuestionCacheSchema = new Schema<IQuestion>(
 
 const QuizSessionSchema = new Schema<IQuizSession>(
   {
-    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: false, default: null },
+    is_guest: { type: Boolean, default: false },
+    guest_id: { type: String, required: false },
     quiz_id: { type: Schema.Types.ObjectId, ref: 'Quiz', required: false },
     mode: { type: String, enum: ['immediate', 'review', 'flashcard'], required: true },
     difficulty: { type: String, enum: ['sequential', 'random'], required: true, default: 'sequential' },
@@ -84,12 +86,14 @@ QuizSessionSchema.index(
     partialFilterExpression: { status: { $in: ['preparing', 'active', 'paused'] } }
   }
 )
-// Compound index for student session lookups
+// Compound index for student session lookups (sparse so null student_id won't collide)
 QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
 // Compound index for mix quiz concurrent check
 QuizSessionSchema.index({ student_id: 1, is_temp: 1, expires_at: 1 })
 // Compound index for dashboard aggregations
 QuizSessionSchema.index({ student_id: 1, status: 1, completed_at: -1 })
+// Sparse index for guest session queries
+QuizSessionSchema.index({ is_guest: 1, guest_id: 1 }, { sparse: true })
 
 // Clear model if already exists to ensure schema updates (like 'preparing' status) are picked up in dev
 if (process.env.NODE_ENV === 'development' && mongoose.models.QuizSession) {

@@ -57,6 +57,18 @@ function QuizSkeleton() {
   )
 }
 
+function computeNextSavedIds(currentIds: string[], quizId: string, isUnsaving: boolean): string[] {
+  if (isUnsaving) {
+    return currentIds.filter((id) => id !== quizId)
+  }
+  return currentIds.includes(quizId) ? currentIds : [...currentIds, quizId]
+}
+
+function computeNextPinnedIds(currentIds: string[], quizId: string, isPinned: boolean, fallback?: string[]): string[] {
+  if (fallback) return fallback
+  return isPinned ? [...currentIds, quizId] : currentIds.filter((id) => id !== quizId)
+}
+
 export default function CourseQuizList({
   code,
   onCategoryNameLoaded,
@@ -104,36 +116,29 @@ export default function CourseQuizList({
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quizId }),
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(json.error || 'Không thể lưu bài thi')
-      } else {
-        const isUnsaving = Boolean(json.unsaved)
-        const nextSavedIds = isUnsaving
-          ? savedQuizIds.filter((id) => id !== quizId)
-          : savedQuizIds.includes(quizId)
-          ? savedQuizIds
-          : [...savedQuizIds, quizId]
-
-        setSavedQuizIds(nextSavedIds)
-
-        queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
-          if (!old) return old
-          return {
-            ...old,
-            savedQuizIds: nextSavedIds,
-          }
-        })
-
-        queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
-        queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
-
-        if (isUnsaving) {
-          toast.success(json.message || 'Đã xóa khỏi Bộ đề của tôi')
-        } else {
-          toast.success(json.message || 'Đã lưu mã quiz')
-        }
+        toast.error(res.status === 401 ? 'Vui lòng đăng nhập để lưu bộ đề vào danh sách của bạn.' : (json.error || 'Không thể lưu bài thi'))
+        return
       }
+
+      const isUnsaving = Boolean(json.unsaved)
+      const nextSavedIds = computeNextSavedIds(savedQuizIds, quizId, isUnsaving)
+
+      setSavedQuizIds(nextSavedIds)
+
+      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          savedQuizIds: nextSavedIds,
+        }
+      })
+
+      queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
+      queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
+
+      toast.success(json.message || (isUnsaving ? 'Đã xóa khỏi Bộ đề của tôi' : 'Đã lưu mã quiz'))
     } catch {
       toast.error('Có lỗi xảy ra khi xử lý lưu bài thi')
     } finally {
@@ -149,28 +154,25 @@ export default function CourseQuizList({
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ quizId }),
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(json.error || 'Không thể ghim mã quiz')
-      } else {
-        const isPinned = Boolean(json.pinned)
-        const nextPinned = json.pinnedQuizzes || (
-          isPinned
-            ? [...pinnedQuizIds, quizId]
-            : pinnedQuizIds.filter((id) => id !== quizId)
-        )
-        setPinnedQuizIds(nextPinned)
-
-        queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
-          if (!old) return old
-          return {
-            ...old,
-            pinnedQuizIds: nextPinned,
-          }
-        })
-
-        toast.success(isPinned ? 'Đã ghim mã quiz lên đầu' : 'Đã bỏ ghim mã quiz')
+        toast.error(res.status === 401 ? 'Vui lòng đăng nhập để ghim mã quiz lên đầu danh sách.' : (json.error || 'Không thể ghim mã quiz'))
+        return
       }
+
+      const isPinned = Boolean(json.pinned)
+      const nextPinned = computeNextPinnedIds(pinnedQuizIds, quizId, isPinned, json.pinnedQuizzes)
+      setPinnedQuizIds(nextPinned)
+
+      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          pinnedQuizIds: nextPinned,
+        }
+      })
+
+      toast.success(isPinned ? 'Đã ghim mã quiz lên đầu' : 'Đã bỏ ghim mã quiz')
     } catch {
       toast.error('Có lỗi khi ghim mã quiz')
     } finally {
@@ -286,7 +288,7 @@ export default function CourseQuizList({
             ))}
           </div>
 
-          <div className="text-xs font-bold text-muted-foreground px-2 flex items-center gap-1.5 shrink-0 bg-muted/40 py-1.5 px-3 rounded-2xl border border-border/60">
+          <div className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 shrink-0 bg-muted/40 py-1.5 px-3 rounded-2xl border border-border/60">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span className="text-primary font-black">
               {filteredQuizzes.length > 0 ? `${startIndex}-${endIndex}` : 0}

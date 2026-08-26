@@ -201,4 +201,4 @@ export const POST = withAuth(async (
     console.error('POST /api/sessions/[id]/flashcard-answer error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

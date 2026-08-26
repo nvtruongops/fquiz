@@ -38,7 +38,10 @@ export function FlashcardReviewButton({
       )
 
       if (!res.ok) {
-        const error = await res.json()
+        if (res.status === 401) {
+          throw new Error('Vui lòng đăng nhập để sử dụng tính năng ôn tập Flashcard.')
+        }
+        const error = await res.json().catch(() => ({}))
         throw new Error(error.error || 'Failed to create review session')
       }
 

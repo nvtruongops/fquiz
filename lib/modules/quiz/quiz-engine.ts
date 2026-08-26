@@ -26,14 +26,32 @@ export interface ReviewAnswerResult {
 }
 
 export async function syncUniqueStudentCount(quizId: any): Promise<void> {
-  const uniqueStudents = await QuizSession.distinct('student_id', {
-    quiz_id: quizId,
-    // Đếm cả active và completed sessions - tính ngay khi user bắt đầu làm
-  })
+  if (!quizId) return
+  const objectId = typeof quizId === 'string' && mongoose.Types.ObjectId.isValid(quizId)
+    ? new mongoose.Types.ObjectId(quizId)
+    : quizId
+
+  const counts = await QuizSession.aggregate([
+    { $match: { quiz_id: objectId } },
+    {
+      $group: {
+        _id: {
+          $cond: [
+            { $eq: ['$is_guest', true] },
+            { $ifNull: ['$guest_id', '$_id'] },
+            { $ifNull: ['$student_id', '$_id'] },
+          ],
+        },
+      },
+    },
+    { $count: 'total' },
+  ])
+
+  const totalCount = counts?.[0]?.total || 0
 
   await Quiz.updateOne(
-    { _id: quizId },
-    { $set: { studentCount: uniqueStudents.length } }
+    { _id: objectId },
+    { $set: { studentCount: totalCount } }
   )
 }
 

@@ -26,6 +26,7 @@ let mockSessionForFind: any = null
 
 jest.mock('../models/QuizSession', () => ({
   QuizSession: {
+    aggregate: jest.fn(),
     distinct: jest.fn(),
     findById: jest.fn().mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),
@@ -65,18 +66,17 @@ describe('Quiz Engine', () => {
   })
 
   describe('syncUniqueStudentCount', () => {
-    it('should query distinct student_id and update Quiz studentCount', async () => {
+    it('should aggregate unique students and guests and update Quiz studentCount', async () => {
       const quizId = 'quiz-123'
-      const mockStudents = ['student-1', 'student-2']
-      ;(QuizSession.distinct as jest.Mock).mockResolvedValue(mockStudents)
+      ;(QuizSession.aggregate as jest.Mock).mockResolvedValue([{ total: 3 }])
       ;(Quiz.updateOne as jest.Mock).mockResolvedValue({ modifiedCount: 1 })
 
       await syncUniqueStudentCount(quizId)
 
-      expect(QuizSession.distinct).toHaveBeenCalledWith('student_id', { quiz_id: quizId })
+      expect(QuizSession.aggregate).toHaveBeenCalled()
       expect(Quiz.updateOne).toHaveBeenCalledWith(
         { _id: quizId },
-        { $set: { studentCount: 2 } }
+        { $set: { studentCount: 3 } }
       )
     })
   })

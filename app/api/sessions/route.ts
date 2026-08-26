@@ -14,7 +14,11 @@ import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle'
 
 export const GET = withAuth(async (req, { payload }) => {
   try {
-    const { searchParams } = new URL(req.url)
+    if (!payload.userId) {
+      return NextResponse.json({ assessmentSession: null, learningSession: null })
+    }
+
+    const { searchParams } = new URL(req.url, 'http://localhost')
     const quizId = searchParams.get('quiz_id')
     if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
       return NextResponse.json({ assessmentSession: null, learningSession: null })
@@ -78,11 +82,11 @@ export const GET = withAuth(async (req, { payload }) => {
     console.error('GET /api/sessions error:', err)
     return NextResponse.json({ assessmentSession: null, learningSession: null })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })
 
 /**
  * POST /api/sessions
- * Creates a new quiz session for a student.
+ * Creates a new quiz session for a student or anonymous guest.
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 12.1
  */
 async function resolveEffectiveQuiz(quiz: any) {
@@ -118,7 +122,8 @@ const sessionLimiter = providerFactory.createProvider(10, 60 * 1000)
 
 export const POST = withAuth(async (req, { payload }) => {
   try {
-    const rateLimitResult = await sessionLimiter.check(payload.userId)
+    const rateLimitKey = payload.userId || req.headers.get('x-forwarded-for') || 'guest_client'
+    const rateLimitResult = await sessionLimiter.check(rateLimitKey)
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Too many session creation requests. Please try again later.' },
@@ -143,14 +148,73 @@ export const POST = withAuth(async (req, { payload }) => {
     const quiz = await Quiz.findById(quiz_id).select('questions original_quiz_id created_by is_public status is_saved_from_explore').lean() as any
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    const isOwner = quiz.created_by?.toString() === payload.userId
+    const isGuest = !payload.userId
+    const isOwner = payload.userId ? quiz.created_by?.toString() === payload.userId : false
+
     if (!isOwner && !(quiz.is_public && quiz.status === 'published')) {
-      return NextResponse.json({ error: 'Quiz này đã được Admin đóng. Vui lòng thực hiện lại sau.' }, { status: 403 })
+      return NextResponse.json({ error: 'Quiz này đã được Admin đóng hoặc không công khai.' }, { status: 403 })
     }
 
     const effective = await resolveEffectiveQuiz(quiz)
     if (!effective) return NextResponse.json({ error: 'Quiz has no questions' }, { status: 400 })
 
+    const now = new Date()
+    const questionOrder = difficulty === 'random' ? secureShuffle([...new Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)
+    const shouldShuffleOptions = shuffle_options ?? (difficulty === 'random')
+    // Cache questions to avoid repeated Quiz DB fetches during answer processing
+    const questionsCache = effective.questions.map((q: any) => {
+      const processed = shouldShuffleOptions ? shuffleQuestionOptions(q) : q
+      return {
+        _id: processed._id,
+        text: processed.text,
+        options: processed.options,
+        correct_answer: processed.correct_answer,
+        explanation: processed.explanation,
+        ...(processed.image_url ? { image_url: processed.image_url } : {}),
+      }
+    })
+
+    // --- GUEST FLOW ---
+    if (isGuest) {
+      const guestId = crypto.randomUUID()
+      const session = await QuizSession.create({
+        student_id: null,
+        is_guest: true,
+        guest_id: guestId,
+        quiz_id: effective.id,
+        mode,
+        difficulty,
+        status: 'active',
+        current_question_index: 0,
+        question_order: questionOrder,
+        user_answers: [],
+        score: 0,
+        questions_cache: questionsCache,
+        flashcard_stats: mode === 'flashcard' ? { total_cards: effective.questions.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 } : undefined,
+        expires_at: new Date(now.getTime() + 86400000), // 24 hours TTL auto-cleanup
+        started_at: now,
+        last_activity_at: now,
+        total_paused_duration_ms: 0
+      })
+
+      // Count 1 attempt immediately on creation and queue async stats sync
+      await Quiz.updateOne({ _id: effective.id }, { $inc: { studentCount: 1 } })
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const { publishJob } = await import('@/lib/core/queue/qstash')
+      publishJob(`${appUrl}/api/jobs/quiz-stats-sync`, { quizId: effective.id })
+        .catch(err => console.error('Failed to queue stats sync for guest session:', err))
+
+      return NextResponse.json({
+        sessionId: session._id,
+        mode: session.mode,
+        difficulty: session.difficulty,
+        totalQuestions: effective.questions.length,
+        isGuest: true,
+      }, { status: 201 })
+    }
+
+    // --- AUTHENTICATED STUDENT FLOW ---
     const studentId = new mongoose.Types.ObjectId(payload.userId)
     const modeGroup = ['flashcard'].includes(mode) ? 'learning' : 'assessment'
     const groupModes = modeGroup === 'learning' ? ['flashcard'] : ['immediate', 'review']
@@ -197,28 +261,23 @@ export const POST = withAuth(async (req, { payload }) => {
 
     await QuizSession.deleteMany({ student_id: studentId, quiz_id: effective.id, mode: { $in: groupModes }, status: { $ne: 'completed' } })
 
-    const now = new Date()
-    const questionOrder = difficulty === 'random' ? secureShuffle([...new Array(effective.questions.length).keys()]) : Array.from({ length: effective.questions.length }, (_, i) => i)
-    const shouldShuffleOptions = shuffle_options ?? (difficulty === 'random')
-    // Cache questions to avoid repeated Quiz DB fetches during answer processing
-    const questionsCache = effective.questions.map((q: any) => {
-      const processed = shouldShuffleOptions ? shuffleQuestionOptions(q) : q
-      return {
-        _id: processed._id,
-        text: processed.text,
-        options: processed.options,
-        correct_answer: processed.correct_answer,
-        explanation: processed.explanation,
-        ...(processed.image_url ? { image_url: processed.image_url } : {}),
-      }
-    })
-
-
     const session = await QuizSession.create({
-      student_id: studentId, quiz_id: effective.id, mode, difficulty, status: 'active', current_question_index: 0, question_order: questionOrder, user_answers: [], score: 0,
+      student_id: studentId,
+      is_guest: false,
+      quiz_id: effective.id,
+      mode,
+      difficulty,
+      status: 'active',
+      current_question_index: 0,
+      question_order: questionOrder,
+      user_answers: [],
+      score: 0,
       questions_cache: questionsCache,
       flashcard_stats: mode === 'flashcard' ? { total_cards: effective.questions.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 } : undefined,
-      expires_at: mode === 'flashcard' ? undefined : new Date(now.getTime() + 86400000), started_at: now, last_activity_at: now, total_paused_duration_ms: 0
+      expires_at: mode === 'flashcard' ? undefined : new Date(now.getTime() + 86400000),
+      started_at: now,
+      last_activity_at: now,
+      total_paused_duration_ms: 0
     })
 
     // --- STATS SYNC OFFLOADED TO QUEUE ---
@@ -232,4 +291,4 @@ export const POST = withAuth(async (req, { payload }) => {
     console.error('POST /api/sessions error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

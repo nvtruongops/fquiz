@@ -377,7 +377,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <GoogleSignInButton callbackUrl={getCallbackUrl()} />
+        <GoogleSignInButton callbackUrl={getCallbackUrl()} text="Đăng ký với Google" />
 
         <div className="mt-3.5 sm:mt-5 pt-3 border-t border-border">
           {(() => {

@@ -32,8 +32,11 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
           headers: withCsrfHeaders(),
         }
       )
-      const resData = await res.json()
+      const resData = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Vui lòng đăng nhập để làm lại các câu sai.')
+        }
         throw new Error(resData.error || 'Không thể tạo phiên sửa câu sai')
       }
 

@@ -84,7 +84,7 @@ export function MobileNav({ user }: MobileNavProps) {
 
   // Active status checks
   const isHomeActive = pathname === '/' || pathname === '/dashboard'
-  const isExamActive = pathname === '/explore' || pathname === '/my-quizzes' || pathname === '/history' || pathname?.startsWith('/courses') || pathname?.startsWith('/create')
+  const isExamActive = pathname === '/explore' || pathname === '/my-quizzes' || pathname === '/history' || pathname?.startsWith('/courses')
   const isUserActive = pathname === '/profile' || pathname === '/settings'
   const isTeacherRole = user?.role === 'teacher' || user?.role === 'admin'
   const classroomHref = isTeacherRole ? '/teacher/classrooms' : '/student/classrooms'
@@ -161,7 +161,7 @@ export function MobileNav({ user }: MobileNavProps) {
                 onClick={closeAllMenus}
                 className={cn(
                   "flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all active:scale-98",
-                  pathname === '/my-quizzes' || pathname?.startsWith('/create')
+                  pathname === '/my-quizzes'
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-foreground hover:bg-muted"
                 )}

@@ -75,8 +75,12 @@ export default function CourseDetailClient({ code }: { code: string }) {
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ categoryId: targetCatId }),
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Vui lòng đăng nhập để ghim môn học yêu thích lên đầu.')
+          return
+        }
         toast.error(json.error || 'Không thể ghim môn học')
       } else {
         toast.success(json.pinned ? 'Đã ghim môn học lên đầu' : 'Đã bỏ ghim môn học')

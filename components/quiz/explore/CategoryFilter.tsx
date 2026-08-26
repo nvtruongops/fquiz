@@ -20,11 +20,11 @@ interface CategoryItem {
 }
 
 interface CategoryFilterProps {
-  initialCategories: CategoryItem[]
+  initialCategories?: CategoryItem[]
   initialPinnedCategories?: string[]
 }
 
-export default function CategoryFilter({ initialCategories, initialPinnedCategories }: CategoryFilterProps) {
+export default function CategoryFilter({ initialCategories, initialPinnedCategories }: CategoryFilterProps = {}) {
   const [searchTerm, setSearchTerm] = useState('')
   const [pinningId, setPinningId] = useState<string | null>(null)
   const [notifyPromptCat, setNotifyPromptCat] = useState<{ id: string; name: string } | null>(null)
@@ -32,6 +32,25 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
   const [enablingNotify, setEnablingNotify] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+
+  // Fetch public categories if not provided as initial data
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['public', 'categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/public/categories')
+      if (!res.ok) return []
+      const json = await res.json()
+      return (json.data || []).map((cat: any) => ({
+        id: cat.id,
+        name: cat.name,
+        quizCount: cat.publishedQuizCount || 0,
+      })) as CategoryItem[]
+    },
+    initialData: initialCategories && initialCategories.length > 0 ? initialCategories : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  })
 
   // Fetch student pinned categories
   const { data: pinnedData } = useQuery({
@@ -60,8 +79,12 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ categoryId }),
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Vui lòng đăng nhập để ghim danh mục ôn tập lên đầu.')
+          return
+        }
         toast.error(json.error || 'Không thể ghim danh mục')
       } else {
         queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: json.pinnedCategories })
@@ -71,7 +94,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
           try {
             const dismissed: string[] = JSON.parse(localStorage.getItem('fquiz_dismissed_pin_notif_cats') || '[]')
             if (!dismissed.includes(categoryId)) {
-              const catObj = initialCategories.find((c) => c.id === categoryId)
+              const catObj = categories.find((c) => c.id === categoryId)
               if (catObj) {
                 setNotifyPromptCat({ id: catObj.id, name: catObj.name })
                 setDontShowAgain(false)
@@ -128,7 +151,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
     }
   }
 
-  const filtered = initialCategories.filter((c) =>
+  const filtered = categories.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 

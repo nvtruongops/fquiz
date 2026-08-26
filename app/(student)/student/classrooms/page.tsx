@@ -53,11 +53,11 @@ export default function StudentClassroomsPage() {
         >
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider border border-primary/20">
-              <Sparkles className="w-3.5 h-3.5" /> Lớp học & Giảng dạy
+              <Sparkles className="w-3.5 h-3.5" /> Lớp học
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
               <GraduationCap className="w-7 h-7 text-primary" />
-              Lớp học & Bài tập của tôi
+              Lớp học của tôi
             </h1>
             <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-xl">
               Quản lý danh sách lớp học đã tham gia, theo dõi thời hạn bài tập và rèn luyện kiến thức trực tiếp từ giảng viên.

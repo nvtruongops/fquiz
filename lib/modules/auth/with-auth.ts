@@ -9,17 +9,19 @@ type Handler<P = any> = (
 
 interface WithAuthOptions {
   roles?: string[]
+  allowGuest?: boolean
 }
 
 /**
  * Higher-order function wrapping a Next.js route handler with JWT
  * authentication and optional role-based authorization.
+ * Supports allowGuest: true to enable public/guest access with guest payload.
  *
  * Usage:
  *   export const GET = withAuth(async (req, { params, payload }) => {
- *     // payload.userId, payload.role are guaranteed
+ *     // payload.userId, payload.role
  *     return NextResponse.json({ ... })
- *   }, { roles: ['student'] })
+ *   }, { roles: ['student'], allowGuest: true })
  */
 export function withAuth<P = any>(
   handler: Handler<P>,
@@ -28,6 +30,13 @@ export function withAuth<P = any>(
   return async (req, context) => {
     const payload = await verifyToken(req)
     if (!payload) {
+      if (options.allowGuest) {
+        const guestPayload: JWTPayload = {
+          userId: '',
+          role: 'guest',
+        }
+        return handler(req, { ...context, payload: guestPayload })
+      }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     if (options.roles) {

@@ -4,26 +4,26 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
-import { CreateCategorySchema } from '@/lib/modules/quiz/schemas/category'
-import { validateObjectId } from '@/lib/core/schemas/common'
-import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const userId = new Types.ObjectId(payload.userId)
 
-    // Find category IDs used by any of the student's quizzes
-    const quizCategoryIds = await Quiz.distinct('category_id', { created_by: userId })
+    // Find category IDs used by any of the student's saved quizzes
+    const quizCategoryIds = await Quiz.distinct('category_id', { 
+      created_by: userId,
+      is_saved_from_explore: true,
+    })
 
-    // Match private categories owned by user OR public/course categories of user's quizzes
+    if (quizCategoryIds.length === 0) {
+      return NextResponse.json({ categories: [] })
+    }
+
     const categories = await Category.aggregate([
       {
         $match: {
-          $or: [
-            { owner_id: userId },
-            { _id: { $in: quizCategoryIds } },
-          ],
+          _id: { $in: quizCategoryIds },
         },
       },
       {
@@ -37,6 +37,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
                   $and: [
                     { $eq: ['$category_id', '$$categoryId'] },
                     { $eq: ['$created_by', '$$userId'] },
+                    { $eq: ['$is_saved_from_explore', true] },
                   ],
                 },
               },
@@ -44,7 +45,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
             {
               $project: {
                 _id: 1,
-                is_saved_from_explore: 1,
               },
             },
           ],
@@ -53,24 +53,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       },
       {
         $addFields: {
-          savedQuizCount: {
-            $size: {
-              $filter: {
-                input: '$quizzesInCategory',
-                as: 'q',
-                cond: { $eq: ['$$q.is_saved_from_explore', true] },
-              },
-            },
-          },
-          ownQuizCount: {
-            $size: {
-              $filter: {
-                input: '$quizzesInCategory',
-                as: 'q',
-                cond: { $ne: ['$$q.is_saved_from_explore', true] },
-              },
-            },
-          },
           totalQuizCount: { $size: '$quizzesInCategory' },
         },
       },
@@ -80,166 +62,13 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         },
       },
       {
-        $sort: { created_at: -1 },
+        $sort: { name: 1 },
       },
     ])
 
-    // Merge duplicate categories sharing the same uppercase name
-    const categoryMap = new Map<string, any>()
-    for (const cat of categories) {
-      const nameKey = (cat.name || '').trim().toUpperCase()
-      if (!categoryMap.has(nameKey)) {
-        categoryMap.set(nameKey, {
-          _id: cat._id.toString(),
-          name: cat.name,
-          type: cat.type,
-          owner_id: cat.owner_id,
-          savedQuizCount: cat.savedQuizCount || 0,
-          ownQuizCount: cat.ownQuizCount || 0,
-          totalQuizCount: cat.totalQuizCount || 0,
-          allIds: [cat._id.toString()],
-        })
-      } else {
-        const existing = categoryMap.get(nameKey)!
-        existing.allIds.push(cat._id.toString())
-        existing.savedQuizCount += cat.savedQuizCount || 0
-        existing.ownQuizCount += cat.ownQuizCount || 0
-        existing.totalQuizCount += cat.totalQuizCount || 0
-        if (cat.type === 'private') {
-          existing.type = 'private'
-          existing.owner_id = cat.owner_id
-        }
-        existing._id = existing.allIds.join(',')
-      }
-    }
-
-    const mergedCategories = Array.from(categoryMap.values())
-    return NextResponse.json({ categories: mergedCategories })
+    return NextResponse.json({ categories })
   } catch (error) {
-    console.error('Error fetching categories:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}, { roles: ['student'] })
-
-export const POST = withAuth(async (req: Request, { payload }) => {
-  try {
-    await connectDB()
-    const body = await parseJsonBody(req)
-    if (body instanceof NextResponse) return body
-
-    // Validate with schema
-    const parsed = CreateCategorySchema.safeParse(body)
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error)
-    }
-
-    const { name } = parsed.data
-
-    const isTeacherOrAdmin = ['teacher', 'admin', 'dev'].includes(payload.role)
-    if (!isTeacherOrAdmin) {
-      const count = await Category.countDocuments({
-        owner_id: new Types.ObjectId(payload.userId),
-        type: 'private'
-      })
-      if (count >= 5) {
-        return NextResponse.json({ error: 'Bạn chỉ có thể tạo tối đa 5 danh mục cá nhân.' }, { status: 400 })
-      }
-    }
-
-    const category = await Category.create({
-      name,
-      owner_id: new Types.ObjectId(payload.userId),
-      type: 'private',
-      is_public: false,
-      status: 'approved'
-    })
-
-    return NextResponse.json({ category })
-  } catch (error: any) {
-    if (error.code === 11000) {
-      return NextResponse.json({ error: 'Tên danh mục đã tồn tại.' }, { status: 400 })
-    }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}, { roles: ['student'] })
-
-export const PATCH = withAuth(async (req: Request, { payload }) => {
-  try {
-    await connectDB()
-    const body = await parseJsonBody(req)
-    if (body instanceof NextResponse) return body
-
-    const { id, name } = body as { id?: string; name?: string }
-
-    if (!id || !name) {
-      return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 })
-    }
-
-    const idList = id.split(',').map((s) => s.trim()).filter(validateObjectId)
-    if (idList.length === 0) {
-      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
-    }
-
-    // Validate name
-    const nameValidation = CreateCategorySchema.shape.name.safeParse(name)
-    if (!nameValidation.success) {
-      return NextResponse.json(
-        { error: 'Invalid name', details: nameValidation.error.issues },
-        { status: 400 }
-      )
-    }
-
-    const objectIds = idList.map((i) => new Types.ObjectId(i))
-    const category = await Category.findOneAndUpdate(
-      { _id: { $in: objectIds }, owner_id: new Types.ObjectId(payload.userId) },
-      { name: nameValidation.data },
-      { new: true }
-    )
-
-    if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
-
-    return NextResponse.json({ category })
-  } catch (error) {
-    console.error('Error updating category:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}, { roles: ['student'] })
-
-export const DELETE = withAuth(async (req: Request, { payload }) => {
-  try {
-    await connectDB()
-    const { searchParams } = new URL(req.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 })
-    }
-
-    const idList = id.split(',').map((s) => s.trim()).filter(validateObjectId)
-    if (idList.length === 0) {
-      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
-    }
-
-    const objectIds = idList.map((i) => new Types.ObjectId(i))
-
-    // Check if category has quizzes
-    const quizCount = await Quiz.countDocuments({ category_id: { $in: objectIds } })
-    if (quizCount > 0) {
-      return NextResponse.json({
-        error: `Không thể xóa: Danh mục này đang chứa ${quizCount} mã đề. Hãy di chuyển hoặc xóa các mã đề trước.`
-      }, { status: 400 })
-    }
-
-    const result = await Category.deleteMany({
-      _id: { $in: objectIds },
-      owner_id: new Types.ObjectId(payload.userId)
-    })
-
-    if (!result.deletedCount) return NextResponse.json({ error: 'Category not found or permission denied' }, { status: 404 })
-
-    return NextResponse.json({ message: `Đã xóa ${result.deletedCount} danh mục thành công` })
-  } catch (error) {
-    console.error('Error deleting category:', error)
+    console.error('Error fetching student categories:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }, { roles: ['student'] })

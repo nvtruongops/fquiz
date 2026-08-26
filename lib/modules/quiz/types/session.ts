@@ -18,7 +18,9 @@ export interface FlashcardStats {
 
 export interface IQuizSession {
   _id: Types.ObjectId
-  student_id: Types.ObjectId
+  student_id?: Types.ObjectId | null
+  is_guest?: boolean
+  guest_id?: string
   quiz_id?: Types.ObjectId
   mode: 'immediate' | 'review' | 'flashcard'
   difficulty: 'sequential' | 'random' // sequential = theo thứ tự, random = xáo trộn

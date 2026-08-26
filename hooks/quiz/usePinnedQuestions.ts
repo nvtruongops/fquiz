@@ -62,7 +62,10 @@ export function usePinnedQuestions(courseCode?: string) {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const err = await res.json()
+        if (res.status === 401) {
+          throw new Error('Vui lòng đăng nhập để ghim và lưu câu hỏi ôn tập.')
+        }
+        const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'Không thể thực hiện thao tác ghim.')
       }
       return res.json()
@@ -88,7 +91,10 @@ export function usePinnedQuestions(courseCode?: string) {
         headers: withCsrfHeaders({}),
       })
       if (!res.ok) {
-        const err = await res.json()
+        if (res.status === 401) {
+          throw new Error('Vui lòng đăng nhập để thực hiện thao tác này.')
+        }
+        const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'Không thể xóa câu ghim.')
       }
       return res.json()
@@ -112,7 +118,10 @@ export function usePinnedQuestions(courseCode?: string) {
         headers: withCsrfHeaders({}),
       })
       if (!res.ok) {
-        const err = await res.json()
+        if (res.status === 401) {
+          throw new Error('Vui lòng đăng nhập để thực hiện thao tác này.')
+        }
+        const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'Không thể xóa tất cả câu ghim.')
       }
       return res.json()
@@ -134,8 +143,15 @@ export function usePinnedQuestions(courseCode?: string) {
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(params),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (res.status === 401) {
+          throw {
+            message: 'Vui lòng đăng nhập để tạo bài kiểm tra từ câu ghim.',
+            quotaExceeded: false,
+            status: 401,
+          }
+        }
         throw {
           message: data.error || 'Không thể tạo bài kiểm tra từ câu ghim.',
           quotaExceeded: Boolean(data.quotaExceeded),

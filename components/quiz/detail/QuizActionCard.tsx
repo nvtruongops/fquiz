@@ -9,6 +9,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
 import { QuizPracticeOptionsModal } from './QuizPracticeOptionsModal'
 import { QuizResumeSessionModal } from './QuizResumeSessionModal'
+import { GuestHistoryReminderModal } from './GuestHistoryReminderModal'
 
 interface QuizActionCardProps {
   quizId: string
@@ -57,6 +58,8 @@ export function QuizActionCard({
   latestSessionId
 }: QuizActionCardProps) {
   const router = useRouter()
+  const [guestReminderOpen, setGuestReminderOpen] = React.useState(false)
+
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4">
@@ -91,8 +94,7 @@ export function QuizActionCard({
             <Button 
               onClick={() => {
                 if (!currentUser) {
-                  const safeCallback = encodeURIComponent(`/quiz/${quizId}`)
-                  router.push(`/login?callbackUrl=${safeCallback}`)
+                  setGuestReminderOpen(true)
                 } else {
                   setModeSelectOpen(true)
                 }
@@ -120,6 +122,20 @@ export function QuizActionCard({
               </Button>
             )}
           </div>
+
+          <GuestHistoryReminderModal
+            open={guestReminderOpen}
+            onOpenChange={setGuestReminderOpen}
+            onContinueAsGuest={() => {
+              setGuestReminderOpen(false)
+              setModeSelectOpen(true)
+            }}
+            onLogin={() => {
+              setGuestReminderOpen(false)
+              const safeCallback = encodeURIComponent(`/quiz/${quizId}?selectMode=true`)
+              router.push(`/login?callbackUrl=${safeCallback}`)
+            }}
+          />
 
           <QuizPracticeOptionsModal
             open={modeSelectOpen}

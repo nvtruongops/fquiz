@@ -83,6 +83,7 @@ const QuizSchema = new Schema<IQuiz>(
 // Optimized indexes for Explore/Search
 // ... (omitted for brevity in replacement but kept in file) ...
 QuizSchema.index({ category_id: 1, status: 1, studentCount: -1 })
+QuizSchema.index({ course_code: 1 })
 QuizSchema.index({ title: 'text', course_code: 'text' })
 QuizSchema.index(
   { created_by: 1, course_code: 1 },

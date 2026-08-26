@@ -223,11 +223,11 @@ export const GET = withAuth(async (
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })
 
 /**
  * DELETE /api/sessions/[id]
- * Delete a specific quiz session belonging to the authenticated student.
+ * Delete a specific quiz session belonging to the authenticated student or guest.
  * If the session is temporary (is_temp: true), also deletes the temporary quiz.
  */
 export const DELETE = withAuth(async (
@@ -239,10 +239,12 @@ export const DELETE = withAuth(async (
     const validation = await validateQuizSessionRequest(id, payload, { checkExpired: false })
     if (!validation.isValid) return validation.response
 
-    const session = await QuizSession.findOneAndDelete({
-      _id: id,
-      student_id: payload.userId,
-    }).lean() as any
+    const deleteFilter: Record<string, any> = { _id: id }
+    if (payload.userId) {
+      deleteFilter.student_id = payload.userId
+    }
+
+    const session = await QuizSession.findOneAndDelete(deleteFilter).lean() as any
 
     if (session && session.is_temp && session.quiz_id) {
       await Quiz.findOneAndDelete({
@@ -256,4 +258,4 @@ export const DELETE = withAuth(async (
     console.error('DELETE /api/sessions/[id] error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student'], allowGuest: true })

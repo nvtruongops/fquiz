@@ -31,7 +31,6 @@ import { bootstrapModels } from '@/lib/core/db/model-registry'
 import '@/lib/modules/auth'
 import '@/lib/modules/quiz'
 import '@/lib/modules/community'
-import '@/lib/modules/learning'
 import '@/lib/modules/ai'
 import '@/lib/modules/classroom'
 

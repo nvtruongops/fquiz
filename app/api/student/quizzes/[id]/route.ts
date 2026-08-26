@@ -114,8 +114,22 @@ export const GET = withAuth(async (
       }
     }
 
-    const uniqueStudents = await QuizSession.distinct('student_id', { quiz_id: effectiveId })
-    const numAttempts = uniqueStudents.length
+    const counts = await QuizSession.aggregate([
+      { $match: { quiz_id: effectiveId } },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$is_guest', true] },
+              { $ifNull: ['$guest_id', '$_id'] },
+              { $ifNull: ['$student_id', '$_id'] },
+            ],
+          },
+        },
+      },
+      { $count: 'total' },
+    ])
+    const numAttempts = counts?.[0]?.total ?? quiz.studentCount ?? 0
     if (quiz.studentCount !== numAttempts && effectiveId.toString() === quiz._id.toString()) {
       await Quiz.updateOne({ _id: quiz._id }, { $set: { studentCount: numAttempts } })
     }

@@ -65,8 +65,26 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     if (quizIds.length > 0) {
       const counts = await QuizSession.aggregate([
         { $match: { quiz_id: { $in: quizIds } } },
-        { $group: { _id: '$quiz_id', count: { $addToSet: '$student_id' } } },
-        { $project: { _id: 1, count: { $size: '$count' } } },
+        {
+          $group: {
+            _id: {
+              quiz_id: '$quiz_id',
+              user_key: {
+                $cond: [
+                  { $eq: ['$is_guest', true] },
+                  { $ifNull: ['$guest_id', '$_id'] },
+                  { $ifNull: ['$student_id', '$_id'] },
+                ],
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: '$_id.quiz_id',
+            count: { $sum: 1 },
+          },
+        },
       ])
       for (const c of counts) {
         studentCountMap.set(c._id.toString(), c.count)

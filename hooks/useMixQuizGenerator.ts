@@ -246,6 +246,10 @@ export function useMixQuizGenerator(
       }
     },
     onError: (err: any) => {
+      if (err.status === 401) {
+        toast.error('Vui lòng đăng nhập để sử dụng tính năng Trộn đề thi.')
+        return
+      }
       if (err.status === 429) {
         const msg = `Bạn đã tạo quá ${err.data?.limit ?? 5} Quiz Trộn trong 1 giờ.`
         setRateLimitReset(err.data?.reset ?? null)
