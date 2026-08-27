@@ -20,7 +20,7 @@ module.exports = {
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-          if (!['node_modules', '.git', '__tests__'].includes(entry.name)) {
+          if (!['node_modules', '.git', '.next', '.turbo', '.vercel', 'dist', 'build', '__tests__'].includes(entry.name)) {
             scanDir(fullPath);
           }
         } else if (entry.isFile() && /\.(tsx|jsx|ts|js)$/.test(entry.name)) {
