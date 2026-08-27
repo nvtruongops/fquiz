@@ -6,74 +6,65 @@ Tài liệu đặc tả toàn diện quy trình triển khai, cấu hình hạ t
 
 ## 1. Cấu Trúc Monorepo & Workspaces
 
-FQuiz được tổ chức theo kiến trúc **Turborepo Monorepo** với 2 ứng dụng độc lập, phân tách hoàn toàn domain và mã nguồn:
+FQuiz được tổ chức theo kiến trúc **Pure Symmetrical Turborepo Monorepo** với 2 ứng dụng thực thi và 5 packages dùng chung:
 
 ```
 fquiz/
 ├── apps/
+│   ├── web/                            # 🎓 Web Học Viên, Giáo Viên & Diễn Đàn (Port 3000 / fquiz-web.vercel.app)
+│   │   ├── app/                        # Next.js 16 App Router ((auth), (student), (teacher), quiz, community, explore, api)
+│   │   ├── components/                 # Web UI Components (Quiz, Classroom, Community, AI Assistant)
+│   │   ├── hooks/                      # Web Custom React Hooks
+│   │   ├── store/                      # Zustand State Store (quiz-session, toast)
+│   │   ├── lib/                        # Web Services & Feature Modules (AIContentService, QuizEngine)
+│   │   ├── proxy.ts                    # Web Edge Proxy Middleware (Redirect /admin, Security Headers)
+│   │   ├── next.config.js              # Next.js 16 Web Config (Transpile packages, Turbopack)
+│   │   ├── tailwind.config.ts          # Tailwind CSS (kế thừa preset @fquiz/ui)
+│   │   ├── vercel.json                 # Cấu hình Vercel Web Cron & region sin1
+│   │   └── package.json                # name: "@fquiz/web"
+│   │
 │   └── admin/                          # 🛡️ Cổng Quản Trị Hệ Thống (Port 3001 / fquiz-admin.vercel.app)
 │       ├── app/                        # Next.js 16 App Router (Slim Orchestrator Pages <90 lines)
-│       │   ├── (dashboard)/
-│       │   │   ├── categories/page.tsx # Slim Page: Quản lý danh mục (49 dòng)
-│       │   │   ├── feedback/page.tsx   # Slim Page: Hộp thư góp ý (77 dòng)
-│       │   │   ├── question-bank/page.tsx # next/dynamic Lazy Loading (Status, Analytics, Migration, Conflicts)
-│       │   │   ├── quizzes/page.tsx    # Slim Page: Quản lý đề thi (78 dòng)
-│       │   │   ├── quizzes/[id]/edit/page.tsx # Chỉnh sửa đề thi + Question Bank sync
-│       │   │   └── users/page.tsx      # Slim Page: Quản lý tài khoản (74 dòng)
+│       │   ├── (dashboard)/            # Categories, Feedback, Question-bank, Quizzes, Settings, Users
+│       │   ├── login/                  # Trang đăng nhập Admin riêng biệt
 │       │   └── api/                    # Admin REST APIs (Quizzes, Users, Question Bank, Settings)
 │       ├── components/                 # Admin UI Components & Subcomponents (Tách lớp độc lập)
-│       │   ├── categories/             # CategoryList, CategoryDeleteDialog
-│       │   ├── feedback/               # FeedbackList, FeedbackReplyDialog, FeedbackDeleteDialog
-│       │   ├── question-bank/          # Analytics, Migration, Conflicts (Card, Preview, Panels)
-│       │   ├── quizzes/                # QuizTable, QuizDeleteDialog
-│       │   ├── quiz/                   # Quiz Editor 3-Layer Orchestrator & Subcomponents
-│       │   │   ├── QuizEditorWithQuestionBank.tsx # Slim Orchestrator (130 dòng)
-│       │   │   └── editor/             # Header, Metadata, QuestionCard, DiagnosticsHub, Modals
-│       │   └── ui/                     # Shadcn UI primitives (Button, Card, Dialog, Badge, Tabs)
 │       ├── hooks/                      # Custom Hooks Layer (State, API Mutations & Business Logic)
-│       │   ├── categories/             # useAdminCategories.ts
-│       │   ├── feedback/               # useAdminFeedback.ts
-│       │   ├── question-bank/          # useQuestionBankAnalytics, useQuestionBankMigration, useQuestionBankConflicts
-│       │   ├── quizzes/                # useAdminQuizzes.ts
-│       │   ├── quiz/                   # useQuizEditorForm, useQuizDiagnostics, useQuizFileUpload
-│       │   └── users/                  # useAdminUsers.ts
-│       ├── lib/                        # Admin self-contained DB, Models, Security & Auth
 │       ├── proxy.ts                    # Zero-Trust Admin Proxy Middleware (Node.js runtime)
-│       ├── .env.local                  # Biến môi trường local cho admin
-│       ├── vercel.json                 # Cấu hình region (sin1) cho Vercel Admin
+│       ├── next.config.js              # Next.js 16 Admin Config
+│       ├── tailwind.config.ts          # Tailwind CSS (kế thừa preset @fquiz/ui)
+│       ├── vercel.json                 # Cấu hình region sin1 cho Vercel Admin
 │       └── package.json                # name: "@fquiz/admin"
-├── app/                                # 🎓 Web Học Viên & Giáo Viên (Port 3000 / fquiz-web.vercel.app)
-│   ├── (auth)/                         # Login, Register, Forgot Password, Restore Account
-│   ├── (student)/                      # Dashboard, My Quizzes, History, Classrooms, Profile, Settings
-│   ├── (teacher)/                      # Classrooms, Quizzes, Assignments, Reports
-│   ├── quiz/                           # Động cơ phòng thi đa chế độ (Immediate, Review, Flashcard, Mobile)
-│   └── api/                            # REST APIs (Auth, Sessions, Classrooms, AI, Community, Public v1)
-├── components/                         # Web Student & Teacher UI Components
-├── hooks/                              # Web Custom React Hooks
-├── lib/                                # Core & Feature Modules (MongoDB, AI, Auth, Quiz Engine)
-├── store/                              # Zustand State Store (quiz-session, toast)
-├── e2e/                                # Playwright E2E Multi-Server Test Suite (57 Tests)
-├── turbo.json                          # Turborepo task pipeline & caching
-├── vercel.json                         # Cấu hình Vercel Cron Jobs & region sin1
-└── package.json                        # Root: name: "quiz-platform", workspaces: ["apps/*"]
+│
+├── packages/
+│   ├── database/                       # 🗄️ Database Singleton & Connection Pool (@fquiz/database)
+│   ├── models/                         # 📦 Single Source of Truth Mongoose Schemas & Types (@fquiz/models)
+│   ├── auth/                           # 🔐 Security, JWT Rotation, CSRF & RBAC (@fquiz/auth)
+│   ├── ui/                             # 🎨 Shared UI Primitives, 3-Tier Tokens & GSAP (@fquiz/ui)
+│   └── config-typescript/              # ⚙️ Shared TypeScript Configs (@fquiz/config-typescript)
+│
+├── e2e/                                # 🧪 Playwright E2E Multi-Server Test Suite (57 Tests)
+├── .agents/                            # 🤖 AI Agent Governance & CI/CD Verification Engine
+├── turbo.json                          # ⚡ Turborepo Task Pipeline & Remote Caching
+└── package.json                        # 📦 Monorepo Root Package
 ```
 
 ---
 
 ## 2. Thiết Lập 2 Vercel Projects Độc Lập
 
-Để triển khai Monorepo hiệu quả nhất, hệ thống sử dụng **2 Vercel Projects riêng biệt** kết nối chung vào cùng 1 GitHub Repository:
+Hệ thống triển khai **2 Vercel Projects riêng biệt** kết nối chung vào cùng 1 GitHub Repository:
 
 ```mermaid
 graph TD
     Repo["GitHub Repository (fquiz)"]
     
-    subgraph VercelWeb ["Vercel Project 1: fquiz"]
-        RootDir1["Root Directory: ./"]
+    subgraph VercelWeb ["Vercel Project 1: fquiz (Web)"]
+        RootDir1["Root Directory: apps/web"]
         Output1["Output: https://fquiz-web.vercel.app"]
     end
     
-    subgraph VercelAdmin ["Vercel Project 2: fquiz-admin"]
+    subgraph VercelAdmin ["Vercel Project 2: fquiz-admin (Admin)"]
         RootDir2["Root Directory: apps/admin"]
         Output2["Output: https://fquiz-admin.vercel.app"]
     end
@@ -87,7 +78,8 @@ graph TD
 * **Thiết lập trên Vercel Dashboard**:
   * **Project Name**: `fquiz` (hoặc `fquiz-web`)
   * **Framework Preset**: `Next.js`
-  * **Root Directory**: `./` (để mặc định thư mục gốc)
+  * **Root Directory**: `apps/web`
+  * **Include source files outside of the Root Directory in the Build Step**: **BẬT (Checked)** *(Bắt buộc để Vercel nhận diện root `node_modules` và packages dùng chung)*.
   * **Build Command**: `npm run build`
   * **Output Directory**: `.next`
   * **Install Command**: `npm install`
@@ -95,11 +87,10 @@ graph TD
     ```bash
     npx turbo-ignore
     ```
-    *(Chỉ trigger build lại khi có thay đổi liên quan đến Web app hoặc root dependencies).*
 
 * **Deploy thủ công bằng Vercel CLI**:
   ```bash
-  # Đứng tại thư mục gốc fquiz:
+  cd apps/web
   npx vercel link --project fquiz --yes --scope nvtruongops
   npx vercel --prod --yes
   ```
@@ -112,7 +103,7 @@ graph TD
   * **Project Name**: `fquiz-admin`
   * **Framework Preset**: `Next.js`
   * **Root Directory**: `apps/admin`
-  * **Include source files outside of the Root Directory in the Build Step**: **BẬT (Checked)** *(Bắt buộc để Vercel nhận diện root `node_modules` và Turborepo của npm workspaces)*.
+  * **Include source files outside of the Root Directory in the Build Step**: **BẬT (Checked)** *(Bắt buộc để Vercel nhận diện root `node_modules` và packages dùng chung)*.
   * **Build Command**: `npm run build`
   * **Output Directory**: `.next`
   * **Install Command**: `npm install`
@@ -120,11 +111,9 @@ graph TD
     ```bash
     npx turbo-ignore
     ```
-    *(Chỉ trigger build lại khi có commit thay đổi trong `apps/admin` hoặc package dùng chung).*
 
 * **Deploy thủ công bằng Vercel CLI**:
   ```bash
-  # Đứng tại thư mục apps/admin:
   cd apps/admin
   npx vercel link --project fquiz-admin --yes --scope nvtruongops
   npx vercel --prod --yes
@@ -175,14 +164,14 @@ Cả 2 project Vercel cần được cấu hình các biến môi trường sau 
 ## 4. Tối Ưu Hóa Hạ Tầng Vercel & Hiệu Năng
 
 1. **Vercel Serverless Regions (`sin1`)**:
-   - Cả 2 file `vercel.json` và `apps/admin/vercel.json` đều được ghim tại region **`sin1` (Singapore)** nhằm đạt độ trễ tối thiểu (< 40ms) đối với người dùng và kết nối MongoDB Atlas khu vực Đông Nam Á.
+   - Cả 2 file `apps/web/vercel.json` và `apps/admin/vercel.json` đều được ghim tại region **`sin1` (Singapore)** nhằm đạt độ trễ tối thiểu (< 40ms) đối với người dùng và kết nối MongoDB Atlas khu vực Đông Nam Á.
 
 2. **Tối ưu hóa Code Splitting & Dynamic Imports**:
    - Áp dụng `next/dynamic` với `ssr: false` cho toàn bộ các mô-đun quản trị nặng trong `apps/admin/app/(dashboard)/question-bank/page.tsx`.
-   - Giảm dung lượng JavaScript bundle tải ban đầu, ngăn chặn việc load mã code của các tính năng nâng cao (quét mâu thuẫn câu hỏi, phân tích tần suất sử dụng, migration) khi người dùng chỉ duyệt trạng thái cơ bản.
+   - Giảm dung lượng JavaScript bundle tải ban đầu, ngăn chặn việc load mã code của các tính năng nâng cao khi người dùng chỉ duyệt trạng thái cơ bản.
 
 3. **Vercel Cron Jobs (Tự động dọn dẹp dữ liệu)**:
-   - Root `vercel.json` cấu hình lịch chạy hằng ngày lúc 02:00 UTC:
+   - `apps/web/vercel.json` cấu hình lịch chạy hằng ngày lúc 02:00 UTC:
      ```json
      "crons": [
        {
@@ -199,7 +188,7 @@ Cả 2 project Vercel cần được cấu hình các biến môi trường sau 
    - Admin Proxy (`apps/admin/proxy.ts`) hoạt động theo nguyên tắc Zero-Trust, từ chối mọi request thiếu quyền `admin`/`dev` trước khi request chạm vào Server Component hay API Route.
 
 5. **Bảo mật Header (CSP, HSTS & Permissions Policy)**:
-   - `next.config.js` và `apps/admin/next.config.js` đã tích hợp đầy đủ: Content Security Policy (CSP), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` (HSTS), `Permissions-Policy`.
+   - `apps/web/next.config.js` và `apps/admin/next.config.js` đã tích hợp đầy đủ: Content Security Policy (CSP), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` (HSTS), `Permissions-Policy`.
 
 ---
 
@@ -236,15 +225,16 @@ graph LR
 
 | Lệnh | Mô tả tác vụ |
 |---|---|
-| `npm run dev` | Khởi chạy Web học viên (`http://localhost:3000`) |
-| `npm run dev:admin` | Khởi chạy Admin Portal (`http://localhost:3001`) |
-| `npm run build` | Build production cho Web học viên |
-| `npm run build:admin` | Build production độc lập cho Admin Portal |
-| `npm run lint` | Kiểm tra ESLint toàn bộ codebase Web & Modules |
-| `npm run lint:admin` | Kiểm tra ESLint riêng cho `apps/admin` |
+| `npm run dev` | Khởi chạy song song cả Web (`:3000`) và Admin (`:3001`) qua Turborepo |
+| `npm run dev:web` | Khởi chạy riêng Web học viên (`http://localhost:3000`) |
+| `npm run dev:admin` | Khởi chạy riêng Admin Portal (`http://localhost:3001`) |
+| `npm run build` | Build production toàn bộ Monorepo (`apps/web` + `apps/admin`) |
+| `npm run build:web` | Build production riêng Web học viên |
+| `npm run build:admin` | Build production riêng Admin Portal |
+| `npm run lint` | Kiểm tra ESLint toàn bộ Monorepo |
+| `npm run check-types` | Kiểm tra TypeScript toàn bộ 7 workspaces |
 | `npm test` | Chạy toàn bộ Jest Unit & Integration Tests (66 test suites, 430 tests) |
 | `npx playwright test` | Chạy toàn bộ E2E Tests (Multi-server `:3000` & `:3001`) |
-| `npx playwright test "e2e/rbac-navigation.spec.ts"` | Chạy riêng kiểm thử phân quyền RBAC |
 | `node .agents/scripts/verify.js --strict` | Chạy bộ Rule Engine Governance kiểm tra nghiêm ngặt 18 quy tắc |
 
 ---
@@ -252,9 +242,11 @@ graph LR
 ## 7. Pre-Deployment & Post-Deployment Checklist
 
 ### 📋 Pre-Deployment (Trước khi deploy)
-- [x] Chạy `npm run lint` và `npm run lint:admin` (0 lỗi ESLint).
-- [x] Chạy `npm run build` và `npm run build:admin` (Build thành công cả 2 ứng dụng).
+- [x] Chạy `npm run lint` (0 lỗi ESLint).
+- [x] Chạy `npm run check-types` (0 lỗi TypeScript trên 7 workspaces).
+- [x] Chạy `npm run build` (Build thành công cả 2 ứng dụng Web & Admin).
 - [x] Chạy `npm test` (66/66 suites, 430/430 tests pass).
+- [x] Chạy `npx playwright test` (57/57 E2E tests pass).
 - [x] Chạy `node .agents/scripts/verify.js --strict` (18/18 rule check pass).
 - [x] Đã cấu hình đủ Environment Variables trên cả 2 Vercel Projects (đặc biệt `MONGODB_URI`, `JWT_SECRET` giống nhau, `CRON_SECRET`, `CORS_ALLOWED_ORIGINS`).
 

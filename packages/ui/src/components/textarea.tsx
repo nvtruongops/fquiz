@@ -1,0 +1,65 @@
+import * as React from 'react'
+import { cn } from '../lib/utils'
+
+export interface TextareaProps extends React.ComponentProps<'textarea'> {
+  autoResize?: boolean
+}
+
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, autoResize, onInput, ...props }, ref) => {
+    const internalRef = React.useRef<HTMLTextAreaElement | null>(null)
+    const combinedRef = (node: HTMLTextAreaElement | null) => {
+      (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = node
+      if (typeof ref === 'function') ref(node)
+      else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = node
+    }
+
+    const adjustHeight = React.useCallback(() => {
+      const textarea = internalRef.current
+      if (textarea && autoResize) {
+        textarea.style.height = 'auto'
+        textarea.style.height = `${textarea.scrollHeight}px`
+      }
+    }, [autoResize])
+
+    React.useEffect(() => {
+      if (autoResize) adjustHeight()
+    }, [adjustHeight, props.value, autoResize])
+
+    const handleInput: NonNullable<React.ComponentProps<'textarea'>['onInput']> = (e) => {
+      if (autoResize) adjustHeight()
+      if (onInput) (onInput as (event: typeof e) => void)(e)
+    }
+
+    const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        const target = e.currentTarget
+        setTimeout(() => {
+          try {
+            target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          } catch {
+            /* ignore scroll error */
+          }
+        }, 250)
+      }
+      if (props.onFocus) props.onFocus(e)
+    }
+
+    return (
+      <textarea
+        className={cn(
+          'flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none scroll-m-20',
+          autoResize && 'overflow-hidden',
+          className
+        )}
+        onInput={handleInput}
+        onFocus={handleFocus}
+        ref={combinedRef}
+        {...props}
+      />
+    )
+  }
+)
+Textarea.displayName = 'Textarea'
+
+export { Textarea }

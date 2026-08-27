@@ -6,9 +6,14 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "eslint app components lib hooks"
+    "lint": "eslint app components lib hooks",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@fquiz/auth": "*",
+    "@fquiz/database": "*",
+    "@fquiz/models": "*",
+    "@fquiz/ui": "*",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-collapsible": "^1.1.12",
@@ -40,6 +45,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@fquiz/config-typescript": "*",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.0.0",
     "@types/pino": "^7.0.4",

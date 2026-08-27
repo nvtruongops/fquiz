@@ -3,7 +3,7 @@
   "enabled": true,
   "category": "CODE_QUALITY",
   "severity": "WARNING",
-  "searchDirs": ["app/api", "lib/modules"],
+  "searchDirs": ["apps/web/app/api", "apps/web/lib/modules", "apps/admin/app/api", "packages"],
   "forbiddenPatterns": [
     {
       "regex": "const\\s+mock[A-Z]\\w+\\s*=",

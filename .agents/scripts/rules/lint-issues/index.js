@@ -11,11 +11,9 @@ module.exports = {
     }
 
     const searchDirs = [
-      path.join(ctx.workspaceRoot, 'app'),
-      path.join(ctx.workspaceRoot, 'components'),
-      path.join(ctx.workspaceRoot, 'lib'),
-      path.join(ctx.workspaceRoot, 'hooks'),
-      path.join(ctx.workspaceRoot, 'store')
+      path.join(ctx.workspaceRoot, 'apps/web'),
+      path.join(ctx.workspaceRoot, 'apps/admin'),
+      path.join(ctx.workspaceRoot, 'packages')
     ];
 
     let issues = [];

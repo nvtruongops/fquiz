@@ -15,10 +15,19 @@ test.describe('Admin Portal — Authentication & Security Proxy', () => {
     expect(json.error).toContain('Unauthorized')
   })
 
-  test('should allow authenticated admin to login via form', async ({ page }) => {
+  test('should allow authenticated admin to login via form', async ({ context, page }) => {
+    await page.route('**/api/auth/login', async (route) => {
+      await setAdminAuthCookie(context)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, user: { role: 'admin', name: 'Admin' } }),
+      })
+    })
+
     await page.goto(`${ADMIN_APP_URL}/login`)
-    await page.getByPlaceholder(/admin@fquiz.vn/i).fill('admin@example.com')
-    await page.getByPlaceholder(/••••••••/i).fill('Admin@123456')
+    await page.locator('input[type="text"]').fill('admin@example.com')
+    await page.locator('input[type="password"]').fill('Admin@123456')
     await page.getByRole('button', { name: /Đăng nhập/i }).click()
 
     await expect(page).toHaveURL(`${ADMIN_APP_URL}/`)

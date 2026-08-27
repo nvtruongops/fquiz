@@ -1,18 +1,20 @@
 ---
 name: vercel-deploy
 description: Quy trình chuẩn và an toàn để deploy Monorepo FQuiz lên Vercel Production. Phân định tuyệt đối giữa Web Học viên (fquiz) và Cổng Admin (fquiz-admin), ngăn chặn triệt để deploy nhầm thư mục hoặc ghi đè sai project.
+version: 2.0
+priority: high
 ---
 
 # Vercel Monorepo Deployment Skill (FQuiz)
 
 ## 📌 Tổng Quan Hệ Thống Monorepo
 
-FQuiz là kiến trúc Next.js 16 Monorepo gồm **2 ứng dụng độc lập** được liên kết với 2 Vercel Projects riêng biệt:
+FQuiz là kiến trúc Next.js 16 Monorepo gồm **2 ứng dụng độc lập** được liên kết với 2 Vercel Projects riêng biệt trên cùng 1 GitHub Repository:
 
 | Ứng dụng | Thư mục làm việc (`Cwd`) | Vercel Project | Project ID | Production URL |
 |---|---|---|---|---|
-| **Web Học viên & Giáo viên** | `.` (Thư mục gốc repo) | `fquiz` | `prj_sg6yZhxUXYxH4wIDRnNZjQEpsOKO` | `https://fquiz-web.vercel.app` |
-| **Cổng Quản Trị (Admin)** | `apps/admin` | `fquiz-admin` | `prj_W1ylsbBg92Vjny82E58RNxZXTFTE` | `https://fquiz-admin.vercel.app` |
+| **Web Học viên & Giáo viên** | `d:\Code\fquiz` (Root) | `fquiz` | `prj_sg6yZhxUXYxH4wIDRnNZjQEpsOKO` | `https://fquiz-web.vercel.app` |
+| **Cổng Quản Trị (Admin)** | `d:\Code\fquiz\apps\admin` | `fquiz-admin` | `prj_W1ylsbBg92Vjny82E58RNxZXTFTE` | `https://fquiz-admin.vercel.app` |
 
 ---
 
@@ -24,52 +26,88 @@ FQuiz là kiến trúc Next.js 16 Monorepo gồm **2 ứng dụng độc lập**
 2. **Luôn kiểm tra `.vercel/project.json`** trước khi kích hoạt lệnh deploy:
    - Trong `apps/admin/.vercel/project.json` phải có `"projectId": "prj_W1ylsbBg92Vjny82E58RNxZXTFTE"`.
    - Trong `d:\Code\fquiz\.vercel\project.json` phải có `"projectId": "prj_sg6yZhxUXYxH4wIDRnNZjQEpsOKO"`.
-3. **Bắt buộc kiểm tra Build & Lints trước khi Deploy**:
-   - Không deploy khi code còn lỗi TypeScript hoặc chưa qua kiểm thử strict.
+3. **Bắt buộc hoàn thành 4 bước Pre-Deployment Verification**:
+   - Không bao giờ deploy khi code còn lỗi TypeScript, vi phạm linter hoặc chưa qua kiểm thử strict.
 
 ---
 
-## 🚀 Quy Trình Triển Khai Chi Tiết
+## 📋 1. Chuỗi Lệnh Kiểm Tra Trước Khi Deploy (Pre-Deployment)
 
-### 1. Triển Khai Cổng Quản Trị Admin (`fquiz-admin`)
+Thực thi tuần tự 4 lệnh bắt buộc tại thư mục gốc (`d:\Code\fquiz`):
 
 ```bash
-# Bước 1: Di chuyển hoặc đặt Cwd tại thư mục apps/admin
+# 1. Linter kiểm tra mã nguồn toàn bộ Monorepo
+npm run lint
+
+# 2. TypeScript Type-Check 7 workspaces
+npm run check-types
+
+# 3. Unit & Integration Tests (66 suites, 430 tests)
+npm test
+
+# 4. AI Rule Engine Strict Mode (18 rules)
+node .agents/scripts/verify.js --strict
+```
+
+---
+
+## 🚀 2. Quy Trình Triển Khai Chi Tiết Lên Vercel Production
+
+### 🅰️ Triển Khai Cổng Quản Trị Admin (`fquiz-admin`)
+
+```bash
+# Bước 1: Đặt Cwd tại thư mục apps/admin
 # Cwd: d:\Code\fquiz\apps\admin
 
-# Bước 2: Kiểm tra biên dịch nội bộ
-npm run build
+# Bước 2: Kiểm tra liên kết dự án Vercel
+cat .vercel/project.json
 
 # Bước 3: Deploy lên Vercel Production
 npx vercel --prod --yes
 ```
 
-> **Target Output**: `https://fquiz-admin.vercel.app` (23 routes compiled)
-
-### 2. Triển Khai Web Học Viên & Giáo Viên (`fquiz`)
-
-```bash
-# Bước 1: Đặt Cwd tại thư mục gốc
-# Cwd: d:\Code\fquiz
-
-# Bước 2: Kiểm tra rule engine & build
-node .agents/scripts/verify.js --strict
-npm run build
-
-# Bước 3: Deploy lên Vercel Production
-npx vercel --prod --yes
-```
-
-> **Target Output**: `https://fquiz-web.vercel.app` (53 routes compiled)
+> **Target Output**: `https://fquiz-admin.vercel.app`
 
 ---
 
-## 🔍 Checklist Xác Minh Sau Deploy (Post-Deployment Verification)
+### 🅱️ Triển Khai Web Học Viên & Giáo Viên (`fquiz`)
 
-1. **Admin Portal (`https://fquiz-admin.vercel.app`)**:
-   - [ ] Truy cập `/quizzes`: Danh sách đề thi chỉ hiển thị đề thi hệ thống/admin.
-   - [ ] Truy cập `/quizzes/new`: Form tạo đề thi không chứa ví dụ cụ thể, ô nhập số câu không có nút tăng giảm.
-   - [ ] Truy cập `/question-bank`: Các tab Thống kê, Migration, Conflicts tải mượt qua `next/dynamic`.
-2. **Web Portal (`https://fquiz-web.vercel.app`)**:
-   - [ ] Truy cập `/explore`: Khám phá các bộ đề public.
-   - [ ] Truy cập `/login` / `/dashboard`: Đăng nhập học viên và làm bài thi.
+```bash
+# Bước 1: Đặt Cwd tại thư mục gốc Monorepo
+# Cwd: d:\Code\fquiz
+
+# Bước 2: Kiểm tra liên kết dự án Vercel
+cat .vercel/project.json
+
+# Bước 3: Deploy lên Vercel Production
+npx vercel --prod --yes
+```
+
+> **Target Output**: `https://fquiz-web.vercel.app`
+
+---
+
+## 🔍 3. Checklist Xác Minh Sau Deploy (Post-Deployment Verification)
+
+Thực hiện kiểm tra HTTP Status và giao diện trên các URL Production chính thức:
+
+### 1. Web Portal (`https://fquiz-web.vercel.app`)
+- [ ] `GET https://fquiz-web.vercel.app` → HTTP 200 OK (Trang chủ / Home Hero tải đầy đủ).
+- [ ] `GET https://fquiz-web.vercel.app/explore` → HTTP 200 OK (Khám phá danh mục đề thi public).
+- [ ] `GET https://fquiz-web.vercel.app/login` → HTTP 200 OK (Form đăng nhập, nút Google OAuth).
+- [ ] `GET https://fquiz-web.vercel.app/community` → HTTP 200 OK (Diễn đàn chia sẻ kiến thức).
+
+### 2. Admin Portal (`https://fquiz-admin.vercel.app`)
+- [ ] `GET https://fquiz-admin.vercel.app/login` → HTTP 200 OK (Cổng đăng nhập quản trị độc lập).
+- [ ] Đăng nhập tài khoản Quản trị viên trên `fquiz-web` → Xác nhận chuyển tiếp mượt sang `fquiz-admin`.
+- [ ] Kiểm tra Zero-Trust Proxy (`apps/admin/proxy.ts`): Truy cập `/quizzes` khi chưa đăng nhập → Tự động redirect về `/login`.
+
+---
+
+## 🛠️ Xử Lý Sự Cố Khi Deploy (Troubleshooting)
+
+- **Xem Logs Runtime**: `npx vercel logs <deployment-url>`
+- **Kiểm tra thông tin build**: `npx vercel inspect <deployment-url>`
+- **Đồng bộ lại liên kết project**:
+  - Admin: `cd apps/admin && npx vercel link --project fquiz-admin --yes --scope nvtruongops`
+  - Web: `cd d:\Code\fquiz && npx vercel link --project fquiz --yes --scope nvtruongops`

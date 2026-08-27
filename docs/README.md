@@ -8,44 +8,42 @@ Chào mừng bạn đến với trung tâm tài liệu kỹ thuật toàn diện
 
 | Mục | Tài liệu | Mô tả trọng tâm | Đối tượng |
 |---|---|---|---|
-| 🏗️ | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Kiến trúc tổng thể Next.js 16 App Router, Module Boundaries, DI, Events, Caching | Devs, Architects |
-| 📐 | [`DESIGN.md`](../DESIGN.md) | Đặc tả kỹ thuật toàn diện: Data Models, Mongoose Schemas, Quiz Engine, AI Pipeline | All |
-| 🌐 | [`DESIGN_ROUTES.md`](./DESIGN_ROUTES.md) | Danh mục Page Routes Web Học viên & Cổng Quản trị Admin độc lập | Frontend Devs |
+| 🏗️ | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Đặc tả kiến trúc Pure Symmetrical Turborepo Monorepo (`apps/web`, `apps/admin`, `packages/*`), 8 Invariants, Data Flow, AI Pipeline | All |
+| 📐 | [`DESIGN.md`](./DESIGN.md) | Đặc tả kỹ thuật toàn diện: Data Models, Mongoose Schemas, Quiz Engine, AI Pipeline | Fullstack Devs |
+| 🌐 | [`DESIGN_ROUTES.md`](./DESIGN_ROUTES.md) | Danh mục Page Routes Web Học viên (`apps/web`) & Cổng Quản trị Admin (`apps/admin`) | Frontend Devs |
 | 🎨 | [`DESIGN_THEME.md`](./DESIGN_THEME.md) | Chuẩn Design Tokens 3-Tier, 4 Themes (Light, Dark, Green, Pink), WCAG 2.2 AA Baseline | UI/UX, Frontend |
-| 🔌 | [`API.md`](./API.md) | Danh mục API Endpoints Web & Cổng Quản trị (`apps/admin`), Auth guards & Error codes | Fullstack, Mobile |
+| 🔌 | [`API.md`](./API.md) | Danh mục REST APIs Web & Admin (`apps/web/app/api`, `apps/admin/app/api`), Auth guards & Error codes | Fullstack, Mobile |
 | 🛡️ | [`SECURITY.md`](./SECURITY.md) | Kiến trúc bảo mật: Token Rotation, CSRF Double-Submit, Rate Limiting, CSP, Audit Logs | SecOps, Backend |
-| 🧪 | [`TESTING.md`](./TESTING.md) | Chiến lược kiểm thử: Jest, Playwright Multi-Server E2E, AI Agent Rule Engine (`verify.js`) | QA, Devs, Agents |
-| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Hướng dẫn triển khai Turborepo Monorepo (2 Projects Vercel: `fquiz` & `fquiz-admin`), MongoDB Atlas, CI/CD | DevOps, Leads |
+| 🧪 | [`TESTING.md`](./TESTING.md) | Chiến lược kiểm thử: Jest (66 suites), Playwright Multi-Server E2E (57 tests), AI Rule Engine (`verify.js`) | QA, Devs, Agents |
+| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Hướng dẫn triển khai Turborepo Monorepo (2 Projects Vercel: `fquiz-web` & `fquiz-admin`), MongoDB Atlas, CI/CD | DevOps, Leads |
 | 🤖 | [`AGENTS.md`](../.agents/AGENTS.md) | Hướng dẫn AI Agent: Rule governance, CI/CD Engine, CodeGraph, Ponytail mode | AI Agents, Devs |
 
 ---
 
-## 📦 Tài liệu Modules Nghiệp vụ (`lib/modules/`)
+## 📦 Các Packages Dùng Chung (`packages/*`)
 
-Các module nghiệp vụ được đóng gói độc lập theo kiến trúc Modular Monolith, tuân thủ nghiêm ngặt nguyên tắc **Không import chéo Model** và **Join dữ liệu ở tầng ứng dụng (Application-level join với `$in`)**:
+Hệ thống được module hóa cao độ thông qua 5 packages độc lập:
 
-- 🧠 [`lib/modules/ai/README.md`](../lib/modules/ai/README.md): Dịch vụ sinh nội dung học tập thông minh (11 loại prompt), Cache dedup SHA-256, và hệ thống Quiz AI Assistant (Intent & Context Resolvers, Question Retriever, Confidence Engine).
-- 🔐 [`lib/modules/auth/README.md`](../lib/modules/auth/README.md): Hệ thống xác thực JWT (jose), Token Rotation, Token Versioning, phân quyền Role Hierarchy (`student`, `teacher`, `admin`), và Site Settings.
-- 🏫 [`lib/modules/classroom/README.md`](../lib/modules/classroom/README.md): Quản lý lớp học trực tuyến, tham gia qua mã lớp, giao bài tập trắc nghiệm theo thời hạn, và theo dõi tiến độ học viên.
-- 👥 [`lib/modules/community/README.md`](../lib/modules/community/README.md): Diễn đàn thảo luận cộng đồng, bài viết (Posts), bình luận lồng nhau (Embedded Comments), lượt thích (Likes) và bộ lọc tags.
-- 📝 [`lib/modules/quiz/README.md`](../lib/modules/quiz/README.md): Động cơ thi trắc nghiệm (Quiz Engine) với 3 chế độ (Immediate, Review, Flashcard), Quản lý Ngân hàng Câu hỏi (Question Bank), Trộn đề Mix Quiz, và Pipeline Import câu hỏi.
+- 🗄️ [`packages/database`](../packages/database): Singleton kết nối MongoDB Atlas, DNS SRV Failover (8.8.8.8, 1.1.1.1), Model Registry Bootstrap ngăn chặn MissingSchemaError.
+- 📦 [`packages/models`](../packages/models): Single Source of Truth cho toàn bộ Mongoose Schemas, Base Entity (`IBaseEntity`), TypeScript Types, Zod Schemas và Application-level join helpers.
+- 🔐 [`packages/auth`](../packages/auth): Hệ thống xác thực JWT (jose) với Zero-Downtime Key Rotation (`JWT_SECRET` + `JWT_SECRET_PREV`), Double-Submit CSRF, Sliding Rate Limiter, RBAC, và `withAuth` Higher-Order Function.
+- 🎨 [`packages/ui`](../packages/ui): Thư viện giao diện dùng chung (Shadcn primitives, Design Tokens CSS Variables, Toast store, Theme Provider, GSAP helpers).
+- ⚙️ [`packages/config-typescript`](../packages/config-typescript): Cấu hình TypeScript chia sẻ tối ưu cho Next.js 16 (`nextjs.json`), React libraries (`react-library.json`) và base (`base.json`).
 
 ---
 
-## ⚙️ Tài liệu Hạ tầng & Tầng ứng dụng
+## 📱 Các Ứng Dụng Thực Thi (`apps/*`)
 
-- 🛠️ [`lib/core/README.md`](../lib/core/README.md): Tầng hạ tầng dùng chung (MongoDB pool, Model Registry, DI Container, Event Bus, Cache, Search, Rate Limit).
-- 🧩 [`components/README.md`](../components/README.md): Thư viện thành phần giao diện (Atomic / Domain-Driven components, shadcn/ui, GSAP animations, Accessibility).
-- 🪝 [`hooks/README.md`](../hooks/README.md): Danh mục Custom React Hooks (Auth, TanStack Query, Session Hydration & Sync, Keyboard Navigation).
-- 🗄️ [`store/README.md`](../store/README.md): Quản lý State phía Client bằng Zustand 5 (`quiz-session.store.ts`, `toast-store.ts`).
-- 📜 [`scripts/README.md`](../scripts/README.md): Danh mục CLI tools: Seeders dữ liệu, Migrations dữ liệu lớn, Data Audit & Diagnostics, Performance Benchmarks.
-- 📋 [`tasks/README.md`](../tasks/README.md): Tài liệu hóa các đặc tả tính năng và kế hoạch phát triển (Feature Specifications & Task Trackers).
+- 🎓 [`apps/web`](../apps/web): Nền tảng học tập chính (Port 3000 / `fquiz-web.vercel.app`) phục vụ Học viên, Giáo viên, Khách vãng lai, Diễn đàn cộng đồng và Quiz AI Assistant thời gian thực.
+- 🛡️ [`apps/admin`](../apps/admin): Cổng Quản trị Hệ thống độc lập (Port 3001 / `fquiz-admin.vercel.app`) với Zero-Trust RBAC Proxy, quản lý danh mục, đề thi chuẩn, ngân hàng câu hỏi, giải quyết conflicts và cấu hình hệ thống.
 
 ---
 
 ## 🏛️ Triết lý Thiết kế Cốt lõi (Core Principles)
 
-1. **Text-Only Quiz Scope**: Tập trung tối đa vào luyện thi trắc nghiệm và ôn luyện kiến thức qua văn bản (câu hỏi, đáp án, giải thích chi tiết, flashcards). Không triển khai audio/TTS/STT/3D WebGL rườm rà.
-2. **Zero-Trust Server Validation**: Phía server không bao giờ tin tưởng client state; toàn bộ câu trả lời thi cử được chấm điểm và tổng kết trên `session.questions_cache` tại server.
-3. **High Performance & Accessibility**: Tất cả animations sử dụng GPU transform aliases thông qua `@gsap/react`, hỗ trợ `prefers-reduced-motion` và đạt chuẩn tương phản màu **WCAG 2.2 AA** trên cả 4 giao diện.
-4. **Strict Governance & CI/CD**: Mọi thay đổi mã nguồn bắt buộc phải vượt qua bộ quy tắc nghiêm ngặt tại `.agents/scripts/verify.js --strict` trước khi được tích hợp vào nhánh chính.
+1. **Text-Only Learning Scope Boundary**: Nền tảng FQuiz chỉ phục vụ học tập, thi trắc nghiệm và ôn luyện qua văn bản. Tuyệt đối không đưa vào audio/TTS/STT/3D WebGL rườm rà.
+2. **Không import chéo Model & Cấm `.populate()`**: `apps/web` và `apps/admin` không tham chiếu mã nguồn của nhau; liên kết bảng dữ liệu thực hiện hoàn toàn ở tầng ứng dụng bằng batch `$in`.
+3. **Server-Authoritative Quiz Engine**: Phía server không bao giờ tin tưởng client state; toàn bộ câu trả lời thi cử được chấm điểm và tổng kết trên `session.questions_cache` tại server, chống Race Condition bằng `findOneAndUpdate({ status: { $ne: 'completed' } })`.
+4. **Cache & Deduplication Nội dung AI**: Băm SHA-256 nội dung yêu cầu (`requestHash`) để đối soát với collection `AIAsset` trước khi gọi Gemini API.
+5. **High Performance & Accessibility**: Tất cả animations sử dụng GPU transform aliases thông qua `@gsap/react`, hỗ trợ `prefers-reduced-motion` và đạt chuẩn tương phản màu **WCAG 2.2 AA** trên cả 4 giao diện.
+6. **Strict Governance & CI/CD**: Mọi thay đổi mã nguồn bắt buộc phải vượt qua bộ quy tắc nghiêm ngặt tại `node .agents/scripts/verify.js --strict` trước khi được tích hợp vào nhánh chính.

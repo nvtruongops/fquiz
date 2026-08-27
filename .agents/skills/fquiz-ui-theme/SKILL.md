@@ -5,12 +5,12 @@ description: Theme Governance, Semantic Design Tokens, and Color Consolidation s
 
 # FQuiz — Theme & Design Tokens Governance Skill
 
-This skill enforces **Theme as Code** governance, **3 Official Themes** (`light`, `dark`, `green`), and **Semantic Design Tokens** across `fquiz`.
+This skill enforces **Theme as Code** governance, **4 Official Themes** (`light`, `dark`, `green`, `pink`), and **Semantic Design Tokens** across `fquiz`.
 
 > ⚠️ **MANDATORY CONTRACT ACCESS REQUIREMENT**:
 > Before making ANY changes to UI components, theme CSS variables, or page routes, you **MUST** first inspect and adhere strictly to the two authoritative documentation contracts:
-> 1. 🎨 **Theme & Accessibility Contract**: [`docs/DESIGN_THEME.md`](file:///d:/Code/fquiz/docs/DESIGN_THEME.md) (Design Tokens 3-Tier Architecture, WCAG 2.2 AA Baseline & FQuiz Enhanced Policy, Status Triads, Quiz Domain Tokens, and 3-Tier Quality Gates).
-> 2. 🗺️ **Page Router Architecture Index**: [`docs/DESIGN_ROUTES.md`](file:///d:/Code/fquiz/docs/DESIGN_ROUTES.md) (Registry of Page Routes across Web Student/Teacher & Standalone Admin Portal, Middleware Governance, and Theme Compliance Status).
+> 1. 🎨 **Theme & Accessibility Contract**: [`docs/DESIGN_THEME.md`](../../docs/DESIGN_THEME.md) (Design Tokens 3-Tier Architecture, WCAG 2.2 AA Baseline & FQuiz Enhanced Policy, Status Triads, Quiz Domain Tokens, and 3-Tier Quality Gates).
+> 2. 🗺️ **Page Router Architecture Index**: [`docs/DESIGN_ROUTES.md`](../../docs/DESIGN_ROUTES.md) (Registry of Page Routes across Web Student/Teacher & Standalone Admin Portal, Middleware Governance, and Theme Compliance Status).
 
 ---
 
@@ -42,7 +42,7 @@ This skill enforces **Theme as Code** governance, **3 Official Themes** (`light`
 ## Governance Rules & Standards
 
 1. **Mandatory Documentation Inspection**:
-   - Always read [`DESIGN_THEME.md`](file:///e:/Code/fquiz/DESIGN_THEME.md) and [`DESIGN_ROUTES.md`](file:///e:/Code/fquiz/DESIGN_ROUTES.md) before writing or refactoring UI components.
+   - Always read [`docs/DESIGN_THEME.md`](../../docs/DESIGN_THEME.md) and [`docs/DESIGN_ROUTES.md`](../../docs/DESIGN_ROUTES.md) before writing or refactoring UI components.
 
 2. **NO Hardcoded Colors**:
    - Never write raw Hex codes (`#5D7B6F`, `#EAE7D6`, `#18181b`, `#3b82f6`) or Tailwind raw palettes (`bg-slate-100`, `text-gray-900`, `bg-blue-500`) directly inside `.tsx` components.

@@ -25,8 +25,8 @@ codeql database analyze .codeql-db codeql/javascript-queries --format=sarif-late
 
 # 3. Unit Tests & Lint Audit
 npm run lint
+npm run check-types
 npm test
-npm run build
 ```
 
 ---

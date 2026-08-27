@@ -107,7 +107,10 @@ module.exports = {
     // ──────────────────────────────────────────────────────────────────────────
     // TIER 2: CONTRACT GOVERNANCE (Surface Elevation Hierarchy Order)
     // ──────────────────────────────────────────────────────────────────────────
-    const globalsCssPath = path.join(ctx.workspaceRoot, 'app', 'globals.css');
+    let globalsCssPath = path.join(ctx.workspaceRoot, 'apps/web', 'app', 'globals.css');
+    if (!ctx.fs.existsSync(globalsCssPath)) {
+      globalsCssPath = path.join(ctx.workspaceRoot, 'app', 'globals.css');
+    }
     
     // Default values for HSL parsing
     let darkBgL = 7, darkCardL = 11, darkFgL = 92;

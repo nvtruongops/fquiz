@@ -3,5 +3,15 @@
   "enabled": true,
   "category": "CODE_QUALITY",
   "severity": "WARNING",
-  "targetDirs": ["app", "components", "lib", "hooks", "store"]
+  "targetDirs": [
+    "apps/web/app",
+    "apps/web/components",
+    "apps/web/lib",
+    "apps/web/hooks",
+    "apps/web/store",
+    "apps/admin/app",
+    "apps/admin/components",
+    "apps/admin/lib",
+    "apps/admin/hooks"
+  ]
 }

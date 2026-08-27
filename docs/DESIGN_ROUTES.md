@@ -1,10 +1,10 @@
 # 🗺️ FQuiz — Sơ đồ Điều hướng & Định tuyến (Page Router Architecture Index)
 
-Hệ thống FQuiz được tổ chức theo kiến trúc **Turborepo Monorepo** với 2 ứng dụng độc lập, phân tách hoàn toàn domain và mã nguồn:
+Hệ thống FQuiz được tổ chức theo kiến trúc **Pure Symmetrical Turborepo Monorepo** với 2 ứng dụng độc lập, phân tách hoàn toàn domain và mã nguồn:
 
 ---
 
-## 1. Ứng dụng Web Học viên & Giáo viên (`fquiz` — Port 3000 / `https://fquiz-web.vercel.app`)
+## 1. Ứng dụng Web Học viên & Giáo viên (`apps/web` — Port 3000 / `https://fquiz-web.vercel.app`)
 
 | Route Group | Đường dẫn | Đối tượng | Mô tả |
 |---|---|---|---|
@@ -14,7 +14,7 @@ Hệ thống FQuiz được tổ chức theo kiến trúc **Turborepo Monorepo**
 | `quiz/` | `/quiz/[id]`, `/quiz/[id]/mode`, `/quiz/[id]/session/[sessionId]`, `/quiz/[id]/session/[sessionId]/flashcard`, `/quiz/[id]/session/[sessionId]/mobile`, `/quiz/[id]/session/[sessionId]/flashcard/mobile`, `/quiz/[id]/result/[sessionId]` | Chung | Phòng thi trắc nghiệm đa thiết bị (Desktop, Mobile, Flashcard) |
 | Public | `/`, `/explore`, `/courses/[code]`, `/privacy`, `/terms`, `/maintenance` | Công khai | Trang chủ, duyệt đề thi công khai, điều khoản, trang bảo trì |
 
-> 🛡️ **Middleware Web (`proxy.ts`)**: Mọi request tới `/admin` hoặc `/admin/*` trên Web tự động được redirect sang Cổng Quản trị độc lập (`NEXT_PUBLIC_ADMIN_URL`). Mọi request tới `/api/admin/*` trả về `404 Not Found`.
+> 🛡️ **Middleware Web (`apps/web/proxy.ts`)**: Mọi request tới `/admin` hoặc `/admin/*` trên Web tự động được redirect sang Cổng Quản trị độc lập (`NEXT_PUBLIC_ADMIN_URL`). Mọi request tới `/api/admin/*` trả về `404 Not Found`.
 
 ---
 

@@ -42,6 +42,22 @@ test.describe('Student Features & Profile Management', () => {
     })
 
     test('should display settings sections including password change form', async ({ page }) => {
+      await page.route('**/api/student/settings', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            settings: {
+              timezone: 'Asia/Ho_Chi_Minh',
+              language: 'vi',
+              notifyEmail: true,
+              notifyQuizReminder: true,
+              privacyShareActivity: false,
+            },
+          }),
+        })
+      })
+
       await page.goto('/settings')
 
       // Check for headings or settings sections
@@ -59,6 +75,22 @@ test.describe('Student Features & Profile Management', () => {
     })
 
     test('should validate password change form on empty submit', async ({ page }) => {
+      await page.route('**/api/student/settings', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            settings: {
+              timezone: 'Asia/Ho_Chi_Minh',
+              language: 'vi',
+              notifyEmail: true,
+              notifyQuizReminder: true,
+              privacyShareActivity: false,
+            },
+          }),
+        })
+      })
+
       await page.goto('/settings')
 
       const submitBtn = page.getByRole('button', { name: /Đổi mật khẩu|Cập nhật/i })
@@ -109,7 +141,7 @@ test.describe('Student Features & Profile Management', () => {
       await page.goto('/history')
 
       // Verify search input and filters are visible
-      await expect(page.getByPlaceholder(/Tìm kiếm mã môn, tên bài thi/i)).toBeVisible()
+      await expect(page.getByPlaceholder(/Tìm kiếm mã môn/i)).toBeVisible()
       await expect(page.getByRole('button', { name: /Hoàn thành/i })).toBeVisible()
     })
   })

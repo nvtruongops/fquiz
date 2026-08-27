@@ -15,7 +15,7 @@ class RuleLoader {
         console.error(`⚠️ Unable to parse manifest.json: ${err.message}`);
       }
     }
-    return { schemaVersion: 1, governanceVersion: '1.4.0' };
+    return { schemaVersion: 1, governanceVersion: '2.0.0' };
   }
 
   static loadRegistry(rootDir) {
@@ -27,7 +27,7 @@ class RuleLoader {
         console.error(`⚠️ Unable to parse registry.json: ${err.message}`);
       }
     }
-    return { schemaVersion: 1, registryVersion: '1.4.0', skills: {} };
+    return { schemaVersion: 1, registryVersion: '2.0.0', skills: {} };
   }
 
   static loadPolicies(rootDir) {
