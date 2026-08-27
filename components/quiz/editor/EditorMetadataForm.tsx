@@ -47,7 +47,7 @@ export function EditorMetadataForm({
 
     const csrfToken = getCsrfTokenFromCookie()
     const excludeParam = quizId ? `&excludeId=${encodeURIComponent(quizId)}` : ''
-    fetch(`/api/admin/quizzes/check-code?code=${encodeURIComponent(code)}${excludeParam}`, {
+    fetch(`/api/student/quizzes/check-code?code=${encodeURIComponent(code)}${excludeParam}`, {
       headers: {
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
       },

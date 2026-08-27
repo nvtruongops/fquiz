@@ -476,18 +476,18 @@
     --input: 45 18% 70%;
     --ring: 155 35% 30%;
 
-    --success-fg: 155 45% 20%;
-    --success-bg: 145 30% 84%;
-    --success-border: 145 25% 72%;
+    --success-fg: 142 85% 15%;
+    --success-bg: 142 60% 88%;
+    --success-border: 142 70% 35%;
     --info-fg: 175 40% 22%;
     --info-bg: 175 30% 86%;
     --info-border: 175 28% 72%;
     --warning-fg: 35 65% 24%;
     --warning-bg: 35 45% 86%;
     --warning-border: 35 40% 74%;
-    --incorrect-fg: 0 70% 32%;
-    --incorrect-bg: 0 50% 90%;
-    --incorrect-border: 0 45% 78%;
+    --incorrect-fg: 0 85% 28%;
+    --incorrect-bg: 0 90% 93%;
+    --incorrect-border: 0 80% 50%;
     --attempted-fg: 155 35% 30%;
     --attempted-bg: 155 25% 85%;
     --attempted-border: 155 25% 75%;
@@ -516,12 +516,12 @@
     --question-current-bg: 155 35% 30%;
     --question-current-fg: 60 30% 98%;
     --question-current-border: 155 35% 20%;
-    --question-correct-bg: 145 30% 84%;
-    --question-correct-fg: 155 45% 20%;
-    --question-correct-border: 145 25% 72%;
-    --question-incorrect-bg: 0 50% 90%;
-    --question-incorrect-fg: 0 70% 32%;
-    --question-incorrect-border: 0 45% 78%;
+    --question-correct-bg: 142 60% 88%;
+    --question-correct-fg: 142 85% 15%;
+    --question-correct-border: 142 70% 35%;
+    --question-incorrect-bg: 0 90% 93%;
+    --question-incorrect-fg: 0 85% 28%;
+    --question-incorrect-border: 0 80% 50%;
     --question-flagged-bg: 35 45% 86%;
     --question-flagged-fg: 35 65% 24%;
     --question-flagged-border: 35 40% 74%;
@@ -704,18 +704,18 @@
     --input: 348 30% 78%;
     --ring: 348 55% 64%;
 
-    --success-fg: 154 72% 23%;         /* #145A32 */
-    --success-bg: 140 45% 93%;          /* #E2F4E7 */
-    --success-border: 145 40% 75%;      /* #A3DBB7 */
+    --success-fg: 154 80% 18%;         /* Crisp Deep Jade #0c4d2b */
+    --success-bg: 142 55% 91%;          /* Mint Ice Tint */
+    --success-border: 145 60% 40%;      /* Vivid Emerald Green Border */
     --info-fg: 200 80% 28%;            /* #0F4C64 */
     --info-bg: 200 70% 94%;            /* #E0F4FC */
     --info-border: 200 50% 78%;         /* #98D7ED */
     --warning-fg: 38 90% 27%;          /* #8C5700 Warm Amber Text */
     --warning-bg: 40 90% 94%;          /* #FFF4DF Warm Gold Tint */
     --warning-border: 40 70% 78%;      /* #F4D396 Warm Gold Border */
-    --incorrect-fg: 352 80% 34%;       /* #991B1B */
-    --incorrect-bg: 352 90% 96%;       /* #FEE2E2 */
-    --incorrect-border: 352 70% 82%;   /* #F8B4B4 */
+    --incorrect-fg: 0 90% 25%;          /* Pure Vivid Crimson Carmine Red (Unmistakable from Pink) */
+    --incorrect-bg: 0 85% 93%;          /* High-Contrast Rose-Red Background */
+    --incorrect-border: 0 85% 50%;      /* Sharp Solid Crimson Red Border */
     --attempted-fg: 348 55% 64%;
     --attempted-bg: 348 35% 92%;
     --attempted-border: 348 30% 86%;
@@ -744,12 +744,12 @@
     --question-current-bg: 348 55% 64%;
     --question-current-fg: 0 0% 100%;
     --question-current-border: 348 55% 56%;
-    --question-correct-bg: 140 45% 93%;
-    --question-correct-fg: 154 72% 23%;
-    --question-correct-border: 145 40% 75%;
-    --question-incorrect-bg: 352 90% 96%;
-    --question-incorrect-fg: 352 80% 34%;
-    --question-incorrect-border: 352 70% 82%;
+    --question-correct-bg: 142 55% 91%;
+    --question-correct-fg: 154 80% 18%;
+    --question-correct-border: 145 60% 40%;
+    --question-incorrect-bg: 0 85% 93%;
+    --question-incorrect-fg: 0 90% 25%;
+    --question-incorrect-border: 0 85% 50%;
     --question-flagged-bg: 40 90% 94%;
     --question-flagged-fg: 38 90% 27%;
     --question-flagged-border: 40 70% 78%;

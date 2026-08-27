@@ -10,20 +10,28 @@ import { useTheme } from 'next-themes'
 function ThemeSync() {
   const { data: authData } = useAuth()
   const { theme, setTheme } = useTheme()
-  const syncedUserThemeRef = React.useRef<string | null>(null)
+  const lastSyncedKeyRef = React.useRef<string | null>(null)
 
   React.useEffect(() => {
+    const userId = authData?.user?._id
     const userTheme = authData?.user?.themePreference || authData?.user?.theme_preference
-    if (
-      userTheme &&
-      ['light', 'dark', 'green', 'pink'].includes(userTheme) &&
-      syncedUserThemeRef.current !== userTheme &&
-      theme !== userTheme
-    ) {
-      syncedUserThemeRef.current = userTheme
-      setTheme(userTheme)
+
+    if (!userId || !userTheme) {
+      lastSyncedKeyRef.current = null
+      return
     }
-  }, [authData?.user?.themePreference, authData?.user?.theme_preference, theme, setTheme])
+
+    const syncKey = `${userId}:${userTheme}`
+    if (
+      ['light', 'dark', 'green', 'pink'].includes(userTheme) &&
+      lastSyncedKeyRef.current !== syncKey
+    ) {
+      lastSyncedKeyRef.current = syncKey
+      if (theme !== userTheme) {
+        setTheme(userTheme)
+      }
+    }
+  }, [authData?.user?._id, authData?.user?.themePreference, authData?.user?.theme_preference, theme, setTheme])
 
   return null
 }

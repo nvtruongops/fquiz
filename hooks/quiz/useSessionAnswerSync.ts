@@ -102,15 +102,17 @@ export function useSessionAnswerSync({
     submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes }, {
       onSuccess: (data: any) => {
         if ('isCorrect' in data) {
+          const fb: QuestionFeedback = {
+            isCorrect: data.isCorrect,
+            correctAnswer: data.correctAnswer,
+            correctAnswers: data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : []),
+            explanation: data.explanation,
+          }
           setFeedbackByQuestion((prev) => ({
             ...prev,
-            [currentQuestionIndex]: {
-              isCorrect: data.isCorrect,
-              correctAnswer: data.correctAnswer,
-              correctAnswers: data.correctAnswers ?? [data.correctAnswer],
-              explanation: data.explanation,
-            },
+            [currentQuestionIndex]: fb,
           }))
+          setLastAnswerResult(fb)
         }
       },
       onError: () => {
@@ -154,20 +156,30 @@ function getRestoredAnswerState(
   currentQuestion: any,
   feedbackByQuestion: Record<number, QuestionFeedback>,
 ) {
-  const existing = activeData?.session?.user_answers.find((a: any) => a.question_index === currentQuestionIndex)
+  const existing = activeData?.session?.user_answers?.find((a: any) => a.question_index === currentQuestionIndex)
   if (existing) {
     const restored = existing.answer_indexes && existing.answer_indexes.length > 0
       ? existing.answer_indexes : [existing.answer_index]
-    const isImmediate = activeData.session.mode === 'immediate'
+    const isImmediate = activeData?.session?.mode === 'immediate'
     let feedback = isImmediate ? feedbackByQuestion[currentQuestionIndex] : undefined
-    if (isImmediate && !feedback && currentQuestion?.correct_answer !== undefined) {
-      const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
-        ? currentQuestion.correct_answer : [currentQuestion.correct_answer]
-      feedback = {
-        isCorrect: existing.is_correct,
-        correctAnswer: correctAnswerIndexes[0],
-        correctAnswers: correctAnswerIndexes,
-        explanation: currentQuestion.explanation,
+    if (isImmediate && !feedback) {
+      if (currentQuestion?.correct_answer !== undefined) {
+        const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
+          ? currentQuestion.correct_answer : [currentQuestion.correct_answer]
+        feedback = {
+          isCorrect: existing.is_correct,
+          correctAnswer: correctAnswerIndexes[0],
+          correctAnswers: correctAnswerIndexes,
+          explanation: currentQuestion.explanation,
+        }
+      } else if (existing.is_correct !== undefined) {
+        const correctAnswers = existing.is_correct ? restored : []
+        feedback = {
+          isCorrect: existing.is_correct,
+          correctAnswer: correctAnswers[0],
+          correctAnswers,
+          explanation: currentQuestion?.explanation || '',
+        }
       }
     }
     return {

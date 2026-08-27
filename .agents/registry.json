@@ -1,54 +1,102 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "1.4.0",
+  "registryVersion": "1.5.0",
   "skills": {
     "using-superpowers": {
-      "type": "builtin",
-      "provider": "ide-platform",
+      "type": "local",
+      "path": ".agents/skills/using-superpowers/SKILL.md",
       "priority": 100,
       "executionMode": "exclusive",
-      "capabilities": ["meta:skill-invocation", "meta:workflow"],
-      "description": "Establishes skill invocation workflows before any response."
+      "capabilities": ["meta:skill-invocation", "meta:workflow", "meta:pre-task"],
+      "description": "Establishes mandatory skill invocation workflows BEFORE any response or task execution."
     },
-    "brainstorming": {
-      "type": "builtin",
-      "provider": "ide-platform",
-      "priority": 90,
+    "ponytail": {
+      "type": "local",
+      "path": ".agents/skills/ponytail/SKILL.md",
+      "priority": 95,
       "executionMode": "sequential",
-      "capabilities": ["meta:brainstorming", "meta:design-exploration"],
-      "description": "Explores user intent, requirements, and design options."
+      "capabilities": ["meta:ponytail-mode", "meta:minimal-code", "meta:root-cause-debug", "meta:during-task"],
+      "description": "Lazy senior developer mode for shortest working diffs, stdlib first, and zero bloat during task execution."
+    },
+    "ponytail-audit": {
+      "type": "local",
+      "path": ".agents/skills/ponytail-audit/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["audit:bloat-detection", "audit:unused-abstractions", "audit:simplification"],
+      "description": "Audits codebase for bloat, unnecessary abstractions, and simplification opportunities."
+    },
+    "ponytail-review": {
+      "type": "local",
+      "path": ".agents/skills/ponytail-review/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["review:ponytail-lens", "review:diff-minimization", "review:yagni"],
+      "description": "Performs code review through the ponytail lens to enforce minimal diffs and YAGNI."
     },
     "writing-plans": {
-      "type": "builtin",
-      "provider": "ide-platform",
+      "type": "local",
+      "path": ".agents/skills/writing-plans/SKILL.md",
       "priority": 90,
       "executionMode": "sequential",
       "capabilities": ["meta:planning", "meta:implementation-plan"],
-      "description": "Drafts multi-step execution plans."
+      "description": "Drafts structured multi-step execution plans."
     },
     "executing-plans": {
-      "type": "builtin",
-      "provider": "ide-platform",
+      "type": "local",
+      "path": ".agents/skills/executing-plans/SKILL.md",
       "priority": 85,
       "executionMode": "sequential",
       "capabilities": ["meta:plan-execution", "meta:checkpoints"],
-      "description": "Executes written implementation plans with checkpoints."
+      "description": "Executes written implementation plans with checkpoints and validations."
     },
-    "codegraph": {
-      "type": "mcp",
-      "provider": "codegraph-mcp",
+    "verification-before-completion": {
+      "type": "local",
+      "path": ".agents/skills/verification-before-completion/SKILL.md",
+      "priority": 95,
+      "executionMode": "sequential",
+      "capabilities": ["meta:verification", "meta:quality-assurance"],
+      "description": "Rigorous verification checklist before declaring any task complete."
+    },
+    "systematic-debugging": {
+      "type": "local",
+      "path": ".agents/skills/systematic-debugging/SKILL.md",
       "priority": 90,
       "executionMode": "sequential",
-      "capabilities": ["codegraph:ast", "codegraph:call-edges", "codegraph:impact-analysis"],
-      "description": "Queries codebase AST dependency graph database (./.codegraph/codegraph.db)."
+      "capabilities": ["debug:root-cause", "debug:4-phase-process"],
+      "description": "Systematic 4-phase root cause debugging workflow."
     },
-    "ponytail": {
-      "type": "builtin",
-      "provider": "ide-platform",
-      "priority": 80,
+    "test-driven-development": {
+      "type": "local",
+      "path": ".agents/skills/test-driven-development/SKILL.md",
+      "priority": 85,
       "executionMode": "sequential",
-      "capabilities": ["meta:ponytail-mode", "meta:minimal-code", "meta:root-cause-debug"],
-      "description": "Lazy senior developer mode for minimal code diffs and zero bloat."
+      "capabilities": ["test:tdd", "test:jest", "test:playwright"],
+      "description": "Test-driven development workflow (red-green-refactor)."
+    },
+    "vercel-react-best-practices": {
+      "type": "local",
+      "path": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["react:best-practices", "nextjs:performance", "react:server-components"],
+      "description": "Vercel & React best practices, server components, and performance guidelines."
+    },
+    "vercel-optimize": {
+      "type": "local",
+      "path": ".agents/skills/vercel-optimize/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["perf:bundle-size", "perf:lcp-inp", "perf:edge-runtime"],
+      "description": "Optimization strategies for Next.js App Router and Vercel deployments."
+    },
+    "vercel-composition-patterns": {
+      "type": "local",
+      "path": ".agents/skills/vercel-composition-patterns/SKILL.md",
+      "priority": 85,
+      "executionMode": "sequential",
+      "capabilities": ["arch:composition", "react:clean-components"],
+      "description": "Component composition and clean state patterns for React and Next.js."
     },
     "fquiz-workflow": {
       "type": "local",
@@ -89,6 +137,30 @@
       "executionMode": "sequential",
       "capabilities": ["theme:tokens", "theme:governance", "ui:color-consolidation"],
       "description": "Theme Governance, Semantic Design Tokens, and Color Consolidation standards for FQuiz."
+    },
+    "git-pr": {
+      "type": "local",
+      "path": ".agents/skills/git-pr/SKILL.md",
+      "priority": 80,
+      "executionMode": "sequential",
+      "capabilities": ["git:pr-workflow", "git:rule-verification", "git:codeql"],
+      "description": "Pull Request creation and verification workflow for FQuiz."
+    },
+    "vercel-deploy": {
+      "type": "local",
+      "path": ".agents/skills/vercel-deploy/SKILL.md",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["deploy:vercel", "deploy:monorepo-safety", "deploy:admin-vs-web"],
+      "description": "Standard, safe deployment workflow for FQuiz Monorepo to prevent deploying wrong targets."
+    },
+    "codegraph": {
+      "type": "mcp",
+      "provider": "codegraph-mcp",
+      "priority": 90,
+      "executionMode": "sequential",
+      "capabilities": ["codegraph:ast", "codegraph:call-edges", "codegraph:impact-analysis"],
+      "description": "Queries codebase AST dependency graph database (./.codegraph/codegraph.db)."
     }
   }
 }

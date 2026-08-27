@@ -9,8 +9,8 @@ This skill enforces **Theme as Code** governance, **3 Official Themes** (`light`
 
 > ⚠️ **MANDATORY CONTRACT ACCESS REQUIREMENT**:
 > Before making ANY changes to UI components, theme CSS variables, or page routes, you **MUST** first inspect and adhere strictly to the two authoritative documentation contracts:
-> 1. 🎨 **Theme & Accessibility Contract**: [`e:\Code\fquiz\DESIGN_THEME.md`](file:///e:/Code/fquiz/DESIGN_THEME.md) (Design Tokens 3-Tier Architecture, WCAG 2.2 AA Baseline & FQuiz Enhanced Policy, Status Triads, Quiz Domain Tokens, and 3-Tier Quality Gates).
-> 2. 🗺️ **Page Router Architecture Index**: [`e:\Code\fquiz\DESIGN_ROUTES.md`](file:///e:/Code/fquiz/DESIGN_ROUTES.md) (Registry of all 49 Page Routes, Route Groups `(auth)`, `(student)`, `(teacher)`, `(admin)`, `quiz/`, Middleware Governance, and Theme Compliance Status).
+> 1. 🎨 **Theme & Accessibility Contract**: [`docs/DESIGN_THEME.md`](file:///d:/Code/fquiz/docs/DESIGN_THEME.md) (Design Tokens 3-Tier Architecture, WCAG 2.2 AA Baseline & FQuiz Enhanced Policy, Status Triads, Quiz Domain Tokens, and 3-Tier Quality Gates).
+> 2. 🗺️ **Page Router Architecture Index**: [`docs/DESIGN_ROUTES.md`](file:///d:/Code/fquiz/docs/DESIGN_ROUTES.md) (Registry of Page Routes across Web Student/Teacher & Standalone Admin Portal, Middleware Governance, and Theme Compliance Status).
 
 ---
 

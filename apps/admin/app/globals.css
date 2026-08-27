@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .light {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 221 83% 45%;
+    --secondary-accent: 215 25% 75%;
+    --app-bg: 210 40% 98%;
+    --secondary: 214 32% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 214 32% 95%;
+    --muted-foreground: 215 25% 36%;
+    --accent: 214 32% 93%;
+    --accent-foreground: 221 83% 53%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 25% 82%;
+    --input: 214 25% 82%;
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
+
+    --success-fg: 160 84% 39%;
+    --success-bg: 160 100% 96%;
+    --success-border: 160 65% 75%;
+    --info-fg: 221 83% 53%;
+    --info-bg: 217 100% 97%;
+    --info-border: 217 80% 80%;
+    --warning-fg: 38 92% 35%;
+    --warning-bg: 43 100% 95%;
+    --warning-border: 43 90% 78%;
+
+    --surface-page: 210 40% 98%;
+    --surface-base: 214 32% 95%;
+    --surface-card: 0 0% 100%;
+    --surface-card-elevated: 0 0% 100%;
+    --surface-card-muted: 214 32% 96%;
+    --surface-card-accent: 217 100% 97%;
+    --surface-inset: 214 32% 94%;
+    --surface-overlay: 0 0% 100%;
+
+    --border-subtle: 214 32% 92%;
+    --border-default: 214 32% 88%;
+    --border-strong: 214 32% 78%;
+    --border-emphasis: 214 32% 65%;
+    --border-accent: 221 83% 53%;
+    --border-focus: 221 83% 53%;
+    --border-selected: 221 83% 53%;
+    --border-success: 160 65% 75%;
+    --border-warning: 43 90% 78%;
+    --border-danger: 0 70% 82%;
+    --border-info: 217 80% 80%;
+
+    --ring-focus: 221 83% 53%;
+    --ring-selected: 221 83% 53%;
+
+    --text-secondary: 215 25% 27%;
+    --text-tertiary: 215 16% 45%;
+    --text-muted: 215 16% 47%;
+    --text-disabled: 215 16% 65%;
+    --text-placeholder: 215 16% 65%;
+    --text-on-accent: 0 0% 100%;
+    --text-on-brand: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 223 50% 5%;
+    --foreground: 216 43% 96%;
+    --card: 221 42% 11%;
+    --card-foreground: 216 43% 96%;
+    --popover: 219 40% 16%;
+    --popover-foreground: 216 43% 96%;
+    --primary: 223 76% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 223 76% 65%;
+    --secondary-accent: 215 36% 23%;
+    --app-bg: 223 50% 5%;
+    --secondary: 222 50% 8%;
+    --secondary-foreground: 216 43% 96%;
+    --muted: 221 47% 10%;
+    --muted-foreground: 214 22% 70%;
+    --accent: 221 47% 14%;
+    --accent-foreground: 216 43% 96%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 221 40% 18%;
+    --input: 221 40% 18%;
+    --ring: 223 76% 55%;
+    --radius: 0.75rem;
+
+    --success-fg: 160 84% 45%;
+    --success-bg: 160 80% 10%;
+    --success-border: 160 60% 25%;
+    --info-fg: 223 76% 65%;
+    --info-bg: 223 70% 12%;
+    --info-border: 223 50% 28%;
+    --warning-fg: 38 92% 55%;
+    --warning-bg: 38 70% 12%;
+    --warning-border: 38 60% 28%;
+
+    --surface-page: 223 50% 5%;
+    --surface-base: 222 50% 8%;
+    --surface-card: 221 42% 11%;
+    --surface-card-elevated: 221 40% 14%;
+    --surface-card-muted: 221 47% 9%;
+    --surface-card-accent: 223 50% 12%;
+    --surface-inset: 223 55% 4%;
+    --surface-overlay: 219 40% 16%;
+
+    --border-subtle: 221 45% 12%;
+    --border-default: 221 40% 18%;
+    --border-strong: 221 35% 26%;
+    --border-emphasis: 221 30% 36%;
+    --border-accent: 223 76% 55%;
+    --border-focus: 223 76% 55%;
+    --border-selected: 223 76% 55%;
+    --border-success: 160 60% 25%;
+    --border-warning: 38 60% 28%;
+    --border-danger: 0 60% 28%;
+    --border-info: 223 50% 28%;
+
+    --ring-focus: 223 76% 55%;
+    --ring-selected: 223 76% 55%;
+
+    --text-secondary: 214 28% 84%;
+    --text-tertiary: 214 20% 70%;
+    --text-muted: 214 22% 70%;
+    --text-disabled: 215 16% 45%;
+    --text-placeholder: 215 16% 50%;
+    --text-on-accent: 0 0% 100%;
+    --text-on-brand: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased min-h-screen;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}

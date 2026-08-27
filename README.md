@@ -39,7 +39,7 @@
 | **State Management** | [TanStack React Query v5](https://tanstack.com/query) (Server State) + [Zustand v5](https://zustand-demo.pmnd.rs/) (Client State) |
 | **AI Integration** | [Google Gemini API](https://ai.google.dev/) (`@google/generative-ai`) + [OpenAI API](https://platform.openai.com/) |
 | **Auth & Security** | [jose](https://github.com/panva/jose) (JWT Rotation), [bcryptjs](https://github.com/dcodeIO/bcrypt.js), Double-Submit CSRF, [Pino](https://getpino.io/) |
-| **Testing & CI/CD** | [Jest](https://jestjs.io/), [ts-jest](https://kulshekhar.github.io/ts-jest/), [fast-check](https://fast-check.dev/), [ESLint](https://eslint.org/) SonarJS, GitHub Actions |
+| **Testing & CI/CD** | [Jest](https://jestjs.io/), [ts-jest](https://kulshekhar.github.io/ts-jest/), [fast-check](https://fast-check.dev/), [Playwright](https://playwright.dev/), [ESLint](https://eslint.org/), GitHub Actions |
 
 ---
 
@@ -95,11 +95,16 @@ Mở trình duyệt tại [http://localhost:3000](http://localhost:3000) để t
 
 ```
 .
-├── 📁 app/                     # Next.js App Router (49 Page Routes & 80+ API Route Handlers)
+├── 📁 apps/
+│   └── 📁 admin/               # 🛡️ Cổng Quản trị Hệ thống (Admin Portal - Port 3001)
+│       ├── app/                # Next.js 16 App Router (Users, Quizzes, Question Bank, Settings)
+│       ├── components/         # Admin UI Components & Modals
+│       ├── hooks/              # Admin Custom Hooks Layer (State & Mutations)
+│       └── proxy.ts            # Zero-Trust Admin Proxy Middleware
+├── 📁 app/                     # 🎓 Web Học viên & Giáo viên (Public Learning App - Port 3000)
 │   ├── (auth)/                 # Xác thực: Login, Register, Forgot/Reset Password
 │   ├── (student)/              # Không gian học viên: Dashboard, Quizzes, History, Classrooms
 │   ├── (teacher)/              # Không gian giáo viên: Lớp học & Quản lý bài tập
-│   ├── (admin)/admin/          # Quản trị hệ thống: Users, Quizzes, Question Bank, Settings
 │   ├── quiz/[id]/              # Chi tiết đề thi, Chọn chế độ, Phòng thi, Kết quả
 │   └── api/                    # REST API endpoints (Auth, Sessions, Classrooms, AI, Community)
 ├── 📁 components/              # Thư viện UI Components (Xem components/README.md)

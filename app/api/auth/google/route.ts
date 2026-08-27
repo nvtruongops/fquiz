@@ -203,6 +203,7 @@ export async function POST(request: Request) {
             name: user.username,
             role: user.role,
             avatarUrl: user.avatar_url || '',
+            themePreference: user.theme_preference ?? user.themePreference ?? 'light',
           },
         },
         { status: 200 }

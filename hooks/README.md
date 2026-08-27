@@ -26,8 +26,6 @@ hooks/
 │   └── useSubmitAnswer.ts             # Mutation hook nộp câu trả lời cho từng câu hỏi
 ├── shared/
 │   └── useDebounce.ts                 # Hook trì hoãn giá trị tìm kiếm và hàm xử lý (Debounce)
-├── useAdminCategories.ts              # Quản lý danh mục bài thi cho Quản trị viên
-├── useAdminSettings.ts                # Quản lý cấu hình toàn hệ thống (Bảo trì, LLM Provider)
 ├── useCommunityFeed.ts                # Tải bài viết, bình luận và lượt thích trên diễn đàn
 ├── useLogout.ts                       # Xử lý đăng xuất, xóa cookie và làm sạch bộ nhớ cache
 ├── useMixQuizGenerator.ts             # Khởi tạo bài thi trộn ngẫu nhiên từ nhiều bộ đề

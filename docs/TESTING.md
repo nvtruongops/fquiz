@@ -34,7 +34,7 @@ graph TD
 ## 3. Các Lệnh Thực thi Test (Test Commands)
 
 ```bash
-# 1. Chạy toàn bộ Unit Tests
+# 1. Chạy toàn bộ Unit Tests (Jest)
 npm test
 
 # 2. Chạy test và xuất báo cáo độ bao phủ (Coverage Report)
@@ -43,7 +43,13 @@ npm run test:coverage
 # 3. Chạy test ở chế độ theo dõi (Watch Mode)
 npx jest --watch
 
-# 4. Chạy một file test cụ thể
+# 4. Chạy toàn bộ E2E Tests (Playwright Multi-Server :3000 & :3001)
+npx playwright test
+
+# 5. Chạy riêng kiểm thử phân quyền RBAC
+npx playwright test "e2e/rbac-navigation.spec.ts"
+
+# 6. Chạy một file test Jest cụ thể
 npx jest lib/modules/quiz/__tests__/quiz-engine.test.ts
 
 # 5. Chạy test theo pattern tên hàm/bài test
@@ -124,7 +130,7 @@ node .agents/scripts/verify.js --strict
 1. `BUILD_TYPE_CHECK`: 100% pass TypeScript compilation (0 error).
 2. `CODE_QUALITY_SECURITY`: 0 hardcoded secrets, 0 security vulnerabilities.
 3. `CROSS_MODULE_BOUNDARY`: 0 cross-module model import, 0 Mongoose `.populate()`.
-4. `ESLINT_VALIDATION`: 100% pass ESLint & SonarJS code quality rules.
+4. `ESLINT_VALIDATION`: 100% pass ESLint code quality & security rules.
 5. `FOLDER_STRUCTURE`: Đảm bảo đầy đủ 7 thư mục kiến trúc chuẩn.
 6. `LINT_ISSUES`: 0 biến không dùng, 0 swallowed errors, 0 explicit `any`.
 7. `NO_MOCK_DATA`: 0 dữ liệu mock tĩnh trong code production.

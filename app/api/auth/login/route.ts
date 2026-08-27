@@ -77,6 +77,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Thông tin đăng nhập không đúng' }, { status: 401 })
     }
 
+    // Role Isolation Defense: Admin accounts are isolated to Admin Portal and blocked on Web App
+    // Return a generic response to prevent account enumeration / targeting
+    // dev, teacher, and student are allowed to log into Web App
+    if (user.role === 'admin') {
+      logSecurityEvent('login_blocked_admin_on_web', { request_id: requestId, user_id: user._id.toString(), route, outcome: 'denied', ip }, 'Admin user tried to login on public web')
+      return NextResponse.json({ error: 'Thông tin đăng nhập không đúng' }, { status: 401 })
+    }
+
     // Record login log
     LoginLog.create({ user_id: user._id, ip, user_agent: userAgent }).catch((logErr) =>
       console.warn('[LoginLog] Failed to record login:', logErr)
@@ -114,6 +122,7 @@ export async function POST(request: Request) {
         name: user.username,
         role: user.role,
         avatarUrl: user.avatar_url || '',
+        themePreference: user.theme_preference ?? user.themePreference ?? 'light',
       },
     }, { status: 200 })
 

@@ -84,6 +84,15 @@ graph TD
 
 ---
 
+### 2.8. Phân Tách Domain & Zero-Trust Admin Proxy
+- **Cách ly hoàn toàn 2 ứng dụng**:
+  - Web Học viên & Giáo viên (`fquiz-web.vercel.app`): `proxy.ts` chuyển hướng mọi request tới `/admin` sang `NEXT_PUBLIC_ADMIN_URL` (`https://fquiz-admin.vercel.app/login`) và trả về `404` đối với `/api/admin/*`.
+  - Cổng Quản trị Admin (`fquiz-admin.vercel.app`): `apps/admin/proxy.ts` áp dụng chính sách **Zero-Trust**: chỉ người dùng mang JWT hợp lệ có role `admin` hoặc `dev` mới được phép truy cập Dashboard và Admin API; các truy cập trái phép bị chuyển hướng ngay lập tức về `/login` trước khi request chạm vào Server Components hay API Route Handlers.
+- **Chia sẻ phiên an toàn (Cross-App Token Sharing)**:
+  - Cả 2 ứng dụng sử dụng chung `JWT_SECRET` và thuật toán ký HMAC-SHA256, cho phép điều hướng mượt mà giữa Web và Admin mà không cần đăng nhập lại khi người dùng có đủ thẩm quyền.
+
+---
+
 ## 3. Quy trình Kiểm thử & Quét Lỗ hổng Tự động
 
 1. **Rule Engine Pre-Push Security Check**:

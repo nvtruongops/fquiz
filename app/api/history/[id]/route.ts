@@ -76,7 +76,6 @@ async function handleActivePath(quiz: any, activeSession: any, payload: any) {
   })
 }
 
-/* eslint-disable sonarjs/cognitive-complexity */
 export const GET = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }

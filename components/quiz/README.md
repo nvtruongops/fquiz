@@ -33,11 +33,9 @@ components/quiz/
 │   ├── CategoryFilterTabs.tsx # Tabs lọc đề thi theo danh mục
 │   ├── QuizCardItem.tsx       # Thẻ hiển thị đề thi cá nhân (sửa, xóa, làm bài)
 │   └── QuizSearchSortBar.tsx  # Thanh tìm kiếm và sắp xếp đề thi
-├── question-bank/             # Tích hợp Ngân hàng Câu hỏi
+├── question-bank/             # Tiện ích Import & Báo cáo cấu trúc
 │   ├── QuestionBankWarning.tsx # Cảnh báo khi câu hỏi bị xung đột đáp án
-│   ├── QuestionConflictModal.tsx # Modal so sánh và giải quyết conflict
 │   ├── QuizImportPanel.tsx    # Panel tải file JSON/TXT để import đề thi
-│   ├── QuizEditorWithQuestionBank.tsx # Wrapper tích hợp ngân hàng câu hỏi
 │   └── QuestionStructureReportCard.tsx # Báo cáo chất lượng cấu trúc câu hỏi
 ├── session/                   # Phòng thi trắc nghiệm (Core Exam Room)
 │   ├── SessionLayout.tsx      # Khung layout phòng thi 3 cột thích ứng

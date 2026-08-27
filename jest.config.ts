@@ -38,14 +38,7 @@ const config: Config = {
   transformIgnorePatterns: [
     '/node_modules/(?!(jose)/)',
   ],
-  // SonarQube test execution reporter (generic format)
-  reporters: [
-    'default',
-    ['jest-sonar', {
-      outputDirectory: 'test-results',
-      outputName: 'sonar-report.xml',
-    }],
-  ],
+  reporters: ['default'],
   // Coverage thresholds
   coverageThreshold: {
     global: {

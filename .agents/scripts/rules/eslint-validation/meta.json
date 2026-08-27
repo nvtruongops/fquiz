@@ -8,5 +8,5 @@
   "parallelizable": true,
   "supportsFix": false,
   "estimatedCost": "medium",
-  "description": "Thực thi ESLint kiểm tra chuẩn TypeScript, React, SonarJS Cognitive Complexity và Security audit cho ứng dụng fquiz."
+  "description": "Thực thi ESLint kiểm tra chuẩn TypeScript, React, và Security audit cho ứng dụng fquiz."
 }

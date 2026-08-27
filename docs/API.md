@@ -111,17 +111,23 @@ interface ErrorResponse {
 
 ---
 
-### 2.5. Quản trị Hệ thống (`/api/admin/*`)
+### 2.5. Cổng Quản trị Hệ thống (`apps/admin` — `/api/*`)
 
-| Method | Endpoint | Quyền (Role) | Mô tả |
+*Toàn bộ API Quản trị được triển khai độc lập tại workspace `apps/admin` (Cổng Quản trị `https://fquiz-admin.vercel.app`), cách ly hoàn toàn khỏi Web Học viên.*
+
+| Method | Endpoint (`apps/admin`) | Quyền (Role) | Mô tả |
 |---|---|---|---|
-| `GET/POST` | `/api/admin/users` | Admin | Quản lý danh sách người dùng, phân quyền, khóa tài khoản (Ban) |
-| `GET/PUT/DELETE`| `/api/admin/users/[id]` | Admin | Xem chi tiết, chỉnh sửa thông tin hoặc xóa tài khoản |
-| `GET/POST` | `/api/admin/quizzes` | Admin | Quản lý tất cả bài thi trong toàn hệ thống |
-| `GET/PUT/DELETE`| `/api/admin/quizzes/[id]` | Admin | Chỉnh sửa nội dung hoặc gỡ bỏ đề thi vi phạm |
-| `GET/POST` | `/api/admin/categories` | Admin | Quản lý danh mục chuẩn toàn hệ thống |
-| `GET/PUT` | `/api/admin/settings` | Admin | Cấu hình tham số toàn cục (Bảo trì, Rate Limits, LLM Provider) |
-| `GET/PUT` | `/api/admin/feedback` | Admin | Tiếp nhận, phản hồi và xử lý các ý kiến đóng góp từ người dùng |
+| `GET/POST` | `/api/users` | Admin / Dev | Quản lý danh sách người dùng, phân quyền, khóa tài khoản (Ban) |
+| `GET/PUT/DELETE`| `/api/users/[id]` | Admin / Dev | Xem chi tiết, chỉnh sửa thông tin hoặc xóa tài khoản |
+| `POST` | `/api/users/[id]/reset-password` | Admin / Dev | Reset mật khẩu người dùng |
+| `GET/POST` | `/api/quizzes` | Admin / Dev | Quản lý và tạo mới tất cả bài thi trong toàn hệ thống |
+| `GET/PUT/DELETE`| `/api/quizzes/[id]` | Admin / Dev | Lấy thông tin, cập nhật hoặc xóa đề thi |
+| `GET` | `/api/quizzes/check-code` | Admin / Dev | Kiểm tra trùng lặp mã đề thi trước khi xuất bản |
+| `GET/POST` | `/api/categories` | Admin / Dev | Quản lý danh mục chuẩn toàn hệ thống |
+| `GET/PUT` | `/api/settings` | Admin / Dev | Cấu hình tham số toàn cục (Bảo trì, Rate Limits, LLM Provider) |
+| `GET/PUT` | `/api/feedback` | Admin / Dev | Tiếp nhận và quản lý danh sách phản hồi từ người dùng |
+| `POST` | `/api/feedback/[id]/reply` | Admin / Dev | Gửi email phản hồi trực tiếp cho người dùng |
+| `GET/POST` | `/api/question-bank/*` | Admin / Dev | Migration, kiểm tra mâu thuẫn câu hỏi và đồng bộ ngân hàng |
 
 ---
 

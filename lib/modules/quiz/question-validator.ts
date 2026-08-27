@@ -25,7 +25,6 @@ export interface QuestionValidationError {
  * Validate một câu hỏi trước khi migrate.
  * Trả về danh sách lỗi + cảnh báo.
  */
-// eslint-disable-next-line sonarjs/cognitive-complexity
 export function validateQuestion(q: {
   text: string
   options: string[]

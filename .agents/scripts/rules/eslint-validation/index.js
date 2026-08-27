@@ -22,7 +22,7 @@ module.exports = {
         maxBuffer: 10 * 1024 * 1024
       });
 
-      ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & SonarJS (0 Error).');
+      ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & Security (0 Error).');
       return { passed: true };
     } catch (err) {
       const output = err.stdout || '';
@@ -54,12 +54,12 @@ module.exports = {
       }
 
       if (totalErrors > 0) {
-        ctx.logger.warn(`Phát hiện ${totalErrors} vi phạm ESLint TypeScript/SonarJS trong mã nguồn:`);
+        ctx.logger.warn(`Phát hiện ${totalErrors} vi phạm ESLint TypeScript/Security trong mã nguồn:`);
         reportedIssues.slice(0, 15).forEach(issue => {
           ctx.logger.warn(`  - [${issue.ruleId}] ${issue.file}:${issue.line} -> ${issue.message}`);
         });
       } else {
-        ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & SonarJS (0 Error).');
+        ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & Security (0 Error).');
       }
 
       return { passed: true };

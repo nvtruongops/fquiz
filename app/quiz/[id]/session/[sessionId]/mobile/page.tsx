@@ -14,7 +14,6 @@ import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useAuth } from '@/hooks/auth/useAuth'
 
-/* eslint-disable sonarjs/cognitive-complexity */
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
   const { data: authData } = useAuth()
@@ -286,9 +285,9 @@ export default function QuizSessionMobilePage() {
               if (showImmediateFeedback) {
                 const isCorrect = correctAnswerSet.includes(optIndex)
                 if (isCorrect) {
-                  statusStyle = 'border-success-border bg-success-bg text-success-fg font-bold'
+                  statusStyle = 'border-success-border bg-success-bg text-success-fg font-bold ring-1 ring-success-border/30'
                 } else if (isSelected) {
-                  statusStyle = 'border-incorrect-border bg-incorrect-bg text-destructive font-bold'
+                  statusStyle = 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-bold ring-1 ring-incorrect-border/30'
                 }
               } else if (isSelected) {
                 statusStyle = 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
@@ -304,7 +303,7 @@ export default function QuizSessionMobilePage() {
                   }}
                   disabled={ctrl.submitted || ctrl.submitMutation.isPending || isNoteMode}
                   className={cn(
-                    "flex w-full items-center gap-3.5 rounded-2xl border-2 p-4 text-left transition-all cursor-pointer",
+                    "flex w-full items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer",
                     isNoteMode && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
                     statusStyle
                   )}
@@ -316,10 +315,14 @@ export default function QuizSessionMobilePage() {
                     <InteractiveText content={optText} sourceType="quiz" sourceId={question._id} />
                   </span>
                   {showImmediateFeedback && correctAnswerSet.includes(optIndex) && (
-                    <CheckCircle2 className="h-5 w-5 text-success-fg shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0">
+                      <CheckCircle2 className="h-4 w-4 text-success-fg" /> Đúng
+                    </span>
                   )}
                   {showImmediateFeedback && !correctAnswerSet.includes(optIndex) && isSelected && (
-                    <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0">
+                      <XCircle className="h-4 w-4 text-incorrect-fg" /> Sai
+                    </span>
                   )}
                 </button>
               )

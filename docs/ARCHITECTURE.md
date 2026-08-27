@@ -6,7 +6,9 @@ Tài liệu thiết kế kiến trúc toàn diện của hệ thống **FQuiz**,
 
 ## 1. Tổng quan Kiến trúc (Architectural Overview)
 
-FQuiz được xây dựng theo mô hình **Modular Monolith** trên nền tảng **Next.js 16 App Router** (Node.js runtime). Dự án hướng đến việc cung cấp một hệ thống học ngôn ngữ và luyện thi trắc nghiệm tốc độ cao, có khả năng mở rộng tốt và độ tin cậy tuyệt đối trong việc chấm điểm và quản lý phiên làm bài.
+FQuiz được xây dựng theo mô hình **Turborepo Monorepo & Modular Monolith** trên nền tảng **Next.js 16 App Router** (Node.js runtime), bao gồm 2 workspace phân tách độc lập hoàn toàn:
+1. **Web Học viên & Giáo viên (`.`)**: Port 3000 / `https://fquiz-web.vercel.app` — Nền tảng học tập, làm bài thi trắc nghiệm, quản lý lớp học và cộng đồng.
+2. **Cổng Quản trị Admin (`apps/admin`)**: Port 3001 / `https://fquiz-admin.vercel.app` — Trung tâm điều hành quản lý người dùng, đề thi chuẩn, ngân hàng câu hỏi và cấu hình hệ thống.
 
 ```mermaid
 graph TD

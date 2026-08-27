@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowRight, ShieldCheck } from 'lucide-react'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
@@ -134,7 +134,13 @@ function LoginForm() {
       await queryClient.invalidateQueries({ queryKey: ['student'] })
 
       setTimeout(() => {
-        router.push(callbackUrl || (data.role === 'admin' ? '/admin' : '/dashboard'))
+        if (data.role === 'admin') {
+          const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'https://fquiz-admin.vercel.app/login'
+          window.location.href = adminUrl
+          return
+        }
+
+        router.push(callbackUrl || '/dashboard')
         router.refresh()
       }, 100)
     } catch {
@@ -249,17 +255,27 @@ function LoginForm() {
 
         <GoogleSignInButton callbackUrl={callbackUrl} text="Đăng nhập với Google" />
 
-        {/* Footer Link */}
-        <div className="mt-6 pt-4 border-t border-border">
-          <p className="text-center text-muted-foreground font-medium text-sm">
-            Bạn chưa có tài khoản?{' '}
+        {/* Footer Links */}
+        <div className="mt-6 pt-4 border-t border-border flex items-center justify-between gap-3 text-xs">
+          <p className="text-muted-foreground font-medium">
+            Chưa có tài khoản?{' '}
             <Link 
               href={callbackUrl ? `/register?redirect=${encodeURIComponent(callbackUrl)}` : '/register'}
-              className="text-primary font-black hover:text-primary/90 transition-colors hover:underline decoration-2 underline-offset-4"
+              className="text-primary font-bold hover:underline"
             >
-              Đăng ký miễn phí
+              Đăng ký
             </Link>
           </p>
+
+          <a 
+            href={process.env.NEXT_PUBLIC_ADMIN_URL || 'https://fquiz-admin.vercel.app/login'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground/70 hover:text-muted-foreground transition-colors inline-flex items-center gap-1 font-medium"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 opacity-70" />
+            Cổng Quản trị
+          </a>
         </div>
       </div>
     </div>

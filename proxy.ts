@@ -177,10 +177,6 @@ function ensureCsrfCookie(request: NextRequest, response: NextResponse) {
 }
 
 function enforceRoleRouting(pathname: string, role: string, request: NextRequest, requestId: string) {
-  if (pathname.startsWith('/admin') && role !== 'admin') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
   if (TEACHER_PATHS.some((p) => pathname.startsWith(p)) && !['teacher', 'admin', 'dev'].includes(role)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -190,11 +186,7 @@ function enforceRoleRouting(pathname: string, role: string, request: NextRequest
   }
 
   if (STUDENT_PATHS.some((p) => pathname.startsWith(p)) && !['student', 'teacher', 'dev'].includes(role)) {
-    return NextResponse.redirect(new URL('/admin', request.url))
-  }
-
-  if (pathname.startsWith('/api/admin') && role !== 'admin') {
-    return createForbiddenResponse(requestId)
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (pathname.startsWith('/api/teacher') && !['teacher', 'admin', 'dev'].includes(role)) {
@@ -318,8 +310,7 @@ function getRateLimitTier(request: NextRequest, pathname: string) {
   }
   if (
     pathname.startsWith('/api/v1/ai') ||
-    pathname.startsWith('/api/import/') ||
-    pathname.startsWith('/api/admin/settings/test-llm')
+    pathname.startsWith('/api/import/')
   ) {
     return RATE_LIMIT_TIERS.AI_GENERATE
   }
@@ -356,6 +347,18 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith('/_vercel') || pathname.startsWith('/_next')) {
     return NextResponse.next()
+  }
+
+  // Standalone Admin Portal Routing: Redirect all /admin traffic to dedicated admin app
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const adminBase = process.env.NEXT_PUBLIC_ADMIN_URL || 'https://fquiz-admin.vercel.app'
+    const adminPath = pathname.replace(/^\/admin/, '') || '/'
+    return NextResponse.redirect(new URL(adminPath, adminBase))
+  }
+
+  // Intercept and isolate /api/admin endpoints on public web
+  if (pathname.startsWith('/api/admin')) {
+    return applyCors(request, NextResponse.json({ error: 'Not Found' }, { status: 404, headers: { 'x-request-id': requestId } }))
   }
 
   const mobileRedirect = handleMobileRedirect(request, pathname)
