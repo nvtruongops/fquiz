@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
+import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 import './globals.css'
 
 const inter = Inter({
@@ -11,7 +12,7 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const APP_URL = resolveAppBaseUrl()
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
