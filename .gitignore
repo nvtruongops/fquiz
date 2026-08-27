@@ -85,7 +85,6 @@ task/
 
 # Scripts
 scripts/.env.local
-.scannerwork/
 
 # Local Agents & MCP Config (tracked for governance)
 !.agents/
@@ -94,9 +93,5 @@ scripts/.env.local
 # Exported Database Dumps
 data/
 
-
-
-
-
-
 .vercel
+.env*

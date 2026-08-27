@@ -8,10 +8,6 @@ Thư viện thành phần giao diện người dùng (UI Component Library) củ
 
 ```
 components/
-├── admin/                     # Giao diện dành riêng cho Quản trị viên (Admin)
-│   ├── AdminSidebar.tsx       # Sidebar điều hướng trang quản trị
-│   ├── QuestionBank*.tsx      # Quản lý ngân hàng câu hỏi, analytics, giải quyết conflict
-│   └── settings/              # Thẻ cấu hình hệ thống & bảo mật
 ├── community/                 # Diễn đàn cộng đồng & bài viết học tập
 │   ├── CommunityHeader.tsx    # Header & thống kê bài viết
 │   ├── CommunityPostCard.tsx  # Thẻ hiển thị bài viết, likes, comments

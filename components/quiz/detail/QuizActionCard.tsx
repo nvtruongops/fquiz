@@ -34,7 +34,6 @@ interface QuizActionCardProps {
   latestSessionId?: string
 }
 
-/* eslint-disable sonarjs/cognitive-complexity */
 export function QuizActionCard({
   quizId,
   selectedMode,

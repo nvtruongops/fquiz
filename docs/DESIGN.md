@@ -8,7 +8,7 @@
 
 Tài liệu [`DESIGN.md`](../DESIGN.md) là đặc tả kỹ thuật chi tiết nhất của hệ thống **FQuiz**, bao gồm:
 
-1. **Kiến trúc Tổng thể**: Phân rã theo kiến trúc Modular Monolith, các Route Groups trong Next.js 16 (`(auth)`, `(student)`, `(teacher)`, `(admin)`, `quiz/`), và cơ chế Middleware `proxy.ts`.
+1. **Kiến trúc Tổng thể**: Turborepo Monorepo gồm 2 workspaces: Web Học viên & Giáo viên (`.`) và Cổng Quản trị độc lập (`apps/admin`), phân tách các Route Groups trong Next.js 16 (`(auth)`, `(student)`, `(teacher)`, `quiz/`), kết hợp cơ chế Zero-Trust Middleware `proxy.ts`.
 2. **Thiết kế Cơ sở Dữ liệu (Mongoose Schemas)**:
    - Các mô hình thực thể: `User`, `SiteSettings`, `Feedback`, `Quiz`, `QuizSession`, `QuestionBank`, `PinnedQuestion`, `Classroom`, `QuizAssignment`, `AIAsset`, `Post`...
    - Quy chuẩn `IBaseEntity` và chỉ mục (indexes) tối ưu hóa truy vấn.

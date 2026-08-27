@@ -79,19 +79,18 @@ export function useQuizEditor(options: QuizEditorOptions) {
 
   const effectiveCreateEndpoint = useMemo(() =>
     createEndpoint ??
-    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${isStudentMode ? '/api/student/quizzes' : '/api/admin/quizzes'}`,
-  [createEndpoint, isStudentMode])
+    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes`,
+  [createEndpoint])
 
   const effectiveUpdateEndpointBuilder = useMemo(() =>
     updateEndpointBuilder ?? ((id: string) => {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
-      const subPath = isStudentMode ? `/api/student/quizzes/${id}` : `/api/admin/quizzes/${id}`
-      return `${baseUrl}${subPath}`
+      return `${baseUrl}/api/student/quizzes/${id}`
     }),
-  [updateEndpointBuilder, isStudentMode])
+  [updateEndpointBuilder])
 
   const effectiveRedirectOnPublish = useMemo(() =>
-    redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/admin/quizzes'),
+    redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/teacher/quizzes'),
   [redirectOnPublish, isStudentMode])
 
   const [form, setForm] = useState<QuizFormData>(() => ({

@@ -10,12 +10,12 @@ Chào mừng bạn đến với trung tâm tài liệu kỹ thuật toàn diện
 |---|---|---|---|
 | 🏗️ | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Kiến trúc tổng thể Next.js 16 App Router, Module Boundaries, DI, Events, Caching | Devs, Architects |
 | 📐 | [`DESIGN.md`](../DESIGN.md) | Đặc tả kỹ thuật toàn diện: Data Models, Mongoose Schemas, Quiz Engine, AI Pipeline | All |
-| 🌐 | [`DESIGN_ROUTES.md`](../DESIGN_ROUTES.md) | Danh mục 49 Page Routes, Route Groups `(auth)`, `(student)`, `(teacher)`, `(admin)` | Frontend Devs |
-| 🎨 | [`DESIGN_THEME.md`](../DESIGN_THEME.md) | Chuẩn Design Tokens 3-Tier, 4 Themes (Light, Dark, Green, Pink), WCAG 2.2 AA Baseline | UI/UX, Frontend |
-| 🔌 | [`API.md`](./API.md) | Danh mục 80+ API Endpoints, Request/Response contracts, Auth guards & Error codes | Fullstack, Mobile |
+| 🌐 | [`DESIGN_ROUTES.md`](./DESIGN_ROUTES.md) | Danh mục Page Routes Web Học viên & Cổng Quản trị Admin độc lập | Frontend Devs |
+| 🎨 | [`DESIGN_THEME.md`](./DESIGN_THEME.md) | Chuẩn Design Tokens 3-Tier, 4 Themes (Light, Dark, Green, Pink), WCAG 2.2 AA Baseline | UI/UX, Frontend |
+| 🔌 | [`API.md`](./API.md) | Danh mục API Endpoints Web & Cổng Quản trị (`apps/admin`), Auth guards & Error codes | Fullstack, Mobile |
 | 🛡️ | [`SECURITY.md`](./SECURITY.md) | Kiến trúc bảo mật: Token Rotation, CSRF Double-Submit, Rate Limiting, CSP, Audit Logs | SecOps, Backend |
-| 🧪 | [`TESTING.md`](./TESTING.md) | Chiến lược kiểm thử: Jest, Fast-check, Benchmark tests, AI Agent Rule Engine (`verify.js`) | QA, Devs, Agents |
-| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Hướng dẫn triển khai Vercel, MongoDB Atlas setup, Biến môi trường, Migration | DevOps, Leads |
+| 🧪 | [`TESTING.md`](./TESTING.md) | Chiến lược kiểm thử: Jest, Playwright Multi-Server E2E, AI Agent Rule Engine (`verify.js`) | QA, Devs, Agents |
+| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Hướng dẫn triển khai Turborepo Monorepo (2 Projects Vercel: `fquiz` & `fquiz-admin`), MongoDB Atlas, CI/CD | DevOps, Leads |
 | 🤖 | [`AGENTS.md`](../.agents/AGENTS.md) | Hướng dẫn AI Agent: Rule governance, CI/CD Engine, CodeGraph, Ponytail mode | AI Agents, Devs |
 
 ---

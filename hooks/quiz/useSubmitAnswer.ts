@@ -80,7 +80,6 @@ export function useSubmitAnswer(sessionId: string) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const {
-    mode,
     optimisticallyMarkAnswered,
     rollbackOptimisticAnswer,
     confirmAnswer,
@@ -108,19 +107,32 @@ export function useSubmitAnswer(sessionId: string) {
     onSuccess: (data, _variables, context) => {
       confirmAnswer(context.questionIndex)
 
-      if (mode === 'immediate' && 'isCorrect' in data) {
+      const currentStore = useQuizSessionStore.getState()
+      if ('isCorrect' in data) {
+        const rawCorrect = data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : [])
         setLastAnswerResult({
           isCorrect: data.isCorrect,
           correctAnswer: data.correctAnswer,
-          correctAnswers: data.correctAnswers,
+          correctAnswers: rawCorrect,
           explanation: data.explanation,
+        })
+
+        // Update preloaded questions cache in React Query so current session question contains correct answer
+        queryClient.setQueryData<any>(['sessions', sessionId, 'all-questions'], (old: any) => {
+          if (!old || !Array.isArray(old.questions)) return old
+          const updatedQuestions = [...old.questions]
+          if (updatedQuestions[context.questionIndex]) {
+            updatedQuestions[context.questionIndex] = {
+              ...updatedQuestions[context.questionIndex],
+              correct_answer: rawCorrect,
+              explanation: data.explanation || updatedQuestions[context.questionIndex].explanation,
+            }
+          }
+          return { ...old, questions: updatedQuestions }
         })
       }
 
-      // Defer session invalidation to avoid blocking the answer feedback display.
-      // The feedback is already set locally; invalidation runs in the background
-      // to keep user_answers in sync for navigation without delaying the UI.
-      // Timer is stored in a ref so it can be cleared on next mutation or unmount.
+      // Defer session invalidation to keep user_answers in sync for navigation without blocking UI
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'] })

@@ -7,12 +7,11 @@ export interface TextareaProps extends React.ComponentProps<"textarea"> {
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, autoResize, onInput, ...props }, ref) => {
-    const internalRef = React.useRef<HTMLTextAreaElement>(null)
+    const internalRef = React.useRef<HTMLTextAreaElement | null>(null)
     const combinedRef = (node: HTMLTextAreaElement | null) => {
-      // @ts-expect-error -- combining refs
-      internalRef.current = node
+      (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = node
       if (typeof ref === "function") ref(node)
-      else if (ref) (ref as any).current = node
+      else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = node
     }
 
     const adjustHeight = React.useCallback(() => {
@@ -27,9 +26,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       if (autoResize) adjustHeight()
     }, [adjustHeight, props.value, autoResize])
 
-    const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const handleInput: NonNullable<React.ComponentProps<"textarea">["onInput"]> = (e) => {
       if (autoResize) adjustHeight()
-      if (onInput) onInput(e)
+      if (onInput) (onInput as (event: typeof e) => void)(e)
     }
 
     const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {

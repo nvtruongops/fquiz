@@ -285,18 +285,38 @@ function StandardQuestionView({
                       onSelectOption(idx)
                     }}
                     className={cn(
-                      "p-2.5 rounded text-sm font-normal leading-relaxed font-[Arial,sans-serif] transition-none border",
+                      "p-2.5 rounded text-sm font-normal leading-relaxed font-[Arial,sans-serif] transition-none border flex items-center justify-between gap-3",
                       !isAnswerDisabled && !isNoteActive && "cursor-pointer",
-                      isAnswerDisabled && "cursor-not-allowed opacity-60",
+                      isAnswerDisabled && "cursor-not-allowed opacity-75",
                       isNoteActive && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
-                      isCorrect && "border-success-fg bg-success-bg/20 text-success-fg font-normal",
-                      isWrongSelected && "border-incorrect-border bg-incorrect-bg text-incorrect-fg font-normal",
+                      isCorrect && "border-success-border bg-success-bg text-success-fg font-medium ring-1 ring-success-border shadow-xs",
+                      isWrongSelected && "border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium ring-1 ring-incorrect-border shadow-xs",
                       !isCorrect && !isWrongSelected && isSelected && "border-primary bg-primary/10 text-primary font-normal",
                       !isCorrect && !isWrongSelected && !isSelected && !isNoteActive && "border-transparent text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <span className="font-normal mr-2">{letter}.</span>
-                    <span><InteractiveText content={option} sourceType="quiz" sourceId={question._id} /></span>
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className={cn(
+                        "inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold shrink-0",
+                        isCorrect && "bg-success-fg text-white",
+                        isWrongSelected && "bg-incorrect-border text-white",
+                        !isCorrect && !isWrongSelected && "font-normal"
+                      )}>
+                        {letter}.
+                      </span>
+                      <span><InteractiveText content={option} sourceType="quiz" sourceId={question._id} /></span>
+                    </div>
+
+                    {isCorrect && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0 animate-in fade-in duration-200">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Đáp án đúng
+                      </span>
+                    )}
+                    {isWrongSelected && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0 animate-in fade-in duration-200">
+                        <XCircle className="w-3.5 h-3.5" /> Bạn đã chọn sai
+                      </span>
+                    )}
                   </div>
                 )
               })}
@@ -473,8 +493,8 @@ function AnimatedQuestionView({
                   !isAnswerDisabled && !isNoteActive && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
                   isNoteActive && 'cursor-text border-dashed border-amber-500/40 bg-amber-500/5',
                   isFocused && 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary shadow-md',
-                  isCorrect && 'border-success-fg/60 bg-success-bg/25 text-success-fg font-medium shadow-sm animate-in zoom-in-95 duration-200',
-                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-medium animate-in shake duration-200',
+                  isCorrect && 'border-success-border bg-success-bg text-success-fg font-semibold shadow-xs ring-2 ring-success-border/30 animate-in zoom-in-95 duration-200',
+                  isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-semibold shadow-xs ring-2 ring-incorrect-border/30 animate-in shake duration-200',
                   !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
                   !isCorrect && !isWrongSelected && !isSelected && !isNoteActive && 'border-border bg-card/80 text-foreground hover:border-primary/50 hover:bg-muted/60'
                 )}
@@ -491,8 +511,16 @@ function AnimatedQuestionView({
                 <span className="flex-1 whitespace-pre-wrap">
                   <InteractiveText content={option} sourceType="quiz" sourceId={question._id} />
                 </span>
-                {isCorrect && <CheckCircle2 className="w-5 h-5 text-success-fg flex-none self-center animate-in zoom-in duration-300" />}
-                {isWrongSelected && <XCircle className="w-5 h-5 text-incorrect-fg flex-none self-center animate-in zoom-in duration-300" />}
+                {isCorrect && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-success-fg bg-background/90 px-2.5 py-1 rounded-md border border-success-border shrink-0 animate-in zoom-in duration-300 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4" /> Đáp án đúng
+                  </span>
+                )}
+                {isWrongSelected && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-incorrect-fg bg-background/90 px-2.5 py-1 rounded-md border border-incorrect-border shrink-0 animate-in zoom-in duration-300 shadow-xs">
+                    <XCircle className="w-4 h-4" /> Bạn đã chọn sai
+                  </span>
+                )}
               </button>
             )
           })}

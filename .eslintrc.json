@@ -2,16 +2,11 @@
   "extends": [
     "next/core-web-vitals",
     "plugin:security/recommended",
-    "plugin:sonarjs/recommended",
     "plugin:no-unsanitized/DOM"
   ],
   "plugins": [
     "security",
-    "sonarjs",
     "no-unsanitized"
   ],
-  "rules": {
-    "sonarjs/no-duplicate-string": "off",
-    "sonarjs/cognitive-complexity": "warn"
-  }
+  "rules": {}
 }
