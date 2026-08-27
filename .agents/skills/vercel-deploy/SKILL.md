@@ -51,39 +51,25 @@ node .agents/scripts/verify.js --strict
 
 ---
 
-## 🚀 2. Quy Trình Triển Khai Chi Tiết Lên Vercel Production
-
-### 🅰️ Triển Khai Cổng Quản Trị Admin (`fquiz-admin`)
+### 🅰️ Triển Khai Web Học Viên & Giáo Viên (`fquiz-web`)
 
 ```bash
-# Bước 1: Đặt Cwd tại thư mục apps/admin
-# Cwd: d:\Code\fquiz\apps\admin
-
-# Bước 2: Kiểm tra liên kết dự án Vercel
-cat .vercel/project.json
-
-# Bước 3: Deploy lên Vercel Production
-npx vercel --prod --yes
+# Thực thi từ Monorepo Root (d:\Code\fquiz)
+npx vercel --prod --yes --scope nvtruongops
 ```
 
-> **Target Output**: `https://fquiz-admin.vercel.app`
+> **Target Output**: `https://fquiz-web.vercel.app` (Deployment: `fquiz-web`, Root Directory: `apps/web`)
 
 ---
 
-### 🅱️ Triển Khai Web Học Viên & Giáo Viên (`fquiz`)
+### 🅱️ Triển Khai Cổng Quản Trị Admin (`fquiz-admin`)
 
 ```bash
-# Bước 1: Đặt Cwd tại thư mục gốc Monorepo
-# Cwd: d:\Code\fquiz
-
-# Bước 2: Kiểm tra liên kết dự án Vercel
-cat .vercel/project.json
-
-# Bước 3: Deploy lên Vercel Production
-npx vercel --prod --yes
+# Thực thi từ Monorepo Root (d:\Code\fquiz)
+npx vercel --prod --yes --scope nvtruongops --project fquiz-admin
 ```
 
-> **Target Output**: `https://fquiz-web.vercel.app`
+> **Target Output**: `https://fquiz-admin.vercel.app` (Deployment: `fquiz-admin`, Root Directory: `apps/admin`)
 
 ---
 
