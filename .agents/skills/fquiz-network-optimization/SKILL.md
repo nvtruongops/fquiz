@@ -43,6 +43,7 @@ priority: high
 Execute verification before completing network optimization work:
 ```bash
 npm run lint
-npm run build
+npm run check-types
 npm test
+node .agents/scripts/verify.js --strict
 ```

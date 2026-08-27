@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "governanceVersion": "1.4.0",
+  "governanceVersion": "2.0.0",
   "pipelineName": "fquiz-feature-development-pipeline",
   "description": "Standard multi-stage DAG workflow pipeline for fquiz AI Agent task orchestration",
   "workflowStages": [

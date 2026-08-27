@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "1.5.0",
+  "registryVersion": "2.0.0",
   "skills": {
     "using-superpowers": {
       "type": "local",

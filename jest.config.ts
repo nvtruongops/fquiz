@@ -5,15 +5,20 @@ const config: Config = {
   testEnvironment: 'jest-environment-node',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/apps/web/$1',
+    '^@fquiz/database$': '<rootDir>/packages/database/src/index.ts',
+    '^@fquiz/models$': '<rootDir>/packages/models/src/index.ts',
+    '^@fquiz/auth$': '<rootDir>/packages/auth/src/index.ts',
+    '^@fquiz/ui$': '<rootDir>/packages/ui/src/index.ts',
+    '^@fquiz/config-typescript/(.*)$': '<rootDir>/packages/config-typescript/$1',
   },
   transform: {
-    '^.+\.tsx?$': ['ts-jest', {
+    '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {
         jsx: 'react',
       },
     }],
-    '^.+\.js$': ['ts-jest', {
+    '^.+\\.js$': ['ts-jest', {
       tsconfig: {
         jsx: 'react',
         allowJs: true,
@@ -50,11 +55,12 @@ const config: Config = {
   },
   // Collect coverage from all source directories
   collectCoverageFrom: [
-    'app/**/*.{ts,tsx}',
-    'components/**/*.{ts,tsx}',
-    'hooks/**/*.{ts,tsx}',
-    'lib/**/*.{ts,tsx}',
-    'store/**/*.{ts,tsx}',
+    'apps/web/app/**/*.{ts,tsx}',
+    'apps/web/components/**/*.{ts,tsx}',
+    'apps/web/hooks/**/*.{ts,tsx}',
+    'apps/web/lib/**/*.{ts,tsx}',
+    'apps/web/store/**/*.{ts,tsx}',
+    'packages/**/*.{ts,tsx}',
     '!**/__tests__/**',
     '!**/*.d.ts',
     '!**/*.test.{ts,tsx}',

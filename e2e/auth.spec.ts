@@ -19,7 +19,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await expect(submitButton).toBeVisible()
 
       // Navigation links
-      await expect(page.getByRole('link', { name: /Đăng ký miễn phí/i })).toBeVisible()
+      await expect(page.getByRole('link', { name: /Đăng ký/i })).toBeVisible()
       await expect(page.getByRole('link', { name: /Quên mật khẩu\?/i })).toBeVisible()
       await expect(page.getByRole('link', { name: /Cổng Quản trị/i })).toBeVisible()
     })

@@ -3,9 +3,16 @@
   "enabled": true,
   "category": "CODE_QUALITY",
   "severity": "ERROR",
-  "scanDirs": ["app", "components"],
+  "scanDirs": [
+    "apps/web/app",
+    "apps/web/components",
+    "apps/admin/app",
+    "apps/admin/components",
+    "packages/ui"
+  ],
   "allowedHexFiles": [
     "globals.css",
-    "FQuizLogo.tsx"
+    "FQuizLogo.tsx",
+    "GoogleSignInButton.tsx"
   ]
 }

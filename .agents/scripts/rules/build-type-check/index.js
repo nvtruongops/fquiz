@@ -11,7 +11,7 @@ module.exports = {
     }
 
     try {
-      execSync('npx tsc --noEmit', {
+      execSync('npx turbo check-types', {
         cwd: ctx.workspaceRoot,
         encoding: 'utf8',
         stdio: 'pipe'

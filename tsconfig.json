@@ -26,6 +26,21 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@fquiz/database": [
+        "./packages/database/src/index.ts"
+      ],
+      "@fquiz/models": [
+        "./packages/models/src/index.ts"
+      ],
+      "@fquiz/auth": [
+        "./packages/auth/src/index.ts"
+      ],
+      "@fquiz/ui": [
+        "./packages/ui/src/index.ts"
+      ],
+      "@fquiz/config-typescript/*": [
+        "./packages/config-typescript/*"
       ]
     }
   },

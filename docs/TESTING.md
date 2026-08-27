@@ -8,12 +8,14 @@ Tài liệu hướng dẫn quy chuẩn kiểm thử (Testing Guidelines), tổ c
 
 ```mermaid
 graph TD
-    Governance["Rule Engine Governance (node .agents/scripts/verify.js --strict)"]
+    Governance["AI Rule Engine Governance (node .agents/scripts/verify.js --strict)"]
+    E2E["Playwright Multi-Server E2E (:3000 Web & :3001 Admin - 57 Tests)"]
     Perf["Performance Benchmarks (Load & Concurrency Scripts)"]
     Property["Property-Based Tests (fast-check: Hash & Invariants)"]
-    Unit["Unit Tests (Jest + ts-jest: Services, Utils, Engine, Hooks)"]
+    Unit["Unit & Integration Tests (Jest 66 Suites: Services, Engine, Auth, DB)"]
 
-    Governance --> Perf
+    Governance --> E2E
+    E2E --> Perf
     Perf --> Property
     Property --> Unit
 ```
@@ -22,49 +24,51 @@ graph TD
 
 ## 2. Cấu hình & Môi trường Kiểm thử (Test Setup)
 
-- **Test Runner**: `Jest` kết hợp với `ts-jest` biên dịch TypeScript trực tiếp.
-- **Môi trường (Environment)**: `node` (không sử dụng `jsdom` nặng nề nhằm tăng tối đa tốc độ thực thi cho các kiểm thử logic và API).
-- **File cấu hình**:
-  - `jest.config.ts`: Cấu hình path aliases (`@/*` $\rightarrow$ `<rootDir>/*`), whitelist module ESM (`jose`), thư mục loại trừ khỏi coverage.
-  - `jest.setup.ts`: Thiết lập các biến môi trường giả lập (`JWT_SECRET`, `MONGODB_URI`, `NODE_ENV=test`).
-- **Quy tắc đặt tên file test**: `**/__tests__/**/*.test.{ts,tsx}`.
+- **Unit & Integration Runner**: `Jest` kết hợp với `ts-jest` biên dịch TypeScript trực tiếp trên môi trường Node.js.
+- **Path Mapping (`jest.config.ts`)**:
+  - `^@/(.*)$`: `<rootDir>/apps/web/$1`
+  - `^@fquiz/database$`: `<rootDir>/packages/database/src`
+  - `^@fquiz/models$`: `<rootDir>/packages/models/src`
+  - `^@fquiz/auth$`: `<rootDir>/packages/auth/src`
+  - `^@fquiz/ui$`: `<rootDir>/packages/ui/src`
+- **E2E Runner**: `Playwright` điều phối song song cả 2 ứng dụng (`apps/web` trên `:3000` và `apps/admin` trên `:3001`).
+- **Quy tắc đặt tên file test**: `**/__tests__/**/*.test.{ts,tsx}` hoặc `e2e/**/*.spec.ts`.
 
 ---
 
 ## 3. Các Lệnh Thực thi Test (Test Commands)
 
 ```bash
-# 1. Chạy toàn bộ Unit Tests (Jest)
+# 1. Chạy toàn bộ 66 Unit & Integration Test Suites (Jest)
 npm test
 
 # 2. Chạy test và xuất báo cáo độ bao phủ (Coverage Report)
 npm run test:coverage
 
-# 3. Chạy test ở chế độ theo dõi (Watch Mode)
-npx jest --watch
-
-# 4. Chạy toàn bộ E2E Tests (Playwright Multi-Server :3000 & :3001)
+# 3. Chạy toàn bộ 57 E2E Tests (Playwright Multi-Server :3000 & :3001)
 npx playwright test
 
-# 5. Chạy riêng kiểm thử phân quyền RBAC
-npx playwright test "e2e/rbac-navigation.spec.ts"
+# 4. Chạy Playwright với giao diện tương tác trực quan
+npx playwright test --ui
 
-# 6. Chạy một file test Jest cụ thể
-npx jest lib/modules/quiz/__tests__/quiz-engine.test.ts
+# 5. Chạy riêng kịch bản tương tác liên ứng dụng Web & Admin
+npx playwright test "e2e/cross-app-impact.spec.ts"
 
-# 5. Chạy test theo pattern tên hàm/bài test
-npx jest -t "atomic session completion"
+# 6. Kiểm tra TypeScript trên toàn bộ 7 workspaces Monorepo
+npx turbo check-types
+
+# 7. Chạy AI Rule Engine Governance kiểm tra nghiêm ngặt 18 quy tắc
+node .agents/scripts/verify.js --strict
 ```
 
 ---
 
 ## 4. Quy chuẩn Mock Dữ liệu (Mocking Standards)
 
-Để đảm bảo các bài test chạy độc lập, nhanh chóng và không phụ thuộc vào kết nối mạng bên ngoài, dự án áp dụng các chuẩn mock sau:
+Để đảm bảo các bài test chạy độc lập, nhanh chóng và không phụ thuộc vào kết nối mạng bên ngoài:
 
 ### 4.1. Mock Kết nối Cơ sở Dữ liệu
 ```typescript
-// Luôn mock mongodb connection trước khi test các services/handlers
 jest.mock('@/lib/core/db/mongodb', () => ({
   connectDB: jest.fn().mockResolvedValue(true)
 }));
@@ -104,34 +108,21 @@ Hệ thống sử dụng thư viện `fast-check` để kiểm tra các bất bi
 
 ---
 
-## 6. Kiểm thử Hiệu năng & Tải (Performance Benchmarks)
-
-Các script đo lường tải và độ trễ được đặt trong thư mục `scripts/`:
-
-| Lệnh | File script | Mục tiêu đo lường |
-|---|---|---|
-| `npm run test:performance` | `scripts/test-quiz-performance.ts` | Tốc độ xử lý toàn bộ vòng đời bài thi |
-| `npm run test:mongodb` | `scripts/test-mongodb-performance.ts` | Độ trễ truy vấn và indexing trên MongoDB |
-| `npm run test:session-perf` | `scripts/test-session-start-perf.ts` | Thời gian khởi tạo phiên thi và cache snapshot |
-| `npm run test:answer-perf` | `scripts/test-answer-perf.ts` | Tốc độ chấm điểm câu trả lời dưới tải lớn |
-
----
-
-## 7. Kiểm soát Chất lượng Bằng AI Agent Rule Engine
+## 6. Kiểm soát Chất lượng Bằng AI Agent Rule Engine
 
 Dự án trang bị bộ công cụ kiểm định tự động chạy trước mỗi đợt commit và trong GitHub Actions CI (`.github/workflows/ci.yml`):
 
 ```bash
-# Kiểm tra toàn bộ 9 quy tắc quản trị hệ thống ở chế độ nghiêm ngặt
+# Kiểm tra toàn bộ quy tắc quản trị hệ thống ở chế độ nghiêm ngặt
 node .agents/scripts/verify.js --strict
 ```
 
 ### 9 Quy tắc Quản trị Bắt buộc:
-1. `BUILD_TYPE_CHECK`: 100% pass TypeScript compilation (0 error).
+1. `BUILD_TYPE_CHECK`: 100% pass TypeScript compilation trên tất cả packages (0 error).
 2. `CODE_QUALITY_SECURITY`: 0 hardcoded secrets, 0 security vulnerabilities.
 3. `CROSS_MODULE_BOUNDARY`: 0 cross-module model import, 0 Mongoose `.populate()`.
 4. `ESLINT_VALIDATION`: 100% pass ESLint code quality & security rules.
-5. `FOLDER_STRUCTURE`: Đảm bảo đầy đủ 7 thư mục kiến trúc chuẩn.
+5. `FOLDER_STRUCTURE`: Đảm bảo cấu trúc monorepo phân tầng đầy đủ.
 6. `LINT_ISSUES`: 0 biến không dùng, 0 swallowed errors, 0 explicit `any`.
 7. `NO_MOCK_DATA`: 0 dữ liệu mock tĩnh trong code production.
 8. `SKILLS_GOVERNANCE`: Đảm bảo tính toàn vẹn của các Agent Skills trong `.agents/skills/`.

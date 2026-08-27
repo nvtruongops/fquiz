@@ -4,12 +4,13 @@
   "category": "ARCHITECTURE",
   "severity": "ERROR",
   "requiredPaths": [
-    "app",
-    "app/api",
-    "components",
-    "lib/core",
-    "lib/modules",
-    "hooks",
+    "apps/web",
+    "apps/admin",
+    "packages/database",
+    "packages/models",
+    "packages/auth",
+    "packages/ui",
+    "packages/config-typescript",
     ".agents/skills"
   ]
 }

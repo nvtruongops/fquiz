@@ -1,0 +1,20 @@
+{
+  "name": "@fquiz/models",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fquiz/database": "*",
+    "mongoose": "^9.4.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@fquiz/config-typescript": "*",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

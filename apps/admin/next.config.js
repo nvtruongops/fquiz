@@ -11,6 +11,7 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  transpilePackages: ['@fquiz/database', '@fquiz/models', '@fquiz/auth', '@fquiz/ui'],
   compiler: {
     removeConsole: isProduction ? { exclude: ['error', 'warn'] } : false,
   },

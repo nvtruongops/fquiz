@@ -3,12 +3,12 @@
   "enabled": true,
   "category": "ARCHITECTURE",
   "severity": "ERROR",
-  "description": "Đảm bảo nguyên tắc độc lập giữa các module (quiz, auth, learning, community, ai): không import Model chéo và không dùng Mongoose .populate().",
-  "moduleDir": "lib/modules",
+  "description": "Đảm bảo nguyên tắc độc lập giữa các ứng dụng và module (apps/web, apps/admin, packages/*): không import trực tiếp chéo app, không import Model chéo module và không dùng Mongoose .populate().",
+  "scanDirs": ["apps/web", "apps/admin", "packages"],
   "forbiddenImports": [
     {
       "regex": "from\\s+['\"]@/lib/modules/([^/'\"]+)/models",
-      "reason": "Vi phạm ranh giới Module: Không được import trực tiếp Model Mongoose của module khác. Sử dụng ObjectId + Repository/Service interface."
+      "reason": "Vi phạm ranh giới Module: Không được import trực tiếp Model Mongoose của module khác. Sử dụng ObjectId + Repository/Service interface hoặc @fquiz/models."
     },
     {
       "regex": "\\.populate\\s*\\(",

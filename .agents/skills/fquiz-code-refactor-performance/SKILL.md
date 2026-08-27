@@ -51,7 +51,7 @@ When any page exceeds ~200 lines or component exceeds ~250 lines, decompose it i
 Run in exact sequence before marking any refactoring task complete:
 ```bash
 npm run lint
-npm run build
+npm run check-types
 npm test
 node .agents/scripts/verify.js --strict
 ```
