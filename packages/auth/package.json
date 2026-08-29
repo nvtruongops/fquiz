@@ -11,14 +11,14 @@
     "@fquiz/database": "*",
     "@fquiz/models": "*",
     "bcryptjs": "^3.0.3",
-    "jose": "^6.2.2",
-    "next": "^16.2.6",
+    "jose": "^6.2.10",
+    "next": "^16.3.3",
     "pino": "^10.3.1"
   },
   "devDependencies": {
     "@fquiz/config-typescript": "*",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^26.3.0",
+    "typescript": "^7.0.2"
   }
 }
