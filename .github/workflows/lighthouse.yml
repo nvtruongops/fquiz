@@ -34,7 +34,7 @@ jobs:
         run: npm run build
 
       - name: Audit Performance & A11y with Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v11
+        uses: treosh/lighthouse-ci-action@v12
         continue-on-error: true
         with:
           configPath: './.lighthouserc.json'
