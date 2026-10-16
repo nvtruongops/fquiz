@@ -11,45 +11,45 @@ export function buildExplainTemplate(
 
   // 🛡️ Pedagogical Guard 1: If asking why choice is wrong but user hasn't made a choice yet
   if (isExplainingWrong && !targetOptionText) {
-    return `HỌC VIÊN HỎI "TẠI SAO TÔI CHỌN SAI" NHƯNG CHƯA CHỌN PHƯƠNG ÁN NÀO:
-- Tình trạng: Học viên chưa tick chọn phương án nào trong câu hỏi này.
-- Câu hỏi chi tiết: "${userQuery}"
+    return `STUDENT ASKS "WHY DID I CHOOSE WRONG" BUT HAS NOT SELECTED ANY OPTION YET:
+- Status: The student has not ticked or selected any option for this question.
+- Detailed question: "${userQuery}"
 
-QUY TẮC SƯ PHẠM (PEDAGOGICAL INTEGRITY & ANTI-SPOIL):
-1. TUYỆT ĐỐI KHÔNG tiết lộ thẳng đáp án đúng ngay lập tức khi học viên chưa thử sức.
-2. Nhắc nhở thân thiện rằng học viên chưa chọn phương án nào để phân tích.
-3. Hướng dẫn gợi ý tư duy (chỉ ra từ khóa then chốt trong đề bài) để học viên tự tin đưa ra lựa chọn trước.
-4. Trình bày ngắn gọn, sư phạm dưới 80 từ.`
+PEDAGOGICAL INTEGRITY & ANTI-SPOIL RULES:
+1. STRICTLY DO NOT reveal the correct answer upfront when the student hasn't attempted yet.
+2. Politely remind the student that they have not selected an option to analyze.
+3. Provide guided thinking (highlight key terms in the question stem) so the student can confidently make a choice first.
+4. Keep the response concise and pedagogical under 80 words.`
   }
 
   // 🛡️ Pedagogical Guard 2: If asking why correct answer is right without specifying/picking an option
   if (!isExplainingWrong && !targetOptionText) {
-    return `HỌC VIÊN HỎI VỀ ĐÁP ÁN ĐÚNG KHI ĐANG LÀM BÀI VÀ CHƯA CHỌN ĐÁP ÁN:
-- Tình trạng: Học viên chưa chọn phương án nào trong bài thi.
-- Câu hỏi chi tiết: "${userQuery}"
+    return `STUDENT ASKS ABOUT CORRECT ANSWER DURING EXAM WITHOUT SELECTING AN OPTION:
+- Status: The student has not chosen any option in the exam.
+- Detailed question: "${userQuery}"
 
-QUY TẮC SƯ PHẠM (PEDAGOGICAL INTEGRITY & ANTI-SPOIL):
-1. TUYỆT ĐỐI KHÔNG tiết lộ trực tiếp ký tự đáp án (A, B, C, D) hay đọc tên đáp án đúng.
-2. Giải thích khái niệm lý thuyết và nguyên lý cốt lõi đằng sau câu hỏi một cách khách quan.
-3. Hướng dẫn học viên tự liên hệ kiến thức và tự tin đưa ra lựa chọn.
-4. Trình bày ngắn gọn, sư phạm dưới 80 từ.`
+PEDAGOGICAL INTEGRITY & ANTI-SPOIL RULES:
+1. STRICTLY DO NOT directly reveal the answer letter (A, B, C, D) or name the correct answer.
+2. Explain the theoretical concept and core principle behind the question objectively.
+3. Guide the student to connect their knowledge and make a confident choice.
+4. Keep the response concise and pedagogical under 80 words.`
   }
 
   const optionSuffix = targetOptionText ? ` ("${targetOptionText}")` : ''
   const optionFocus = targetOptionLetter
-    ? `Phương án ${targetOptionLetter}${optionSuffix}`
-    : 'phương án đã chọn'
+    ? `Option ${targetOptionLetter}${optionSuffix}`
+    : 'the selected option'
 
-  const actionHeader = isExplainingWrong ? 'TẠI SAO PHƯƠNG ÁN LẠI SAI' : 'TẠI SAO ĐÁP ÁN LẠI ĐÚNG'
-  const reasonConclusion = isExplainingWrong ? 'không phù hợp / thiếu chính xác' : 'là đáp án hoàn toàn chính xác'
+  const actionHeader = isExplainingWrong ? 'WHY THE OPTION IS WRONG' : 'WHY THE ANSWER IS CORRECT'
+  const reasonConclusion = isExplainingWrong ? 'is unsuitable / inaccurate' : 'is entirely correct'
 
-  return `HỌC VIÊN YÊU CẦU GIẢI THÍCH: ${actionHeader}
-- Trọng tâm phân tích: ${optionFocus}
-- Câu hỏi chi tiết: "${userQuery}"
+  return `STUDENT REQUESTS EXPLANATION: ${actionHeader}
+- Focus of analysis: ${optionFocus}
+- Detailed question: "${userQuery}"
 
-HƯỚNG DẪN GIẢI THÍCH (THEO CẤU TRÚC SƯ PHẠM):
-1. Giải thích khái niệm / lý thuyết cốt lõi của câu hỏi.
-2. Nêu rõ logic suy luận vì sao ${optionFocus} ${reasonConclusion}.
-3. Nếu học viên chọn nhầm, chỉ ra điểm gài bẫy hoặc điểm dễ gây nhầm lẫn thường gặp.
-4. Trình bày ngắn gọn, súc tích dưới 80 từ.`
+PEDAGOGICAL EXPLANATION GUIDELINES:
+1. Explain the core concept / theory behind the question.
+2. Clearly explain the deductive logic of why ${optionFocus} ${reasonConclusion}.
+3. If the student picked incorrectly, point out common distractors, pitfalls, or common misconceptions.
+4. Keep the response concise and compact under 80 words.`
 }

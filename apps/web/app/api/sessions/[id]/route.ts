@@ -17,9 +17,9 @@ import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selec
  * Replaces .populate('category_id') — avoids cross-module Mongoose ref.
  */
 async function resolveCategoryName(categoryId: any): Promise<string> {
-  if (!categoryId) return 'Chưa phân loại'
+  if (!categoryId) return 'Uncategorized'
   const cat = await Category.findById(categoryId).select('name').lean()
-  return (cat as any)?.name || 'Chưa phân loại'
+  return (cat as any)?.name || 'Uncategorized'
 }
 
 /**
@@ -126,7 +126,7 @@ export const GET = withAuth(async (
 
     if (session.status === 'expired') {
       return NextResponse.json({
-        error: 'Phiên làm bài đã tự động kết thúc.',
+        error: 'Session has ended automatically.',
         expired: true,
       }, { status: 410 })
     }
@@ -140,9 +140,9 @@ export const GET = withAuth(async (
           current_question_index: 0,
           totalQuestions: 0,
           user_answers: [],
-          courseCode: 'Đang chuẩn bị...',
-          categoryName: 'Đang chuẩn bị...',
-          title: 'Đang chuẩn bị bộ đề...',
+          courseCode: 'Preparing...',
+          categoryName: 'Preparing...',
+          title: 'Preparing quiz...',
           started_at: session.started_at,
           is_temp: true,
         },
@@ -197,9 +197,13 @@ export const GET = withAuth(async (
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
     const questionId = (rawQuestion as any).question_id || generateQuestionId(rawQuestion as any)
-    const usageInfo = questionId
-      ? await QuestionUsageService.getQuestionPublicUsage(questionId)
-      : { count: 0, quizzes: [] }
+    const usageInfo = await QuestionUsageService.getQuestionPublicUsage(
+      {
+        question_id: questionId,
+        text: rawQuestion.text,
+      },
+      quiz?.course_code
+    )
 
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'

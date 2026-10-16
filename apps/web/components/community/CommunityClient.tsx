@@ -101,9 +101,9 @@ export function CommunityClient() {
           onOpenFeedback={() => {
             if (!userId) {
               handleGuestAuthPrompt(
-                'Góp ý phát triển',
-                'Đăng nhập để gửi góp ý',
-                'Vui lòng đăng nhập hoặc tạo tài khoản để gửi ý kiến đóng góp, báo lỗi hoặc đề xuất tính năng mới cho FQuiz.'
+                'Feedback & Suggestions',
+                'Sign in to submit feedback',
+                'Please sign in or create an account to submit feedback, report bugs, or suggest new features for FQuiz.'
               )
             } else {
               setIsFeedbackModalOpen(true)
@@ -112,9 +112,9 @@ export function CommunityClient() {
           onOpenCreatePost={() => {
             if (!userId) {
               handleGuestAuthPrompt(
-                'Đăng bài thảo luận',
-                'Đăng nhập để tạo bài viết',
-                'Vui lòng đăng nhập hoặc tạo tài khoản để đặt câu hỏi, chia sẻ kinh nghiệm học tập cùng cộng đồng FQuiz.'
+                'Community Post',
+                'Sign in to create a post',
+                'Please sign in or create an account to ask questions and share study experience with the FQuiz community.'
               )
             } else {
               setIsCreateModalOpen(true)
@@ -135,7 +135,7 @@ export function CommunityClient() {
             <div className="bg-card backdrop-blur-xl border border-border rounded-2xl p-4 shadow-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Flame className="w-5 h-5 text-amber-400" />
-                <h2 className="text-lg font-black text-foreground">Thảo luận mới nhất</h2>
+                <h2 className="text-lg font-black text-foreground">Latest Discussions</h2>
                 {isRefetching && <Loader2 className="w-4 h-4 animate-spin text-primary ml-1" />}
               </div>
             </div>
@@ -146,9 +146,9 @@ export function CommunityClient() {
                   <MessageSquare className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-foreground">Chưa có bài thảo luận nào</h3>
+                  <h3 className="text-lg font-black text-foreground">No discussions yet</h3>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Hãy là người đầu tiên đặt câu hỏi hoặc chia sẻ tài liệu ôn thi bổ ích tới cộng đồng FQuiz!
+                    Be the first to ask a question or share study materials with the FQuiz community!
                   </p>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export function CommunityClient() {
                       variant="outline"
                       className="px-6 py-2.5 rounded-2xl text-xs font-bold border-border hover:bg-muted cursor-pointer"
                     >
-                      <RefreshCw className="w-4 h-4 mr-2" /> Xem thêm bài viết cũ hơn
+                      <RefreshCw className="w-4 h-4 mr-2" /> Load older posts
                     </Button>
                   </div>
                 )}
@@ -198,9 +198,9 @@ export function CommunityClient() {
             onOpenFeedback={() => {
               if (!userId) {
                 handleGuestAuthPrompt(
-                  'Góp ý phát triển',
-                  'Đăng nhập để gửi góp ý',
-                  'Vui lòng đăng nhập hoặc tạo tài khoản để gửi ý kiến đóng góp, báo lỗi hoặc đề xuất tính năng mới cho FQuiz.'
+                  'Feedback & Suggestions',
+                  'Sign in to submit feedback',
+                  'Please sign in or create an account to submit feedback, report bugs, or suggest new features for FQuiz.'
                 )
               } else {
                 setIsFeedbackModalOpen(true)

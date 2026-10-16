@@ -99,7 +99,9 @@ export function useMobileQuizSessionController() {
   })
 
   const courseCode = activeData?.session?.courseCode
-  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode, {
+    enabled: Boolean(courseCode),
+  })
   const [isRightHanded, setIsRightHanded] = useState<boolean>(false)
 
   useEffect(() => {
@@ -135,7 +137,7 @@ export function useMobileQuizSessionController() {
     if (!sessionLoaderStartedRef.current) {
       sessionLoaderStartedRef.current = true
       if (!isQuizLoaderActive()) {
-        sessionLoader.open('Đang tải bộ câu hỏi...')
+        sessionLoader.open('Loading question set...')
       }
     }
   }, [sessionLoader])
@@ -147,9 +149,9 @@ export function useMobileQuizSessionController() {
     if (isInitialError) {
       sessionLoader.close()
     } else if (activeData?.session.status === 'preparing') {
-      sessionLoader.setStatus('Đang trộn bộ đề, vui lòng chờ trong giây lát...')
+      sessionLoader.setStatus('Shuffling questions, please wait a moment...')
     } else if (!isReadyToRender) {
-      sessionLoader.setStatus('Đang chuẩn bị giao diện...')
+      sessionLoader.setStatus('Preparing interface...')
     } else if (!isStillLoading) {
       sessionLoader.complete()
     }
@@ -181,7 +183,7 @@ export function useMobileQuizSessionController() {
     }
 
     setConfirmOpen(false)
-    sessionLoader.open('Đang nộp bài và tổng hợp kết quả...')
+    sessionLoader.open('Submitting answers and compiling results...')
     finalizeMutation.mutate()
   }, [activeData?.session, finalizeMutation, submitMutation.isPending, sessionLoader])
 
@@ -189,7 +191,7 @@ export function useMobileQuizSessionController() {
     markExiting()
     void reportSessionActivity('pause')
     setExitConfirmOpen(false)
-    sessionLoader.open('Đang lưu tiến trình và thoát phòng thi...')
+    sessionLoader.open('Saving progress and exiting exam session...')
     const targetQuizId = (activeData?.session as any)?.quiz_id || (activeData?.session as any)?.quizId || resolvedQuizId
     const targetUrl = activeData?.session?.is_temp || !targetQuizId || targetQuizId === 'undefined' ? '/' : `/quiz/${targetQuizId}`
     sessionLoader.completeAndNavigate(() => {

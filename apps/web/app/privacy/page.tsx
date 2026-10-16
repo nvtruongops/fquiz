@@ -8,11 +8,11 @@ import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContai
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Chính sách bảo mật — FQuiz',
-  description: 'Chính sách bảo mật và cam kết an toàn dữ liệu cá nhân của người dùng trên nền tảng FQuiz.',
+  title: 'Privacy Policy — FQuiz',
+  description: 'Privacy policy and personal data protection commitments on FQuiz.',
   openGraph: {
-    title: 'Chính sách bảo mật — FQuiz',
-    description: 'Chính sách bảo mật và cam kết an toàn dữ liệu cá nhân của người dùng trên nền tảng FQuiz.',
+    title: 'Privacy Policy — FQuiz',
+    description: 'Privacy policy and personal data protection commitments on FQuiz.',
     type: 'website',
   },
 }
@@ -30,12 +30,12 @@ export default async function PrivacyPage() {
             className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-primary/90 transition-colors group bg-card backdrop-blur-md px-4 py-2 rounded-full border border-border shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span>Quay lại trang chủ</span>
+            <span>Back to Home</span>
           </Link>
 
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-              Pháp lý & An toàn
+              Legal & Privacy
             </span>
           </div>
         </div>
@@ -47,12 +47,12 @@ export default async function PrivacyPage() {
           <aside className="legal-section lg:col-span-4 lg:sticky lg:top-24 space-y-5">
             <div className="bg-card backdrop-blur-md border border-border rounded-3xl p-6 shadow-2xs space-y-5">
               <div className="space-y-1">
-                <p className="text-[10px] font-black tracking-widest text-primary uppercase">Trung tâm Pháp lý</p>
+                <p className="text-[10px] font-black tracking-widest text-primary uppercase">Legal Center</p>
                 <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-                  Chính sách bảo mật
+                  Privacy Policy
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground pt-1">
-                  Cập nhật lần cuối: Tháng 4, 2026
+                  Last updated: April 2026
                 </p>
               </div>
 
@@ -60,14 +60,14 @@ export default async function PrivacyPage() {
 
               {/* Table of Contents Navigation */}
               <nav className="space-y-1.5">
-                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Mục lục nhanh</p>
+                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Table of Contents</p>
                 <a
                   href="#minimization"
                   className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck className="w-4 h-4 text-primary" />
-                    <span>1. Thu thập tối giản</span>
+                    <span>1. Data Minimization</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -78,7 +78,7 @@ export default async function PrivacyPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Lock className="w-4 h-4 text-success-fg" />
-                    <span>2. Mã hóa mật khẩu</span>
+                    <span>2. Password Security</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -89,7 +89,7 @@ export default async function PrivacyPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Cookie className="w-4 h-4 text-warning-fg" />
-                    <span>3. Cookie & Sessions</span>
+                    <span>3. Cookies & Sessions</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -100,7 +100,7 @@ export default async function PrivacyPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <UserCheck className="w-4 h-4 text-primary" />
-                    <span>4. Quyền của người dùng</span>
+                    <span>4. User Rights</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -110,13 +110,13 @@ export default async function PrivacyPage() {
 
               {/* Quick Link to Terms */}
               <div className="bg-muted p-4 rounded-2xl border border-border space-y-2">
-                <p className="text-[11px] font-bold text-muted-foreground">Bạn muốn xem Điều khoản sử dụng?</p>
+                <p className="text-[11px] font-bold text-muted-foreground">Looking for Terms of Service?</p>
                 <Link
                   href="/terms"
                   className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Xem Điều khoản sử dụng</span>
+                  <span>View Terms of Service</span>
                 </Link>
               </div>
             </div>
@@ -125,9 +125,9 @@ export default async function PrivacyPage() {
           {/* Right Column: Detailed Document Stream */}
           <div className="lg:col-span-8 space-y-6">
             <div className="legal-section bg-primary/10 border border-primary/20 p-6 rounded-3xl space-y-2">
-              <p className="text-xs font-black uppercase tracking-wider text-primary">Tóm tắt Cam kết</p>
+              <p className="text-xs font-black uppercase tracking-wider text-primary">Commitment Summary</p>
               <p className="text-sm sm:text-base text-foreground font-medium leading-relaxed">
-                FQuiz cam kết bảo vệ sự riêng tư và an toàn dữ liệu của bạn. Xin vui lòng đọc kỹ các mục chi tiết bên dưới để hiểu rõ cách chúng tôi thu thập, lưu trữ và bảo vệ thông tin cá nhân.
+                FQuiz is committed to protecting your privacy and personal data. Please read the sections below to understand how we collect, store, and safeguard your information.
               </p>
             </div>
 
@@ -138,13 +138,13 @@ export default async function PrivacyPage() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 01</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Thu thập tối giản (Data Minimization)</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 01</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Data Minimization</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>Chúng tôi chỉ thu thập những thông tin cần thiết nhất để vận hành hệ thống: <strong>Tên đăng nhập (Username)</strong>, <strong>Email</strong> và <strong>Lịch sử làm bài (Kết quả quiz)</strong>.</li>
-                <li>Chúng tôi tuyệt đối không thu thập thông tin định danh cá nhân nhạy cảm, vị trí địa lý chính xác, hay dữ liệu thiết bị dư thừa.</li>
+                <li>We collect only essential information required to operate the platform: <strong>Username</strong>, <strong>Email address</strong>, and <strong>Quiz history & results</strong>.</li>
+                <li>We never collect sensitive personal identifiers, precise geographic locations, or unnecessary device data.</li>
               </ul>
             </section>
 
@@ -155,13 +155,13 @@ export default async function PrivacyPage() {
                   <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 02</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Mã hóa mật khẩu (Data Security)</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 02</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Password Security</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>Mật khẩu của bạn được mã hóa một chiều (hashing) bằng chuẩn mã hóa an toàn trước khi lưu vào cơ sở dữ liệu.</li>
-                <li><strong>Không một ai</strong> (kể cả đội ngũ quản trị hay kỹ sư của FQuiz) có thể xem hoặc biết được mật khẩu dạng văn bản gốc của bạn.</li>
+                <li>Your password is cryptographically hashed using industry-standard one-way algorithms before database persistence.</li>
+                <li><strong>No one</strong> (including FQuiz administrators and engineers) can access or view your plaintext password.</li>
               </ul>
             </section>
 
@@ -172,13 +172,13 @@ export default async function PrivacyPage() {
                   <Cookie className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Điều 03</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Cookie & Phiên làm việc (Sessions)</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Section 03</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Cookies & Sessions</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>FQuiz sử dụng các token xác thực (JWT) được lưu trữ an toàn trong HTTP-only Cookies để duy trì trạng thái đăng nhập của bạn.</li>
-                <li>Các cookies này chỉ sử dụng cho mục đích bảo mật xác thực, hoàn toàn không theo dõi quảng cáo thương mại.</li>
+                <li>FQuiz uses secure authentication tokens (JWT) stored in HTTP-only cookies to manage your active session.</li>
+                <li>These cookies are strictly used for security and authentication purposes, with zero third-party ad tracking.</li>
               </ul>
             </section>
 
@@ -189,12 +189,12 @@ export default async function PrivacyPage() {
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 04</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Quyền lợi người dùng</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 04</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">User Rights & Data Control</h2>
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                Bạn có quyền yêu cầu trích xuất toàn bộ dữ liệu lịch sử làm bài hoặc xóa vĩnh viễn tài khoản khỏi hệ thống FQuiz vào bất cứ lúc nào. Khi có yêu cầu xóa, mọi truy vết về kết quả thi của bạn sẽ được xóa sổ hoàn toàn khỏi cơ sở dữ liệu.
+                You have the right to request an export of your quiz history or permanently delete your account at any time. Upon deletion, all associated quiz records and personal data are purged completely from our database.
               </p>
             </section>
           </div>

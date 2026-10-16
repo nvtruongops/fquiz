@@ -6,7 +6,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['folder-structure'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc FOLDER_STRUCTURE bị tắt.');
+      ctx.logger.pass('Rule FOLDER_STRUCTURE is disabled.');
       return { passed: true };
     }
 
@@ -31,12 +31,12 @@ module.exports = {
 
     if (missing.length > 0) {
       missing.forEach(p => {
-        ctx.logger.error(`Thiếu thư mục cấu trúc chuẩn của dự án: ${p}`);
+        ctx.logger.error(`Missing standard repository directory: ${p}`);
       });
       return { passed: false };
     }
 
-    ctx.logger.pass(`Cấu trúc thư mục dự án fquiz hoàn tất 100% (${requiredPaths.length}/${requiredPaths.length} thư mục chuẩn tồn tại).`);
+    ctx.logger.pass(`Repository folder structure 100% verified (${requiredPaths.length}/${requiredPaths.length} standard directories exist).`);
     return { passed: true };
   }
 };

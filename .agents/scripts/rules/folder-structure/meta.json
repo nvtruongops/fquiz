@@ -7,5 +7,5 @@
   "dependsOn": [],
   "parallelizable": true,
   "supportsFix": false,
-  "description": "Kiểm tra tính toàn vẹn cấu trúc thư mục quy chuẩn fquiz (app, components, lib/modules, lib/core, hooks)."
+  "description": "Validates the integrity of standard repository directory structures (app, components, lib/modules, lib/core, hooks)."
 }

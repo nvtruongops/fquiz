@@ -28,15 +28,15 @@ export function QuizDeleteDialog({
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Xóa đề thi</DialogTitle>
+          <DialogTitle>Delete Quiz</DialogTitle>
           <DialogDescription>
-            Bạn có chắc chắn muốn xóa đề thi{' '}
-            <span className="font-bold text-foreground">{deleteTarget?.title}</span>? Thao tác này không thể hoàn tác.
+            Are you sure you want to delete quiz{' '}
+            <span className="font-bold text-foreground">{deleteTarget?.title}</span>? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Cancel
           </Button>
           <Button
             variant="destructive"
@@ -44,7 +44,7 @@ export function QuizDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Xác nhận xóa
+            Confirm Delete
           </Button>
         </DialogFooter>
       </DialogContent>

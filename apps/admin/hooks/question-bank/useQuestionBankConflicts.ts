@@ -46,7 +46,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       setConflicts(data.conflicts || [])
     } catch (error) {
       console.error('Error fetching conflicts:', error)
-      toast({ title: 'Lỗi', description: 'Không thể tải danh sách conflicts', type: 'error' })
+      toast({ title: 'Error', description: 'Failed to load conflicts list', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -82,7 +82,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       }
 
       const data = await response.json()
-      toast({ title: 'Thành công', description: data.message || 'Đã resolve conflict thành công!', type: 'success' })
+      toast({ title: 'Success', description: data.message || 'Conflict resolved successfully!', type: 'success' })
 
       await fetchConflicts()
       setSelectedConflict(null)
@@ -90,7 +90,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       setUpdateAllQuizzes(false)
     } catch (error) {
       console.error('Error resolving conflict:', error)
-      toast({ title: 'Lỗi', description: 'Không thể resolve conflict', type: 'error' })
+      toast({ title: 'Error', description: 'Failed to resolve conflict', type: 'error' })
     } finally {
       setResolving(false)
     }

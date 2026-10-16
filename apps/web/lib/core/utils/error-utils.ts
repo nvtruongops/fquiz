@@ -8,7 +8,7 @@
 export function extractApiErrorMessage(error: unknown): string {
   if (typeof error === 'string') return error
   if (Array.isArray(error)) return handleArrayError(error)
-  if (!error || typeof error !== 'object') return 'Lưu thất bại'
+  if (!error || typeof error !== 'object') return 'Save failed'
   
   return handleObjectError(error as Record<string, unknown>)
 }
@@ -21,7 +21,7 @@ function handleArrayError(error: unknown[]): string {
       : ''
     return path ? `${path}: ${firstIssue.message}` : firstIssue.message
   }
-  return 'Dữ liệu không hợp lệ'
+  return 'Invalid data'
 }
 
 function handleObjectError(flat: Record<string, unknown>): string {
@@ -38,5 +38,5 @@ function handleObjectError(flat: Record<string, unknown>): string {
   const formMessages = (formErrors ?? []).filter(Boolean)
   
   const all = [...fieldMessages, ...formMessages]
-  return all.length > 0 ? all[0] : 'Lưu thất bại'
+  return all.length > 0 ? all[0] : 'Save failed'
 }

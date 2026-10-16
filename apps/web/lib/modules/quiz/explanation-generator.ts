@@ -37,7 +37,7 @@ function generateFallbackExplanation(
   const cleanText = text ? text.trim() : ''
 
   if (!options || options.length === 0 || !correctAnswers || correctAnswers.length === 0) {
-    return 'Đáp án đúng dựa trên nội dung câu hỏi.'
+    return 'The correct answer is based on the question content.'
   }
 
   const correctTexts = correctAnswers
@@ -45,18 +45,18 @@ function generateFallbackExplanation(
     .map((idx) => `"${options[idx].trim()}"`)
 
   if (correctTexts.length === 0) {
-    return 'Đáp án đúng dựa trên nội dung câu hỏi.'
+    return 'The correct answer is based on the question content.'
   }
 
   if (correctTexts.length === 1) {
     return cleanText
-      ? `Đáp án đúng là ${correctTexts[0]} vì đáp án này chính xác theo nội dung câu hỏi "${cleanText}".`
-      : `Đáp án đúng là ${correctTexts[0]}.`
+      ? `The correct answer is ${correctTexts[0]} because it accurately satisfies the question "${cleanText}".`
+      : `The correct answer is ${correctTexts[0]}.`
   }
 
   return cleanText
-    ? `Các đáp án đúng gồm: ${correctTexts.join(', ')} do thỏa mãn các điều kiện trong câu hỏi "${cleanText}".`
-    : `Các đáp án đúng gồm: ${correctTexts.join(', ')}.`
+    ? `The correct answers are: ${correctTexts.join(', ')} because they satisfy the conditions in "${cleanText}".`
+    : `The correct answers are: ${correctTexts.join(', ')}.`
 }
 
 /**

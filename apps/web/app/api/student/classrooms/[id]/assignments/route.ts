@@ -11,7 +11,7 @@ export const GET = withAuth(
       const assignments = await ClassroomService.getClassroomAssignments(id, payload.userId)
       return NextResponse.json({ assignments })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi lấy bài tập lớp học' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Failed to get classroom assignments' }, { status: 500 })
     }
   },
   { roles: ['student', 'teacher', 'dev'] }

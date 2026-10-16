@@ -10,7 +10,7 @@ async function handleThemeUpdate(req: Request, payload: JWTPayload) {
     const theme = body.themePreference || body.theme
 
     if (!theme || !['light', 'dark', 'green', 'pink'].includes(theme)) {
-      return NextResponse.json({ error: 'Theme hợp lệ bao gồm: light, dark, green, pink' }, { status: 400 })
+      return NextResponse.json({ error: 'Valid themes include: light, dark, green, pink' }, { status: 400 })
     }
 
     await connectDB()
@@ -21,7 +21,7 @@ async function handleThemeUpdate(req: Request, payload: JWTPayload) {
     ).lean()
 
     if (!updatedUser) {
-      return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, themePreference: theme, theme: theme })

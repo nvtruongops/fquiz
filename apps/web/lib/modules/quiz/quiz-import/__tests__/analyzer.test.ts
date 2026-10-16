@@ -37,7 +37,7 @@ describe('analyzeQuestionStructure', () => {
 
     expect(report.nonStandardQuestions.length).toBe(2)
     expect(report.nonStandardQuestions[0].questionIndex).toBe(1)
-    expect(report.nonStandardQuestions[0].reasons).toContain('3 phương án (chuẩn là 4)')
-    expect(report.nonStandardQuestions[0].reasons).toContain('2 đáp án đúng (chuẩn là 1)')
+    expect(report.nonStandardQuestions[0].reasons).toContain('3 options (standard is 4)')
+    expect(report.nonStandardQuestions[0].reasons).toContain('2 correct answers (standard is 1)')
   })
 })

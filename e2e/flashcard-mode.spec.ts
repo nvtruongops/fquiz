@@ -9,18 +9,18 @@ test.describe('Flashcard Learning Mode Interactive Experience', () => {
     {
       _id: 'q1',
       question_id: 'Q-001',
-      text: 'Khái niệm Polymorphism trong OOP thể hiện điều gì?',
-      options: ['Tính đa hình', 'Tính đóng gói', 'Tính kế thừa', 'Tính trừu tượng'],
+      text: 'What does Polymorphism represent in OOP?',
+      options: ['Polymorphism', 'Encapsulation', 'Inheritance', 'Abstraction'],
       correct_answer: 0,
-      explanation: 'Polymorphism (Tính đa hình) cho phép các đối tượng khác nhau thực thi cùng một phương thức theo các cách khác nhau.',
+      explanation: 'Polymorphism allows different objects to execute the same method in different ways.',
     },
     {
       _id: 'q2',
       question_id: 'Q-002',
-      text: 'Khái niệm Encapsulation trong OOP thể hiện điều gì?',
-      options: ['Tính đóng gói', 'Tính đa hình', 'Tính kế thừa', 'Tính trừu tượng'],
+      text: 'What does Encapsulation represent in OOP?',
+      options: ['Encapsulation', 'Polymorphism', 'Inheritance', 'Abstraction'],
       correct_answer: 0,
-      explanation: 'Encapsulation (Tính đóng gói) che giấu trạng thái bên trong của đối tượng và chỉ cung cấp các phương thức truy cập công khai.',
+      explanation: 'Encapsulation hides the internal state of an object and provides public access methods.',
     },
   ]
 
@@ -38,12 +38,12 @@ test.describe('Flashcard Learning Mode Interactive Experience', () => {
     await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}/flashcard`)
 
     // Check front face question text and indicator
-    await expect(page.getByText('Khái niệm Polymorphism trong OOP thể hiện điều gì?')).toBeVisible()
-    await expect(page.getByText('Mặt Trước (Câu hỏi)')).toBeVisible()
+    await expect(page.getByText('What does Polymorphism represent in OOP?')).toBeVisible()
+    await expect(page.getByText(/Front \(Question\)/i)).toBeVisible()
 
-    // Check "Chưa thuộc" and "Đã thuộc" buttons
-    const notKnownBtn = page.getByRole('button', { name: /Chưa thuộc/i })
-    const knownBtn = page.getByRole('button', { name: /Đã thuộc/i })
+    // Check "Not Mastered" and "Mastered" buttons
+    const notKnownBtn = page.getByRole('button', { name: /Not Mastered|Still Learning/i })
+    const knownBtn = page.getByRole('button', { name: /Mastered|Known/i })
 
     await expect(notKnownBtn).toBeVisible()
     await expect(knownBtn).toBeVisible()
@@ -53,24 +53,24 @@ test.describe('Flashcard Learning Mode Interactive Experience', () => {
     await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}/flashcard`)
 
     // Verify initially on front face
-    await expect(page.getByText('Mặt Trước (Câu hỏi)')).toBeVisible()
+    await expect(page.getByText(/Front \(Question\)/i)).toBeVisible()
 
     // Click flashcard to flip
-    const card = page.getByText('Khái niệm Polymorphism trong OOP thể hiện điều gì?')
+    const card = page.getByText('What does Polymorphism represent in OOP?')
     await card.click()
 
     // Verify flipped to back face with correct answer indicator
-    await expect(page.getByText('Mặt Sau (Đáp án)')).toBeVisible()
-    await expect(page.getByText(/Đáp án chính xác/i)).toBeVisible()
+    await expect(page.getByText(/Back \(Answer\)/i)).toBeVisible()
+    await expect(page.getByText(/Correct Answer/i)).toBeVisible()
   })
 
-  test('should advance to next card when clicking "Đã thuộc"', async ({ page }) => {
+  test('should advance to next card when clicking "Mastered"', async ({ page }) => {
     await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}/flashcard`)
 
-    const knownBtn = page.getByRole('button', { name: /Đã thuộc/i })
+    const knownBtn = page.getByRole('button', { name: /Mastered|Known/i })
     await knownBtn.click()
 
     // Advance to next card or update status
-    await expect(page.getByRole('button', { name: /Đã thuộc/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Mastered|Known/i })).toBeVisible()
   })
 })

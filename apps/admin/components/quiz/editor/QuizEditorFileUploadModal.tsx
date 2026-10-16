@@ -74,10 +74,10 @@ export function QuizEditorFileUploadModal({
           <div>
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
               <UploadCloud className="w-5 h-5 text-primary" />
-              Upload &amp; Đối chiếu Ngân hàng Câu hỏi (.TXT / .JSON)
+              Upload &amp; Cross-Check Question Bank (.TXT / .JSON)
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              Tự động nhận diện Mô tả, Câu hỏi, Phương án, Đáp án đúng &amp; đối chiếu với ngân hàng môn học
+              Automatically parses description, questions, options, and correct answers to cross-check with the category bank
             </CardDescription>
           </div>
           <Button
@@ -118,7 +118,7 @@ export function QuizEditorFileUploadModal({
                         </span>
                       </span>
                       <p className="text-xs text-muted-foreground">
-                        Đã nhận diện: <strong>{filePreview.rawQuestions.length}</strong> câu hỏi
+                        Parsed: <strong>{filePreview.rawQuestions.length}</strong> question(s)
                       </p>
                     </div>
                   </div>
@@ -134,7 +134,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      Tất cả ({filePreview.rawQuestions.length})
+                      All ({filePreview.rawQuestions.length})
                     </button>
                     <button
                       type="button"
@@ -145,7 +145,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
                       }`}
                     >
-                      Mâu thuẫn ({conflictIndices.length})
+                      Conflicts ({conflictIndices.length})
                     </button>
                     <button
                       type="button"
@@ -156,7 +156,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                       }`}
                     >
-                      Câu mới ({newIndices.length})
+                      New ({newIndices.length})
                     </button>
                     <button
                       type="button"
@@ -167,7 +167,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-success-bg border-success-border text-success-fg hover:bg-success-bg/80'
                       }`}
                     >
-                      Trùng bank ({reusedIndices.length})
+                      In Bank ({reusedIndices.length})
                     </button>
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export function QuizEditorFileUploadModal({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Database className="w-4 h-4 text-primary" />
-                    Danh sách câu hỏi đối chiếu (Hiển thị {filteredReviewDetails.length} / {filePreview.rawQuestions.length} câu):
+                    Cross-Checked Questions (Showing {filteredReviewDetails.length} / {filePreview.rawQuestions.length}):
                   </span>
                   {reviewFilter !== 'all' && (
                     <button
@@ -193,7 +193,7 @@ export function QuizEditorFileUploadModal({
                       onClick={() => setReviewFilter('all')}
                       className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
                     >
-                      Hiển thị tất cả câu hỏi
+                      Show all questions
                     </button>
                   )}
                 </div>
@@ -222,7 +222,7 @@ export function QuizEditorFileUploadModal({
               onClick={() => setFilePreview(null)}
               className="cursor-pointer"
             >
-              Chọn file khác
+              Choose Another File
             </Button>
             <Button
               type="button"
@@ -231,7 +231,7 @@ export function QuizEditorFileUploadModal({
               className="font-bold gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Áp dụng {filePreview.rawQuestions.length} câu vào đề thi
+              Apply {filePreview.rawQuestions.length} Question(s) to Quiz
             </Button>
           </div>
         )}

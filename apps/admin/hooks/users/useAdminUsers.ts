@@ -32,7 +32,7 @@ async function fetchUsers(
   if (status) params.set('status', status)
 
   const res = await fetch(`/api/users?${params.toString()}`, { credentials: 'include' })
-  if (!res.ok) throw new Error('Không thể tải danh sách người dùng')
+  if (!res.ok) throw new Error('Failed to load user list')
   return res.json()
 }
 
@@ -46,6 +46,7 @@ export function useAdminUsers() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'users', page, search, role, status],
     queryFn: () => fetchUsers(page, search, role, status),
+    staleTime: 30 * 1000,
   })
 
   const updateMutation = useMutation({
@@ -57,16 +58,16 @@ export function useAdminUsers() {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Cập nhật thất bại')
+        throw new Error(err.error || 'Failed to update user')
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      toast({ title: 'Thành công', description: 'Cập nhật tài khoản thành công', type: 'success' })
+      toast({ title: 'Success', description: 'User account updated successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 
@@ -75,16 +76,16 @@ export function useAdminUsers() {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Xóa tài khoản thất bại')
+        throw new Error(err.error || 'Failed to delete user account')
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      toast({ title: 'Thành công', description: 'Đã xóa tài khoản', type: 'success' })
+      toast({ title: 'Success', description: 'User account deleted successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 

@@ -30,8 +30,8 @@ export function useQuizFileUpload({
   function handleOpenUploadModal() {
     if (!categoryId) {
       toast({
-        title: 'Yêu cầu chọn Môn học',
-        description: 'Vui lòng chọn Môn học trước để hệ thống đối chiếu với Ngân hàng câu hỏi của môn đó!',
+        title: 'Subject/Category required',
+        description: 'Please select a subject first so the system can verify against the question bank!',
         type: 'warning',
       })
       const catSelect = document.getElementById('category-select-trigger')
@@ -75,7 +75,7 @@ export function useQuizFileUpload({
             const items = parsed.questions || parsed.items || []
             parsedQuestions = items.map((item: any, idx: number) => ({
               question_id: item.question_id,
-              text: String(item.text || item.question || `Câu hỏi ${idx + 1}`),
+              text: String(item.text || item.question || `Question ${idx + 1}`),
               options: Array.isArray(item.options) ? item.options.map(String) : ['', '', '', ''],
               correct_answer: Array.isArray(item.correct_answer)
                 ? item.correct_answer.map(Number)
@@ -85,7 +85,7 @@ export function useQuizFileUpload({
           } else if (Array.isArray(parsed)) {
             parsedQuestions = parsed.map((item: any, idx: number) => ({
               question_id: item.question_id,
-              text: String(item.text || item.question || `Câu hỏi ${idx + 1}`),
+              text: String(item.text || item.question || `Question ${idx + 1}`),
               options: Array.isArray(item.options) ? item.options.map(String) : ['', '', '', ''],
               correct_answer: Array.isArray(item.correct_answer)
                 ? item.correct_answer.map(Number)
@@ -163,7 +163,7 @@ export function useQuizFileUpload({
 
           if (qText || options.length > 0) {
             parsedQuestions.push({
-              text: qText || 'Câu hỏi chưa có tiêu đề',
+              text: qText || 'Untitled question',
               options: options.length >= 2 ? options : ['', '', '', ''],
               correct_answer: correctAnswers.map((idx) => Math.max(0, Math.min(options.length - 1, idx))),
               explanation,
@@ -173,7 +173,7 @@ export function useQuizFileUpload({
       }
 
       if (parsedQuestions.length === 0) {
-        throw new Error('Không nhận diện được câu hỏi nào từ file. Vui lòng kiểm tra định dạng.')
+        throw new Error('No questions recognized from file. Please check file format.')
       }
 
       // Check Question Bank
@@ -222,7 +222,7 @@ export function useQuizFileUpload({
         setReviewFilter('all')
       }
     } catch (err: any) {
-      toast({ title: 'Lỗi đọc file', description: err.message, type: 'error' })
+      toast({ title: 'File read error', description: err.message, type: 'error' })
     } finally {
       setIsParsingFile(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -330,7 +330,7 @@ export function useQuizFileUpload({
               }).then(async (res) => {
                 if (!res.ok) {
                   const data = await res.json().catch(() => ({}))
-                  throw new Error(data.error || `Lỗi đồng bộ câu ${idx + 1}`)
+                  throw new Error(data.error || `Failed to synchronize question ${idx + 1}`)
                 }
                 return res.json()
               })
@@ -346,14 +346,14 @@ export function useQuizFileUpload({
 
         if (failedCount > 0) {
           toast({
-            title: 'Cảnh báo đồng bộ ngân hàng',
-            description: `Đã cập nhật ${successCount}/${syncTasks.length} câu mâu thuẫn. Có ${failedCount} câu gặp lỗi trong quá trình đồng bộ.`,
+            title: 'Question Bank sync warning',
+            description: `Updated ${successCount}/${syncTasks.length} conflicting questions. ${failedCount} questions encountered errors during sync.`,
             type: 'warning',
           })
         } else {
           toast({
-            title: 'Đã cập nhật ngân hàng & đề thi',
-            description: `Đã ghi đè đáp án mới của ${successCount} câu mâu thuẫn vào Ngân hàng và tất cả đề thi liên quan`,
+            title: 'Question Bank & Quizzes updated',
+            description: `Overwrote new answers for ${successCount} conflicting questions in Question Bank and all related quizzes`,
             type: 'success',
           })
         }
@@ -364,12 +364,12 @@ export function useQuizFileUpload({
       setShowUploadModal(false)
       setFilePreview(null)
       toast({
-        title: 'Đã nạp câu hỏi thành công',
-        description: `Đã nhập và đối chiếu ${processedQuestions.length} câu hỏi với ngân hàng môn`,
+        title: 'Questions imported successfully',
+        description: `Imported and cross-checked ${processedQuestions.length} questions with Question Bank`,
         type: 'success',
       })
     } catch (err: any) {
-      toast({ title: 'Lỗi áp dụng câu hỏi', description: err.message, type: 'error' })
+      toast({ title: 'Error applying questions', description: err.message, type: 'error' })
     } finally {
       setIsSyncing(false)
     }

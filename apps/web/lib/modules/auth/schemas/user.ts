@@ -4,21 +4,21 @@ import { stripHtml } from '@/lib/core/schemas/common'
 export const UpdateUserSchema = z.object({
   username: z
     .string()
-    .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
-    .max(20, 'Tên đăng nhập tối đa 20 ký tự')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới')
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username cannot exceed 20 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
     .optional(),
   display_name: z
     .string()
-    .max(50, 'Tên hiển thị tối đa 50 ký tự')
+    .max(50, 'Display name cannot exceed 50 characters')
     .transform(stripHtml)
     .optional(),
   profile_bio: z
     .string()
-    .max(200, 'Giới thiệu tối đa 200 ký tự')
+    .max(200, 'Bio cannot exceed 200 characters')
     .transform(stripHtml)
     .optional(),
-  avatar_url: z.string().url('URL ảnh không hợp lệ').optional().or(z.literal('')),
+  avatar_url: z.string().url('Invalid image URL').optional().or(z.literal('')),
   role: z.enum(['student', 'teacher', 'admin', 'dev']).optional(),
   status: z.enum(['active', 'banned']).optional(),
   ban_reason: z.string().max(200).optional(),

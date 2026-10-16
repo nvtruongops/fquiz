@@ -12,7 +12,7 @@ export const GET = withAuth(
       const assignments = await ClassroomService.getClassroomAssignments(id)
       return NextResponse.json({ assignments })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi khi lấy bài tập' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Failed to retrieve assignments' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }
@@ -30,9 +30,9 @@ export const POST = withAuth(
       })
 
       const assignment = await ClassroomService.assignQuizToClassroom(payload.userId, parsed)
-      return NextResponse.json({ assignment, message: 'Giao bài tập thành công' }, { status: 201 })
+      return NextResponse.json({ assignment, message: 'Assignment assigned successfully' }, { status: 201 })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi khi giao bài tập' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to assign quiz' }, { status: 400 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

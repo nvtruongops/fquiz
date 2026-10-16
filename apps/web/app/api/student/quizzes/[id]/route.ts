@@ -17,7 +17,7 @@ async function getAuthorizedQuiz(payload: any, id: string) {
   // 1. Fetch minimal quiz data
   const quiz = await Quiz.findById(id).select('created_by status is_public is_temp').lean() as any
   if (!quiz) {
-    throw new Response(JSON.stringify({ error: 'Bộ đề không tồn tại.' }), { 
+    throw new Response(JSON.stringify({ error: 'Quiz not found.' }), { 
       status: 404, 
       headers: { 'Content-Type': 'application/json' } 
     })
@@ -48,7 +48,7 @@ async function getAuthorizedQuiz(payload: any, id: string) {
   if (saved) return quiz
 
   // Otherwise, forbidden
-  throw new Response(JSON.stringify({ error: 'Bạn không có quyền truy cập bộ đề này.' }), { 
+  throw new Response(JSON.stringify({ error: 'You do not have access to this quiz.' }), { 
     status: 403, 
     headers: { 'Content-Type': 'application/json' } 
   })
@@ -89,18 +89,25 @@ export const GET = withAuth(async (
     if (rawQuiz instanceof NextResponse) return rawQuiz
 
     if (!await validateOriginalStatus(rawQuiz)) {
-      return NextResponse.json({ error: 'Không thể làm lại vì bộ đề gốc đã bị ẩn.', code: 'QUIZ_SOURCE_LOCKED', hint: 'Bạn vẫn có thể xem lại kết quả tại mục Lịch sử hoặc chọn một bộ đề khác.' }, { status: 403 })
+      return NextResponse.json({ error: 'Cannot retry because the original quiz is hidden.', code: 'QUIZ_SOURCE_LOCKED', hint: 'You can still view results in History or choose another quiz.' }, { status: 403 })
     }
 
-    const quiz = await Quiz.findById(new Types.ObjectId(id)).select('title description course_code questionCount studentCount questions original_quiz_id is_saved_from_explore is_temp created_by created_at category_id mix_config').populate('category_id', 'name').lean() as any
-    if (!quiz) return NextResponse.json({ error: 'Bộ đề này không tồn tại hoặc đã bị xóa.', code: 'QUIZ_NOT_FOUND' }, { status: 404 })
+    const quiz = await Quiz.findById(new Types.ObjectId(id))
+      .select('title description course_code questionCount studentCount questions original_quiz_id is_saved_from_explore is_temp created_by created_at category_id mix_config')
+      .lean() as any
+    if (!quiz) return NextResponse.json({ error: 'This quiz does not exist or has been deleted.', code: 'QUIZ_NOT_FOUND' }, { status: 404 })
+
+    if (quiz.category_id) {
+      const categoryDoc = await Category.findById(quiz.category_id).select('name').lean() as any
+      quiz.category_id = categoryDoc ?? { _id: quiz.category_id, name: 'Uncategorized' }
+    }
 
     // Extra safety layer for temp quizzes
     const isOwner = quiz.created_by?.toString() === payload.userId
     const hasSession = quiz.is_temp ? await QuizSession.exists({ quiz_id: quiz._id, student_id: new Types.ObjectId(payload.userId) }) : false
     
     if (quiz.is_temp && !isOwner && !hasSession) {
-      return NextResponse.json({ error: 'Bộ đề này không tồn tại hoặc đã bị xóa.', code: 'QUIZ_NOT_FOUND' }, { status: 404 })
+      return NextResponse.json({ error: 'This quiz does not exist or has been deleted.', code: 'QUIZ_NOT_FOUND' }, { status: 404 })
     }
 
     let effectiveId = quiz._id
@@ -207,13 +214,13 @@ export const PATCH = withAuth(async (
 
     if (quiz.is_saved_from_explore) {
       return NextResponse.json(
-        { error: 'Quiz đã lưu từ Explore không thể chuyển danh mục.' },
+        { error: 'Quizzes saved from Explore cannot change categories.' },
         { status: 400 }
       )
     }
 
     if (!category_id) {
-      return NextResponse.json({ error: 'Danh mục là bắt buộc.' }, { status: 400 })
+      return NextResponse.json({ error: 'Category is required.' }, { status: 400 })
     }
 
     if (!Types.ObjectId.isValid(category_id)) {
@@ -227,7 +234,7 @@ export const PATCH = withAuth(async (
     }).lean()
 
     if (!category) {
-      return NextResponse.json({ error: 'Danh mục đích không tồn tại hoặc không thuộc về bạn.' }, { status: 404 })
+      return NextResponse.json({ error: 'Target category does not exist or does not belong to you.' }, { status: 404 })
     }
 
     quiz.category_id = new Types.ObjectId(category_id)
@@ -254,7 +261,7 @@ export const PUT = withAuth(async (
     const quiz = await authorizeResource(payload, id, Quiz, 'quiz', 'created_by')
     if ((quiz as any).is_saved_from_explore) {
       return NextResponse.json(
-        { error: 'Bộ đề lưu từ kho Khám phá không thể chỉnh sửa.' },
+        { error: 'Quizzes saved from Explore cannot be edited.' },
         { status: 400 }
       )
     }
@@ -281,7 +288,7 @@ export const PUT = withAuth(async (
 
       if (duplicate) {
         return NextResponse.json(
-          { error: `Mã quiz ${normalizedCourseCode} đã tồn tại trong bộ đề tự tạo của bạn.` },
+          { error: `Quiz code ${normalizedCourseCode} already exists in your created quizzes.` },
           { status: 409 }
         )
       }
@@ -313,11 +320,11 @@ export const PUT = withAuth(async (
     quiz.questionCount = processedQuestions.length
     await (quiz as any).save()
 
-    return NextResponse.json({ quiz, message: 'Cập nhật bộ đề thành công' })
+    return NextResponse.json({ quiz, message: 'Quiz updated successfully' })
   } catch (error) {
     console.error('Error updating student quiz:', error)
     if ((error as { code?: number }).code === 11000) {
-      return NextResponse.json({ error: 'Mã quiz đã tồn tại.' }, { status: 409 })
+      return NextResponse.json({ error: 'Quiz code already exists.' }, { status: 409 })
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }

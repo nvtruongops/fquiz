@@ -1,22 +1,13 @@
 'use client'
 
-import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
-import { invalidateHistoryForQuiz } from '@/lib/core/utils/cache-invalidation'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { analyzeQuizCompleteness } from '@/lib/modules/quiz/quiz-analyzer'
-import { useDebounce } from '@/hooks/shared/useDebounce'
-import { useToast } from '@/store/shared/toast-store'
-import { withCsrfHeaders } from '@/lib/core/security/csrf'
-import { useQuestionBankWarning } from '@/hooks/quiz/useQuestionBankWarning'
 import { useQuestionBankCheck } from '@/hooks/quiz/useQuestionBankCheck'
-import { extractApiErrorMessage } from '@/lib/core/utils/error-utils'
-import { analyzeQuestionStructure } from '@/lib/modules/quiz/quiz-import/analyzer'
-import { checkDuplicateQuestions } from '@/lib/modules/quiz/quiz-import/duplicate-checker'
-import { Category, QuizFormData, QuestionForm } from '@/lib/modules/quiz/types/quiz'
-import { ImportedQuiz } from '@/components/quiz/question-bank/QuizImportPanel'
-
-const DEFAULT_OPTION_COUNT = 4
+import type { Category, QuizFormData, QuestionForm } from '@/lib/modules/quiz/types/quiz'
+import type { ImportedQuiz } from '@/hooks/quiz/useQuizImport'
+import { useQuizQuestions, emptyQuestion } from '@/hooks/quiz/useQuizQuestions'
+import { useQuizAutoSave } from '@/hooks/quiz/useQuizAutoSave'
+import { useQuizSave } from '@/hooks/quiz/useQuizSave'
 
 export interface QuizEditorOptions {
   initialData?: Partial<QuizFormData>
@@ -37,16 +28,6 @@ export interface QuizEditorOptions {
   onConflictsResolved?: () => void
 }
 
-function emptyQuestion(): QuestionForm {
-  return {
-    text: '',
-    options: new Array(DEFAULT_OPTION_COUNT).fill(''),
-    correct_answers: [],
-    explanation: '',
-    image_url: '',
-  }
-}
-
 export function useQuizEditor(options: QuizEditorOptions) {
   const {
     initialData,
@@ -64,34 +45,9 @@ export function useQuizEditor(options: QuizEditorOptions) {
     onConflictsResolved,
   } = options
 
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-  const DRAFT_KEY = 'quiz_editor_draft_id'
-
-  const [activeQuizId, setActiveQuizId] = useState<string | undefined>(() => {
-    return quizId
-  })
-
   const isStudentMode = mode === 'student'
   const canSaveDraft = allowDraft ?? !isStudentMode
   const autosaveEnabled = enableAutosave ?? !isStudentMode
-
-  const effectiveCreateEndpoint = useMemo(() =>
-    createEndpoint ??
-    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes`,
-  [createEndpoint])
-
-  const effectiveUpdateEndpointBuilder = useMemo(() =>
-    updateEndpointBuilder ?? ((id: string) => {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
-      return `${baseUrl}/api/student/quizzes/${id}`
-    }),
-  [updateEndpointBuilder])
-
-  const effectiveRedirectOnPublish = useMemo(() =>
-    redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/teacher/quizzes'),
-  [redirectOnPublish, isStudentMode])
 
   const [form, setForm] = useState<QuizFormData>(() => ({
     description: (initialData as any)?.description ?? '',
@@ -103,40 +59,21 @@ export function useQuizEditor(options: QuizEditorOptions) {
     status: initialData?.status ?? 'published',
   }))
 
-  const [targetCount, setTargetCount] = useState(form.questions.length)
-  const [targetInput, setTargetInput] = useState(String(form.questions.length))
-  const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [autosaving, setAutosaving] = useState(false)
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>((initialData as any)?.updatedAt ?? null)
-  const lastUpdatedAtRef = useRef<string | null>((initialData as any)?.updatedAt ?? null)
+  const forceSaveAfterResolveRef = useRef(false)
 
-  const [hasImportBlockingErrors, setHasImportBlockingErrors] = useState(false)
-  const [importPreviewErrors, setImportPreviewErrors] = useState<Array<{ code: string; message: string; questionIndex?: number }>>([])
-  const [showImportPanel, setShowImportPanel] = useState(false)
-  const [isImportProcessing, setIsImportProcessing] = useState(false)
-  const [appliedStructureReport, setAppliedStructureReport] = useState<any | null>(null)
-  const [appliedImportSummary, setAppliedImportSummary] = useState<{
-    summary: { totalQuestions: number; validQuestions: number; errors: number; warnings: number }
-    isValid: boolean
-    sameAnswerCount: number
-    differentAnswerCount: number
-    diagnostics?: Array<{ level?: 'error' | 'warning'; code?: string; message: string; questionIndex?: number }>
-  } | null>(null)
+  const questionsApi = useQuizQuestions({
+    form,
+    setForm,
+    categories,
+    isStudentMode,
+    onConflictsResolved,
+  })
+
   const importEnabled = process.env.NEXT_PUBLIC_ENABLE_QUIZ_IMPORT !== 'false'
-
-  const { checkQuestionUsage, usageInfo, clearUsageInfo } = useQuestionBankWarning(form.category_id)
-  const [showBankWarning, setShowBankWarning] = useState(false)
-  const [pendingQuestionUpdate, setPendingQuestionUpdate] = useState<{
-    index: number
-    field: 'text' | 'explanation' | 'image_url'
-    value: string
-  } | null>(null)
 
   const bankCheck = useQuestionBankCheck({
     categoryId: form.category_id,
-    questions: form.questions.map(q => ({
+    questions: form.questions.map((q) => ({
       text: q.text,
       options: q.options,
       correct_answer: q.correct_answers,
@@ -151,289 +88,20 @@ export function useQuizEditor(options: QuizEditorOptions) {
   const bankCheckResults = useMemo(() => {
     const map: Record<number, boolean> = {}
     if (bankCheck.result?.conflicts) {
-      bankCheck.result.conflicts.same_answer.forEach(c => { map[c.questionIndex] = true })
-      bankCheck.result.conflicts.different_answer.forEach(c => { map[c.questionIndex] = true })
+      bankCheck.result.conflicts.same_answer.forEach((c) => {
+        map[c.questionIndex] = true
+      })
+      bankCheck.result.conflicts.different_answer.forEach((c) => {
+        map[c.questionIndex] = true
+      })
     }
     return map
   }, [bankCheck.result])
 
-  const diagnostics = useMemo(() => analyzeQuizCompleteness({ ...form, course_code: form.course_code } as any, targetCount), [form, targetCount])
-  const isSubmitBlocked = saving || hasImportBlockingErrors || isImportProcessing
-
-  const debouncedForm = useDebounce(form, 3000)
-  const isFirstLoad = useRef(true)
-  const autosaveInFlightRef = useRef(false)
-  const autosaveResolveRef = useRef<(() => void) | null>(null)
-  const formSnapshotRef = useRef(form)
-  const forceSaveAfterResolveRef = useRef(false)
-  const lastSavedSignatureRef = useRef<string | null>(null)
-
-  const pendingQuestionData = useMemo(() => {
-    if (!pendingQuestionUpdate) return null
-    const q = form.questions[pendingQuestionUpdate.index]
-    return {
-      text: pendingQuestionUpdate.field === 'text' ? pendingQuestionUpdate.value : q.text,
-      options: q.options,
-      correct_answer: q.correct_answers,
-      explanation: pendingQuestionUpdate.field === 'explanation' ? pendingQuestionUpdate.value : q.explanation,
-      image_url: pendingQuestionUpdate.field === 'image_url' ? pendingQuestionUpdate.value : q.image_url,
-    }
-  }, [pendingQuestionUpdate, form.questions])
-
-  function applyTargetCount(raw: string) {
-    const maxCount = isStudentMode ? 150 : 9999
-    const n = Math.max(1, Math.min(maxCount, Number.parseInt(raw, 10) || 1))
-    setTargetCount(n)
-    setTargetInput(String(n))
-    setForm((prev) => {
-      const cur = prev.questions.length
-      if (n > cur) return { ...prev, questions: [...prev.questions, ...Array.from({ length: n - cur }, emptyQuestion)] }
-      if (n < cur) return { ...prev, questions: prev.questions.slice(0, n) }
-      return prev
-    })
-  }
-
-  const addQuestion = () =>
-    setForm((prev) => ({ ...prev, questions: [...prev.questions, emptyQuestion()] }))
-
-  const removeQuestion = (qi: number) => {
-    setForm((prev) => {
-      if (prev.questions.length <= 1) return prev
-      const next = prev.questions.filter((_, i) => i !== qi)
-      setTargetCount(next.length)
-      setTargetInput(String(next.length))
-      return { ...prev, questions: next }
-    })
-  }
-
-  const updateOption = (qi: number, oi: number, value: string) =>
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      const options = [...questions[qi].options]
-      options[oi] = value
-      questions[qi] = { ...questions[qi], options }
-      return { ...prev, questions }
-    })
-
-  const addOption = (qi: number) =>
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      if (questions[qi].options.length >= 6) return prev
-      questions[qi] = { ...questions[qi], options: [...questions[qi].options, ''] }
-      return { ...prev, questions }
-    })
-
-  const removeOption = (qi: number, oi: number) =>
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      if (questions[qi].options.length <= 2) return prev
-      const options = questions[qi].options.filter((_, i) => i !== oi)
-      const correct_answers = questions[qi].correct_answers
-        .filter((a) => a !== oi)
-        .map((a) => (a > oi ? a - 1 : a))
-      questions[qi] = { ...questions[qi], options, correct_answers }
-      return { ...prev, questions }
-    })
-
-  const toggleCorrect = (qi: number, oi: number) =>
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      const q = questions[qi]
-      const already = q.correct_answers.includes(oi)
-      const correct_answers = already
-        ? q.correct_answers.filter((a) => a !== oi)
-        : [...q.correct_answers, oi].sort((a, b) => a - b)
-      questions[qi] = { ...q, correct_answers }
-      return { ...prev, questions }
-    })
-
-  const updateQuestion = async (qi: number, field: 'text' | 'explanation' | 'image_url', value: string) => {
-    const isImportantChange = field === 'text' && !isStudentMode
-
-    if (isImportantChange && form.category_id) {
-      const currentQuestion = form.questions[qi]
-      const updatedQuestion = {
-        text: field === 'text' ? value : currentQuestion.text,
-        options: currentQuestion.options,
-        correct_answer: currentQuestion.correct_answers,
-        explanation: currentQuestion.explanation,
-        image_url: currentQuestion.image_url,
-      }
-
-      const usage = await checkQuestionUsage(updatedQuestion)
-
-      if (usage && usage.exists && usage.usage_count && usage.usage_count > 1) {
-        setPendingQuestionUpdate({ index: qi, field, value })
-        setShowBankWarning(true)
-        return
-      }
-    }
-
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      questions[qi] = { ...questions[qi], [field]: value }
-      return { ...prev, questions }
-    })
-  }
-
-  const removeQuestionImage = (qi: number) =>
-    setForm((prev) => {
-      const questions = [...prev.questions]
-      questions[qi] = { ...questions[qi], image_url: '' }
-      return { ...prev, questions }
-    })
-
-  const applyPendingQuestionUpdate = useCallback(() => {
-    if (pendingQuestionUpdate) {
-      const { index, field, value } = pendingQuestionUpdate
-      setForm((prev) => {
-        const questions = [...prev.questions]
-        questions[index] = { ...questions[index], [field]: value }
-        return { ...prev, questions }
-      })
-    }
-    setPendingQuestionUpdate(null)
-    clearUsageInfo()
-  }, [pendingQuestionUpdate, clearUsageInfo])
-
-  function effectiveOptions(q: QuestionForm): string[] {
-    let last = q.options.length - 1
-    while (last > 1 && !q.options[last].trim()) last--
-    return q.options.slice(0, last + 1)
-  }
-
-  const syncToQuestionBank = useCallback(async (qId: string, status: string) => {
-    if (isStudentMode || !form.category_id || status !== 'published') return
-    try {
-      await fetch('/api/question-bank/auto-sync', {
-        method: 'POST',
-        credentials: 'include',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          category_id: form.category_id,
-          course_code: form.course_code.trim().toUpperCase(),
-          quiz_id: qId || undefined,
-          questions: form.questions.map(q => ({ text: q.text, options: q.options, correct_answer: q.correct_answers, explanation: q.explanation, image_url: q.image_url })),
-        }),
-      })
-    } catch (e) {
-      console.error('Auto-sync failed:', e)
-    }
-  }, [isStudentMode, form.category_id, form.course_code, form.questions])
-
-  const handlePostSaveRedirect = useCallback((status: string) => {
-    if (status === 'published') {
-      sessionStorage.removeItem(DRAFT_KEY)
-      toast.success(isStudentMode ? 'Đã tạo quiz thành công!' : 'Đã công khai quiz thành công!')
-      router.push(effectiveRedirectOnPublish)
-      router.refresh()
-    } else {
-      toast.success('Đã lưu bản nháp')
-    }
-  }, [effectiveRedirectOnPublish, isStudentMode, router, toast])
-
-  const handleSaveSuccess = useCallback(async (data: any, status: string, quiet: boolean) => {
-    const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId
-    if (savedId) {
-      setActiveQuizId(savedId)
-      if (!quizId) sessionStorage.setItem(DRAFT_KEY, savedId)
-    }
-    if (!quiet && data?.quiz?.status) setForm(prev => ({ ...prev, status: data.quiz.status }))
-    setLastUpdatedAt(data?.quiz?.updatedAt ?? null)
-    lastUpdatedAtRef.current = data?.quiz?.updatedAt ?? null
-    setLastSavedAt(new Date())
-
-    if (!quiet) {
-      if (savedId) await invalidateHistoryForQuiz(queryClient, savedId)
-      handlePostSaveRedirect(status)
-    }
-  }, [activeQuizId, queryClient, quizId, handlePostSaveRedirect])
-
-  const handleSaveError = useCallback((data: any) => {
-    if (data.code === 'CONCURRENCY_ERROR') {
-      setError('Xung đột dữ liệu. Có người vừa chỉnh sửa quiz này. Hãy tải lại trang.')
-      toast.error('Xung đột dữ liệu! Vui lòng làm mới trang.')
-    } else if (data.error === 'question_bank_conflict' && data.conflicts) {
-      onServerConflict?.(data.conflicts)
-      setError(
-        data.message ||
-          'Phát hiện câu hỏi mâu thuẫn đáp án với ngân hàng. Vui lòng chọn đáp án đúng để đồng bộ.'
-      )
-    } else {
-      const apiMsg = extractApiErrorMessage(data.error)
-      setError(apiMsg)
-      if (data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')) {
-        toast.error(apiMsg)
-      }
-    }
-  }, [onServerConflict, toast])
-
-  const buildSavePayload = useCallback((overrideStatus?: 'published' | 'draft') => {
-    const status = isStudentMode ? 'published' : (overrideStatus ?? form.status)
-    return {
-      status,
-      description: form.description.trim(),
-      category_id: form.category_id,
-      course_code: form.course_code.trim().toUpperCase() || 'GENERAL',
-      lastUpdatedAt: lastUpdatedAtRef.current,
-      questions: form.questions.map(q => {
-        const opts = effectiveOptions(q)
-        return {
-          text: q.text.trim(),
-          options: opts.map(o => o.trim()),
-          correct_answer: q.correct_answers.filter(a => a < opts.length),
-          ...(q.explanation.trim() ? { explanation: q.explanation.trim() } : {}),
-          ...(q.image_url.trim() ? { image_url: q.image_url.trim() } : {}),
-        }
-      }),
-    }
-  }, [form, isStudentMode])
-
-  const executeSaveFetch = useCallback(async (payload: any) => {
-    const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : effectiveCreateEndpoint
-    const method = activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST'
-    const res = await fetch(url, {
-      method,
-      credentials: 'include',
-      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-    return { res, data }
-  }, [activeQuizId, effectiveCreateEndpoint, effectiveUpdateEndpointBuilder, isStudentMode])
-
-  const handleSaveResponse = useCallback(async (res: Response, data: any, status: string, quiet: boolean) => {
-    if (!res.ok) {
-      if (activeQuizId && !quizId && (res.status === 400 || res.status === 404)) {
-        setActiveQuizId(undefined)
-        sessionStorage.removeItem(DRAFT_KEY)
-      }
-      if (!quiet) handleSaveError(data)
-      return
-    }
-    const savedId = data?.quiz?._id ? String(data.quiz._id) : activeQuizId || quizId || ''
-    await handleSaveSuccess(data, status, quiet)
-    if (savedId) await syncToQuestionBank(savedId, status)
-  }, [activeQuizId, handleSaveError, handleSaveSuccess, quizId, syncToQuestionBank])
-
-  const doSave = useCallback(async (overrideStatus?: 'published' | 'draft', quiet: boolean = false) => {
-    if (!quiet && autosaveInFlightRef.current) {
-      const timeoutPromise = new Promise<void>(res => setTimeout(res, 3000))
-      const waitAutosavePromise = new Promise<void>(res => { autosaveResolveRef.current = res })
-      await Promise.race([waitAutosavePromise, timeoutPromise])
-    }
-    if (!quiet) setSaving(true)
-    setError('')
-    const payload = buildSavePayload(overrideStatus)
-    try {
-      const { res, data } = await executeSaveFetch(payload)
-      await handleSaveResponse(res, data, payload.status, quiet)
-    } catch {
-      if (!quiet) setError('Lỗi kết nối. Vui lòng thử lại.')
-    } finally {
-      if (!quiet) setSaving(false)
-    }
-  }, [buildSavePayload, executeSaveFetch, handleSaveResponse])
+  const diagnostics = useMemo(
+    () => analyzeQuizCompleteness({ ...form, course_code: form.course_code } as any, questionsApi.targetCount),
+    [form, questionsApi.targetCount]
+  )
 
   const scrollToQuestion = (idx: number) => {
     const el = document.getElementById(`q-card-${idx}`)
@@ -444,94 +112,33 @@ export function useQuizEditor(options: QuizEditorOptions) {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (hasImportBlockingErrors) {
-      setError('File import vẫn còn lỗi. Vui lòng sửa lỗi trong preview trước khi lưu.')
-      return
-    }
-    if (!diagnostics.isValid) {
-      setError('Vui lòng hoàn thiện các thông tin còn thiếu trước khi công khai.')
-      scrollToQuestion(diagnostics.errors[0]?.questionIndex ?? 0)
-      return
-    }
+  const saveApi = useQuizSave({
+    quizId,
+    initialUpdatedAt: (initialData as any)?.updatedAt ?? null,
+    isStudentMode,
+    canSaveDraft,
+    createEndpoint,
+    updateEndpointBuilder,
+    redirectOnPublish,
+    onBeforeSubmit,
+    onServerConflict,
+    form,
+    setForm,
+    diagnostics,
+    hasImportBlockingErrors: questionsApi.hasImportBlockingErrors,
+    isImportProcessing: questionsApi.isImportProcessing,
+    waitForAutosave: () => autoSaveApi.waitForAutosave(),
+    setLastSavedAt: (date) => autoSaveApi.setLastSavedAt(date),
+    scrollToQuestion,
+  })
 
-    if (onBeforeSubmit) {
-      const canProceed = onBeforeSubmit({
-        category_id: form.category_id,
-        questions: form.questions.map(q => ({
-          text: q.text,
-          options: q.options,
-          correct_answer: q.correct_answers,
-        })),
-      })
-      if (canProceed === false) return
-    }
-
-    await doSave('published')
-  }
-
-  const handleSaveDraft = async () => {
-    if (!canSaveDraft) return
-    if (hasImportBlockingErrors) {
-      setError('File import vẫn còn lỗi. Vui lòng sửa lỗi trong preview trước khi lưu.')
-      return
-    }
-    await doSave('draft')
-  }
-
-  const handleAutosave = useCallback(async () => {
-    if (autosaveInFlightRef.current) return
-    autosaveInFlightRef.current = true
-    formSnapshotRef.current = form
-    const savedSignature = JSON.stringify({
-      description: form.description,
-      category_id: form.category_id,
-      course_code: form.course_code,
-      status: form.status,
-      questions: form.questions,
-    })
-    setAutosaving(true)
-    try {
-      await doSave('draft', true)
-      lastSavedSignatureRef.current = savedSignature
-    } finally {
-      setAutosaving(false)
-      autosaveInFlightRef.current = false
-      autosaveResolveRef.current?.()
-      autosaveResolveRef.current = null
-    }
-  }, [form, doSave])
-
-  useEffect(() => {
-    if (!autosaveEnabled) return
-    if (!activeQuizId) return
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false
-      lastSavedSignatureRef.current = JSON.stringify({
-        description: debouncedForm.description,
-        category_id: debouncedForm.category_id,
-        course_code: debouncedForm.course_code,
-        status: debouncedForm.status,
-        questions: debouncedForm.questions,
-      })
-      return
-    }
-    if (isImportProcessing) return
-
-    if (debouncedForm.category_id && debouncedForm.course_code) {
-      const signature = JSON.stringify({
-        description: debouncedForm.description,
-        category_id: debouncedForm.category_id,
-        course_code: debouncedForm.course_code,
-        status: debouncedForm.status,
-        questions: debouncedForm.questions,
-      })
-      if (signature === lastSavedSignatureRef.current) return
-      lastSavedSignatureRef.current = signature
-      handleAutosave()
-    }
-  }, [debouncedForm, isImportProcessing, autosaveEnabled, handleAutosave, activeQuizId])
+  const autoSaveApi = useQuizAutoSave({
+    form,
+    activeQuizId: saveApi.activeQuizId,
+    autosaveEnabled,
+    isImportProcessing: questionsApi.isImportProcessing,
+    doSave: saveApi.doSave,
+  })
 
   useEffect(() => {
     if (!registerApplyResolutions) return
@@ -552,267 +159,61 @@ export function useQuizEditor(options: QuizEditorOptions) {
         })
         forceSaveAfterResolveRef.current = true
       } else {
-        doSave('published')
+        saveApi.doSave('published')
       }
     })
-  }, [registerApplyResolutions, doSave])
+  }, [registerApplyResolutions, saveApi])
 
   useEffect(() => {
     if (!forceSaveAfterResolveRef.current) return
     forceSaveAfterResolveRef.current = false
-    doSave('published')
-  }, [form, doSave])
-
-  const handleApplyImportedQuiz = (
-    importedQuiz: ImportedQuiz,
-    importInfo?: {
-      bankCheck?: any
-      previewSummary?: { totalQuestions: number; validQuestions: number; errors: number; warnings: number }
-      diagnostics?: Array<{ level?: 'error' | 'warning'; code?: string; message: string; questionIndex?: number }>
-    }
-  ) => {
-    const mappedQuestions = importedQuiz.questions.map((q) => ({
-      question_no: q.question_no,
-      data: {
-        text: q.text,
-        options: q.options.length >= 2 ? q.options : [...q.options, ''],
-        correct_answers: q.correct_answer,
-        explanation: q.explanation ?? '',
-        image_url: q.image_url ?? '',
-      } as QuestionForm,
-    }))
-
-    const importedCategoryToken = (importedQuiz.category_id ?? '').trim()
-    const importedCourseCode = (importedQuiz.course_code ?? '').trim()
-    const matchedCategory = categories.find(
-      (cat) =>
-        cat._id === importedCategoryToken ||
-        cat.name.trim().toLowerCase() === importedCategoryToken.toLowerCase() ||
-        (importedCourseCode && cat.name.trim().toLowerCase() === importedCourseCode.toLowerCase())
-    )
-    let overwriteCount = 0
-    let addedCount = 0
-    let nextLength = 0
-
-    setForm((prev) => {
-      const isSingleEmptyQuestion =
-        prev.questions.length === 1 &&
-        !prev.questions[0].text.trim() &&
-        !prev.questions[0].options.some((o) => o.trim()) &&
-        prev.questions[0].correct_answers.length === 0
-
-      const nextQuestions = isSingleEmptyQuestion ? [] : [...prev.questions]
-      const hasQuestionNo = mappedQuestions.some((q) => typeof q.question_no === 'number' && q.question_no > 0)
-
-      if (hasQuestionNo) {
-        mappedQuestions.forEach((item) => {
-          const targetIndex =
-            typeof item.question_no === 'number' && item.question_no > 0
-              ? item.question_no - 1
-              : nextQuestions.length
-
-          while (nextQuestions.length <= targetIndex) {
-            nextQuestions.push(emptyQuestion())
-          }
-
-          const existing = nextQuestions[targetIndex]
-          const hasExistingContent =
-            existing &&
-            (existing.text.trim() ||
-              existing.options.some((o) => o.trim()) ||
-              existing.correct_answers.length > 0 ||
-              existing.explanation.trim() ||
-              existing.image_url.trim())
-
-          if (hasExistingContent) overwriteCount += 1
-          else addedCount += 1
-
-          nextQuestions[targetIndex] = item.data
-        })
-      } else {
-        mappedQuestions.forEach((item) => {
-          nextQuestions.push(item.data)
-          addedCount += 1
-        })
-      }
-
-      nextLength = nextQuestions.length
-
-      return {
-        ...prev,
-        description: importedQuiz.description || prev.description,
-        category_id: matchedCategory?._id ?? prev.category_id,
-        course_code: importedCourseCode || prev.course_code,
-        questions: nextQuestions,
-      }
-    })
-
-    if (nextLength > 0) {
-      setTargetCount(nextLength)
-      setTargetInput(String(nextLength))
-    }
-
-    const report = analyzeQuestionStructure(
-      importedQuiz.questions.map((q) => ({
-        options: q.options,
-        correct_answer: q.correct_answer,
-      }))
-    )
-    setAppliedStructureReport(report)
-
-    if (importInfo?.previewSummary) {
-      setAppliedImportSummary({
-        summary: importInfo.previewSummary,
-        isValid: (importInfo.previewSummary.errors ?? 0) === 0,
-        sameAnswerCount: importInfo.bankCheck?.same_answer_conflicts ?? 0,
-        differentAnswerCount: importInfo.bankCheck?.different_answer_conflicts ?? 0,
-        diagnostics: importInfo.diagnostics,
-      })
-    }
-
-    setHasImportBlockingErrors(false)
-    setImportPreviewErrors([])
-    setShowImportPanel(false)
-    onConflictsResolved?.()
-
-    if ((importedCategoryToken || importedCourseCode) && !matchedCategory) {
-      toast.error(`Không tìm thấy môn học khớp với "${importedCategoryToken || importedCourseCode}". Vui lòng chọn môn học thủ công.`)
-    }
-
-    if (overwriteCount > 0) {
-      toast.success(`Đã áp dụng file: thêm ${addedCount} câu, ghi đè ${overwriteCount} câu trùng số.`)
-    } else {
-      toast.success(`Đã áp dụng file: thêm ${addedCount} câu.`)
-    }
-  }
-
-  const reanalyzeFormQuestions = useCallback(() => {
-    const mapped = form.questions.map((q) => ({
-      text: q.text,
-      options: q.options || [],
-      correct_answer: q.correct_answers || [],
-    }))
-    const freshReport = analyzeQuestionStructure(mapped)
-    setAppliedStructureReport(freshReport)
-
-    const freshDiagnostics: Array<{ level: 'error' | 'warning'; code: string; message: string; questionIndex?: number }> = []
-
-    // 1. Dynamic Duplicate Question check across active form questions (re-calculates indices live)
-    const duplicateDiagnostics = checkDuplicateQuestions(mapped)
-    freshDiagnostics.push(...duplicateDiagnostics)
-
-    // 2. Question-level validation
-    form.questions.forEach((q, idx) => {
-      if (!q.text.trim()) {
-        freshDiagnostics.push({
-          level: 'error',
-          code: 'EMPTY_TEXT',
-          message: `Câu ${idx + 1}: Nội dung câu hỏi rỗng`,
-          questionIndex: idx,
-        })
-      }
-      const validOpts = (q.options || []).filter((o) => o.trim())
-      if (validOpts.length < 2) {
-        freshDiagnostics.push({
-          level: 'error',
-          code: 'TOO_FEW_OPTIONS',
-          message: `Câu ${idx + 1}: Cần ít nhất 2 phương án`,
-          questionIndex: idx,
-        })
-      }
-      if (!q.correct_answers || q.correct_answers.length === 0) {
-        freshDiagnostics.push({
-          level: 'warning',
-          code: 'NO_CORRECT_ANSWER',
-          message: `Câu ${idx + 1}: Chưa chọn đáp án đúng`,
-          questionIndex: idx,
-        })
-      }
-    })
-
-    // 3. Metadata field check (only add if still missing in form)
-    if (!form.course_code) {
-      freshDiagnostics.push({
-        level: 'warning',
-        code: 'MISSING_COURSE_CODE',
-        message: 'Thiếu Fquiz code (quizMeta.course_code) - có thể nhập thủ công trong form trước khi lưu',
-      })
-    }
-    if (!form.category_id) {
-      freshDiagnostics.push({
-        level: 'warning',
-        code: 'MISSING_CATEGORY_ID',
-        message: 'Thiếu category_id - có thể chọn môn học trong form trước khi lưu',
-      })
-    }
-    if (!form.description) {
-      freshDiagnostics.push({
-        level: 'warning',
-        code: 'MISSING_DESCRIPTION',
-        message: 'Thiếu quiz description (quizMeta.description) - có thể bỏ qua hoặc nhập thêm trong form',
-      })
-    }
-
-    const errorCount = freshDiagnostics.filter((d) => d.level === 'error').length
-    const warningCount = freshDiagnostics.filter((d) => d.level === 'warning').length
-
-    setAppliedImportSummary({
-      summary: {
-        totalQuestions: form.questions.length,
-        validQuestions: form.questions.length - errorCount,
-        errors: errorCount,
-        warnings: warningCount,
-      },
-      isValid: errorCount === 0,
-      sameAnswerCount: appliedImportSummary?.sameAnswerCount ?? 0,
-      differentAnswerCount: appliedImportSummary?.differentAnswerCount ?? 0,
-      diagnostics: freshDiagnostics,
-    })
-
-    if (freshDiagnostics.length === 0) {
-      toast.success('Đã cập nhật báo cáo: Không còn câu trùng hay lỗi nào trong form!')
-    } else {
-      toast.success(`Đã cập nhật vị trí mới: Còn ${errorCount} lỗi và ${warningCount} cảnh báo.`)
-    }
-  }, [form.questions, form.course_code, form.category_id, form.description, appliedImportSummary, toast])
+    saveApi.doSave('published')
+  }, [form, saveApi])
 
   return {
-    activeQuizId,
-    form, setForm,
-    targetInput, setTargetInput,
-    applyTargetCount,
-    addQuestion,
-    removeQuestion,
-    updateOption,
-    addOption,
-    removeOption,
-    toggleCorrect,
-    updateQuestion,
-    removeQuestionImage,
+    activeQuizId: saveApi.activeQuizId,
+    form,
+    setForm,
+    targetInput: questionsApi.targetInput,
+    setTargetInput: questionsApi.setTargetInput,
+    applyTargetCount: questionsApi.applyTargetCount,
+    addQuestion: questionsApi.addQuestion,
+    removeQuestion: questionsApi.removeQuestion,
+    updateOption: questionsApi.updateOption,
+    addOption: questionsApi.addOption,
+    removeOption: questionsApi.removeOption,
+    toggleCorrect: questionsApi.toggleCorrect,
+    updateQuestion: questionsApi.updateQuestion,
+    removeQuestionImage: questionsApi.removeQuestionImage,
     diagnostics,
     bankCheckResults,
-    saving,
-    autosaving,
-    lastSavedAt,
-    error,
-    isSubmitBlocked,
+    saving: saveApi.saving,
+    autosaving: autoSaveApi.autosaving,
+    lastSavedAt: autoSaveApi.lastSavedAt,
+    error: saveApi.error,
+    isSubmitBlocked: saveApi.isSubmitBlocked,
     canSaveDraft,
     isStudentMode,
     importEnabled,
-    showImportPanel, setShowImportPanel,
-    handleApplyImportedQuiz,
-    appliedStructureReport, setAppliedStructureReport,
-    appliedImportSummary, setAppliedImportSummary,
-    reanalyzeFormQuestions,
-    setHasImportBlockingErrors,
-    setImportPreviewErrors,
-    setIsImportProcessing,
+    showImportPanel: questionsApi.showImportPanel,
+    setShowImportPanel: questionsApi.setShowImportPanel,
+    handleApplyImportedQuiz: questionsApi.handleApplyImportedQuiz,
+    appliedStructureReport: questionsApi.appliedStructureReport,
+    setAppliedStructureReport: questionsApi.setAppliedStructureReport,
+    appliedImportSummary: questionsApi.appliedImportSummary,
+    setAppliedImportSummary: questionsApi.setAppliedImportSummary,
+    reanalyzeFormQuestions: questionsApi.reanalyzeFormQuestions,
+    setHasImportBlockingErrors: questionsApi.setHasImportBlockingErrors,
+    setImportPreviewErrors: questionsApi.setImportPreviewErrors,
+    setIsImportProcessing: questionsApi.setIsImportProcessing,
     scrollToQuestion,
-    handleSubmit,
-    handleSaveDraft,
-    showBankWarning, setShowBankWarning,
-    usageInfo, clearUsageInfo,
-    pendingQuestionData,
-    applyPendingQuestionUpdate,
+    handleSubmit: saveApi.handleSubmit,
+    handleSaveDraft: saveApi.handleSaveDraft,
+    showBankWarning: questionsApi.showBankWarning,
+    setShowBankWarning: questionsApi.setShowBankWarning,
+    usageInfo: questionsApi.usageInfo,
+    clearUsageInfo: questionsApi.clearUsageInfo,
+    pendingQuestionData: questionsApi.pendingQuestionData,
+    applyPendingQuestionUpdate: questionsApi.applyPendingQuestionUpdate,
   }
 }

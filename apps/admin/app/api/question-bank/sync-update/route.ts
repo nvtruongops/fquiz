@@ -130,10 +130,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({
       success: true,
       updated_quizzes: updatedQuizCount,
-      message: `Đã cập nhật đồng bộ ${updatedQuizCount} đề thi trong ngân hàng thành công`,
+      message: `Successfully synchronized and updated ${updatedQuizCount} quizzes in question bank`,
     })
   } catch (error: any) {
     console.error('Error syncing update:', error)
-    return NextResponse.json({ error: error.message || 'Lỗi đồng bộ ngân hàng' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to synchronize question bank' }, { status: 500 })
   }
 }, { roles: ['admin'] })

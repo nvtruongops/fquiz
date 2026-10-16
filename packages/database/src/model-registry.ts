@@ -1,6 +1,6 @@
 /**
- * Model Registry — Giải pháp đăng ký schema/models Mongoose an toàn
- * Mục đích DUY NHẤT: tránh MissingSchemaError trong Next.js Serverless Routes.
+ * Model Registry — Safe Mongoose schema/model registration pattern
+ * SOLE PURPOSE: Prevent MissingSchemaError in Next.js Serverless Routes.
  */
 
 const registry: Array<() => Promise<void> | void> = []

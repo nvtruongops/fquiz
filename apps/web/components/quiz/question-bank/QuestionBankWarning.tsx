@@ -79,7 +79,7 @@ export function QuestionBankWarning({
       onOpenChange(false)
     } catch (error) {
       console.error('Error syncing update:', error)
-      toast.error('Có lỗi khi cập nhật. Vui lòng thử lại.')
+      toast.error('An error occurred during update. Please try again.')
     } finally {
       setUpdating(false)
     }
@@ -100,10 +100,10 @@ export function QuestionBankWarning({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle> Câu hỏi đang được dùng ở nhiều quiz</DialogTitle>
+          <DialogTitle>Question Used in Multiple Quizzes</DialogTitle>
           <DialogDescription>
-            Câu hỏi này đang được sử dụng trong {usageInfo?.usage_count || 0} quiz khác.
-            Bạn muốn cập nhật như thế nào?
+            This question is currently used in {usageInfo?.usage_count || 0} other quizzes.
+            How would you like to update it?
           </DialogDescription>
         </DialogHeader>
 
@@ -113,7 +113,7 @@ export function QuestionBankWarning({
             <AlertDescription>
               <div className="space-y-2">
                 <p className="font-medium">
-                  Đang được dùng trong {usageInfo?.usage_count || 0} quiz:
+                  Used in {usageInfo?.usage_count || 0} quizzes:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {usageInfo?.used_in_quizzes?.slice(0, 10).map((code) => (
@@ -123,7 +123,7 @@ export function QuestionBankWarning({
                   ))}
                   {usageInfo?.used_in_quizzes && usageInfo.used_in_quizzes.length > 10 && (
                     <Badge variant="secondary">
-                      +{usageInfo.used_in_quizzes.length - 10} quiz khác
+                      +{usageInfo.used_in_quizzes.length - 10} other quizzes
                     </Badge>
                   )}
                 </div>
@@ -135,11 +135,10 @@ export function QuestionBankWarning({
           {answerChanged && (
             <Alert variant="destructive">
               <AlertDescription>
-                <p className="font-bold"> Đáp án đã thay đổi!</p>
+                <p className="font-bold">Answer has changed!</p>
                 <p className="text-sm mt-1">
-                  Nếu cập nhật tất cả quiz, đáp án trong {usageInfo?.usage_count || 0} quiz
-                  sẽ bị thay đổi theo. Điều này có thể ảnh hưởng đến kết quả của
-                  học sinh đã làm bài.
+                  Updating all quizzes will change the answer across {usageInfo?.usage_count || 0} quizzes.
+                  This may affect existing student results.
                 </p>
               </AlertDescription>
             </Alert>
@@ -147,7 +146,7 @@ export function QuestionBankWarning({
 
           {/* Question Preview */}
           <div className="border border-border rounded-lg p-4 bg-muted">
-            <p className="font-medium mb-2">Nội dung câu hỏi:</p>
+            <p className="font-medium mb-2">Question content:</p>
             <p className="text-sm text-card-foreground">{newQuestion.text}</p>
           </div>
         </div>
@@ -159,7 +158,7 @@ export function QuestionBankWarning({
             disabled={updating}
             className="w-full sm:w-auto"
           >
-            Chỉ sửa quiz này
+            Update this quiz only
           </Button>
           <Button
             onClick={handleUpdateAll}
@@ -169,10 +168,10 @@ export function QuestionBankWarning({
             {updating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang cập nhật...
+                Updating...
               </>
             ) : (
-              `Cập nhật tất cả ${usageInfo?.usage_count || 0} quiz`
+              `Update all ${usageInfo?.usage_count || 0} quizzes`
             )}
           </Button>
         </DialogFooter>

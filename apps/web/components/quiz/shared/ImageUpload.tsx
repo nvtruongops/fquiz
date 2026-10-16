@@ -21,7 +21,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
     setErrorMsg(null)
     
     if (!urlInput.trim()) {
-      setErrorMsg('Vui lòng nhập URL ảnh')
+      setErrorMsg('Please enter an image URL')
       return
     }
 
@@ -29,11 +29,11 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
     try {
       const url = new URL(urlInput.trim())
       if (!url.protocol.startsWith('http')) {
-        setErrorMsg('URL phải bắt đầu bằng http:// hoặc https://')
+        setErrorMsg('URL must start with http:// or https://')
         return
       }
     } catch {
-      setErrorMsg('URL không hợp lệ')
+      setErrorMsg('Invalid URL')
       return
     }
 
@@ -63,7 +63,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
         ) : (
           <div className="w-full aspect-video max-h-[160px] shrink-0 rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center bg-muted/50 text-muted-foreground transition-all hover:bg-muted hover:border-primary/50 group/empty">
             <ImageIcon className="h-10 w-10 mb-2 group-hover/empty:scale-110 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Chưa có ảnh</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">No image</span>
           </div>
         )}
 
@@ -90,7 +90,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
                   onClick={handleUrlSubmit}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                 >
-                  Thêm ảnh
+                  Add Image
                 </Button>
                 <Button
                   type="button"
@@ -103,7 +103,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
                   }}
                   className="border-border text-card-foreground hover:bg-muted cursor-pointer"
                 >
-                  Hủy
+                  Cancel
                 </Button>
               </div>
             </div>
@@ -116,7 +116,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
               className="w-full flex items-center justify-center gap-2 h-10 rounded-xl border-border text-primary font-bold hover:bg-primary/10 transition-all cursor-pointer"
             >
               <LinkIcon className="h-4 w-4" />
-              {value ? 'Thay đổi ảnh' : 'Thêm ảnh từ URL'}
+              {value ? 'Change Image' : 'Add Image from URL'}
             </Button>
           )}
 
@@ -127,7 +127,7 @@ export function ImageUpload({ value, onChange, onRemove }: Readonly<ImageUploadP
             </div>
           ) : (
             <p className="text-[10px] font-bold text-muted-foreground leading-relaxed text-center px-2">
-              Dán link ảnh trực tiếp từ Google, Pinterest... (https://)
+              Paste direct image URL from Google, Pinterest... (https://)
             </p>
           )}
         </div>

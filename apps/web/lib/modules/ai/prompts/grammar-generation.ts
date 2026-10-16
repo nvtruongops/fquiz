@@ -55,7 +55,7 @@ export const grammarGeneration: PromptDefinition<GrammarPromptParams, typeof Gen
   version: PROMPT_VERSION,
   schema: GeneratedGrammarSchema,
   buildPrompt: (params: GrammarPromptParams): string => {
-    const expLang = params.explanationLanguage || 'Vietnamese'
+    const expLang = params.explanationLanguage || 'English'
     const patternConstraint = params.patternName
       ? ` specifically for the grammar pattern "${params.patternName}"`
       : params.topic

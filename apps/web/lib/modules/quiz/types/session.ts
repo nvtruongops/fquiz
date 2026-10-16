@@ -23,7 +23,7 @@ export interface IQuizSession {
   guest_id?: string
   quiz_id?: Types.ObjectId
   mode: 'immediate' | 'review' | 'flashcard'
-  difficulty: 'sequential' | 'random' // sequential = theo thứ tự, random = xáo trộn
+  difficulty: 'sequential' | 'random' // sequential = in original order, random = shuffled
   status: 'preparing' | 'active' | 'completed' | 'paused' | 'expired'
   user_answers: UserAnswer[]
   current_question_index: number

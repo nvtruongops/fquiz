@@ -3,8 +3,8 @@ import { User } from '@/lib/modules/auth/models/User'
 import type { IUserService } from '@/lib/modules/quiz/services/IUserService'
 
 /**
- * UserService — Implement IUserService cho Auth module.
- * Đây là implementation DUY NHẤT được phép gọi User model trực tiếp.
+ * UserService — Implements IUserService for the Auth module.
+ * This is the ONLY implementation allowed to query the User model directly.
  */
 export class UserService implements IUserService {
   async getUsernames(userIds: string[]): Promise<Map<string, string>> {

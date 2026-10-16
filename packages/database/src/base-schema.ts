@@ -1,14 +1,14 @@
 import { Schema } from 'mongoose'
 
 /**
- * BaseEntityFields — Mongoose schema fragment dùng chung cho mọi model mới.
- * Sử dụng: `new Schema({ ...BaseEntityFields, ...yourFields }, BaseEntityOptions)`
+ * BaseEntityFields — Shared Mongoose schema fragment for all new models.
+ * Usage: `new Schema({ ...BaseEntityFields, ...yourFields }, BaseEntityOptions)`
  *
- * CHUẨN HÓA:
- * - createdAt, updatedAt (qua timestamps)
+ * STANDARDIZATION:
+ * - createdAt, updatedAt (via timestamps)
  * - createdBy, updatedBy (ObjectId → User)
  * - deletedAt, deletedBy (soft delete)
- * - status (draft → published → archived → deleted)
+ * - status (draft → pending → published → archived → deleted)
  * - schemaVersion, contentVersion (migration + edit tracking)
  * - metadata (extensible)
  */

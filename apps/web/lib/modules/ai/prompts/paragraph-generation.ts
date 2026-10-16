@@ -87,7 +87,7 @@ export const paragraphGeneration: PromptDefinition<ParagraphPromptParams, typeof
   version: PROMPT_VERSION,
   schema: GeneratedParagraphSchema,
   buildPrompt: (params: ParagraphPromptParams): string => {
-    const expLang = params.explanationLanguage || 'Vietnamese'
+    const expLang = params.explanationLanguage || 'English'
     const genreInstruction = params.genre ? `\nWriting Genre/Format: ${params.genre}` : ''
     const toneInstruction = params.tone ? `\nTone & Style: ${params.tone}` : ''
 

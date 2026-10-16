@@ -52,7 +52,7 @@ export function validateImportedQuiz(
   validateMetadata(raw, normalized, diagnostics, context)
   
   if (normalized.questions.length === 0) {
-    diagnostics.push(diagnostic('error', 'NO_QUESTIONS', 'Cần ít nhất 1 câu hỏi', { field: 'questions' }))
+    diagnostics.push(diagnostic('error', 'NO_QUESTIONS', 'At least 1 question is required', { field: 'questions' }))
   }
 
   normalized.questions.forEach((question, index) => {
@@ -69,22 +69,22 @@ export function validateImportedQuiz(
 function validateTopLevel(raw: ImportRawQuizPayload, diagnostics: ImportDiagnostic[]) {
   for (const key of Object.keys(raw)) {
     if (!ALLOWED_TOP_KEYS.has(key)) {
-      diagnostics.push(diagnostic('error', 'UNKNOWN_TOP_LEVEL_FIELD', `Trường không được phép: ${key}`, { field: key }))
+      diagnostics.push(diagnostic('error', 'UNKNOWN_TOP_LEVEL_FIELD', `Disallowed field: ${key}`, { field: key }))
     }
   }
 
   if (!raw.quizMeta || typeof raw.quizMeta !== 'object' || Array.isArray(raw.quizMeta)) {
-    diagnostics.push(diagnostic('error', 'MISSING_QUIZ_META', 'Thiếu quizMeta hoặc quizMeta không hợp lệ', { field: 'quizMeta' }))
+    diagnostics.push(diagnostic('error', 'MISSING_QUIZ_META', 'Missing or invalid quizMeta', { field: 'quizMeta' }))
   } else {
     for (const key of Object.keys(raw.quizMeta)) {
       if (!ALLOWED_META_KEYS.has(key)) {
-        diagnostics.push(diagnostic('error', 'UNKNOWN_QUIZ_META_FIELD', `Trường quizMeta không hợp lệ: ${key}`, { field: `quizMeta.${key}` }))
+        diagnostics.push(diagnostic('error', 'UNKNOWN_QUIZ_META_FIELD', `Invalid quizMeta field: ${key}`, { field: `quizMeta.${key}` }))
       }
     }
   }
 
   if (!Array.isArray(raw.questions)) {
-    diagnostics.push(diagnostic('error', 'INVALID_QUESTIONS_ARRAY', 'questions phải là mảng', { field: 'questions' }))
+    diagnostics.push(diagnostic('error', 'INVALID_QUESTIONS_ARRAY', 'questions must be an array', { field: 'questions' }))
   }
 }
 
@@ -101,7 +101,7 @@ function validateMetadata(
   const hasDescription = !!(normalized.description || context?.description)
 
   if (!hasCourseCode) {
-    diagnostics.push(diagnostic('warning', 'MISSING_COURSE_CODE', 'Thiếu Fquiz code (quizMeta.course_code) - có thể nhập thủ công trong form trước khi lưu', { field: 'quizMeta.course_code' }))
+    diagnostics.push(diagnostic('warning', 'MISSING_COURSE_CODE', 'Missing course code (quizMeta.course_code) - can be manually entered before saving', { field: 'quizMeta.course_code' }))
   } else if (normalized.course_code && normalized.course_code.length > COURSE_CODE_MAX_LENGTH) {
     diagnostics.push(diagnostic('error', 'COURSE_CODE_TOO_LONG', COURSE_CODE_MAX_LENGTH_MESSAGE, { field: 'quizMeta.course_code' }))
   } else if (normalized.course_code && !COURSE_CODE_PATTERN.test(normalized.course_code)) {
@@ -109,15 +109,15 @@ function validateMetadata(
   }
 
   if (!hasCategoryId) {
-    diagnostics.push(diagnostic('warning', 'MISSING_CATEGORY_ID', 'Thiếu category_id - có thể chọn môn học trong form trước khi lưu', { field: 'quizMeta.category_id' }))
+    diagnostics.push(diagnostic('warning', 'MISSING_CATEGORY_ID', 'Missing category_id - can select course in form before saving', { field: 'quizMeta.category_id' }))
   }
 
   if (!hasDescription) {
-    diagnostics.push(diagnostic('warning', 'MISSING_DESCRIPTION', 'Thiếu quiz description (quizMeta.description) - có thể bỏ qua hoặc nhập thêm trong form', { field: 'quizMeta.description' }))
+    diagnostics.push(diagnostic('warning', 'MISSING_DESCRIPTION', 'Missing quiz description (quizMeta.description) - can be omitted or added in form', { field: 'quizMeta.description' }))
   }
 
   if (normalized.category_id && !validateObjectId(normalized.category_id)) {
-    diagnostics.push(diagnostic('warning', 'CATEGORY_ID_NOT_OBJECT_ID', 'category_id không đúng định dạng ObjectId, hãy chọn lại môn học trước khi lưu', { field: 'quizMeta.category_id' }))
+    diagnostics.push(diagnostic('warning', 'CATEGORY_ID_NOT_OBJECT_ID', 'category_id is not a valid ObjectId, please reselect the course before saving', { field: 'quizMeta.category_id' }))
   }
 }
 
@@ -128,16 +128,16 @@ function validateSingleQuestion(question: any, index: number, raw: ImportRawQuiz
   if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
     for (const key of Object.keys(candidate)) {
       if (!ALLOWED_QUESTION_KEYS.has(key)) {
-        diagnostics.push(diagnostic('warning', 'UNKNOWN_QUESTION_FIELD', `Câu ${index + 1} có trường dư thừa: ${key}`, { questionIndex: index, field: `questions[${index}].${key}` }))
+        diagnostics.push(diagnostic('warning', 'UNKNOWN_QUESTION_FIELD', `Question ${index + 1} has unexpected field: ${key}`, { questionIndex: index, field: `questions[${index}].${key}` }))
       }
     }
   }
 
   if (!question.text) {
-    diagnostics.push(diagnostic('error', 'MISSING_QUESTION_TEXT', 'Thiếu nội dung câu hỏi', { questionIndex: index, field: `questions[${index}].text` }))
+    diagnostics.push(diagnostic('error', 'MISSING_QUESTION_TEXT', 'Question text is missing', { questionIndex: index, field: `questions[${index}].text` }))
   }
   if (question.options.length < 2) {
-    diagnostics.push(diagnostic('error', 'INSUFFICIENT_OPTIONS', 'Câu hỏi cần ít nhất 2 đáp án', { questionIndex: index, field: `questions[${index}].options` }))
+    diagnostics.push(diagnostic('error', 'INSUFFICIENT_OPTIONS', 'Question requires at least 2 options', { questionIndex: index, field: `questions[${index}].options` }))
   }
   
   validateAnswers(question, index, diagnostics)
@@ -157,23 +157,23 @@ function getCandidateQuestion(source: any): ImportRawQuestion {
 function validateAnswers(question: any, index: number, diagnostics: ImportDiagnostic[]) {
   const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
   if (answers.length === 0) {
-    diagnostics.push(diagnostic('error', 'MISSING_CORRECT_ANSWER', 'Chưa có đáp án đúng', { questionIndex: index, field: `questions[${index}].correct_answer` }))
+    diagnostics.push(diagnostic('error', 'MISSING_CORRECT_ANSWER', 'No correct answer selected', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 
   if (answers.some((answerIndex: number) => answerIndex >= question.options.length)) {
-    diagnostics.push(diagnostic('error', 'CORRECT_ANSWER_OUT_OF_RANGE', 'Chỉ số đáp án đúng vượt quá số lượng options', { questionIndex: index, field: `questions[${index}].correct_answer` }))
+    diagnostics.push(diagnostic('error', 'CORRECT_ANSWER_OUT_OF_RANGE', 'Correct answer index exceeds the number of options', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 
   const uniqueAnswers = new Set(answers)
   if (uniqueAnswers.size !== answers.length) {
-    diagnostics.push(diagnostic('error', 'DUPLICATE_CORRECT_ANSWER', 'Đáp án đúng bị trùng lặp (ví dụ: C, C)', { questionIndex: index, field: `questions[${index}].correct_answer` }))
+    diagnostics.push(diagnostic('error', 'DUPLICATE_CORRECT_ANSWER', 'Duplicate correct answers (e.g. C, C)', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
 }
 
 function validateOptions(question: any, index: number, diagnostics: ImportDiagnostic[]) {
   const hasEmptyMiddleOption = question.options.slice(0, -1).some((option: string) => !option)
   if (hasEmptyMiddleOption) {
-    diagnostics.push(diagnostic('warning', 'EMPTY_OPTION_IN_MIDDLE', 'Có option rỗng ở giữa danh sách', { questionIndex: index, field: `questions[${index}].options` }))
+    diagnostics.push(diagnostic('warning', 'EMPTY_OPTION_IN_MIDDLE', 'Empty option in the middle of options list', { questionIndex: index, field: `questions[${index}].options` }))
   }
 
   const seen = new Set<string>()
@@ -184,7 +184,7 @@ function validateOptions(question: any, index: number, diagnostics: ImportDiagno
     return false
   })
   if (hasDuplicateOption) {
-    diagnostics.push(diagnostic('warning', 'DUPLICATE_OPTION', 'Có option bị trùng lặp', { questionIndex: index, field: `questions[${index}].options` }))
+    diagnostics.push(diagnostic('warning', 'DUPLICATE_OPTION', 'Duplicate options detected', { questionIndex: index, field: `questions[${index}].options` }))
   }
 }
 

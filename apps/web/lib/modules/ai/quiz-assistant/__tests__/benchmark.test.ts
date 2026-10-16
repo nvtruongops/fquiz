@@ -85,7 +85,7 @@ describe('E2E Performance Benchmark & SLA Verification (Task 1.3)', () => {
         await new Promise((res) => setTimeout(res, 250))
         return {
           content: {
-            reply: 'Phân tích phương án B: Critical Path là đường dài nhất xác định tổng thời gian dự án.',
+            reply: 'Analysis of option B: Critical Path is the longest path determining total project duration.',
             formulaExplanation: null,
             similarQuestionFound: true,
             similarQuestionDetails: 'Which technique determines the shortest possible project duration?',
@@ -108,7 +108,7 @@ describe('E2E Performance Benchmark & SLA Verification (Task 1.3)', () => {
       const res = await orchestrator.execute({
         sessionId: 'session-perf-1',
         questionIndex: 0,
-        userQuery: 'Tại sao phương án B lại sai?',
+        userQuery: 'Why is option B incorrect?',
         authenticatedUserId: 'student-perf-1',
       })
       expect(res.reply).toContain('Critical Path')
@@ -178,7 +178,7 @@ describe('E2E Performance Benchmark & SLA Verification (Task 1.3)', () => {
     const res = await orchestrator.execute({
       sessionId: 'session-fallback-1',
       questionIndex: 0,
-      userQuery: 'Tại sao đáp án A đúng?',
+      userQuery: 'Why is option A correct?',
       authenticatedUserId: 'student-fb-1',
     })
     const duration = performance.now() - start

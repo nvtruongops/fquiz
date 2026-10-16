@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
+import { NetworkStatusNotification } from '@/components/shared/ui/network-status-notification'
 import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 import './globals.css'
 
@@ -18,10 +19,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
     template: '%s | FQuiz',
-    default: 'FQuiz — Nền tảng ôn tập thông minh',
+    default: 'FQuiz — Smart Practice & Quiz Platform',
   },
   description:
-    'Nền tảng thi trắc nghiệm online với 3 chế độ: trắc nghiệm tức thì, ôn tập, và flashcard. Tạo quiz, luyện tập, và theo dõi tiến độ.',
+    'Online quiz platform with 3 learning modes: Instant Quiz, Practice, and Flashcards. Create quizzes, practice, and track mastery progress.',
   icons: {
     icon: '/favicon.webp',
     shortcut: '/favicon.ico',
@@ -30,16 +31,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'FQuiz',
-    title: 'FQuiz — Nền tảng ôn tập thông minh',
+    title: 'FQuiz — Smart Practice & Quiz Platform',
     description:
-      'Nền tảng thi trắc nghiệm online với 3 chế độ: trắc nghiệm tức thì, ôn tập, và flashcard.',
+      'Online quiz platform with 3 learning modes: Instant Quiz, Practice, and Flashcards.',
     url: APP_URL,
   },
   twitter: {
     card: 'summary',
-    title: 'FQuiz — Nền tảng ôn tập thông minh',
+    title: 'FQuiz — Smart Practice & Quiz Platform',
     description:
-      'Nền tảng thi trắc nghiệm online với 3 chế độ: trắc nghiệm tức thì, ôn tập, và flashcard.',
+      'Online quiz platform with 3 learning modes: Instant Quiz, Practice, and Flashcards.',
   },
   verification: {
     google: 'Ebe9Yn8_Zc1Z9DhhnuKIqcjqBlpD6WTdmlyRvepZp9Y',
@@ -60,7 +61,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <script
           // ponytail: allow-dangerouslySetInnerHTML
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased min-h-screen bg-app-bg text-foreground font-sans" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="light" themes={['light', 'dark', 'green', 'pink']} enableSystem={false}>
+            <NetworkStatusNotification />
             <PageTransitionLoader />
             <div className="w-full min-h-screen flex flex-col bg-background relative">
               {children}

@@ -43,7 +43,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       session: {
         sessionId: activeSession._id,
         quizId: activeSession.quiz_id,
-        title: quiz?.title ?? 'Quiz Trộn',
+        title: quiz?.title ?? 'Mix Quiz',
         question_count: quiz?.questionCount ?? 0,
         mode: activeSession.mode,
         status: activeSession.status,

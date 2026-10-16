@@ -30,13 +30,13 @@ async function fetchQuizzes(
   if (search.trim()) params.set('search', search.trim())
 
   const res = await fetch(`/api/quizzes?${params.toString()}`, { credentials: 'include' })
-  if (!res.ok) throw new Error('Không thể tải danh sách đề thi')
+  if (!res.ok) throw new Error('Failed to load quiz list')
   return res.json()
 }
 
 async function fetchCategories(): Promise<Category[]> {
   const res = await fetch('/api/categories', { credentials: 'include' })
-  if (!res.ok) throw new Error('Không thể tải danh mục')
+  if (!res.ok) throw new Error('Failed to load categories')
   const data = await res.json()
   return data.categories || []
 }
@@ -51,11 +51,13 @@ export function useAdminQuizzes() {
   const { data: categories = [] } = useQuery({
     queryKey: ['admin', 'categories'],
     queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'quizzes', page, category, search],
     queryFn: () => fetchQuizzes(page, category, search),
+    staleTime: 30 * 1000,
   })
 
   const updateStatusMutation = useMutation({
@@ -65,31 +67,31 @@ export function useAdminQuizzes() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      if (!res.ok) throw new Error('Cập nhật trạng thái thất bại')
+      if (!res.ok) throw new Error('Failed to update status')
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
-      toast({ title: 'Thành công', description: 'Đã cập nhật trạng thái quiz', type: 'success' })
+      toast({ title: 'Success', description: 'Quiz status updated successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/quizzes/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Xóa đề thi thất bại')
+      if (!res.ok) throw new Error('Failed to delete quiz')
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
       setDeleteTarget(null)
-      toast({ title: 'Thành công', description: 'Đã xóa đề thi', type: 'success' })
+      toast({ title: 'Success', description: 'Quiz deleted successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 

@@ -1,16 +1,16 @@
 import type { IDomainEvent, EventHandler } from '@/lib/core/events/domain-event'
 
 /**
- * IEventBus — Abstraction cho event publishing/subscribing.
+ * IEventBus — Abstraction for event publishing/subscribing.
  *
- * Phân biệt:
+ * Distinction:
  * - publishDomainEvent: internal aggregate events
  * - publishIntegrationEvent: external system notifications
  *
  * Implementations:
- * - InMemoryEventBus (hiện tại)
- * - RedisEventBus (tùy chọn)
- * - KafkaEventBus (tùy chọn)
+ * - InMemoryEventBus (current)
+ * - RedisEventBus (optional)
+ * - KafkaEventBus (optional)
  */
 
 export interface IEventBus {

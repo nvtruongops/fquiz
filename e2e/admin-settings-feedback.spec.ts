@@ -23,22 +23,22 @@ test.describe('Admin Portal — Settings & Feedback', () => {
     })
 
     await page.goto(`${ADMIN_APP_URL}/settings`)
-    await expect(page.getByRole('heading', { name: /Cấu hình Hệ thống/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /System Settings|Settings/i })).toBeVisible()
 
-    const generalTab = page.getByRole('button', { name: /Hiển thị chung/i })
-    const securityTab = page.getByRole('button', { name: /Bảo mật/i })
-    const aiTab = page.getByRole('button', { name: /Cấu hình LLM/i })
+    const generalTab = page.getByRole('button', { name: /General/i })
+    const securityTab = page.getByRole('button', { name: /Security/i })
+    const aiTab = page.getByRole('button', { name: /AI LLM|LLM/i })
 
     await expect(generalTab).toBeVisible()
     await expect(securityTab).toBeVisible()
     await expect(aiTab).toBeVisible()
 
     // Check General tab fields
-    await expect(page.getByText(/Tên ứng dụng/i)).toBeVisible()
+    await expect(page.getByText(/App Name|Application Name/i)).toBeVisible()
 
     // Switch to Security tab
     await securityTab.click()
-    await expect(page.getByText(/Bảo vệ phiên đăng nhập/i).or(page.getByText(/Chống chia sẻ/i)).or(page.getByText(/Bảo mật/i)).first()).toBeVisible()
+    await expect(page.getByText(/Session Protection|Security/i).first()).toBeVisible()
 
     // Switch to AI tab
     await aiTab.click()
@@ -47,7 +47,7 @@ test.describe('Admin Portal — Settings & Feedback', () => {
 
   test('should render feedback inbox with filters', async ({ page }) => {
     await page.goto(`${ADMIN_APP_URL}/feedback`)
-    await expect(page.getByRole('heading', { name: /Hộp thư Góp ý & Báo lỗi/i })).toBeVisible()
-    await expect(page.getByPlaceholder(/Tìm theo nội dung/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Feedback & Bug Reports|Feedback/i })).toBeVisible()
+    await expect(page.getByPlaceholder(/Search.*content|Search.*feedback/i)).toBeVisible()
   })
 })

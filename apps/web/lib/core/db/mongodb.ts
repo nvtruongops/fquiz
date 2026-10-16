@@ -24,7 +24,7 @@ function isSrvDnsError(err: unknown): boolean {
 }
 
 // Pre-register models via bootstrap to prevent MissingSchemaError in Next.js Serverless Routes.
-// Mỗi module tự đăng ký model qua registerModel() trong file index.ts của module.
+// Each module registers its models via registerModel() in the module's index.ts file.
 import { bootstrapModels } from '@/lib/core/db/model-registry'
 
 // Each module's index.ts auto-registers its models on import

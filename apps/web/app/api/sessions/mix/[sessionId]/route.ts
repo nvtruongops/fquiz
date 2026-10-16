@@ -9,7 +9,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 /**
  * DELETE /api/sessions/mix/[sessionId]
  * Immediately delete a temporary mix quiz session and its associated temp quiz.
- * Called when user clicks "Thoát & Xóa Quiz" on the result page, or when creating a new mix quiz.
+ * Called when user clicks "Exit & Delete Quiz" on the result page, or when creating a new mix quiz.
  */
 export const DELETE = withAuth(async (
   req: Request,
@@ -29,7 +29,7 @@ export const DELETE = withAuth(async (
 
     const studentId = new mongoose.Types.ObjectId(payload.userId)
 
-    // This is called when user clicks "Làm mới" to start a fresh mix quiz.
+    // This is called when user clicks "Reset" to start a fresh mix quiz.
     const session = await QuizSession.findOneAndDelete({
       _id: new mongoose.Types.ObjectId(sessionId),
       student_id: studentId,

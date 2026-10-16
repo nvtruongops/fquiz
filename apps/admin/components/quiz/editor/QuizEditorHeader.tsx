@@ -19,10 +19,10 @@ export function QuizEditorHeader({ quizId, onOpenUploadModal }: QuizEditorHeader
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {quizId ? 'Chỉnh sửa Đề thi' : 'Soạn thảo Đề thi Mới'}
+            {quizId ? 'Edit Quiz' : 'Create New Quiz'}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Tạo và quản lý đề thi chính thức đồng bộ trực tiếp với Ngân hàng câu hỏi
+            Create and manage official quizzes synchronized directly with the Question Bank
           </p>
         </div>
       </div>
@@ -36,7 +36,7 @@ export function QuizEditorHeader({ quizId, onOpenUploadModal }: QuizEditorHeader
           className="gap-2 text-xs font-semibold cursor-pointer shadow-xs"
         >
           <UploadCloud className="w-4 h-4 text-primary" />
-          Upload File Đề thi (.TXT / .JSON)
+          Upload Quiz File (.TXT / .JSON)
         </Button>
       </div>
     </div>

@@ -17,7 +17,7 @@ function isExcludedPath(path: string): boolean {
   if (!path) return false
   const cleanPath = path.split('?')[0].split('#')[0]
   const excludedPrefixes = [
-    '/', '/explore', '/my-quizzes', '/history', '/student', '/community',
+    '/', '/explore', '/history', '/student', '/community',
     '/dashboard', '/login', '/register', '/forgot-password', '/reset-password',
     '/restore-account', '/terms', '/privacy', '/maintenance', '/profile', '/settings', '/ai', '/courses'
   ]
@@ -195,7 +195,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
       if (checkCompletionTimerRef.current) clearTimeout(checkCompletionTimerRef.current)
       checkCompletionTimerRef.current = setTimeout(() => {
         finishLoading()
-      }, 1500)
+      }, 600)
 
       return () => {
         if (checkCompletionTimerRef.current) clearTimeout(checkCompletionTimerRef.current)
@@ -237,7 +237,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
           </h1>
           <div className={`flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider ${loaderColors.subText} uppercase`}>
             <span className={`w-1.5 h-1.5 rounded-full ${loaderColors.dotColor}`} />
-            <span>{customSubtitle || 'Vui lòng chờ trong giây lát • Please wait a moment'}</span>
+            <span>{customSubtitle || 'Please wait a moment'}</span>
             <span className={`w-1.5 h-1.5 rounded-full ${loaderColors.dotColor}`} />
           </div>
         </div>

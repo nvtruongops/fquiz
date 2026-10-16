@@ -5,6 +5,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { User } from '@/lib/modules/auth/models/User'
+import { compareQuizBySemester } from '@/lib/core/utils/semester'
 import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
 
@@ -141,14 +142,8 @@ export async function GET(
       bestScore: scoreMap.get(q._id.toString()) ?? null,
     }))
 
-    // Sort: Attempted quizzes (bestScore !== null) first, then unattempted, sorted naturally by title
-    result.sort((a, b) => {
-      const aDone = a.bestScore !== null
-      const bDone = b.bestScore !== null
-      if (aDone && !bDone) return -1
-      if (!aDone && bDone) return 1
-      return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
-    })
+    // Sort: Chronological by semester key (newest year & season first, FE before RE)
+    result.sort((a, b) => compareQuizBySemester(a.title, b.title))
 
     return NextResponse.json({
       categoryId: matchingCategories[0]?._id?.toString() ?? null,

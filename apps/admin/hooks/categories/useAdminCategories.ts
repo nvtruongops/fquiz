@@ -11,7 +11,7 @@ export interface Category {
 
 async function fetchCategories(): Promise<Category[]> {
   const res = await fetch('/api/categories', { credentials: 'include' })
-  if (!res.ok) throw new Error('Không thể tải danh sách danh mục')
+  if (!res.ok) throw new Error('Failed to load categories')
   const data = await res.json()
   return data.categories || []
 }
@@ -27,6 +27,8 @@ export function useAdminCategories() {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['admin', 'categories'],
     queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const createMutation = useMutation({
@@ -38,17 +40,17 @@ export function useAdminCategories() {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Tạo danh mục thất bại')
+        throw new Error(err.error || 'Failed to create category')
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setNewName('')
-      toast({ title: 'Thành công', description: 'Đã tạo danh mục mới', type: 'success' })
+      toast({ title: 'Success', description: 'Category created successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 
@@ -61,17 +63,17 @@ export function useAdminCategories() {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Cập nhật danh mục thất bại')
+        throw new Error(err.error || 'Failed to update category')
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setEditId(null)
-      toast({ title: 'Thành công', description: 'Đã cập nhật danh mục', type: 'success' })
+      toast({ title: 'Success', description: 'Category updated successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 
@@ -80,17 +82,17 @@ export function useAdminCategories() {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Xóa danh mục thất bại')
+        throw new Error(err.error || 'Failed to delete category')
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setDeleteTarget(null)
-      toast({ title: 'Thành công', description: 'Đã xóa danh mục', type: 'success' })
+      toast({ title: 'Success', description: 'Category deleted successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 

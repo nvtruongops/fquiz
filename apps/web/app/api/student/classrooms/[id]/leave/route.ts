@@ -9,9 +9,9 @@ export const POST = withAuth(
       await connectDB()
       const { id } = await params
       await ClassroomService.leaveClassroom(payload.userId, id)
-      return NextResponse.json({ message: 'Đã rời khỏi lớp học thành công' })
+      return NextResponse.json({ message: 'Successfully left classroom' })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi rời khỏi lớp học' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to leave classroom' }, { status: 400 })
     }
   },
   { roles: ['student', 'teacher', 'dev'] }

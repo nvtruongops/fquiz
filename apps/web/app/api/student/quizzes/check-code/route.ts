@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/student/quizzes/check-code?code=MLN131_DE01&excludeId=xxx
- * Kiểm tra mã môn / mã đề (course_code) đã tồn tại trên hệ thống chưa.
+ * Check whether course / quiz code (course_code) already exists in system.
  */
 export const GET = withAuth(async (req: Request) => {
   try {

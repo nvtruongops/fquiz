@@ -1,10 +1,10 @@
-# 🧪 FQuiz — Chiến lược & Quy chuẩn Kiểm thử (Testing Strategy)
+# 🧪 FQuiz — Testing Strategy & Quality Assurance (`docs/TESTING.md`)
 
-Tài liệu hướng dẫn quy chuẩn kiểm thử (Testing Guidelines), tổ chức mã test, các kỹ thuật mock, kiểm thử hiệu năng và cơ chế kiểm soát chất lượng mã nguồn bằng **AI Agent Rule Engine** của dự án **FQuiz**.
+This document outlines the testing strategy, test suite organization, mocking standards, performance benchmarks, and automated quality control enforced by the **AI Agent Rule Engine** for the **FQuiz** platform.
 
 ---
 
-## 1. Kim tự tháp Kiểm thử (Testing Pyramid)
+## 1. Testing Pyramid
 
 ```mermaid
 graph TD
@@ -22,52 +22,52 @@ graph TD
 
 ---
 
-## 2. Cấu hình & Môi trường Kiểm thử (Test Setup)
+## 2. Test Setup & Environment
 
-- **Unit & Integration Runner**: `Jest` kết hợp với `ts-jest` biên dịch TypeScript trực tiếp trên môi trường Node.js.
+- **Unit & Integration Runner**: `Jest` paired with `ts-jest` executing directly against the Node.js environment.
 - **Path Mapping (`jest.config.ts`)**:
   - `^@/(.*)$`: `<rootDir>/apps/web/$1`
   - `^@fquiz/database$`: `<rootDir>/packages/database/src`
   - `^@fquiz/models$`: `<rootDir>/packages/models/src`
   - `^@fquiz/auth$`: `<rootDir>/packages/auth/src`
   - `^@fquiz/ui$`: `<rootDir>/packages/ui/src`
-- **E2E Runner**: `Playwright` điều phối song song cả 2 ứng dụng (`apps/web` trên `:3000` và `apps/admin` trên `:3001`).
-- **Quy tắc đặt tên file test**: `**/__tests__/**/*.test.{ts,tsx}` hoặc `e2e/**/*.spec.ts`.
+- **E2E Runner**: `Playwright` concurrently orchestrating both web servers (`apps/web` on `:3000` and `apps/admin` on `:3001`).
+- **File Naming Conventions**: `**/__tests__/**/*.test.{ts,tsx}` or `e2e/**/*.spec.ts`.
 
 ---
 
-## 3. Các Lệnh Thực thi Test (Test Commands)
+## 3. Test Execution Commands
 
 ```bash
-# 1. Chạy toàn bộ 66 Unit & Integration Test Suites (Jest)
+# 1. Run all 66 Unit & Integration test suites (Jest)
 npm test
 
-# 2. Chạy test và xuất báo cáo độ bao phủ (Coverage Report)
+# 2. Run tests and generate code coverage report
 npm run test:coverage
 
-# 3. Chạy toàn bộ 57 E2E Tests (Playwright Multi-Server :3000 & :3001)
+# 3. Run all 57 E2E tests (Playwright Multi-Server :3000 & :3001)
 npx playwright test
 
-# 4. Chạy Playwright với giao diện tương tác trực quan
+# 4. Run Playwright with interactive visual UI mode
 npx playwright test --ui
 
-# 5. Chạy riêng kịch bản tương tác liên ứng dụng Web & Admin
+# 5. Run cross-application impact scenarios
 npx playwright test "e2e/cross-app-impact.spec.ts"
 
-# 6. Kiểm tra TypeScript trên toàn bộ 7 workspaces Monorepo
+# 6. Check TypeScript compiler across all 7 monorepo workspaces
 npx turbo check-types
 
-# 7. Chạy AI Rule Engine Governance kiểm tra nghiêm ngặt 18 quy tắc
+# 7. Execute AI Rule Engine Governance verifying 18 strict checks
 node .agents/scripts/verify.js --strict
 ```
 
 ---
 
-## 4. Quy chuẩn Mock Dữ liệu (Mocking Standards)
+## 4. Mocking Standards
 
-Để đảm bảo các bài test chạy độc lập, nhanh chóng và không phụ thuộc vào kết nối mạng bên ngoài:
+To maintain test isolation, fast execution times, and zero external network dependencies:
 
-### 4.1. Mock Kết nối Cơ sở Dữ liệu
+### 4.1. Mock Database Connection
 ```typescript
 jest.mock('@/lib/core/db/mongodb', () => ({
   connectDB: jest.fn().mockResolvedValue(true)
@@ -86,7 +86,7 @@ jest.mock('next/server', () => ({
 }));
 ```
 
-### 4.3. Mock withAuth HOF
+### 4.3. Mock withAuth Higher-Order Function
 ```typescript
 jest.mock('@/lib/modules/auth/with-auth', () => ({
   withAuth: (handler: any) => (req: any, ctx: any) =>
@@ -99,31 +99,31 @@ jest.mock('@/lib/modules/auth/with-auth', () => ({
 
 ---
 
-## 5. Kiểm thử Dựa trên Thuộc tính (Property-Based Testing)
+## 5. Property-Based Testing
 
-Hệ thống sử dụng thư viện `fast-check` để kiểm tra các bất biến (invariants) thuật toán băm và sinh ID câu hỏi:
+The platform utilizes `fast-check` to empirically prove mathematical invariants across hashing and identifier generation algorithms:
 
-- **Question ID Generator Invariant**: Đảm bảo rằng dù thứ tự các lựa chọn trong mảng `options` bị đảo lộn, hàm `generateQuestionId(text, options)` luôn trả về một hash SHA-256 duy nhất và nhất quán.
-- **Fingerprint Invariant**: Đảm bảo hai câu hỏi có cùng nội dung, cùng đáp án đúng, cùng chủ đề và thể loại luôn có cùng fingerprint.
+- **Question ID Generator Invariant**: Ensures that arbitrary shuffling of choices in the `options` array never alters the generated SHA-256 identifier output by `generateQuestionId(text, options)`.
+- **Fingerprint Invariant**: Proves that identical question stems, answer keys, subject codes, and curriculum categories always produce the exact same deterministic SHA-256 fingerprint.
 
 ---
 
-## 6. Kiểm soát Chất lượng Bằng AI Agent Rule Engine
+## 6. Automated Quality Assurance via AI Agent Rule Engine
 
-Dự án trang bị bộ công cụ kiểm định tự động chạy trước mỗi đợt commit và trong GitHub Actions CI (`.github/workflows/ci.yml`):
+A custom rule verification engine runs locally before commits and within the GitHub Actions CI pipeline (`.github/workflows/ci.yml`):
 
 ```bash
-# Kiểm tra toàn bộ quy tắc quản trị hệ thống ở chế độ nghiêm ngặt
+# Execute governance rules in strict verification mode
 node .agents/scripts/verify.js --strict
 ```
 
-### 9 Quy tắc Quản trị Bắt buộc:
-1. `BUILD_TYPE_CHECK`: 100% pass TypeScript compilation trên tất cả packages (0 error).
-2. `CODE_QUALITY_SECURITY`: 0 hardcoded secrets, 0 security vulnerabilities.
-3. `CROSS_MODULE_BOUNDARY`: 0 cross-module model import, 0 Mongoose `.populate()`.
-4. `ESLINT_VALIDATION`: 100% pass ESLint code quality & security rules.
-5. `FOLDER_STRUCTURE`: Đảm bảo cấu trúc monorepo phân tầng đầy đủ.
-6. `LINT_ISSUES`: 0 biến không dùng, 0 swallowed errors, 0 explicit `any`.
-7. `NO_MOCK_DATA`: 0 dữ liệu mock tĩnh trong code production.
-8. `SKILLS_GOVERNANCE`: Đảm bảo tính toàn vẹn của các Agent Skills trong `.agents/skills/`.
-9. `THEME_GOVERNANCE`: Đảm bảo 3-Tier Design Tokens và độ tương phản WCAG 2.2 AA.
+### 9 Mandatory Governance Rules:
+1. `BUILD_TYPE_CHECK`: 100% pass on TypeScript compiler check across all packages (0 errors).
+2. `CODE_QUALITY_SECURITY`: 0 hardcoded secrets, 0 security vulnerabilities (XSS, eval).
+3. `CROSS_MODULE_BOUNDARY`: 0 cross-module model imports, 0 Mongoose `.populate()` calls.
+4. `ESLINT_VALIDATION`: 100% adherence to ESLint TypeScript & security standards.
+5. `FOLDER_STRUCTURE`: Guarantees complete layered monorepo directory topology.
+6. `LINT_ISSUES`: 0 unused variables, 0 swallowed catch errors, 0 explicit `any` abuses.
+7. `NO_MOCK_DATA`: 0 static mock objects in production runtime code.
+8. `SKILLS_GOVERNANCE`: Validates integrity and documentation of Agent Skills in `.agents/skills/`.
+9. `THEME_GOVERNANCE`: Enforces 3-Tier Design Tokens and WCAG 2.2 AA contrast compliance.

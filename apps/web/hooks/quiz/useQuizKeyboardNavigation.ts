@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 /**
  * ponytail: Keyboard navigation hook currently built for multiple-choice quiz modes (immediate & review).
  * Uses Arrow keys (← → for prev/next question, ↑ ↓ for option focus) and Enter/Space for selection.
- * IF ESSAY/OPEN-ENDED (TỰ LUẬN) QUESTIONS ARE ADDED IN THE FUTURE: Ensure `isInput` guard below
+ * IF ESSAY/OPEN-ENDED (Essay/Short-answer) QUESTIONS ARE ADDED IN THE FUTURE: Ensure `isInput` guard below
  * or a question-type filter prevents arrow/enter keydown interception when the student is typing in input fields.
  */
 

@@ -116,7 +116,7 @@ export function createRateLimitErrorResponse(status: RateLimitStatus): NextRespo
   return new NextResponse(
     JSON.stringify({
       error: 'Too Many Requests',
-      message: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau giây lát.',
+      message: 'Too many requests. Please try again shortly.',
       statusCode: 429,
       retryAfterSeconds: Math.max(1, retryAfterSeconds),
     }),

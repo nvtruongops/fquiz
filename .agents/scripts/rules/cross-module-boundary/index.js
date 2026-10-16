@@ -6,7 +6,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['cross-module-boundary'];
     if (!policy || !policy.enabled) {
-      ctx.logger.pass('Quy tắc CROSS_MODULE_BOUNDARY bị tắt hoặc chưa cấu hình.');
+      ctx.logger.pass('Rule CROSS_MODULE_BOUNDARY is disabled or unconfigured.');
       return { passed: true };
     }
 
@@ -41,7 +41,7 @@ module.exports = {
             for (const forbidden of forbiddenPatterns) {
               const regex = new RegExp(`from\\s+['"]${forbidden}`, 'i');
               if (regex.test(line)) {
-                ctx.logger.error(`${relPath}:${idx + 1} -> Cross-App Boundary Violation: '${targetName}' không được import trực tiếp từ '${forbidden}'!`);
+                ctx.logger.error(`${relPath}:${idx + 1} -> Cross-App Boundary Violation: '${targetName}' must not import directly from '${forbidden}'!`);
                 violations++;
               }
             }
@@ -86,14 +86,14 @@ module.exports = {
                 if (otherModule === currentModuleName) continue;
                 const crossModelImportRegex = new RegExp(`from\\s+['"]@/lib/modules/${otherModule}/models`, 'i');
                 if (crossModelImportRegex.test(line)) {
-                  ctx.logger.error(`${relPath}:${idx + 1} -> Cross-Module Model Import: Module '${currentModuleName}' không được import Model trực tiếp từ module '${otherModule}'!`);
+                  ctx.logger.error(`${relPath}:${idx + 1} -> Cross-Module Model Import: Module '${currentModuleName}' must not directly import Model from module '${otherModule}'!`);
                   violations++;
                 }
               }
 
               // Check .populate() usage in domain modules
               if (/\.populate\s*\(/.test(line) && !line.includes('// ponytail: allow-populate')) {
-                ctx.logger.error(`${relPath}:${idx + 1} -> Mongoose .populate() Usage: Không sử dụng Mongoose .populate() trong module '${currentModuleName}'! Dùng batch query với $in.`);
+                ctx.logger.error(`${relPath}:${idx + 1} -> Mongoose .populate() Usage: Do not use Mongoose .populate() in module '${currentModuleName}'! Use batch queries with $in.`);
                 violations++;
               }
             });
@@ -107,10 +107,9 @@ module.exports = {
     }
 
     if (violations === 0) {
-      ctx.logger.pass('Ranh giới Module & Quy chuẩn Database fquiz đạt 100% (0 Cross-Module Import, 0 Mongoose .populate).');
+      ctx.logger.pass('Module boundaries & database query standards 100% compliant (0 cross-module imports, 0 Mongoose .populate).');
     }
 
     return { passed: violations === 0 };
   }
 };
-

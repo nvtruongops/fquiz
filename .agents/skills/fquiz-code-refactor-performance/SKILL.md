@@ -14,7 +14,7 @@ priority: high
 
 ---
 
-## 1. Card Nesting Elimination ("Giảm thẻ lồng thẻ")
+## 1. Card Nesting Elimination
 - **No Double Wrappers**: Never wrap inner `Card` or border components inside an outer `div` that duplicates `border`, `bg-white/40`, `backdrop-blur`, or `shadow`.
 - **Single-Layer Elevation**: Every UI section (Header, Stats, Action Card) must render as a clean single-layer card (`bg-white border border-slate-200/80 shadow-xs rounded-2xl`).
 

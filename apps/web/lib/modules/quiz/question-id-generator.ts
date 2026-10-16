@@ -3,9 +3,9 @@ import { getAnswerTexts, areAnswersSame } from '@/lib/core/utils/array-utils'
 import { normalizeTextAST, normalizeOptionAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 
 /**
- * CHIẾN LƯỢC HASH CŨ (Conflict Detection): AST-normalized text + sorted options
- * Dùng cho QuestionBank – phát hiện mâu thuẫn đáp án giữa các quiz.
- * KHÔNG bao gồm correct_answer → câu hỏi giống + options giống nhưng đáp án khác → CÙNG ID → conflict.
+ * LEGACY HASH STRATEGY (Conflict Detection): AST-normalized text + sorted options
+ * Used for QuestionBank – detects answer conflicts between quizzes.
+ * DOES NOT include correct_answer → same question + same options but different answer → SAME ID → conflict.
  */
 export function generateQuestionId(question: {
   text: string
@@ -14,7 +14,7 @@ export function generateQuestionId(question: {
 }): string {
   const normalizedText = normalizeTextAST(question.text)
   
-  // Sort options để thứ tự không quan trọng
+  // Sort options so order does not matter
   const normalizedOptions = question.options
     .map(o => normalizeOptionAST(o))
     .sort((a, b) => a.localeCompare(b))
@@ -30,15 +30,15 @@ export function generateQuestionId(question: {
 
 
 /**
- * CHIẾN LƯỢC FINGERPRINT MỚI (Exact Deduplication): language + text + options + correct_answer + type
+ * NEW FINGERPRINT STRATEGY (Exact Deduplication): language + text + options + correct_answer + type
  *
- * Dùng cho Question collection (Phase 1+) – xác định câu hỏi giống hệt nhau để reuse,
- * không phải để phát hiện conflict. Correct_answer được đưa vào hash để phân biệt:
- * - Cùng câu hỏi + cùng options + khác đáp án → KHÁC fingerprint → tạo mới ✅
- * - Cùng câu hỏi + cùng options + cùng đáp án → CÙNG fingerprint → reuse ✅
+ * Used for Question collection (Phase 1+) – identifies identical questions to reuse,
+ * not for conflict detection. Correct_answer is included in the hash to differentiate:
+ * - Same question + same options + different answer → DIFFERENT fingerprint → create new ✅
+ * - Same question + same options + same answer → SAME fingerprint → reuse ✅
  *
- * Forward-compatible: language, question_type, topic được đưa vào fingerprint
- * để chuẩn bị cho Phase 2+ khi Question liên kết với Learning Objects.
+ * Forward-compatible: language, question_type, topic are included in fingerprint
+ * to prepare for Phase 2+ when Question links with Learning Objects.
  */
 export function generateQuestionFingerprint(q: {
   text: string
@@ -70,12 +70,12 @@ export function generateQuestionFingerprint(q: {
 }
 
 /**
- * Tránh false conflict khi options bị đổi thứ tự giữa các quiz
+ * Prevents false conflicts when options are reordered between quizzes.
  * 
- * Ví dụ:
- * Quiz A: options=["Đúng","Sai","Không biết"], answer=[0] → answer text = "Đúng"
- * Quiz B: options=["Sai","Đúng","Không biết"], answer=[1] → answer text = "Đúng"
- * → CÙNG đáp án (không conflict) ✅
+ * Example:
+ * Quiz A: options=["True","False","Unknown"], answer=[0] → answer text = "True"
+ * Quiz B: options=["False","True","Unknown"], answer=[1] → answer text = "True"
+ * → SAME answer (no conflict) ✅
  */
 export { getAnswerTexts, areAnswersSame }
 

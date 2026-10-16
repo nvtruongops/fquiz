@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
   const isRegister = pathname === '/register'
 
   return (
-    <div className="min-h-screen bg-page-bg relative overflow-hidden flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8">
       {/* Floating Back to Home Button */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -27,7 +27,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
           className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-xl border border-border shadow-xs text-card-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:translate-y-0 font-bold text-[11px] sm:text-xs tracking-wider cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>Quay lại trang chủ</span>
+          <span>Back to Home</span>
         </button>
       </motion.div>
 
@@ -44,7 +44,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, type: "spring", stiffness: 300, damping: 25 }}
-          className={cn("w-full relative transition-all duration-300", isRegister ? "max-w-[700px]" : "max-w-[440px]")}
+          className={cn("w-full relative transition-all duration-300", isRegister ? "max-w-[480px]" : "max-w-[440px]")}
         >
           {children}
         </motion.div>
@@ -58,7 +58,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         className="relative z-10 mt-4 sm:mt-10 flex items-center gap-2 text-muted-foreground text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]"
       >
         <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span>Học tập thông minh</span>
+        <span>Smart Learning Platform</span>
       </motion.div>
     </div>
   )

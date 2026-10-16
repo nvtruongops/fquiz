@@ -26,13 +26,13 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
       <Card className="border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground text-base font-bold flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" /> Thông tin Dự án
+            <Globe className="w-4 h-4 text-primary" /> Project Information
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">Cấu hình các thông tin công khai hiển thị trên hệ thống</CardDescription>
+          <CardDescription className="text-muted-foreground text-xs">Configure public information displayed across the platform</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="app_name" className="text-xs font-semibold text-foreground uppercase tracking-wider">Tên ứng dụng</label>
+            <label htmlFor="app_name" className="text-xs font-semibold text-foreground uppercase tracking-wider">Application Name</label>
             <Input
               id="app_name"
               value={formState.app_name ?? ''}
@@ -41,7 +41,7 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="app_description" className="text-xs font-semibold text-foreground uppercase tracking-wider">Mô tả ngắn (SEO)</label>
+            <label htmlFor="app_description" className="text-xs font-semibold text-foreground uppercase tracking-wider">Short Description (SEO)</label>
             <textarea
               id="app_description"
               rows={3}
@@ -56,20 +56,20 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
       <Card className="border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground text-base font-bold flex items-center gap-2">
-            <Wrench className="w-4 h-4 text-primary" /> Trạng thái Hệ thống
+            <Wrench className="w-4 h-4 text-primary" /> System Status
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">Quản lý chế độ bảo trì và tạm dừng truy cập</CardDescription>
+          <CardDescription className="text-muted-foreground text-xs">Manage maintenance mode and access restrictions</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-muted/40 border border-border rounded-xl">
             <div className="space-y-1 pr-4">
-              <h4 className="font-semibold text-foreground text-sm">Chế độ bảo trì hệ thống</h4>
-              <p className="text-xs text-muted-foreground">Đóng toàn bộ tính năng và hiển thị trang thông báo Đang Nâng Cấp.</p>
+              <h4 className="font-semibold text-foreground text-sm">System Maintenance Mode</h4>
+              <p className="text-xs text-muted-foreground">Disables features and displays an Under Maintenance notice to users.</p>
             </div>
             <Switch
               checked={Boolean(formState.maintenance_mode)}
               onCheckedChange={(checked) => setFormState((s) => ({ ...s, maintenance_mode: checked }))}
-              aria-label="Bật/tắt chế độ bảo trì"
+              aria-label="Toggle maintenance mode"
             />
           </div>
         </CardContent>
@@ -82,7 +82,7 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm px-6 rounded-xl cursor-pointer"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Lưu cấu hình Hiển thị
+          Save Display Settings
         </Button>
       </div>
     </div>

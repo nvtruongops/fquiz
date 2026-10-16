@@ -142,7 +142,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
         {
           id: 'welcome-msg',
           sender: 'assistant',
-          text: 'Xin chào! Tôi là Trợ lý AI Phòng Thi. Tôi có thể giúp bạn phân tích lý do chọn đáp án, công thức tính toán hoặc đối chiếu câu hỏi tương tự trong ngân hàng đề.',
+          text: 'Hello! I am your Exam AI Assistant. I can help explain why an answer is correct, break down formulas, or retrieve similar questions from the question bank.',
           confidence: 'high',
           responseMode: 'llm',
           timestamp: new Date(),
@@ -192,7 +192,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
 
       if (!res.ok) {
         const errJson = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(errJson.error || 'Không thể kết nối dịch vụ AI Assistant')
+        throw new Error(errJson.error || 'Unable to connect to AI Assistant service')
       }
 
       const resData = await res.json()
@@ -201,7 +201,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
       const botMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: 'assistant',
-        text: data.reply || 'Đã phân tích xong câu hỏi.',
+        text: data.reply || 'Finished analyzing the question.',
         intent: data.intent || explicitIntent,
         confidence: data.confidence || 'medium',
         responseMode: data.responseMode || (data.fallback ? 'db_fallback' : 'llm'),
@@ -218,7 +218,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
-        text: err instanceof Error ? err.message : 'Có lỗi xảy ra khi xử lý yêu cầu.',
+        text: err instanceof Error ? err.message : 'An error occurred while processing your request.',
         confidence: 'low',
         responseMode: 'db_fallback',
         timestamp: new Date(),
@@ -268,12 +268,12 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
-                  Trợ Lý AI Phòng Thi
+                  Exam AI Assistant
                   <span className="px-1.5 py-0.5 rounded-md bg-warning-bg text-warning-fg text-[9px] font-extrabold border border-warning-border uppercase tracking-tight">
                     DEV ONLY
                   </span>
                 </h3>
-                <p className="text-[10px] text-muted-foreground font-medium">Đối chiếu ngân hàng đề & Giải thích sư phạm</p>
+                <p className="text-[10px] text-muted-foreground font-medium">Question bank verification & Pedagogical explanations</p>
               </div>
             </div>
             <Button
@@ -308,7 +308,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-card border border-border text-foreground text-[11px] font-sans space-y-1">
                       <div className="flex items-center gap-1.5 font-bold text-primary">
                         <Layers className="w-3.5 h-3.5 text-primary" />
-                        <span>Phân tích công thức & Các bước tính:</span>
+                        <span>Formula Breakdown & Calculation Steps:</span>
                       </div>
                       <p className="text-muted-foreground whitespace-pre-wrap">{msg.formulaExplanation}</p>
                     </div>
@@ -319,7 +319,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-info-bg border border-info-border text-info-fg text-[11px] space-y-1">
                       <div className="flex items-center gap-1.5 font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5 text-info-fg" />
-                        <span>Tìm thấy câu tương tự trong Ngân hàng đề:</span>
+                        <span>Found similar question in Question Bank:</span>
                       </div>
                       {msg.similarQuestionDetails && (
                         <p className="text-info-fg/90 whitespace-pre-wrap">{msg.similarQuestionDetails}</p>
@@ -332,17 +332,17 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-card border border-border text-foreground text-[10px] space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                         <BookOpen className="w-3 h-3 text-primary" />
-                        <span>Bằng chứng đối chiếu ({msg.evidenceUsed.length} câu phù hợp):</span>
+                        <span>Reference Evidence ({msg.evidenceUsed.length} matching questions):</span>
                       </div>
                       <div className="space-y-2">
                         {msg.evidenceUsed.map((ev, idx) => (
                           <div key={idx} className="p-2 rounded-xl bg-muted/50 border border-border/70 text-muted-foreground space-y-1.5">
                             <div className="flex items-center justify-between font-semibold">
                               <span className="text-primary font-bold">
-                                {ev.sourceType === 'question_bank' ? '🏷️ Ngân hàng đề' : '🏷️ Đề thi môn học'}
+                                {ev.sourceType === 'question_bank' ? '🏷️ Question Bank' : '🏷️ Course Quiz'}
                               </span>
                               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-card border border-border font-bold text-foreground">
-                                Độ khớp: {Math.round(ev.relevance * 100)}%
+                                Match: {Math.round(ev.relevance * 100)}%
                               </span>
                             </div>
 
@@ -352,16 +352,16 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                             {ev.matchedAnswerText && (
                               <div className="flex items-center gap-1 text-[10px] text-success-fg font-semibold bg-success-bg/80 border border-success-border/60 px-2 py-0.5 rounded-lg">
                                 <Check className="w-3 h-3 shrink-0" />
-                                <span>Đáp án đúng trong câu này: <strong>{ev.matchedAnswerText}</strong></span>
+                                <span>Correct answer for this question: <strong>{ev.matchedAnswerText}</strong></span>
                               </div>
                             )}
 
                             {/* Transparent Scoring Breakdown */}
                             {ev.breakdown && (
                               <div className="pt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground font-mono">
-                                <span>🎯 Khớp đáp án: <strong>{Math.round(ev.breakdown.optionScore * 100)}%</strong></span>
-                                <span>📝 Ngữ cảnh: <strong>{Math.round(ev.breakdown.questionScore * 100)}%</strong></span>
-                                <span>📚 Môn: <strong>{Math.round(ev.breakdown.subjectScore * 100)}%</strong></span>
+                                <span>🎯 Answer match: <strong>{Math.round(ev.breakdown.optionScore * 100)}%</strong></span>
+                                <span>📝 Context: <strong>{Math.round(ev.breakdown.questionScore * 100)}%</strong></span>
+                                <span>📚 Subject: <strong>{Math.round(ev.breakdown.subjectScore * 100)}%</strong></span>
                               </div>
                             )}
                           </div>
@@ -377,19 +377,19 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                       {msg.responseMode === 'cached' && (
                         <span className="inline-flex items-center gap-1 font-bold text-info-fg bg-info-bg border border-info-border px-2 py-0.5 rounded-full">
                           <Zap className="w-2.5 h-2.5" />
-                          Nguồn: Cache
+                          Source: Cache
                         </span>
                       )}
                       {msg.responseMode === 'db_fallback' && (
                         <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">
                           <Database className="w-2.5 h-2.5" />
-                          Nguồn: Đối chiếu dự phòng
+                          Source: DB Fallback
                         </span>
                       )}
                       {msg.responseMode === 'llm' && (
                         <span className="inline-flex items-center gap-1 font-medium text-muted-foreground bg-muted/60 border border-border/80 px-2 py-0.5 rounded-full">
                           <Bot className="w-2.5 h-2.5 text-primary" />
-                          Nguồn: AI trực tiếp
+                          Source: Direct AI
                         </span>
                       )}
 
@@ -397,19 +397,19 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                       {msg.confidence === 'high' && (
                         <span className="inline-flex items-center gap-1 font-bold text-success-fg bg-success-bg border border-success-border px-2 py-0.5 rounded-full">
                           <ShieldCheck className="w-2.5 h-2.5" />
-                          Độ tin cậy: Cao
+                          Confidence: High
                         </span>
                       )}
                       {msg.confidence === 'medium' && (
                         <span className="inline-flex items-center gap-1 font-semibold text-warning-fg bg-warning-bg border border-warning-border px-2 py-0.5 rounded-full">
                           <Sparkles className="w-2.5 h-2.5" />
-                          Độ tin cậy: Trung bình
+                          Confidence: Medium
                         </span>
                       )}
                       {msg.confidence === 'low' && (
                         <span className="inline-flex items-center gap-1 font-medium text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">
                           <HelpCircle className="w-2.5 h-2.5" />
-                          Độ tin cậy: Tham khảo
+                          Confidence: Reference
                         </span>
                       )}
                     </div>
@@ -418,12 +418,12 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                   {/* Micro-Feedback Thumbs Up/Down for P4 Telemetry */}
                   {msg.sender === 'assistant' && msg.id !== 'welcome-msg' && (
                     <div className="flex items-center gap-2 pt-1 mt-0.5 border-t border-border/40">
-                      <span className="text-[10px] text-muted-foreground font-medium">Hữu ích không?</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">Helpful?</span>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          title="Hữu ích"
-                          aria-label="Phản hồi câu trả lời hữu ích"
+                          title="Helpful"
+                          aria-label="Feedback: response is helpful"
                           onClick={() => handleFeedback(msg, true)}
                           className={`p-1 rounded-md transition-colors cursor-pointer ${
                             msg.feedback === true
@@ -435,8 +435,8 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                         </button>
                         <button
                           type="button"
-                          title="Chưa hữu ích"
-                          aria-label="Phản hồi câu trả lời chưa hữu ích"
+                          title="Not helpful"
+                          aria-label="Feedback: response is not helpful"
                           onClick={() => handleFeedback(msg, false)}
                           className={`p-1 rounded-md transition-colors cursor-pointer ${
                             msg.feedback === false
@@ -456,30 +456,30 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
             {/* Quick Action Suggestions */}
             {messages.length === 1 && !isLoading && (
               <div className="pt-1 space-y-1.5 animate-in fade-in duration-200">
-                <p className="text-[10px] font-semibold text-muted-foreground px-1">Gợi ý thắc mắc nhanh:</p>
+                <p className="text-[10px] font-semibold text-muted-foreground px-1">Quick Prompts:</p>
                 <div className="flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => handleSend('Tại sao đáp án tôi chọn lại sai?', 'EXPLAIN_WRONG_ANSWER')}
+                    onClick={() => handleSend('Why is my selected answer incorrect?', 'EXPLAIN_WRONG_ANSWER')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>❓ Tại sao đáp án tôi chọn lại sai?</span>
+                    <span>❓ Why is my selected answer incorrect?</span>
                     <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">EXPLAIN</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSend('Hướng dẫn tư duy & cách tiếp cận câu hỏi này?', 'SOLVE_QUESTION')}
+                    onClick={() => handleSend('How should I approach solving this question?', 'SOLVE_QUESTION')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>💡 Gợi ý tư duy & cách tiếp cận câu này</span>
+                    <span>💡 Suggested approach & solution steps</span>
                     <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">SOLVE</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSend('Tra cứu câu hỏi tương tự trong ngân hàng đề', 'FIND_SIMILAR_QUESTION')}
+                    onClick={() => handleSend('Find similar questions in the question bank', 'FIND_SIMILAR_QUESTION')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>🔍 Tra cứu câu tương tự trong ngân hàng đề</span>
+                    <span>🔍 Find similar questions in question bank</span>
                     <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">RETRIEVE</span>
                   </button>
                 </div>
@@ -490,7 +490,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
               <div className="flex justify-start">
                 <div className="bg-muted border border-border rounded-2xl rounded-bl-xs p-3 text-xs text-muted-foreground flex items-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                  <span>AI Assistant đang tra cứu dữ liệu và phân tích...</span>
+                  <span>AI Assistant is retrieving data and analyzing...</span>
                 </div>
               </div>
             )}
@@ -510,7 +510,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Hỏi AI về đáp án, công thức..."
+                placeholder="Ask AI about answers, formulas..."
                 disabled={isLoading}
                 className="flex-1 h-9 px-3 rounded-xl border border-border bg-background text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
               />
@@ -529,8 +529,8 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
       {/* Floating Circular Action Button */}
       <button
         type="button"
-        title="Trợ lý AI Phòng Thi (DEV ONLY)"
-        aria-label="Trợ lý AI Phòng Thi (DEV ONLY)"
+        title="Exam AI Assistant (DEV ONLY)"
+        aria-label="Exam AI Assistant (DEV ONLY)"
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-12 h-12 rounded-full bg-primary text-primary-foreground border border-border shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center group"
       >

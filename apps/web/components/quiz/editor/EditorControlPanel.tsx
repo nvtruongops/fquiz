@@ -40,7 +40,7 @@ export function EditorControlPanel({
     <Card className="bg-card border border-border shadow-xs rounded-[24px] overflow-hidden">
       <CardContent className="p-4 space-y-3">
         <div className="space-y-1.5">
-          <label htmlFor="question-count-input" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground block">Số lượng câu hỏi</label>
+          <label htmlFor="question-count-input" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground block">Number of Questions</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -60,7 +60,7 @@ export function EditorControlPanel({
               onClick={() => applyTargetCount(targetInput)}
               className="h-9 px-3 text-xs rounded-xl border-border text-foreground hover:bg-muted"
             >
-              Đặt
+              Set
             </Button>
           </div>
         </div>
@@ -71,7 +71,7 @@ export function EditorControlPanel({
           className="w-full h-10 text-xs rounded-xl bg-card border-2 border-primary text-primary font-bold hover:bg-primary hover:text-primary-foreground transition-all gap-1.5 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Thêm 1 câu hỏi
+          Add Question
         </Button>
 
         <div className="h-px bg-border my-1" />
@@ -86,12 +86,12 @@ export function EditorControlPanel({
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Đang xử lý...
+                Processing...
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                {isStudentMode ? 'Tạo Quiz' : 'Công khai ngay'}
+                {isStudentMode ? 'Create Quiz' : 'Publish Now'}
               </>
             )}
           </Button>
@@ -104,7 +104,7 @@ export function EditorControlPanel({
               disabled={isSubmitBlocked}
               className="w-full h-9 text-xs rounded-lg text-primary font-bold hover:bg-primary/10 transition-all cursor-pointer"
             >
-              Lưu bản nháp
+              Save Draft
             </Button>
           )}
         </div>

@@ -9,5 +9,6 @@
   "tailwindCSS.experimental.classRegex": [
     ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
     ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "codeql.cli.executablePath": "C:\\Users\\nvt\\codeql\\codeql\\codeql.exe"
 }

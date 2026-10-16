@@ -51,7 +51,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
   const handleCreateQuiz = () => {
     if (pinnedQuestions.length === 0) {
-      toast.info('Bạn chưa ghim câu hỏi nào trong môn này.')
+      toast.info('You have not pinned any questions in this course.')
       return
     }
 
@@ -60,15 +60,15 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
       {
         onSuccess: (data) => {
           if (data.quiz?._id) {
-            router.push(`/my-quizzes`)
+            router.push(`/quiz/${data.quiz._id}`)
           }
         },
         onError: (err: any) => {
           if (err.quotaExceeded) {
-            setQuotaMessage(err.message || 'Bạn đã đạt giới hạn tối đa 10 bộ đề tự tạo/trộn.')
+            setQuotaMessage(err.message || 'You have reached the maximum limit of 10 custom/mixed quizzes.')
             setQuotaModalOpen(true)
           } else {
-            toast.error(err.message || 'Không thể tạo bộ đề từ các câu đã ghim.')
+            toast.error(err.message || 'Failed to create quiz from pinned questions.')
           }
         },
       }
@@ -87,7 +87,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] gap-3">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Đang tải câu hỏi đã ghim...</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Loading pinned questions...</p>
       </div>
     )
   }
@@ -103,14 +103,14 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-black text-foreground uppercase tracking-tight">
-                Câu hỏi đã ghim ({pinnedQuestions.length})
+                Pinned Questions ({pinnedQuestions.length})
               </h2>
               <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
                 {normalizedCode}
               </span>
             </div>
             <p className="text-xs font-medium text-muted-foreground mt-0.5">
-              Danh sách các câu hỏi trọng tâm bạn đã ghim khi làm bài môn {normalizedCode}
+              Focused questions you have pinned while studying {normalizedCode}
             </p>
           </div>
         </div>
@@ -127,12 +127,12 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               {isAllExpanded ? (
                 <>
                   <EyeOff className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-                  Thu gọn đáp án
+                  Collapse answers
                 </>
               ) : (
                 <>
                   <Eye className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  Hiện tất cả đáp án
+                  Expand all answers
                 </>
               )}
             </Button>
@@ -146,7 +146,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               className="h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:text-destructive-foreground hover:bg-destructive font-black text-xs transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Xóa tất cả
+              Clear all
             </Button>
 
             <Button
@@ -161,7 +161,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               ) : (
                 <PlusCircle className="w-4 h-4" />
               )}
-              Tạo bài kiểm tra ({pinnedQuestions.length} câu)
+              Create quiz ({pinnedQuestions.length} questions)
             </Button>
           </div>
         )}
@@ -175,10 +175,10 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
             <h3 className="text-base font-black text-foreground uppercase tracking-tight">
-              Chưa có câu hỏi nào được ghim
+              No pinned questions yet
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Trong quá trình ôn luyện làm bài môn <strong className="text-foreground font-bold">{normalizedCode}</strong>, hãy nhấn biểu tượng Ghim trên từng câu hỏi để lưu lại các câu cần ôn tập tại đây.
+              While practicing quizzes for <strong className="text-foreground font-bold">{normalizedCode}</strong>, tap the Pin icon on any question to bookmark it here for targeted revision.
             </p>
           </div>
         </div>
@@ -204,14 +204,14 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-primary/10 text-primary">
-                        Câu {index + 1}
+                        Question {index + 1}
                       </span>
 
                       {/* Display source quiz title / code */}
                       {item.quiz_title && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
                           <FileText className="w-3 h-3 text-muted-foreground" />
-                          <span>Mã quiz: <strong>{item.quiz_title}</strong></span>
+                          <span>Quiz: <strong>{item.quiz_title}</strong></span>
                         </span>
                       )}
                     </div>
@@ -222,7 +222,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       onClick={() => deletePinMutation.mutate(item._id)}
                       disabled={deletePinMutation.isPending}
                       className="p-1.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Xóa câu ghim"
+                      title="Remove pinned question"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -243,7 +243,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       <div className="mt-2 max-w-sm rounded-xl border border-border p-2 bg-muted/50">
                         <img
                           src={item.image_url}
-                          alt="Minh họa"
+                          alt="Illustration"
                           className="max-h-48 w-full object-contain rounded-lg"
                         />
                       </div>
@@ -260,13 +260,13 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       {isExpanded ? (
                         <>
                           <EyeOff className="w-3.5 h-3.5" />
-                          <span>Ẩn đáp án</span>
+                          <span>Hide answers</span>
                           <ChevronUp className="w-4 h-4 ml-0.5" />
                         </>
                       ) : (
                         <>
                           <Eye className="w-3.5 h-3.5" />
-                          <span>Xem đáp án</span>
+                          <span>Show answers</span>
                           <ChevronDown className="w-4 h-4 ml-0.5" />
                         </>
                       )}
@@ -319,7 +319,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                           <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-2">
                             <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
                             <div>
-                              <strong className="font-bold">Giải thích: </strong>
+                              <strong className="font-bold">Explanation: </strong>
                               <span>{item.explanation}</span>
                             </div>
                           </div>
@@ -342,10 +342,10 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               <Trash2 className="h-7 w-7" />
             </div>
             <DialogTitle className="text-center text-lg font-black text-card-foreground">
-              Xóa tất cả câu đã ghim?
+              Clear all pinned questions?
             </DialogTitle>
             <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
-              Bạn có chắc chắn muốn xóa toàn bộ <strong className="text-destructive font-bold">{pinnedQuestions.length} câu hỏi đã ghim</strong> của môn {normalizedCode} không? Thao tác này không thể hoàn tác.
+              Are you sure you want to clear all <strong className="text-destructive font-bold">{pinnedQuestions.length} pinned questions</strong> for course {normalizedCode}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -355,7 +355,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               onClick={() => setConfirmClearOpen(false)}
               className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
             >
-              Hủy bỏ
+              Cancel
             </Button>
             <Button
               type="button"
@@ -363,7 +363,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               disabled={clearAllPinsMutation.isPending}
               className="flex-1 h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold text-xs cursor-pointer"
             >
-              {clearAllPinsMutation.isPending ? 'Đang xóa...' : 'Xóa tất cả'}
+              {clearAllPinsMutation.isPending ? 'Clearing...' : 'Clear all'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -377,10 +377,10 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               <AlertCircle className="h-7 w-7" />
             </div>
             <DialogTitle className="text-center text-lg font-black text-card-foreground">
-              Đã đạt giới hạn Quota bộ đề
+              Quiz Quota Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
-              {quotaMessage || 'Tài khoản của bạn đã tạo đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại "Bộ đề của tôi" để tiếp tục tạo bài mới.'}
+              {quotaMessage || 'You have reached the maximum limit of 10 custom and mixed quizzes. Please delete an older quiz to continue.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
@@ -390,17 +390,17 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               onClick={() => setQuotaModalOpen(false)}
               className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
             >
-              Đóng
+              Close
             </Button>
             <Button
               type="button"
               onClick={() => {
                 setQuotaModalOpen(false)
-                router.push('/my-quizzes')
+                router.push('/explore')
               }}
               className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer"
             >
-              Đến Bộ đề của tôi
+              Explore Quizzes
             </Button>
           </DialogFooter>
         </DialogContent>

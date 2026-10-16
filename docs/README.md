@@ -1,49 +1,52 @@
-# 📚 FQuiz — Trung tâm Tài liệu Kỹ thuật (Documentation Hub)
+# 📚 FQuiz — Documentation Hub
 
-Chào mừng bạn đến với trung tâm tài liệu kỹ thuật toàn diện của nền tảng **FQuiz**. Tài liệu này đóng vai trò là kim chỉ nam cho các nhà phát triển (Developers), kiến trúc sư hệ thống (Architects), kỹ sư vận hành (DevOps) và các AI Agents khi tham gia phát triển dự án.
+Welcome to the comprehensive technical documentation hub for the **FQuiz** platform. This hub serves as the authoritative guide for developers, system architects, DevOps engineers, and AI agents contributing to the project.
 
 ---
 
-## 🗺️ Bản đồ Tài liệu (Documentation Index)
+## 🗺️ Documentation Index
 
-| Mục | Tài liệu | Mô tả trọng tâm | Đối tượng |
+| Section | Document | Core Focus | Target Audience |
 |---|---|---|---|
-| 🏗️ | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Đặc tả kiến trúc Pure Symmetrical Turborepo Monorepo (`apps/web`, `apps/admin`, `packages/*`), 8 Invariants, Data Flow, AI Pipeline | All |
-| 📐 | [`DESIGN.md`](./DESIGN.md) | Đặc tả kỹ thuật toàn diện: Data Models, Mongoose Schemas, Quiz Engine, AI Pipeline | Fullstack Devs |
-| 🌐 | [`DESIGN_ROUTES.md`](./DESIGN_ROUTES.md) | Danh mục Page Routes Web Học viên (`apps/web`) & Cổng Quản trị Admin (`apps/admin`) | Frontend Devs |
-| 🎨 | [`DESIGN_THEME.md`](./DESIGN_THEME.md) | Chuẩn Design Tokens 3-Tier, 4 Themes (Light, Dark, Green, Pink), WCAG 2.2 AA Baseline | UI/UX, Frontend |
-| 🔌 | [`API.md`](./API.md) | Danh mục REST APIs Web & Admin (`apps/web/app/api`, `apps/admin/app/api`), Auth guards & Error codes | Fullstack, Mobile |
-| 🛡️ | [`SECURITY.md`](./SECURITY.md) | Kiến trúc bảo mật: Token Rotation, CSRF Double-Submit, Rate Limiting, CSP, Audit Logs | SecOps, Backend |
-| 🧪 | [`TESTING.md`](./TESTING.md) | Chiến lược kiểm thử: Jest (66 suites), Playwright Multi-Server E2E (57 tests), AI Rule Engine (`verify.js`) | QA, Devs, Agents |
-| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Hướng dẫn triển khai Turborepo Monorepo (2 Projects Vercel: `fquiz-web` & `fquiz-admin`), MongoDB Atlas, CI/CD | DevOps, Leads |
-| 🤖 | [`AGENTS.md`](../.agents/AGENTS.md) | Hướng dẫn AI Agent: Rule governance, CI/CD Engine, CodeGraph, Ponytail mode | AI Agents, Devs |
+| 🏗️ | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Pure Symmetrical Turborepo Monorepo specification (`apps/web`, `apps/admin`, `packages/*`), 8 Invariants, Data Flow, AI Pipeline | All Engineers |
+| 📐 | [`DESIGN.md`](./DESIGN.md) | Comprehensive technical design: Data Models, Mongoose Schemas, Quiz Engine, AI Pipeline | Fullstack Devs |
+| 🌐 | [`DESIGN_ROUTES.md`](./DESIGN_ROUTES.md) | Catalog of Page Routes for Student Web Portal (`apps/web`) & Admin Portal (`apps/admin`) | Frontend Devs |
+| 🎨 | [`DESIGN_THEME.md`](./DESIGN_THEME.md) | 3-Tier Design Tokens standard, 4 Themes (Light, Dark, Green, Pink), WCAG 2.2 AA Baseline | UI/UX, Frontend |
+| 🔌 | [`API.md`](./API.md) | Complete REST API catalog for Web & Admin (`apps/web/app/api`, `apps/admin/app/api`), Auth guards & Error codes | Fullstack, Mobile |
+| 🛡️ | [`SECURITY.md`](./SECURITY.md) | Security architecture: Token Rotation, Double-Submit CSRF, Rate Limiting, CSP, Audit Logs | SecOps, Backend |
+| 🧪 | [`TESTING.md`](./TESTING.md) | Testing strategy: Jest (66 suites), Playwright Multi-Server E2E (57 tests), AI Rule Engine (`verify.js`) | QA, Devs, Agents |
+| 🚀 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Monorepo deployment guide (Dual Vercel Projects: `fquiz-web` & `fquiz-admin`), MongoDB Atlas, CI/CD | DevOps, Leads |
+| 📊 | [`REPO_AUDIT_REPORT.md`](./REPO_AUDIT_REPORT.md) | Comprehensive repository audit: Scorecard, oversized files, shadow models & refactor roadmap | Architects, Devs |
+| 🔍 | [`DATABASE_VECTOR_AI_AUDIT.md`](./DATABASE_VECTOR_AI_AUDIT.md) | Rigorous audit of Vector Indexes, database query logic & AI Retrieval RAG Pipeline | DBAs, AI Devs |
+| 🤖 | [`AI_CHATBOT_SPEC.md`](./AI_CHATBOT_SPEC.md) | Comprehensive specification for multi-context AI Chatbot across FQuiz (Student, Teacher, Community, Admin) | AI Devs, Architects |
+| 🤖 | [`AGENTS.md`](../.agents/AGENTS.md) | AI Agent Guide: Rule governance, CI/CD Engine, CodeGraph, Ponytail mode | AI Agents, Devs |
 
 ---
 
-## 📦 Các Packages Dùng Chung (`packages/*`)
+## 📦 Shared Packages (`packages/*`)
 
-Hệ thống được module hóa cao độ thông qua 5 packages độc lập:
+The codebase is highly modularized into 5 independent shared packages:
 
-- 🗄️ [`packages/database`](../packages/database): Singleton kết nối MongoDB Atlas, DNS SRV Failover (8.8.8.8, 1.1.1.1), Model Registry Bootstrap ngăn chặn MissingSchemaError.
-- 📦 [`packages/models`](../packages/models): Single Source of Truth cho toàn bộ Mongoose Schemas, Base Entity (`IBaseEntity`), TypeScript Types, Zod Schemas và Application-level join helpers.
-- 🔐 [`packages/auth`](../packages/auth): Hệ thống xác thực JWT (jose) với Zero-Downtime Key Rotation (`JWT_SECRET` + `JWT_SECRET_PREV`), Double-Submit CSRF, Sliding Rate Limiter, RBAC, và `withAuth` Higher-Order Function.
-- 🎨 [`packages/ui`](../packages/ui): Thư viện giao diện dùng chung (Shadcn primitives, Design Tokens CSS Variables, Toast store, Theme Provider, GSAP helpers).
-- ⚙️ [`packages/config-typescript`](../packages/config-typescript): Cấu hình TypeScript chia sẻ tối ưu cho Next.js 16 (`nextjs.json`), React libraries (`react-library.json`) và base (`base.json`).
-
----
-
-## 📱 Các Ứng Dụng Thực Thi (`apps/*`)
-
-- 🎓 [`apps/web`](../apps/web): Nền tảng học tập chính (Port 3000 / `fquiz-web.vercel.app`) phục vụ Học viên, Giáo viên, Khách vãng lai, Diễn đàn cộng đồng và Quiz AI Assistant thời gian thực.
-- 🛡️ [`apps/admin`](../apps/admin): Cổng Quản trị Hệ thống độc lập (Port 3001 / `fquiz-admin.vercel.app`) với Zero-Trust RBAC Proxy, quản lý danh mục, đề thi chuẩn, ngân hàng câu hỏi, giải quyết conflicts và cấu hình hệ thống.
+- 🗄️ [`packages/database`](../packages/database): Singleton MongoDB Atlas connection pool, DNS SRV Failover (8.8.8.8, 1.1.1.1), Model Registry Bootstrap preventing MissingSchemaError in serverless environments.
+- 📦 [`packages/models`](../packages/models): Single Source of Truth for all Mongoose Schemas, Base Entity (`IBaseEntity`), TypeScript Types, Zod Schemas, and application-level join helpers.
+- 🔐 [`packages/auth`](../packages/auth): JWT authentication engine (jose) with zero-downtime key rotation (`JWT_SECRET` + `JWT_SECRET_PREV`), Double-Submit CSRF, sliding window rate limiting, RBAC, and `withAuth` Higher-Order Functions.
+- 🎨 [`packages/ui`](../packages/ui): Shared UI primitives library (Shadcn primitives, CSS variable design tokens, Toast store, Theme Provider, GSAP animation helpers).
+- ⚙️ [`packages/config-typescript`](../packages/config-typescript): Shared TypeScript configurations tailored for Next.js 16 (`nextjs.json`), React libraries (`react-library.json`), and base environments (`base.json`).
 
 ---
 
-## 🏛️ Triết lý Thiết kế Cốt lõi (Core Principles)
+## 📱 Applications (`apps/*`)
 
-1. **Text-Only Learning Scope Boundary**: Nền tảng FQuiz chỉ phục vụ học tập, thi trắc nghiệm và ôn luyện qua văn bản. Tuyệt đối không đưa vào audio/TTS/STT/3D WebGL rườm rà.
-2. **Không import chéo Model & Cấm `.populate()`**: `apps/web` và `apps/admin` không tham chiếu mã nguồn của nhau; liên kết bảng dữ liệu thực hiện hoàn toàn ở tầng ứng dụng bằng batch `$in`.
-3. **Server-Authoritative Quiz Engine**: Phía server không bao giờ tin tưởng client state; toàn bộ câu trả lời thi cử được chấm điểm và tổng kết trên `session.questions_cache` tại server, chống Race Condition bằng `findOneAndUpdate({ status: { $ne: 'completed' } })`.
-4. **Cache & Deduplication Nội dung AI**: Băm SHA-256 nội dung yêu cầu (`requestHash`) để đối soát với collection `AIAsset` trước khi gọi Gemini API.
-5. **High Performance & Accessibility**: Tất cả animations sử dụng GPU transform aliases thông qua `@gsap/react`, hỗ trợ `prefers-reduced-motion` và đạt chuẩn tương phản màu **WCAG 2.2 AA** trên cả 4 giao diện.
-6. **Strict Governance & CI/CD**: Mọi thay đổi mã nguồn bắt buộc phải vượt qua bộ quy tắc nghiêm ngặt tại `node .agents/scripts/verify.js --strict` trước khi được tích hợp vào nhánh chính.
+- 🎓 [`apps/web`](../apps/web): Primary learning platform (Port 3000 / `fquiz-web.vercel.app`) serving Students, Teachers, Guests, Community Forums, and the real-time Quiz AI Assistant.
+- 🛡️ [`apps/admin`](../apps/admin): Standalone System Admin Portal (Port 3001 / `fquiz-admin.vercel.app`) featuring a Zero-Trust RBAC Proxy, category management, standardized quizzes, question banks, conflict resolution, and system configuration.
+
+---
+
+## 🏛️ Core Design Principles
+
+1. **Text-Only Learning Scope Boundary**: FQuiz is strictly dedicated to text-based learning, quizzes, and knowledge mastery. Audio, voice (TTS/STT), OCR, 3D WebGL, and heavy multimedia features are strictly prohibited.
+2. **No Direct Cross-Module Model Imports & No `.populate()`**: `apps/web` and `apps/admin` never reference each other directly. Database relationships are joined exclusively at the application level using batch `$in` queries.
+3. **Server-Authoritative Quiz Engine**: The server never trusts client-submitted scores or states. All quiz sessions are evaluated and aggregated against the server's `session.questions_cache`, with race conditions prevented via `findOneAndUpdate({ status: { $ne: 'completed' } })`.
+4. **AI Content Deduplication & Caching**: SHA-256 hashes of prompt payloads (`requestHash`) are matched against the `AIAsset` collection before executing external Gemini API calls.
+5. **High Performance & Accessibility**: All UI animations leverage GPU transform aliases via `@gsap/react`, support `prefers-reduced-motion`, and guarantee **WCAG 2.2 AA** color contrast across all 4 themes.
+6. **Strict Governance & CI/CD**: Every code change must pass the strict governance rule engine (`node .agents/scripts/verify.js --strict`) before integration into main branches.

@@ -4,45 +4,45 @@ import { resolveAppBaseUrl } from '../url-utils'
 
 describe('Formatting & URL Utilities Test Suite', () => {
   describe('formatStudyDuration', () => {
-    test('formats minutes under 60 in Vietnamese and short forms', () => {
-      expect(formatStudyDuration(45, false)).toBe('45 phút')
+    test('formats minutes under 60 in long and short forms', () => {
+      expect(formatStudyDuration(45, false)).toBe('45 mins')
       expect(formatStudyDuration(45, true)).toBe('45m')
     })
 
     test('formats exact hours', () => {
-      expect(formatStudyDuration(120, false)).toBe('2 giờ')
+      expect(formatStudyDuration(120, false)).toBe('2 hours')
       expect(formatStudyDuration(120, true)).toBe('2h')
     })
 
     test('formats hours and remaining minutes', () => {
-      expect(formatStudyDuration(150, false)).toBe('2 giờ 30 phút')
+      expect(formatStudyDuration(150, false)).toBe('2 hours 30 mins')
       expect(formatStudyDuration(150, true)).toBe('2h 30m')
     })
   })
 
   describe('extractApiErrorMessage', () => {
     test('returns raw string error', () => {
-      expect(extractApiErrorMessage('Lỗi kết nối')).toBe('Lỗi kết nối')
+      expect(extractApiErrorMessage('Network error')).toBe('Network error')
     })
 
     test('handles Zod array issues', () => {
-      const zodIssue = [{ path: ['question', 'title'], message: 'Không được để trống' }]
-      expect(extractApiErrorMessage(zodIssue)).toBe('question.title: Không được để trống')
+      const zodIssue = [{ path: ['question', 'title'], message: 'Cannot be empty' }]
+      expect(extractApiErrorMessage(zodIssue)).toBe('question.title: Cannot be empty')
     })
 
     test('handles flat error objects with message or error key', () => {
-      expect(extractApiErrorMessage({ message: 'Token hết hạn' })).toBe('Token hết hạn')
-      expect(extractApiErrorMessage({ error: 'Không có quyền' })).toBe('Không có quyền')
+      expect(extractApiErrorMessage({ message: 'Token expired' })).toBe('Token expired')
+      expect(extractApiErrorMessage({ error: 'Permission denied' })).toBe('Permission denied')
     })
 
     test('handles fieldErrors and formErrors objects', () => {
-      const errorObj = { fieldErrors: { title: ['Tiêu đề quá ngắn'] }, formErrors: [] }
-      expect(extractApiErrorMessage(errorObj)).toBe('Tiêu đề quá ngắn')
+      const errorObj = { fieldErrors: { title: ['Title is too short'] }, formErrors: [] }
+      expect(extractApiErrorMessage(errorObj)).toBe('Title is too short')
     })
 
     test('returns default fallback when empty or unknown', () => {
-      expect(extractApiErrorMessage(null)).toBe('Lưu thất bại')
-      expect(extractApiErrorMessage({})).toBe('Lưu thất bại')
+      expect(extractApiErrorMessage(null)).toBe('Save failed')
+      expect(extractApiErrorMessage({})).toBe('Save failed')
     })
   })
 

@@ -27,7 +27,7 @@ interface QuizSessionState {
   // Optimistic answer tracking
   pendingAnswerIndex: number | null
 
-  // Note & Vocab Lookup mode (Bút Highlight)
+  // Note & Vocab Lookup mode (Highlighter tool)
   isNoteMode: boolean
 
   // Actions

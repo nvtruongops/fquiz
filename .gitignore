@@ -2,6 +2,7 @@
 node_modules/
 
 # Build and framework outputs
+.turbo/
 .next/
 out/
 dist/
@@ -73,6 +74,10 @@ public/uploads/
 # CodeGraph
 .codegraph/
 codegraph.mcp.json
+
+# Fallow
+.fallow/
+.fallow
 
 # Task documents & migration scripts (sensitive internal docs & exec scripts)
 task/

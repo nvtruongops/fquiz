@@ -21,28 +21,28 @@ export function useQuizDiagnostics({
     const errors: QuizDiagnosticError[] = []
 
     if (!categoryId) {
-      errors.push({ message: 'Vui lòng chọn Môn học trước' })
+      errors.push({ message: 'Please select a subject/category first' })
     }
     if (!courseCode.trim()) {
-      errors.push({ message: 'Chưa nhập Mã đề thi (Quiz Code)' })
+      errors.push({ message: 'Quiz Code is required' })
     } else if (codeDuplicateInfo?.exists) {
-      errors.push({ message: `Mã đề ${courseCode.toUpperCase()} đã tồn tại trong hệ thống` })
+      errors.push({ message: `Quiz Code ${courseCode.toUpperCase()} already exists in the system` })
     }
 
     const seenQuestionMap = new Map<string, number>()
     questions.forEach((q, i) => {
       let isQValid = true
       if (!q.text.trim()) {
-        errors.push({ message: 'Chưa nhập nội dung câu hỏi', questionIndex: i })
+        errors.push({ message: 'Question content is required', questionIndex: i })
         isQValid = false
       }
       const nonEmptyOptions = q.options.filter((o) => o.trim())
       if (nonEmptyOptions.length < 2) {
-        errors.push({ message: 'Cần ít nhất 2 phương án trả lời', questionIndex: i })
+        errors.push({ message: 'At least 2 options are required', questionIndex: i })
         isQValid = false
       }
       if (!q.correct_answer || q.correct_answer.length === 0) {
-        errors.push({ message: 'Chưa chọn đáp án đúng', questionIndex: i })
+        errors.push({ message: 'Correct answer must be selected', questionIndex: i })
         isQValid = false
       }
 
@@ -51,7 +51,7 @@ export function useQuizDiagnostics({
         if (seenQuestionMap.has(qHash)) {
           const firstIndex = seenQuestionMap.get(qHash)!
           errors.push({
-            message: `Trùng nội dung & đáp án với Câu ${firstIndex + 1}`,
+            message: `Duplicate content & answer with Question ${firstIndex + 1}`,
             questionIndex: i,
           })
           isQValid = false

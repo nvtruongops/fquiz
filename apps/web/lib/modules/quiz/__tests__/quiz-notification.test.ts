@@ -38,7 +38,7 @@ describe('notifyPinnedUsersNewQuiz', () => {
   it('enqueues mail for active users with notifications enabled who pinned the category/course code', async () => {
     (Category.findById as jest.Mock).mockReturnValue({
       select: jest.fn().mockReturnValue({
-        lean: jest.fn().mockResolvedValue({ name: 'Triết học Mác - Lênin' }),
+        lean: jest.fn().mockResolvedValue({ name: 'Marxist-Leninist Philosophy' }),
       }),
     });
 
@@ -56,7 +56,7 @@ describe('notifyPinnedUsersNewQuiz', () => {
         limit: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
             lean: jest.fn().mockResolvedValue([
-              { _id: 'other1', title: 'Quiz cũ 1', questions: [1, 2, 3] },
+              { _id: 'other1', title: 'Archived Quiz 1', questions: [1, 2, 3] },
             ]),
           }),
         }),
@@ -65,7 +65,7 @@ describe('notifyPinnedUsersNewQuiz', () => {
 
     const quiz = {
       _id: 'quiz123',
-      title: 'Đề thi MLN131 số 1',
+      title: 'Exam MLN131 No. 1',
       course_code: 'MLN131',
       category_id: 'cat123',
     }
@@ -76,7 +76,7 @@ describe('notifyPinnedUsersNewQuiz', () => {
       status: 'active',
       notify_email: true,
       pinned_categories: {
-        $in: expect.arrayContaining(['cat123', 'MLN131', 'Triết học Mác - Lênin']),
+        $in: expect.arrayContaining(['cat123', 'MLN131', 'Marxist-Leninist Philosophy']),
       },
     })
 
@@ -85,9 +85,9 @@ describe('notifyPinnedUsersNewQuiz', () => {
       to: 'student1@example.com',
       username: 'Student 1',
       courseCode: 'MLN131',
-      quizTitle: 'Đề thi MLN131 số 1',
+      quizTitle: 'Exam MLN131 No. 1',
       quizId: 'quiz123',
-      otherQuizzes: [{ id: 'other1', title: 'Quiz cũ 1', questionCount: 3 }],
+      otherQuizzes: [{ id: 'other1', title: 'Archived Quiz 1', questionCount: 3 }],
     })
   })
 
@@ -106,7 +106,7 @@ describe('notifyPinnedUsersNewQuiz', () => {
 
     const quiz = {
       _id: 'quiz456',
-      title: 'Đề thi thử',
+      title: 'Practice Exam',
       course_code: 'MLN122',
       category_id: 'cat456',
     }

@@ -53,20 +53,20 @@ function formatUsedInQuizzes(existing: {
   if (codes.length === 0) {
     // Fallback to quiz_ids if codes are empty
     const ids = (existing.used_in_quiz_ids || []).map((id: any) => String(id).substring(0, 8))
-    if (ids.length === 0) return `Chưa được dùng trong quiz nào`
-    return `Đã dùng trong ${ids.length} quiz (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? '...' : ''})`
+    if (ids.length === 0) return 'Not used in any quiz yet'
+    return `Used in ${ids.length} quizzes (${ids.slice(0, 3).join(', ')}${ids.length > 3 ? '...' : ''})`
   }
   const display = codes.slice(0, 3).join(', ')
   return codes.length > 3
-    ? `${display}... (+${codes.length - 3} khác)`
+    ? `${display}... (+${codes.length - 3} more)`
     : display
 }
 
 /**
- * Kiểm tra câu hỏi có tồn tại trong ngân hàng của môn học không
+ * Checks if a question exists in the course question bank
  * 
- * Layer 1: Tìm bằng question_id (hash text + sorted options)
- * Layer 2: So sánh đáp án theo TEXT (không phải index) để tránh false conflict
+ * Layer 1: Find by question_id (hash of text + sorted options)
+ * Layer 2: Compare answers by TEXT (not index) to avoid false conflicts
  */
 export async function checkQuestionInBank(
   categoryId: Types.ObjectId | string,
@@ -95,7 +95,7 @@ export async function checkQuestionInBank(
     usage_count: existing.usage_count
   }
   
-  // Layer 2: So sánh đáp án theo TEXT (không phải index)
+  // Layer 2: Compare answers by TEXT (not index)
   const sameAnswer = areAnswersSame(
     { options: question.options, correct_answer: question.correct_answer },
     { options: existing.options, correct_answer: existing.correct_answer }
@@ -106,7 +106,7 @@ export async function checkQuestionInBank(
       hasConflict: true,
       existingQuestion: existingInfo,
       conflictType: 'same_answer',
-      message: `Câu hỏi này đã tồn tại trong môn học với cùng đáp án. ${formatUsedInQuizzes(existingInfo)}`
+      message: `This question already exists in this course with the same answer. ${formatUsedInQuizzes(existingInfo)}`
     }
   }
   
@@ -114,17 +114,17 @@ export async function checkQuestionInBank(
     hasConflict: true,
     existingQuestion: existingInfo,
     conflictType: 'different_answer',
-    message: ` MÂU THUẪN: Câu hỏi tương tự đã tồn tại nhưng có đáp án khác!\n` +
+    message: ` CONFLICT: A similar question already exists with a different answer!\n` +
              /* eslint-disable-next-line security/detect-object-injection */
-             `Đáp án hiện tại: ${ensureArray(question.correct_answer).map((i: number) => question.options[i] || ('[' + i + ']')).join(', ')}\n` +
+             `Current answer: ${ensureArray(question.correct_answer).map((i: number) => question.options[i] || ('[' + i + ']')).join(', ')}\n` +
              /* eslint-disable-next-line security/detect-object-injection */
-             `Đáp án trong ngân hàng: ${ensureArray(existing.correct_answer).map((i: number) => existing.options[i] || ('[' + i + ']')).join(', ')}\n` +
+             `Bank answer: ${ensureArray(existing.correct_answer).map((i: number) => existing.options[i] || ('[' + i + ']')).join(', ')}\n` +
              `${formatUsedInQuizzes(existingInfo)}`
   }
 }
 
 /**
- * Kiểm tra nhiều câu hỏi cùng lúc (cho import quiz)
+ * Checks multiple questions simultaneously (for quiz import)
  */
 export async function checkQuestionsInBank(
   categoryId: Types.ObjectId | string,
@@ -132,12 +132,12 @@ export async function checkQuestionsInBank(
 ): Promise<Map<number, ConflictInfo>> {
   const conflicts = new Map<number, ConflictInfo>()
 
-  // Lấy tất cả câu hỏi đã có trong ngân hàng cho môn này (1 query duy nhất)
+  // Fetch all existing questions in the bank for this category (single query)
   const existingQuestions = await QuestionBank.find({
     category_id: categoryId,
   }).lean()
 
-  // Tạo 2 map lookup: theo question_id và theo normalizeTextAST(text)
+  // Create 2 lookup maps: by question_id and by normalizeTextAST(text)
   const existingIdMap = new Map<string, any>()
   const existingTextMap = new Map<string, any>()
 
@@ -146,7 +146,7 @@ export async function checkQuestionsInBank(
     if (q.text) existingTextMap.set(normalizeTextAST(q.text), q)
   }
 
-  // Kiểm tra từng câu hỏi
+  // Check each question
   questions.forEach((question, index) => {
     const questionId = generateQuestionId(question)
     const normalizedText = normalizeTextAST(question.text)
@@ -160,10 +160,10 @@ export async function checkQuestionsInBank(
     }
 
     if (!existing) {
-      return // Không có conflict
+      return // No conflict
     }
 
-    // Layer 2: So sánh đáp án theo TEXT
+    // Layer 2: Compare answers by TEXT
     const sameAnswer = areAnswersSame(
       { options: question.options, correct_answer: question.correct_answer },
       { options: existing.options, correct_answer: existing.correct_answer }
@@ -186,8 +186,8 @@ export async function checkQuestionsInBank(
       existingQuestion: existingInfo,
       conflictType: sameAnswer ? 'same_answer' : 'different_answer',
       message: sameAnswer
-        ? `Câu ${index + 1}: Đã tồn tại (dùng ${existingInfo.usage_count} lần)`
-        : ` Câu ${index + 1}: MÂU THUẪN đáp án với câu đã có trong ngân hàng!`
+        ? `Question ${index + 1}: Already exists (used ${existingInfo.usage_count} times)`
+        : ` Question ${index + 1}: CONFLICT - Answer differs from question in question bank!`
     })
   })
 
@@ -195,7 +195,7 @@ export async function checkQuestionsInBank(
 }
 
 /**
- * Thêm hoặc cập nhật câu hỏi vào ngân hàng
+ * Adds or updates a question in the bank
  */
 export async function addOrUpdateQuestionInBank(
   categoryId: Types.ObjectId | string,
@@ -252,7 +252,7 @@ export async function addOrUpdateQuestionInBank(
 }
 
 /**
- * Đồng bộ tất cả câu hỏi của quiz vào ngân hàng
+ * Synchronizes all quiz questions into the question bank
  */
 export async function syncQuizToQuestionBank(
   categoryId: Types.ObjectId | string,
@@ -275,7 +275,7 @@ export async function syncQuizToQuestionBank(
     
     if (conflict.hasConflict && conflict.conflictType === 'different_answer') {
       conflicts.push(conflict)
-      continue // Không sync câu hỏi có mâu thuẫn
+      continue // Do not sync conflicting questions
     }
     
     const result = await addOrUpdateQuestionInBank(
@@ -302,7 +302,7 @@ export async function syncQuizToQuestionBank(
 }
 
 /**
- * Lấy câu hỏi phổ biến nhất trong môn học
+ * Retrieves the most popular questions in a category
  */
 export async function getPopularQuestions(
   categoryId: Types.ObjectId | string,
@@ -315,9 +315,9 @@ export async function getPopularQuestions(
 }
 
 /**
- * Đổi tên course_code trong tracking của ngân hàng (khi quiz đổi mã).
- * Rename in-place để giữ nguyên usage_count, used_in_quiz_ids — tránh sinh rác
- * (mã cũ còn sót lại trong used_in_quizzes khi quiz được đổi tên).
+ * Renames course_code in bank tracking (when quiz code changes).
+ * In-place rename to preserve usage_count, used_in_quiz_ids
+ * (prevents obsolete codes remaining in used_in_quizzes).
  */
 export async function renameQuizCodeInBank(
   categoryId: Types.ObjectId | string,
@@ -348,7 +348,7 @@ export async function renameQuizCodeInBank(
 }
 
 /**
- * Xóa quiz khỏi usage tracking
+ * Removes a quiz from usage tracking
  */
 export async function removeQuizFromBank(
   categoryId: Types.ObjectId | string,

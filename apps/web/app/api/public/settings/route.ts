@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { getSettings } from '@/lib/modules/auth/models/SiteSettings'
 
-// Force nodejs runtime - NOT edge, vì dùng Mongoose
+// Force nodejs runtime - NOT edge, because Mongoose is used
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/public/settings
- * Public endpoint - trả về maintenance_mode để proxy đọc
- * Không cần auth, chỉ trả về thông tin không nhạy cảm
+ * Public endpoint - returns maintenance_mode for proxy consumption
+ * No auth required, returns only non-sensitive data
  */
 export async function GET() {
   try {
@@ -21,7 +21,7 @@ export async function GET() {
       app_name: settings.app_name,
     }, {
       headers: {
-        'Cache-Control': 'no-store', // Không cache - cần real-time
+        'Cache-Control': 'no-store', // Do not cache - real-time required
       }
     })
   } catch {

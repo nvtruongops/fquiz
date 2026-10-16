@@ -13,7 +13,7 @@ export const GET = withAuth(async (req) => {
 
   const parsed = QuizListQuerySchema.safeParse(queryParams)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Tham số truy vấn không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 })
   }
 
   const { page, limit, category_id, search, status } = parsed.data
@@ -98,7 +98,7 @@ export const POST = withAuth(async (req, { payload }) => {
     const { title, course_code, category_id, description, questions, status = 'published' } = body
 
     if (!course_code || !category_id) {
-      return NextResponse.json({ error: 'Mã môn và danh mục là bắt buộc' }, { status: 400 })
+      return NextResponse.json({ error: 'Quiz code and category are required' }, { status: 400 })
     }
 
     const normalizedCode = String(course_code).trim().toUpperCase()
@@ -106,7 +106,7 @@ export const POST = withAuth(async (req, { payload }) => {
     // Validate category
     const category = await Category.findById(category_id).lean()
     if (!category) {
-      return NextResponse.json({ error: 'Danh mục môn học không tồn tại' }, { status: 400 })
+      return NextResponse.json({ error: 'Category does not exist' }, { status: 400 })
     }
 
     const processedQuestions = (Array.isArray(questions) ? questions : []).map((q: any) => ({
@@ -139,8 +139,8 @@ export const POST = withAuth(async (req, { payload }) => {
   } catch (err: any) {
     console.error('Create quiz error:', err)
     if (err.code === 11000) {
-      return NextResponse.json({ error: 'Mã môn học hoặc quiz đã tồn tại' }, { status: 409 })
+      return NextResponse.json({ error: 'Quiz code or quiz already exists' }, { status: 409 })
     }
-    return NextResponse.json({ error: err.message || 'Lỗi tạo đề thi' }, { status: 500 })
+    return NextResponse.json({ error: err.message || 'Failed to create quiz' }, { status: 500 })
   }
 })

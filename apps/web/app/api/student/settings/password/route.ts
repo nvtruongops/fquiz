@@ -9,14 +9,14 @@ import { User } from '@/lib/modules/auth/models/User'
 export const dynamic = 'force-dynamic'
 
 const ChangePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
-  newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự').max(50, 'Mật khẩu mới quá dài'),
-  confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
+  currentPassword: z.string().min(1, 'Please enter current password'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters').max(50, 'New password is too long'),
+  confirmPassword: z.string().min(1, 'Please confirm your new password'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Mật khẩu nhập lại không khớp',
+  message: 'Passwords do not match',
   path: ['confirmPassword'],
 }).refine((data) => data.currentPassword !== data.newPassword, {
-  message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+  message: 'New password must be different from current password',
   path: ['newPassword'],
 })
 
@@ -45,7 +45,7 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
 
     const currentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash)
     if (!currentPasswordValid) {
-      return NextResponse.json({ error: 'Mật khẩu hiện tại không đúng' }, { status: 401 })
+      return NextResponse.json({ error: 'Incorrect current password' }, { status: 401 })
     }
 
     const password_hash = await bcrypt.hash(newPassword, 10)

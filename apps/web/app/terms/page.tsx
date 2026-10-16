@@ -8,11 +8,11 @@ import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContai
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Điều khoản sử dụng — FQuiz',
-  description: 'Quy định và Điều khoản sử dụng dịch vụ ôn thi trắc nghiệm FQuiz.',
+  title: 'Terms of Service — FQuiz',
+  description: 'Terms of Service and regulations for using FQuiz.',
   openGraph: {
-    title: 'Điều khoản sử dụng — FQuiz',
-    description: 'Quy định và Điều khoản sử dụng dịch vụ ôn thi trắc nghiệm FQuiz.',
+    title: 'Terms of Service — FQuiz',
+    description: 'Terms of Service and regulations for using FQuiz.',
     type: 'website',
   },
 }
@@ -30,12 +30,12 @@ export default async function TermsPage() {
             className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-primary/90 transition-colors group bg-card backdrop-blur-md px-4 py-2 rounded-full border border-border shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span>Quay lại trang chủ</span>
+            <span>Back to Home</span>
           </Link>
 
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-              Quy định & Pháp lý
+              Rules & Legal
             </span>
           </div>
         </div>
@@ -47,12 +47,12 @@ export default async function TermsPage() {
           <aside className="legal-section lg:col-span-4 lg:sticky lg:top-24 space-y-5">
             <div className="bg-card backdrop-blur-md border border-border rounded-3xl p-6 shadow-2xs space-y-5">
               <div className="space-y-1">
-                <p className="text-[10px] font-black tracking-widest text-primary uppercase">Trung tâm Pháp lý</p>
+                <p className="text-[10px] font-black tracking-widest text-primary uppercase">Legal Center</p>
                 <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-                  Điều khoản sử dụng
+                  Terms of Service
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground pt-1">
-                  Cập nhật lần cuối: Tháng 4, 2026
+                  Last updated: April 2026
                 </p>
               </div>
 
@@ -60,14 +60,14 @@ export default async function TermsPage() {
 
               {/* Table of Contents Navigation */}
               <nav className="space-y-1.5">
-                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Mục lục nhanh</p>
+                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Table of Contents</p>
                 <a
                   href="#account"
                   className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-card-foreground hover:bg-primary/10 hover:text-primary transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck className="w-4 h-4 text-primary" />
-                    <span>1. Đăng ký & Bảo mật</span>
+                    <span>1. Registration & Security</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -78,7 +78,7 @@ export default async function TermsPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Copyright className="w-4 h-4 text-success-fg" />
-                    <span>2. Bản quyền nội dung</span>
+                    <span>2. Intellectual Property</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -89,7 +89,7 @@ export default async function TermsPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <AlertTriangle className="w-4 h-4 text-warning-fg" />
-                    <span>3. Miễn trừ trách nhiệm</span>
+                    <span>3. Disclaimer</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -100,7 +100,7 @@ export default async function TermsPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <RefreshCw className="w-4 h-4 text-primary" />
-                    <span>4. Thay đổi điều khoản</span>
+                    <span>4. Modifications</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </a>
@@ -110,13 +110,13 @@ export default async function TermsPage() {
 
               {/* Quick Link to Privacy */}
               <div className="bg-muted p-4 rounded-2xl border border-border space-y-2">
-                <p className="text-[11px] font-bold text-muted-foreground">Bạn muốn xem Chính sách bảo mật?</p>
+                <p className="text-[11px] font-bold text-muted-foreground">Looking for Privacy Policy?</p>
                 <Link
                   href="/privacy"
                   className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:underline"
                 >
                   <Shield className="w-3.5 h-3.5" />
-                  <span>Xem Chính sách bảo mật</span>
+                  <span>View Privacy Policy</span>
                 </Link>
               </div>
             </div>
@@ -125,9 +125,9 @@ export default async function TermsPage() {
           {/* Right Column: Detailed Document Stream */}
           <div className="lg:col-span-8 space-y-6">
             <div className="legal-section bg-primary/10 border border-primary/20 p-6 rounded-3xl space-y-2">
-              <p className="text-xs font-black uppercase tracking-wider text-primary">Lời ngỏ sử dụng</p>
+              <p className="text-xs font-black uppercase tracking-wider text-primary">Introduction</p>
               <p className="text-sm sm:text-base text-foreground font-medium leading-relaxed">
-                Chào mừng bạn đến với FQuiz. Bằng việc truy cập và sử dụng nền tảng của chúng tôi, bạn đồng ý tuân thủ các quy định được nêu trong Điều khoản sử dụng này. Nếu không đồng ý, vui lòng dừng sử dụng dịch vụ.
+                Welcome to FQuiz. By accessing and using our platform, you agree to comply with and be bound by these Terms of Service. If you do not agree, please discontinue using the service immediately.
               </p>
             </div>
 
@@ -138,14 +138,14 @@ export default async function TermsPage() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 01</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Đăng ký & Bảo mật tài khoản</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 01</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Account Registration & Security</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>Bạn có trách nhiệm tự bảo vệ thông tin đăng nhập cá nhân (Tên đăng nhập, Mật khẩu).</li>
-                <li>Không chia sẻ hoặc sử dụng chung tài khoản với người khác. Mọi hoạt động phát sinh từ tài khoản của bạn sẽ do bạn hoàn toàn chịu trách nhiệm.</li>
-                <li>FQuiz có quyền tạm khóa hoặc vô hiệu hóa tài khoản vĩnh viễn nếu phát hiện có hành vi gian lận, phá hoại hoặc sử dụng sai mục đích cấp phép.</li>
+                <li>You are responsible for maintaining the confidentiality of your login credentials (username and password).</li>
+                <li>Do not share accounts. You are solely responsible for all activities and submissions conducted under your account.</li>
+                <li>FQuiz reserves the right to suspend or terminate accounts engaging in fraudulent activities, abuse, or unauthorized exploitation.</li>
               </ul>
             </section>
 
@@ -156,13 +156,13 @@ export default async function TermsPage() {
                   <Copyright className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 02</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Bản quyền nội dung</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 02</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Intellectual Property & Content</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>Toàn bộ bộ câu hỏi, tài liệu ôn tập, thuật toán xử lý và giao diện hiển thị trên FQuiz thuộc quyền sở hữu trí tuệ của FQuiz.</li>
-                <li>Nghiêm cấm mọi hành vi sao chép, phát tán, cào dữ liệu (scraping), hoặc thương mại hóa nội dung từ hệ thống khi chưa có sự cho phép bằng văn bản.</li>
+                <li>All quiz questions, learning materials, algorithms, and interface designs on FQuiz are the intellectual property of FQuiz.</li>
+                <li>Unauthorized copying, distribution, automated scraping, or commercialization of content without prior written consent is strictly prohibited.</li>
               </ul>
             </section>
 
@@ -173,13 +173,13 @@ export default async function TermsPage() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Điều 03</span>
-                  <h2 className="text-lg sm:text-xl font-black text-foreground">Quy định học tập & Miễn trừ trách nhiệm</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Section 03</span>
+                  <h2 className="text-lg sm:text-xl font-black text-foreground">Educational Disclaimer</h2>
                 </div>
               </div>
               <ul className="list-disc pl-6 space-y-2.5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                <li>FQuiz là một nền tảng công nghệ giáo dục (EdTech) cung cấp môi trường luyện thi giả lập. Chúng tôi không đảm bảo các câu hỏi trên hệ thống sẽ xuất hiện chính xác trong các kỳ thi thực tế của bạn.</li>
-                <li>FQuiz không chịu trách nhiệm đánh giá tư cách đạo đức hay kết quả học tập cuối cùng của bất kỳ cá nhân nào. Mọi nỗ lực gian lận trong thi cử thật thông qua ứng dụng công nghệ không thuộc phạm vi trách nhiệm của chúng tôi.</li>
+                <li>FQuiz is an educational technology platform providing simulated practice environments. We do not guarantee that practice questions will mirror actual official examinations.</li>
+                <li>FQuiz is not responsible for academic standing or official test outcomes. Users must adhere to their educational institution&apos;s academic integrity policies.</li>
               </ul>
             </section>
 
@@ -190,12 +190,12 @@ export default async function TermsPage() {
                   <RefreshCw className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Điều 04</span>
-                  <h2 className="text-lg sm:text-xl font-black text-card-foreground">Thay đổi điều khoản</h2>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Section 04</span>
+                  <h2 className="text-lg sm:text-xl font-black text-card-foreground">Modifications to Terms</h2>
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
-                FQuiz bảo lưu quyền cập nhật Điều khoản sử dụng bất cứ lúc nào để phù hợp với sự phát triển của hệ thống và tuân thủ pháp luật. Phiên bản mới sẽ có hiệu lực ngay khi được đăng tải trên trang này.
+                FQuiz reserves the right to update these Terms of Service at any time to reflect platform improvements or regulatory compliance. Continued use of the platform constitutes acceptance of revised terms.
               </p>
             </section>
           </div>

@@ -27,7 +27,7 @@ export const GET = withAuth(async (
     
     if (session.status === 'expired') {
       return NextResponse.json({
-        error: 'Phiên làm bài đã tự động kết thúc.',
+        error: 'Session has ended automatically.',
         expired: true,
       }, { status: 410 })
     }
@@ -68,7 +68,7 @@ export const GET = withAuth(async (
     // Get question order (use existing or create sequential)
     const questionOrder = session.question_order || Array.from({ length: rawQuestions.length }, (_, i) => i)
 
-    // Đảm bảo mọi câu hỏi đều có question_id (tự sinh nếu thiếu)
+    // Ensure all questions have a question_id (generate if missing)
     let hasMissingId = false
     for (const q of rawQuestions) {
       if (q && !q.question_id) {
@@ -76,14 +76,23 @@ export const GET = withAuth(async (
         hasMissingId = true
       }
     }
-    // Tự động repair DB nếu có câu thiếu question_id (chỉ sửa khi rawQuestions lấy trực tiếp từ Quiz gốc)
+    // Auto-repair DB if any question is missing question_id (only when rawQuestions is from root Quiz)
     if (hasMissingId && !isFromSessionCache && Array.isArray(quiz.questions) && quiz.questions.length === rawQuestions.length) {
       await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 
     // Batch lookup public usage via QuestionUsageService (Single Source of Truth)
-    const questionIds = questionOrder.map((i: number) => rawQuestions[i]?.question_id).filter(Boolean)
-    const usageMap = await QuestionUsageService.getBatchQuestionPublicUsage(questionIds)
+    const questionQueries = questionOrder.map((i: number) => {
+      const q = rawQuestions[i]
+      return {
+        question_id: q?.question_id,
+        text: q?.text,
+      }
+    })
+    const usageMap = await QuestionUsageService.getBatchQuestionPublicUsage(
+      questionQueries,
+      quiz?.course_code
+    )
 
     // Set of display indexes that have already been answered by the student
     const answeredDisplayIndexes = new Set(
@@ -104,7 +113,9 @@ export const GET = withAuth(async (
       }
 
       const isQuestionAnswered = answeredDisplayIndexes.has(displayIndex)
-      const usageInfo = q.question_id ? usageMap.get(q.question_id) : undefined
+      const usageInfo = q.question_id
+        ? usageMap.get(q.question_id)
+        : (q.text ? usageMap.get(q.text) : undefined)
 
       const questionWithUsage = {
         ...baseQuestion,

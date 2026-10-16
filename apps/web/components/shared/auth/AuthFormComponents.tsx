@@ -18,7 +18,7 @@ export function DevCodeAndRetryMessage({
           exit={{ opacity: 0, y: -4 }}
           className="text-[11px] font-bold text-warning-fg ml-1 mt-1"
         >
-          Vui lòng thử lại sau {retryAfterSec} giây.
+          Please try again after {retryAfterSec} seconds.
         </motion.p>
       )}
       {devCode && (
@@ -28,7 +28,7 @@ export function DevCodeAndRetryMessage({
           exit={{ opacity: 0, y: -4 }}
           className="text-[11px] font-bold text-primary ml-1 mt-1"
         >
-          Mã test (dev): {devCode}
+          Dev test code: {devCode}
         </motion.p>
       )}
     </AnimatePresence>

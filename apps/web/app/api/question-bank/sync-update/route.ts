@@ -22,7 +22,7 @@ const SyncUpdateSchema = z.object({
 
 /**
  * POST /api/question-bank/sync-update
- * Cập nhật câu hỏi trong Question Bank và TẤT CẢ quiz đang dùng
+ * Update question in Question Bank and ALL referencing quizzes
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
@@ -195,7 +195,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       updated_quizzes: updatedQuizCount,
       total_quizzes: affectedQuizzes.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Đã cập nhật ${updatedQuizCount}/${affectedQuizzes.length} quiz thành công`,
+      message: `Successfully updated ${updatedQuizCount}/${affectedQuizzes.length} quizzes`,
     })
   } catch (error: any) {
     console.error('Error syncing update:', error)

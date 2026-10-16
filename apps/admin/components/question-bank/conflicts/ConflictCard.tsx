@@ -31,12 +31,12 @@ export function ConflictCard({ conflict, selected, onClick }: ConflictCardProps)
           {conflict.text}
         </p>
         <Badge variant="destructive" className="shrink-0">
-          {conflict.answer_groups.length} đáp án
+          {conflict.answer_groups.length} answer{conflict.answer_groups.length === 1 ? '' : 's'}
         </Badge>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{conflict.total_variants} quiz</span>
+        <span>{conflict.total_variants} {conflict.total_variants === 1 ? 'quiz' : 'quizzes'}</span>
         <span>•</span>
         <span>
           {conflict.answer_groups.reduce((sum, g) => sum + g.count, 0)} variants

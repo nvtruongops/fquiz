@@ -27,9 +27,9 @@ const AutoSyncSchema = z.object({
 
 /**
  * POST /api/question-bank/auto-sync
- * Tự động sync Question Bank khi save quiz
- * - Xóa câu cũ không còn dùng
- * - Thêm/update câu mới
+ * Automatically sync Question Bank when saving quiz
+ * - Delete old questions no longer in use
+ * - Add/update new questions
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {

@@ -6,7 +6,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['no-mock-data'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc NO_MOCK_DATA bị tắt.');
+      ctx.logger.pass('Rule NO_MOCK_DATA is disabled.');
       return { passed: true };
     }
 
@@ -44,11 +44,11 @@ module.exports = {
     searchDirs.forEach(dir => scanDir(dir));
 
     if (mockCount > 0) {
-      ctx.logger.warn(`Phát hiện ${mockCount} trường hợp nghi vấn mock data trong production API/modules.`);
+      ctx.logger.warn(`Detected ${mockCount} suspected mock data instance(s) in production API/modules.`);
       return { passed: true };
     }
 
-    ctx.logger.pass('Không phát hiện hardcoded mock objects nào trong production API/modules.');
+    ctx.logger.pass('No hardcoded mock objects detected in production API/modules.');
     return { passed: true };
   }
 };

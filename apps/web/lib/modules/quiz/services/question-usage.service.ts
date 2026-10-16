@@ -7,6 +7,13 @@ export interface QuestionUsageResult {
   quizzes: string[]
 }
 
+export interface QuestionUsageQueryItem {
+  question_id?: string
+  text?: string
+}
+
+export type QuestionUsageQuery = string | QuestionUsageQueryItem
+
 /**
  * QuestionUsageService
  * Single Source of Truth resolver for question usage across public quizzes.
@@ -14,109 +21,155 @@ export interface QuestionUsageResult {
  * Rules:
  * 1. Count is strictly equal to unique public course_code array length (count === quizzes.length).
  * 2. Only public quizzes matching getPublicQuizFilter() are counted.
- * 3. QuestionBank is used as a fast denormalized cache, falling back to direct Quiz collection query.
+ * 3. Supports lookup by exact question_id AND question text to bridge QuestionBank cache and Quiz collection seamlessly.
+ * 4. Combines results from both QuestionBank (denormalized fast cache) and direct Quiz collection queries.
  */
 export class QuestionUsageService {
   /**
-   * Get public quiz usage for a single question_id
+   * Normalize course code and filter out invalid/temporary codes
    */
-  static async getQuestionPublicUsage(questionId: string): Promise<QuestionUsageResult> {
-    if (!questionId) {
-      return { count: 0, quizzes: [] }
-    }
-    const map = await this.getBatchQuestionPublicUsage([questionId])
-    return map.get(questionId) || { count: 0, quizzes: [] }
+  private static normalizeCourseCode(code: unknown): string | null {
+    if (typeof code !== 'string') return null
+    const trimmed = code.trim().toUpperCase()
+    if (!trimmed || trimmed.startsWith('MIX_') || trimmed.startsWith('TEMP_')) return null
+    return trimmed
   }
 
   /**
-   * Get public quiz usage for a batch of question_ids using single Mongo queries
+   * Get public quiz usage for a single question item (question_id string or object with question_id/text)
+   */
+  static async getQuestionPublicUsage(
+    query: QuestionUsageQuery,
+    currentCourseCode?: string
+  ): Promise<QuestionUsageResult> {
+    if (!query) {
+      return { count: 0, quizzes: [] }
+    }
+    const map = await this.getBatchQuestionPublicUsage([query], currentCourseCode)
+    const key = typeof query === 'string' ? query : query.question_id || query.text || ''
+    return map.get(key) || { count: 0, quizzes: [] }
+  }
+
+  /**
+   * Get public quiz usage for a batch of question items
    */
   static async getBatchQuestionPublicUsage(
-    questionIds: string[]
+    items: QuestionUsageQuery[],
+    currentCourseCode?: string
   ): Promise<Map<string, QuestionUsageResult>> {
     const resultMap = new Map<string, QuestionUsageResult>()
-    const validIds = Array.from(
-      new Set((questionIds || []).filter((id): id is string => typeof id === 'string' && id.trim().length > 0))
-    )
-
-    if (validIds.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       return resultMap
     }
 
-    // Initialize all IDs with empty default
-    validIds.forEach((id) => resultMap.set(id, { count: 0, quizzes: [] }))
+    const validCurrentCode = this.normalizeCourseCode(currentCourseCode)
 
-    // 1. Primary lookup via QuestionBank (denormalized cache)
-    const bankDocs = await QuestionBank.find({
-      question_id: { $in: validIds },
-    })
-      .select('question_id used_in_quizzes')
-      .lean()
+    // Extract valid search keys
+    const validIds: string[] = []
+    const validTexts: string[] = []
 
-    const missingIds: string[] = []
-
-    for (const doc of bankDocs) {
-      const uniqueCodes: string[] = Array.from(
-        new Set<string>(
-          (doc.used_in_quizzes || [])
-            .map((c: string) => (typeof c === 'string' ? c.trim().toUpperCase() : ''))
-            .filter((c: string) => c.length > 0 && !c.startsWith('MIX_') && !c.startsWith('TEMP_'))
-        )
-      )
-
-      if (uniqueCodes.length > 0) {
-        resultMap.set(doc.question_id, {
-          count: uniqueCodes.length,
-          quizzes: uniqueCodes,
-        })
-      } else {
-        missingIds.push(doc.question_id)
+    for (const item of items) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim()
+        if (trimmed.length > 0) validIds.push(trimmed)
+      } else if (item && typeof item === 'object') {
+        if (typeof item.question_id === 'string' && item.question_id.trim().length > 0) {
+          validIds.push(item.question_id.trim())
+        }
+        if (typeof item.text === 'string' && item.text.trim().length > 0) {
+          validTexts.push(item.text.trim())
+        }
       }
     }
 
-    // Determine IDs that weren't found in QuestionBank cache or had empty cache
-    validIds.forEach((id) => {
-      if (!bankDocs.some((d) => d.question_id === id)) {
-        missingIds.push(id)
-      }
-    })
+    const uniqueIds = Array.from(new Set(validIds))
+    const uniqueTexts = Array.from(new Set(validTexts))
 
-    // 2. Direct Fallback Query to Quiz Collection for missing IDs
-    if (missingIds.length > 0) {
-      const publicQuizzes = await Quiz.find({
-        ...getPublicQuizFilter(),
-        $or: [
-          { 'questions.question_id': { $in: missingIds } },
-        ],
-      })
-        .select('course_code questions.question_id')
-        .lean()
+    if (uniqueIds.length === 0 && uniqueTexts.length === 0) {
+      return resultMap
+    }
 
-      const directMap = new Map<string, Set<string>>()
-      missingIds.forEach((id) => directMap.set(id, new Set()))
+    // Build parallel database queries
+    const bankOr: Record<string, unknown>[] = []
+    if (uniqueIds.length > 0) bankOr.push({ question_id: { $in: uniqueIds } })
+    if (uniqueTexts.length > 0) bankOr.push({ text: { $in: uniqueTexts } })
 
-      for (const quiz of publicQuizzes) {
-        const code = (quiz.course_code || '').trim().toUpperCase()
-        if (!code || code.startsWith('MIX_') || code.startsWith('TEMP_')) continue
+    const quizOr: Record<string, unknown>[] = []
+    if (uniqueIds.length > 0) quizOr.push({ 'questions.question_id': { $in: uniqueIds } })
+    if (uniqueTexts.length > 0) quizOr.push({ 'questions.text': { $in: uniqueTexts } })
 
-        if (Array.isArray(quiz.questions)) {
-          for (const q of quiz.questions) {
-            if (q.question_id && directMap.has(q.question_id)) {
-              directMap.get(q.question_id)?.add(code)
-            }
+    const [bankDocs, publicQuizzes] = await Promise.all([
+      bankOr.length > 0
+        ? QuestionBank.find({ $or: bankOr })
+            .select('question_id text used_in_quizzes')
+            .lean()
+        : [],
+      quizOr.length > 0
+        ? Quiz.find({
+            ...getPublicQuizFilter(),
+            $or: quizOr,
+          })
+            .select('course_code questions.question_id questions.text')
+            .lean()
+        : [],
+    ])
+
+    // Aggregate matches for each item
+    for (const item of items) {
+      const qId = typeof item === 'string' ? item.trim() : (item?.question_id || '').trim()
+      const qText = typeof item === 'object' && item?.text ? item.text.trim() : ''
+
+      if (!qId && !qText) continue
+
+      const codeSet = new Set<string>()
+
+      // 1. Check QuestionBank docs
+      for (const doc of bankDocs as any[]) {
+        const matchId = qId && doc.question_id === qId
+        const matchText = qText && doc.text && doc.text.trim() === qText
+
+        if (matchId || matchText) {
+          for (const c of doc.used_in_quizzes || []) {
+            const norm = QuestionUsageService.normalizeCourseCode(c)
+            if (norm) codeSet.add(norm)
           }
         }
       }
 
-      directMap.forEach((codeSet, qid) => {
-        const uniqueCodes: string[] = Array.from(codeSet)
-        if (uniqueCodes.length > 0) {
-          resultMap.set(qid, {
-            count: uniqueCodes.length,
-            quizzes: uniqueCodes,
-          })
+      // 2. Check Public Quizzes docs
+      for (const quiz of publicQuizzes as any[]) {
+        const normCode = QuestionUsageService.normalizeCourseCode(quiz.course_code)
+        if (!normCode) continue
+
+        if (Array.isArray(quiz.questions)) {
+          const hasMatch = quiz.questions.some(
+            (q: any) =>
+              (qId && q.question_id === qId) ||
+              (qText && typeof q.text === 'string' && q.text.trim() === qText)
+          )
+          if (hasMatch) {
+            codeSet.add(normCode)
+          }
         }
-      })
+      }
+
+      // 3. Fallback/Include current quiz course code if available
+      if (validCurrentCode) {
+        codeSet.add(validCurrentCode)
+      }
+
+      const uniqueCodes = Array.from(codeSet)
+      const usageResult: QuestionUsageResult = {
+        count: uniqueCodes.length,
+        quizzes: uniqueCodes,
+      }
+
+      if (typeof item === 'string') {
+        resultMap.set(item, usageResult)
+      } else if (item && typeof item === 'object') {
+        if (item.question_id) resultMap.set(item.question_id, usageResult)
+        if (item.text) resultMap.set(item.text, usageResult)
+      }
     }
 
     return resultMap

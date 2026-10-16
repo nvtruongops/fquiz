@@ -17,7 +17,7 @@ import {
   COOKIE_MAX_AGE
 } from '@/lib/core/constants'
 
-// proxy.ts luôn chạy trên Node.js runtime trong Next.js 16 (không cần khai báo)
+// proxy.ts runs on Node.js runtime in Next.js 16 (no explicit export needed)
 
 async function getMaintenanceStatus(): Promise<boolean> {
   try {
@@ -35,7 +35,7 @@ export function resetMaintenanceCache() {
 
 const PUBLIC_PATHS = new Set(['/', '/explore', '/community', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
 const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/cleanup-deleted-accounts', '/api/security/csp-report'])
-const STUDENT_PATHS = ['/dashboard', '/history', '/my-quizzes', '/profile', '/settings', '/quiz']
+const STUDENT_PATHS = ['/dashboard', '/history', '/profile', '/settings', '/quiz']
 const TEACHER_PATHS = ['/teacher']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -255,7 +255,7 @@ async function handleMaintenanceMode(request: NextRequest, pathname: string, req
 
   if (pathname.startsWith('/api/')) {
     return applyCors(request, NextResponse.json(
-      { error: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.' },
+      { error: 'System is currently undergoing maintenance. Please try again later.' },
       { status: 503, headers: { 'x-request-id': requestId } }
     ))
   }

@@ -46,16 +46,16 @@ export const IncompleteSessionBanner = React.memo(function IncompleteSessionBann
 
       <div className="flex items-start gap-3.5 min-w-0 relative z-10">
         <div className="w-11 h-11 rounded-2xl bg-warning-bg border border-warning-border flex items-center justify-center shrink-0 shadow-xs">
-          <Flame className="w-6 h-6 text-warning-fg animate-bounce" />
+          <Flame aria-hidden="true" className="w-6 h-6 text-warning-fg animate-bounce" />
         </div>
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-black uppercase tracking-wider text-warning-fg bg-warning-bg px-2.5 py-0.5 rounded-full border border-warning-border">
-              Chưa hoàn thành • {item.quizCode}
+              In Progress • {item.quizCode}
             </span>
             {totalCount > 0 ? (
               <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border/40">
-                {answeredCount}/{totalCount} câu
+                {answeredCount}/{totalCount} answered
               </span>
             ) : null}
           </div>
@@ -63,9 +63,9 @@ export const IncompleteSessionBanner = React.memo(function IncompleteSessionBann
         </div>
       </div>
 
-      <Button asChild size="sm" className="bg-primary hover:bg-primary-hover text-primary-foreground font-black rounded-xl text-xs h-10 px-5 w-full sm:w-fit shrink-0 shadow-xs relative z-10 transition-colors mt-2">
+      <Button asChild size="sm" className="bg-primary hover:bg-primary-hover text-primary-foreground font-black rounded-xl text-xs h-11 px-5 w-full sm:w-fit shrink-0 shadow-xs relative z-10 transition-colors mt-2 active:scale-[0.98]">
         <Link href={resumeHref}>
-          Tiếp tục ngay <ArrowRight className="w-4 h-4 ml-1.5" />
+          Resume Quiz <ArrowRight aria-hidden="true" className="w-4 h-4 ml-1.5" />
         </Link>
       </Button>
     </div>

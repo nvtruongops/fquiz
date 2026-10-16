@@ -11,14 +11,14 @@ interface DevOnlyGuardProps {
   featureName?: string
 }
 
-export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }: DevOnlyGuardProps) {
+export function DevOnlyGuard({ children, featureName = 'AI Language Learning' }: DevOnlyGuardProps) {
   const { data: authData, isLoading } = useAuth()
 
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-xs font-semibold text-muted-foreground">Đang xác thực quyền truy cập...</p>
+        <p className="text-xs font-semibold text-muted-foreground">Authenticating access permissions...</p>
       </div>
     )
   }
@@ -39,7 +39,7 @@ export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }:
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-warning-bg border border-warning-border text-warning-fg text-xs font-bold shadow-xs">
             <Clock className="w-3.5 h-3.5 text-warning-fg animate-pulse" />
-            <span>Sắp Ra Mắt (Coming Soon)</span>
+            <span>Coming Soon</span>
           </div>
 
           {/* Icon */}
@@ -50,10 +50,10 @@ export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }:
           {/* Heading */}
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-black text-card-foreground tracking-tight">
-              Phân Hệ {featureName}
+              {featureName} Module
             </h1>
             <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-              Tính năng Trợ lý AI Ngôn ngữ hiện đang thử nghiệm giới hạn dành cho các tài khoản <span className="font-bold text-primary">Developer</span>. Chúng tôi đang hoàn thiện trải nghiệm tốt nhất cho người dùng!
+              The AI Language Assistant is currently in limited testing for <span className="font-bold text-primary">Developer</span> accounts. We are polishing the experience for everyone!
             </p>
           </div>
 
@@ -61,18 +61,18 @@ export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }:
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-2">
             <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-1">
               <Sparkles className="w-4 h-4 text-warning-fg" />
-              <h3 className="text-xs font-bold text-card-foreground">Phân tích chuyên sâu</h3>
-              <p className="text-[11px] text-muted-foreground leading-snug">Học từ vựng, ngữ pháp và kịch bản bằng Gemini AI.</p>
+              <h3 className="text-xs font-bold text-card-foreground">In-depth Analysis</h3>
+              <p className="text-[11px] text-muted-foreground leading-snug">Learn vocabulary, grammar, and dialogues powered by Gemini AI.</p>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-1">
               <Layers className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-bold text-card-foreground">Lộ trình cá nhân</h3>
-              <p className="text-[11px] text-muted-foreground leading-snug">Lộ trình bài học tùy chỉnh theo từng cấp độ CEFR/JLPT.</p>
+              <h3 className="text-xs font-bold text-card-foreground">Personalized Roadmap</h3>
+              <p className="text-[11px] text-muted-foreground leading-snug">Lesson pathways customized to your CEFR/JLPT level.</p>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-1">
               <Compass className="w-4 h-4 text-info-fg" />
-              <h3 className="text-xs font-bold text-card-foreground">Flashcards tương tác</h3>
-              <p className="text-[11px] text-muted-foreground leading-snug">Thẻ ghi nhớ thông minh tự động trích xuất từ vựng.</p>
+              <h3 className="text-xs font-bold text-card-foreground">Interactive Flashcards</h3>
+              <p className="text-[11px] text-muted-foreground leading-snug">Smart flashcards with automated vocabulary extraction.</p>
             </div>
           </div>
 
@@ -80,12 +80,12 @@ export function DevOnlyGuard({ children, featureName = 'Học Ngôn Ngữ AI' }:
           <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
             <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold shadow-md cursor-pointer">
               <Link href="/dashboard">
-                <ArrowLeft className="w-4 h-4 mr-1.5" /> Quay về Trang chủ
+                <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Dashboard
               </Link>
             </Button>
             <Button asChild variant="outline" className="rounded-xl text-xs font-bold border-border text-card-foreground hover:bg-muted cursor-pointer">
               <Link href="/explore">
-                <Compass className="w-4 h-4 mr-1.5 text-info-fg" /> Ôn tập Trắc nghiệm
+                <Compass className="w-4 h-4 mr-1.5 text-info-fg" /> Explore Quizzes
               </Link>
             </Button>
           </div>

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const bodyWithCode = body as { verificationCode?: unknown }
     const verificationCode = typeof bodyWithCode.verificationCode === 'string' ? bodyWithCode.verificationCode.trim() : ''
     if (!isValidVerificationCode(verificationCode)) {
-      return NextResponse.json({ error: 'Mã xác thực không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
     }
 
     const { username, email, password } = result.data
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     const existingEmail = await User.findOne({ email: normalizedEmail })
     if (existingEmail) {
-      return NextResponse.json({ error: 'Email đã được sử dụng' }, { status: 409 })
+      return NextResponse.json({ error: 'Email is already in use' }, { status: 409 })
     }
 
     const codeRecord = await EmailVerification.findOne({
@@ -62,11 +62,11 @@ export async function POST(request: Request) {
     })
 
     if (!codeRecord) {
-      return NextResponse.json({ error: 'Mã xác thực đã hết hạn hoặc không tồn tại' }, { status: 400 })
+      return NextResponse.json({ error: 'Verification code expired or does not exist' }, { status: 400 })
     }
 
     if (codeRecord.attempts >= 5) {
-      return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+      return NextResponse.json({ error: 'Too many attempts. Please request a new code.' }, { status: 429 })
     }
 
     const expectedHash = hashVerificationCode(verificationCode)
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         { _id: codeRecord._id },
         { $inc: { attempts: 1 } }
       )
-      return NextResponse.json({ error: 'Mã xác thực không đúng' }, { status: 400 })
+      return NextResponse.json({ error: 'Incorrect verification code' }, { status: 400 })
     }
 
     // Case-insensitive username check
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       username_lower: username.toLowerCase().trim() 
     })
     if (existingUsername) {
-      return NextResponse.json({ error: 'Username đã được sử dụng' }, { status: 409 })
+      return NextResponse.json({ error: 'Username is already taken' }, { status: 409 })
     }
 
     const password_hash = await bcrypt.hash(password, 12)

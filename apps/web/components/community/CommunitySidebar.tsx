@@ -24,7 +24,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
       <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-6 shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-foreground font-black text-sm border-b border-border pb-3">
           <Flame className="w-4 h-4 text-amber-400" />
-          <span>Chủ đề thảo luận nổi bật</span>
+          <span>Featured Topics</span>
         </div>
 
         {postsData?.featuredTopics && postsData.featuredTopics.length > 0 ? (
@@ -54,7 +54,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
                       'text-[10px] font-bold',
                       isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'
                     )}>
-                      {topic.postCount} bài
+                      {topic.postCount} posts
                     </span>
                   </div>
                 </button>
@@ -63,7 +63,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
           </div>
         ) : (
           <p className="text-xs font-medium text-muted-foreground text-center py-2">
-            Chưa có chủ đề hashtag nào
+            No hashtag topics yet
           </p>
         )}
       </div>
@@ -72,16 +72,16 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
       <div className="bg-card border border-primary/20 rounded-3xl p-6 shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-primary font-black text-sm">
           <Lightbulb className="w-4 h-4 text-amber-400" />
-          <span>Đóng góp ý kiến cho FQuiz</span>
+          <span>Feedback & Suggestions</span>
         </div>
         <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-          Bạn gặp phải sự cố kỹ thuật hoặc có ý tưởng tính năng mới? Đừng ngần ngại gửi feedback cho chúng tôi!
+          Encountered a technical issue or have a feature idea? Do not hesitate to share your feedback with us!
         </p>
         <Button
           onClick={onOpenFeedback}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs py-2.5 shadow-xs"
         >
-          Gửi góp ý ngay
+          Submit Feedback
         </Button>
       </div>
     </aside>

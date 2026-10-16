@@ -6,7 +6,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['lint-issues'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc LINT_ISSUES bị tắt.');
+      ctx.logger.pass('Rule LINT_ISSUES is disabled.');
       return { passed: true };
     }
 
@@ -41,7 +41,7 @@ module.exports = {
                   file: relPath,
                   line: idx + 1,
                   type: 'Empty Catch Block',
-                  message: 'Khối catch rỗng nuốt exception (Empty catch block swallows errors)'
+                  message: 'Empty catch block swallows errors'
                 });
               }
             });
@@ -55,7 +55,7 @@ module.exports = {
                   file: relPath,
                   line: idx + 1,
                   type: 'Explicit Any Type',
-                  message: 'Lạm dụng kiểu dữ liệu :any làm mất tính Type-safe'
+                  message: 'Excessive use of :any bypasses type safety'
                 });
               }
             });
@@ -67,14 +67,14 @@ module.exports = {
     searchDirs.forEach(dir => scanDir(dir));
 
     if (issues.length > 0) {
-      ctx.logger.warn(`Phát hiện ${issues.length} cảnh báo Lint Issues trong mã nguồn:`);
+      ctx.logger.warn(`Detected ${issues.length} Lint Issue warning(s) in source code:`);
       issues.slice(0, 15).forEach(issue => {
         ctx.logger.warn(`  - [${issue.type}] ${issue.file}:${issue.line} -> ${issue.message}`);
       });
       return { passed: true };
     }
 
-    ctx.logger.pass('Không phát hiện lỗi Lint Issues nào trong mã nguồn fquiz (0 Unused/Swallowed Errors/Explicit Any).');
+    ctx.logger.pass('No lint issues detected in fquiz source code (0 unused/swallowed errors/explicit any).');
     return { passed: true };
   }
 };

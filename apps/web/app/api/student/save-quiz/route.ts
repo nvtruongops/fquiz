@@ -42,7 +42,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         unsaved: true,
         quizId: sourceQuiz._id.toString(),
         courseCode: sourceQuiz.course_code,
-        message: `Đã xóa mã quiz ${sourceQuiz.course_code} khỏi Bộ đề của tôi`,
+        message: `Unsaved quiz code ${sourceQuiz.course_code}`,
       }, { status: 200 })
     }
 
@@ -65,7 +65,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       saved: true,
       quiz: newQuiz, 
       courseCode: sourceQuiz.course_code,
-      message: `Đã lưu mã quiz ${sourceQuiz.course_code}` 
+      message: `Saved quiz code ${sourceQuiz.course_code}` 
     })
 
   } catch (error: any) {

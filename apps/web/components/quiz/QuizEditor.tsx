@@ -12,7 +12,7 @@ const QuizImportPanel = dynamic(
     loading: () => (
       <div className="flex items-center justify-center p-8 bg-card rounded-2xl border border-border">
         <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-        <span className="text-xs font-bold text-muted-foreground">Đang tải công cụ nhập đề...</span>
+        <span className="text-xs font-bold text-muted-foreground">Loading quiz import tool...</span>
       </div>
     ),
     ssr: false,
@@ -147,7 +147,7 @@ export function QuizEditor(props: Props) {
             {!isStudentMode && (
               <div className="flex items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold text-primary">
-                  {quizId ? 'Chỉnh sửa Quiz' : 'Tạo Quiz mới'}
+                  {quizId ? 'Edit Quiz' : 'Create New Quiz'}
                 </h1>
               </div>
             )}
@@ -165,7 +165,7 @@ export function QuizEditor(props: Props) {
                 <CardContent className="pt-6 text-center">
                   <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground font-medium">
-                    Vui lòng chọn môn học ở trên để tiếp tục tạo quiz
+                    Please select a subject above to continue creating quiz
                   </p>
                 </CardContent>
               </Card>
@@ -187,7 +187,7 @@ export function QuizEditor(props: Props) {
                         }, 0)
                       }}
                     >
-                      {showImportPanel ? 'Ẩn upload file JSON/TXT' : 'Upload file JSON/TXT'}
+                      {showImportPanel ? 'Hide JSON/TXT file upload' : 'Upload JSON/TXT file'}
                     </Button>
                   </div>
                 )}
@@ -257,7 +257,7 @@ export function QuizEditor(props: Props) {
                     onClick={addQuestion}
                     className="h-16 px-12 rounded-2xl bg-card border-2 border-primary text-primary font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all shadow-lg hover:shadow-xl"
                   >
-                    + Thêm câu hỏi tiếp theo
+                    + Add Next Question
                   </Button>
                 </div>
               </>

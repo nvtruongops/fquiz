@@ -39,10 +39,10 @@ function formatQuestions(quizQuestions: any[], session: any) {
 
 function getSourceInfo(quiz: any, userId: string) {
   const isMix = Boolean(quiz.is_temp)
-  if (isMix) return { type: 'mix_quiz', label: 'Quiz Trộn' }
-  if (quiz.is_saved_from_explore) return { type: 'saved_explore', label: 'Đã lưu từ Explore' }
-  if (quiz.created_by?.toString() === userId) return { type: 'self_created', label: 'Tự tạo' }
-  return { type: 'explore_public', label: 'Từ Explore/Public' }
+  if (isMix) return { type: 'mix_quiz', label: 'Mix Quiz' }
+  if (quiz.is_saved_from_explore) return { type: 'saved_explore', label: 'Saved from Explore' }
+  if (quiz.created_by?.toString() === userId) return { type: 'self_created', label: 'Self-created' }
+  return { type: 'explore_public', label: 'From Explore/Public' }
 }
 
 async function handleActivePath(quiz: any, activeSession: any, payload: any) {
@@ -100,7 +100,7 @@ export const GET = withAuth(async (
 
       if (!quiz) {
         const attempts = quizSessions.map(s => ({ session_id: s._id, score: s.score, mode: s.mode, completed_at: s.completed_at, started_at: s.started_at, total_paused_duration_ms: s.total_paused_duration_ms }))
-        return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Quiz đã bị xóa', quiz_deleted: true, source_type: 'deleted', source_label: 'Quiz đã bị xóa', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts, user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
+        return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Deleted Quiz', quiz_deleted: true, source_type: 'deleted', source_label: 'Deleted Quiz', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts, user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
       }
     }
 
@@ -135,7 +135,7 @@ export const GET = withAuth(async (
 
     const currentQuiz = quiz || await Quiz.findById(session.quiz_id).lean() as any
     if (!currentQuiz) {
-      return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Quiz đã bị xóa', quiz_deleted: true, source_type: 'deleted', source_label: 'Quiz đã bị xóa', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts: [{ session_id: session._id, score: session.score, mode: session.mode, completed_at: session.completed_at, started_at: session.started_at, total_paused_duration_ms: session.total_paused_duration_ms }], user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
+      return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Deleted Quiz', quiz_deleted: true, source_type: 'deleted', source_label: 'Deleted Quiz', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts: [{ session_id: session._id, score: session.score, mode: session.mode, completed_at: session.completed_at, started_at: session.started_at, total_paused_duration_ms: session.total_paused_duration_ms }], user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
     }
 
     const source = getSourceInfo(currentQuiz, payload.userId)

@@ -37,7 +37,7 @@ export const POST = withAuth(
     }
 
     if (current.length >= MAX_PINS) {
-      return NextResponse.json({ error: `Tối đa ${MAX_PINS} bộ đề được ghim` }, { status: 400 })
+      return NextResponse.json({ error: `Maximum ${MAX_PINS} quizzes can be pinned` }, { status: 400 })
     }
 
     // Pin

@@ -22,8 +22,8 @@ test.describe('Community & Discussions Feed (/community)', () => {
           posts: [
             {
               _id: 'post-1',
-              title: 'Chia sẻ mẹo học thuộc nhanh từ vựng Tiếng Anh chuyên ngành',
-              content: 'Các bạn nên dùng Flashcard lặp lại ngắt quãng để ghi nhớ lâu hơn.',
+              title: 'Tips for learning specialized English vocabulary quickly',
+              content: 'You should use spaced repetition flashcards for longer retention.',
               author: {
                 _id: '69d7441dff42ce4f938bd488',
                 name: 'Nguyen Van A',
@@ -63,21 +63,21 @@ test.describe('Community & Discussions Feed (/community)', () => {
     await page.goto('/community')
 
     // Header checks
-    await expect(page.getByRole('heading', { name: /Cộng đồng/i }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /Gửi góp ý/i }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /Tạo bài viết/i }).first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Community/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Send Feedback|Feedback/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Create Post|New Post/i }).first()).toBeVisible()
 
     // Post content check
-    await expect(page.getByText(/Chia sẻ mẹo học thuộc nhanh từ vựng/i)).toBeVisible()
+    await expect(page.getByText(/Tips for learning specialized English vocabulary/i)).toBeVisible()
   })
 
-  test('should open feedback modal when clicking "Gửi góp ý"', async ({ page }) => {
+  test('should open feedback modal when clicking Send Feedback', async ({ page }) => {
     await page.goto('/community')
 
-    const feedbackBtn = page.getByRole('button', { name: /Gửi góp ý/i }).first()
+    const feedbackBtn = page.getByRole('button', { name: /Send Feedback|Feedback/i }).first()
     await feedbackBtn.click()
 
     // Verify feedback modal dialog is visible
-    await expect(page.getByText(/Góp ý/i).first()).toBeVisible()
+    await expect(page.getByText(/Feedback/i).first()).toBeVisible()
   })
 })

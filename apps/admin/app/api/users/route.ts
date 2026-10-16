@@ -12,7 +12,7 @@ export const GET = withAuth(async (req) => {
 
   const parsed = UserListQuerySchema.safeParse(queryParams)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Tham số truy vấn không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 })
   }
 
   const { page, limit, search, role, status } = parsed.data

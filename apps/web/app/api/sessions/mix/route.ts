@@ -19,14 +19,14 @@ import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { processMixQuizGeneration } from '@/lib/modules/quiz/utils/mix-quiz-processor'
 
 const CreateMixSessionSchema = z.object({
-  quiz_ids: z.array(MongoIdSchema).min(2, 'Cần ít nhất 2 quiz').max(MIX_QUIZ_MAX_SELECT, `Tối đa ${MIX_QUIZ_MAX_SELECT} quiz`),
+  quiz_ids: z.array(MongoIdSchema).min(2, 'At least 2 quizzes required').max(MIX_QUIZ_MAX_SELECT, `Maximum ${MIX_QUIZ_MAX_SELECT} quizzes`),
   question_count: z
     .union([z.number(), z.string()])
     .transform((v) => Number(v))
     .pipe(z.number().int().min(1).max(MIX_QUIZ_MAX_QUESTIONS)),
-  // Chỉ 2 chế độ: luyện tập (immediate) hoặc kiểm tra (review)
+  // Practice (immediate) or test (review) mode
   mode: z.enum(['immediate', 'review', 'flashcard']).default('immediate'),
-  // Thứ tự câu hỏi: sequential (theo thứ tự) hoặc random (ngẫu nhiên)
+  // Question order: sequential or random
   difficulty: z.enum(['sequential', 'random']).default('random'),
 })
 
@@ -77,7 +77,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json(
         {
           error: 'rate_limit_exceeded',
-          message: 'Bạn đã tạo quá nhiều Quiz Trộn. Vui lòng thử lại sau.',
+          message: 'You have created too many Mix Quizzes. Please try again later.',
           reset: rateLimitResult.reset,
           limit: rateLimitResult.limit,
         },
@@ -126,7 +126,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (totalCreatedAndMix >= 10) {
       return NextResponse.json(
         {
-          error: 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để trộn mới.',
+          error: 'You have reached the maximum limit of 10 quizzes (custom + mix). Please delete an existing quiz before creating a new mix.',
           quotaExceeded: true,
           code: 'TOTAL_QUOTA_EXCEEDED',
         },

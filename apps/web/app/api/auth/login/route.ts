@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (!rateLimit.success) {
       logSecurityEvent('rate_limit_triggered', { request_id: requestId, route, outcome: 'denied', ip }, 'Login rate limit reached')
       return NextResponse.json(
-        { error: 'Quá nhiều lần thử. Vui lòng thử lại sau 1 phút.' },
+        { error: 'Too many attempts. Please try again after 1 minute.' },
         { status: 429 }
       )
     }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const result = LoginSchema.safeParse(body)
     if (!result.success) {
       return NextResponse.json(
-        { error: 'Vui lòng nhập đầy đủ thông tin đăng nhập' },
+        { error: 'Please provide all required login credentials' },
         { status: 400 }
       )
     }
@@ -44,29 +44,29 @@ export async function POST(request: Request) {
     // Support login by email OR username
     const isEmail = identifier.includes('@')
     const user = isEmail
-      ? await User.findOne({ email: identifier.toLowerCase().trim() })
+      ? await User.findOne({ email: identifier.toLowerCase().trim() }).select('+password_hash')
       : await User.findOne({
           $or: [
             { username: identifier.trim() },
             { username_lower: identifier.toLowerCase().trim() }
           ]
-        })
+        }).select('+password_hash')
 
     if (!user) {
       logSecurityEvent('login_failed', { request_id: requestId, route, outcome: 'failure', ip, identifier }, 'User not found')
-      return NextResponse.json({ error: 'Thông tin đăng nhập không đúng' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid login credentials' }, { status: 401 })
     }
 
     if (user.status === 'banned') {
       return NextResponse.json(
-        { error: 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.' },
+        { error: 'Account has been locked. Please contact the administrator.' },
         { status: 403 }
       )
     }
 
     if (user.status === 'pending_deletion') {
       return NextResponse.json(
-        { error: 'Tài khoản của bạn đang trong thời gian chờ xóa (72h). Vui lòng kiểm tra email và bấm vào liên kết khôi phục để kích hoạt lại tài khoản.' },
+        { error: 'Your account is pending deletion (72h). Please check your email and click the restore link to reactivate your account.' },
         { status: 403 }
       )
     }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) {
       logSecurityEvent('login_failed', { request_id: requestId, user_id: user._id.toString(), route, outcome: 'failure', ip }, 'Invalid password')
-      return NextResponse.json({ error: 'Thông tin đăng nhập không đúng' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid login credentials' }, { status: 401 })
     }
 
     // Role Isolation Defense: Admin accounts are isolated to Admin Portal and blocked on Web App
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     // dev, teacher, and student are allowed to log into Web App
     if (user.role === 'admin') {
       logSecurityEvent('login_blocked_admin_on_web', { request_id: requestId, user_id: user._id.toString(), route, outcome: 'denied', ip }, 'Admin user tried to login on public web')
-      return NextResponse.json({ error: 'Thông tin đăng nhập không đúng' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid login credentials' }, { status: 401 })
     }
 
     // Record login log
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       const settings = await getSettings()
       if (settings.anti_sharing_enabled && user.role === 'student' && user.sharing_violations >= settings.anti_sharing_max_violations) {
         await User.findByIdAndUpdate(user._id, { status: 'banned', ban_reason: 'anti_sharing' })
-        return NextResponse.json({ error: 'Tài khoản đã bị khóa do vi phạm chia sẻ.' }, { status: 403 })
+        return NextResponse.json({ error: 'Account has been locked due to account sharing policy violation.' }, { status: 403 })
       }
     } catch (antiSharingErr) {
       console.warn('[LoginRoute] Anti-sharing check failed:', antiSharingErr)

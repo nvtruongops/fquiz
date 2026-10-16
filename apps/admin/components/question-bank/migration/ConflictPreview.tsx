@@ -27,7 +27,7 @@ export function ConflictPreview({ conflict }: ConflictPreviewProps) {
           <div key={idx} className="text-sm">
             <span className="font-medium text-card-foreground">{variant.course_code}:</span>{' '}
             <span className="text-muted-foreground">
-              Đáp án:{' '}
+              Answer:{' '}
               {variant.correct_answer.map((i) => variant.options[i]).join(', ')}
             </span>
           </div>

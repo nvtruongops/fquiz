@@ -1,12 +1,12 @@
 # Technical Design: Quiz AI Assistant (Knowledge Retrieval Engine)
 
-Tài liệu thiết kế kỹ thuật chi tiết cho phân hệ **Quiz AI Assistant (Knowledge Retrieval Engine)** trong FQuiz.
+Technical design specification for the **Quiz AI Assistant (Knowledge Retrieval Engine)** subsystem in FQuiz.
 
 ---
 
-## 1. Tổng quan Kiến trúc Hệ thống (8-Stage Processing Pipeline with Deadline Propagation)
+## 1. System Architecture Overview (8-Stage Processing Pipeline with Deadline Propagation)
 
-Hệ thống được thiết kế theo nguyên lý **Clean Architecture / Layered Abstraction**, phân chia thành **8 giai đoạn xử lý độc lập, tuần tự và truyền hạn mức thời gian (Deadline Propagation)**:
+The subsystem is architected according to **Clean Architecture / Layered Abstraction** principles, partitioned into **8 sequential, decoupled execution stages with strict Deadline Propagation**:
 
 ```mermaid
 flowchart TD
@@ -38,30 +38,30 @@ flowchart TD
 
 ---
 
-## 2. Cấu trúc Thư mục Module (`lib/modules/ai/quiz-assistant/`)
+## 2. Directory Structure (`apps/web/lib/modules/ai/quiz-assistant/`)
 
 ```
-lib/modules/ai/quiz-assistant/
+apps/web/lib/modules/ai/quiz-assistant/
 ├── index.ts                           # Public exports & module entry point
-├── orchestrator.ts                    # QuizAIOrchestrator - Điều phối luồng 8 bước
+├── orchestrator.ts                    # QuizAIOrchestrator - 8-stage pipeline orchestrator
 │
 ├── context/
 │   ├── context-types.ts               # InternalQuizContext, QuestionContext
-│   └── quiz-context-resolver.ts       # Phân giải Session, question_order, Quiz, CategoryId
+│   └── quiz-context-resolver.ts       # Session, question_order, Quiz, CategoryId resolution
 │
 ├── intent/
-│   └── intent-resolver.ts             # Phân loại Intent (EXPLAIN_WRONG, COMPARE, GENERAL...)
+│   └── intent-resolver.ts             # Intent classification (EXPLAIN_WRONG, COMPARE, GENERAL...)
 │
 ├── retrieval/
-│   ├── retrieval-types.ts             # Type definitions cho Retrieval
-│   ├── retrieval-engine.interface.ts  # Interface IRetrievalEngine
-│   ├── mongo-question-retriever.ts    # Parallel Promise.allSettled Search
-│   └── ranking.ts                     # Weighted Scoring Config & Dynamic Thresholding
+│   ├── retrieval-types.ts             # Type definitions for Retrieval
+│   ├── retrieval-engine.interface.ts  # IRetrievalEngine interface
+│   ├── mongo-question-retriever.ts    # Parallel Promise.allSettled search
+│   └── ranking.ts                     # Weighted scoring config & dynamic thresholding
 │
 ├── prompt/
-│   ├── prompt-engine.ts               # Bộ sinh prompt theo 4 tầng dữ liệu
-│   ├── system-rules.ts                # Quy định chung, giọng văn & mandate tiếng Việt
-│   └── templates/                     # Các template theo từng Intent
+│   ├── prompt-engine.ts               # 4-tier prompt builder
+│   ├── system-rules.ts                # Anti-Spoil rules, tone, and directives
+│   └── templates/                     # Intent-specific prompt templates
 │       ├── explain-wrong.ts
 │       ├── explain-correct.ts
 │       ├── formula.ts
@@ -71,23 +71,23 @@ lib/modules/ai/quiz-assistant/
 │       └── general-inquiry.ts
 │
 ├── confidence/
-│   └── confidence-engine.ts           # Thuật toán tính toán confidence khách quan
+│   └── confidence-engine.ts           # Deterministic confidence evaluation algorithm
 │
 ├── mapper/
-│   └── response-mapper.ts             # DTO Mapper ngăn rò rỉ dữ liệu nội bộ
+│   └── response-mapper.ts             # DTO allowlist mapper preventing data leakage
 │
 └── schemas/
-    └── quiz-assistant.schema.ts       # Zod schemas cho LLM & API Response
+    └── quiz-assistant.schema.ts       # Zod schemas for LLM & API responses
 ```
 
 ---
 
-## 3. Chi tiết Hợp đồng Dữ liệu & DTO Layer (Data Contracts)
+## 3. Data Contracts & DTO Layer
 
-### 3.1. DTO Phân tầng Ngăn ngừa Rò rỉ Dữ liệu ([`context-types.ts`](file:///e:/Code/fquiz/lib/modules/ai/quiz-assistant/context/context-types.ts))
+### 3.1. Layered DTO Isolation ([`context-types.ts`](file:///apps/web/lib/modules/ai/quiz-assistant/context/context-types.ts))
 
 ```typescript
-// Tầng 1: Internal Context (Chỉ lưu hành nội bộ Backend)
+// Tier 1: Internal Context (Backend internal lifecycle only)
 export interface InternalQuizContext {
   userId: string
   sessionId: string
@@ -99,7 +99,7 @@ export interface InternalQuizContext {
     id: string
     text: string
     options: string[]
-    correctAnswer: number | number[] // ⚠️ Tuyệt đối không để lọt ra Client
+    correctAnswer: number | number[] // ⚠️ Never leaked to client
     explanation?: string
   }
   userSubmittedAnswer: number | number[] | null
@@ -108,7 +108,7 @@ export interface InternalQuizContext {
   targetOptionText: string
 }
 
-// Tầng 2: Retrieval Types
+// Tier 2: Retrieval Types
 export interface RetrievalInput {
   courseCode: string
   categoryId?: string
@@ -129,7 +129,7 @@ export interface RetrievalResult {
   options?: string[]
   correctAnswer?: number | number[]
   explanation?: string
-  score: number // Điểm liên quan [0.0 - 1.0]
+  score: number // Relevance score [0.0 - 1.0]
   metadata: {
     courseCode?: string
     categoryId?: string
@@ -138,7 +138,7 @@ export interface RetrievalResult {
 }
 ```
 
-### 3.2. Schemas Đồng bộ API & Response Modes ([`quiz-assistant.schema.ts`](file:///e:/Code/fquiz/lib/modules/ai/quiz-assistant/schemas/quiz-assistant.schema.ts))
+### 3.2. Schemas & Response Modes ([`quiz-assistant.schema.ts`](file:///apps/web/lib/modules/ai/quiz-assistant/schemas/quiz-assistant.schema.ts))
 
 ```typescript
 import { z } from 'zod'
@@ -154,7 +154,7 @@ export const QuizAIIntentEnum = z.enum([
 ])
 export type QuizAIIntent = z.infer<typeof QuizAIIntentEnum>
 
-// Schema cho LLM sinh nội dung thuần túy
+// Schema for raw LLM generation
 export const LLMQuizAssistantOutputSchema = z.object({
   reply: z.string().min(1),
   formulaExplanation: z.string().nullable().optional(),
@@ -163,7 +163,7 @@ export const LLMQuizAssistantOutputSchema = z.object({
 })
 export type LLMQuizAssistantOutput = z.infer<typeof LLMQuizAssistantOutputSchema>
 
-// Schema Public Response trả về Client qua ResponseMapper
+// Schema for Public API response returned to client via ResponseMapper
 export const QuizAssistantResponseSchema = z.object({
   intent: QuizAIIntentEnum,
   reply: z.string(),
@@ -187,10 +187,10 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
 
 ---
 
-## 4. Chi tiết Thiết kế 8 Giai đoạn Xử lý
+## 4. 8-Stage Execution Details
 
-### Giai đoạn 1: Context Resolution (`QuizContextResolver`)
-- **Authoritative JWT Identity**: Lấy `userId` từ `payload.userId` của `withAuth`, phớt lờ hoàn toàn `body.userId`.
+### Stage 1: Context Resolution (`QuizContextResolver`)
+- **Authoritative JWT Identity**: Extract `userId` strictly from `payload.userId` via `withAuth`, completely ignoring client-supplied `body.userId`.
 - **Question Mapping Single Source of Truth**:
   ```typescript
   const questionOrder = session.question_order || []
@@ -203,19 +203,19 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
   2. `quizDoc.questions[actualIndex]` $\rightarrow$
   3. `Question.findById(quizDoc.question_refs[actualIndex])`.
 
-### Giai đoạn 2: Intent Resolution (`IntentResolver`)
-- Nếu client truyền `intent` tường minh từ Quick Buttons $\rightarrow$ sử dụng trực tiếp.
-- Nếu là Free Text $\rightarrow$ Phân tích Regex & Keywords:
-  - *"tại sao sai"*, *"sai ở đâu"* $\rightarrow$ `EXPLAIN_WRONG_ANSWER`
-  - *"tại sao đúng"*, *"vì sao là đáp án này"* $\rightarrow$ `EXPLAIN_CORRECT_ANSWER`
-  - *"công thức"*, *"tính như thế nào"* $\rightarrow$ `EXPLAIN_FORMULA`
-  - *"câu tương tự"*, *"ngân hàng đề"* $\rightarrow$ `FIND_SIMILAR_QUESTION`
-  - *"so sánh"*, *"khác nhau thế nào"* $\rightarrow$ `COMPARE_OPTIONS`
-  - *"giải thế nào"*, *"hướng dẫn giải"* $\rightarrow$ `SOLVE_QUESTION`
-  - Không khớp $\rightarrow$ `GENERAL_INQUIRY` (Chỉ giải thích trên đề bài hiện tại, không claim QuestionBank).
+### Stage 2: Intent Resolution (`IntentResolver`)
+- When the client passes an explicit `intent` from Quick Action Buttons $\rightarrow$ used directly.
+- Free Text analysis via Regex & Keywords:
+  - *"why wrong"*, *"where is the mistake"* $\rightarrow$ `EXPLAIN_WRONG_ANSWER`
+  - *"why correct"*, *"why is this the answer"* $\rightarrow$ `EXPLAIN_CORRECT_ANSWER`
+  - *"formula"*, *"how to calculate"* $\rightarrow$ `EXPLAIN_FORMULA`
+  - *"similar question"*, *"question bank"* $\rightarrow$ `FIND_SIMILAR_QUESTION`
+  - *"compare"*, *"what is the difference"* $\rightarrow$ `COMPARE_OPTIONS`
+  - *"how to solve"*, *"step by step"* $\rightarrow$ `SOLVE_QUESTION`
+  - Fallback unmatched $\rightarrow$ `GENERAL_INQUIRY` (Only explains current question, does not claim QuestionBank verification).
 
-### Giai đoạn 3: Parallel Retrieval với `Promise.allSettled` (`MongoQuestionRetriever`)
-- **Khả năng chịu lỗi từng phần (Partial Failure Resiliency)**:
+### Stage 3: Parallel Retrieval with `Promise.allSettled` (`MongoQuestionRetriever`)
+- **Partial Failure Resiliency**:
   ```typescript
   const results = await Promise.allSettled([
     this.queryQuestionBank(input, 300),
@@ -232,8 +232,8 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
   }
   ```
 
-### Giai đoạn 4: Configurable Ranking Engine (`ranking.ts`)
-- **Trọng số Cấu hình được**:
+### Stage 4: Configurable Ranking Engine (`ranking.ts`)
+- **Configurable Weights**:
   ```typescript
   export const RANKING_WEIGHTS = {
     optionMatch: 0.35,
@@ -244,32 +244,32 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
 
   export const MIN_RELEVANCE_SCORE = 0.50
   ```
-- **Hàm Chuẩn hóa Điểm $[0.0, 1.0]$**:
-  - `computeOptionMatch(targetOptionText, candidateOptions)`: Tính độ tương đồng token Dice/Jaccard giữa phương án thắc mắc và các phương án đúng của câu ứng viên $\rightarrow [0.0, 1.0]$.
-  - `computeQuestionMatch(currentQText, candidateQText)`: Tính độ tương đồng từ khóa giữa đề bài hiện tại và đề bài ứng viên $\rightarrow [0.0, 1.0]$.
-  - `categoryMatch`: $1.0$ nếu cùng `category_id`, ngược lại $0.0$.
-  - `courseMatch`: $1.0$ nếu cùng tiền tố môn học (`course_code`), ngược lại $0.0$.
-- **Lọc Ngưỡng & Giới hạn**: Lọc candidates có $\text{Score} \ge 0.50$, sắp xếp giảm dần, lấy tối đa `limit` (mặc định 2).
+- **Normalized Scoring $[0.0, 1.0]$**:
+  - `computeOptionMatch(targetOptionText, candidateOptions)`: Token Dice/Jaccard similarity between targeted option and candidate correct options $\rightarrow [0.0, 1.0]$.
+  - `computeQuestionMatch(currentQText, candidateQText)`: Keyword similarity between current and candidate questions $\rightarrow [0.0, 1.0]$.
+  - `categoryMatch`: $1.0$ if matching `category_id`, else $0.0$.
+  - `courseMatch`: $1.0$ if matching `course_code` prefix, else $0.0$.
+- **Thresholding & Limits**: Filter candidates with $\text{Score} \ge 0.50$, sort descending, capped at `limit` (default 2).
 
-### Giai đoạn 5: Prompt Construction (`PromptEngine`)
-- **Phân tách 4 tầng dữ liệu rõ ràng**:
-  1. `SYSTEM RULES`: Bắt buộc Tiếng Việt, ngắn gọn $< 100$ từ, Evidence-first mandate (Cấm bịa đặt có trong QuestionBank nếu danh sách bằng chứng rỗng).
-  2. `CURRENT QUESTION`: Mã môn, đề bài, 4 phương án, đáp án đúng, phương án học viên chọn.
-  3. `RETRIEVED EVIDENCE`: Danh sách câu hỏi đối chiếu trích xuất từ MongoDB (hoặc ghi rõ: *Không tìm thấy câu hỏi tương tự*).
-  4. `USER REQUEST & INTENT`: Ý định và câu hỏi chi tiết của học viên.
+### Stage 5: Prompt Construction (`PromptEngine`)
+- **4 Distinct Data Tiers**:
+  1. `SYSTEM RULES`: Anti-Spoil rules, concise style ($< 100$ words), Evidence-first mandate (strictly forbidden from claiming presence in QuestionBank if evidence list is empty).
+  2. `CURRENT QUESTION`: Course code, question prompt, 4 options, correct answer, student choice.
+  3. `RETRIEVED EVIDENCE`: Verified question references extracted from MongoDB (or explicit notice: *No verified questions found*).
+  4. `USER REQUEST & INTENT`: Specific user intent and query.
 
-### Giai đoạn 6: LLM Execution & Deadline Management
-- **Quản lý Hạn mức Thời gian (Deadline Budget)**:
-  - Tổng Request SLA: $2500\text{ms}$.
-  - Thời gian đã trôi qua: $\text{elapsedTime} = \text{Date.now()} - \text{startTime}$.
+### Stage 6: LLM Execution & Deadline Management
+- **Deadline Budgeting**:
+  - Total Request SLA: $2500\text{ms}$.
+  - Elapsed Time: $\text{elapsedTime} = \text{Date.now()} - \text{startTime}$.
   - LLM Timeout: $\text{llmTimeout} = \min(2200\text{ms}, 2500\text{ms} - \text{elapsedTime})$.
 - **Graceful DB Fallback**:
-  - Nếu LLM quá hạn mức hoặc gặp sự cố API key/quota/mất mạng $\rightarrow$ Kích hoạt `DBFallbackGenerator`.
-  - Đánh dấu `responseMode = 'db_fallback'` và `fallback = true`.
+  - If the LLM exceeds budget, runs out of quota, or times out $\rightarrow$ activate `DBFallbackGenerator`.
+  - Mark `responseMode = 'db_fallback'` and `fallback = true`.
 
-### Giai đoạn 7: Validation & Confidence Calculation (`ConfidenceEngine`)
-- Kiểm tra tính hợp lệ qua `LLMQuizAssistantOutputSchema.parse()`.
-- Tính `confidence` tất định:
+### Stage 7: Validation & Confidence Calculation (`ConfidenceEngine`)
+- Validate output through `LLMQuizAssistantOutputSchema.parse()`.
+- Deterministic `confidence` calculation:
   ```typescript
   export class ConfidenceEngine {
     static evaluate(evidences: RetrievalResult[], intent: QuizAIIntent): 'high' | 'medium' | 'low' {
@@ -284,8 +284,8 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
   }
   ```
 
-### Giai đoạn 8: Response Mapping (`ResponseMapper`)
-- **Allowlisting Fields**: Loại bỏ mọi trường nhạy cảm, chỉ xuất các trường public an toàn:
+### Stage 8: Response Mapping (`ResponseMapper`)
+- **Allowlisting Fields**: Strips internal fields, exporting safe public DTOs only:
   ```typescript
   export class ResponseMapper {
     static toPublicResponse(params: {
@@ -317,7 +317,7 @@ export type QuizAssistantResponse = z.infer<typeof QuizAssistantResponseSchema>
 
 ---
 
-## 5. Thin Controller Pattern (`app/api/v1/ai/quiz-assistant/route.ts`)
+## 5. Thin Controller Pattern (`apps/web/app/api/v1/ai/quiz-assistant/route.ts`)
 
 ```typescript
 export const POST = withAuth(
@@ -327,7 +327,7 @@ export const POST = withAuth(
       const parsed = QuizAssistantRequestSchema.safeParse(body)
       if (!parsed.success) {
         return NextResponse.json(
-          { error: 'Dữ liệu yêu cầu không hợp lệ', details: parsed.error.issues },
+          { error: 'Invalid request data', details: parsed.error.issues },
           { status: 400 }
         )
       }

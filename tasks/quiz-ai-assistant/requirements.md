@@ -1,129 +1,129 @@
 # Requirements: Quiz AI Assistant (Knowledge Retrieval Engine)
 
-Tài liệu đặc tả yêu cầu cho phân hệ **Quiz AI Assistant (Trợ lý AI phòng thi)** theo kiến trúc **Knowledge Retrieval Engine (RAG-Ready trên MongoDB)**.
+Requirements specification for the **Quiz AI Assistant (Exam Room AI Copilot)** subsystem architected as a **Knowledge Retrieval Engine (RAG-Ready on MongoDB Atlas)**.
 
 ---
 
-## 1. Mục tiêu & Định vị hệ thống
+## 1. System Goals & Positioning
 
-- **Mục tiêu**: Nâng cấp trợ lý AI phòng thi từ cơ chế truy vấn nguyên khối (`route.ts` đơn lẻ) sang kiến trúc phân lớp hướng dịch vụ (Clean Architecture / Service Layered), sẵn sàng cho mở rộng RAG trong tương lai mà không làm gián đoạn phòng thi hiện tại.
-- **Phạm vi (Scope)**:
-  - Phục vụ giải đáp thắc mắc câu hỏi trắc nghiệm theo thời gian thực (Real-time Quiz Session).
-  - Đối chiếu ngân hàng đề thi (`QuestionBank`) theo môn học để giải thích vì sao lựa chọn của học viên đúng/sai.
-  - Triển khai dạng **Knowledge Retrieval Engine** trên MongoDB hiện hữu (không cần Vector DB hay File Ingestion ở Phase 1).
-  - Tuân thủ nghiêm ngặt nguyên tắc **Zero API Breakage** và **Graceful Degradation** (Luôn có DB Fallback khi LLM mất kết nối).
+- **Objective**: Upgrade the exam room AI assistant from a monolithic API handler (`route.ts`) to a clean, service-layered architecture ready for future RAG extensions without disrupting active exam rooms.
+- **Scope**:
+  - Provide real-time multiple-choice explanation assistance during active quiz sessions.
+  - Cross-reference subject question banks (`QuestionBank`) to explain why student choices are correct or incorrect.
+  - Operate as an in-database **Knowledge Retrieval Engine** on existing MongoDB collections (zero new vector DB infrastructure required for Phase 1).
+  - Strictly adhere to **Zero API Breakage** and **Graceful Degradation** (guaranteed DB Fallback upon LLM network disruption or timeout).
 
 ---
 
-## 2. Yêu cầu chức năng (Functional Requirements)
+## 2. Functional Requirements (FR)
 
-### FR-1: Phân giải Ngữ cảnh Phiên thi & Bảo mật Danh tính (Context & Security Resolution)
+### FR-1: Session Context & Identity Security Resolution
 - **FR-1.1 (Authoritative JWT Identity)**:
-  - Danh tính người dùng (`userId`) phải lấy **100% từ JWT Token đã được xác thực qua `withAuth`**.
-  - Tuyệt đối bỏ qua (hoặc reject) bất kỳ trường `userId` nào được gửi từ client request body.
-  - Xác thực quyền sở hữu phiên: `session.student_id.toString() === tokenPayload.userId`.
-- **FR-1.2 (Single Source of Truth cho Question Mapping)**:
-  - `session.question_order` là **nguồn chân lý duy nhất (Single Source of Truth)** để ánh xạ chỉ số câu hỏi UI sang câu hỏi thực tế:
+  - User identity (`userId`) must be derived **100% from the verified JWT token via `withAuth`**.
+  - Any `userId` provided in the client request body must be strictly ignored.
+  - Validate session ownership: `session.student_id.toString() === tokenPayload.userId`.
+- **FR-1.2 (Single Source of Truth for Question Mapping)**:
+  - `session.question_order` is the **Single Source of Truth** for mapping UI question indices to canonical database questions:
     $$\text{actualIndex} = \text{session.question\_order}[\text{UI questionIndex}]$$
-  - Document câu hỏi được resolve theo thứ tự ưu tiên:
-    1. `session.questions_cache[actualIndex]` (nếu có cache câu hỏi trong session).
-    2. `quiz.questions[actualIndex]` (nếu đề thi nhúng subdocuments).
-    3. `Question.findById(quiz.question_refs[actualIndex])` (nếu đề thi dùng standalone refs).
-- **FR-1.3 (Phân giải Quan hệ Môn học)**:
-  - Tự động phân giải chuỗi quan hệ dữ liệu: `Session` $\rightarrow$ `Quiz` $\rightarrow$ `course_code` (Subject Prefix, ví dụ `PMG201C`) $\rightarrow$ `category_id`.
-- **FR-1.4 (Trích xuất Trạng thái Lựa chọn)**:
-  - Trích xuất phương án học viên đã chọn (`user_answers`), đáp án đúng chính thức, nội dung đề bài và danh sách phương án.
+  - Question resolution chain:
+    1. `session.questions_cache[actualIndex]` (if session snapshot exists).
+    2. `quiz.questions[actualIndex]` (embedded questions).
+    3. `Question.findById(quiz.question_refs[actualIndex])` (standalone references).
+- **FR-1.3 (Subject & Category Resolution)**:
+  - Automatically traverse relation chain: `Session` $\rightarrow$ `Quiz` $\rightarrow$ `course_code` (e.g. `PMG201C`) $\rightarrow$ `category_id`.
+- **FR-1.4 (Selection State Extraction)**:
+  - Extract the student's selected answer (`user_answers`), official correct answer, question prompt, and option list.
 
-### FR-2: Xử lý Ý định Người dùng Toàn diện (Comprehensive Intent Handling)
-- **FR-2.1 (Explicit Intent từ Quick Buttons)**: Hỗ trợ tiếp nhận `intent` tường minh từ các nút bấm 1-click trên giao diện:
-  - `EXPLAIN_WRONG_ANSWER`: Giải thích tại sao phương án học viên chọn lại sai.
-  - `EXPLAIN_CORRECT_ANSWER`: Giải thích tại sao đáp án chính thức lại đúng.
-  - `FIND_SIMILAR_QUESTION`: Tra cứu câu hỏi tương tự trong ngân hàng đề.
-  - `EXPLAIN_FORMULA`: Phân tích công thức / bước tính toán.
-  - `COMPARE_OPTIONS`: So sánh sự khác nhau giữa các phương án.
-  - `SOLVE_QUESTION`: Hướng dẫn cách tư duy giải câu hỏi từ đầu.
-- **FR-2.2 (Intent Resolver cho Free Text)**:
-  - Với câu hỏi tự do (Free-text Query), `IntentResolver` phân tích từ khóa và ngữ cảnh để phân loại vào 1 trong các intent trên.
-- **FR-2.3 (Quy định cho `GENERAL_INQUIRY`)**:
-  - Khi câu hỏi người dùng không thuộc 6 intent cụ thể trên $\rightarrow$ gán `GENERAL_INQUIRY`.
-  - **Quy tắc**: `GENERAL_INQUIRY` chỉ được trả lời dựa trên ngữ cảnh câu hỏi hiện tại, **nghiêm cấm tuyên bố có trong QuestionBank** nếu không có retrieved evidence rõ ràng. Nếu không tìm thấy evidence $\rightarrow$ Backend tự động gán `confidence = 'low'`.
+### FR-2: Comprehensive Intent Handling
+- **FR-2.1 (Explicit Intent via Quick Action Buttons)**: Support explicit intent dispatch from 1-click UI triggers:
+  - `EXPLAIN_WRONG_ANSWER`: Explain why the student's selected answer is incorrect.
+  - `EXPLAIN_CORRECT_ANSWER`: Explain why the official answer is correct.
+  - `FIND_SIMILAR_QUESTION`: Retrieve a verified similar question from the question bank.
+  - `EXPLAIN_FORMULA`: Explain applicable formulas or calculation steps.
+  - `COMPARE_OPTIONS`: Compare nuances between different answer options.
+  - `SOLVE_QUESTION`: Provide step-by-step reasoning from first principles.
+- **FR-2.2 (Free-Text Intent Resolution)**:
+  - For free-form queries, `IntentResolver` categorizes the query into one of the canonical intents above.
+- **FR-2.3 (General Inquiry Policy)**:
+  - When the query does not match any specific intent $\rightarrow$ assign `GENERAL_INQUIRY`.
+  - **Rule**: `GENERAL_INQUIRY` only addresses the immediate question context and **must never claim verification against QuestionBank** without explicit retrieved evidence. If no evidence is found $\rightarrow$ assign `confidence = 'low'`.
 
-### FR-3: Công cụ Truy xuất Tri thức Song song & Chống Lỗi Cục bộ (Partial Failure Resilient Retrieval)
+### FR-3: Fault-Tolerant Parallel Knowledge Retrieval
 - **FR-3.1 (Interface Extensibility)**:
-  - Định nghĩa Interface `IRetrievalEngine` trừu tượng hóa phương thức `search(input: RetrievalInput): Promise<RetrievalResult[]>`.
-- **FR-3.2 (Parallel Retrieval với `Promise.allSettled`)**:
-  - Thực thi song song 2 nguồn dữ liệu: `QuestionBank` (theo `category_id`) và `Quiz` (theo `course_code`) bằng `Promise.allSettled` với timeout tối đa $300\text{ms}$.
-  - **Partial Failure Semantics**: Nếu 1 trong 2 nguồn bị lỗi hoặc timeout, nguồn còn lại hoàn thành thành công vẫn được đưa vào Ranking bình thường; không bao giờ để lỗi của 1 nguồn làm sập toàn bộ bước Retrieval.
+  - Abstract retrieval via `IRetrievalEngine` with signature `search(input: RetrievalInput): Promise<RetrievalResult[]>`.
+- **FR-3.2 (Parallel Retrieval with `Promise.allSettled`)**:
+  - Concurrently query `QuestionBank` (by `category_id`) and `Quiz` (by `course_code`) using `Promise.allSettled` with a $300\text{ms}$ deadline.
+  - **Partial Failure Resiliency**: If one source fails or times out, the successful source must proceed through Ranking; a partial error must never fail the overall retrieval step.
 - **FR-3.3 (Configurable Weighted Scoring & Dynamic Thresholding)**:
-  - Điểm liên quan được tính theo công thức trọng số cấu hình được:
+  - Compute composite relevance scores via configurable weights:
     $$\text{Score} = (\text{optionMatch} \times w_{\text{opt}}) + (\text{questionMatch} \times w_{\text{q}}) + (\text{categoryMatch} \times w_{\text{cat}}) + (\text{courseMatch} \times w_{\text{crs}})$$
-    *(Mặc định: $w_{\text{opt}}=0.35, w_{\text{q}}=0.35, w_{\text{cat}}=0.15, w_{\text{crs}}=0.15$)*.
-  - Hàm `optionMatch` và `questionMatch` chuẩn hóa giá trị về $[0.0, 1.0]$.
-  - Áp dụng ngưỡng lọc `MIN_RELEVANCE_SCORE = 0.50`. Không ép lấy kết quả nếu tất cả candidates đều dưới ngưỡng.
-  - Số lượng kết quả lấy tối đa `limit` (mặc định 2, tối đa 3).
+    *(Default: $w_{\text{opt}}=0.35, w_{\text{q}}=0.35, w_{\text{cat}}=0.15, w_{\text{crs}}=0.15$)*.
+  - Normalize `optionMatch` and `questionMatch` to $[0.0, 1.0]$.
+  - Enforce minimum relevance threshold `MIN_RELEVANCE_SCORE = 0.50`.
+  - Cap results at `limit` (default 2, max 3).
 
-### FR-4: Kỹ thuật Prompt & Tách biệt Dữ liệu (Evidence-First Prompting)
+### FR-4: Evidence-First Prompt Engineering
 - **FR-4.1 (4-Tier Prompt Hierarchy)**:
-  1. `SYSTEM RULES`: Quy tắc an toàn, giọng văn sư phạm, bắt buộc tiếng Việt, giới hạn dưới 80-100 từ.
-  2. `CURRENT QUESTION`: Đề bài, 4 phương án, đáp án đúng, phương án học viên đã chọn.
-  3. `RETRIEVED EVIDENCE`: Danh sách câu hỏi/bằng chứng trích xuất từ MongoDB (hoặc ghi rõ: *Không tìm thấy câu hỏi tương tự*).
-  4. `USER REQUEST`: Thắc mắc cụ thể và ý định của học viên.
+  1. `SYSTEM RULES`: Safety boundaries, pedagogical tone, English default, and length limits ($< 100$ words).
+  2. `CURRENT QUESTION`: Course code, question prompt, 4 options, correct answer, student choice.
+  3. `RETRIEVED EVIDENCE`: Verified question references from MongoDB (or explicit declaration: *No verified questions found*).
+  4. `USER REQUEST`: Student query and resolved intent.
 - **FR-4.2 (Evidence-First Mandate)**:
-  - Nghiêm cấm LLM tự nhận là câu hỏi có trong ngân hàng đề nếu trong `RETRIEVED EVIDENCE` không có bản ghi khớp.
+  - Strictly prohibit the assistant from claiming question presence in QuestionBank unless backed by a non-empty `RETRIEVED EVIDENCE` list.
 
-### FR-5: Đánh giá Độ tin cậy Khách quan (Deterministic Confidence Engine)
-- **FR-5.1**: Độ tin cậy (`confidence`: `'high' | 'medium' | 'low'`) phải do **Backend tính toán tất định**, không để LLM tự báo cáo.
-- **FR-5.2 (Quy tắc tính điểm)**:
-  - Không có bằng chứng phù hợp $\rightarrow$ `'low'` (hoặc `'medium'` đối với `SOLVE_QUESTION`/`EXPLAIN_CORRECT_ANSWER` khi lý thuyết đủ rõ).
-  - Có $\ge 1$ bằng chứng với `score >= 0.70` $\rightarrow$ `'medium'`.
-  - Có $\ge 2$ bằng chứng với `score >= 0.85` $\rightarrow$ `'high'`.
+### FR-5: Deterministic Confidence Engine
+- **FR-5.1**: Confidence (`confidence`: `'high' | 'medium' | 'low'`) must be computed deterministically by the backend, never self-reported by the LLM.
+- **FR-5.2 (Scoring Criteria)**:
+  - 0 valid evidence $\rightarrow$ `'low'` (or `'medium'` for `SOLVE_QUESTION`/`EXPLAIN_CORRECT_ANSWER` when theory is self-contained).
+  - $\ge 1$ evidence with `score >= 0.70` $\rightarrow$ `'medium'`.
+  - $\ge 2$ evidence with `score >= 0.85` $\rightarrow$ `'high'`.
 
-### FR-6: Ngăn ngừa Rò rỉ Dữ liệu & Đính kèm Bằng chứng (Layer Isolation & Anti-Leakage)
-- **FR-6.1 (DTO Separation qua `ResponseMapper`)**:
-  - Phân tách tuyệt đối 3 mô hình đối tượng:
-    1. `InternalQuizContext`: Chứa đầy đủ `correct_answer`, `user_answers`, `session`, `quizDoc`.
-    2. `LLMContext`: Chứa dữ liệu đóng gói prompt an toàn cho LLM.
-    3. `PublicQuizAssistantResponse`: Dữ liệu trả về Client thông qua `ResponseMapper` với cơ chế Allowlisting trường công khai.
+### FR-6: Anti-Leakage & Public DTO Allowlisting
+- **FR-6.1 (DTO Boundary via `ResponseMapper`)**:
+  - Maintain strict isolation across 3 object contexts:
+    1. `InternalQuizContext`: Full internal state including `correct_answer` and session metadata.
+    2. `LLMContext`: Sanitized prompt context sent to the provider.
+    3. `PublicQuizAssistantResponse`: Public response mapped via `ResponseMapper` allowlist.
 - **FR-6.2 (Safe Evidence Metadata)**:
-  - `evidenceUsed` do Backend đính kèm trực tiếp từ `RetrievalResult[]` (gồm `sourceType`, `sourceId`, `snippet`, `relevance`).
-  - Tuyệt đối không để lộ trường nhạy cảm `correct_answer` của các câu hỏi chưa làm vào client payload.
+  - `evidenceUsed` attached directly by backend (`sourceType`, `sourceId`, `snippet`, `relevance`).
+  - Never leak unattempted correct answers into client payloads.
 
-### FR-7: Đồng bộ Hợp đồng API & Ngữ nghĩa `responseMode` (Response Contract & Mode Semantics)
-- **FR-7.1 (Định nghĩa Ngữ nghĩa `responseMode`)**:
-  - `'llm'`: Phản hồi mới được tạo trực tiếp từ mô hình ngôn ngữ lớn (LLM Provider).
-  - `'db_fallback'`: Phản hồi cấu trúc sinh tự động từ DB khi LLM mất kết nối, quota hết hoặc timeout.
-  - `'cached'`: Phản hồi tái sử dụng từ Cache/AIAsset với Scope khóa chặt theo: $\text{SHA-256}(\text{courseCode} + \text{questionId} + \text{intent} + \text{userQuery})$.
-- **FR-7.2 (Cờ `fallback`)**:
-  - API Response Schema bắt buộc có trường boolean `fallback` (`true` khi `responseMode === 'db_fallback'`, ngược lại `false`).
+### FR-7: API Contract Synchronization & Response Modes
+- **FR-7.1 (`responseMode` Semantics)**:
+  - `'llm'`: Fresh response synthesized by the AI provider.
+  - `'db_fallback'`: Rule-based structured response generated from database upon LLM timeout or outage.
+  - `'cached'`: Deduplicated response from Cache/AIAsset keyed by: $\text{SHA-256}(\text{courseCode} + \text{questionId} + \text{intent} + \text{userQuery})$.
+- **FR-7.2 (`fallback` Flag)**:
+  - API response must include boolean `fallback` (`true` when `responseMode === 'db_fallback'`, otherwise `false`).
 
-### FR-8: Nâng cấp Giao diện (UI Micro-Interactions)
-- **FR-8.1**: Gửi `intent` tường minh từ các nút Quick Action.
-- **FR-8.2**: Hiển thị Badge nguồn trích dẫn (`QuestionBank` / `Quiz`) và thanh trạng thái độ tin cậy (`confidence`).
-- **FR-8.3**: Tương thích hoàn hảo 4 theme màu (Light, Dark, Green, Pink) và thiết bị di động.
+### FR-8: UI Micro-Interactions & Experience
+- **FR-8.1**: Explicit intent dispatch from Quick Action buttons.
+- **FR-8.2**: Evidence citation badges (`QuestionBank` / `Quiz`) and confidence indicators.
+- **FR-8.3**: 100% compatibility across 4 themes (Light, Dark, Green, Pink) and responsive mobile views.
 
 ---
 
-## 3. Yêu cầu phi chức năng (Non-Functional Requirements)
+## 3. Non-Functional Requirements (NFR)
 
-- **NFR-1 (SLA & Request Deadline Budget Propagation)**:
-  - **Tổng Request SLA**: $\le 2500\text{ms}$.
-  - **DB Retrieval Budget**: $\le 300\text{ms}$ (Thực thi song song với deadline enforcement).
+- **NFR-1 (SLA & Deadline Budgeting)**:
+  - **Total Request SLA**: $\le 2500\text{ms}$.
+  - **DB Retrieval Budget**: $\le 300\text{ms}$ (parallel execution).
   - **LLM Provider Budget**: $\text{Remaining Time} = \min(2200\text{ms}, 2500\text{ms} - \text{elapsedTime})$.
-  - **Pipeline Overhead**: Context + Intent + Ranking + Prompt + Validation + Mapping $\le 100\text{ms}$.
+  - **Pipeline Overhead**: $\le 100\text{ms}$.
   - **DB Fallback Latency**: $\le 150\text{ms}$.
-- **NFR-2 (Bảo mật & Phân quyền)**:
-  - Xác thực JWT qua `withAuth`; danh tính lấy độc quyền từ token.
-  - Hỗ trợ các roles `['student', 'admin', 'dev']`.
-- **NFR-3 (Kiến trúc Module Clean Architecture)**:
-  - Đặt trọn vẹn trong `lib/modules/ai/quiz-assistant/`.
-  - Tuân thủ 100% `.agents/policies/cross-module-boundary.json`.
-- **NFR-4 (Tương thích ngược 100%)**:
-  - Giữ nguyên các trường `reply`, `formulaExplanation`, `similarQuestionFound`, `similarQuestionDetails` để không làm gãy UI cũ.
-- **NFR-5 (Kiểm thử Toàn diện & Negative Security Tests)**:
-  - Bắt buộc kiểm thử cả Happy Paths lẫn Negative & Security Edge Cases:
-    1. Rejection khi Session không thuộc về Token User.
-    2. Body `userId` giả mạo bị phớt lờ hoàn toàn.
-    3. Không có evidence thì không claim QuestionBank.
-    4. LLM cố tình trả `correct_answer` giả mạo thì `ResponseMapper` vẫn bóc tách sạch sẽ.
-    5. Partial Retrieval Failure (1 nguồn timeout thì nguồn còn lại vẫn trả kết quả).
-    6. LLM timeout thì chuyển sang `responseMode = 'db_fallback'`.
+- **NFR-2 (Security & Authorization)**:
+  - JWT verification via `withAuth`; identity strictly sourced from token.
+  - Supported roles: `['student', 'admin', 'dev']`.
+- **NFR-3 (Clean Module Boundaries)**:
+  - Contained fully within `apps/web/lib/modules/ai/quiz-assistant/`.
+  - 100% compliant with `.agents/policies/cross-module-boundary.json`.
+- **NFR-4 (Zero Breaking Changes)**:
+  - Preserve legacy response fields `reply`, `formulaExplanation`, `similarQuestionFound`, `similarQuestionDetails`.
+- **NFR-5 (Comprehensive Test Coverage)**:
+  - Validate happy paths, negative tests, and security edge cases:
+    1. Rejection when session does not belong to token user.
+    2. Spoofed body `userId` completely ignored.
+    3. Absence of evidence never generates QuestionBank claims.
+    4. Malformed LLM answer payloads filtered cleanly by `ResponseMapper`.
+    5. Partial retrieval failure resiliency.
+    6. LLM timeout triggers seamless `responseMode = 'db_fallback'`.

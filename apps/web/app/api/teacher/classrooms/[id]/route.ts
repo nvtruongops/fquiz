@@ -10,11 +10,11 @@ export const GET = withAuth(
       const { id } = await params
       const classroom = await ClassroomService.getClassroomDetail(id)
       if (!classroom) {
-        return NextResponse.json({ error: 'Không tìm thấy lớp học' }, { status: 404 })
+        return NextResponse.json({ error: 'Classroom not found' }, { status: 404 })
       }
       return NextResponse.json({ classroom })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi hệ thống' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }
@@ -27,9 +27,9 @@ export const PATCH = withAuth(
       const { id } = await params
       const body = await req.json()
       const classroom = await ClassroomService.updateClassroom(id, payload.userId, body)
-      return NextResponse.json({ classroom, message: 'Cập nhật lớp học thành công' })
+      return NextResponse.json({ classroom, message: 'Classroom updated successfully' })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi cập nhật lớp học' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to update classroom' }, { status: 400 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }
@@ -41,9 +41,9 @@ export const DELETE = withAuth(
       await connectDB()
       const { id } = await params
       await ClassroomService.deleteClassroom(id, payload.userId)
-      return NextResponse.json({ message: 'Xóa lớp học thành công' })
+      return NextResponse.json({ message: 'Classroom deleted successfully' })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi xóa lớp học' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to delete classroom' }, { status: 400 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

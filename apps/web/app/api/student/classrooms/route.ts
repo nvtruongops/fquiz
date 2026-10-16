@@ -10,7 +10,7 @@ export const GET = withAuth(
       const classrooms = await ClassroomService.getClassroomsByStudent(payload.userId)
       return NextResponse.json({ classrooms })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi lấy danh sách lớp học' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Failed to get classroom list' }, { status: 500 })
     }
   },
   { roles: ['student', 'teacher', 'dev'] }

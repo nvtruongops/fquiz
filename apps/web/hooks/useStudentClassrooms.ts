@@ -76,7 +76,7 @@ export function useStudentClassrooms() {
         setSelectedClassroom(prev => prev || (list.length > 0 ? list[0] : null))
       }
     } catch (err) {
-      console.error('Lỗi tải lớp học:', err)
+      console.error('Failed to load classrooms:', err)
     } finally {
       setLoading(false)
     }
@@ -90,7 +90,7 @@ export function useStudentClassrooms() {
         setAssignments(data.assignments || [])
       }
     } catch (err) {
-      console.error('Lỗi tải bài tập:', err)
+      console.error('Failed to load assignments:', err)
     }
   }
 
@@ -107,7 +107,7 @@ export function useStudentClassrooms() {
   const handleJoinClass = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!joinCode.trim() || joinCode.length !== 6) {
-      setErrorMessage('Mã lớp học phải có đúng 6 ký tự')
+      setErrorMessage('Classroom code must be exactly 6 characters')
       return
     }
 
@@ -124,16 +124,16 @@ export function useStudentClassrooms() {
       })
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Gia nhập lớp học thất bại')
+        throw new Error(data.error || 'Failed to join classroom')
       }
 
-      setSuccessMessage(data.message || 'Gia nhập lớp thành công')
+      setSuccessMessage(data.message || 'Joined classroom successfully')
       setJoinCode('')
       setJoinPassword('')
       setJoinModalOpen(false)
       fetchClassrooms()
     } catch (err: any) {
-      setErrorMessage(err.message || 'Lỗi khi gia nhập lớp')
+      setErrorMessage(err.message || 'Error joining classroom')
     } finally {
       setJoining(false)
     }
@@ -150,7 +150,7 @@ export function useStudentClassrooms() {
         fetchClassrooms()
       }
     } catch (err) {
-      console.error('Lỗi ghim lớp:', err)
+      console.error('Failed to pin classroom:', err)
     }
   }
 
@@ -168,10 +168,10 @@ export function useStudentClassrooms() {
         fetchClassrooms()
       } else {
         const data = await res.json()
-        toast.error(data.error || 'Rời lớp học thất bại')
+        toast.error(data.error || 'Failed to leave classroom')
       }
     } catch (err) {
-      console.error('Lỗi rời lớp học:', err)
+      console.error('Failed to leave classroom:', err)
     }
   }
 

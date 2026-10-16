@@ -24,8 +24,8 @@ export function useSessionFinalize({
 
   const finalizeMutation = useMutation<{ completed: boolean; score: number; totalQuestions: number }, Error>({
     mutationFn: async () => {
-      sessionLoader.open('Đang nộp bài và chấm điểm...')
-      sessionLoader.advance(50, 'Đang phân tích kết quả...')
+      sessionLoader.open('Submitting exam and scoring...')
+      sessionLoader.advance(50, 'Analyzing results...')
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`,
@@ -38,10 +38,10 @@ export function useSessionFinalize({
           throw new Error('Session expired. Redirecting to login...')
         }
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error ?? 'Không thể nộp bài')
+        throw new Error(err.error ?? 'Failed to submit quiz')
       }
 
-      sessionLoader.advance(95, 'Đang chuẩn bị bảng kết quả...')
+      sessionLoader.advance(95, 'Preparing result summary...')
       return res.json()
     },
     onSuccess: () => {

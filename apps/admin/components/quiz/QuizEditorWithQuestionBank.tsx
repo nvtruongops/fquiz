@@ -49,8 +49,8 @@ export function QuizEditorWithQuestionBank({
       {!form.isCategorySelected && (
         <div className="p-4 bg-primary/10 border border-primary/30 rounded-2xl flex items-center gap-3 animate-in fade-in duration-300 shadow-xs">
           <div className="text-xs text-foreground">
-            <strong className="font-bold text-primary block text-sm">Bước 1: Chọn Môn học để bắt đầu</strong>
-            <span>Vui lòng chọn Môn học trước để hệ thống kích hoạt bảng soạn thảo và đối chiếu với Ngân hàng câu hỏi của môn đó.</span>
+            <strong className="font-bold text-primary block text-sm">Step 1: Select a Category to start</strong>
+            <span>Please select a Category first to enable the editor and cross-check against its Question Bank.</span>
           </div>
         </div>
       )}

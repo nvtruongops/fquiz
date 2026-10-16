@@ -66,7 +66,7 @@ export function useAdminSettings() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'settings'],
     queryFn: fetchSettings,
-    staleTime: 0,
+    staleTime: 30 * 1000,
   })
 
   useEffect(() => {
@@ -88,11 +88,11 @@ export function useAdminSettings() {
     mutationFn: saveSettings,
     onSuccess: (res) => {
       queryClient.setQueryData(['admin', 'settings'], res)
-      toast({ title: 'Thành công', description: 'Đã lưu cấu hình hệ thống!', type: 'success' })
+      toast({ title: 'Success', description: 'System settings saved successfully!', type: 'success' })
       setSavingProvider(null)
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message || 'Không thể lưu cài đặt', type: 'error' })
+      toast({ title: 'Error', description: err.message || 'Failed to save settings', type: 'error' })
       setSavingProvider(null)
     },
   })

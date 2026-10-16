@@ -37,9 +37,9 @@ export function VariantCard({ group, selected, onClick }: VariantCardProps) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Badge variant={selected ? 'default' : 'secondary'}>
-            {group.count} quiz dùng đáp án này
+            {group.count} {group.count === 1 ? 'quiz uses' : 'quizzes use'} this answer
           </Badge>
-          {selected && <span className="text-success-fg font-bold text-sm">✓ Đã chọn</span>}
+          {selected && <span className="text-success-fg font-bold text-sm">✓ Selected</span>}
         </div>
       </div>
 
@@ -69,14 +69,14 @@ export function VariantCard({ group, selected, onClick }: VariantCardProps) {
 
       {group.sample_variant.explanation && (
         <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-1 font-medium">Giải thích:</p>
+          <p className="text-xs text-muted-foreground mb-1 font-medium">Explanation:</p>
           <p className="text-xs text-card-foreground">{group.sample_variant.explanation}</p>
         </div>
       )}
 
       <div className="mt-3 pt-3 border-t border-border">
         <p className="text-xs text-muted-foreground mb-1 font-medium">
-          Đáp án này đang dùng trong:
+          Currently used in:
         </p>
         <div className="flex flex-wrap gap-1">
           {group.quizzes.slice(0, 5).map((code) => (

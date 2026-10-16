@@ -172,17 +172,17 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       if (isMixQuiz) {
         const { answeredCount, correctCount } = calculateAnswerCounts(item)
         const sessionTotal = resolveSessionTotalQuestions(item, quiz) || answeredCount || 0
-        const quizTitle = quiz?.title ?? 'Quiz Trộn'
-        const quizCode = quiz ? mixQuizDisplayCode(quizTitle) : 'TRỘN'
+        const quizTitle = quiz?.title ?? 'Mix Quiz'
+        const quizCode = quiz ? mixQuizDisplayCode(quizTitle) : 'MIX'
 
         return {
           _id: item._id.toString(),
           quiz_id: quizIdStr,
           quiz_title: quizTitle,
           quiz_code: quizCode,
-          category_name: 'Quiz Trộn',
+          category_name: 'Mix Quiz',
           source_type: 'mix_quiz',
-          source_label: 'Quiz Trộn',
+          source_label: 'Mix Quiz',
           source_creator_name: null,
           score: item.score,
           total_questions: sessionTotal,
@@ -204,12 +204,12 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       const { answeredCount, correctCount } = calculateAnswerCounts(item)
 
       const categoryIdStr = quiz?.category_id?.toString?.()
-      const categoryName = categoryIdStr ? (categoryNameMap.get(categoryIdStr) ?? 'Chưa phân loại') : 'Chưa phân loại'
+      const categoryName = categoryIdStr ? (categoryNameMap.get(categoryIdStr) ?? 'Uncategorized') : 'Uncategorized'
 
       return {
         _id: item._id.toString(),
         quiz_id: quizIdStr,
-        quiz_title: quiz?.title ?? 'Quiz đã bị xóa',
+        quiz_title: quiz?.title ?? 'Deleted Quiz',
         quiz_code: quiz?.course_code ?? 'N/A',
         category_name: categoryName,
         source_type: sourceType,

@@ -36,7 +36,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
   if (!questions || questions.length === 0) {
     return (
       <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-bold text-xs">
-        Không có thông tin chi tiết câu hỏi.
+        No question detail information available.
       </div>
     )
   }
@@ -73,21 +73,24 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
       {/* Left Panel: Compact Question Matrix & Filters */}
       <div className="md:col-span-3 lg:col-span-3 xl:col-span-3 bg-card rounded-2xl p-3 sm:p-3.5 shadow-2xs border border-border flex flex-col h-auto md:h-full min-h-0 overflow-hidden shrink-0">
         {/* Header (Clickable toggle on mobile only) */}
-        <div 
+        <button 
+          type="button"
           onClick={() => setIsMobileMatrixOpen(!isMobileMatrixOpen)}
-          className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border shrink-0 cursor-pointer md:cursor-default select-none"
+          aria-expanded={isMobileMatrixOpen}
+          aria-label="Expand or collapse question list"
+          className="w-full flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border shrink-0 cursor-pointer md:cursor-default select-none text-left"
         >
           <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <BookOpen className="h-4 w-4 text-primary shrink-0" />
-            Danh sách câu ({totalQuestions})
+            <BookOpen aria-hidden="true" className="h-4 w-4 text-primary shrink-0" />
+            Questions ({totalQuestions})
             <span className="inline-flex md:hidden items-center text-[10px] font-black text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full border border-border">
-              {isMobileMatrixOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {isMobileMatrixOpen ? <ChevronUp aria-hidden="true" className="h-3 w-3" /> : <ChevronDown aria-hidden="true" className="h-3 w-3" />}
             </span>
           </span>
           <span className="text-[11px] font-black text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border">
-            Đúng {correctCount}/{totalQuestions}
+            Correct {correctCount}/{totalQuestions}
           </span>
-        </div>
+        </button>
 
         {/* Matrix content container: Hidden on mobile unless toggled open */}
         <div className={cn("flex flex-col flex-1 min-h-0 transition-all", !isMobileMatrixOpen && "hidden md:flex")}>
@@ -103,7 +106,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Tất cả ({totalQuestions})
+              All ({totalQuestions})
             </button>
             <button
               type="button"
@@ -115,7 +118,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-success-fg hover:bg-success-bg/40'
               )}
             >
-              Đúng ({correctCount})
+              Correct ({correctCount})
             </button>
             <button
               type="button"
@@ -127,7 +130,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-incorrect-fg hover:bg-incorrect-bg/50'
               )}
             >
-              Sai ({incorrectCount})
+              Wrong ({incorrectCount})
             </button>
             <button
               type="button"
@@ -139,7 +142,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-muted-foreground hover:bg-muted'
               )}
             >
-              Bỏ ({unansweredCount})
+              Skipped ({unansweredCount})
             </button>
           </div>
 
@@ -181,7 +184,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                       btnBg,
                       isSelected && 'border-2 border-primary ring-2 ring-primary/20 font-black z-10 shadow-2xs'
                     )}
-                    title={`Câu ${idx + 1}: ${notAnswered ? 'Chưa làm' : isCorrect ? 'Đúng' : 'Sai'}`}
+                    title={`Question ${idx + 1}: ${notAnswered ? 'Unanswered' : isCorrect ? 'Correct' : 'Incorrect'}`}
                   >
                     {idx + 1}
                   </button>
@@ -193,13 +196,13 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           {/* Legend Footer */}
           <div className="pt-2 mt-1.5 border-t border-border flex items-center justify-around text-[9px] sm:text-[10px] font-black text-muted-foreground select-none shrink-0">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-success-fg inline-block" /> Đúng
+              <span className="w-2 h-2 rounded-full bg-success-fg inline-block" /> Correct
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-incorrect-fg inline-block" /> Sai
+              <span className="w-2 h-2 rounded-full bg-incorrect-fg inline-block" /> Incorrect
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> Bỏ trống
+              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> Skipped
             </span>
           </div>
         </div>
@@ -251,22 +254,22 @@ function QuestionDetailCard({
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 rounded-xl bg-muted text-muted-foreground font-black text-xs uppercase tracking-wider border border-border">
-            CÂU {idx + 1} / {totalQuestions}
+            QUESTION {idx + 1} / {totalQuestions}
           </span>
         </div>
 
         <div>
           {notAnswered ? (
             <Badge className="bg-muted text-muted-foreground border border-border text-xs font-black px-3 py-1.5 rounded-full">
-              <MinusCircle className="h-3.5 w-3.5 mr-1 inline text-muted-foreground" /> Chưa trả lời
+              <MinusCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1 inline text-muted-foreground" /> Unanswered
             </Badge>
           ) : q.is_correct ? (
             <Badge className="bg-success-bg text-success-fg border border-success-border text-xs font-black px-3 py-1.5 rounded-full">
-              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 inline text-success-fg" /> Trả lời đúng
+              <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-success-fg" /> Correct
             </Badge>
           ) : (
             <Badge className="bg-incorrect-bg text-incorrect-fg border border-incorrect-border text-xs font-black px-3 py-1.5 rounded-full">
-              <XCircle className="h-3.5 w-3.5 mr-1.5 inline text-incorrect-fg" /> Trả lời sai
+              <XCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-incorrect-fg" /> Incorrect
             </Badge>
           )}
         </div>
@@ -288,7 +291,7 @@ function QuestionDetailCard({
                   ? q.image_url
                   : ''
               }
-              alt={`Câu hỏi ${idx + 1}`}
+              alt={`Question ${idx + 1}`}
               className="max-h-56 object-contain rounded-xl select-none"
             />
           </div>
@@ -313,7 +316,7 @@ function QuestionDetailCard({
               circleBg = 'bg-primary text-primary-foreground border-primary'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-success-border bg-card text-success-fg flex items-center justify-center shrink-0">
-                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
                 </div>
               )
             } else if (isCorrectAnswer) {
@@ -323,7 +326,7 @@ function QuestionDetailCard({
               circleBg = 'bg-primary text-primary-foreground border-primary'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-success-border bg-card text-success-fg flex items-center justify-center shrink-0">
-                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
                 </div>
               )
             } else if (isSubmittedAnswer && !isCorrectAnswer) {
@@ -333,7 +336,7 @@ function QuestionDetailCard({
               circleBg = 'bg-destructive text-destructive-foreground border-destructive'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-incorrect-border bg-card text-incorrect-fg flex items-center justify-center shrink-0">
-                  <X className="h-3.5 w-3.5 stroke-[3]" />
+                  <X aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
                 </div>
               )
             }
@@ -371,14 +374,14 @@ function QuestionDetailCard({
               onClick={() => setShowExplanation(!showExplanation)}
               className="h-9 px-4 rounded-full border-info-border bg-info-bg text-info-fg hover:bg-info-bg/80 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
-              XEM GIẢI THÍCH ĐÁP ÁN
-              {showExplanation ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              VIEW EXPLANATION
+              {showExplanation ? <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" /> : <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />}
             </Button>
 
             {showExplanation && (
               <div className="mt-2.5 p-4 rounded-2xl bg-info-bg border border-info-border space-y-1.5 select-none animate-in fade-in slide-in-from-top-1 duration-200 text-card-foreground">
                 <p className="text-xs font-black text-info-fg uppercase tracking-wider flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 text-info-fg" /> Giải thích chi tiết
+                  <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 text-info-fg" /> Detailed Explanation
                 </p>
                 <p className="text-xs sm:text-[13px] text-info-fg leading-relaxed whitespace-pre-wrap select-none font-bold">
                   {q.explanation}
@@ -397,7 +400,7 @@ function QuestionDetailCard({
           disabled={idx === 0}
           className="h-10 sm:h-9 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border-border disabled:opacity-40 text-muted-foreground bg-muted/80 hover:bg-muted cursor-pointer"
         >
-          <ChevronLeft className="mr-1 h-3.5 w-3.5" /> CÂU TRƯỚC
+          <ChevronLeft aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> PREV QUESTION
         </Button>
 
         <span className="text-xs font-black text-muted-foreground uppercase tracking-wider">
@@ -409,7 +412,7 @@ function QuestionDetailCard({
           disabled={idx === totalQuestions - 1}
           className="h-10 sm:h-9 px-4 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs uppercase tracking-wider disabled:opacity-40 cursor-pointer"
         >
-          CÂU TIẾP <ChevronRight className="ml-1 h-3.5 w-3.5" />
+          NEXT QUESTION <ChevronRight aria-hidden="true" className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

@@ -25,7 +25,7 @@ export default function TeacherCreateQuizPage() {
     return (
       <div className="p-8 flex items-center gap-2 text-muted-foreground font-semibold">
         <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        Đang tải danh mục môn học...
+        Loading categories...
       </div>
     )
   }

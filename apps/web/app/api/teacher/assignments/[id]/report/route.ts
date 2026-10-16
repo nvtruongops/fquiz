@@ -10,11 +10,11 @@ export const GET = withAuth(
       const { id } = await params
       const report = await ClassroomService.getAssignmentReport(id)
       if (!report) {
-        return NextResponse.json({ error: 'Không tìm thấy bài tập' }, { status: 404 })
+        return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
       }
       return NextResponse.json({ report })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi khi xuất báo cáo' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Failed to generate report' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

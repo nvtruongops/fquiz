@@ -143,7 +143,7 @@ export function useSubmitAnswer(sessionId: string) {
       if (context) {
         rollbackOptimisticAnswer(context.questionIndex)
       }
-      toast.error(error.message || 'Không thể gửi câu trả lời, vui lòng thử lại')
+      toast.error(error.message || 'Failed to submit answer, please try again')
     },
   })
 }

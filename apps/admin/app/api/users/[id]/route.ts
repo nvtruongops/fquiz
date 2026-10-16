@@ -7,13 +7,13 @@ import mongoose from 'mongoose'
 export const PUT = withAuth<{ id: string }>(async (req, { params, payload }) => {
   const { id } = await Promise.resolve(params)
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID người dùng không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 })
   }
 
   await connectDB()
   const targetUser = await User.findById(id).lean()
   if (!targetUser) {
-    return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 })
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
   const isTargetAdmin = targetUser.role === 'admin'
@@ -25,13 +25,13 @@ export const PUT = withAuth<{ id: string }>(async (req, { params, payload }) => 
   if (isTargetAdmin) {
     if (role && role !== targetUser.role) {
       return NextResponse.json(
-        { error: 'Không thể thay đổi hoặc hạ quyền tài khoản Quản trị viên' },
+        { error: 'Cannot change or demote Administrator accounts' },
         { status: 403 }
       )
     }
     if (status === 'banned') {
       return NextResponse.json(
-        { error: 'Không thể khóa tài khoản Quản trị viên' },
+        { error: 'Cannot suspend Administrator accounts' },
         { status: 403 }
       )
     }
@@ -40,7 +40,7 @@ export const PUT = withAuth<{ id: string }>(async (req, { params, payload }) => 
   // 2. Privilege Escalation Prevention: Cannot elevate regular users to admin via UI (only dev/teacher/student allowed)
   if (!isTargetAdmin && role === 'admin') {
     return NextResponse.json(
-      { error: 'Không thể nâng cấp tài khoản người dùng lên Quản trị viên qua giao diện này' },
+      { error: 'Cannot elevate user accounts to Administrator via this interface' },
       { status: 403 }
     )
   }
@@ -56,7 +56,7 @@ export const PUT = withAuth<{ id: string }>(async (req, { params, payload }) => 
   }
 
   if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: 'Không có dữ liệu cập nhật hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'No valid update data provided' }, { status: 400 })
   }
 
   const user = await User.findByIdAndUpdate(id, update, { new: true })
@@ -69,27 +69,27 @@ export const PUT = withAuth<{ id: string }>(async (req, { params, payload }) => 
 export const DELETE = withAuth<{ id: string }>(async (req, { params, payload }) => {
   const { id } = await Promise.resolve(params)
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID người dùng không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 })
   }
 
   if (id === payload.userId) {
-    return NextResponse.json({ error: 'Không thể tự xóa tài khoản của chính mình' }, { status: 400 })
+    return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 })
   }
 
   await connectDB()
   const targetUser = await User.findById(id).lean()
   if (!targetUser) {
-    return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 })
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
   // Protection: Admin accounts cannot be deleted via Admin Panel
   if (targetUser.role === 'admin') {
     return NextResponse.json(
-      { error: 'Bảo mật: Không thể xóa tài khoản Quản trị viên' },
+      { error: 'Security: Cannot delete Administrator accounts' },
       { status: 403 }
     )
   }
 
   await User.findByIdAndDelete(id)
-  return NextResponse.json({ success: true, message: 'Đã xóa người dùng' })
+  return NextResponse.json({ success: true, message: 'User deleted successfully' })
 })

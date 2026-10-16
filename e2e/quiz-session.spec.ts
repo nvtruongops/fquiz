@@ -9,18 +9,18 @@ test.describe('Quiz Session Runner Interactive Experience', () => {
     {
       _id: 'q1',
       question_id: 'Q-001',
-      text: 'Mô hình lập trình nào là nền tảng cốt lõi của C# .NET?',
-      options: ['Hướng đối tượng (OOP)', 'Lập trình thủ tục thuần túy', 'Lập trình hàm thuần túy', 'Lập trình logic'],
+      text: 'Which programming paradigm is the core foundation of C# .NET?',
+      options: ['Object-Oriented Programming (OOP)', 'Pure Procedural Programming', 'Pure Functional Programming', 'Logic Programming'],
       correct_answer: 0,
-      explanation: 'C# là ngôn ngữ lập trình hướng đối tượng mạnh mẽ (Object-Oriented Programming).',
+      explanation: 'C# is a strong object-oriented programming language.',
     },
     {
       _id: 'q2',
       question_id: 'Q-002',
-      text: 'Từ khóa nào trong C# được dùng để kế thừa một lớp cơ sở?',
-      options: [': (dấu hai chấm)', 'extends', 'implements', 'inherit'],
+      text: 'Which symbol in C# is used to inherit from a base class?',
+      options: [': (colon)', 'extends', 'implements', 'inherit'],
       correct_answer: 0,
-      explanation: 'Trong C#, cú pháp kế thừa sử dụng dấu hai chấm : (class Dog : Animal).',
+      explanation: 'In C#, inheritance syntax uses a colon : (class Dog : Animal).',
     },
   ]
 
@@ -38,18 +38,18 @@ test.describe('Quiz Session Runner Interactive Experience', () => {
     await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}`)
 
     // Check question text
-    await expect(page.getByText('Mô hình lập trình nào là nền tảng cốt lõi của C# .NET?')).toBeVisible()
+    await expect(page.getByText('Which programming paradigm is the core foundation of C# .NET?')).toBeVisible()
 
     // Check options
-    await expect(page.getByText('Hướng đối tượng (OOP)')).toBeVisible()
-    await expect(page.getByText('Lập trình thủ tục thuần túy')).toBeVisible()
+    await expect(page.getByText('Object-Oriented Programming (OOP)')).toBeVisible()
+    await expect(page.getByText('Pure Procedural Programming')).toBeVisible()
   })
 
   test('should allow selecting an answer option and receiving immediate feedback in practice mode', async ({ page }) => {
     await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}`)
 
     // Click option A
-    const optionA = page.getByText('Hướng đối tượng (OOP)')
+    const optionA = page.getByText('Object-Oriented Programming (OOP)')
     await optionA.click()
 
     // Option should receive selected or active highlight styling

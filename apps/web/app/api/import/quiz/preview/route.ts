@@ -70,7 +70,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         preview.diagnostics.push({
           level: 'error',
           code: 'CATEGORY_NOT_FOUND',
-          message: `Không tìm thấy category_id "${categoryToken}". Vui lòng tạo môn học trước khi lưu quiz.`,
+          message: `Category "${categoryToken}" not found. Please create the category before saving the quiz.`,
           field: 'quizMeta.category_id',
         })
         preview.summary.errors += 1
@@ -101,17 +101,17 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (err instanceof Error) {
       switch (err.message) {
         case 'MISSING_FILE':
-          return NextResponse.json({ error: 'Thiếu file upload (field "file")' }, { status: 400 })
+          return NextResponse.json({ error: 'Missing file upload (field "file")' }, { status: 400 })
         case 'INVALID_FILE_TYPE':
-          return NextResponse.json({ error: 'Chỉ cho phép file .json hoặc .txt' }, { status: 400 })
+          return NextResponse.json({ error: 'Only .json or .txt files are allowed' }, { status: 400 })
         case 'FILE_TOO_LARGE':
-          return NextResponse.json({ error: 'File quá lớn (tối đa 2MB)' }, { status: 413 })
+          return NextResponse.json({ error: 'File is too large (maximum 2MB)' }, { status: 413 })
         case 'EMPTY_BODY':
-          return NextResponse.json({ error: 'Nội dung request đang trống' }, { status: 400 })
+          return NextResponse.json({ error: 'Request body is empty' }, { status: 400 })
         case 'INVALID_JSON':
-          return NextResponse.json({ error: 'Nội dung JSON không hợp lệ' }, { status: 400 })
+          return NextResponse.json({ error: 'Invalid JSON content' }, { status: 400 })
         case 'INVALID_PAYLOAD_SHAPE':
-          return NextResponse.json({ error: 'Payload phải là một JSON object' }, { status: 400 })
+          return NextResponse.json({ error: 'Payload must be a JSON object' }, { status: 400 })
       }
     }
 

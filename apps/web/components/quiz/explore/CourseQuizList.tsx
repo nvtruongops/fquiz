@@ -1,37 +1,17 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { Input } from '@/components/shared/ui/input'
 import { motion } from 'framer-motion'
-import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Search, Sparkles, Pin } from 'lucide-react'
+import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Pin } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
-
-interface QuizItem {
-  _id: string
-  title: string
-  questionCount: number
-  bestScore: number | null
-}
-
-interface CourseQuizzesResponse {
-  categoryId?: string | null
-  categoryName: string
-  quizzes: QuizItem[]
-  savedQuizIds?: string[]
-  pinnedQuizIds?: string[]
-  isCategoryPinned?: boolean
-}
-
-async function fetchCourseQuizzes(code: string): Promise<CourseQuizzesResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/courses/${code}/quizzes`)
-  if (!res.ok) throw new Error('Failed to fetch quizzes')
-  return res.json()
-}
+import { compareQuizBySemester } from '@/lib/core/utils/semester'
+import { useCourseQuizzes, type CourseQuizzesResponse } from '@/hooks/quiz/useCourseQuizzes'
 
 function QuizSkeleton() {
   return (
@@ -110,11 +90,7 @@ export default function CourseQuizList({
     }
   }
 
-  const { data, isLoading, isError } = useQuery<CourseQuizzesResponse>({
-    queryKey: ['courseQuizzes', code],
-    queryFn: () => fetchCourseQuizzes(code),
-    staleTime: 1000 * 60 * 2,
-  })
+  const { data, isLoading, isError } = useCourseQuizzes(code)
 
   useEffect(() => {
     if (data?.categoryName) {
@@ -144,14 +120,14 @@ export default function CourseQuizList({
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Lưu bộ đề',
-            title: 'Đăng nhập để lưu bộ đề',
-            description: 'Lưu bài thi vào danh sách cá nhân để xem lại và tiếp tục luyện tập bất cứ lúc nào.',
+            featureName: 'Save Quiz',
+            title: 'Sign in to save quiz',
+            description: 'Save quizzes to your personal list to review and practice anytime.',
             targetUrl: `/courses/${code}`,
           })
           return
         }
-        toast.error(json.error || 'Không thể lưu bài thi')
+        toast.error(json.error || 'Failed to save quiz')
         return
       }
 
@@ -159,7 +135,7 @@ export default function CourseQuizList({
       const nextSavedIds = computeNextSavedIds(savedQuizIds, quizId, isUnsaving)
       setSavedQuizIds(nextSavedIds)
 
-      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code.toUpperCase()], (old) => {
         if (!old) return old
         return {
           ...old,
@@ -170,9 +146,9 @@ export default function CourseQuizList({
       queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
       queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
 
-      toast.success(json.message || (isUnsaving ? 'Đã xóa khỏi Bộ đề của tôi' : 'Đã lưu mã quiz'))
+      toast.success(json.message || (isUnsaving ? 'Removed quiz from saved list' : 'Saved quiz successfully'))
     } catch {
-      toast.error('Có lỗi xảy ra khi xử lý lưu bài thi')
+      toast.error('An error occurred while saving quiz')
     } finally {
       setSavingQuizId(null)
     }
@@ -190,14 +166,14 @@ export default function CourseQuizList({
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Ghim đề thi',
-            title: 'Đăng nhập để ghim đề thi',
-            description: 'Ghim đề thi quan trọng lên đầu danh sách để dễ dàng ôn tập trọng tâm.',
+            featureName: 'Pin Quiz',
+            title: 'Sign in to pin quiz',
+            description: 'Pin important quizzes to the top of the list for focused review.',
             targetUrl: `/courses/${code}`,
           })
           return
         }
-        toast.error(json.error || 'Không thể ghim mã quiz')
+        toast.error(json.error || 'Failed to pin quiz')
         return
       }
 
@@ -205,7 +181,7 @@ export default function CourseQuizList({
       const nextPinned = computeNextPinnedIds(pinnedQuizIds, quizId, isPinned, json.pinnedQuizzes)
       setPinnedQuizIds(nextPinned)
 
-      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code], (old) => {
+      queryClient.setQueryData<CourseQuizzesResponse>(['courseQuizzes', code.toUpperCase()], (old) => {
         if (!old) return old
         return {
           ...old,
@@ -213,9 +189,9 @@ export default function CourseQuizList({
         }
       })
 
-      toast.success(isPinned ? 'Đã ghim mã quiz lên đầu' : 'Đã bỏ ghim mã quiz')
+      toast.success(isPinned ? 'Pinned quiz to top' : 'Unpinned quiz')
     } catch {
-      toast.error('Có lỗi khi ghim mã quiz')
+      toast.error('An error occurred while pinning quiz')
     } finally {
       setPinningQuizId(null)
     }
@@ -229,13 +205,13 @@ export default function CourseQuizList({
       const q = searchQuery.trim().toLowerCase()
       list = rawQuizzes.filter((quiz) => quiz.title.toLowerCase().includes(q))
     }
-    // Sort: Pinned quizzes float to the VERY TOP!
+    // Sort: Pinned quizzes float to the VERY TOP, then sorted by semester chronologically
     return [...list].sort((a, b) => {
       const aPinned = pinnedQuizIds.includes(a._id)
       const bPinned = pinnedQuizIds.includes(b._id)
       if (aPinned && !bPinned) return -1
       if (!aPinned && bPinned) return 1
-      return 0
+      return compareQuizBySemester(a.title, b.title)
     })
   }, [rawQuizzes, searchQuery, pinnedQuizIds])
 
@@ -256,7 +232,7 @@ export default function CourseQuizList({
   if (isError) {
     return (
       <div className="text-center py-12 text-red-600 bg-red-50/50 border border-red-200 rounded-3xl backdrop-blur-md">
-        Không thể tải danh sách đề thi. Vui lòng thử lại sau.
+        Unable to load quizzes. Please try again later.
       </div>
     )
   }
@@ -264,7 +240,7 @@ export default function CourseQuizList({
   if (rawQuizzes.length === 0) {
     return (
       <div className="text-center py-16 text-muted-foreground font-semibold border border-dashed border-border bg-card/40 backdrop-blur-md rounded-3xl">
-        Chưa có đề thi nào trong danh mục này.
+        No quizzes available in this category.
       </div>
     )
   }
@@ -288,7 +264,7 @@ export default function CourseQuizList({
     <div className="space-y-5">
       {filteredQuizzes.length === 0 ? (
         <div className="text-center py-14 text-muted-foreground text-xs font-semibold bg-card/40 border border-border/80 rounded-3xl backdrop-blur-md">
-          Không tìm thấy bộ đề phù hợp với từ khóa &quot;{searchQuery}&quot;
+          No quizzes found matching keyword &quot;{searchQuery}&quot;
         </div>
       ) : (
         <>
@@ -319,11 +295,11 @@ export default function CourseQuizList({
                       <div className="flex items-start gap-3">
                         {isCompleted ? (
                           <div className="w-10 h-10 rounded-2xl bg-success/15 text-success-fg flex items-center justify-center shrink-0 border border-success/30 shadow-2xs">
-                            <Trophy className="w-5 h-5" />
+                            <Trophy className="w-5 h-5" aria-hidden="true" />
                           </div>
                         ) : (
                           <div className="w-10 h-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center shrink-0 border border-border shadow-2xs">
-                            <HelpCircle className="w-5 h-5" />
+                            <HelpCircle className="w-5 h-5" aria-hidden="true" />
                           </div>
                         )}
                         <div className="flex-1 space-y-1 min-w-0">
@@ -335,8 +311,8 @@ export default function CourseQuizList({
                           </h3>
                           {isPinned && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border">
-                              <Pin className="w-2.5 h-2.5 fill-current rotate-45" />
-                              Đã ghim
+                              <Pin className="w-2.5 h-2.5 fill-current rotate-45" aria-hidden="true" />
+                              Pinned
                             </span>
                           )}
                         </div>
@@ -346,13 +322,13 @@ export default function CourseQuizList({
                       <div className="space-y-2">
                         <div className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-primary" />
-                          {quiz.questionCount} câu hỏi
+                          {quiz.questionCount} questions
                         </div>
 
                         <div>
                           {isCompleted ? (
                             <Badge className="border-0 text-white font-black text-[10px] px-3 py-1 rounded-full bg-success shadow-2xs uppercase tracking-wider whitespace-nowrap">
-                              Điểm cao nhất: {(() => {
+                              Highest score: {(() => {
                                 const val = (quiz.bestScore! / quiz.questionCount) * 10
                                 return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
                               })()}/10
@@ -362,7 +338,7 @@ export default function CourseQuizList({
                               variant="outline"
                               className="text-[10px] text-muted-foreground border-border font-extrabold px-3 py-1 rounded-full bg-muted uppercase tracking-wider whitespace-nowrap"
                             >
-                              Chưa thử sức
+                              Not attempted
                             </Badge>
                           )}
                         </div>
@@ -373,10 +349,10 @@ export default function CourseQuizList({
                     <div className="pt-3 border-t border-border/80 relative z-10 flex items-center gap-2">
                       <Link
                         href={`/quiz/${quiz._id}`}
-                        className="flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
+                        className="flex-1 min-w-0 min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
                       >
-                        Vào làm bài
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        Start Quiz
+                        <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                       </Link>
 
                       <button
@@ -387,18 +363,19 @@ export default function CourseQuizList({
                           handlePinQuiz(quiz._id)
                         }}
                         disabled={pinningQuizId === quiz._id}
+                        aria-label={isPinned ? `Unpin quiz ${quiz.title}` : `Pin quiz ${quiz.title}`}
                         className={cn(
-                          'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
+                          'min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isPinned
                             ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs'
                             : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
-                        title={isPinned ? 'Bỏ ghim mã quiz' : 'Ghim mã quiz lên đầu'}
+                        title={isPinned ? 'Unpin quiz' : 'Pin quiz to top'}
                       >
                         {pinningQuizId === quiz._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
                         ) : (
-                          <Pin className={cn('w-4 h-4', isPinned && 'fill-current rotate-45')} />
+                          <Pin className={cn('w-4 h-4', isPinned && 'fill-current rotate-45')} aria-hidden="true" />
                         )}
                       </button>
 
@@ -410,18 +387,19 @@ export default function CourseQuizList({
                           handleSaveQuiz(quiz._id)
                         }}
                         disabled={savingQuizId === quiz._id}
+                        aria-label={isSaved ? `Remove quiz ${quiz.title} from saved` : `Save quiz ${quiz.title}`}
                         className={cn(
-                          'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
+                          'min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isSaved
                             ? 'bg-warning-bg/30 text-warning-fg border-warning-border shadow-2xs'
                             : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
-                        title="Lưu bộ đề vào kho của tôi"
+                        title="Save quiz to library"
                       >
                         {savingQuizId === quiz._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
                         ) : (
-                          <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-warning-fg')} />
+                          <Bookmark className={cn('w-4 h-4', isSaved && 'fill-current text-warning-fg')} aria-hidden="true" />
                         )}
                       </button>
                     </div>
@@ -435,7 +413,7 @@ export default function CourseQuizList({
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <span className="text-xs font-semibold text-muted-foreground">
-                Trang {currentPage} / {totalPages} (Tổng {filteredQuizzes.length} bộ đề)
+                Page {currentPage} / {totalPages} (Total {filteredQuizzes.length} quizzes)
               </span>
 
               <div className="flex items-center gap-1.5">
@@ -443,9 +421,10 @@ export default function CourseQuizList({
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  aria-label="Previous page"
+                  className="min-h-[44px] px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center"
                 >
-                  &larr; Trước
+                  &larr; Prev
                 </button>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -453,8 +432,10 @@ export default function CourseQuizList({
                     key={page}
                     type="button"
                     onClick={() => setCurrentPage(page)}
+                    aria-label={`Page ${page}`}
+                    aria-current={currentPage === page ? 'page' : undefined}
                     className={cn(
-                      'w-8 h-8 rounded-xl text-xs font-black transition-all cursor-pointer',
+                      'min-w-[44px] min-h-[44px] rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center',
                       currentPage === page
                         ? 'bg-primary text-primary-foreground shadow-2xs'
                         : 'border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -468,9 +449,10 @@ export default function CourseQuizList({
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  aria-label="Next page"
+                  className="min-h-[44px] px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center"
                 >
-                  Sau &rarr;
+                  Next &rarr;
                 </button>
               </div>
             </div>

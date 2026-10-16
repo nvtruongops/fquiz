@@ -39,9 +39,9 @@ export default function AdminFeedbackPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Hộp thư Góp ý &amp; Báo lỗi</h1>
+        <h1 className="text-2xl font-bold text-foreground">Feedback &amp; Bug Reports</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Tiếp nhận và phản hồi các ý kiến đóng góp, báo lỗi từ học viên
+          Review and respond to user feedback, suggestions, and bug reports
         </p>
       </div>
 
@@ -50,7 +50,7 @@ export default function AdminFeedbackPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Tìm theo nội dung, người gửi..."
+            placeholder="Search by content, sender..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -59,26 +59,26 @@ export default function AdminFeedbackPage() {
 
         <Select value={type} onValueChange={setType}>
           <SelectTrigger>
-            <SelectValue placeholder="Tất cả loại góp ý" />
+            <SelectValue placeholder="All feedback types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả loại</SelectItem>
-            <SelectItem value="bug">Báo lỗi</SelectItem>
-            <SelectItem value="feature">Đề xuất tính năng</SelectItem>
-            <SelectItem value="content">Góp ý nội dung</SelectItem>
-            <SelectItem value="other">Khác</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="bug">Bug report</SelectItem>
+            <SelectItem value="feature">Feature request</SelectItem>
+            <SelectItem value="content">Content feedback</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger>
-            <SelectValue placeholder="Tất cả trạng thái" />
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            <SelectItem value="pending">Chờ xem (Pending)</SelectItem>
-            <SelectItem value="reviewed">Đã xem (Reviewed)</SelectItem>
-            <SelectItem value="resolved">Đã xử lý (Resolved)</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
           </SelectContent>
         </Select>
       </div>

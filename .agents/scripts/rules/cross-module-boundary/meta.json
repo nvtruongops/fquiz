@@ -7,5 +7,5 @@
   "dependsOn": [],
   "parallelizable": true,
   "supportsFix": false,
-  "description": "Đảm bảo ranh giới mô-đun fquiz (không import Model chéo giữa lib/modules/*) và cấm sử dụng Mongoose .populate()."
+  "description": "Enforces module boundaries (no cross-module model imports across lib/modules/*) and forbids Mongoose .populate() calls."
 }

@@ -6,11 +6,11 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 import { User } from '@/lib/modules/auth/models/User'
 
-// Whitelist: chỉ giữ ký tự an toàn, loại bỏ mọi tag HTML và control characters
+// Whitelist: retain safe characters only, remove all HTML tags and control characters
 function sanitizeText(v: string): string {
   return v
     .replace(/<[^>]{0,1000}>/g, '')           // strip HTML tags
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars (giữ \n \r \t)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars (keep \n \r \t)
     .trim()
 }
 
@@ -19,10 +19,10 @@ const CreateFeedbackSchema = z.object({
   message: z
     .string()
     .trim()
-    .min(5, 'Góp ý phải có ít nhất 5 ký tự')
-    .max(1000, 'Góp ý tối đa 1000 ký tự')
+    .min(5, 'Feedback must be at least 5 characters')
+    .max(1000, 'Feedback must not exceed 1000 characters')
     .transform(sanitizeText)
-    .refine((v) => v.length >= 5, 'Góp ý phải có ít nhất 5 ký tự sau khi làm sạch'),
+    .refine((v) => v.length >= 5, 'Feedback must be at least 5 characters after sanitization'),
 }).strict()
 
 // Rate limit: max 3 feedbacks per user per hour (DB-based)
@@ -33,7 +33,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
   try {
     const contentLength = Number(req.headers.get('content-length') || '0')
     if (contentLength > 5000) {
-      return NextResponse.json({ error: 'Payload quá lớn' }, { status: 413 })
+      return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
     }
 
     let body: unknown
@@ -56,7 +56,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     })
     if (recentCount >= RATE_LIMIT) {
       return NextResponse.json(
-        { error: 'Bạn đã gửi quá nhiều góp ý. Vui lòng thử lại sau 1 giờ.' },
+        { error: 'You have submitted too much feedback. Please try again in 1 hour.' },
         { status: 429 }
       )
     }

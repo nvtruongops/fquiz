@@ -41,20 +41,20 @@ export function QuizTable({
             </div>
           ) : !data || data.quizzes.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground text-sm">
-              Không tìm thấy đề thi nào
+              No quizzes found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/30">
                   <tr>
-                    <th className="text-left py-3 px-4 font-semibold">Mã đề</th>
-                    <th className="text-left py-3 px-4 font-semibold">Tiêu đề</th>
-                    <th className="text-left py-3 px-4 font-semibold">Số câu</th>
-                    <th className="text-left py-3 px-4 font-semibold">Lượt thi</th>
-                    <th className="text-left py-3 px-4 font-semibold">Trạng thái</th>
-                    <th className="text-left py-3 px-4 font-semibold">Ngày tạo</th>
-                    <th className="text-right py-3 px-4 font-semibold">Thao tác</th>
+                    <th className="text-left py-3 px-4 font-semibold">Quiz Code</th>
+                    <th className="text-left py-3 px-4 font-semibold">Title</th>
+                    <th className="text-left py-3 px-4 font-semibold">Questions</th>
+                    <th className="text-left py-3 px-4 font-semibold">Attempts</th>
+                    <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold">Created Date</th>
+                    <th className="text-right py-3 px-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -73,13 +73,13 @@ export function QuizTable({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="published">Đã xuất bản (Published)</SelectItem>
-                            <SelectItem value="draft">Bản nháp (Draft)</SelectItem>
+                            <SelectItem value="published">Published</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
                       <td className="py-3 px-4 text-xs text-muted-foreground">
-                        {new Date(q.created_at).toLocaleDateString('vi-VN')}
+                        {new Date(q.created_at).toLocaleDateString('en-US')}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -88,7 +88,7 @@ export function QuizTable({
                               variant="ghost"
                               size="sm"
                               className="h-8 px-2 text-muted-foreground hover:text-primary"
-                              title="Chỉnh sửa đề thi"
+                              title="Edit quiz"
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -98,7 +98,7 @@ export function QuizTable({
                             size="sm"
                             onClick={() => onDeleteTarget(q)}
                             className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                            title="Xóa đề thi"
+                            title="Delete quiz"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -116,7 +116,7 @@ export function QuizTable({
       {data && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
-            Tổng cộng: <span className="font-semibold text-foreground">{data.total}</span> đề thi
+            Total: <span className="font-semibold text-foreground">{data.total}</span> {data.total === 1 ? 'quiz' : 'quizzes'}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -128,7 +128,7 @@ export function QuizTable({
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-xs font-medium px-2">
-              Trang {page} / {totalPages}
+              Page {page} of {totalPages}
             </span>
             <Button
               variant="outline"

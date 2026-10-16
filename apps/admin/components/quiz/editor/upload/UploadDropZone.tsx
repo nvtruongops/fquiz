@@ -37,10 +37,10 @@ export function UploadDropZone({
       </div>
       <div>
         <p className="text-sm font-bold text-foreground">
-          Kéo thả file đề thi vào đây hoặc bấm để chọn file
+          Drag and drop your quiz file here, or click to browse
         </p>
         <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-          Hỗ trợ file văn bản <code className="font-mono font-bold">.txt</code> (định dạng Câu 1, A., B., C., D., Đáp án: A, Mô tả / Giải thích) hoặc file <code className="font-mono font-bold">.json</code>
+          Supports plain text <code className="font-mono font-bold">.txt</code> (formatted as Question 1, A., B., C., D., Answer: A, Description / Explanation) or structured <code className="font-mono font-bold">.json</code>
         </p>
       </div>
     </div>

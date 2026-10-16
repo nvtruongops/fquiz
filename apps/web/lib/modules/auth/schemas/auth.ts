@@ -1,21 +1,21 @@
 import { z } from 'zod'
 
 export const LoginSchema = z.object({
-  identifier: z.string().min(1, 'Vui lòng nhập email hoặc tên đăng nhập'),
-  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
+  identifier: z.string().min(1, 'Please enter your email or username'),
+  password: z.string().min(1, 'Please enter your password'),
 })
 
 export const RegisterSchema = z.object({
   username: z
     .string()
-    .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
-    .max(20, 'Tên đăng nhập tối đa 20 ký tự')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'),
-  email: z.string().email('Email không hợp lệ'),
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username cannot exceed 20 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  email: z.string().email('Invalid email address'),
   password: z
     .string()
-    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
-    .max(50, 'Mật khẩu quá dài'),
+    .min(6, 'Password must be at least 6 characters')
+    .max(50, 'Password is too long'),
 })
 
 export type LoginInput = z.infer<typeof LoginSchema>

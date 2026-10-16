@@ -54,7 +54,7 @@ export const PATCH = withAuth(async (req: Request, { payload }) => {
   try {
     const body = await req.json()
     if (Object.hasOwn(body, 'username')) {
-      return NextResponse.json({ error: 'Username không thể thay đổi sau khi đăng ký' }, { status: 400 })
+      return NextResponse.json({ error: 'Username cannot be changed after registration' }, { status: 400 })
     }
 
     const parsed = UpdateProfileSchema.safeParse(body)

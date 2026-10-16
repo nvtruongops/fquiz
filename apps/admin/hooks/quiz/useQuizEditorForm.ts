@@ -125,7 +125,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
 
   // Question Bank Debounced Check
   useEffect(() => {
-    if (!categoryId || questions.length === 0) {
+    if (!categoryId) {
       setBankStatus({ checked: false, hasConflicts: false, conflicts: [] })
       return
     }
@@ -153,7 +153,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
     }, 1500)
 
     return () => clearTimeout(timer)
-  }, [categoryId, questions.length])
+  }, [categoryId])
 
   // Scroll to question helper
   function scrollToQuestion(index: number) {
@@ -192,7 +192,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
 
   function handleRemoveQuestion(index: number) {
     if (questions.length <= 1) {
-      toast({ title: 'Cảnh báo', description: 'Đề thi phải có ít nhất 1 câu hỏi', type: 'warning' })
+      toast({ title: 'Warning', description: 'Quiz must have at least 1 question', type: 'warning' })
       return
     }
     setQuestions((prev) => prev.filter((_, i) => i !== index))
@@ -229,7 +229,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
     setQuestions((prev) => {
       const clone = [...prev]
       if (clone[qIndex].options.length <= 2) {
-        toast({ title: 'Cảnh báo', description: 'Mỗi câu hỏi cần tối thiểu 2 phương án', type: 'warning' })
+        toast({ title: 'Warning', description: 'Each question requires at least 2 options', type: 'warning' })
         return clone
       }
       const updatedOpts = clone[qIndex].options.filter((_, i) => i !== optIndex)
@@ -257,7 +257,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
   function handleApplyTargetCount() {
     if (typeof targetCount !== 'number' || targetCount <= 0) return
     if (targetCount <= questions.length) {
-      toast({ title: 'Thông báo', description: `Đề thi hiện đã có ${questions.length} câu hỏi.`, type: 'default' })
+      toast({ title: 'Notice', description: `Quiz already has ${questions.length} questions.`, type: 'default' })
       return
     }
     const needed = targetCount - questions.length
@@ -268,7 +268,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
       explanation: '',
     }))
     setQuestions((prev) => [...prev, ...emptySlots])
-    toast({ title: 'Thành công', description: `Đã thêm ${needed} khung câu hỏi để đạt mục tiêu ${targetCount} câu.`, type: 'success' })
+    toast({ title: 'Success', description: `Added ${needed} question slots to reach target of ${targetCount} questions.`, type: 'success' })
   }
 
   // Form Submission
@@ -277,27 +277,27 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
 
     if (targetStatus === 'published' && !diagnostics.isValid) {
       toast({
-        title: 'Chưa thể xuất bản',
-        description: diagnostics.errors[0]?.message || 'Vui lòng hoàn thiện các câu hỏi trước khi xuất bản',
+        title: 'Cannot publish yet',
+        description: diagnostics.errors[0]?.message || 'Please resolve all question errors before publishing',
         type: 'error',
       })
       return
     }
 
     if (!categoryId) {
-      toast({ title: 'Lỗi', description: 'Vui lòng chọn Môn học trước', type: 'error' })
+      toast({ title: 'Error', description: 'Please select a subject/category first', type: 'error' })
       return
     }
 
     if (!courseCode.trim()) {
-      toast({ title: 'Lỗi', description: 'Vui lòng nhập Mã đề thi (Quiz Code)', type: 'error' })
+      toast({ title: 'Error', description: 'Please enter Quiz Code', type: 'error' })
       return
     }
 
     if (codeDuplicateInfo?.exists) {
       toast({
-        title: 'Mã đề đã tồn tại',
-        description: `Mã ${courseCode.toUpperCase()} đã được sử dụng bởi đề thi khác. Vui lòng đổi mã đề.`,
+        title: 'Quiz Code already exists',
+        description: `Quiz code ${courseCode.toUpperCase()} is already used by another quiz. Please choose a different code.`,
         type: 'error',
       })
       return
@@ -328,19 +328,20 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
       })
 
       const data = await res.json()
+
       if (!res.ok) {
-        throw new Error(data.error || 'Lưu đề thi thất bại')
+        throw new Error(data.error || 'Failed to save quiz')
       }
 
       toast({
-        title: 'Thành công',
-        description: targetStatus === 'published' ? 'Đã xuất bản đề thi thành công' : 'Đã lưu bản nháp',
+        title: 'Success',
+        description: targetStatus === 'published' ? 'Quiz published successfully' : 'Draft saved successfully',
         type: 'success',
       })
       router.push('/quizzes')
       router.refresh()
     } catch (err: any) {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     } finally {
       setIsSubmitting(false)
     }

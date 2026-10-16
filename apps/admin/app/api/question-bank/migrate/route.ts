@@ -279,8 +279,8 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
     await QuestionBank.bulkWrite(bulkOps)
   }
 
-  const conflictSuffix = skippedConflicts > 0 ? `, bỏ qua ${skippedConflicts} conflict` : ''
-  const summary = `Đã thêm ${newQuestions} câu hỏi mới, cập nhật ${existingQuestions} câu đã có${conflictSuffix}.`
+  const conflictSuffix = skippedConflicts > 0 ? `, skipped ${skippedConflicts} conflicts` : ''
+  const summary = `Added ${newQuestions} new questions, updated ${existingQuestions} existing questions${conflictSuffix}.`
 
   return NextResponse.json({
     success: true,

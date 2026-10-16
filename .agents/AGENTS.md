@@ -6,18 +6,18 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 
 ## Commands
 
-| Command | What |
+| Command | Description |
 |---|---|
-| `npm run dev` | Khởi chạy song song Web (`:3000`) & Admin (`:3001`) qua Turborepo |
-| `npm run dev:web` | Next.js dev server Web (`apps/web` `:3000`) |
-| `npm run dev:admin` | Next.js dev server Admin (`apps/admin` `:3001`) |
-| `npm run build` | Next.js production build toàn bộ Monorepo (`apps/web` + `apps/admin`) |
-| `npm run build:web` | Next.js build riêng Web (`apps/web`) |
-| `npm run build:admin` | Next.js build riêng Admin (`apps/admin`) |
-| `npm run check-types` | TypeScript Type-check toàn bộ 7 workspaces (`apps/*` & `packages/*`) |
-| `npm run lint` | ESLint toàn bộ Monorepo |
-| `npm test` | Jest Unit & Integration tests (66 suites, 430 tests) |
-| `npx playwright test` | Playwright Multi-Server E2E Tests (57 tests) |
+| `npm run dev` | Launch Web (`:3000`) & Admin (`:3001`) concurrently via Turborepo |
+| `npm run dev:web` | Run Next.js dev server for Web (`apps/web` `:3000`) |
+| `npm run dev:admin` | Run Next.js dev server for Admin (`apps/admin` `:3001`) |
+| `npm run build` | Next.js production build for entire monorepo (`apps/web` + `apps/admin`) |
+| `npm run build:web` | Next.js production build for Web (`apps/web`) |
+| `npm run build:admin` | Next.js production build for Admin (`apps/admin`) |
+| `npm run check-types` | TypeScript type-check across all 7 workspaces (`apps/*` & `packages/*`) |
+| `npm run lint` | ESLint across entire monorepo |
+| `npm test` | Jest unit & integration tests (66 suites, 430 tests) |
+| `npx playwright test` | Playwright multi-server E2E tests (57 tests) |
 | `node .agents/scripts/verify.js --strict` | Rule Engine Verification (18 checks - Strict Mode) |
 
 ## Architecture
@@ -25,8 +25,8 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 - **Workspaces**:
   - `apps/web`: Web Student/Teacher (`@fquiz/web` / Port 3000 / `fquiz-web.vercel.app`). Route groups: `(auth)`, `(student)`, `(teacher)`, `quiz/`, `community/`, `explore/`.
   - `apps/admin`: Standalone Admin Portal (`@fquiz/admin` / Port 3001 / `fquiz-admin.vercel.app`). Route structure: `app/(dashboard)/` (`categories`, `feedback`, `question-bank`, `quizzes`, `settings`, `users`), `app/api/`.
-  - `packages/database`: Singleton kết nối MongoDB Atlas, DNS SRV fallback, Model Registry.
-  - `packages/models`: Single Source of Truth cho Mongoose Schemas, Base Entity (`IBaseEntity`), Zod Schemas.
+  - `packages/database`: Singleton MongoDB Atlas connection, DNS SRV fallback, Model Registry.
+  - `packages/models`: Single Source of Truth for Mongoose Schemas, Base Entity (`IBaseEntity`), Zod Schemas.
   - `packages/auth`: JWT Rotation (`jose`), Double-Submit CSRF, Sliding Rate Limiter, RBAC, `withAuth`.
   - `packages/ui`: Shadcn primitives, 3-Tier Design Tokens, 4 Themes (WCAG 2.2 AA), Toast store, GSAP helpers.
   - `packages/config-typescript`: Shared TSConfig presets.
@@ -61,25 +61,39 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 
 ## Module Architecture
 
-- **No cross-module model imports**. Business modules only import model through `@fquiz/models`.
+- **No cross-module model imports**. Business modules only import models through `@fquiz/models`.
 - **No Mongoose `.populate()`**. Use batch queries with `$in` for application-level joins.
 - **Model Registry**: Modules register models via `registerModel()`. `bootstrapModels()` runs on connect to prevent MissingSchemaError in serverless routes.
 - **Base entity**: All models extend `IBaseEntity`.
+
+## UI/UX & Experience Modes Architecture
+
+- **4 Experience Modes Mental Model** (Reference [`fquiz-ui-ux-audit`](./skills/fquiz-ui-ux-audit/SKILL.md)):
+  1. `Learn Mode`: 3D Flashcards, Instant Explanations, AI Assistant, Swipe Gestures with Undo.
+  2. `Practice Mode`: Multi-category Mix Quiz, Retry Wrong Questions, Smart Filters.
+  3. `Exam Mode`: EOS-standard minimalist UI, ALL AI & Distracting Widgets DISABLED, Authoritative Multi-tab lock, Maximum Exam State Preservation.
+  4. `Result & Mastery Mode`: Visual score analysis, Auto-focus first incorrect question, Knowledge mastery level radar/charts.
+- **Mission-Critical Exam Reliability**: Exam completion and state preservation rate $\ge 99.9\%$.
+- **In-Place Re-auth Mandate**: Strictly no redirect to `/login` upon 401 in exam rooms (`/session/*`). Mandatory In-Place Re-auth Modal to preserve client memory state.
+- **Authoritative Multi-Tab Lease**: Use `BroadcastChannel` to lock submission authority to a single active tab.
+- **Mobile Safe-Area Inset**: Apply `padding-bottom: max(0.75rem, env(safe-area-inset-bottom))` across all mobile footers.
+- **Dual-Track Audit Protocol**: UI/UX audit reports must strictly differentiate between *Engineering Quality* and *Empirically Validated UX*.
 
 ## AI Content
 
 - **Product scope**: Text-only learning (vocabulary, grammar, sentences, paragraphs, quizzes, flashcards). No audio, voice (TTS/STT), OCR, 3D, VR, or multimedia.
 - **Dedup before generation**: Check `AIAsset` collection via `requestHash` + `responseHash` before calling Gemini API. AIAsset has unique index on `{ requestHash: 1, aiProvider: 1 }`.
 - **Prompt templates**: Validate structured JSON output from AI with Zod schemas.
+- **Exam Integrity**: The AI Assistant is strictly prohibited from appearing or intervening in simulated exams (`Exam Mode`).
 
 ## Testing & Verification Standard
 
 - **Environment**: Node (not jsdom).
 - **Pattern**: `**/__tests__/**/*.test.{ts,tsx}` and `e2e/**/*.spec.ts`.
-- **Routine Verification (Mặc định sau mỗi task)**:
+- **Routine Verification (Default after every task)**:
   `npm run lint` → `npm run check-types` → `npm test` → `node .agents/scripts/verify.js --strict`
 - **E2E Playwright Tests (`npx playwright test`)**:
-  Chỉ chạy khi người dùng yêu cầu rõ ràng (On-demand/Release testing), KHÔNG chạy mặc định sau mỗi task phát triển thông thường để tối ưu thời gian phản hồi.
+  Executed on-demand only (Release testing), NOT run by default after routine development tasks to optimize response latency.
 
 ## GSAP UI/UX Animation Standards
 

@@ -15,7 +15,7 @@ export interface IQuestion {
 
 /**
  * Standalone Question document (new collection – Phase 1).
- * Tách biệt khỏi Quiz để tái sử dụng và liên kết với Learning Objects.
+ * Separated from Quiz for reuse and linking with Learning Objects.
  */
 export interface IQuestionStandalone {
   _id: Types.ObjectId
@@ -34,10 +34,10 @@ export interface IQuestionStandalone {
 
   // Usage tracking
   usage_count: number
-  quiz_ids: Types.ObjectId[]        // Các Quiz tham chiếu đến câu hỏi này
+  quiz_ids: Types.ObjectId[]        // Quizzes referencing this question
 
   // Learning links (Phase 2 – Double-Write, temporary)
-  // Phase 4+: thay bằng QuestionContentRelation JOIN TABLE
+  // Phase 4+: replaced by QuestionContentRelation JOIN TABLE
   vocabulary_ids?: Types.ObjectId[]
   grammar_ids?: Types.ObjectId[]
   sentence_ids?: Types.ObjectId[]
@@ -80,6 +80,8 @@ export interface IQuiz {
 export interface ICategory {
   _id: Types.ObjectId
   name: string
+  description?: string
+  slug?: string
   owner_id?: Types.ObjectId // null for admin public categories
   is_public: boolean
   status: 'pending' | 'approved' | 'rejected'

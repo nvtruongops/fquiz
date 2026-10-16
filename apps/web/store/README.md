@@ -1,44 +1,44 @@
 # 🗄️ Client State Stores (`store/`)
 
-Tài liệu thiết kế và hướng dẫn quản lý trạng thái phía máy khách (Client State Management) của **FQuiz** sử dụng thư viện **Zustand v5**.
+Design documentation and client state management guide for **FQuiz** using **Zustand v5**.
 
 ---
 
-## 1. Cấu trúc Thư mục
+## 1. Directory Structure
 
 ```
 store/
 ├── quiz/
-│   └── quiz-session.store.ts   # Quản lý trạng thái phiên làm bài trắc nghiệm (Persisted)
+│   └── quiz-session.store.ts   # Quiz session state management (Persisted)
 ├── shared/
-│   ├── toast-store.ts          # Quản lý hàng đợi thông báo Toast toàn cục
-│   └── __tests__/              # Unit tests cho các actions trong store
-└── README.md                   # Tài liệu hướng dẫn sử dụng
+│   ├── toast-store.ts          # Global toast notification queue
+│   └── __tests__/              # Unit tests for store actions
+└── README.md                   # State store documentation
 ```
 
 ---
 
 ## 2. Quiz Session Store (`store/quiz/quiz-session.store.ts`)
 
-Store trung tâm quản lý toàn bộ vòng đời phiên làm bài thi trắc nghiệm của học viên, đảm bảo trải nghiệm tức thì (0ms latency) và duy trì dữ liệu khi refresh trang.
+Central store managing the complete lifecycle of a student's quiz session, ensuring instant responsiveness (0ms latency) and state retention across page reloads.
 
-### 2.1. Cấu trúc Trạng thái (State Shape)
+### 2.1. State Shape
 
 ```typescript
 interface QuizSessionState {
-  // Metadata phiên thi
+  // Session metadata
   sessionId: string | null;
   quizId: string | null;
   mode: 'immediate' | 'review' | null;
 
-  // Điều hướng câu hỏi
+  // Question navigation
   currentQuestionIndex: number;
   totalQuestions: number;
 
-  // Trạng thái đã trả lời (Mirror từ DB)
+  // Answered state (mirrored from database)
   answeredQuestions: Set<number>;
 
-  // Phản hồi kết quả câu vừa trả lời (Dành cho Immediate Mode)
+  // Immediate feedback for recently submitted answer
   lastAnswerResult: {
     isCorrect: boolean;
     correctAnswer: number;
@@ -49,10 +49,10 @@ interface QuizSessionState {
   // Optimistic UI state
   pendingAnswerIndex: number | null;
 
-  // Chế độ Highlight từ vựng & Ghi chú
+  // Highlight & Note mode
   isNoteMode: boolean;
 
-  // Danh mục Actions
+  // Actions
   initSession: (sessionId: string, quizId: string, mode: string, total: number) => void;
   resumeSession: (sessionId: string, quizId: string, mode: string, total: number, currentIndex: number, answered: Set<number>) => void;
   navigateToQuestion: (index: number) => void;
@@ -67,26 +67,26 @@ interface QuizSessionState {
 }
 ```
 
-### 2.2. Chiến lược Lưu trữ Bền vững (Persistence Strategy)
-- **Middleware**: `persist` kết hợp với `createJSONStorage(() => localStorage)`.
-- **Tên Key**: `quiz-session`.
-- **Xử lý Serialization**: Cấu trúc dữ liệu `Set<number>` không thể serialize trực tiếp sang JSON; middleware tự động chuyển đổi giữa `Set<number>` trong bộ nhớ và mảng `number[]` khi lưu xuống `localStorage` qua hàm `partialize`.
+### 2.2. Persistence Strategy
+- **Middleware**: `persist` combined with `createJSONStorage(() => localStorage)`.
+- **Key Name**: `quiz-session`.
+- **Serialization Handling**: `Set<number>` cannot be serialized directly to JSON; middleware converts between in-memory `Set<number>` and `number[]` array upon persisting via `partialize`.
 
 ### 2.3. Optimistic Updates & Rollback Flow
-Khi học viên chọn một đáp án trong chế độ mạng chậm:
-1. `optimisticallyMarkAnswered(index)`: Đánh dấu câu hỏi đã được làm trên thanh điều hướng sidebar ngay lập tức.
-2. Gửi request `POST /api/sessions/[id]/answer` trong background.
-3. Nếu thành công: `confirmAnswer(index)`.
-4. Nếu thất bại (lỗi mạng): `rollbackOptimisticAnswer(index)` và hiển thị toast cảnh báo để học viên chọn lại.
+When a student selects an answer under slow network conditions:
+1. `optimisticallyMarkAnswered(index)`: Instantly marks the question as answered in the sidebar palette.
+2. Dispatches `POST /api/sessions/[id]/answer` request in the background.
+3. On success: `confirmAnswer(index)`.
+4. On failure (network error): `rollbackOptimisticAnswer(index)` and surfaces a toast warning allowing the student to retry.
 
 ---
 
 ## 3. Toast Notification Store (`store/shared/toast-store.ts`)
 
-Quản lý hàng đợi hiển thị thông báo toast toàn cục:
-- Hỗ trợ 3 trạng thái: `success`, `error`, `info`.
-- Tự động đóng (Auto-dismiss) sau **5000ms**.
-- Tự động phân giải thông điệp lỗi dạng chuỗi hoặc `Error` instance.
+Manages the global toast notification queue:
+- Supports 4 states: `success`, `error`, `info`, `warning`.
+- Auto-dismisses after **5000ms** by default.
+- Resolves string error messages and `Error` instances automatically.
 
 ```typescript
 import { useToast } from '@/store/shared/toast-store';
@@ -97,7 +97,7 @@ function MyComponent() {
   const handleSave = async () => {
     try {
       await saveData();
-      toast.success('Đã lưu bài thi thành công!');
+      toast.success('Quiz saved successfully!');
     } catch (err) {
       toast.error(err);
     }
@@ -107,18 +107,18 @@ function MyComponent() {
 
 ---
 
-## 4. Tối ưu Hiệu năng (Performance Guidelines)
+## 4. Performance Guidelines
 
-Để tránh hiện tượng re-render toàn bộ giao diện làm bài thi khi chỉ có một trường thay đổi (ví dụ: chỉ chuyển câu hỏi nhưng thanh header cũng bị re-render):
+To avoid re-rendering the entire quiz runner UI when a single property updates:
 
-- ❌ **Không lấy toàn bộ store**:
+- ❌ **Avoid subscribing to the entire store**:
   ```tsx
-  // TRÁNH VIẾT THẾ NÀY: Re-render khi BẤT KỲ state nào thay đổi
+  // BAD: Re-renders on ANY state change in the store
   const { currentQuestionIndex, answeredQuestions } = useQuizSessionStore();
   ```
-- ✅ **Sử dụng Fine-Grained Selectors**:
+- ✅ **Use Fine-Grained Selectors**:
   ```tsx
-  // CHUẨN FQUIZ: Chỉ re-render khi currentQuestionIndex thay đổi
+  // FQUIZ STANDARD: Re-renders only when currentQuestionIndex changes
   const currentIndex = useQuizSessionStore((state) => state.currentQuestionIndex);
   const navigateTo = useQuizSessionStore((state) => state.navigateToQuestion);
   ```

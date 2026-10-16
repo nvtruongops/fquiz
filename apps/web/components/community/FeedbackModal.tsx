@@ -29,10 +29,10 @@ interface FeedbackModalProps {
 }
 
 const FEEDBACK_TYPE_OPTIONS = [
-  { value: 'bug' as const, label: 'Báo lỗi', icon: Bug },
-  { value: 'feature' as const, label: 'Đề xuất tính năng', icon: Lightbulb },
-  { value: 'content' as const, label: 'Góp ý nội dung', icon: BookOpen },
-  { value: 'other' as const, label: 'Khác', icon: MessageCircle },
+  { value: 'bug' as const, label: 'Bug Report', icon: Bug },
+  { value: 'feature' as const, label: 'Feature Request', icon: Lightbulb },
+  { value: 'content' as const, label: 'Content Feedback', icon: BookOpen },
+  { value: 'other' as const, label: 'Other', icon: MessageCircle },
 ]
 
 export default function FeedbackModal({
@@ -56,8 +56,8 @@ export default function FeedbackModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent aria-describedby={undefined} className="sm:max-w-2xl rounded-[32px] p-6 sm:p-8 border border-border bg-card/95 backdrop-blur-3xl shadow-2xl z-50 text-card-foreground">
-        <DialogTitle className="text-2xl font-black text-foreground mb-1">Góp ý phát triển FQuiz</DialogTitle>
-        <p className="text-xs font-medium text-muted-foreground mb-5">Mỗi ý kiến đóng góp của bạn đều giúp FQuiz hoàn thiện hơn mỗi ngày.</p>
+        <DialogTitle className="text-2xl font-black text-foreground mb-1">Feedback & Suggestions</DialogTitle>
+        <p className="text-xs font-medium text-muted-foreground mb-5">Every piece of feedback helps improve FQuiz every day.</p>
 
         {success ? (
           <div className="flex flex-col items-center justify-center text-center space-y-6 py-10">
@@ -65,9 +65,9 @@ export default function FeedbackModal({
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-foreground">Cảm ơn bạn!</h3>
+              <h3 className="text-xl font-black text-foreground">Thank you!</h3>
               <p className="text-muted-foreground font-medium text-xs">
-                Góp ý của bạn đã được gửi đến đội ngũ phát triển.
+                Your feedback has been sent to our development team.
               </p>
             </div>
             <Button
@@ -75,14 +75,14 @@ export default function FeedbackModal({
               variant="outline"
               className="rounded-xl px-6 border-border text-primary font-bold text-xs hover:bg-muted"
             >
-              Gửi thêm góp ý
+              Submit More Feedback
             </Button>
           </div>
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="space-y-5">
             <div className="space-y-2">
               <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1 block">
-                Phân loại
+                Category
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {FEEDBACK_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
@@ -115,13 +115,13 @@ export default function FeedbackModal({
                 >
                   <div className="space-y-1.5 pt-1">
                     <label htmlFor="feedback-reason" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                      Lý do
+                      Reason
                     </label>
                     <Textarea
                       id="feedback-reason"
                       value={reason}
                       onChange={(e) => setReason(e.target.value.slice(0, 200))}
-                      placeholder="Cho chúng tôi biết lý do cụ thể..."
+                      placeholder="Let us know the specific reason..."
                       className="h-[68px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary resize-none"
                     />
                   </div>
@@ -131,19 +131,19 @@ export default function FeedbackModal({
 
             <div className="space-y-1.5">
               <label htmlFor="feedback-detail" className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                Chi tiết góp ý
+                Feedback Details
               </label>
               <Textarea
                 id="feedback-detail"
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
-                placeholder="Mô tả chi tiết góp ý của bạn..."
+                placeholder="Describe your feedback in detail..."
                 className="h-[130px] rounded-2xl border-2 px-4 py-3 text-xs outline-none font-medium border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary resize-none"
               />
               <div className="flex justify-between items-center mt-1">
                 {error ? <p className="text-xs font-bold text-destructive ml-1">{error}</p> : <span />}
                 <p className="text-[10px] font-bold text-muted-foreground">
-                  {1000 - message.length} ký tự còn lại
+                  {1000 - message.length} characters remaining
                 </p>
               </div>
             </div>
@@ -156,10 +156,10 @@ export default function FeedbackModal({
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : rateLimited ? (
-                <span className="text-xs">Thử lại sau {Math.floor(cooldownSec / 60)}:{String(cooldownSec % 60).padStart(2, '0')}</span>
+                <span className="text-xs">Retry in {Math.floor(cooldownSec / 60)}:{String(cooldownSec % 60).padStart(2, '0')}</span>
               ) : (
                 <>
-                  <span className="text-sm">Gửi góp ý</span>
+                  <span className="text-sm">Submit Feedback</span>
                   <Send className="w-4 h-4" />
                 </>
               )}

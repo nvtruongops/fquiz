@@ -12,7 +12,7 @@ import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-h
 /**
  * POST /api/student/quizzes/from-pinned
  * Body: { course_code: string, title?: string }
- * Creates a custom quiz saved in /my-quizzes from student's pinned questions of course_code.
+ * Creates a custom quiz from student's pinned questions of course_code.
  * Enforces max 10 custom quizzes quota limit.
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
@@ -23,7 +23,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const { course_code, title } = body as any
     if (!course_code || typeof course_code !== 'string') {
-      return NextResponse.json({ error: 'Mã môn học là bắt buộc.' }, { status: 400 })
+      return NextResponse.json({ error: 'Course code is required.' }, { status: 400 })
     }
 
     const normalizedCourseCode = course_code.trim().toUpperCase()
@@ -38,7 +38,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (totalCreatedAndMix >= 10) {
       return NextResponse.json(
         {
-          error: 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để tạo bài mới.',
+          error: 'You have reached the maximum limit of 10 quizzes (custom + mix). Please delete an existing quiz before creating a new one.',
           quotaExceeded: true,
           code: 'TOTAL_QUOTA_EXCEEDED',
         },
@@ -77,12 +77,12 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     if (!pinnedDocs || pinnedDocs.length === 0) {
       return NextResponse.json(
-        { error: `Chưa có câu hỏi nào được ghim cho môn ${normalizedCourseCode}.` },
+        { error: `No pinned questions found for course ${normalizedCourseCode}.` },
         { status: 400 }
       )
     }
 
-    // 4. Transform pinned questions to Quiz questions format (Auto-resolving correct answers)
+    // 4. Transform pinned questions to Quiz questions format (Auto-resolving correct answers & sanitizing)
     const { Question } = await import('@/lib/modules/quiz/models/Question')
     const quizQuestions = await Promise.all(pinnedDocs.map(async (pq: any) => {
       let validCorrectAnswer: number[] | undefined = Array.isArray(pq.correct_answer) && pq.correct_answer.length > 0 
@@ -95,7 +95,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
           const sourceQuiz: any = await Quiz.findById(pq.quiz_id).select('questions').lean()
           if (sourceQuiz?.questions) {
             const matched = sourceQuiz.questions.find((q: any) => 
-              (pq.question_id && q._id?.toString() === pq.question_id) ||
+              (pq.question_id && (q._id?.toString() === pq.question_id || q.question_id === pq.question_id)) ||
               (q.text && q.text.trim() === pq.text?.trim())
             )
             if (matched && matched.correct_answer !== undefined && matched.correct_answer !== null) {
@@ -120,38 +120,89 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         }
       }
 
+      // Ensure options has at least 2 valid strings (required by QuestionSchema)
+      let rawOptions = Array.isArray(pq.options) ? pq.options.filter((o: any) => typeof o === 'string' && o.trim().length > 0) : []
+      if (rawOptions.length < 2) {
+        rawOptions = ['True', 'False']
+      }
+
+      // Ensure correct_answer indices are valid within [0, rawOptions.length - 1]
+      let finalCorrectAnswer = (validCorrectAnswer || [0])
+        .map((idx) => (typeof idx === 'number' ? idx : parseInt(String(idx), 10)))
+        .filter((idx) => !isNaN(idx) && idx >= 0 && idx < rawOptions.length)
+      if (finalCorrectAnswer.length === 0) {
+        finalCorrectAnswer = [0]
+      }
+
       return {
         text: pq.text || '',
-        options: Array.isArray(pq.options) ? pq.options : [],
-        correct_answer: validCorrectAnswer || [0],
+        options: rawOptions,
+        correct_answer: finalCorrectAnswer,
         explanation: pq.explanation || '',
         image_url: pq.image_url || '',
-        question_id: pq.question_id || generateQuestionId(pq),
+        question_id: pq.question_id || generateQuestionId({ text: pq.text || '', options: rawOptions, correct_answer: finalCorrectAnswer }),
       }
     }))
 
     // 5. Generate quiz title
     const customTitle = title && typeof title === 'string' && title.trim().length > 0
       ? title.trim()
-      : `${normalizedCourseCode} - Quiz Ghim (${quizQuestions.length} CÂU)`
+      : `${normalizedCourseCode} - Pinned Quiz (${quizQuestions.length} QUESTIONS)`
 
-    const quizId = new Types.ObjectId()
-    const quiz = await Quiz.create({
-      _id: quizId,
-      title: customTitle,
-      course_code: normalizedCourseCode,
-      description: `Bộ đề tự tạo từ ${quizQuestions.length} câu hỏi đã ghim của môn ${normalizedCourseCode}`,
-      category_id: targetCategory._id,
+    // 6. Create or update pinned quiz for this course to avoid E11000 duplicate key conflict
+    const existingPinnedQuiz = await Quiz.findOne({
       created_by: userObjectId,
-      is_public: false,
-      status: 'published',
-      questions: quizQuestions,
-      questionCount: quizQuestions.length,
+      course_code: normalizedCourseCode,
+      is_saved_from_explore: { $ne: true },
+      is_temp: { $ne: true },
     })
+
+    let quiz: any
+    if (existingPinnedQuiz) {
+      existingPinnedQuiz.title = customTitle
+      existingPinnedQuiz.questions = quizQuestions
+      existingPinnedQuiz.questionCount = quizQuestions.length
+      existingPinnedQuiz.description = `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`
+      existingPinnedQuiz.category_id = targetCategory._id
+      await existingPinnedQuiz.save()
+      quiz = existingPinnedQuiz
+    } else {
+      try {
+        quiz = await Quiz.create({
+          title: customTitle,
+          course_code: normalizedCourseCode,
+          description: `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`,
+          category_id: targetCategory._id,
+          created_by: userObjectId,
+          is_public: false,
+          status: 'published',
+          questions: quizQuestions,
+          questionCount: quizQuestions.length,
+        })
+      } catch (createErr: any) {
+        if (createErr?.code === 11000) {
+          // Fallback with suffixed course code if collision with another custom quiz
+          const suffixedCode = `${normalizedCourseCode}_PINNED_${Date.now().toString().slice(-4)}`
+          quiz = await Quiz.create({
+            title: customTitle,
+            course_code: suffixedCode,
+            description: `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`,
+            category_id: targetCategory._id,
+            created_by: userObjectId,
+            is_public: false,
+            status: 'published',
+            questions: quizQuestions,
+            questionCount: quizQuestions.length,
+          })
+        } else {
+          throw createErr
+        }
+      }
+    }
 
     return NextResponse.json({
       quiz,
-      message: `Đã tạo bộ đề ghim (${quizQuestions.length} câu) thành công!`,
+      message: `Successfully created pinned quiz (${quizQuestions.length} questions)!`,
     }, { status: 201 })
   } catch (error) {
     console.error('Error creating quiz from pinned questions:', error)

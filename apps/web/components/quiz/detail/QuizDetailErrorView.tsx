@@ -13,7 +13,7 @@ interface QuizDetailErrorViewProps {
 export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps) {
   const status = error?.status
   const code = error?.code
-  const message = error?.message || 'Không thể tải thông tin đề thi này.'
+  const message = error?.message || 'Unable to load quiz details.'
   const hint = error?.hint
 
   return (
@@ -33,12 +33,12 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
 
         <h2 className="mb-2 text-xl font-black uppercase tracking-tight text-foreground">
           {status === 403
-            ? 'Không có quyền truy cập'
+            ? 'Access Denied'
             : status === 404
-              ? 'Không tìm thấy bộ đề'
+              ? 'Quiz Not Found'
               : code === 'QUIZ_SOURCE_LOCKED'
-                ? 'Không thể làm lại quiz này'
-                : 'Đã xảy ra lỗi'}
+                ? 'Quiz Retake Unavailable'
+                : 'An Error Occurred'}
         </h2>
 
         <p className="mb-8 font-medium text-muted-foreground">{message}</p>
@@ -49,19 +49,19 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
           {code === 'QUIZ_SOURCE_LOCKED' ? (
             <>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/my-quizzes">Về Bộ đề của tôi</Link>
+                <Link href="/explore">Explore Quizzes</Link>
               </Button>
               <Button asChild variant="outline" className="py-6 border-border">
-                <Link href="/history">Xem Lịch sử</Link>
+                <Link href="/history">View History</Link>
               </Button>
             </>
           ) : status === 403 ? (
             <>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/">Khám phá bộ đề</Link>
+                <Link href="/">Explore Quizzes</Link>
               </Button>
               <Button asChild variant="outline" className="py-6 border-border">
-                <Link href="/my-quizzes">Bộ đề của tôi</Link>
+                <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
             </>
           ) : (
@@ -78,10 +78,10 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
                 }}
                 className="py-6 border-border"
               >
-                Quay lại
+                Go Back
               </Button>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/dashboard">Về Dashboard</Link>
+                <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
             </div>
           )}

@@ -33,9 +33,9 @@ export default function AdminUsersPage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Quản lý Tài khoản</h1>
+          <h1 className="text-2xl font-bold text-foreground">User Management</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Quản trị trạng thái hoạt động và phân quyền học viên &amp; giáo viên
+            Manage user accounts, roles, permissions, and account statuses
           </p>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Tìm theo username hoặc email..."
+            placeholder="Search by username or email..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -63,14 +63,14 @@ export default function AdminUsersPage() {
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Tất cả vai trò" />
+            <SelectValue placeholder="All roles" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả vai trò</SelectItem>
-            <SelectItem value="student">Học viên (Student)</SelectItem>
-            <SelectItem value="teacher">Giáo viên (Teacher)</SelectItem>
-            <SelectItem value="admin">Quản trị viên (Admin)</SelectItem>
-            <SelectItem value="dev">Nhà phát triển (Dev)</SelectItem>
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="student">Student</SelectItem>
+            <SelectItem value="teacher">Teacher</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="dev">Developer</SelectItem>
           </SelectContent>
         </Select>
 
@@ -82,12 +82,12 @@ export default function AdminUsersPage() {
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Tất cả trạng thái" />
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            <SelectItem value="active">Đang hoạt động (Active)</SelectItem>
-            <SelectItem value="banned">Đã khóa (Banned)</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="banned">Banned</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -105,7 +105,7 @@ export default function AdminUsersPage() {
           updateMutation.mutate({ id, updates: { status: newStatus } })
         }
         onDeleteUser={(u) => {
-          if (confirm(`Bạn có chắc chắn muốn xóa tài khoản ${u.username}?`)) {
+          if (confirm(`Are you sure you want to delete user ${u.username}?`)) {
             deleteMutation.mutate(u._id)
           }
         }}

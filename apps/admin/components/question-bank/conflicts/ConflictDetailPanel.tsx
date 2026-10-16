@@ -28,18 +28,18 @@ export function ConflictDetailPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Chi tiết &amp; Giải quyết</CardTitle>
+        <CardTitle>Details &amp; Resolution</CardTitle>
       </CardHeader>
       <CardContent>
         {selectedConflict ? (
           <div className="space-y-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Câu hỏi:</p>
+              <p className="text-sm font-medium text-muted-foreground mb-2">Question:</p>
               <p className="font-medium text-card-foreground">{selectedConflict.text}</p>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-3">Chọn đáp án đúng:</p>
+              <p className="text-sm font-medium text-muted-foreground mb-3">Select Correct Answer:</p>
               <div className="space-y-3">
                 {selectedConflict.answer_groups.map((group, idx) => (
                   <VariantCard
@@ -64,22 +64,22 @@ export function ConflictDetailPanel({
                 htmlFor="update-all"
                 className="text-sm font-medium cursor-pointer text-warning-fg"
               >
-                Cập nhật đáp án đúng cho tất cả quiz có câu hỏi này
+                Update correct answer across all quizzes containing this question
               </label>
             </div>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={onCancel} className="flex-1">
-                Hủy
+                Cancel
               </Button>
               <Button onClick={onResolve} disabled={resolving} className="flex-1">
-                {resolving ? 'Đang lưu...' : 'Lưu đáp án'}
+                {resolving ? 'Saving...' : 'Save Answer'}
               </Button>
             </div>
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            Chọn một conflict để xem chi tiết
+            Select a conflict to view details
           </div>
         )}
       </CardContent>

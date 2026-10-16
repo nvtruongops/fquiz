@@ -63,7 +63,7 @@ const QuizHeader = React.memo(function QuizHeader({
                     ? "border-amber-500 bg-amber-500 text-white font-bold animate-pulse ring-2 ring-amber-400/50"
                     : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
-                title={isNoteMode ? "Đang bật Bút Tra Từ: Bôi đen text để tra từ (Nhấn để tắt và quay lại làm bài)" : "Bật Bút Tra Từ (Bôi đen text để tra từ không lo chọn nhầm đáp án)"}
+                title={isNoteMode ? "Vocabulary Lookup active: Select text to lookup words (Click to return to quiz)" : "Vocabulary Lookup Pen (Select text to lookup words without triggering answer selection)"}
               >
                 <PenTool className="w-3.5 h-3.5" />
               </button>
@@ -75,13 +75,13 @@ const QuizHeader = React.memo(function QuizHeader({
                 className="flex items-center gap-1 border border-border bg-card px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted rounded"
               >
                 <Lightbulb className="w-3.5 h-3.5" />
-                {isExplanationOpen ? 'Đóng giải thích' : 'Giải thích'}
+                {isExplanationOpen ? 'Hide Explanation' : 'Explanation'}
               </button>
             )}
             {onToggleAnimation && (
-              <div className="flex items-center gap-1.5 border border-border bg-card px-2 py-1 rounded" title="Bật/Tắt hiệu ứng giao diện">
+              <div className="flex items-center gap-1.5 border border-border bg-card px-2 py-1 rounded" title="Toggle animations">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Hiệu ứng</span>
+                <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Effects</span>
                 <Switch 
                   checked={enableAnimation} 
                   onCheckedChange={onToggleAnimation} 
@@ -104,7 +104,7 @@ const QuizHeader = React.memo(function QuizHeader({
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-muted text-foreground text-xs font-semibold border border-border shadow-2xs">
             <BookOpen className="w-3.5 h-3.5 text-primary" />
-            <span>{categoryName || 'Chưa phân loại'}</span>
+            <span>{categoryName || 'Uncategorized'}</span>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-primary/10 text-primary text-xs font-bold border border-primary/20">
             <Hash className="w-3.5 h-3.5 text-primary" />
@@ -117,7 +117,7 @@ const QuizHeader = React.memo(function QuizHeader({
           <div className="flex items-center justify-between gap-2 text-xs font-semibold text-muted-foreground mb-1.5">
             <div className="flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-primary" />
-              <span>Tiến độ bài làm: <strong className="text-primary font-black">{answeredCount}</strong>/{totalQuestions} câu</span>
+              <span>Quiz Progress: <strong className="text-primary font-black">{answeredCount}</strong>/{totalQuestions} questions</span>
             </div>
             <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-black text-[11px]">
               {progressPercent}%
@@ -143,7 +143,7 @@ const QuizHeader = React.memo(function QuizHeader({
                   ? "bg-amber-500 text-white shadow-xs animate-pulse ring-2 ring-amber-400/50"
                   : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
               )}
-              title={isNoteMode ? "Đang bật Bút Tra Từ: Bôi đen text để tra từ (Nhấn để tắt và quay lại làm bài)" : "Bật Bút Tra Từ (Bôi đen text để tra từ không lo chọn nhầm đáp án)"}
+              title={isNoteMode ? "Vocabulary Lookup active: Select text to lookup words (Click to return to quiz)" : "Vocabulary Lookup Pen (Select text to lookup words without triggering answer selection)"}
             >
               <PenTool className="w-4 h-4" />
             </button>
@@ -158,16 +158,16 @@ const QuizHeader = React.memo(function QuizHeader({
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
               )}
-              title={isExplanationOpen ? "Thu gọn giải thích" : "Xem gợi ý & giải thích"}
+              title={isExplanationOpen ? "Collapse explanation" : "View hints & explanation"}
             >
               <Lightbulb className={cn("w-3.5 h-3.5", isExplanationOpen && "fill-current")} />
-              <span className="hidden sm:inline">{isExplanationOpen ? "Thu gọn giải thích" : "Gợi ý & Giải thích"}</span>
+              <span className="hidden sm:inline">{isExplanationOpen ? "Collapse Explanation" : "Hints & Explanation"}</span>
             </button>
           )}
           {onToggleAnimation && (
-            <div className="flex items-center gap-1.5 bg-muted border border-border px-2.5 py-1 rounded-full shadow-2xs" title="Bật/Tắt hiệu ứng giao diện">
+            <div className="flex items-center gap-1.5 bg-muted border border-border px-2.5 py-1 rounded-full shadow-2xs" title="Toggle animations">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Hiệu ứng</span>
+              <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Effects</span>
               <Switch 
                 checked={enableAnimation} 
                 onCheckedChange={onToggleAnimation} 

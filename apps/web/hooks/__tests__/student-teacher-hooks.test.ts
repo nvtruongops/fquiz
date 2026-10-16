@@ -5,7 +5,7 @@ describe('Student & Teacher Refactored Data Models & Utils Test Suite', () => {
   test('QuizItem data structure validation', () => {
     const mockQuiz: QuizItem = {
       _id: 'q123',
-      title: 'Kinh tế vĩ mô PRN211',
+      title: 'Macroeconomics PRN211',
       course_code: 'PRN211',
       questionCount: 20,
       status: 'published',
@@ -21,7 +21,7 @@ describe('Student & Teacher Refactored Data Models & Utils Test Suite', () => {
   test('Classroom data structure validation', () => {
     const mockClassroom: Classroom = {
       _id: 'cls123',
-      name: 'Lớp Tiếng Anh B1',
+      name: 'English B1 Class',
       code: 'ABC123',
       password: 'secretpassword',
       student_count: 15,

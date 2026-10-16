@@ -53,11 +53,11 @@ function LoginForm() {
     if (error) {
       toast.error(decodeURIComponent(error))
     } else if (reason === 'account_banned') {
-      toast.error('Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ.')
+      toast.error('Your account has been suspended by an administrator. Please contact support.')
     } else if (reason === 'session_expired') {
-      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+      toast.error('Your session has expired. Please sign in again.')
     } else if (message === 'deletion_requested') {
-      toast.info('Yêu cầu xóa tài khoản đã được ghi nhận. Vui lòng kiểm tra email để khôi phục tài khoản nếu muốn.')
+      toast.info('Account deletion requested. Please check your email to recover your account if desired.')
     }
 
     // Parse callback URL
@@ -104,26 +104,26 @@ function LoginForm() {
 
       if (!res.ok) {
         if (res.status === 403) {
-          toast.error(data.error || 'Tài khoản đã bị khóa bởi quản trị viên.')
+          toast.error(data.error || 'Your account has been suspended by an administrator.')
           return
         }
 
         if (res.status === 429) {
-          toast.error(data.error || 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.')
+          toast.error(data.error || 'Too many attempts. Please try again later.')
           return
         }
 
         if (res.status >= 500) {
-          toast.error('Hệ thống đang bận hoặc gặp lỗi. Vui lòng thử lại sau.')
+          toast.error('System is temporarily unavailable. Please try again later.')
           return
         }
 
-        toast.error(data.error || 'Thông tin đăng nhập không chính xác. Vui lòng kiểm tra lại.')
+        toast.error(data.error || 'Invalid credentials. Please verify your information.')
         return
       }
 
-      toast.success('Đăng nhập thành công!')
-      startGlobalPageLoader('THÀNH CÔNG!', 'Đang chuyển hướng...')
+      toast.success('Sign in successful!')
+      startGlobalPageLoader('SUCCESS!', 'Redirecting...')
       setIsRedirecting(true)
       
       if (data.user) {
@@ -144,7 +144,7 @@ function LoginForm() {
         router.refresh()
       }, 100)
     } catch {
-      toast.error('Hệ thống đang bận, vui lòng thử lại sau.')
+      toast.error('System is busy. Please try again later.')
     } finally {
       setLoading(false)
     }
@@ -160,15 +160,15 @@ function LoginForm() {
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
         <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-[32px] font-black text-card-foreground tracking-tight leading-tight">Đăng nhập</h1>
-          <p className="text-muted-foreground mt-2 text-sm font-medium">Chào mừng bạn quay lại với FQuiz</p>
+          <h1 className="text-2xl sm:text-[32px] font-black text-card-foreground tracking-tight leading-tight">Sign in</h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium">Welcome back to FQuiz</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Identifier Field */}
           <div className="space-y-1.5">
             <label htmlFor="identifier" className="text-sm font-bold text-card-foreground ml-1">
-              Email hoặc Tên đăng nhập
+              Email or Username
             </label>
             <div className="relative">
               <input
@@ -177,7 +177,7 @@ function LoginForm() {
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Nhập email hoặc tên đăng nhập của bạn"
+                placeholder="Enter your email or username"
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.identifier 
@@ -197,10 +197,10 @@ function LoginForm() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between ml-1">
               <label htmlFor="password" className="text-sm font-bold text-card-foreground">
-                Mật khẩu
+                Password
               </label>
               <Link href="/forgot-password" className="text-xs font-black text-primary hover:text-primary/90 transition-colors">
-                Quên mật khẩu?
+                Forgot password?
               </Link>
             </div>
             <div className="relative">
@@ -210,7 +210,7 @@ function LoginForm() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu của bạn"
+                placeholder="Enter your password"
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-3.5 pr-12 text-[15px] outline-none transition-all duration-300 font-medium",
                   errors.password 
@@ -222,7 +222,7 @@ function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -246,24 +246,24 @@ function LoginForm() {
               <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
             ) : (
               <>
-                <span className="tracking-wide drop-shadow-2xs">Đăng nhập</span>
+                <span className="tracking-wide drop-shadow-2xs">Sign in</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-2xs" />
               </>
             )}
           </button>
         </form>
 
-        <GoogleSignInButton callbackUrl={callbackUrl} text="Đăng nhập với Google" />
+        <GoogleSignInButton callbackUrl={callbackUrl} text="Sign in with Google" />
 
         {/* Footer Links */}
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between gap-3 text-xs">
           <p className="text-muted-foreground font-medium">
-            Chưa có tài khoản?{' '}
+            Don&apos;t have an account?{' '}
             <Link 
               href={callbackUrl ? `/register?redirect=${encodeURIComponent(callbackUrl)}` : '/register'}
               className="text-primary font-bold hover:underline"
             >
-              Đăng ký
+              Sign up
             </Link>
           </p>
 
@@ -274,7 +274,7 @@ function LoginForm() {
             className="text-muted-foreground/70 hover:text-muted-foreground transition-colors inline-flex items-center gap-1 font-medium"
           >
             <ShieldCheck className="w-3.5 h-3.5 opacity-70" />
-            Cổng Quản trị
+            Admin Portal
           </a>
         </div>
       </div>

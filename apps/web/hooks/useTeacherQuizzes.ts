@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
 
@@ -56,7 +56,7 @@ export function useTeacherQuizzes() {
   const [assignSuccess, setAssignSuccess] = useState('')
   const [assignError, setAssignError] = useState('')
 
-  const fetchQuizzes = async () => {
+  const fetchQuizzes = useCallback(async () => {
     try {
       setLoadingQuizzes(true)
       const res = await fetch('/api/student/quizzes')
@@ -65,13 +65,13 @@ export function useTeacherQuizzes() {
         setQuizzes(data.quizzes || [])
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách đề thi:', err)
+      console.error('Failed to load quizzes:', err)
     } finally {
       setLoadingQuizzes(false)
     }
-  }
+  }, [])
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoadingCategories(true)
       const res = await fetch('/api/student/categories')
@@ -80,37 +80,41 @@ export function useTeacherQuizzes() {
         setCategories(data.categories || [])
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách môn học:', err)
+      console.error('Failed to load categories:', err)
     } finally {
       setLoadingCategories(false)
     }
-  }
+  }, [])
 
-  const fetchClassrooms = async () => {
+  const fetchClassrooms = useCallback(async () => {
     try {
       const res = await fetch('/api/teacher/classrooms')
       const data = await res.json()
       if (res.ok) {
         setClassrooms(data.classrooms || [])
         if (data.classrooms?.length > 0) {
-          setSelectedClassroomId(data.classrooms[0]._id)
+          setSelectedClassroomId((prev) => prev || data.classrooms[0]._id)
         }
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách lớp học:', err)
+      console.error('Failed to load classrooms:', err)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchQuizzes()
-    fetchCategories()
-    fetchClassrooms()
-  }, [])
+    Promise.all([
+      fetchQuizzes(),
+      fetchCategories(),
+      fetchClassrooms(),
+    ]).catch((err) => {
+      console.error('Failed to initialize teacher dashboard:', err)
+    })
+  }, [fetchQuizzes, fetchCategories, fetchClassrooms])
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCategoryName.trim()) {
-      setCategoryError('Vui lòng nhập Mã/Tên môn học')
+      setCategoryError('Please enter course code or subject name')
       return
     }
 
@@ -126,14 +130,14 @@ export function useTeacherQuizzes() {
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Tạo Mã môn học thất bại')
+        throw new Error(data.error || 'Failed to create course category')
       }
 
       setNewCategoryName('')
       setCreateCategoryOpen(false)
       fetchCategories()
     } catch (err: any) {
-      setCategoryError(err.message || 'Lỗi khi tạo Mã môn học')
+      setCategoryError(err.message || 'Error creating course category')
     } finally {
       setCreatingCategory(false)
     }
@@ -150,10 +154,10 @@ export function useTeacherQuizzes() {
         setConfirmDeleteCategoryId(null)
         fetchCategories()
       } else {
-        toast.error(data.error || 'Không thể xóa mã môn học')
+        toast.error(data.error || 'Failed to delete course category')
       }
     } catch (err) {
-      console.error('Lỗi khi xóa môn học:', err)
+      console.error('Failed to delete category:', err)
     }
   }
 
@@ -167,7 +171,7 @@ export function useTeacherQuizzes() {
   const handleAssignQuiz = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedQuiz || !selectedClassroomId) {
-      setAssignError('Vui lòng chọn lớp học để giao bài')
+      setAssignError('Please select a classroom to assign')
       return
     }
 
@@ -187,15 +191,15 @@ export function useTeacherQuizzes() {
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Giao bài tập thất bại')
+        throw new Error(data.error || 'Failed to assign quiz')
       }
 
-      setAssignSuccess('Đã giao bài tập thành công cho lớp học!')
+      setAssignSuccess('Quiz assigned successfully to classroom!')
       setTimeout(() => {
         setAssignModalOpen(false)
       }, 1500)
     } catch (err: any) {
-      setAssignError(err.message || 'Lỗi khi giao bài tập')
+      setAssignError(err.message || 'Error assigning quiz')
     } finally {
       setAssigning(false)
     }
@@ -212,10 +216,10 @@ export function useTeacherQuizzes() {
         fetchQuizzes()
       } else {
         const data = await res.json()
-        toast.error(data.error || 'Xóa thất bại')
+        toast.error(data.error || 'Failed to delete quiz')
       }
     } catch (err) {
-      console.error('Lỗi khi xóa bộ đề:', err)
+      console.error('Failed to delete quiz:', err)
     }
   }
 

@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const rateLimit = await rateLimiter.check(`google_auth_${ip}`)
     if (!rateLimit.success) {
       logSecurityEvent('rate_limit_triggered', { request_id: requestId, route, outcome: 'denied', ip }, 'Google auth rate limit reached')
-      return handleError('Quá nhiều lần thử. Vui lòng thử lại sau 1 phút.', 429)
+      return handleError('Too many attempts. Please try again after 1 minute.', 429)
     }
 
     let credential = ''
@@ -53,19 +53,19 @@ export async function POST(request: Request) {
         const body = await request.json()
         credential = body?.credential || body?.idToken || body?.id_token || ''
       } catch {
-        return handleError('Dữ liệu không hợp lệ', 400)
+        return handleError('Invalid request data', 400)
       }
     }
 
     if (!credential) {
-      return handleError('Mã xác thực Google không hợp lệ', 400)
+      return handleError('Invalid Google credential', 400)
     }
 
     // Verify ID Token via Google API TokenInfo endpoint
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`)
     if (!googleRes.ok) {
       logSecurityEvent('google_auth_failed', { request_id: requestId, route, outcome: 'failure', ip }, 'Google token verification failed')
-      return handleError('Xác thực Google không thành công hoặc token đã hết hạn', 401)
+      return handleError('Google authentication failed or token expired', 401)
     }
 
     const payload = await googleRes.json()
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const isEmailVerified = payload.email_verified === true || payload.email_verified === 'true'
 
     if (!isValidIssuer || !isEmailVerified || !payload.email || !payload.sub) {
-      return handleError('Tài khoản Google chưa được xác minh email', 400)
+      return handleError('Google account email is not verified', 400)
     }
 
     await connectDB()
@@ -154,12 +154,12 @@ export async function POST(request: Request) {
 
     // Status check
     if (user.status === 'banned') {
-      return handleError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 403)
+      return handleError('Account has been locked. Please contact the administrator.', 403)
     }
 
     if (user.status === 'pending_deletion') {
       return handleError(
-        'Tài khoản của bạn đang trong thời gian chờ xóa (72h). Vui lòng kiểm tra email và bấm vào liên kết khôi phục để kích hoạt lại tài khoản trước khi đăng nhập.',
+        'Your account is pending deletion (72h). Please check your email and click the restore link to reactivate your account before logging in.',
         403
       )
     }
@@ -233,6 +233,6 @@ export async function POST(request: Request) {
       },
       'Google auth handler unexpected error'
     )
-    return handleError('Hệ thống đang bận, vui lòng thử lại sau.', 500)
+    return handleError('System is currently busy. Please try again later.', 500)
   }
 }

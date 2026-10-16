@@ -6,12 +6,12 @@ import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { MIX_QUIZ_MAX_SELECT } from '@/lib/modules/quiz/constants/mix-quiz'
+import { usePublicCategories } from '@/hooks/quiz/usePublicCategories'
 
 export interface Category {
   id: string
   name: string
 }
-
 export interface QuizOption {
   id: string
   title: string
@@ -37,12 +37,6 @@ const PAGE_SIZE = 10
 async function fetchActiveMixSession(): Promise<{ hasActive: boolean; session?: ActiveMixSession }> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/mix/active`)
   if (!res.ok) return { hasActive: false }
-  return res.json()
-}
-
-async function fetchCategoriesForMix(): Promise<{ data: Category[] }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/v1/public/categories`)
-  if (!res.ok) throw new Error('Failed to fetch categories')
   return res.json()
 }
 
@@ -104,14 +98,8 @@ export function useMixQuizGenerator(
     refetchOnWindowFocus: false,
   })
 
-  // Categories Query
-  const { data: catData, isLoading: catsLoading } = useQuery({
-    queryKey: ['mix', 'categories'],
-    queryFn: fetchCategoriesForMix,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
+  // Categories Query using shared hook
+  const { categories, isLoading: catsLoading, data: categoriesData } = usePublicCategories()
 
   useEffect(() => {
     const target = initialCategoryId || categoryIdParam
@@ -123,7 +111,7 @@ export function useMixQuizGenerator(
 
   // Pre-load from mix_from
   useEffect(() => {
-    if (!mixFrom || !catData) return
+    if (!mixFrom || !categoriesData) return
 
     const loadFromMix = async () => {
       setIsPreloading(true)
@@ -145,7 +133,7 @@ export function useMixQuizGenerator(
     }
 
     loadFromMix()
-  }, [mixFrom, catData])
+  }, [mixFrom, categoriesData])
 
   const {
     data: quizPages,
@@ -172,7 +160,6 @@ export function useMixQuizGenerator(
     staleTime: 2 * 60 * 1000,
   })
 
-  const categories = catData?.data ?? []
   const quizzes = (quizPages ?? []).flatMap((p) => p.data)
 
   const totalPool = quizzes
@@ -234,7 +221,7 @@ export function useMixQuizGenerator(
       const targetQuizId = data.quizId || 'mix'
       if (data.actual_count && data.actual_count < (questionCount ?? 0)) {
         setPoolWarning(
-          `Pool câu hỏi chỉ có ${data.actual_count} câu — đã lấy hết. Bắt đầu với ${data.actual_count} câu.`
+          `Question pool only contains ${data.actual_count} questions — selected all available. Starting with ${data.actual_count} questions.`
         )
         setTimeout(() => {
           if (onSessionCreated) onSessionCreated(targetQuizId, data.sessionId)
@@ -247,18 +234,18 @@ export function useMixQuizGenerator(
     },
     onError: (err: any) => {
       if (err.status === 401) {
-        toast.error('Vui lòng đăng nhập để sử dụng tính năng Trộn đề thi.')
+        toast.error('Please sign in to use the Mix Quiz feature.')
         return
       }
       if (err.status === 429) {
-        const msg = `Bạn đã tạo quá ${err.data?.limit ?? 5} Quiz Trộn trong 1 giờ.`
+        const msg = `You have created more than ${err.data?.limit ?? 5} Mix Quizzes in 1 hour.`
         setRateLimitReset(err.data?.reset ?? null)
         setRateLimitMsg(msg)
         toast.error(msg)
       } else if (err.status === 409 && err.data?.quotaExceeded) {
-        setQuotaErrorMsg(err.data.error || 'Bạn đã đạt giới hạn tối đa 10 bộ đề (tự tạo + trộn). Vui lòng xóa bớt 1 bài cũ tại Bộ đề của tôi để tiếp tục.')
+        setQuotaErrorMsg(err.data.error || 'You have reached the maximum limit of 10 quizzes (custom + mixed). Please complete or delete old quizzes to continue.')
       } else {
-        toast.error(err.data?.message || err.data?.error || err.message || 'Có lỗi xảy ra khi tạo bộ đề trộn')
+        toast.error(err.data?.message || err.data?.error || err.message || 'An error occurred while creating the mix quiz')
       }
     },
   })

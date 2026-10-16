@@ -43,13 +43,13 @@ export function CategoryList({
   return (
     <Card className="border-border bg-card">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
-        <CardTitle className="text-base font-bold">Danh sách Danh mục</CardTitle>
+        <CardTitle className="text-base font-bold">Categories List</CardTitle>
         <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm danh mục..."
+            placeholder="Search categories..."
             className="pl-9 h-9"
           />
         </div>
@@ -60,7 +60,7 @@ export function CategoryList({
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nhập tên danh mục môn thi mới..."
+            placeholder="Enter new category name..."
             className="h-10"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && newName.trim()) {
@@ -78,7 +78,7 @@ export function CategoryList({
             ) : (
               <Plus className="w-4 h-4" />
             )}
-            Thêm mới
+            Add Category
           </Button>
         </div>
 
@@ -88,7 +88,7 @@ export function CategoryList({
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-sm">
-            Chưa có danh mục nào phù hợp
+            No matching categories found
           </div>
         ) : (
           <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">

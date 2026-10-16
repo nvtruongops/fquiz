@@ -52,18 +52,18 @@ export function EditorProgressHub({
       <div className="p-3.5 px-4 bg-muted/60 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LayoutDashboard className="w-4 h-4 text-primary" />
-          <span className="text-xs font-black text-foreground uppercase tracking-tight">Bảng điều khiển hoàn thiện</span>
+          <span className="text-xs font-black text-foreground uppercase tracking-tight">Completion Dashboard</span>
         </div>
         <div className="flex items-center gap-2">
           {autosaving ? (
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground animate-pulse">
               <Loader2 className="w-3 h-3 animate-spin" />
-              Đang lưu...
+              Saving...
             </div>
           ) : lastSavedAt && (
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <CheckCircle2 className="w-3 h-3 text-primary" />
-              Đã lưu {lastSavedAt.toLocaleTimeString()}
+              Saved at {lastSavedAt.toLocaleTimeString()}
             </div>
           )}
         </div>
@@ -72,30 +72,30 @@ export function EditorProgressHub({
       <div className="p-4 space-y-3.5">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-foreground">Độ hoàn thiện</span>
+            <span className="font-bold text-foreground">Completion</span>
             <span className="font-black text-primary">
               {diagnostics.percent}%
             </span>
           </div>
           <Progress value={diagnostics.percent} className="h-1.5 bg-muted" />
           <p className="text-[10px] text-muted-foreground text-center font-medium">
-            {diagnostics.complete} / {diagnostics.total} câu hỏi hợp lệ
+            {diagnostics.complete} / {diagnostics.total} valid questions
           </p>
         </div>
 
         {structureReport && structureReport.total > 0 && (
           <div className="p-2.5 bg-muted/40 border border-border rounded-xl space-y-1">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <span>Cấu trúc file</span>
-              <span className="text-foreground">{structureReport.standardCount}/{structureReport.total} chuẩn</span>
+              <span>File Structure</span>
+              <span className="text-foreground">{structureReport.standardCount}/{structureReport.total} standard</span>
             </div>
             <div className="flex flex-wrap gap-1 text-[10px]">
               <Badge variant="outline" className="px-1.5 py-0 bg-success-bg/40 text-success-fg border-success-border/60">
-                {structureReport.singleCorrectCount} câu 1 đ.án
+                {structureReport.singleCorrectCount} single-answer
               </Badge>
               {structureReport.multiCorrectCount > 0 && (
                 <Badge variant="outline" className="px-1.5 py-0 bg-warning-bg text-warning-fg border-warning-border">
-                  ⚠️ {structureReport.multiCorrectCount} câu &gt; 1 đ.án
+                  ⚠️ {structureReport.multiCorrectCount} multi-answer
                 </Badge>
               )}
               {structureReport.fourOptionsCount === structureReport.total ? (
@@ -104,7 +104,7 @@ export function EditorProgressHub({
                 </Badge>
               ) : (
                 <Badge variant="outline" className="px-1.5 py-0 bg-warning-bg text-warning-fg border-warning-border">
-                  ⚠️ {structureReport.lessThanFourOptionsCount + structureReport.moreThanFourOptionsCount} câu khác 4 opt
+                  ⚠️ {structureReport.lessThanFourOptionsCount + structureReport.moreThanFourOptionsCount} non-4-option
                 </Badge>
               )}
             </div>
@@ -113,19 +113,19 @@ export function EditorProgressHub({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Chỉ số chất lượng</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Quality Status</span>
             <Badge variant="outline" className={cn(
               "text-[10px] uppercase font-bold px-2 py-0.5 rounded-md",
               diagnostics.isValid ? "bg-success-bg text-success-fg border-success-border" : "bg-warning-bg text-warning-fg border-warning-border"
             )}>
-              {diagnostics.isValid ? 'Sẵn sàng công khai' : 'Cần hoàn thiện thêm'}
+              {diagnostics.isValid ? 'Ready to publish' : 'Needs attention'}
             </Badge>
           </div>
 
           {diagnostics.errors.length === 0 ? (
             <div className="py-2 px-3 bg-success-bg/40 border border-success-border/60 rounded-lg flex items-center gap-2 text-success-fg">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-success-fg" />
-              <span className="text-[11px] font-medium">Tuyệt vời! Không có lỗi nào.</span>
+              <span className="text-[11px] font-medium">Great! No errors found.</span>
             </div>
           ) : (
             <ScrollArea className="max-h-[140px] pr-2">
@@ -148,7 +148,7 @@ export function EditorProgressHub({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-[10px] font-black uppercase tracking-wider">
-                            {typeof err.questionIndex === 'number' ? `Câu ${err.questionIndex + 1}` : 'Toàn bộ'}
+                            {typeof err.questionIndex === 'number' ? `Question ${err.questionIndex + 1}` : 'Global'}
                           </span>
                           <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>

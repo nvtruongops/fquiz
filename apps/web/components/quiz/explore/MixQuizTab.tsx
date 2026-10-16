@@ -61,11 +61,11 @@ function QuotaExceededDialog({
           </div>
 
           <DialogTitle className="text-xl font-black text-card-foreground mb-2">
-            Đã Đạt Giới Hạn Quota
+            Quota Limit Reached
           </DialogTitle>
 
           <DialogDescription className="text-xs font-bold text-muted-foreground leading-relaxed mb-8 px-2">
-            {message || 'Bạn đã đạt giới hạn tối đa 10 bài tự tạo + trộn. Vui lòng xóa bớt bài cũ tại Bộ đề của tôi để tiếp tục.'}
+            {message || 'You have reached the maximum limit of 10 custom and mixed quizzes. Please delete an older quiz to continue.'}
           </DialogDescription>
 
           <div className="flex flex-col gap-3 w-full">
@@ -73,8 +73,8 @@ function QuotaExceededDialog({
               asChild
               className="h-13 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black shadow-lg shadow-primary/20 active:scale-95 transition-all text-xs uppercase tracking-wider justify-center"
             >
-              <Link href="/my-quizzes">
-                Đi tới Bộ đề của tôi
+              <Link href="/explore">
+                Explore Quizzes
               </Link>
             </Button>
             <Button
@@ -82,7 +82,7 @@ function QuotaExceededDialog({
               variant="outline"
               className="h-11 rounded-2xl border-border font-bold text-muted-foreground hover:bg-muted text-xs cursor-pointer"
             >
-              Để sau
+              Maybe later
             </Button>
           </div>
         </div>
@@ -102,7 +102,7 @@ function ActiveSessionBanner({
   onCreateNew: () => void
   isDeleting: boolean
 }) {
-  const modeLabel = session.mode === 'immediate' ? 'Luyện tập' : 'Kiểm tra'
+  const modeLabel = session.mode === 'immediate' ? 'Practice' : 'Exam'
   const modeColor = session.mode === 'immediate' ? 'text-success-fg' : 'text-info-fg'
   const modeBg = session.mode === 'immediate' ? 'bg-success-bg border-success-border' : 'bg-info-bg border-info-border'
 
@@ -113,25 +113,25 @@ function ActiveSessionBanner({
           <Shuffle className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-black text-card-foreground">Bạn có một Quiz Trộn chưa hoàn thành</h3>
-          <p className="text-sm text-muted-foreground">Tiếp tục hay tạo quiz mới?</p>
+          <h3 className="font-black text-card-foreground">You have an incomplete Mixed Quiz</h3>
+          <p className="text-sm text-muted-foreground">Continue where you left off or create a new quiz?</p>
         </div>
       </div>
 
       <div className={cn('rounded-2xl p-4 border space-y-2', modeBg)}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider shadow-xs">
-            Quiz Trộn
+            Mixed Quiz
           </span>
           <span className="px-2 py-0.5 rounded-full bg-card/80 text-card-foreground text-[10px] font-bold">
-            {session.question_count} câu
+            {session.question_count} questions
           </span>
           <span className={cn('px-2 py-0.5 rounded-full bg-card/80 text-[10px] font-bold', modeColor)}>
             {modeLabel}
           </span>
         </div>
         <p className="font-black text-card-foreground text-sm leading-snug line-clamp-2 break-words">
-          {session.title.startsWith('Quiz Trộn · ') ? session.title.slice('Quiz Trộn · '.length) : session.title}
+          {session.title.replace(/^(Quiz Tr\u1ED9n|Mixed Quiz) · /, '')}
         </p>
       </div>
 
@@ -141,7 +141,7 @@ function ActiveSessionBanner({
           className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl h-12 gap-2 cursor-pointer"
         >
           <PlayCircle className="w-4 h-4" />
-          Làm tiếp
+          Resume
         </Button>
         <Button
           onClick={onCreateNew}
@@ -154,7 +154,7 @@ function ActiveSessionBanner({
           ) : (
             <>
               <RefreshCw className="w-4 h-4" />
-              Làm mới
+              Start Fresh
             </>
           )}
         </Button>
@@ -221,10 +221,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Shuffle className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-black text-card-foreground">Trộn Quiz</h2>
+            <h2 className="text-2xl font-black text-card-foreground">Mix Quiz</h2>
           </div>
           <p className="text-muted-foreground font-medium text-sm">
-            Chọn tối đa {MIX_QUIZ_MAX_SELECT} quiz công khai, gộp câu hỏi và làm ngay.
+            Select up to {MIX_QUIZ_MAX_SELECT} public quizzes, combine questions, and start practicing immediately.
           </p>
         </div>
       )}
@@ -248,11 +248,11 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-black">1</div>
-            <h2 className="text-sm font-black text-card-foreground uppercase tracking-widest">Chọn danh mục kiến thức</h2>
+            <h2 className="text-sm font-black text-card-foreground uppercase tracking-widest">Select Course Category</h2>
           </div>
           {catsLoading || isPreloading ? (
             <div className="h-14 rounded-2xl bg-muted animate-pulse flex items-center px-4 text-xs font-bold text-muted-foreground">
-              {isPreloading ? 'Đang khôi phục cấu hình...' : 'Đang tải danh mục...'}
+              {isPreloading ? 'Restoring configuration...' : 'Loading categories...'}
             </div>
           ) : (
             <Select
@@ -260,7 +260,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
               onValueChange={(val) => { setSelectedCategoryId(val); setSelectedQuizIds(new Set()) }}
             >
               <SelectTrigger className="w-full h-12 px-4 rounded-xl border-2 border-border bg-card text-card-foreground font-bold shadow-xs transition-all hover:border-primary/50 focus:ring-0">
-                <SelectValue placeholder="Duyệt qua các danh mục câu hỏi..." />
+                <SelectValue placeholder="Browse question categories..." />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 border-border shadow-2xl bg-popover text-popover-foreground">
                 {categories.map((cat) => (
@@ -286,16 +286,16 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs sm:text-sm font-black text-foreground uppercase tracking-wider">
-                    Chọn các bộ đề cần trộn
+                    Select Quizzes to Mix
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Chọn từ 2 đến {MIX_QUIZ_MAX_SELECT} bộ đề để tổng hợp câu hỏi</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">Choose from 2 to {MIX_QUIZ_MAX_SELECT} quizzes to combine questions</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-2 shrink-0">
                 {totalPool > 0 && (
                   <Badge variant="outline" className="rounded-full px-3 py-1 font-extrabold text-[10px] bg-success-bg text-success-fg border-success-border shadow-2xs">
-                    Pool: {totalPool} câu
+                    Pool: {totalPool} questions
                   </Badge>
                 )}
                 <Badge variant="outline" className={cn(
@@ -304,7 +304,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-muted text-muted-foreground border-border'
                 )}>
-                  {selectedQuizIds.size}/{MIX_QUIZ_MAX_SELECT} ĐÃ CHỌN
+                  {selectedQuizIds.size}/{MIX_QUIZ_MAX_SELECT} SELECTED
                 </Badge>
               </div>
             </div>
@@ -318,7 +318,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
               ) : quizzes.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground font-bold bg-card/60 rounded-xl border border-dashed border-border text-xs">
-                  Không tìm thấy quiz nào trong danh mục này
+                  No quizzes found in this category
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto overscroll-contain p-1.5 pr-2.5">
@@ -369,7 +369,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                             </div>
                           )}
                           <div className="flex items-center gap-1 justify-end text-[9.5px] font-bold text-muted-foreground">
-                            <span className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-extrabold border border-border/60">{quiz.questionCount} câu</span>
+                            <span className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-extrabold border border-border/60">{quiz.questionCount} questions</span>
                           </div>
                         </div>
                       </div>
@@ -377,7 +377,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   })}
                   {isFetchingNextPage && (
                     <div className="col-span-full h-12 rounded-xl bg-card border border-border animate-pulse flex items-center justify-center text-xs font-bold text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary mr-2" /> Đang tải thêm bộ đề...
+                      <Loader2 className="w-4 h-4 animate-spin text-primary mr-2" /> Loading more quizzes...
                     </div>
                   )}
                 </div>
@@ -395,9 +395,9 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
-                    Số lượng câu hỏi muốn làm
+                    Number of Questions
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Chọn số câu rút ngẫu nhiên từ ngân hàng đã chọn</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">Select how many random questions to draw from the selected pool</p>
                 </div>
               </div>
 
@@ -414,7 +414,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                         : 'border-border bg-muted/60 text-muted-foreground hover:border-primary/40 hover:bg-card'
                     )}
                   >
-                    {count} CÂU
+                    {count} QUESTIONS
                   </button>
                 ))}
               </div>
@@ -428,14 +428,14 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
-                    Chế độ luyện tập / kiểm tra
+                    Study / Exam Mode
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Chọn hình thức trải nghiệm làm bài thích hợp</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">Choose your preferred quiz experience</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {/* Luyện tập */}
+                {/* Practice */}
                 <button
                   type="button"
                   onClick={() => setMode('immediate')}
@@ -454,10 +454,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('font-black text-xs uppercase tracking-tight', mode === 'immediate' ? 'text-success-fg' : 'text-card-foreground')}>
-                      Luyện tập
+                      Practice
                     </p>
                     <p className="text-[10px] font-medium text-muted-foreground leading-snug mt-0.5 truncate">
-                      Xem đáp án & giải thích ngay
+                      Instant answers & explanations
                     </p>
                   </div>
                   {mode === 'immediate' && (
@@ -465,7 +465,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   )}
                 </button>
 
-                {/* Kiểm tra */}
+                {/* Exam */}
                 <button
                   type="button"
                   onClick={() => setMode('review')}
@@ -484,10 +484,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('font-black text-xs uppercase tracking-tight', mode === 'review' ? 'text-info-fg' : 'text-card-foreground')}>
-                      Kiểm tra
+                      Exam
                     </p>
                     <p className="text-[10px] font-medium text-muted-foreground leading-snug mt-0.5 truncate">
-                      Chấm điểm sau khi hoàn thành
+                      Graded upon completion
                     </p>
                   </div>
                   {mode === 'review' && (
@@ -502,7 +502,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
               <div className="p-3 bg-warning-bg/90 border border-warning-border/80 rounded-2xl flex items-center gap-2.5 shadow-2xs animate-in fade-in duration-300">
                 <AlertCircle className="w-4 h-4 text-warning-fg shrink-0" />
                 <p className="text-xs font-bold text-warning-fg leading-snug">
-                  Hãy chọn từ 2 bộ đề trở lên ở cột bên trái để kích hoạt trộn bài.
+                  Please select 2 or more quizzes on the left to activate mixing.
                 </p>
               </div>
             )}
@@ -522,7 +522,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 {createMutation.isPending ? (
                   <span className="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    ĐANG KHỞI TẠO PHIÊN TRỘN...
+                    INITIALIZING MIXED SESSION...
                   </span>
                 ) : (
                   <div className="flex items-center justify-between w-full px-4">
@@ -535,10 +535,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70 leading-none mb-1">
-                          {canStart ? 'Xác nhận cấu hình & Bắt đầu' : 'Cần chọn đủ 2 bộ đề'}
+                          {canStart ? 'Confirm configuration & start' : 'Select at least 2 quizzes'}
                         </p>
                         <p className="text-base sm:text-lg font-black tracking-tight leading-none uppercase">
-                          {canStart ? 'KÍCH HOẠT TRỘN QUIZ' : 'CHỌN ĐỦ ĐỀ ĐỂ BẮT ĐẦU'}
+                          {canStart ? 'LAUNCH MIX QUIZ' : 'SELECT QUIZZES TO START'}
                         </p>
                       </div>
                     </div>

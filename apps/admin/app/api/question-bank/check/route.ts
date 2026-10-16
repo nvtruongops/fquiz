@@ -14,7 +14,7 @@ import {
 import { z } from 'zod'
 
 const CheckQuestionsSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'ID danh mục môn không hợp lệ'),
+  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
   questions: z.array(
     z.object({
       text: z.string(),
@@ -32,7 +32,7 @@ export const POST = withAuth(async (req: Request) => {
     const parsed = CheckQuestionsSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Dữ liệu không hợp lệ', details: parsed.error.issues },
+        { error: 'Invalid data', details: parsed.error.issues },
         { status: 400 }
       )
     }
@@ -157,7 +157,7 @@ export const POST = withAuth(async (req: Request) => {
           questionIndex: index,
           question_id: qId,
           status: 'new' as const,
-          message: 'Câu hỏi mới hoàn toàn (sẽ tự động thêm vào ngân hàng môn học)',
+          message: 'New question (will be added to the question bank)',
           uploaded: {
             text: uploadedQ.text,
             options: uploadedQ.options,
@@ -182,8 +182,8 @@ export const POST = withAuth(async (req: Request) => {
           questionIndex: index,
           question_id: existingInBank.question_id,
           status: 'reused' as const,
-          message: `Đã có trong ngân hàng môn (khớp đáp án: "${uploadedAnswerTexts.join(', ')}"${
-            existingInBank.quizzes.length > 0 ? `, đang dùng trong ${existingInBank.quizzes.length} đề thi` : ''
+          message: `Exists in question bank (matching answer: "${uploadedAnswerTexts.join(', ')}"${
+            existingInBank.quizzes.length > 0 ? `, currently used in ${existingInBank.quizzes.length} quizzes` : ''
           })`,
           uploaded: {
             text: uploadedQ.text,
@@ -207,7 +207,7 @@ export const POST = withAuth(async (req: Request) => {
           questionIndex: index,
           question_id: existingInBank.question_id,
           status: 'conflict' as const,
-          message: `Mâu thuẫn đáp án: File chọn "${uploadedAnswerTexts.join(', ')}" nhưng Ngân hàng chọn "${bankAnswerTexts.join(', ')}"`,
+          message: `Answer conflict: File has "${uploadedAnswerTexts.join(', ')}" but Question Bank has "${bankAnswerTexts.join(', ')}"`,
           uploaded: {
             text: uploadedQ.text,
             options: uploadedQ.options,
@@ -237,7 +237,7 @@ export const POST = withAuth(async (req: Request) => {
   } catch (error: any) {
     console.error('Error checking question bank:', error)
     return NextResponse.json(
-      { error: error.message || 'Lỗi kiểm tra ngân hàng câu hỏi' },
+      { error: error.message || 'Failed to check question bank' },
       { status: 500 }
     )
   }

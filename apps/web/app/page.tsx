@@ -10,8 +10,8 @@ import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContai
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'FQuiz — Nền tảng Ôn thi Trắc nghiệm & Lớp học Trực tuyến',
-  description: 'Nền tảng thi thử trắc nghiệm, ôn tập flashcard và quản lý lớp học trực tuyến.',
+  title: 'FQuiz — Online Quiz Platform & Virtual Classrooms',
+  description: 'Practice multiple-choice exams, review flashcards, and manage online classrooms with ease.',
 }
 
 export default async function HomePage() {
@@ -36,21 +36,21 @@ export default async function HomePage() {
               <div className="hero-stagger inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card border border-border shadow-2xs backdrop-blur-md">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-xs font-black text-foreground uppercase tracking-wider">
-                  Nền tảng Ôn thi Trắc nghiệm & Lớp học
+                  Quiz Practice Platform & Virtual Classrooms
                 </span>
               </div>
 
               {/* Title */}
               <h1 className="hero-stagger text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.25] text-foreground">
-                <span className="block mb-1 sm:mb-1.5">Luyện thi Trắc nghiệm &</span>
+                <span className="block mb-1 sm:mb-1.5">Master Every Quiz &</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-primary-hover block">
-                  Quản lý Lớp học Thông minh
+                  Empower Intelligent Learning
                 </span>
               </h1>
 
               {/* Description */}
               <p className="hero-stagger text-xs sm:text-sm md:text-base text-muted-foreground max-w-xl mx-auto font-medium leading-relaxed">
-                Thi thử trắc nghiệm đa dạng môn học, hỗ trợ trộn đề ngẫu nhiên, thẻ ghi nhớ flashcard và nộp bài tập trực tuyến chuyên nghiệp.
+                Practice diverse quizzes across disciplines with random question mixing, smart flashcards, and seamless online assignment submissions.
               </p>
 
               {/* CTA Buttons */}
@@ -58,13 +58,13 @@ export default async function HomePage() {
                 <Button asChild size="lg" className="rounded-xl px-6 h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm shadow-md shadow-primary/20 transition-all cursor-pointer">
                   <Link href="/explore">
                     <Compass className="w-4 h-4 mr-2" />
-                    Khám phá Đề thi
+                    Explore Quizzes
                   </Link>
                 </Button>
 
                 <Button asChild size="lg" variant="outline" className="rounded-xl px-6 h-11 border-2 border-border bg-card hover:bg-muted font-bold text-sm text-foreground transition-all cursor-pointer">
                   <Link href={user ? '/dashboard' : '/login'}>
-                    {user ? 'Vào Bảng điều khiển' : 'Đăng nhập ngay'}
+                    {user ? 'Go to Dashboard' : 'Sign in now'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
@@ -77,9 +77,9 @@ export default async function HomePage() {
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <BookCheck className="w-4.5 h-4.5" />
                 </div>
-                <h3 className="text-sm font-black text-foreground">Kho Đề Thi Phong Phú</h3>
+                <h3 className="text-sm font-black text-foreground">Rich Quiz Repository</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Trắc nghiệm chuẩn kiến thức nhiều môn, làm bài có bấm giờ và xem đáp án giải thích chi tiết.
+                  Curated question banks across subjects, timed test simulations, and detailed step-by-step explanations.
                 </p>
               </div>
 
@@ -87,9 +87,9 @@ export default async function HomePage() {
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Layers className="w-4.5 h-4.5" />
                 </div>
-                <h3 className="text-sm font-black text-foreground">Thẻ Ghi Nhớ Flashcard</h3>
+                <h3 className="text-sm font-black text-foreground">Interactive Flashcards</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Lật thẻ flashcard ghi nhớ các khái niệm cốt lõi, công thức và câu hỏi trọng tâm trước kỳ thi.
+                  Flip flashcards to reinforce core concepts, formulas, and high-yield questions before exams.
                 </p>
               </div>
 
@@ -97,9 +97,9 @@ export default async function HomePage() {
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <GraduationCap className="w-4.5 h-4.5" />
                 </div>
-                <h3 className="text-sm font-black text-foreground">Lớp Học & Giảng Dạy</h3>
+                <h3 className="text-sm font-black text-foreground">Classrooms & Teaching</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Tham gia lớp học của giáo viên, làm bài tập được giao và theo dõi kết quả minh bạch.
+                  Join instructor classrooms, complete assigned quizzes on time, and track transparent progress.
                 </p>
               </div>
             </section>

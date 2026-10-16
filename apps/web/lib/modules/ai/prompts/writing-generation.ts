@@ -35,7 +35,7 @@ export const writingGeneration: PromptDefinition<WritingPromptParams, typeof Gen
   version: PROMPT_VERSION,
   schema: GeneratedWritingPromptSchema,
   buildPrompt: (params: WritingPromptParams): string => {
-    const expLang = params.explanationLanguage || 'Vietnamese'
+    const expLang = params.explanationLanguage || 'English'
     const genreInstruction = params.genre ? `\n- Text Genre / Format: ${params.genre}` : ''
     const contextInstruction = params.context ? `\n- Specific Situation / Context: ${params.context}` : ''
 

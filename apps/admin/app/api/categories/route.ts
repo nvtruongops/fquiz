@@ -17,7 +17,7 @@ export const POST = withAuth(async (req, { payload }) => {
   const { name } = body
 
   if (!name || typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'Tên danh mục không được để trống' }, { status: 400 })
+    return NextResponse.json({ error: 'Category name cannot be empty' }, { status: 400 })
   }
 
   await connectDB()
@@ -25,7 +25,7 @@ export const POST = withAuth(async (req, { payload }) => {
   const trimmed = name.trim()
   const existing = await Category.findOne({ name: { $regex: `^${trimmed}$`, $options: 'i' } })
   if (existing) {
-    return NextResponse.json({ error: 'Danh mục đã tồn tại' }, { status: 409 })
+    return NextResponse.json({ error: 'Category already exists' }, { status: 409 })
   }
 
   const category = await Category.create({

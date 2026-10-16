@@ -8,14 +8,17 @@ jest.mock('@/lib/modules/quiz/models/QuestionBank', () => ({
         lean: jest.fn().mockResolvedValue([
           {
             question_id: 'q_test1',
+            text: 'Question text 1',
             used_in_quizzes: ['IT001', 'IT002', 'IT001'],
           },
           {
             question_id: 'q_test2',
+            text: 'Question text 2',
             used_in_quizzes: ['MIX_123', 'TEMP_456'],
           },
           {
             question_id: 'q_test3',
+            text: 'Question text 3',
             used_in_quizzes: ['ENG101'],
           },
         ]),
@@ -31,7 +34,11 @@ jest.mock('@/lib/modules/quiz/models/Quiz', () => ({
         lean: jest.fn().mockResolvedValue([
           {
             course_code: 'IT003',
-            questions: [{ question_id: 'q_test2' }],
+            questions: [{ question_id: 'q_test2', text: 'Question text 2' }],
+          },
+          {
+            course_code: 'IT004',
+            questions: [{ question_id: 'q_test_by_text', text: 'Text only question' }],
           },
         ]),
       }),
@@ -79,6 +86,24 @@ describe('QuestionUsageService & PublicQuizFilter', () => {
     expect(usage3).toBeDefined()
     expect(usage3?.quizzes).toEqual(['ENG101'])
     expect(usage3?.count).toBe(1)
+  })
+
+  it('should support object query items with text and question_id', async () => {
+    const result = await QuestionUsageService.getBatchQuestionPublicUsage([
+      { question_id: 'q_test1', text: 'Question text 1' },
+      { text: 'Text only question' },
+    ], 'CURRENT_01')
+
+    const usage1 = result.get('q_test1')
+    expect(usage1).toBeDefined()
+    expect(usage1?.quizzes).toContain('IT001')
+    expect(usage1?.quizzes).toContain('IT002')
+    expect(usage1?.quizzes).toContain('CURRENT_01')
+
+    const usageText = result.get('Text only question')
+    expect(usageText).toBeDefined()
+    expect(usageText?.quizzes).toContain('IT004')
+    expect(usageText?.quizzes).toContain('CURRENT_01')
   })
 
   it('should handle single question usage lookup via getQuestionPublicUsage', async () => {

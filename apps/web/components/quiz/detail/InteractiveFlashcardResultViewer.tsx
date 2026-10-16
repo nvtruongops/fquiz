@@ -31,7 +31,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
   if (!questions || questions.length === 0) {
     return (
       <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-medium">
-        Không có thông tin chi tiết thẻ ghi nhớ.
+        No flashcard detail information available.
       </div>
     )
   }
@@ -56,10 +56,10 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
         <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="h-4 w-4 text-primary" />
-            Bộ thẻ ({totalCards})
+            Deck ({totalCards})
           </span>
           <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-            Đã nhớ {knownCount}/{totalCards}
+            Mastered {knownCount}/{totalCards}
           </span>
         </div>
 
@@ -75,7 +75,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Tất cả ({totalCards})
+            All ({totalCards})
           </button>
           <button
             type="button"
@@ -87,7 +87,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-emerald-500 hover:bg-emerald-500/10'
             )}
           >
-            Đã nhớ ({knownCount})
+            Mastered ({knownCount})
           </button>
           <button
             type="button"
@@ -99,7 +99,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-destructive hover:bg-destructive/10'
             )}
           >
-            Cần ôn lại ({unknownCount})
+            Needs Review ({unknownCount})
           </button>
         </div>
 
@@ -138,11 +138,11 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
 
                 {isKnown ? (
                   <Badge className="bg-success-bg text-success-fg hover:bg-success-bg border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
-                    <CheckCircle2 className="w-3 h-3 mr-0.5 inline" /> Đã nhớ
+                    <CheckCircle2 className="w-3 h-3 mr-0.5 inline" /> Mastered
                   </Badge>
                 ) : (
                   <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
-                    <RotateCcw className="w-3 h-3 mr-0.5 inline" /> Cần ôn
+                    <RotateCcw className="w-3 h-3 mr-0.5 inline" /> Review
                   </Badge>
                 )}
               </button>
@@ -157,15 +157,15 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
         <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">
-              Thẻ {selectedIndex + 1} / {totalCards}
+              Card {selectedIndex + 1} / {totalCards}
             </span>
             {currentQuestion.is_correct ? (
               <Badge className="bg-success-bg/20 text-success-fg border-none text-xs font-bold px-2.5 py-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline" /> Bạn đánh dấu: ĐÃ NHỚ
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline" /> Your mark: MASTERED
               </Badge>
             ) : (
               <Badge className="bg-destructive/10 text-destructive border-none text-xs font-bold px-2.5 py-0.5">
-                <RotateCcw className="w-3.5 h-3.5 mr-1 inline" /> Bạn đánh dấu: CẦN ÔN LẠI
+                <RotateCcw className="w-3.5 h-3.5 mr-1 inline" /> Your mark: NEEDS REVIEW
               </Badge>
             )}
           </div>
@@ -178,22 +178,22 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
             className="text-xs font-bold text-primary hover:bg-primary/10 rounded-xl"
           >
             {showAnswer ? (
-              <><EyeOff className="w-3.5 h-3.5 mr-1" /> Ẩn đáp án mặt sau</>
+              <><EyeOff className="w-3.5 h-3.5 mr-1" /> Hide reverse side</>
             ) : (
-              <><Eye className="w-3.5 h-3.5 mr-1" /> Hiện đáp án mặt sau</>
+              <><Eye className="w-3.5 h-3.5 mr-1" /> Show reverse side</>
             )}
           </Button>
         </div>
 
         {/* Side-by-Side Cards Grid (Left: Front Card with Question + Options A B C D | Right: Back Card with Answer & Explanation) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 pt-3 overflow-y-auto scrollbar-thin">
-          {/* Card 1: MẶT TRƯỚC THẺ (Câu hỏi & Lựa chọn A, B, C, D) */}
+          {/* Card 1: Front Card (Question & Options) */}
           <div className="bg-muted/50 p-4 rounded-2xl border border-border flex flex-col justify-between space-y-3">
             <div>
               <div className="flex items-center justify-between pb-2 border-b border-border mb-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                   <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/60" />
-                  Mặt trước thẻ (Đề bài & Lựa chọn)
+                  Front Card (Question & Options)
                 </span>
                 <span className="text-[10px] font-mono text-muted-foreground bg-card px-2 py-0.5 rounded border border-border">Front</span>
               </div>
@@ -218,7 +218,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               {Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
                 <div className="space-y-2 pt-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
-                    Các phương án lựa chọn:
+                    Options:
                   </span>
                   <div className="space-y-1.5">
                     {currentQuestion.options.map((optText: string, optIdx: number) => {
@@ -242,13 +242,13 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
             </div>
           </div>
 
-          {/* Card 2: MẶT SAU THẺ (Đáp án chuẩn & Giải thích) */}
+          {/* Card 2: Back Card (Answer & Notes) */}
           <div className="bg-success-bg/10 p-4 rounded-2xl border border-success-fg/30 flex flex-col justify-between space-y-3">
             <div>
               <div className="flex items-center justify-between pb-2 border-b border-success-fg/20 mb-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-success-fg flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-success-fg" />
-                  Mặt sau thẻ (Đáp án & Gợi ý)
+                  Back Card (Answer & Notes)
                 </span>
                 <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200 font-bold">Back</span>
               </div>
@@ -258,7 +258,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                   {/* Correct Answer Highlight */}
                   <div className="bg-card p-4 rounded-xl border border-success-border shadow-xs space-y-1 text-card-foreground">
                     <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
-                      Đáp án chính xác:
+                      Correct Answer:
                     </span>
                     <div className="flex items-center gap-2 text-sm font-black text-success-fg">
                       {correctAnswerLetter && (
@@ -274,7 +274,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                   {currentQuestion.explanation ? (
                     <div className="bg-card p-4 rounded-xl border border-border space-y-1.5 text-xs text-card-foreground leading-relaxed">
                       <span className="font-bold text-primary uppercase tracking-wider text-[10px] flex items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5 text-primary" /> Giải thích / Dịch nghĩa / Mẹo nhớ:
+                        <BookOpen className="w-3.5 h-3.5 text-primary" /> Explanation / Translation / Memory tip:
                       </span>
                       <p className="whitespace-pre-line font-medium text-card-foreground pt-1">
                         {currentQuestion.explanation}
@@ -282,15 +282,15 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                     </div>
                   ) : (
                     <div className="p-4 rounded-xl bg-muted/60 border border-border text-xs text-muted-foreground italic">
-                      Không có thêm phần giải thích cho câu hỏi này.
+                      No additional explanation available for this question.
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="h-48 flex flex-col items-center justify-center text-center p-6 bg-muted/60 rounded-xl border border-border text-muted-foreground space-y-2">
                   <EyeOff className="w-8 h-8 text-primary/60" />
-                  <p className="text-xs font-bold text-card-foreground">Đáp án mặt sau đang ẩn</p>
-                  <p className="text-[11px] text-muted-foreground">Ấn nút &quot;Hiện đáp án mặt sau&quot; ở góc trên để mở đáp án.</p>
+                  <p className="text-xs font-bold text-card-foreground">Back side is currently hidden</p>
+                  <p className="text-[11px] text-muted-foreground">Click &quot;Show reverse side&quot; above to view the answer.</p>
                 </div>
               )}
             </div>

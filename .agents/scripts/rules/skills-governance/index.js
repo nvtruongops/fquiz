@@ -6,13 +6,13 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['skills-governance'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc SKILLS_GOVERNANCE bị tắt.');
+      ctx.logger.pass('Rule SKILLS_GOVERNANCE is disabled.');
       return { passed: true };
     }
 
     const skillsDir = path.join(ctx.workspaceRoot, '.agents/skills');
     if (!ctx.fs.existsSync(skillsDir)) {
-      ctx.logger.error('Không tìm thấy thư mục .agents/skills!');
+      ctx.logger.error('Directory .agents/skills not found!');
       return { passed: false };
     }
 
@@ -27,14 +27,14 @@ module.exports = {
         const skillMdPath = path.join(skillsDir, skillName, 'SKILL.md');
 
         if (!ctx.fs.existsSync(skillMdPath)) {
-          ctx.logger.error(`Skill '${skillName}' thiếu file SKILL.md bắt buộc!`);
+          ctx.logger.error(`Skill '${skillName}' is missing required SKILL.md file!`);
           errors++;
           continue;
         }
 
         const content = ctx.fs.readFileSync(skillMdPath, 'utf8');
         if (!content.startsWith('---') || !content.includes('name:') || !content.includes('description:')) {
-          ctx.logger.error(`Skill '${skillName}' có file SKILL.md nhưng thiếu YAML frontmatter 'name' hoặc 'description'!`);
+          ctx.logger.error(`Skill '${skillName}' has a SKILL.md file but is missing YAML frontmatter 'name' or 'description'!`);
           errors++;
         }
       }
@@ -44,7 +44,7 @@ module.exports = {
       return { passed: false };
     }
 
-    ctx.logger.pass(`Kiểm tra ${totalSkills} skill(s) trong .agents/skills hợp lệ 100% (SKILL.md & Frontmatter OK).`);
+    ctx.logger.pass(`All ${totalSkills} skill(s) in .agents/skills verified 100% valid (SKILL.md & Frontmatter OK).`);
     return { passed: true };
   }
 };

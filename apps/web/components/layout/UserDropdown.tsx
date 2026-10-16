@@ -59,7 +59,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
   const isTeacher = user.role === 'teacher'
   const hasAvatar = !!user.avatarUrl && !avatarError
 
-  const roleLabel = isAdmin ? 'Quản trị viên' : isDev ? 'Developer' : isTeacher ? 'Giáo viên' : 'Học viên'
+  const roleLabel = isAdmin ? 'Administrator' : isDev ? 'Developer' : isTeacher ? 'Teacher' : 'Student'
 
   return (
     <DropdownMenu>
@@ -168,7 +168,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                   <Sparkles className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-sm font-bold truncate">Bảng điều khiển Admin</span>
+                <span className="text-sm font-bold truncate">Admin Dashboard</span>
               </Link>
             </DropdownMenuItem>
           )}
@@ -180,7 +180,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                     <GraduationCap className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-sm font-bold truncate">Trang Học viên</span>
+                  <span className="text-sm font-bold truncate">Student Portal</span>
                 </Link>
               </DropdownMenuItem>
             ) : (
@@ -189,7 +189,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                     <School className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-sm font-bold truncate">Trang Giáo viên</span>
+                  <span className="text-sm font-bold truncate">Teacher Portal</span>
                 </Link>
               </DropdownMenuItem>
             )
@@ -200,7 +200,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <User className="w-4 h-4" />
               </div>
-              <span className="text-sm">Trang cá nhân</span>
+              <span className="text-sm">Profile</span>
             </Link>
           </DropdownMenuItem>
 
@@ -209,7 +209,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <Settings className="w-4 h-4" />
               </div>
-              <span className="text-sm">Cài đặt</span>
+              <span className="text-sm">Settings</span>
             </Link>
           </DropdownMenuItem>
         </div>
@@ -229,15 +229,15 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   )}
                 </div>
                 <div className="flex flex-col min-w-0 text-left">
-                  <span className="text-sm font-semibold truncate">Giao diện</span>
+                  <span className="text-sm font-semibold truncate">Appearance</span>
                   <span className="text-[10px] text-muted-foreground font-bold truncate">
                     {theme === 'dark'
-                      ? 'Giao diện Tối'
+                      ? 'Dark'
                       : theme === 'green'
-                      ? 'Tùy chỉnh: Green'
+                      ? 'Custom: Green'
                       : theme === 'pink'
-                      ? 'Tùy chỉnh: Pink'
-                      : 'Giao diện Sáng'}
+                      ? 'Custom: Pink'
+                      : 'Light'}
                   </span>
                 </div>
               </DropdownMenuSubTrigger>
@@ -251,7 +251,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 >
                   <div className="flex items-center gap-2.5">
                     <Sun className="w-4 h-4 text-primary" />
-                    <span>Giao diện Sáng</span>
+                    <span>Light</span>
                   </div>
                   {theme === 'light' && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
@@ -265,7 +265,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 >
                   <div className="flex items-center gap-2.5">
                     <Moon className="w-4 h-4 text-primary" />
-                    <span>Giao diện Tối</span>
+                    <span>Dark</span>
                   </div>
                   {theme === 'dark' && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
@@ -279,7 +279,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   >
                     <div className="flex items-center gap-2.5">
                       <Palette className="w-4 h-4 text-primary" />
-                      <span>Tùy chỉnh (Custom)</span>
+                      <span>Custom Themes</span>
                     </div>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent sideOffset={8} className="w-48 p-1.5 bg-card border border-border rounded-2xl shadow-xl z-50">
@@ -326,7 +326,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
             <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive">
               <LogOut className="w-4 h-4" />
             </div>
-            <span className="text-sm font-semibold">Đăng xuất</span>
+            <span className="text-sm font-semibold">Sign Out</span>
           </DropdownMenuItem>
         </div>
       </DropdownMenuContent>

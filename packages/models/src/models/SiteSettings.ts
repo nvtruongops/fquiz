@@ -4,7 +4,7 @@ import type { ISiteSettings } from '../entities/settings.types'
 const SiteSettingsSchema = new Schema<ISiteSettings>(
   {
     app_name: { type: String, required: true, default: 'FQuiz Platform' },
-    app_description: { type: String, required: true, default: 'Nền tảng ôn tập thông minh trực tuyến' },
+    app_description: { type: String, required: true, default: 'Online smart study and quiz platform' },
     allow_registration: { type: Boolean, required: true, default: true },
     maintenance_mode: { type: Boolean, required: true, default: false },
     anti_sharing_enabled: { type: Boolean, required: true, default: false },

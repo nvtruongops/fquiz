@@ -60,7 +60,7 @@ async function findRealQuizForQuestion(quizId?: string, cleanCourse?: string, qu
     if (directQuiz) return directQuiz
   }
 
-  const baseFilter = { is_temp: { $ne: true }, title: { $not: /^Quiz Trộn/i }, $or: queryCriteria }
+  const baseFilter = { is_temp: { $ne: true }, title: { $not: /^(Quiz Tr\u1ED9n|Mix Quiz)/i }, $or: queryCriteria }
   if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
     const matched = await Quiz.findOne({ ...baseFilter, course_code: cleanCourse }).select('_id course_code title questions question_refs').lean()
     if (matched) return matched
@@ -134,7 +134,7 @@ async function resolveOriginalQuizForQuestion(params: {
   const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText, question_id)
 
   const title = realQuiz?.title ||
-    ((clientQuizTitle && !clientQuizTitle.startsWith('Quiz Trộn'))
+    ((clientQuizTitle && !clientQuizTitle.startsWith('Quiz Tr\u1ED9n') && !clientQuizTitle.startsWith('Mix Quiz'))
       ? clientQuizTitle
       : (cleanCourse && cleanCourse !== 'GENERAL' ? cleanCourse : 'GENERAL'))
 
@@ -189,12 +189,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const { searchParams } = new URL(req.url)
     const courseCodeParam = searchParams.get('course_code')
     const studentObjectId = new Types.ObjectId(payload.userId)
-
-    // Auto-heal legacy or temp-coded pins for this student
-    const allStudentPins = await PinnedQuestion.find({ student_id: studentObjectId }).lean() as any[]
-    for (const pin of allStudentPins) {
-      await autoHealPin(pin, courseCodeParam)
-    }
 
     const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
 
@@ -277,7 +271,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     } = body as any
 
     if (!text || typeof text !== 'string') {
-      return NextResponse.json({ error: 'Nội dung câu hỏi là bắt buộc.' }, { status: 400 })
+      return NextResponse.json({ error: 'Question content is required.' }, { status: 400 })
     }
 
     const studentObjectId = new Types.ObjectId(payload.userId)
@@ -297,7 +291,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (existing) {
       // Unpin
       await PinnedQuestion.deleteOne({ _id: existing._id })
-      return NextResponse.json({ pinned: false, message: 'Đã bỏ ghim câu hỏi.' })
+      return NextResponse.json({ pinned: false, message: 'Question unpinned successfully.' })
     }
 
     // Pin
@@ -316,8 +310,11 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       image_url,
     })
 
-    return NextResponse.json({ pinned: true, item: newPin, message: 'Đã ghim câu hỏi.' }, { status: 201 })
-  } catch (error) {
+    return NextResponse.json({ pinned: true, item: newPin, message: 'Question pinned successfully.' }, { status: 201 })
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      return NextResponse.json({ pinned: true, message: 'Question has already been pinned.' }, { status: 200 })
+    }
     console.error('Error toggling pinned question:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }

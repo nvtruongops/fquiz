@@ -28,36 +28,36 @@ export class PromptEngine {
       .map((opt, i) => {
         const letter = getLabel(i)
         const cleanOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '')
-        return `  Phương án ${letter}: ${cleanOpt}`
+        return `  Option ${letter}: ${cleanOpt}`
       })
       .join('\n')
 
     // Format Answers
     const getFormattedAnswerStr = (answer: number | number[] | null | undefined) => {
-      if (answer === null || answer === undefined) return 'Chưa chọn'
+      if (answer === null || answer === undefined) return 'Not answered yet'
       const idxs = Array.isArray(answer) ? answer : [answer]
       return idxs
         .map((i) => {
           const letter = getLabel(i)
           const cleanText = (question.options[i] ?? '').replace(/^[A-Z][\.\)]\s*/i, '')
-          return `Phương án ${letter} (${cleanText})`
+          return `Option ${letter} (${cleanText})`
         })
         .join(', ')
     }
 
     const correctText = getFormattedAnswerStr(question.correctAnswer)
     const submittedText = getFormattedAnswerStr(userSubmittedAnswer)
-    const courseStr = courseCode ? `môn ${courseCode}` : 'môn học này'
+    const courseStr = courseCode ? `subject ${courseCode}` : 'this subject'
 
     // 2. Format Retrieved Evidence (Invariant 3: Evidence-First)
-    let evidenceSection = `Trong ngân hàng đề ${courseStr}, không tìm thấy câu hỏi nào khác sử dụng phương án này làm đáp án đúng.`
+    let evidenceSection = `In the question bank for ${courseStr}, no other question was found using this option as the correct answer.`
     if (evidences && evidences.length > 0) {
       evidenceSection = evidences
         .map((e, idx) => {
           const qCorrect = Array.isArray(e.correctAnswer)
             ? e.correctAnswer.map((i) => getLabel(i)).join(', ')
             : (e.correctAnswer !== undefined ? getLabel(e.correctAnswer) : 'N/A')
-          return `Bằng chứng #${idx + 1} (Nguồn: ${e.sourceType.toUpperCase()} - Độ khớp: ${(e.score * 100).toFixed(0)}%):\n- Đề bài: "${e.content}"\n- Đáp án đúng trong câu đó: Phương án ${qCorrect}`
+          return `Evidence #${idx + 1} (Source: ${e.sourceType.toUpperCase()} - Match: ${(e.score * 100).toFixed(0)}%):\n- Question: "${e.content}"\n- Correct answer in that question: Option ${qCorrect}`
         })
         .join('\n\n')
     }
@@ -93,27 +93,27 @@ export class PromptEngine {
     return `${SYSTEM_RULES}
 
 =========================================
-TẦNG 1: NGỮ CẢNH CÂU HỎI HIỆN TẠI (CURRENT QUESTION)
+TIER 1: CURRENT QUESTION CONTEXT
 =========================================
-- Mã môn học: ${courseCode || 'N/A'}
-- Đề bài: "${question.text}"
-- Các lựa chọn:
+- Course Code: ${courseCode || 'N/A'}
+- Question: "${question.text}"
+- Options:
 ${formattedOptions}
-- Đáp án đúng của câu này: ${correctText}
-- Đáp án học viên đã chọn: ${submittedText}
-- Phương án học viên đang thắc mắc: ${targetOptionText ? `"${targetOptionText}"` : 'Phương án đã chọn/hỏi'}
+- Correct answer for this question: ${correctText}
+- Student's selected answer: ${submittedText}
+- Option being queried by student: ${targetOptionText ? `"${targetOptionText}"` : 'Selected/queried option'}
 
 =========================================
-TẦNG 2: BẰNG CHỨNG TRÍCH XUẤT TỪ DATABASE (RETRIEVED EVIDENCE)
+TIER 2: RETRIEVED EVIDENCE FROM DATABASE
 =========================================
 ${evidenceSection}
 
 =========================================
-TẦNG 3: CHỈ THỊ CHUYÊN BIỆT THEO Ý ĐỊNH (INTENT-SPECIFIC DIRECTIVE)
+TIER 3: INTENT-SPECIFIC DIRECTIVE
 =========================================
-- Phân loại ý định: ${intent}
+- Intent Classification: ${intent}
 ${intentDirective}
 
-Hãy phân tích và trả về định dạng JSON theo đúng schema quy định.`
+Analyze and return JSON strictly adhering to the specified schema.`
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Quiz Module Bootstrap — Đăng ký tất cả model trong module quiz.
+ * Quiz Module Bootstrap — Register all models in the quiz module.
  */
 import { registerModel } from '@/lib/core/db/model-registry'
 import { registerUserCleanupHandler } from '@/lib/core/services/user-cleanup-registry'

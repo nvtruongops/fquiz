@@ -12,8 +12,8 @@ import {
 
 /**
  * POST /api/question-bank/sync
- * Đồng bộ câu hỏi của quiz vào ngân hàng môn học
- * Tự động bỏ qua câu hỏi có mâu thuẫn đáp án
+ * Sync quiz questions into subject question bank
+ * Automatically skip questions with conflicting answers
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
@@ -28,7 +28,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
-    // Tìm quiz_id nếu không được cung cấp
+    // Find quiz_id if not provided
     let resolvedQuizId = quiz_id
     if (!resolvedQuizId) {
       const quiz = await Quiz.findOne({ course_code, category_id })
@@ -39,7 +39,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       }
     }
 
-    // Đồng bộ vào ngân hàng
+    // Sync to bank
     const result = await syncQuizToQuestionBank(
       category_id,
       course_code,
@@ -56,8 +56,8 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       conflicts: result.conflicts.length,
       conflict_details: result.conflicts,
       message: result.conflicts.length > 0
-        ? ` Đã đồng bộ ${result.synced}/${questions.length} câu hỏi. ${result.conflicts.length} câu bị bỏ qua do mâu thuẫn đáp án.`
-        : `✅ Đã đồng bộ thành công ${result.synced} câu hỏi vào ngân hàng môn học.`
+        ? `⚠️ Synced ${result.synced}/${questions.length} questions. ${result.conflicts.length} questions skipped due to conflicting answers.`
+        : `✅ Successfully synced ${result.synced} questions to the subject question bank.`
     })
   } catch (error: any) {
     console.error('Error syncing to question bank:', error)

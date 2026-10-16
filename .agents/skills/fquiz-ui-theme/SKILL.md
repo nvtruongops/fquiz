@@ -77,7 +77,15 @@ This skill enforces **Theme as Code** governance, **4 Official Themes** (`light`
    - Primary and Destructive CTA Buttons MUST possess soft elevation shadows (`shadow-sm shadow-primary/25` / `shadow-sm shadow-destructive/20`) and micro-interaction hover states (`hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-xs`) configured centrally in the core `Button` component (`components/shared/ui/button.tsx`). Avoid scattering ad-hoc shadow classes inside individual page components.
 
 12. **Glassmorphism & Ambient Glow Governance**:
-   - Bento Cards, Studio Containers, and Sticky Headers SHOULD utilize `.glass-card` (`backdrop-filter: blur(16px) saturate(150%)`) or `.glass-card-elevated` (`backdrop-filter: blur(24px) saturate(160%)`) for frosted glass visual depth.
-   - Combine glassmorphism cards with `.ambient-glow-sphere` and `.rail-glow-*` to provide subtle background light diffusion while maintaining 100% WCAG 2.2 AA text contrast standards.
+   - Bento Cards, Studio Containers, and Sticky Headers SHOULD utilize `.glass-card` (`backdrop-filter: blur(16px) saturate(150%)`) or `.glass-card-elevated` (`backdrop-filter: blur(24px) saturate(160%)`) to create visual depth.
+   - Pair glassmorphism cards with `.ambient-glow-sphere` and `.rail-glow-*` to diffuse soft background illumination while strictly preserving 100% WCAG 2.2 AA text contrast.
+
+13. **Static Color Scan Non-Binary Principle & Token Leakage Audit**:
+   - All static color scan reports must specify: *"No hardcoded colors detected within the executed static scan scope"*, avoiding absolute binary assertions since dynamic classnames, SVG fills, or inline styles may still exist.
+   - Periodically audit classes such as `text-white`, `bg-[#...]`, and `border-[#...]` across the entire monorepo (`packages/ui`, `packages/*`, `apps/*`).
+
+14. **State Contrast Matrix**:
+   - Verify contrast ratios not only in default static states, but systematically across interactive states: `Hover`, `Focus`, `Active`, `Disabled`, `Selected`, `Error`, and `Warning` across all 4 themes (`light`, `dark`, `green`, `pink`).
+
 
 

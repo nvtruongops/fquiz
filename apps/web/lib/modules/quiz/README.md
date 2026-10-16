@@ -1,8 +1,8 @@
 # Quiz Module (`lib/modules/quiz/`)
 
-Module quản lý quiz, session, ngân hàng câu hỏi, import và phân tích.
+Manages quizzes, sessions, question bank integration, quiz imports, and schema diagnostics.
 
-## Cấu trúc
+## Structure
 
 ```
 quiz/
@@ -55,21 +55,21 @@ quiz/
 
 | Mode | Behavior |
 |------|----------|
-| **Immediate** | Chấm ngay, hiển thị correct_answer + explanation |
-| **Review** | Không hiển thị đáp án, chấm khi nộp bài cuối |
-| **Flashcard** | Client-managed, server chỉ lưu flashcard_stats |
+| **Immediate** | Real-time grading, displays `correct_answer` + `explanation` |
+| **Review** | Answers hidden until final submission |
+| **Flashcard** | Client-managed deck, server saves `flashcard_stats` |
 
 ### Server-Side Processing
-- Không bao giờ tin client state
-- Dùng `questions_cache` trong session document (không query Quiz DB)
-- Map display index → actual index qua `question_order` array
-- Exact set match cho multi-select answers
+- Never trust client-provided state
+- Uses `questions_cache` stored in session document (zero quiz DB queries during active exams)
+- Maps display index $\rightarrow$ actual index via `question_order` array
+- Exact set match validation for multiple-select answers
 
 ### Atomic Session Completion
 ```typescript
 // Race condition prevention
 findOneAndUpdate({ _id: sessionId, status: { $ne: 'completed' } }, update)
-// Only first submit succeeds; concurrent submits get 409
+// Only first submit succeeds; concurrent submits receive HTTP 409 Conflict
 ```
 
 ## Question ID Generation
@@ -82,7 +82,7 @@ generateQuestionId(text, options): string
 
 generateQuestionFingerprint(text, options, correctAnswer, type, topic): string
 // SHA-256 hash of: text + sorted(options) + sorted(correctAnswer) + type + topic
-// Exact dedup (same question + same answer = same fingerprint)
+// Exact deduplication (same question + same answer = same fingerprint)
 ```
 
 ## Question Bank Manager
@@ -125,22 +125,22 @@ MALFORMED_JSON, EMPTY_PAYLOAD, FILE_TOO_LARGE
 ## Quiz Schema (Mongoose)
 
 ### Indexes
-- `{ category_id, status, studentCount: -1 }` — Explore listing
+- `{ category_id, status, studentCount: -1 }` — Explore catalog listing
 - Text: `{ title, course_code }` — full-text search
 - Unique partial: `{ created_by, course_code }` where `is_saved_from_explore != true`
-- `{ expires_at }` TTL — auto-delete temp (mix) quizzes
+- `{ expires_at }` TTL — auto-deletes temporary mixed quizzes
 
 ### Pre-save Hooks
-- `course_code` → `.trim().toUpperCase()`
-- Auto-generate `question_id` for questions without ID
+- `course_code` $\rightarrow$ `.trim().toUpperCase()`
+- Auto-generate `question_id` for questions lacking an ID
 
 ## Mix Quiz
 
 ```
 POST /api/sessions/mix
-  → Create temp Quiz (is_temp=true, expires_at TTL)
+  → Create temporary Quiz (is_temp=true, expires_at TTL)
   → Create session with is_temp=true
-  → Concurrent check: { student_id, is_temp, expires_at } index
+  → Concurrent quota check: { student_id, is_temp, expires_at } index
 ```
 
 ## Cross-Module Interface

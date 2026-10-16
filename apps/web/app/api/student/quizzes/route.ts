@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Types } from 'mongoose'
@@ -13,13 +14,15 @@ function buildSourceMappings(quizzes: any[]) {
 
   for (const quiz of quizzes) {
     const displayId = quiz._id.toString()
-    const sourceId = quiz.is_saved_from_explore && quiz.original_quiz_id?._id
-      ? quiz.original_quiz_id._id.toString()
+    const rawOrigId = quiz.original_quiz_id?._id ?? quiz.original_quiz_id
+    const origIdStr = rawOrigId ? rawOrigId.toString() : null
+    const sourceId = quiz.is_saved_from_explore && origIdStr
+      ? origIdStr
       : displayId
     sourceQuizIdByDisplayId.set(displayId, sourceId)
 
-    if (quiz.is_saved_from_explore && quiz.original_quiz_id?._id) {
-      originalSourceIds.add(quiz.original_quiz_id._id.toString())
+    if (quiz.is_saved_from_explore && origIdStr) {
+      originalSourceIds.add(origIdStr)
     }
   }
 
@@ -145,7 +148,7 @@ function mapQuizzesForResponse(
 
     let sourceStatus: 'available' | 'source_locked' | 'not_applicable' = 'not_applicable'
     if (q.is_saved_from_explore) {
-      const originalId = original?._id?.toString?.() || ''
+      const originalId = (original?._id ?? original)?.toString?.() || ''
       sourceStatus = sourceAvailabilityByOriginalId.get(originalId) ? 'available' : 'source_locked'
     }
 
@@ -187,10 +190,10 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
 
-    // Chỉ lấy bộ đề đã lưu từ Explore của user
+    // Fetch all saved quizzes from Explore and user self-created/pinned quizzes (excluding temp quizzes is_temp: true)
     const query: any = { 
       created_by: new Types.ObjectId(payload.userId),
-      is_saved_from_explore: true,
+      is_temp: { $ne: true },
     }
     if (categoryId) {
       const catIds = categoryId.split(',').map((s) => s.trim()).filter(validateObjectId)
@@ -203,13 +206,28 @@ export const GET = withAuth(async (req: Request, { payload }) => {
 
     const quizzes = await Quiz.find(query)
       .select('title course_code questionCount status is_public created_at category_id original_quiz_id is_saved_from_explore is_temp')
-      .populate('category_id', 'name')
-      .populate({
-        path: 'original_quiz_id',
-        select: 'questionCount'
-      })
       .sort({ created_at: -1 })
       .lean() as any[]
+
+    const categoryIds = Array.from(new Set(quizzes.map((q: any) => q.category_id).filter(Boolean)))
+    const originalQuizIds = Array.from(new Set(quizzes.map((q: any) => q.original_quiz_id).filter(Boolean)))
+
+    const [categories, originalQuizzes] = await Promise.all([
+      categoryIds.length > 0 ? Category.find({ _id: { $in: categoryIds } }).select('name').lean() : [],
+      originalQuizIds.length > 0 ? Quiz.find({ _id: { $in: originalQuizIds } }).select('questionCount').lean() : [],
+    ])
+
+    const categoryMap = new Map((categories as any[]).map((c: any) => [c._id.toString(), c]))
+    const originalQuizMap = new Map((originalQuizzes as any[]).map((oq: any) => [oq._id.toString(), oq]))
+
+    for (const q of quizzes) {
+      if (q.category_id) {
+        q.category_id = categoryMap.get(q.category_id.toString()) ?? { _id: q.category_id, name: 'Uncategorized' }
+      }
+      if (q.original_quiz_id) {
+        q.original_quiz_id = originalQuizMap.get(q.original_quiz_id.toString()) ?? { _id: q.original_quiz_id }
+      }
+    }
 
     const { sourceQuizIdByDisplayId, originalSourceIds } = buildSourceMappings(quizzes as any[])
     const sourceAvailabilityByOriginalId = await fetchSourceAvailabilityMap(originalSourceIds)

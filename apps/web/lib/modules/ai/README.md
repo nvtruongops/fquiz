@@ -1,8 +1,8 @@
 # AI Module (`lib/modules/ai/`)
 
-Module quản lý nội dung sinh bởi AI (Gemini/OpenAI) và phân hệ Trợ lý phòng thi Quiz AI Assistant.
+Manages AI-generated educational content (Gemini/OpenAI) and the Quiz AI Assistant real-time exam room copilot.
 
-## Cấu trúc
+## Structure
 
 ```
 ai/
@@ -47,18 +47,18 @@ ai/
 | `aiModel` | string | Model name |
 | `sourceType` | AIGenerationType | Type of generated content |
 | `promptTemplate` | string | Versioned prompt key |
-| `requestPayload` | Record | Raw request |
-| `responsePayload` | Record | Zod-validated response |
-| `tokensUsed` | number | Token usage |
-| `costEstimated` | number | Estimated cost |
+| `requestPayload` | Record | Raw request payload |
+| `responsePayload` | Record | Zod-validated response payload |
+| `tokensUsed` | number | Token usage count |
+| `costEstimated` | number | Estimated cost in USD |
 
 Extends `IBaseEntity`: `status`, `createdBy`, `updatedBy`, `deletedAt`, `metadata`.
 
-**Unique index**: `{ requestHash, aiProvider }` — prevents duplicate API calls.
+**Unique index**: `{ requestHash, aiProvider }` — prevents duplicate API requests.
 
 ### AILearningLog
 
-Standalone model (does NOT extend IBaseEntity). Tracks AI generation usage per user/language.
+Standalone model (does NOT extend IBaseEntity). Tracks AI generation usage per user and language.
 
 ## AIContentService
 
@@ -73,58 +73,57 @@ class AIContentService {
 ```
 generate(request)
   ├─ 1. Build prompt from promptRegistry + params
-  ├─ 2. SHA-256 requestHash
+  ├─ 2. Compute SHA-256 requestHash
   ├─ 3. Check AIAsset DB (dedup) → found? reuse response
   ├─ 4. Check in-memory cache → hit? return cached
   ├─ 5. Call IAIProvider.generate() → Gemini/OpenAI
   ├─ 6. Validate with Zod schema
-  ├─ 7. Persist to AIAsset
+  ├─ 7. Persist to AIAsset collection
   ├─ 8. Emit AIAssetGenerated event
   └─ 9. Return result
 ```
 
 ## Prompts
 
-12 prompt types (11 học liệu + 1 quiz assistant), mỗi loại có Zod schema validate structured JSON output từ AI:
+12 prompt types (11 educational generators + 1 quiz assistant), each featuring a Zod schema validating structured JSON output:
 
 | # | Prompt | Output |
 |---|--------|--------|
-| 1 | `vocabularyGeneration` | Từ vựng + định nghĩa + ví dụ |
-| 2 | `sentenceGeneration` | Câu ví dụ theo ngữ pháp |
-| 3 | `paragraphGeneration` | Đoạn văn theo chủ đề |
-| 4 | `grammarGeneration` | Pattern ngữ pháp + giải thích |
-| 5 | `quizGeneration` | Câu hỏi trắc nghiệm |
-| 6 | `flashcardGeneration` | Flashcard 2 mặt |
-| 7 | `translation` | Bản dịch + giải thích |
-| 8 | `dialogueGeneration` | Hội thoại theo ngữ cảnh |
-| 9 | `storyGeneration` | Truyện ngắn theo trình độ |
-| 10 | `writingGeneration` | Đề bài viết + gợi ý |
-| 11 | `writingEvaluation` | Chấm bài viết + feedback (100% tiếng Việt) |
-| 12 | `quizAssistantPrompt` | Giải đáp câu hỏi thi trắc nghiệm & đối chiếu ngân hàng đề |
+| 1 | `vocabularyGeneration` | Vocabulary terms + definitions + example sentences |
+| 2 | `sentenceGeneration` | Example sentences based on grammar patterns |
+| 3 | `paragraphGeneration` | Reading comprehension paragraphs by topic |
+| 4 | `grammarGeneration` | Grammar patterns + structural explanations |
+| 5 | `quizGeneration` | Multiple-choice questions |
+| 6 | `flashcardGeneration` | Double-sided flashcard decks |
+| 7 | `translation` | Translations with linguistic annotations |
+| 8 | `dialogueGeneration` | Contextual conversational dialogues |
+| 9 | `storyGeneration` | Short reading stories tailored by CEFR level |
+| 10 | `writingGeneration` | Essay prompts + brainstorming suggestions |
+| 11 | `writingEvaluation` | Essay evaluation + constructive feedback |
+| 12 | `quizAssistantPrompt` | Multiple-choice question guidance & question bank verification |
 
 ## Quiz AI Assistant (Real-time Exam Room Assistant)
 
-Phân hệ trợ lý AI giải đáp thắc mắc và đối chiếu tri thức theo thời gian thực trong phòng thi trắc nghiệm (`lib/modules/ai/quiz-assistant/`):
-- **Cấu trúc Sub-package**:
-  - `orchestrator.ts`: `QuizAIOrchestrator` phối hợp toàn bộ luồng xử lý từ lúc nhận yêu cầu đến lúc phản hồi.
-  - `intent/intent-resolver.ts`: Phân loại ý định của học sinh (Explain, Compare, Formula, Similar Question, Solve, General).
-  - `context/quiz-context-resolver.ts`: Trích xuất và làm giàu ngữ cảnh câu hỏi, bài thi và lựa chọn của học viên.
-  - `retrieval/mongo-question-retriever.ts` & `ranking.ts`: Tra cứu đa cấp từ Question Bank theo `category_id` và đề thi theo `course_code`.
-  - `confidence/confidence-engine.ts`: Đánh giá độ tin cậy của câu trả lời trước khi gửi phản hồi.
-  - `prompt/prompt-engine.ts` & `templates/`: 4-Tier Evidence prompt templates chống hallucination.
-  - `telemetry/quiz-ai-telemetry.ts`: Theo dõi độ trễ, token usage và tỷ lệ thành công.
-- **Tài liệu nhiệm vụ**: Xem chi tiết tại [`tasks/quiz-ai-assistant/`](../../../tasks/quiz-ai-assistant/) (`requirements.md`, `design.md`, `tasks.md`, `SUMMARY.md`).
+AI copilot providing real-time question explanations and question bank cross-referencing during active exams (`lib/modules/ai/quiz-assistant/`):
+- **Sub-package Structure**:
+  - `orchestrator.ts`: `QuizAIOrchestrator` orchestrating the 8-stage pipeline from request parsing to response emission.
+  - `intent/intent-resolver.ts`: Intent classification (Explain, Compare, Formula, Similar Question, Solve, General).
+  - `context/quiz-context-resolver.ts`: Extracts and enriches context for questions, quizzes, and student choices.
+  - `retrieval/mongo-question-retriever.ts` & `ranking.ts`: Multi-source parallel retrieval from Question Bank (by `category_id`) and Quiz (by `course_code`).
+  - `confidence/confidence-engine.ts`: Evaluates response confidence deterministically before dispatching.
+  - `prompt/prompt-engine.ts` & `templates/`: 4-Tier Evidence prompt templates preventing hallucinations.
+  - `telemetry/quiz-ai-telemetry.ts`: Tracks latency, token consumption, and success rates.
+- **Specification Documents**: See [`tasks/quiz-ai-assistant/`](../../../tasks/quiz-ai-assistant/) (`requirements.md`, `design.md`, `tasks.md`, `SUMMARY.md`).
 
 ## Dependencies
 
-- **IAIProvider** (from `lib/core/ai/`) — GeminiProvider, OpenAIProvider, DynamicAIProvider
-- **ICache** (from `lib/core/cache/`) — in-memory dedup
-- **EventBus** (from `lib/core/events/`) — emit `AIAssetGenerated` events
-- **DI Container** (from `lib/core/di/`) — AIContentService is DI-wired
+- **IAIProvider** (from `lib/core/ai/`): GeminiProvider, OpenAIProvider, DynamicAIProvider
+- **ICache** (from `lib/core/cache/`): In-memory deduplication cache
+- **EventBus** (from `lib/core/events/`): Dispatches `AIAssetGenerated` events
+- **DI Container** (from `lib/core/di/`): AIContentService wiring
 
 ## Module Rules
 
-- Không import model từ module khác (trừ models trong `ai/models/`)
-- AI output luôn luôn được validate qua Zod schemas trước khi lưu trữ hoặc trả về
-- Đăng ký model đầy đủ qua `registerModel()` trong `index.ts`
-
+- No cross-module model imports (strictly models within `ai/models/`)
+- All AI outputs must be validated through Zod schemas before storage or transmission
+- Register all models via `registerModel()` in `index.ts`

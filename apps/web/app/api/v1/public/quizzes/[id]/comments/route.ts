@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizComment } from '@/lib/modules/quiz/models/QuizComment'
+import { User } from '@/lib/modules/auth/models/User'
 import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Types } from 'mongoose'
@@ -18,15 +19,25 @@ export const GET = withAuth(async (
     }
 
     const comments = await QuizComment.find({ quiz_id: new Types.ObjectId(id) })
-      .populate('user_id', 'username avatar_url')
       .sort({ created_at: -1 })
-      .lean()
+      .lean() as any[]
     
-    return NextResponse.json(comments)
+    const userIds = Array.from(new Set(comments.map((c) => c.user_id).filter(Boolean)))
+    const users = userIds.length > 0
+      ? await User.find({ _id: { $in: userIds } }).select('username avatar_url').lean() as any[]
+      : []
+    const userMap = new Map(users.map((u) => [u._id.toString(), { _id: u._id, username: u.username, avatar_url: u.avatar_url }]))
+
+    const populatedComments = comments.map((c) => ({
+      ...c,
+      user_id: userMap.get(c.user_id?.toString()) ?? null,
+    }))
+    
+    return NextResponse.json(populatedComments)
   } catch (error) {
     console.error('Error fetching comments:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const POST = withAuth(async (
@@ -36,7 +47,7 @@ export const POST = withAuth(async (
   try {
     await connectDB()
 
-        const { id } = await params
+    const { id } = await params
     
     if (!id || !Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
@@ -46,7 +57,7 @@ export const POST = withAuth(async (
     let { content } = body
     
     if (!content || content.trim().length === 0) {
-      return NextResponse.json({ error: 'Nội dung bình luận không được để trống' }, { status: 400 })
+      return NextResponse.json({ error: 'Comment content cannot be empty' }, { status: 400 })
     }
     
     // Sanitization: Multi-pass HTML tag stripping & entity escaping to neutralize XSS
@@ -65,11 +76,11 @@ export const POST = withAuth(async (
       .trim()
     
     if (content.length === 0) {
-      return NextResponse.json({ error: 'Nội dung bình luận không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid comment content' }, { status: 400 })
     }
 
     if (content.length > 1000) {
-      return NextResponse.json({ error: 'Bình luận quá dài (tối đa 1000 ký tự)' }, { status: 400 })
+      return NextResponse.json({ error: 'Comment is too long (maximum 1000 characters)' }, { status: 400 })
     }
 
     // Rate Limiting: 1 comment per 30 seconds per user on this quiz
@@ -81,7 +92,7 @@ export const POST = withAuth(async (
 
     if (lastComment) {
       return NextResponse.json({ 
-        error: 'Bạn đang bình luận quá nhanh. Vui lòng đợi 30 giây.' 
+        error: 'You are commenting too fast. Please wait 30 seconds.' 
       }, { status: 429 })
     }
 
@@ -91,15 +102,17 @@ export const POST = withAuth(async (
       content: content,
     })
     
-    const populatedComment = await QuizComment.findById(newComment._id)
-      .populate('user_id', 'username avatar_url')
-      .lean()
+    const user = await User.findById(payload.userId).select('username avatar_url').lean() as any
+    const populatedComment = {
+      ...newComment.toObject(),
+      user_id: user ? { _id: user._id, username: user.username, avatar_url: user.avatar_url } : null,
+    }
       
     return NextResponse.json(populatedComment)
   } catch (error) {
     console.error('Error posting comment:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-}
+  }
 }, { roles: ['student'] })
 
 export const DELETE = withAuth(async (
@@ -127,12 +140,12 @@ export const DELETE = withAuth(async (
 
     // Check ownership
     if (comment.user_id.toString() !== payload.userId) {
-      return NextResponse.json({ error: 'Bạn không có quyền xóa bình luận này' }, { status: 403 })
+      return NextResponse.json({ error: 'You do not have permission to delete this comment' }, { status: 403 })
     }
 
     await QuizComment.findByIdAndDelete(commentId)
 
-    return NextResponse.json({ message: 'Đã xóa bình luận' })
+    return NextResponse.json({ message: 'Comment deleted successfully' })
   } catch (error) {
     console.error('Error deleting comment:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

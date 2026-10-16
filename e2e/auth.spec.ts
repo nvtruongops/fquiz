@@ -7,7 +7,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await page.goto('/login')
 
       // Check header and titles
-      await expect(page.getByRole('heading', { name: /Đăng nhập/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /Sign In/i })).toBeVisible()
 
       // Inputs
       const identifierInput = page.locator('#identifier')
@@ -19,9 +19,9 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await expect(submitButton).toBeVisible()
 
       // Navigation links
-      await expect(page.getByRole('link', { name: /Đăng ký/i })).toBeVisible()
-      await expect(page.getByRole('link', { name: /Quên mật khẩu\?/i })).toBeVisible()
-      await expect(page.getByRole('link', { name: /Cổng Quản trị/i })).toBeVisible()
+      await expect(page.getByRole('link', { name: /Create account|Sign Up/i })).toBeVisible()
+      await expect(page.getByRole('link', { name: /Forgot password\?/i })).toBeVisible()
+      await expect(page.getByRole('link', { name: /Admin Portal/i })).toBeVisible()
     })
 
     test('should validate empty fields when submitted', async ({ page }) => {
@@ -31,8 +31,8 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await submitButton.click()
 
       // Identifier and password validation errors should appear
-      await expect(page.getByText(/Vui lòng nhập email hoặc tên đăng nhập/i)).toBeVisible()
-      await expect(page.getByText(/Vui lòng nhập mật khẩu/i)).toBeVisible()
+      await expect(page.getByText(/Please enter your email or username/i)).toBeVisible()
+      await expect(page.getByText(/Please enter your password/i)).toBeVisible()
     })
 
     test('should toggle password visibility on click', async ({ page }) => {
@@ -45,14 +45,14 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await expect(passwordInput).toHaveAttribute('type', 'password')
 
       // Toggle button
-      const toggleBtn = page.locator('button[aria-label="Hiện mật khẩu"]')
+      const toggleBtn = page.locator('button[aria-label="Show password"]')
       await toggleBtn.click()
 
       // Now text type
       await expect(passwordInput).toHaveAttribute('type', 'text')
 
       // Toggle back
-      const hideBtn = page.locator('button[aria-label="Ẩn mật khẩu"]')
+      const hideBtn = page.locator('button[aria-label="Hide password"]')
       await hideBtn.click()
       await expect(passwordInput).toHaveAttribute('type', 'password')
     })
@@ -63,7 +63,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
         await route.fulfill({
           status: 401,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Tên đăng nhập hoặc mật khẩu không chính xác' }),
+          body: JSON.stringify({ error: 'Incorrect username/email or password' }),
         })
       })
 
@@ -74,7 +74,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await page.locator('button[type="submit"]').click()
 
       // Expect error toast/message
-      await expect(page.getByText(/Tên đăng nhập hoặc mật khẩu không chính xác/i)).toBeVisible()
+      await expect(page.getByText(/Incorrect username\/email or password/i)).toBeVisible()
     })
 
     test('should redirect on successful login', async ({ page }) => {
@@ -91,7 +91,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
             role: 'student',
             user: {
               _id: '69d7441dff42ce4f938bd488',
-              name: 'Sinh viên FQuiz',
+              name: 'FQuiz Student',
               email: DEFAULT_TEST_EMAIL,
               role: 'student',
             },
@@ -114,23 +114,23 @@ test.describe('Authentication & Password Recovery Flows', () => {
     test('should display register form with all required inputs', async ({ page }) => {
       await page.goto('/register')
 
-      await expect(page.getByRole('heading', { name: /Tạo tài khoản/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /Create Account/i })).toBeVisible()
       await expect(page.locator('input[name="username"]')).toBeVisible()
       await expect(page.locator('input[name="email"]')).toBeVisible()
       await expect(page.locator('input[name="password"]')).toBeVisible()
       await expect(page.locator('input[name="confirmPassword"]')).toBeVisible()
       await expect(page.locator('input[name="verificationCode"]')).toBeVisible()
-      await expect(page.getByRole('button', { name: /Gửi mã/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /Send Code/i })).toBeVisible()
       await expect(page.locator('button[type="submit"]')).toBeVisible()
     })
 
     test('should show error when sending verification code without valid email', async ({ page }) => {
       await page.goto('/register')
 
-      const sendCodeBtn = page.getByRole('button', { name: /Gửi mã/i })
+      const sendCodeBtn = page.getByRole('button', { name: /Send Code/i })
       await sendCodeBtn.click()
 
-      await expect(page.getByText(/Vui lòng nhập email hợp lệ trước khi gửi mã/i)).toBeVisible()
+      await expect(page.getByText(/Please enter a valid email address before requesting a code/i)).toBeVisible()
     })
   })
 
@@ -138,7 +138,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
     test('should display forgot password form and validate email format', async ({ page }) => {
       await page.goto('/forgot-password')
 
-      await expect(page.getByRole('heading', { name: /Khôi phục mật khẩu/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /Reset Password/i })).toBeVisible()
       const emailInput = page.locator('input#email')
       await expect(emailInput).toBeVisible()
 
@@ -146,14 +146,14 @@ test.describe('Authentication & Password Recovery Flows', () => {
       await emailInput.fill('notanemail')
       await page.locator('button[type="submit"]').click()
 
-      await expect(page.getByText(/Vui lòng nhập đúng định dạng email/i)).toBeVisible()
+      await expect(page.getByText(/Please enter a valid email address/i)).toBeVisible()
     })
   })
 
   test.describe('Restore Account Page (/restore-account)', () => {
     test('should show error message when visited without token parameter', async ({ page }) => {
       await page.goto('/restore-account')
-      await expect(page.getByText(/Không tìm thấy mã khôi phục tài khoản/i)).toBeVisible()
+      await expect(page.getByText(/Account recovery token not found in link/i)).toBeVisible()
     })
   })
 })

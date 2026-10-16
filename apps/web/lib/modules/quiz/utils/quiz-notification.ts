@@ -5,6 +5,8 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { enqueueMail } from '@/lib/core/mail/mail'
 import logger from '@/lib/core/utils/logger'
 
+const NOTIFICATION_BATCH_SIZE = 10
+
 export async function notifyPinnedUsersNewQuiz(quiz: {
   _id: any
   title: string
@@ -36,7 +38,7 @@ export async function notifyPinnedUsersNewQuiz(quiz: {
 
     if (!usersToNotify || usersToNotify.length === 0) return
 
-    const courseCode = quiz.course_code || categoryName || 'môn học'
+    const courseCode = quiz.course_code || categoryName || 'Course'
 
     // Fetch other recent published quizzes for this course code/category
     const otherQuizzesDocs = await Quiz.find({
@@ -60,21 +62,35 @@ export async function notifyPinnedUsersNewQuiz(quiz: {
       questionCount: Array.isArray(q.questions) ? q.questions.length : 0,
     }))
 
+    const validUsers = usersToNotify.filter((u): u is { email: string; username?: string } => Boolean(u.email))
+
     logger.info(
-      { quizId: quiz._id, count: usersToNotify.length, courseCode, otherCount: otherQuizzes.length },
-      'Enqueuing new quiz email notifications for pinned users'
+      { quizId: quiz._id, count: validUsers.length, courseCode, otherCount: otherQuizzes.length },
+      'Enqueuing new quiz email notifications for pinned users in batches'
     )
 
-    for (const u of usersToNotify) {
-      if (u.email) {
-        await enqueueMail('new-quiz-notification', {
-          to: u.email,
-          username: u.username || 'bạn',
-          courseCode,
-          quizTitle: quiz.title || courseCode,
-          quizId: quiz._id.toString(),
-          otherQuizzes,
-        })
+    // Process in concurrent chunks to prevent serverless execution timeout
+    for (let i = 0; i < validUsers.length; i += NOTIFICATION_BATCH_SIZE) {
+      const chunk = validUsers.slice(i, i + NOTIFICATION_BATCH_SIZE)
+      const results = await Promise.allSettled(
+        chunk.map((u) =>
+          enqueueMail('new-quiz-notification', {
+            to: u.email,
+            username: u.username || 'Student',
+            courseCode,
+            quizTitle: quiz.title || courseCode,
+            quizId: quiz._id.toString(),
+            otherQuizzes,
+          })
+        )
+      )
+
+      const failures = results.filter((r) => r.status === 'rejected')
+      if (failures.length > 0) {
+        logger.warn(
+          { failureCount: failures.length, batchIndex: i / NOTIFICATION_BATCH_SIZE },
+          'Some quiz email notifications failed in batch'
+        )
       }
     }
   } catch (err) {

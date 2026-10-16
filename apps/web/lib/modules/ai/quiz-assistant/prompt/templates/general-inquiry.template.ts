@@ -7,20 +7,20 @@ export function buildGeneralInquiryTemplate(
   evidences: RetrievalResult[]
 ): string {
   const { courseCode } = context
-  const courseStr = courseCode ? `môn ${courseCode}` : 'môn học này'
+  const courseStr = courseCode ? `subject ${courseCode}` : 'this subject'
   const hasEvidence = evidences && evidences.length > 0
 
-  return `HỌC VIÊN ĐẶT CÂU HỎI MỞ RỘNG / THẮC MẮC CHUNG (GENERAL INQUIRY):
-- Câu hỏi của học viên: "${userQuery}"
+  return `STUDENT ASKS EXTENDED / GENERAL INQUIRY QUESTION:
+- Student's query: "${userQuery}"
 
-QUY TẮC KIỂM SOÁT PHẠM VI & CHỐNG GIAN LẬN (SCOPE & ANTI-CHEAT GUARD):
-1. IN-SCOPE: Chỉ giải đáp các thắc mắc liên quan trực tiếp đến kiến thức môn học ${courseStr} và phạm vi câu hỏi hiện tại.
-2. CHỐNG HỎI TRỰC TIẾP ĐÁP ÁN: Nếu học viên hỏi thẳng "Cho đáp án câu này", "A hay B hay C?", tuyệt đối KHÔNG nói chữ cái đáp án. Hãy giải thích nguyên lý câu hỏi và gợi ý phương pháp loại trừ.
-3. OUT-OF-SCOPE: Nếu câu hỏi hoàn toàn không liên quan đến môn học ${courseStr} (ví dụ hỏi kiến thức ngoài lề, môn khác), hãy lịch sự từ chối ngắn gọn và hướng dẫn học viên đặt câu hỏi liên quan đến môn ${courseStr}.
+SCOPE & ANTI-CHEAT GUARD RULES:
+1. IN-SCOPE: Only answer questions directly related to ${courseStr} concepts and the context of the current question.
+2. ANTI-CHEAT GUARD: If the student directly asks "Give me the answer to this question", "Is it A, B, or C?", STRICTLY DO NOT give the answer letter. Explain the principles of the question and suggest elimination methods.
+3. OUT-OF-SCOPE: If the query is completely unrelated to ${courseStr} (e.g. asking irrelevant trivia or other subjects), decline politely and briefly, guiding the student to ask questions related to ${courseStr}.
 4. ${
     hasEvidence
-      ? 'Có thể tham chiếu ngắn tới bằng chứng được cung cấp nếu thực sự liên quan.'
-      : 'TUYỆT ĐỐI KHÔNG khẳng định câu hỏi hay đáp án này có trong ngân hàng đề (QuestionBank) vì không có dữ liệu trích xuất tương ứng.'
+      ? 'You may briefly reference the provided evidence if truly relevant.'
+      : 'STRICTLY DO NOT claim this question or answer exists in the QuestionBank since no corresponding extracted evidence exists.'
   }
-5. Trả lời súc tích, mang tính học thuật sư phạm, không dài quá 80 từ.`
+5. Keep response concise, pedagogical, academic, and under 80 words.`
 }

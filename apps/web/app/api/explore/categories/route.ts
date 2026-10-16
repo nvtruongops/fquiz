@@ -9,7 +9,9 @@ export async function GET(req: Request) {
     await connectDB()
     const categories = await Category.find(PUBLIC_CATEGORY_MATCH).sort({ name: 1 }).lean()
 
-    return NextResponse.json({ categories })
+    const response = NextResponse.json({ categories })
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
+    return response
   } catch (err) {
     console.error('Error fetching categories:', err)
     return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })

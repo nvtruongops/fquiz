@@ -32,9 +32,9 @@ export function FeedbackReplyDialog({
     <Dialog open={!!replyTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Phản hồi góp ý của {replyTarget?.username}</DialogTitle>
+          <DialogTitle>Reply to {replyTarget?.username}&apos;s Feedback</DialogTitle>
           <DialogDescription className="text-xs">
-            Nội dung phản hồi sẽ được lưu và hiển thị cho học viên
+            Your reply will be saved and visible to the student
           </DialogDescription>
         </DialogHeader>
 
@@ -46,7 +46,7 @@ export function FeedbackReplyDialog({
           <textarea
             rows={4}
             required
-            placeholder="Nhập nội dung phản hồi..."
+            placeholder="Type your reply here..."
             value={replyText}
             onChange={(e) => onChangeReplyText(e.target.value)}
             className="w-full resize-none border p-3 text-sm rounded-lg outline-none border-border focus:border-primary bg-background"
@@ -55,14 +55,14 @@ export function FeedbackReplyDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Cancel
           </Button>
           <Button
             disabled={isPending || !replyText.trim()}
             onClick={onSubmitReply}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Gửi phản hồi
+            Send Reply
           </Button>
         </DialogFooter>
       </DialogContent>

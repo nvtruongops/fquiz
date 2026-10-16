@@ -146,8 +146,8 @@ export default function QuizReviewPage({ params }: { params: Promise<{ id: strin
   if (isError) {
     return (
       <Alert variant="destructive">
-        <AlertTitle>Lỗi tải dữ liệu</AlertTitle>
-        <AlertDescription>{error?.message || 'Không thể tải kết quả bài quiz.'}</AlertDescription>
+        <AlertTitle>Error Loading Data</AlertTitle>
+        <AlertDescription>{error?.message || 'Failed to load quiz results.'}</AlertDescription>
       </Alert>
     );
   }

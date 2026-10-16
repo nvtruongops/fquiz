@@ -17,7 +17,7 @@ describe('AI Module Prompt Registry & Schemas Test Suite', () => {
       lemma: 'resilient',
       display: 'Resilient',
       ipa: '/rɪˈzɪl.jənt/',
-      definition: 'Có khả năng phục hồi nhanh chóng',
+      definition: 'Able to recover quickly from difficult conditions',
       partOfSpeech: 'adjective',
       examples: ['He is resilient in the face of adversity.'],
       cefrLevel: 'B2',

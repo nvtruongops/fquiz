@@ -27,9 +27,9 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Quản lý Danh mục Môn thi</h1>
+        <h1 className="text-2xl font-bold text-foreground">Category & Subject Management</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Cấu hình danh mục môn thi trắc nghiệm công khai trên hệ thống
+          Configure public quiz categories and subjects across the platform
         </p>
       </div>
 

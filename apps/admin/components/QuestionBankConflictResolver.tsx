@@ -45,23 +45,23 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
   return (
     <div className="space-y-6 text-card-foreground">
       <div>
-        <h2 className="text-2xl font-bold text-card-foreground">Giải quyết Conflicts</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">Resolve Conflicts</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Xem và chọn đáp án đúng cho các câu hỏi có mâu thuẫn
+          Review and select authoritative correct answers for conflicting questions
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Chọn môn học</CardTitle>
+          <CardTitle>Select Category</CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="-- Chọn môn học --" />
+              <SelectValue placeholder="-- Select category --" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả môn học</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   {cat.name}
@@ -81,7 +81,7 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
       {!loading && selectedCategory && conflicts.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            Không có conflict nào trong môn học này!
+            No conflicts found in this category!
           </CardContent>
         </Card>
       )}
@@ -91,9 +91,9 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Danh sách Conflicts ({conflicts.length})</CardTitle>
+                <CardTitle>Conflicts List ({conflicts.length})</CardTitle>
                 <Button size="sm" variant="outline" onClick={fetchConflicts}>
-                  Làm mới
+                  Refresh
                 </Button>
               </div>
             </CardHeader>

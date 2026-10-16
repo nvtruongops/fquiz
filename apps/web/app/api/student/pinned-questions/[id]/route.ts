@@ -16,7 +16,7 @@ export const DELETE = withAuth(async (
   try {
     const { id } = await params
     if (!validateObjectId(id)) {
-      return NextResponse.json({ error: 'ID không hợp lệ.' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid ID.' }, { status: 400 })
     }
 
     await connectDB()
@@ -26,10 +26,10 @@ export const DELETE = withAuth(async (
     })
 
     if (result.deletedCount === 0) {
-      return NextResponse.json({ error: 'Không tìm thấy câu hỏi ghim.' }, { status: 404 })
+      return NextResponse.json({ error: 'Pinned question not found.' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, message: 'Đã xóa câu hỏi ghim.' })
+    return NextResponse.json({ success: true, message: 'Pinned question deleted successfully.' })
   } catch (error) {
     console.error('Error deleting pinned question:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

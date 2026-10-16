@@ -1,9 +1,103 @@
 'use client'
 
-import { useToast } from '@/store/shared/toast-store'
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
+import { useToast, type Toast } from '@/store/shared/toast-store'
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/core/utils/cn'
+
+interface ToastItemProps {
+  toast: Toast
+  onRemove: (id: string) => void
+}
+
+function ToastItem({ toast, onRemove }: ToastItemProps) {
+  const isAlert = toast.type === 'error' || toast.type === 'warning'
+
+  return (
+    <div
+      role={isAlert ? 'alert' : 'status'}
+      aria-atomic="true"
+      className={cn(
+        'pointer-events-auto relative overflow-hidden flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl',
+        'border border-border/80 shadow-xl shadow-black/5 dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/10',
+        'bg-card/95 backdrop-blur-2xl text-foreground transition-all',
+        'animate-in fade-in slide-in-from-top-2 sm:slide-in-from-bottom-2 duration-300'
+      )}
+    >
+      {/* Status Stripe */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'w-1 absolute left-0 inset-y-0 rounded-l-2xl',
+          toast.type === 'success' && 'bg-emerald-500',
+          toast.type === 'error' && 'bg-rose-500',
+          toast.type === 'warning' && 'bg-amber-500',
+          toast.type === 'info' && 'bg-primary'
+        )}
+      />
+
+      {/* Icon Badge */}
+      <div
+        className={cn(
+          'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5',
+          toast.type === 'success' && 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20',
+          toast.type === 'error' && 'bg-rose-500/10 text-rose-500 ring-1 ring-rose-500/20',
+          toast.type === 'warning' && 'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20',
+          toast.type === 'info' && 'bg-primary/10 text-primary ring-1 ring-primary/20'
+        )}
+      >
+        {toast.type === 'success' && <CheckCircle2 className="w-4 h-4" aria-hidden="true" />}
+        {toast.type === 'error' && <AlertCircle className="w-4 h-4" aria-hidden="true" />}
+        {toast.type === 'warning' && <AlertTriangle className="w-4 h-4" aria-hidden="true" />}
+        {toast.type === 'info' && <Info className="w-4 h-4" aria-hidden="true" />}
+      </div>
+
+      {/* Text Content */}
+      <div className="flex-1 min-w-0 pr-1 space-y-0.5">
+        {toast.title && (
+          <p className="text-xs font-black text-foreground tracking-tight leading-snug">
+            {toast.title}
+          </p>
+        )}
+        <p
+          className={cn(
+            'text-xs leading-relaxed',
+            toast.title ? 'text-muted-foreground font-medium' : 'text-foreground font-semibold'
+          )}
+        >
+          {toast.message}
+        </p>
+
+        {/* Action Button if provided */}
+        {toast.action && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                toast.action?.onClick()
+                onRemove(toast.id)
+              }}
+              className="text-xs font-black text-primary hover:underline inline-flex items-center gap-1 active:scale-95 cursor-pointer"
+            >
+              {toast.action.label} →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Close Button */}
+      <button
+        type="button"
+        onClick={() => onRemove(toast.id)}
+        className="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 cursor-pointer -mr-1 -mt-1"
+        title="Close notification"
+        aria-label="Close notification"
+      >
+        <X className="w-4 h-4" aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
 
 export default function ToastProvider() {
   const { toasts, removeToast } = useToast()
@@ -19,63 +113,13 @@ export default function ToastProvider() {
   if (!isMounted || toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 inset-x-3 sm:top-auto sm:bottom-6 sm:right-6 sm:inset-x-auto z-[100] w-auto sm:w-full max-w-sm sm:max-w-[380px] mx-auto sm:mx-0 flex flex-col gap-2.5 pointer-events-none transition-all">
+    <div
+      aria-live="polite"
+      aria-relevant="additions text"
+      className="fixed top-3 inset-x-3 sm:top-auto sm:bottom-6 sm:right-6 sm:inset-x-auto z-[100] w-auto sm:w-full max-w-sm mx-auto sm:mx-0 flex flex-col gap-2.5 pointer-events-none transition-all"
+    >
       {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={cn(
-            "pointer-events-auto relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border bg-card/95 backdrop-blur-xl transition-all duration-300",
-            "animate-in fade-in slide-in-from-top-3 sm:slide-in-from-bottom-3 duration-250",
-            toast.type === 'success' && "border-emerald-500/30 dark:border-emerald-500/20 shadow-emerald-500/5",
-            toast.type === 'error' && "border-rose-500/30 dark:border-rose-500/20 shadow-rose-500/5",
-            toast.type === 'info' && "border-primary/30 dark:border-primary/20 shadow-primary/5"
-          )}
-        >
-          {/* Icon Pill */}
-          <div className={cn(
-            "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 shadow-2xs",
-            toast.type === 'success' && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-            toast.type === 'error' && "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-            toast.type === 'info' && "bg-primary/15 text-primary"
-          )}>
-            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4" />}
-            {toast.type === 'error' && <AlertCircle className="w-4 h-4" />}
-            {toast.type === 'info' && <Info className="w-4 h-4" />}
-          </div>
-          
-          {/* Message Content */}
-          <div className="flex-1 min-w-0 pr-1">
-            <p className="text-xs sm:text-[13px] font-bold text-foreground leading-snug">
-              {toast.message}
-            </p>
-          </div>
-
-          {/* Close Button */}
-          <button
-            type="button"
-            onClick={() => removeToast(toast.id)}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0 cursor-pointer active:scale-95"
-            title="Đóng"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Micro Progress Bar Animation */}
-          <div className="absolute bottom-0 left-0 h-0.5 bg-muted/40 w-full overflow-hidden">
-            <div 
-              className={cn(
-                "h-full transition-[width] ease-linear",
-                toast.type === 'success' && "bg-emerald-500",
-                toast.type === 'error' && "bg-rose-500",
-                toast.type === 'info' && "bg-primary"
-              )}
-              style={{ width: '0%', transitionDuration: '5000ms' }}
-              ref={(el) => {
-                if (el) setTimeout(() => { el.style.width = '100%' }, 10)
-              }}
-            />
-          </div>
-        </div>
+        <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
     </div>
   )

@@ -6,10 +6,10 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useAuth } from '@/hooks/auth/useAuth'
 
 export const FEEDBACK_TYPES = [
-  { value: 'bug', label: 'Báo lỗi' },
-  { value: 'feature', label: 'Đề xuất tính năng' },
-  { value: 'content', label: 'Góp ý nội dung' },
-  { value: 'other', label: 'Khác' },
+  { value: 'bug', label: 'Bug Report' },
+  { value: 'feature', label: 'Feature Request' },
+  { value: 'content', label: 'Content Feedback' },
+  { value: 'other', label: 'Other' },
 ] as const
 
 export type FeedbackType = typeof FEEDBACK_TYPES[number]['value']
@@ -112,7 +112,7 @@ export function useCommunityFeed() {
       })
       if (!res.ok) {
         const errorData = await res.json().catch(() => null)
-        const errorMsg = errorData?.error || (Array.isArray(errorData?.details) ? errorData.details.join(', ') : errorData?.details) || 'Không thể tạo bài đăng'
+        const errorMsg = errorData?.error || (Array.isArray(errorData?.details) ? errorData.details.join(', ') : errorData?.details) || 'Failed to create post'
         throw new Error(errorMsg)
       }
       return res.json()
@@ -276,7 +276,7 @@ export function useCommunityFeed() {
     if (!canSubmit) return
 
     if (!checkClientRateLimit()) {
-      setError('Bạn đã gửi quá nhiều góp ý. Vui lòng thử lại sau.')
+      setError('You have submitted too much feedback. Please try again later.')
       return
     }
 
@@ -294,10 +294,10 @@ export function useCommunityFeed() {
       const data = await res.json()
       if (!res.ok) {
         if (res.status === 429) {
-          setError('Hệ thống nhận thấy quá nhiều gửi từ thiết bị này. Vui lòng đợi.')
+          setError('Too many submissions from this device. Please wait.')
           startCooldown(60 * 1000)
         } else {
-          setError(data.error || 'Có lỗi xảy ra, vui lòng thử lại.')
+          setError(data.error || 'An error occurred, please try again.')
         }
         return
       }
@@ -307,7 +307,7 @@ export function useCommunityFeed() {
       setMessage('')
       setReason('')
     } catch {
-      setError('Lỗi kết nối máy chủ. Vui lòng kiểm tra lại mạng.')
+      setError('Server connection error. Please check your network.')
     } finally {
       setLoading(false)
     }

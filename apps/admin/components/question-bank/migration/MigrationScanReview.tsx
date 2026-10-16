@@ -34,7 +34,7 @@ export function MigrationScanReview({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tổng Quiz</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Quizzes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{scanResult.total_quizzes}</div>
@@ -43,7 +43,7 @@ export function MigrationScanReview({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tổng câu hỏi</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{scanResult.total_questions}</div>
@@ -52,11 +52,11 @@ export function MigrationScanReview({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Câu duy nhất</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Unique Questions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-success-fg">{scanResult.unique_questions}</div>
-            <p className="text-xs text-muted-foreground mt-1">Có thể migrate ngay</p>
+            <p className="text-xs text-muted-foreground mt-1">Ready for immediate migration</p>
           </CardContent>
         </Card>
 
@@ -66,7 +66,7 @@ export function MigrationScanReview({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-destructive">{scanResult.conflicts}</div>
-            <p className="text-xs text-muted-foreground mt-1">Cần xem xét</p>
+            <p className="text-xs text-muted-foreground mt-1">Requires review</p>
           </CardContent>
         </Card>
       </div>
@@ -74,8 +74,8 @@ export function MigrationScanReview({
       {scanResult.conflicts > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Xử lý Conflicts</CardTitle>
-            <CardDescription>Chọn cách xử lý các câu hỏi có đáp án khác nhau</CardDescription>
+            <CardTitle>Conflict Resolution</CardTitle>
+            <CardDescription>Choose how to handle questions with differing answers</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Select
@@ -86,9 +86,9 @@ export function MigrationScanReview({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="skip">Bỏ qua - Chỉ migrate câu không conflict</SelectItem>
-                <SelectItem value="keep_first">Giữ đáp án đầu tiên gặp</SelectItem>
-                <SelectItem value="keep_most_used">Giữ đáp án xuất hiện nhiều nhất</SelectItem>
+                <SelectItem value="skip">Skip - Only migrate non-conflicting questions</SelectItem>
+                <SelectItem value="keep_first">Keep first encountered answer</SelectItem>
+                <SelectItem value="keep_most_used">Keep most frequently used answer</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -98,7 +98,7 @@ export function MigrationScanReview({
       {(scanResult.conflict_details?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Chi tiết Conflicts ({scanResult.conflicts})</CardTitle>
+            <CardTitle>Conflict Details ({scanResult.conflicts})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -112,18 +112,18 @@ export function MigrationScanReview({
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack}>
-          Quay lại
+          Back
         </Button>
         <Button onClick={onMigrate} disabled={migrating} className="gap-2">
           {migrating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Đang migrate...
+              Migrating...
             </>
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              Bắt đầu Migration
+              Start Migration
             </>
           )}
         </Button>

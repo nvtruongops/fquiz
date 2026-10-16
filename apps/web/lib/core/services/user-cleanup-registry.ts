@@ -1,8 +1,8 @@
 /**
- * User Cleanup Registry — Registry cho phép các module đăng ký xử lý dọn dẹp dữ liệu cá nhân
- * của người dùng khi tài khoản bị xóa vĩnh viễn (GDPR / Right to be Forgotten).
+ * User Cleanup Registry — Registry allowing modules to register personal data cleanup handlers
+ * when a user account is permanently deleted (GDPR / Right to be Forgotten).
  *
- * Giúp tuân thủ ranh giới module: auth module không cần import trực tiếp Mongoose models từ các module khác.
+ * Helps maintain module boundaries: the auth module does not need to directly import Mongoose models from other modules.
  */
 
 export type UserCleanupHandler = (userId: string) => Promise<void>

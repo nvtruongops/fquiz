@@ -19,7 +19,7 @@ function generateJoinCode(): string {
 
 export class ClassroomService {
   /**
-   * Tạo lớp học mới và cấp mã code gia nhập 6 ký tự
+   * Create new classroom and generate 6-character join code
    */
   static async createClassroom(teacherId: string, input: CreateClassroomInput) {
     let code = generateJoinCode()
@@ -42,25 +42,25 @@ export class ClassroomService {
   }
 
   /**
-   * Gia nhập lớp bằng Join Code & Password (nếu có)
+   * Join classroom by Join Code & Password (if required)
    */
   static async joinClassroomByCode(studentId: string, code: string, password?: string) {
     const classroom = await Classroom.findOne({ code: code.trim().toUpperCase(), status: 'active' })
     if (!classroom) {
-      throw new Error('Mã lớp học không tồn tại hoặc lớp đã đóng')
+      throw new Error('Class code does not exist or classroom is closed')
     }
 
     if (classroom.settings?.allow_code_join === false) {
-      throw new Error('Lớp học này đã tắt tính năng tham gia bằng mã code')
+      throw new Error('This classroom has disabled joining via class code')
     }
 
     if (classroom.password) {
       const inputPass = (password || '').trim()
       if (!inputPass) {
-        throw new Error('Lớp học này yêu cầu Mật khẩu tham gia. Vui lòng nhập Mật khẩu lớp học.')
+        throw new Error('This classroom requires a password. Please enter the classroom password.')
       }
       if (inputPass !== classroom.password.trim()) {
-        throw new Error('Mật khẩu tham gia lớp học không chính xác.')
+        throw new Error('Incorrect classroom password.')
       }
     }
 
@@ -71,7 +71,7 @@ export class ClassroomService {
 
     if (existingMember) {
       if (existingMember.status === 'blocked') {
-        throw new Error('Bạn đã bị chặn khỏi lớp học này')
+        throw new Error('You have been blocked from this classroom')
       }
       return { classroom, member: existingMember, alreadyJoined: true }
     }
@@ -88,16 +88,14 @@ export class ClassroomService {
   }
 
   /**
-   * Lấy danh sách lớp do Giáo viên giảng dạy
+   * Get classrooms taught by teacher
    */
   static async getClassroomsByTeacher(teacherId: string) {
     return Classroom.find({ teacher_id: new Types.ObjectId(teacherId) }).sort({ created_at: -1 }).lean()
   }
 
   /**
-   * Lấy danh sách lớp mà Học viên đã tham gia
-  /**
-   * Lấy danh sách lớp học của học viên
+   * Get student's enrolled classrooms
    */
   static async getClassroomsByStudent(studentId: string) {
     const memberships = await ClassroomMember.find({
@@ -129,7 +127,7 @@ export class ClassroomService {
   }
 
   /**
-   * Ghim/Bỏ ghim lớp học đối với học viên
+   * Toggle pin classroom for student
    */
   static async togglePinClassroom(studentId: string, classroomId: string) {
     const member = await ClassroomMember.findOne({
@@ -137,7 +135,7 @@ export class ClassroomService {
       classroom_id: new Types.ObjectId(classroomId),
       status: 'active',
     })
-    if (!member) throw new Error('Bạn chưa tham gia lớp học này')
+    if (!member) throw new Error('You have not joined this classroom')
 
     member.is_pinned = !member.is_pinned
     await member.save()
@@ -145,7 +143,7 @@ export class ClassroomService {
   }
 
   /**
-   * Học viên rời khỏi lớp học
+   * Student leaves classroom
    */
   static async leaveClassroom(studentId: string, classroomId: string) {
     const member = await ClassroomMember.findOneAndDelete({
@@ -159,7 +157,7 @@ export class ClassroomService {
   }
 
   /**
-   * Lấy chi tiết lớp học
+   * Get classroom details
    */
   static async getClassroomDetail(classroomId: string) {
     const classroom = await Classroom.findById(classroomId).lean()
@@ -173,7 +171,7 @@ export class ClassroomService {
   }
 
   /**
-   * Lấy danh sách học viên trong lớp
+   * Get list of classroom members
    */
   static async getClassroomMembers(classroomId: string) {
     const members = await ClassroomMember.find({ classroom_id: new Types.ObjectId(classroomId), status: 'active' })
@@ -193,14 +191,14 @@ export class ClassroomService {
   }
 
   /**
-   * Đánh sao / bỏ đánh sao học viên nổi bật
+   * Toggle star / favorite member status
    */
   static async toggleStarMember(teacherId: string, classroomId: string, studentId: string) {
     const classroom = await Classroom.findOne({ _id: classroomId, teacher_id: new Types.ObjectId(teacherId) })
-    if (!classroom) throw new Error('Không có quyền quản lý lớp học này')
+    if (!classroom) throw new Error('You do not have permission to manage this classroom')
 
     const member = await ClassroomMember.findOne({ classroom_id: classroom._id, student_id: new Types.ObjectId(studentId) })
-    if (!member) throw new Error('Không tìm thấy học viên trong lớp')
+    if (!member) throw new Error('Student not found in classroom')
 
     member.is_starred = !member.is_starred
     await member.save()
@@ -208,14 +206,14 @@ export class ClassroomService {
   }
 
   /**
-   * Cập nhật thẻ ghi chú cho học viên
+   * Update student note tags
    */
   static async updateMemberTags(teacherId: string, classroomId: string, studentId: string, tags: string[]) {
     const classroom = await Classroom.findOne({ _id: classroomId, teacher_id: new Types.ObjectId(teacherId) })
-    if (!classroom) throw new Error('Không có quyền quản lý lớp học này')
+    if (!classroom) throw new Error('You do not have permission to manage this classroom')
 
     const member = await ClassroomMember.findOne({ classroom_id: classroom._id, student_id: new Types.ObjectId(studentId) })
-    if (!member) throw new Error('Không tìm thấy học viên trong lớp')
+    if (!member) throw new Error('Student not found in classroom')
 
     member.tags = tags.map((t) => t.trim()).filter(Boolean)
     await member.save()
@@ -223,11 +221,11 @@ export class ClassroomService {
   }
 
   /**
-   * Xóa học viên khỏi lớp
+   * Remove member from classroom
    */
   static async removeMember(teacherId: string, classroomId: string, studentId: string) {
     const classroom = await Classroom.findOne({ _id: classroomId, teacher_id: new Types.ObjectId(teacherId) })
-    if (!classroom) throw new Error('Không có quyền quản lý lớp học này')
+    if (!classroom) throw new Error('You do not have permission to manage this classroom')
 
     const member = await ClassroomMember.findOneAndDelete({ classroom_id: classroom._id, student_id: new Types.ObjectId(studentId) })
     if (member) {
@@ -237,18 +235,18 @@ export class ClassroomService {
   }
 
   /**
-   * Giao Quiz cho Lớp học
+   * Assign quiz to classroom
    */
   static async assignQuizToClassroom(teacherId: string, input: CreateQuizAssignmentInput) {
     const classroom = await Classroom.findById(input.classroom_id)
-    if (!classroom) throw new Error('Không tìm thấy lớp học')
+    if (!classroom) throw new Error('Classroom not found')
 
     if (classroom.teacher_id.toString() !== teacherId) {
-      throw new Error('Bạn không phải là giáo viên của lớp học này')
+      throw new Error('You are not the teacher of this classroom')
     }
 
     const quiz = await Quiz.findById(input.quiz_id)
-    if (!quiz) throw new Error('Không tìm thấy bộ đề Quiz')
+    if (!quiz) throw new Error('Quiz not found')
 
     return QuizAssignment.create({
       classroom_id: new Types.ObjectId(input.classroom_id),
@@ -267,7 +265,7 @@ export class ClassroomService {
   }
 
   /**
-   * Lấy danh sách Bài tập trong Lớp học
+   * Get list of assignments in classroom
    */
   static async getClassroomAssignments(classroomId: string, studentId?: string) {
     const assignments = await QuizAssignment.find({
@@ -298,7 +296,7 @@ export class ClassroomService {
   }
 
   /**
-   * Cập nhật tiến độ của học viên khi hoàn thành 1 assignment Quiz
+   * Record student progress upon completing a quiz assignment
    */
   static async recordAssignmentResult(data: {
     assignmentId: string
@@ -348,7 +346,7 @@ export class ClassroomService {
   }
 
   /**
-   * Lấy báo cáo điểm số cho Giáo viên của 1 bài tập
+   * Get assignment grade report for teacher
    */
   static async getAssignmentReport(assignmentId: string) {
     const assignment = await QuizAssignment.findById(assignmentId).lean()
@@ -368,7 +366,7 @@ export class ClassroomService {
       const prog = progressMap.get(m.student_id.toString())
       return {
         student_id: m.student_id,
-        username: student?.username ?? 'Học viên',
+        username: student?.username ?? 'Student',
         email: student?.email ?? '',
         avatar_url: student?.avatar_url ?? null,
         status: prog?.status ?? 'not_started',
@@ -388,11 +386,11 @@ export class ClassroomService {
   }
 
   /**
-   * Cập nhật thông tin lớp học (mật khẩu, tên, mô tả)
+   * Update classroom details (password, name, description)
    */
   static async updateClassroom(classroomId: string, teacherId: string, updates: { password?: string | null; name?: string; description?: string }) {
     const classroom = await Classroom.findOne({ _id: classroomId, teacher_id: new Types.ObjectId(teacherId) })
-    if (!classroom) throw new Error('Không tìm thấy lớp học hoặc không có quyền thực hiện')
+    if (!classroom) throw new Error('Classroom not found or unauthorized')
 
     if (updates.password !== undefined) {
       classroom.password = updates.password && updates.password.trim() ? updates.password.trim() : null
@@ -405,11 +403,11 @@ export class ClassroomService {
   }
 
   /**
-   * Xóa lớp học và tất cả dữ liệu liên quan
+   * Delete classroom and all associated data
    */
   static async deleteClassroom(classroomId: string, teacherId: string) {
     const classroom = await Classroom.findOneAndDelete({ _id: classroomId, teacher_id: new Types.ObjectId(teacherId) })
-    if (!classroom) throw new Error('Không tìm thấy lớp học hoặc không có quyền thực hiện')
+    if (!classroom) throw new Error('Classroom not found or unauthorized')
 
     await ClassroomMember.deleteMany({ classroom_id: classroom._id })
     await QuizAssignment.deleteMany({ classroom_id: classroom._id })

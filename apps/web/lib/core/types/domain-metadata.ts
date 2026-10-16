@@ -1,7 +1,7 @@
 import { Types } from 'mongoose'
 
 // ============================================================
-// Domain Metadata — Áp dụng cho Learning Objects
+// Domain Metadata — Applies to Learning Objects
 // ============================================================
 
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
@@ -16,14 +16,14 @@ export interface IDomainMetadata {
   difficulty?: number            // 1-10
   frequency?: number             // word frequency rank
   tags?: Types.ObjectId[]        // ref: LearningTag — shared tag system
-  source: ContentSource          // Nguồn gốc dữ liệu
+  source: ContentSource          // Data source origin
   isVerified?: boolean
   verifiedBy?: Types.ObjectId
   verifiedAt?: Date
 }
 
 // ============================================================
-// AI Metadata — Áp dụng cho entity do AI sinh
+// AI Metadata — Applies to AI-generated entities
 // ============================================================
 
 export type AIReviewStatus = 'pending' | 'approved' | 'rejected' | 'edited'
@@ -53,7 +53,7 @@ export interface IAIMetadata {
 }
 
 // ============================================================
-// Search Metadata — Áp dụng cho entity cần tìm kiếm
+// Search Metadata — Applies to searchable entities
 // ============================================================
 
 export interface ISearchMetadata {

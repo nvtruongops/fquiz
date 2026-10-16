@@ -2,49 +2,49 @@ import { z } from 'zod'
 import { stripHtml, MongoIdSchema } from '@/lib/core/schemas/common'
 
 export const COURSE_CODE_MAX_LENGTH = 150
-export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Mã môn / Mã đề tối đa ${COURSE_CODE_MAX_LENGTH} ký tự`
-export const COURSE_CODE_ALLOWED_MESSAGE = 'Mã môn / Mã đề chỉ được chứa chữ cái, số, dấu cách, dấu gạch dưới (_), dấu hai chấm (:) và dấu gạch ngang (-)'
+export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Course code / Quiz code cannot exceed ${COURSE_CODE_MAX_LENGTH} characters`
+export const COURSE_CODE_ALLOWED_MESSAGE = 'Course code / Quiz code can only contain letters, numbers, spaces, underscores (_), colons (:), and hyphens (-)'
 export const COURSE_CODE_PATTERN = /^[a-zA-Z0-9_ :ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỂưạảấầẩẫậắằẳẵặẹẻẽềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸỳỵỷỹ-]+$/
 
 export const QuestionSchema = z.object({
   question_id: z.string().optional(), // Auto-generated content-based ID
   text: z
     .string()
-    .min(1, 'Câu hỏi không được để trống')
-    .max(2000, 'Câu hỏi tối đa 2000 ký tự')
+    .min(1, 'Question text cannot be empty')
+    .max(2000, 'Question text cannot exceed 2000 characters')
     .transform(stripHtml)
     .optional()
     .default(''),
   options: z
     .array(
       z.string()
-        .min(1, 'Lựa chọn không được để trống')
-        .max(500, 'Lựa chọn tối đa 500 ký tự')
+        .min(1, 'Option text cannot be empty')
+        .max(500, 'Option text cannot exceed 500 characters')
         .transform(stripHtml)
     )
-    .min(2, 'Cần ít nhất 2 lựa chọn')
-    .max(10, 'Tối đa 10 lựa chọn')
+    .min(2, 'At least 2 options are required')
+    .max(10, 'Maximum 10 options allowed')
     .optional()
     .default([]),
   correct_answer: z
-    .union([z.number().int().min(0, 'Chỉ số đáp án phải >= 0'), z.array(z.number().int().min(0, 'Chỉ số đáp án phải >= 0'))])
+    .union([z.number().int().min(0, 'Answer index must be >= 0'), z.array(z.number().int().min(0, 'Answer index must be >= 0'))])
     .optional()
     .default([]),
   explanation: z
     .string()
-    .max(1000, 'Giải thích tối đa 1000 ký tự')
+    .max(1000, 'Explanation cannot exceed 1000 characters')
     .transform(stripHtml)
     .optional(),
   // image_url: base64 (new upload) or HTTPS URL (existing). Validated for type/size.
   image_url: z
     .string()
-    .max(100000, 'URL hoặc base64 quá dài')
+    .max(100000, 'URL or base64 is too long')
     .refine(
       (val) => {
         if (!val || !val.startsWith('data:image')) return true
         return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(val)
       },
-      'Chỉ chấp nhận ảnh JPEG, PNG, GIF, WEBP'
+      'Only JPEG, PNG, GIF, and WEBP images are supported'
     )
     .refine(
       (val) => {
@@ -53,7 +53,7 @@ export const QuestionSchema = z.object({
         if (!match) return false
         return (match[1].length * 3) / 4 <= 5 * 1024 * 1024 // 5MB
       },
-      'Ảnh không được vượt quá 5MB'
+      'Image cannot exceed 5MB'
     )
     .refine(
       (val) => {
@@ -61,7 +61,7 @@ export const QuestionSchema = z.object({
         // Non-base64 must be a valid HTTPS URL
         return /^https:\/\/.+/.test(val)
       },
-      'URL ảnh phải dùng HTTPS'
+      'Image URL must use HTTPS'
     )
     .optional(),
 }).refine(
@@ -73,7 +73,7 @@ export const QuestionSchema = z.object({
     return true
   },
   {
-    message: 'Chỉ số đáp án đúng vượt quá số lượng lựa chọn',
+    message: 'Correct answer index exceeds the number of options',
     path: ['correct_answer'],
   }
 )
@@ -99,32 +99,32 @@ export const CreateQuizSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(1000, 'Mô tả tối đa 1000 ký tự')
+    .max(1000, 'Description cannot exceed 1000 characters')
     .transform(stripHtml)
     .optional()
     .default(''),
   category_id: z
     .string()
-    .min(1, 'Danh mục (Môn học) không được để trống')
-    .regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
+    .min(1, 'Category (Subject) cannot be empty')
+    .regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
   course_code: z
     .string()
     .trim()
-    .min(1, 'Mã đề / Mã Quiz không được để trống')
+    .min(1, 'Course code / Quiz code cannot be empty')
     .max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z
     .array(QuestionSchema)
-    .min(1, 'Cần ít nhất một câu hỏi')
-    .max(150, 'Tối đa 150 câu hỏi'),
+    .min(1, 'At least one question is required')
+    .max(150, 'Maximum 150 questions allowed'),
   status: z.enum(['published', 'draft']).optional().default('published'),
 })
 
 // Lenient schema for draft saves — skips per-option and correct_answer strictness
 export const SaveDraftQuizSchema = z.object({
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
-  category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+  category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  course_code: z.string().trim().min(1, 'Course code cannot be empty').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z.array(DraftQuestionSchema).min(1).max(150),
   status: z.literal('draft'),
@@ -135,31 +135,31 @@ export const AdminCreateQuizSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(1000, 'Mô tả tối đa 1000 ký tự')
+    .max(1000, 'Description cannot exceed 1000 characters')
     .transform(stripHtml)
     .optional()
     .default(''),
   category_id: z
     .string()
-    .min(1, 'Danh mục (Môn học) không được để trống')
-    .regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
+    .min(1, 'Category (Subject) cannot be empty')
+    .regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
   course_code: z
     .string()
     .trim()
-    .min(1, 'Mã đề / Mã Quiz không được để trống')
+    .min(1, 'Course code / Quiz code cannot be empty')
     .max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z
     .array(QuestionSchema)
-    .min(1, 'Cần ít nhất một câu hỏi'),
+    .min(1, 'At least one question is required'),
   status: z.enum(['published', 'draft']).optional().default('published'),
 })
 
 // Admin lenient schema for draft saves — no upper limit on question count
 export const AdminSaveDraftQuizSchema = z.object({
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
-  category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'ID danh mục không hợp lệ'),
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+  category_id: z.string().min(1).regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
+  course_code: z.string().trim().min(1, 'Course code cannot be empty').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   questions: z.array(DraftQuestionSchema).min(1),
   status: z.literal('draft'),
@@ -180,11 +180,11 @@ export const SubmitAnswerSchema = z
   })
 
 export const CreateStudentQuizSchema = z.object({
-  course_code: z.string().trim().min(1, 'Mã đề không được để trống').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
+  course_code: z.string().trim().min(1, 'Course code cannot be empty').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   category_id: MongoIdSchema,
   description: z.string().trim().max(1000).transform(stripHtml).optional().default(''),
-  questions: z.array(QuestionSchema).min(1, 'Cần ít nhất một câu hỏi').max(150, 'Tối đa 150 câu hỏi'),
+  questions: z.array(QuestionSchema).min(1, 'At least one question is required').max(150, 'Maximum 150 questions allowed'),
 })
 
 export const SaveQuizSchema = z.object({

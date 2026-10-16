@@ -66,7 +66,7 @@ export async function GET(
         id: quiz._id.toString(),
         title: quiz.title,
         description: quiz.description || '',
-        categoryName: (category as { name?: string } | undefined)?.name || 'Chưa phân loại',
+        categoryName: (category as { name?: string } | undefined)?.name || 'Uncategorized',
         course_code: quiz.course_code,
         questionCount: quiz.questionCount,
         studentCount: quiz.studentCount || 0,

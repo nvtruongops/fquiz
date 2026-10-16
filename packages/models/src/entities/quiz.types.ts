@@ -65,11 +65,32 @@ export interface IQuiz {
 export interface ICategory {
   _id: Types.ObjectId
   name: string
+  description?: string
+  slug?: string
   owner_id?: Types.ObjectId
   is_public: boolean
   status: 'pending' | 'approved' | 'rejected'
   type: 'private' | 'public'
   created_at: Date
+}
+
+export interface IQuestionBank {
+  _id: Types.ObjectId
+  category_id: Types.ObjectId
+  question_id: string
+  text: string
+  options: string[]
+  correct_answer: number[]
+  explanation?: string
+  image_url?: string
+  created_by: Types.ObjectId
+  created_at: Date
+  updated_at: Date
+  usage_count: number
+  used_in_quizzes: string[]
+  used_in_quiz_ids: Types.ObjectId[]
+  has_conflicts: boolean
+  conflict_notes?: string
 }
 
 export interface QuestionForm {

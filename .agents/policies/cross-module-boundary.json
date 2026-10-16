@@ -3,16 +3,16 @@
   "enabled": true,
   "category": "ARCHITECTURE",
   "severity": "ERROR",
-  "description": "Đảm bảo nguyên tắc độc lập giữa các ứng dụng và module (apps/web, apps/admin, packages/*): không import trực tiếp chéo app, không import Model chéo module và không dùng Mongoose .populate().",
+  "description": "Ensure module independence across apps and packages (apps/web, apps/admin, packages/*): no direct cross-app imports, no cross-module Model imports, and no Mongoose .populate() calls.",
   "scanDirs": ["apps/web", "apps/admin", "packages"],
   "forbiddenImports": [
     {
       "regex": "from\\s+['\"]@/lib/modules/([^/'\"]+)/models",
-      "reason": "Vi phạm ranh giới Module: Không được import trực tiếp Model Mongoose của module khác. Sử dụng ObjectId + Repository/Service interface hoặc @fquiz/models."
+      "reason": "Module boundary violation: Direct imports of Mongoose models from other modules are prohibited. Use ObjectId + Repository/Service interface or @fquiz/models."
     },
     {
       "regex": "\\.populate\\s*\\(",
-      "reason": "Vi phạm quy chuẩn DB fquiz: Không sử dụng Mongoose .populate(). Sử dụng batch query với $in cho application-level joins."
+      "reason": "FQuiz database standard violation: Do not use Mongoose .populate(). Use batch queries with $in for application-level joins."
     }
   ]
 }

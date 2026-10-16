@@ -34,6 +34,6 @@ test.describe('Role-Based Access Control & Navigation Security', () => {
   test('should sanitize malicious open redirect attempts in callbackUrl', async ({ page }) => {
     await page.goto('/login?callbackUrl=https://malicious-site.com')
     // Form should still render safely without auto-redirecting to external URL
-    await expect(page.getByRole('heading', { name: /Đăng nhập/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Sign In/i })).toBeVisible()
   })
 })

@@ -52,7 +52,7 @@ export function useTeacherClassrooms() {
         setTotalQuizzes(data.totalQuizzes || 0)
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách lớp:', err)
+      console.error('Failed to load classrooms:', err)
     } finally {
       setLoading(false)
     }
@@ -65,7 +65,7 @@ export function useTeacherClassrooms() {
   const handleCreateClassroom = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setErrorMessage('Vui lòng nhập tên lớp học')
+      setErrorMessage('Please enter classroom name')
       return
     }
 
@@ -79,7 +79,7 @@ export function useTeacherClassrooms() {
       })
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Tạo lớp học thất bại')
+        throw new Error(data.error || 'Failed to create classroom')
       }
 
       setName('')
@@ -88,7 +88,7 @@ export function useTeacherClassrooms() {
       setCreateModalOpen(false)
       fetchClassrooms()
     } catch (err: any) {
-      setErrorMessage(err.message || 'Lỗi hệ thống')
+      setErrorMessage(err.message || 'System error')
     } finally {
       setCreating(false)
     }
@@ -115,16 +115,16 @@ export function useTeacherClassrooms() {
       })
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Cập nhật mật khẩu thất bại')
+        throw new Error(data.error || 'Failed to update password')
       }
 
-      setPassMessage('Đã cập nhật mật khẩu lớp học thành công!')
+      setPassMessage('Classroom password updated successfully!')
       setTimeout(() => {
         setPasswordModalOpen(false)
         fetchClassrooms()
       }, 1200)
     } catch (err: any) {
-      setPassMessage(err.message || 'Lỗi khi cập nhật mật khẩu')
+      setPassMessage(err.message || 'Error updating password')
     } finally {
       setUpdatingPass(false)
     }
@@ -159,10 +159,10 @@ export function useTeacherClassrooms() {
         fetchClassrooms()
       } else {
         const data = await res.json()
-        toast.error(data.error || 'Xóa lớp học thất bại')
+        toast.error(data.error || 'Failed to delete classroom')
       }
     } catch (err) {
-      console.error('Lỗi khi xóa lớp học:', err)
+      console.error('Failed to delete classroom:', err)
     }
   }
 

@@ -37,15 +37,15 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
   const [showNonStandardList, setShowNonStandardList] = React.useState(false)
 
   const multiAnswerBreakdownText = Object.entries(report.multiCorrectBreakdown)
-    .map(([count, num]) => `${num} câu có ${count} đáp án đúng`)
+    .map(([count, num]) => `${num} with ${count} correct answers`)
     .join(', ')
 
   const lessOptionsBreakdownText = Object.entries(report.lessThanFourBreakdown)
-    .map(([count, num]) => `${num} câu có ${count} options`)
+    .map(([count, num]) => `${num} with ${count} options`)
     .join(', ')
 
   const moreOptionsBreakdownText = Object.entries(report.moreThanFourBreakdown)
-    .map(([count, num]) => `${num} câu có ${count} options`)
+    .map(([count, num]) => `${num} with ${count} options`)
     .join(', ')
 
   return (
@@ -54,7 +54,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-primary" />
           <CardTitle className="text-xs font-black uppercase tracking-wider text-foreground">
-            Báo cáo phân tích cấu trúc file & Ngân hàng câu hỏi
+            File Structure & Question Bank Analysis Report
           </CardTitle>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -67,11 +67,11 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
               className="h-7 px-2.5 text-[11px] font-bold border-primary/40 text-primary hover:bg-primary/10 flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Cập nhật báo cáo</span>
+              <span>Update report</span>
             </Button>
           )}
           <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary bg-primary/10">
-            Chỉ xem & Tham khảo
+            Reference only
           </Badge>
           {onClose && (
             <Button
@@ -92,10 +92,10 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         {importSummary && (
           <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border text-xs">
             <Badge variant="outline" className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded-md", importSummary.isValid ? "bg-success-bg text-success-fg border-success-border" : "bg-warning-bg text-warning-fg border-warning-border")}>
-              {importSummary.isValid ? 'Hợp lệ' : 'Có lỗi'}
+              {importSummary.isValid ? 'Valid' : 'Errors found'}
             </Badge>
             <span className="text-xs text-muted-foreground font-medium">
-              Tổng: {importSummary.totalQuestions} | Hợp lệ: {importSummary.validQuestions} | Lỗi: {importSummary.errors} | Cảnh báo: {importSummary.warnings}
+              Total: {importSummary.totalQuestions} | Valid: {importSummary.validQuestions} | Errors: {importSummary.errors} | Warnings: {importSummary.warnings}
             </span>
           </div>
         )}
@@ -104,10 +104,10 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-success-bg/30 border border-success-border/60 rounded-xl space-y-1 text-xs text-success-fg">
             <div className="flex items-center gap-1.5 font-bold">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-success-fg" />
-              <span>✓ {bankStatus.sameAnswerCount} câu hỏi đã có trong ngân hàng</span>
+              <span>✓ {bankStatus.sameAnswerCount} questions already in question bank</span>
             </div>
             <p className="text-[11px] text-success-fg/90 pl-5 leading-relaxed">
-              Các câu hỏi này đã tồn tại với cùng đáp án. Có thể tái sử dụng an toàn.
+              These questions already exist with matching answers. Safe to reuse.
             </p>
           </div>
         )}
@@ -116,7 +116,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-incorrect-bg/40 border border-incorrect-border/60 rounded-xl space-y-1 text-xs text-destructive">
             <div className="flex items-center gap-1.5 font-bold">
               <AlertTriangle className="w-4 h-4 shrink-0 text-destructive" />
-              <span>⚠️ {bankStatus.differentAnswerCount} câu hỏi mâu thuẫn đáp án với ngân hàng</span>
+              <span>⚠️ {bankStatus.differentAnswerCount} questions have conflicting answers with the question bank</span>
             </div>
           </div>
         )}
@@ -126,14 +126,14 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-warning-bg/30 border border-warning-border/60 rounded-xl space-y-2 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-warning-fg">
               <AlertCircle className="w-4 h-4 shrink-0 text-warning-fg" />
-              <span>Ghi chú & Cảnh báo trong file ({diagnostics.length})</span>
+              <span>File Notes & Warnings ({diagnostics.length})</span>
             </div>
             <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
               {diagnostics.map((item, idx) => (
                 <div key={`${item.code}-${idx}`} className="flex items-start justify-between gap-2 text-warning-fg/90 bg-card/60 p-2 rounded-lg border border-warning-border/40">
                   <div className="flex items-start gap-1.5">
                     <span className="font-bold shrink-0">
-                      {item.questionIndex !== undefined ? `Câu ${item.questionIndex + 1}:` : '•'}
+                      {item.questionIndex !== undefined ? `Question ${item.questionIndex + 1}:` : '•'}
                     </span>
                     <span className="leading-snug">{item.message}</span>
                   </div>
@@ -145,7 +145,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
                       onClick={() => onSelectQuestion(item.questionIndex!)}
                       className="h-6 px-2 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/10 shrink-0 cursor-pointer"
                     >
-                      Xem câu này
+                      View question
                     </Button>
                   )}
                 </div>
@@ -158,7 +158,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="p-2.5 bg-info-bg/40 border border-info-border/60 rounded-xl flex items-start gap-2 text-info-fg text-xs">
           <HelpCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed">
-            Báo cáo liệt kê số lượng options và số lượng đáp án đúng trong file. <strong>Bạn vẫn có thể tạo quiz bình thường với tất cả câu hỏi này.</strong>
+            Report lists option count and correct answer count in the file. <strong>You can still create quizzes normally with all of these questions.</strong>
           </span>
         </div>
 
@@ -166,78 +166,78 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Total Questions */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Tổng số câu</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Total Questions</span>
             <span className="text-lg font-black text-foreground">{report.total}</span>
-            <span className="text-[10px] text-muted-foreground block">câu hỏi trong file</span>
+            <span className="text-[10px] text-muted-foreground block">questions in file</span>
           </div>
 
           {/* Standard Count */}
           <div className="p-3 bg-success-bg/30 rounded-xl border border-success-border/50 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-success-fg block">Chuẩn (4 opt + 1 đ.án)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-success-fg block">Standard (4 opts + 1 ans)</span>
             <span className="text-lg font-black text-success-fg">{report.standardCount}</span>
-            <span className="text-[10px] text-success-fg/80 block">{Math.round((report.standardCount / (report.total || 1)) * 100)}% tổng số câu</span>
+            <span className="text-[10px] text-success-fg/80 block">{Math.round((report.standardCount / (report.total || 1)) * 100)}% of total questions</span>
           </div>
 
           {/* Correct Answers Stat */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Số đáp án đúng</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Correct Answers</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold text-foreground">{report.singleCorrectCount} câu 1 đ.án</span>
+              <span className="text-sm font-bold text-foreground">{report.singleCorrectCount} single-answer</span>
             </div>
             {report.multiCorrectCount > 0 ? (
               <span className="text-[10px] font-medium text-warning-fg block">
-                ⚠️ {report.multiCorrectCount} câu &gt; 1 đáp án {multiAnswerBreakdownText ? `(${multiAnswerBreakdownText})` : ''}
+                ⚠️ {report.multiCorrectCount} questions &gt; 1 answer {multiAnswerBreakdownText ? `(${multiAnswerBreakdownText})` : ''}
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground block">100% câu có 1 đáp án</span>
+              <span className="text-[10px] text-muted-foreground block">100% single-answer</span>
             )}
           </div>
 
           {/* Option Counts Stat */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Số phương án (Options)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Options Count</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold text-foreground">{report.fourOptionsCount} câu 4 opt</span>
+              <span className="text-sm font-bold text-foreground">{report.fourOptionsCount} 4-option</span>
             </div>
             {(report.lessThanFourOptionsCount > 0 || report.moreThanFourOptionsCount > 0) ? (
               <span className="text-[10px] font-medium text-warning-fg block">
-                ⚠️ {report.lessThanFourOptionsCount + report.moreThanFourOptionsCount} câu khác 4 options
+                ⚠️ {report.lessThanFourOptionsCount + report.moreThanFourOptionsCount} non-4-option questions
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground block">100% câu có 4 options</span>
+              <span className="text-[10px] text-muted-foreground block">100% 4-option</span>
             )}
           </div>
         </div>
 
         {/* Detailed Breakdown Tags */}
         <div className="p-3 bg-card border border-border rounded-xl space-y-2">
-          <span className="text-xs font-bold text-foreground block">Chi tiết phân bổ cấu trúc câu hỏi:</span>
+          <span className="text-xs font-bold text-foreground block">Question structure distribution details:</span>
           <div className="flex flex-wrap gap-1.5 text-xs">
             <Badge variant="outline" className="bg-success-bg/40 text-success-fg border-success-border/60">
-              ✓ 1 Đáp án đúng: {report.singleCorrectCount} câu
+              ✓ 1 Correct answer: {report.singleCorrectCount} questions
             </Badge>
             {report.multiCorrectCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ &gt; 1 Đáp án đúng: {report.multiCorrectCount} câu ({multiAnswerBreakdownText})
+                ⚠️ &gt; 1 Correct answer: {report.multiCorrectCount} questions ({multiAnswerBreakdownText})
               </Badge>
             )}
             {report.zeroCorrectCount > 0 && (
               <Badge variant="outline" className="bg-incorrect-bg text-destructive border-incorrect-border">
-                ❌ Chưa có đáp án đúng: {report.zeroCorrectCount} câu
+                ❌ No correct answer: {report.zeroCorrectCount} questions
               </Badge>
             )}
 
             <Badge variant="outline" className="bg-success-bg/40 text-success-fg border-success-border/60">
-              ✓ Đúng 4 options: {report.fourOptionsCount} câu
+              ✓ Exactly 4 options: {report.fourOptionsCount} questions
             </Badge>
             {report.lessThanFourOptionsCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ 2-3 options: {report.lessThanFourOptionsCount} câu ({lessOptionsBreakdownText})
+                ⚠️ 2-3 options: {report.lessThanFourOptionsCount} questions ({lessOptionsBreakdownText})
               </Badge>
             )}
             {report.moreThanFourOptionsCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ &gt; 4 options: {report.moreThanFourOptionsCount} câu ({moreOptionsBreakdownText})
+                ⚠️ &gt; 4 options: {report.moreThanFourOptionsCount} questions ({moreOptionsBreakdownText})
               </Badge>
             )}
           </div>
@@ -254,7 +254,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
             >
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 text-warning-fg" />
-                <span>Danh sách {report.nonStandardCount} câu không thuộc chuẩn (4 options + 1 đáp án)</span>
+                <span>List of {report.nonStandardCount} non-standard questions (4 options + 1 answer)</span>
               </div>
               {showNonStandardList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
@@ -272,11 +272,11 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">Câu {q.questionIndex + 1}:</span>
+                      <span className="font-bold text-primary">Question {q.questionIndex + 1}:</span>
                       <span className="text-muted-foreground">{q.reasons.join(' | ')}</span>
                     </div>
                     {onSelectQuestion && (
-                      <span className="text-[10px] text-primary font-bold hover:underline shrink-0">Xem câu này</span>
+                      <span className="text-[10px] text-primary font-bold hover:underline shrink-0">View question</span>
                     )}
                   </div>
                 ))}

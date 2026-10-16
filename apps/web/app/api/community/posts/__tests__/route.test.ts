@@ -100,9 +100,9 @@ describe('/api/community/posts API Handler', () => {
       
       const createdPost = {
         _id: 'post_123',
-        title: 'Thắc mắc giải đề #Toán',
-        content: 'Nội dung thắc mắc',
-        tags: ['Toán'],
+        title: 'Question about math quiz #Math',
+        content: 'Question details and context',
+        tags: ['Math'],
         authorName: 'student',
       }
       ;(Post.create as jest.Mock).mockResolvedValue(createdPost)
@@ -111,9 +111,9 @@ describe('/api/community/posts API Handler', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'Thắc mắc giải đề #Toán',
-          content: 'Nội dung thắc mắc',
-          tags: ['Toán'],
+          title: 'Question about math quiz #Math',
+          content: 'Question details and context',
+          tags: ['Math'],
         }),
       })
 

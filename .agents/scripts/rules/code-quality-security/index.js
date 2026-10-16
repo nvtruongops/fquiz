@@ -6,7 +6,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['code-quality-security'];
     if (!policy || !policy.enabled) {
-      ctx.logger.pass('Quy tắc CODE_QUALITY_SECURITY bị tắt hoặc chưa được cấu hình.');
+      ctx.logger.pass('Rule CODE_QUALITY_SECURITY is disabled or unconfigured.');
       return { passed: true };
     }
 
@@ -43,7 +43,7 @@ module.exports = {
               const regex = new RegExp(ruleItem.regex, 'i');
               if (regex.test(line)) {
                 const relPath = path.relative(ctx.workspaceRoot, fullPath);
-                ctx.logger.error(`${relPath}:${idx + 1} -> Vi phạm Security: ${ruleItem.reason}`);
+                ctx.logger.error(`${relPath}:${idx + 1} -> Security Violation: ${ruleItem.reason}`);
                 violations++;
               }
             });
@@ -55,7 +55,7 @@ module.exports = {
     searchDirs.forEach(dir => scanDir(dir));
 
     if (violations === 0) {
-      ctx.logger.pass('Mã nguồn fquiz sạch (0 lỗ hổng Security & Hardcoded Secrets).');
+      ctx.logger.pass('FQuiz source code is clean (0 security vulnerabilities & hardcoded secrets).');
     }
 
     return { passed: violations === 0 };

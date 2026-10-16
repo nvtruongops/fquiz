@@ -8,5 +8,5 @@
   "parallelizable": true,
   "supportsFix": false,
   "estimatedCost": "medium",
-  "description": "Tự động thực thi TypeScript Compiler (tsc --noEmit) kiểm tra toàn bộ lỗi Cú pháp JSX và Type Check mã nguồn fquiz."
+  "description": "Automatically executes TypeScript Compiler (tsc --noEmit) to validate syntax, JSX, and type safety across fquiz."
 }

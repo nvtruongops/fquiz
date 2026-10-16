@@ -61,10 +61,10 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
 
   // 1. Basic Metadata Rules
   if (!data.category_id) {
-    errors.push({ code: 'MISSING_CATEGORY', severity: 'error', message: 'Chưa chọn môn học' })
+    errors.push({ code: 'MISSING_CATEGORY', severity: 'error', message: 'Category is required' })
   }
   if (!data.course_code?.trim()) {
-    errors.push({ code: 'MISSING_COURSE_CODE', severity: 'error', message: 'Chưa nhập mã đề / Mã Quiz' })
+    errors.push({ code: 'MISSING_COURSE_CODE', severity: 'error', message: 'Course code / Quiz code is required' })
   } else if (data.course_code.trim().length > COURSE_CODE_MAX_LENGTH) {
     errors.push({ code: 'INVALID_COURSE_CODE', severity: 'error', message: COURSE_CODE_MAX_LENGTH_MESSAGE })
   } else if (!COURSE_CODE_PATTERN.test(data.course_code.trim())) {
@@ -78,7 +78,7 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
 
     // Text Check
     if (!q.text?.trim()) {
-      errors.push({ code: 'MISSING_TEXT', severity: 'error', message: `Câu ${i + 1}: chưa nhập nội dung`, questionIndex: i })
+      errors.push({ code: 'MISSING_TEXT', severity: 'error', message: `Question ${i + 1}: text is required`, questionIndex: i })
       summary.missingTextCount++
       isQComplete = false
     }
@@ -103,7 +103,7 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
       }
 
       if (foundContentAfterEmpty) {
-        errors.push({ code: 'EMPTY_OPTION', severity: 'error', message: `Câu ${i + 1}: đáp án không được để trống ở giữa`, questionIndex: i })
+        errors.push({ code: 'EMPTY_OPTION', severity: 'error', message: `Question ${i + 1}: options cannot have empty gaps`, questionIndex: i })
         summary.emptyOptionsCount++
         isQComplete = false
       }
@@ -112,7 +112,7 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
     // Correct Answer Check - handle both singular and plural naming
     const correctAnswers = q.correct_answer || q.correct_answers || []
     if (correctAnswers.length === 0) {
-      errors.push({ code: 'NO_CORRECT_ANSWER', severity: 'error', message: `Câu ${i + 1}: chưa chọn đáp án đúng`, questionIndex: i })
+      errors.push({ code: 'NO_CORRECT_ANSWER', severity: 'error', message: `Question ${i + 1}: no correct answer selected`, questionIndex: i })
       summary.missingAnswerCount++
       isQComplete = false
     }
@@ -127,13 +127,13 @@ export function analyzeQuizCompleteness(data: any, targetCount: number = 0): Qui
     errors.push({ 
       code: 'TARGET_MISMATCH', 
       severity: 'error', 
-      message: `Chưa đủ số lượng câu hỏi mục tiêu (${summary.totalQuestions}/${targetCount})` 
+      message: `Target question count not reached (${summary.totalQuestions}/${targetCount})` 
     })
   } else if (summary.totalQuestions > targetCount && targetCount > 0) {
      warnings.push({
        code: 'TARGET_MISMATCH',
        severity: 'warning',
-       message: `Số câu hỏi (${summary.totalQuestions}) đang vượt mục tiêu (${targetCount})`
+       message: `Question count (${summary.totalQuestions}) exceeds target (${targetCount})`
      })
   }
 

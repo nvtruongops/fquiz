@@ -8,14 +8,14 @@ import mongoose from 'mongoose'
 export const PUT = withAuth<{ id: string }>(async (req, { params }) => {
   const { id } = await Promise.resolve(params)
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID danh mục không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
   }
 
   const body = await req.json().catch(() => ({}))
   const { name } = body
 
   if (!name || typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'Tên danh mục không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid category name' }, { status: 400 })
   }
 
   await connectDB()
@@ -26,7 +26,7 @@ export const PUT = withAuth<{ id: string }>(async (req, { params }) => {
   ).lean()
 
   if (!updated) {
-    return NextResponse.json({ error: 'Không tìm thấy danh mục' }, { status: 404 })
+    return NextResponse.json({ error: 'Category not found' }, { status: 404 })
   }
 
   return NextResponse.json({ success: true, category: updated })
@@ -35,7 +35,7 @@ export const PUT = withAuth<{ id: string }>(async (req, { params }) => {
 export const DELETE = withAuth<{ id: string }>(async (req, { params }) => {
   const { id } = await Promise.resolve(params)
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID danh mục không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
   }
 
   await connectDB()
@@ -44,15 +44,15 @@ export const DELETE = withAuth<{ id: string }>(async (req, { params }) => {
   const linkedQuizzes = await Quiz.countDocuments({ category_id: id })
   if (linkedQuizzes > 0) {
     return NextResponse.json(
-      { error: `Không thể xóa: Vẫn còn ${linkedQuizzes} quiz thuộc danh mục này` },
+      { error: `Cannot delete: ${linkedQuizzes} quizzes still belong to this category` },
       { status: 400 }
     )
   }
 
   const deleted = await Category.findByIdAndDelete(id)
   if (!deleted) {
-    return NextResponse.json({ error: 'Không tìm thấy danh mục' }, { status: 404 })
+    return NextResponse.json({ error: 'Category not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, message: 'Đã xóa danh mục' })
+  return NextResponse.json({ success: true, message: 'Category deleted successfully' })
 })

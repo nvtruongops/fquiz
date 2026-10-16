@@ -1,21 +1,42 @@
-# Dependencies & Build Outputs
-node_modules/
-.next/
-out/
-dist/
-build/
-.vercel/
+# Dependencies & Monorepo Build Outputs
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/.turbo
+out
+**/out
+dist
+**/dist
+build
+**/build
+.vercel
+**/.vercel
 
-# Version Control & Local Databases
-.git/
-.codeql-db/
-.codegraph/
-.scannerwork/
-coverage/
-data/
+# Version Control, CodeQL, CodeGraph & Local Databases
+.git
+**/.git
+.codeql-db
+**/.codeql-db
+.codegraph
+**/.codegraph
+.fallow
+**/.fallow
+.scannerwork
+**/.scannerwork
+coverage
+**/coverage
+data
+**/data
 *.db
+**/*.db
 *.sqlite
+**/*.sqlite
 *.sqlite3
+**/*.sqlite3
+*.sarif
+**/*.sarif
 
 # Environment files & secrets
 .env
@@ -26,12 +47,37 @@ data/
 .env.production.local
 !.env.example
 
-# Temporary & Uploads
-tmp/
-temp/
+# Temporary, Logs & Testing Artifacts
+tmp
+**/tmp
+temp
+**/temp
 *.log
-logs/
-uploads/
-public/uploads/
-.nyc_output/
-test-results/
+**/*.log
+logs
+**/logs
+uploads
+**/uploads
+public/uploads
+**/public/uploads
+.nyc_output
+**/.nyc_output
+test-results
+**/test-results
+playwright-report
+**/playwright-report
+.playwright-mcp
+**/.playwright-mcp
+.kilo
+**/.kilo
+.vscode
+**/.vscode
+.idea
+**/.idea
+*.tsbuildinfo
+**/*.tsbuildinfo
+e2e
+**/e2e
+docs
+**/docs
+

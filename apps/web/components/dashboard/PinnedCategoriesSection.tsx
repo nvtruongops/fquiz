@@ -57,10 +57,10 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
     <section className="space-y-3 w-full overflow-hidden">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-black uppercase tracking-wider text-text-tertiary flex items-center gap-2">
-          <Pin className="w-4 h-4 text-accentRole-learning fill-accentRole-learning" /> Môn Học Đã Ghim
+          <Pin aria-hidden="true" className="w-4 h-4 text-accentRole-learning fill-accentRole-learning" /> Pinned Subjects
         </h2>
         <Link href="/explore" className="text-[11px] font-bold text-text-tertiary hover:text-foreground transition-colors">
-          Quản lý ghim
+          Manage pins
         </Link>
       </div>
       <div
@@ -82,17 +82,17 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
             title={cat.name}
           >
             <span className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-              <BookOpen className="w-4 h-4 text-primary transition-colors" />
+              <BookOpen aria-hidden="true" className="w-4 h-4 text-primary transition-colors" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-xs font-black text-foreground uppercase tracking-tight truncate group-hover:text-primary transition-colors">
                 {cat.name}
               </span>
               <span className="block text-[10px] font-bold text-text-tertiary mt-0.5">
-                {cat.quizCount} đề thi
+                {cat.quizCount} quizzes
               </span>
             </span>
-            <ArrowRight className="w-3.5 h-3.5 text-text-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+            <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 text-text-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
           </Link>
         ))}
         {/* Trailing spacer to prevent last card from clipping on right edge when scrolling */}

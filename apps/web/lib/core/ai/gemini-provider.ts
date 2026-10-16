@@ -66,7 +66,7 @@ export class GeminiProvider implements IAIProvider {
 
   private getNextClient(): { client: GoogleGenerativeAI; key: string; index: number } {
     if (this.apiKeys.length === 0) {
-      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
+      throw new Error('Gemini API key is not configured (in Admin Settings or GEMINI_API_KEY)')
     }
     const index = (GeminiProvider.globalKeyIndex++) % this.apiKeys.length
     const key = this.apiKeys[index]
@@ -78,7 +78,7 @@ export class GeminiProvider implements IAIProvider {
     options?: AIGenerationOptions
   ): Promise<AIGenerationResult<T>> {
     if (this.apiKeys.length === 0) {
-      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
+      throw new Error('Gemini API key is not configured (in Admin Settings or GEMINI_API_KEY)')
     }
 
     const startTime = Date.now()
@@ -174,7 +174,7 @@ export class GeminiProvider implements IAIProvider {
 
   async embed(text: string): Promise<AIEmbeddingResult> {
     if (this.apiKeys.length === 0) {
-      throw new Error('Chưa cấu hình API Key cho Gemini (trong Admin Settings hoặc GEMINI_API_KEY)')
+      throw new Error('Gemini API key is not configured (in Admin Settings or GEMINI_API_KEY)')
     }
 
     const maxAttempts = Math.max(1, this.apiKeys.length)

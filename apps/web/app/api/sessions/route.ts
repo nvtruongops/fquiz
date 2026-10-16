@@ -115,7 +115,7 @@ function handleSessionConflicts(session: any, questions: any[], action: string |
   if (action === 'restart') return null // Signal to delete and restart
 
   const answered = new Set((session.user_answers ?? []).map((a: any) => a.question_index).filter((idx: any) => Number.isInteger(idx) && idx >= 0)).size
-  return NextResponse.json({ error: `Bạn có một bài ${group === 'learning' ? 'lật thẻ' : 'quiz'} chưa hoàn thành.`, code: 'ACTIVE_SESSION_EXISTS', activeSession: { sessionId: session._id, mode: session.mode, difficulty: session.difficulty, current_question_index: session.current_question_index, totalQuestions: questions.length, answeredCount: answered, started_at: session.started_at } }, { status: 409 })
+  return NextResponse.json({ error: `You have an unfinished ${group === 'learning' ? 'flashcard' : 'quiz'} session.`, code: 'ACTIVE_SESSION_EXISTS', activeSession: { sessionId: session._id, mode: session.mode, difficulty: session.difficulty, current_question_index: session.current_question_index, totalQuestions: questions.length, answeredCount: answered, started_at: session.started_at } }, { status: 409 })
 }
 
 const sessionLimiter = providerFactory.createProvider(10, 60 * 1000)
@@ -152,7 +152,7 @@ export const POST = withAuth(async (req, { payload }) => {
     const isOwner = payload.userId ? quiz.created_by?.toString() === payload.userId : false
 
     if (!isOwner && !(quiz.is_public && quiz.status === 'published')) {
-      return NextResponse.json({ error: 'Quiz này đã được Admin đóng hoặc không công khai.' }, { status: 403 })
+      return NextResponse.json({ error: 'This quiz has been closed by Admin or is not public.' }, { status: 403 })
     }
 
     const effective = await resolveEffectiveQuiz(quiz)
@@ -165,10 +165,17 @@ export const POST = withAuth(async (req, { payload }) => {
     const questionsCache = effective.questions.map((q: any) => {
       const processed = shouldShuffleOptions ? shuffleQuestionOptions(q) : q
       return {
-        _id: processed._id,
+        _id:
+          processed._id && mongoose.Types.ObjectId.isValid(processed._id.toString())
+            ? new mongoose.Types.ObjectId(processed._id.toString())
+            : new mongoose.Types.ObjectId(),
         text: processed.text,
         options: processed.options,
-        correct_answer: processed.correct_answer,
+        correct_answer: Array.isArray(processed.correct_answer)
+          ? processed.correct_answer
+          : typeof processed.correct_answer === 'number'
+            ? [processed.correct_answer]
+            : [],
         explanation: processed.explanation,
         ...(processed.image_url ? { image_url: processed.image_url } : {}),
       }
@@ -229,7 +236,7 @@ export const POST = withAuth(async (req, { payload }) => {
         const stats = completedFlashcard.flashcard_stats || {}
         return NextResponse.json(
           {
-            error: `Bạn vẫn còn ${stats.cards_unknown}/${stats.total_cards || effective.questions.length} câu chưa nhớ trong bài Học Lật Thẻ này.`,
+            error: `You still have ${stats.cards_unknown}/${stats.total_cards || effective.questions.length} unmemorized cards in this flashcard session.`,
             code: 'COMPLETED_FLASHCARD_HAS_UNKNOWN',
             activeSession: {
               sessionId: completedFlashcard._id.toString(),

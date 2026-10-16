@@ -59,9 +59,9 @@ interface QuizHistoryProps {
 
 function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
   const config = {
-    immediate: { bg: 'bg-primary/10 text-primary border-primary/20', label: 'Luyện tập', icon: Zap },
-    review: { bg: 'bg-muted text-foreground border-border', label: 'Kiểm tra', icon: BookOpen },
-    flashcard: { bg: 'bg-muted text-foreground border-border', label: 'Lật thẻ', icon: GraduationCap },
+    immediate: { bg: 'bg-primary/10 text-primary border-primary/20', label: 'Practice', icon: Zap },
+    review: { bg: 'bg-muted text-foreground border-border', label: 'Exam', icon: BookOpen },
+    flashcard: { bg: 'bg-muted text-foreground border-border', label: 'Flashcard', icon: GraduationCap },
   }
   /* eslint-disable-next-line security/detect-object-injection */
   const item = config[mode] ?? config.immediate
@@ -102,16 +102,16 @@ export function QuizHistory({
         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-3">
           <History className="w-6 h-6" />
         </div>
-        <h3 className="text-base font-extrabold text-foreground">Lịch sử làm bài</h3>
+        <h3 className="text-base font-extrabold text-foreground">Attempt History</h3>
         <p className="text-xs text-muted-foreground max-w-xs mt-1 mb-4">
-          Đăng nhập để xem lịch sử làm bài thi và theo dõi tiến trình học tập của bạn.
+          Sign in to view your attempt history and track your learning progress.
         </p>
         <Button 
           onClick={onAuthRequired} 
           className="rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold px-5 h-9"
         >
           <LogIn className="w-3.5 h-3.5 mr-1.5" />
-          Đăng nhập ngay
+          Sign in now
         </Button>
       </div>
     )
@@ -121,7 +121,7 @@ export function QuizHistory({
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 bg-card backdrop-blur-md rounded-2xl sm:rounded-[32px] border border-border shadow-xs gap-3 mb-6", className)}>
         <Loader2 className="w-6 h-6 text-primary animate-spin" />
-        <p className="text-xs font-extrabold text-primary uppercase tracking-wider">Đang tải lịch sử...</p>
+        <p className="text-xs font-extrabold text-primary uppercase tracking-wider">Loading history...</p>
       </div>
     )
   }
@@ -159,15 +159,15 @@ export function QuizHistory({
             <History className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight">Lịch sử làm bài</h2>
-            <p className="text-[11px] font-bold text-muted-foreground">Theo dõi tiến trình & kết quả các lần luyện tập của bạn</p>
+            <h2 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight">Attempt History</h2>
+            <p className="text-[11px] font-bold text-muted-foreground">Track your progress and results across practice attempts</p>
           </div>
         </div>
 
         {hasCompletedAttempt && (
           <div className="flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black">
             <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-            <span>Cao nhất: {maxScoreOnTen.toFixed(1)}/10</span>
+            <span>Best: {maxScoreOnTen.toFixed(1)}/10</span>
           </div>
         )}
       </div>
@@ -180,8 +180,8 @@ export function QuizHistory({
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm font-extrabold text-foreground">Bạn có 1 bài làm dở chưa hoàn thành</p>
-              <p className="text-[11px] font-bold text-muted-foreground">Nhấn vào đây để tiếp tục câu làm dở của bạn.</p>
+              <p className="text-xs sm:text-sm font-extrabold text-foreground">You have an incomplete session in progress</p>
+              <p className="text-[11px] font-bold text-muted-foreground">Click here to resume your unanswered questions.</p>
             </div>
           </div>
           <Button
@@ -190,7 +190,7 @@ export function QuizHistory({
             className="w-full sm:w-auto rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-black px-4 h-9 shadow-xs shrink-0 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
-            Tiếp tục làm bài
+            Resume Quiz
           </Button>
         </div>
       )}
@@ -199,8 +199,8 @@ export function QuizHistory({
       {attempts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground space-y-2">
           <History className="w-8 h-8 mx-auto text-muted-foreground/50" />
-          <p className="text-xs font-bold">Chưa có lịch sử làm bài cho bộ đề này.</p>
-          <p className="text-[11px] text-muted-foreground">Hãy nhấn &quot;Bắt đầu làm bài&quot; ở trên để thực hiện lần thi đầu tiên!</p>
+          <p className="text-xs font-bold">No attempt history for this quiz yet.</p>
+          <p className="text-[11px] text-muted-foreground">Click &quot;Start Quiz&quot; above to begin your first attempt!</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -223,12 +223,12 @@ export function QuizHistory({
                   <div className="flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-                      <span className="text-xs font-black text-foreground">Lượt {attemptNumber}</span>
+                      <span className="text-xs font-black text-foreground">Attempt {attemptNumber}</span>
                       <ModeBadge mode={attempt.mode} />
                       {isRetryWrong && (
                         <Badge variant="secondary" className="bg-amber-500/10 text-amber-400 border-none font-extrabold text-[9px] uppercase px-2 py-0.5 gap-1 rounded-full">
                           <RotateCcw className="w-2.5 h-2.5" />
-                          <span>Luyện câu sai</span>
+                          <span>Retry Wrong</span>
                         </Badge>
                       )}
                     </div>
@@ -246,7 +246,7 @@ export function QuizHistory({
                         <span className="text-[10px] font-bold text-muted-foreground">/10</span>
                       </div>
                       <p className="text-[10px] font-bold text-muted-foreground">
-                        {correctCount}/{totalQ} câu đúng
+                        {correctCount}/{totalQ} correct
                       </p>
                     </div>
 
@@ -257,7 +257,7 @@ export function QuizHistory({
                       asChild
                     >
                       <Link href={`/quiz/${quizId}/result/${attempt.session_id}`}>
-                        <span>Xem kết quả</span>
+                        <span>View Results</span>
                         <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                       </Link>
                     </Button>
@@ -278,11 +278,11 @@ export function QuizHistory({
                 className="h-9 px-3.5 rounded-xl text-xs font-black border-border bg-card hover:bg-muted disabled:opacity-40 shadow-xs cursor-pointer text-foreground"
               >
                 <ChevronLeft className="w-4 h-4 mr-1 text-primary" />
-                <span>Trang trước</span>
+                <span>Previous</span>
               </Button>
 
               <div className="flex items-center gap-1 bg-card px-3 py-1.5 rounded-xl border border-border shadow-xs">
-                <span className="text-xs font-black text-primary">Trang {safePage}</span>
+                <span className="text-xs font-black text-primary">Page {safePage}</span>
                 <span className="text-[11px] font-bold text-muted-foreground">/ {totalPages}</span>
               </div>
 
@@ -293,7 +293,7 @@ export function QuizHistory({
                 disabled={safePage === totalPages}
                 className="h-9 px-3.5 rounded-xl text-xs font-black border-border bg-card hover:bg-muted disabled:opacity-40 shadow-xs cursor-pointer text-card-foreground"
               >
-                <span>Trang sau</span>
+                <span>Next</span>
                 <ChevronRight className="w-4 h-4 ml-1 text-primary" />
               </Button>
             </div>
@@ -302,7 +302,7 @@ export function QuizHistory({
               href="/history" 
               className="font-black text-primary hover:text-primary/90 inline-flex items-center gap-1.5 text-xs bg-primary/10 hover:bg-primary/20 px-3.5 py-2 rounded-xl transition-all shadow-xs"
             >
-              <span>Xem tất cả lịch sử</span>
+              <span>View Full History</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

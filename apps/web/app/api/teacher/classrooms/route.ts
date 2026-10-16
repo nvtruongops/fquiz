@@ -13,7 +13,7 @@ export const GET = withAuth(
       const totalQuizzes = await Quiz.countDocuments({ created_by: payload.userId, is_temp: { $ne: true } })
       return NextResponse.json({ classrooms, totalQuizzes })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi lấy danh sách lớp học' }, { status: 500 })
+      return NextResponse.json({ error: err.message || 'Failed to get classroom list' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }
@@ -27,9 +27,9 @@ export const POST = withAuth(
       const parsed = createClassroomSchema.parse(body)
 
       const classroom = await ClassroomService.createClassroom(payload.userId, parsed)
-      return NextResponse.json({ classroom, message: 'Tạo lớp học thành công' }, { status: 201 })
+      return NextResponse.json({ classroom, message: 'Classroom created successfully' }, { status: 201 })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi khi tạo lớp học' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to create classroom' }, { status: 400 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }
