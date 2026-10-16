@@ -120,3 +120,5 @@ export function DeleteAccountModal({
     </>
   )
 }
+
+export default DeleteAccountModal

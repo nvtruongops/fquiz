@@ -1,10 +1,15 @@
 'use client'
 
 import React from 'react'
+import dynamic from 'next/dynamic'
 import { Loader2 } from 'lucide-react'
 import { useStudentProfile } from '@/hooks/student/useStudentProfile'
 import { ProfileFormCard } from '@/components/student/profile/ProfileFormCard'
-import { DeleteAccountModal } from '@/components/student/profile/DeleteAccountModal'
+
+const DeleteAccountModal = dynamic(
+  () => import('@/components/student/profile/DeleteAccountModal'),
+  { ssr: false }
+)
 
 export default function ProfilePage() {
   const {

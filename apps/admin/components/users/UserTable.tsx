@@ -45,7 +45,7 @@ export function UserTable({
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex justify-center items-center">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
             </div>
           ) : !data || data.users.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
@@ -72,7 +72,7 @@ export function UserTable({
                       <tr key={u._id} className="hover:bg-muted/40 transition-colors">
                         <td className="py-3 px-4 font-medium text-foreground">
                           <div className="flex items-center gap-2">
-                            {isRootAdmin && <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
+                            {isRootAdmin && <ShieldCheck className="w-3.5 h-3.5 text-primary" aria-hidden="true" />}
                             <span>{u.username}</span>
                           </div>
                         </td>
@@ -87,7 +87,7 @@ export function UserTable({
                               value={u.role}
                               onValueChange={(newRole) => onUpdateRole(u._id, newRole)}
                             >
-                              <SelectTrigger className="h-8 w-28 text-xs font-semibold">
+                              <SelectTrigger className="h-8 w-28 text-xs font-semibold" aria-label={`Change role for ${u.username}`}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -122,9 +122,10 @@ export function UserTable({
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'banned')}
                                   title="Suspend account"
+                                  aria-label={`Suspend account ${u.username}`}
                                   className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                                 >
-                                  <UserX className="w-4 h-4" />
+                                  <UserX className="w-4 h-4" aria-hidden="true" />
                                 </Button>
                               ) : (
                                 <Button
@@ -132,9 +133,10 @@ export function UserTable({
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'active')}
                                   title="Activate account"
+                                  aria-label={`Activate account ${u.username}`}
                                   className="h-8 px-2 text-muted-foreground hover:text-success-fg cursor-pointer"
                                 >
-                                  <UserCheck className="w-4 h-4" />
+                                  <UserCheck className="w-4 h-4" aria-hidden="true" />
                                 </Button>
                               )}
 
@@ -143,9 +145,10 @@ export function UserTable({
                                 size="sm"
                                 onClick={() => onDeleteUser(u)}
                                 title="Delete permanently"
+                                aria-label={`Delete account ${u.username}`}
                                 className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </Button>
                             </div>
                           )}
@@ -171,8 +174,9 @@ export function UserTable({
               size="sm"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
+              aria-label="Previous page"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </Button>
             <span className="text-xs font-medium px-2">
               Page {page} of {data.totalPages}
@@ -182,8 +186,9 @@ export function UserTable({
               size="sm"
               disabled={page >= data.totalPages}
               onClick={() => onPageChange(page + 1)}
+              aria-label="Next page"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

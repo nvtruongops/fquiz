@@ -1,7 +1,9 @@
 import * as React from 'react'
 import { cn } from '../lib/utils'
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
+export type InputProps = React.ComponentProps<'input'>
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, onFocus, ...props }, ref) => {
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {

@@ -67,19 +67,24 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
   useGSAP(
     () => {
       if (!containerRef.current) return
-      const items = containerRef.current.querySelectorAll('.timeline-item')
-      if (items.length > 0) {
-        gsap.fromTo(
-          items,
-          { y: 10, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 0.35, stagger: 0.05, ease: 'power2.out' }
-        )
-      }
+      const mm = gsap.matchMedia()
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const items = containerRef.current?.querySelectorAll('.timeline-item')
+        if (items && items.length > 0) {
+          gsap.fromTo(
+            items,
+            { y: 10, autoAlpha: 0 },
+            { y: 0, autoAlpha: 1, duration: 0.35, stagger: 0.05, ease: 'power2.out' }
+          )
+        }
+      })
+      return () => mm.revert()
     },
     { scope: containerRef, dependencies: [filteredActivities] }
   )
 
   const handleItemHover = contextSafe((e: React.MouseEvent<HTMLElement>, isEnter: boolean) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     gsap.to(e.currentTarget, {
       scale: isEnter ? 1.01 : 1,
       x: isEnter ? 2 : 0,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
 interface FlashcardQuestion {
   _id: string
@@ -72,8 +73,7 @@ export function useFlashcardSession(sessionId: string) {
       )
       if (!res.ok) {
         if (res.status === 401) {
-          const currentUrl = window.location.pathname + window.location.search
-          window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
+          promptSessionReauth()
           throw new Error('Session expired')
         }
         throw new Error('Failed to load session')

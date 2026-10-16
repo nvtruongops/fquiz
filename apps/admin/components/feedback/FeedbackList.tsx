@@ -31,7 +31,7 @@ export function FeedbackList({
       <CardContent className="p-0">
         {isLoading ? (
           <div className="p-12 flex justify-center items-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
           </div>
         ) : feedbacks.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-sm">
@@ -59,7 +59,7 @@ export function FeedbackList({
                       value={fb.status}
                       onValueChange={(status) => onUpdateStatus(fb._id, status)}
                     >
-                      <SelectTrigger className="h-7 w-28 text-xs font-semibold">
+                      <SelectTrigger className="h-7 w-28 text-xs font-semibold" aria-label={`Change status for feedback from ${fb.username}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -73,20 +73,22 @@ export function FeedbackList({
                       variant="ghost"
                       size="sm"
                       onClick={() => onReplyTarget(fb)}
-                      className="h-7 px-2 text-muted-foreground hover:text-primary"
+                      className="h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer"
                       title="Reply"
+                      aria-label={`Reply to ${fb.username}`}
                     >
-                      <Reply className="w-3.5 h-3.5" />
+                      <Reply className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
 
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onDeleteTarget(fb)}
-                      className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                      className="h-7 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                       title="Delete"
+                      aria-label={`Delete feedback from ${fb.username}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>
@@ -98,7 +100,7 @@ export function FeedbackList({
                 {fb.reply_message && (
                   <div className="ml-4 p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
                     <div className="text-xs font-bold text-primary flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5" />
+                      <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
                       Admin Reply:
                     </div>
                     <p className="text-xs text-foreground/90 whitespace-pre-wrap">{fb.reply_message}</p>

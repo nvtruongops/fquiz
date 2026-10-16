@@ -46,7 +46,10 @@ export function MobileNavExamSheet({
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-          className="fixed bottom-0 inset-x-0 w-full max-w-lg mx-auto bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] shadow-2xl p-4 sm:p-5 space-y-2 overflow-hidden z-50 max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          className="fixed bottom-0 inset-x-0 w-full max-w-lg mx-auto bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] shadow-2xl p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-2 overflow-hidden z-50 max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Quizzes & Exams"
         >
           <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20 mx-auto mt-0.5 mb-2.5 shrink-0" />
           <div className="px-2 py-2 border-b border-border/60 flex items-center justify-between shrink-0">

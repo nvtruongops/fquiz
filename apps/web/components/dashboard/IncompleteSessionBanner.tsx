@@ -23,12 +23,14 @@ export const IncompleteSessionBanner = React.memo(function IncompleteSessionBann
   const { contextSafe } = useGSAP({ scope: containerRef })
 
   const handleMouseEnter = contextSafe(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     if (containerRef.current) {
       gsap.to(containerRef.current, { scale: 1.01, y: -2, duration: 0.25, ease: 'power2.out' })
     }
   })
 
   const handleMouseLeave = contextSafe(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     if (containerRef.current) {
       gsap.to(containerRef.current, { scale: 1, y: 0, duration: 0.25, ease: 'power2.out' })
     }

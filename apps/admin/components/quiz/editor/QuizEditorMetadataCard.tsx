@@ -52,7 +52,7 @@ export function QuizEditorMetadataCard({
         <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
           <span>1. Category &amp; Quiz Code</span>
           {!isCategorySelected && (
-            <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/40 bg-amber-500/10">
+            <Badge variant="outline" className="text-[10px] text-warning-fg border-warning-border bg-warning-bg">
               Awaiting category selection
             </Badge>
           )}
@@ -62,11 +62,11 @@ export function QuizEditorMetadataCard({
         {/* Row 1: Category & Quiz Code */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1">
+            <label htmlFor="category-select-trigger" className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1">
               Category <span className="text-destructive">*</span>
             </label>
             <Select value={categoryId} onValueChange={onSelectCategory}>
-              <SelectTrigger id="category-select-trigger" className="h-10 bg-background">
+              <SelectTrigger id="category-select-trigger" aria-label="Select quiz category" className="h-10 bg-background">
                 <SelectValue placeholder="— Click to select a category —" />
               </SelectTrigger>
               <SelectContent>
@@ -81,14 +81,15 @@ export function QuizEditorMetadataCard({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
+            <label htmlFor="quiz-course-code" className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center gap-1">
                 Quiz Code <span className="text-destructive">*</span>
               </span>
-              {isCheckingCode && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+              {isCheckingCode && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" aria-hidden="true" />}
             </label>
             <div className="relative">
               <Input
+                id="quiz-course-code"
                 placeholder="Enter quiz code..."
                 value={courseCode}
                 onChange={(e) => onChangeCourseCode(e.target.value.toUpperCase())}
@@ -96,16 +97,16 @@ export function QuizEditorMetadataCard({
                   codeDuplicateInfo?.exists
                     ? 'border-destructive focus-visible:ring-destructive pr-8'
                     : courseCode.trim()
-                    ? 'border-emerald-500/50 pr-8'
+                    ? 'border-success-border pr-8'
                     : ''
                 }`}
               />
               {courseCode.trim() && !isCheckingCode && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                   {codeDuplicateInfo?.exists ? (
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <AlertTriangle className="w-4 h-4 text-destructive" aria-hidden="true" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 text-success-fg" aria-hidden="true" />
                   )}
                 </div>
               )}
@@ -122,10 +123,11 @@ export function QuizEditorMetadataCard({
 
         {/* Row 2: Description */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+          <label htmlFor="quiz-description" className="text-xs font-bold text-foreground uppercase tracking-wider">
             Description / Quiz Notes
           </label>
           <Input
+            id="quiz-description"
             placeholder="Enter description or quiz notes..."
             value={description}
             onChange={(e) => onChangeDescription(e.target.value)}
@@ -136,13 +138,15 @@ export function QuizEditorMetadataCard({
         {/* Row 3: Target Count Helper */}
         <div className="p-3.5 bg-muted/30 border border-border/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary shrink-0" />
+            <Sparkles className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
             <span>
               Quick question scaffolding: <strong>{currentQuestionsCount}</strong> current question(s)
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
+              id="quiz-target-count"
+              aria-label="Target question count"
               type="number"
               placeholder="60"
               value={targetCount}

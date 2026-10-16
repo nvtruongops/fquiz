@@ -46,7 +46,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Previous question (←)"
           >
-            <ChevronLeft className="mr-1 h-4 w-4 text-primary" /> Prev
+            <ChevronLeft aria-hidden="true" className="mr-1 h-4 w-4 text-primary" /> Prev
           </Button>
           <Button
             type="button"
@@ -56,7 +56,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Next question (→)"
           >
-            Next <ChevronRight className="ml-1 h-4 w-4 text-primary" />
+            Next <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4 text-primary" />
           </Button>
         </div>
 
@@ -82,6 +82,8 @@ const QuizSidebar = React.memo(function QuizSidebar({
                     key={i}
                     type="button"
                     onClick={() => onNavigate(i)}
+                    aria-label={`Question ${i + 1}${isAnswered ? ', answered' : ', not answered'}`}
+                    aria-current={isCurrent ? 'step' : undefined}
                     className={cn(
                       'h-7 rounded-lg font-bold text-[11px] flex items-center justify-center transition-all duration-200 relative cursor-pointer',
                       isAnswered
@@ -89,7 +91,6 @@ const QuizSidebar = React.memo(function QuizSidebar({
                         : 'bg-card text-card-foreground border border-border hover:border-primary/50 hover:bg-muted',
                       isCurrent && 'ring-2 ring-primary ring-offset-1 ring-offset-card font-extrabold z-10 scale-105'
                     )}
-
                   >
                     {i + 1}
                   </button>
@@ -109,7 +110,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
           >
             {isPending ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
+                <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" /> Submitting...
               </span>
             ) : (
               <span>Submit Quiz ({answeredCount}/{totalQuestions})</span>

@@ -16,6 +16,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
 
 import { usePublicCategories, type CategoryItem } from '@/hooks/quiz/usePublicCategories'
+import { CategoryGridSkeleton } from './ExploreSkeleton'
 
 interface CategoryFilterProps {
   initialCategories?: CategoryItem[]
@@ -34,9 +35,31 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
   const queryClient = useQueryClient()
 
   // Fetch public categories if not provided as initial data
-  const { categories, isLoading: isLoadingCategories, isError, refetch } = usePublicCategories({
+  const {
+    categories,
+    isLoading: isLoadingCategories,
+    isPending,
+    isFetching,
+    isSuccess,
+    isError,
+    refetch,
+  } = usePublicCategories({
     initialData: initialCategories,
   })
+
+  // We are waiting for categories if:
+  // 1. Initial categories were not provided from server (undefined) and client hasn't loaded data yet
+  // 2. Query is pending or actively loading initial data
+  // 3. Query is fetching and we currently have 0 categories to display
+  const isWaiting =
+    categories.length === 0 &&
+    !isError &&
+    (
+      (initialCategories === undefined && !isSuccess) ||
+      isPending ||
+      isLoadingCategories ||
+      isFetching
+    )
 
   // Fetch student pinned categories
   const { data: pinnedData } = useQuery({
@@ -190,24 +213,8 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
         </div>
       </motion.div>
 
-      {isLoadingCategories && categories.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full" aria-busy="true" aria-label="Loading course categories">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-border bg-card flex items-center justify-between shadow-xs animate-pulse"
-            >
-              <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-muted shrink-0" />
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <div className="h-4 w-28 bg-muted rounded-md" />
-                  <div className="h-3 w-16 bg-muted/60 rounded-md" />
-                </div>
-              </div>
-              <div className="w-8 h-8 rounded-xl bg-muted shrink-0 ml-2" />
-            </div>
-          ))}
-        </div>
+      {isWaiting ? (
+        <CategoryGridSkeleton count={8} />
       ) : isError && categories.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

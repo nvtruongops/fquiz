@@ -63,6 +63,12 @@ function getCsrfCookie(request: Request): string | undefined {
   return row.split('=').slice(1).join('=')
 }
 
+function csrfWarn(message: string): void {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(message)
+  }
+}
+
 export function validateCsrfRequest(request: Request): boolean {
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true
 
@@ -76,18 +82,22 @@ export function validateCsrfRequest(request: Request): boolean {
   const csrfHeader = request.headers.get(CSRF_HEADER_NAME)
 
   if (!csrfCookie || !csrfHeader) {
+    csrfWarn('[CSRF] Missing CSRF cookie or header')
     return false
   }
 
   if (!safeCompare(csrfCookie, csrfHeader)) {
+    csrfWarn('[CSRF] CSRF token mismatch')
     return false
   }
 
   if (origin && !isValidOrigin(origin, siteUrl)) {
+    csrfWarn(`[CSRF] Origin mismatch: ${origin} vs ${siteUrl}`)
     return false
   }
 
   if (!origin && referer && !isValidReferer(referer, siteUrl)) {
+    csrfWarn(`[CSRF] Referer mismatch: ${referer} vs ${siteUrl}`)
     return false
   }
 

@@ -124,10 +124,11 @@ export function QuestionBankStatus() {
               variant="outline"
               onClick={fetchStatus}
               disabled={loading}
+              aria-label="Refresh status"
             >
               {loading
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <RefreshCw className="w-4 h-4" />
+                ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                : <RefreshCw className="w-4 h-4" aria-hidden="true" />
               }
             </Button>
           </div>
@@ -163,17 +164,17 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
 
   const statusConfig = {
     not_migrated: {
-      icon: <XCircle className="w-4 h-4 text-destructive" />,
+      icon: <XCircle className="w-4 h-4 text-destructive" aria-hidden="true" />,
       badge: <Badge variant="destructive" className="text-xs">Not Migrated</Badge>,
       bg: 'border-destructive/20 bg-destructive/5',
     },
     partial: {
-      icon: <AlertTriangle className="w-4 h-4 text-warning-fg" />,
+      icon: <AlertTriangle className="w-4 h-4 text-warning-fg" aria-hidden="true" />,
       badge: <Badge variant="warning" className="text-xs">Has New Quizzes</Badge>,
       bg: 'border-warning-border/40 bg-warning-bg/20',
     },
     synced: {
-      icon: <CheckCircle2 className="w-4 h-4 text-success-fg" />,
+      icon: <CheckCircle2 className="w-4 h-4 text-success-fg" aria-hidden="true" />,
       badge: <Badge variant="success" className="text-xs">Fully Synced</Badge>,
       bg: 'border-success-border/40 bg-success-bg/20',
     },
@@ -185,7 +186,9 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
     <div className={cn("border rounded-lg overflow-hidden", config.bg)}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
+        aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} details for category ${category.category_name}`}
+        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors cursor-pointer"
       >
         {config.icon}
         <span className="font-semibold text-card-foreground flex-1">{category.category_name}</span>
@@ -194,7 +197,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
             {category.total_quizzes} quizzes • {category.total_bank_questions} questions in bank
           </span>
           {config.badge}
-          <span className="text-muted-foreground text-xs">{expanded ? '▲' : '▼'}</span>
+          <span className="text-muted-foreground text-xs" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
         </div>
       </button>
 
@@ -203,7 +206,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
           {category.not_migrated_quiz_codes.length > 0 && (
             <div>
               <p className="text-xs font-bold text-destructive mb-2 flex items-center gap-1">
-                <XCircle className="w-3 h-3" />
+                <XCircle className="w-3 h-3" aria-hidden="true" />
                 Not migrated ({category.not_migrated_quiz_codes.length} quiz codes):
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -219,7 +222,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
           {category.migrated_quiz_codes.length > 0 && (
             <div>
               <p className="text-xs font-bold text-success-fg mb-2 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
+                <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
                 Migrated ({category.migrated_quiz_codes.length} quiz codes):
               </p>
               <div className="flex flex-wrap gap-1.5">

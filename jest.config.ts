@@ -7,9 +7,13 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/apps/web/$1',
     '^@fquiz/database$': '<rootDir>/packages/database/src/index.ts',
+    '^@fquiz/database/(.*)$': '<rootDir>/packages/database/src/$1',
     '^@fquiz/models$': '<rootDir>/packages/models/src/index.ts',
+    '^@fquiz/models/(.*)$': '<rootDir>/packages/models/src/$1',
     '^@fquiz/auth$': '<rootDir>/packages/auth/src/index.ts',
+    '^@fquiz/auth/(.*)$': '<rootDir>/packages/auth/src/$1',
     '^@fquiz/ui$': '<rootDir>/packages/ui/src/index.ts',
+    '^@fquiz/ui/(.*)$': '<rootDir>/packages/ui/src/$1',
     '^@fquiz/config-typescript/(.*)$': '<rootDir>/packages/config-typescript/$1',
   },
   transform: {

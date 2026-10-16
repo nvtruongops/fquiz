@@ -38,6 +38,13 @@
     --warning-fg: 38 92% 35%;
     --warning-bg: 43 100% 95%;
     --warning-border: 43 90% 78%;
+    --incorrect-fg: 0 72% 35%;
+    --incorrect-bg: 0 85% 95%;
+    --incorrect-border: 0 70% 82%;
+    --attempted-fg: 221 83% 53%;
+    --attempted-bg: 217 100% 97%;
+    --attempted-border: 217 80% 80%;
+    --attempted-text: var(--attempted-fg);
 
     --surface-page: 210 40% 98%;
     --surface-base: 214 32% 95%;
@@ -106,6 +113,13 @@
     --warning-fg: 38 92% 55%;
     --warning-bg: 38 70% 12%;
     --warning-border: 38 60% 28%;
+    --incorrect-fg: 352 96% 81%;
+    --incorrect-bg: 336 33% 12%;
+    --incorrect-border: 346 37% 28%;
+    --attempted-fg: 223 76% 55%;
+    --attempted-bg: 215 57% 15%;
+    --attempted-border: 212 47% 36%;
+    --attempted-text: var(--attempted-fg);
 
     --surface-page: 223 50% 5%;
     --surface-base: 222 50% 8%;
@@ -136,6 +150,156 @@
     --text-muted: 214 22% 70%;
     --text-disabled: 215 16% 45%;
     --text-placeholder: 215 16% 50%;
+    --text-on-accent: 0 0% 100%;
+    --text-on-brand: 0 0% 100%;
+  }
+
+  .green {
+    --background: 45 20% 90%;
+    --foreground: 155 30% 12%;
+    --card: 50 25% 96%;
+    --card-foreground: 155 30% 12%;
+    --popover: 50 25% 96%;
+    --popover-foreground: 155 30% 12%;
+    --primary: 155 35% 30%;
+    --primary-foreground: 60 30% 98%;
+    --primary-hover: 155 35% 22%;
+    --secondary-accent: 45 18% 75%;
+    --app-bg: 45 20% 90%;
+    --secondary: 45 18% 86%;
+    --secondary-foreground: 155 30% 12%;
+    --muted: 45 18% 86%;
+    --muted-foreground: 155 22% 28%;
+    --accent: 45 20% 84%;
+    --accent-foreground: 155 35% 30%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 45 18% 70%;
+    --input: 45 18% 70%;
+    --ring: 155 35% 30%;
+    --radius: 0.75rem;
+
+    --success-fg: 142 85% 15%;
+    --success-bg: 142 60% 88%;
+    --success-border: 142 70% 35%;
+    --info-fg: 175 40% 22%;
+    --info-bg: 175 30% 86%;
+    --info-border: 175 28% 72%;
+    --warning-fg: 35 65% 24%;
+    --warning-bg: 35 45% 86%;
+    --warning-border: 35 40% 74%;
+    --incorrect-fg: 0 85% 28%;
+    --incorrect-bg: 0 90% 93%;
+    --incorrect-border: 0 80% 50%;
+    --attempted-fg: 155 35% 30%;
+    --attempted-bg: 155 25% 85%;
+    --attempted-border: 155 25% 75%;
+    --attempted-text: var(--attempted-fg);
+
+    --surface-page: 45 20% 90%;
+    --surface-base: 45 18% 87%;
+    --surface-card: 50 25% 96%;
+    --surface-card-elevated: 0 0% 100%;
+    --surface-card-muted: 45 18% 87%;
+    --surface-card-accent: 155 20% 92%;
+    --surface-inset: 45 18% 85%;
+    --surface-overlay: 50 25% 96%;
+
+    --border-subtle: 45 15% 82%;
+    --border-default: 45 15% 76%;
+    --border-strong: 45 15% 65%;
+    --border-emphasis: 45 15% 52%;
+    --border-accent: 155 35% 30%;
+    --border-focus: 155 35% 30%;
+    --border-selected: 155 35% 30%;
+    --border-success: 145 25% 72%;
+    --border-warning: 35 40% 74%;
+    --border-danger: 0 45% 78%;
+    --border-info: 175 28% 72%;
+
+    --ring-focus: 155 35% 30%;
+    --ring-selected: 155 35% 30%;
+
+    --text-secondary: 155 25% 22%;
+    --text-tertiary: 155 15% 36%;
+    --text-muted: 155 15% 36%;
+    --text-disabled: 155 15% 55%;
+    --text-placeholder: 155 15% 55%;
+    --text-on-accent: 60 30% 98%;
+    --text-on-brand: 60 30% 98%;
+  }
+
+  .pink {
+    --background: 348 50% 97%;
+    --foreground: 348 30% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 348 30% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 348 30% 13%;
+    --primary: 348 55% 64%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 348 55% 56%;
+    --secondary-accent: 348 45% 92%;
+    --app-bg: 348 50% 97%;
+    --secondary: 348 40% 94%;
+    --secondary-foreground: 348 30% 13%;
+    --muted: 348 35% 92%;
+    --muted-foreground: 348 25% 34%;
+    --accent: 348 45% 92%;
+    --accent-foreground: 348 55% 64%;
+    --destructive: 351 95% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 348 30% 78%;
+    --input: 348 30% 78%;
+    --ring: 348 55% 64%;
+    --radius: 0.75rem;
+
+    --success-fg: 154 80% 18%;
+    --success-bg: 142 55% 91%;
+    --success-border: 145 60% 40%;
+    --info-fg: 200 80% 28%;
+    --info-bg: 200 70% 94%;
+    --info-border: 200 50% 78%;
+    --warning-fg: 38 90% 27%;
+    --warning-bg: 40 90% 94%;
+    --warning-border: 40 70% 78%;
+    --incorrect-fg: 0 90% 25%;
+    --incorrect-bg: 0 85% 93%;
+    --incorrect-border: 0 85% 50%;
+    --attempted-fg: 348 55% 64%;
+    --attempted-bg: 348 35% 92%;
+    --attempted-border: 348 30% 86%;
+    --attempted-text: var(--attempted-fg);
+
+    --surface-page: 348 50% 97%;
+    --surface-base: 348 40% 95%;
+    --surface-card: 0 0% 100%;
+    --surface-card-elevated: 0 0% 100%;
+    --surface-card-muted: 348 35% 92%;
+    --surface-card-accent: 348 45% 92%;
+    --surface-inset: 348 30% 94%;
+    --surface-overlay: 0 0% 100%;
+
+    --border-subtle: 348 25% 90%;
+    --border-default: 348 30% 86%;
+    --border-strong: 348 35% 75%;
+    --border-emphasis: 348 40% 65%;
+    --border-accent: 348 55% 64%;
+    --border-focus: 348 55% 64%;
+    --border-selected: 348 55% 64%;
+    --border-success: 145 40% 75%;
+    --border-warning: 40 70% 78%;
+    --border-danger: 352 70% 82%;
+    --border-info: 200 50% 78%;
+
+    --ring-focus: 348 55% 64%;
+    --ring-selected: 348 55% 64%;
+
+    --text-secondary: 348 20% 32%;
+    --text-tertiary: 348 15% 48%;
+    --text-muted: 348 12% 58%;
+    --text-disabled: 348 10% 70%;
+    --text-placeholder: 348 12% 65%;
     --text-on-accent: 0 0% 100%;
     --text-on-brand: 0 0% 100%;
   }

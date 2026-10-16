@@ -1,214 +1,123 @@
-# Design System Master File
+# FQuiz — Design System Master Specification (`ui-ux-pro-max` + `@fquiz/ui`)
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
+> **LOGIC:** When building or refactoring a specific page, first check `design-system/fquiz/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
+> Otherwise, strictly follow the global rules below and [`docs/DESIGN_THEME.md`](../../docs/DESIGN_THEME.md).
 
 ---
 
-**Project:** FQuiz
-**Generated:** 2026-10-15 18:10:16
-**Category:** AI/Chatbot Platform
+**Project:** FQuiz (`@fquiz/web` & `@fquiz/admin`)
+**Updated:** 2026-10-16
+**Category:** Academic Examination, Active Comprehension & Analytics SaaS Platform (Text-Only Scope)
+**Design Dials (`ui-ux-pro-max`):** Variance `7/10` (Modern Bento Grid) · Motion `6/10` (GPU GSAP Micro-interactions) · Density `7/10` (Balanced Academic / High-Density Admin)
 
 ---
 
-## Global Rules
+## 1. 3-Tier Design Token & 4-Theme Architecture (`@fquiz/ui`)
 
-### Color Palette
+All UI components across `apps/web`, `apps/admin`, and `packages/ui` **MUST** use semantic CSS variables and Tailwind token classes. Raw hex values (`#...`) and hardcoded palette utilities (`bg-white`, `bg-slate-*`, `text-gray-*`, `bg-amber-*`, `bg-emerald-*`) in `.tsx` files are strictly prohibited.
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#7C3AED` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#A78BFA` | `--color-secondary` |
-| On Secondary | `#0F172A` | `--color-on-secondary` |
-| Accent/CTA | `#0891B2` | `--color-accent` |
-| On Accent/CTA | `#000000` | `--color-on-accent` |
-| Background | `#FAF5FF` | `--color-background` |
-| Foreground | `#1E1B4B` | `--color-foreground` |
-| Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#1E1B4B` | `--color-card-foreground` |
-| Muted | `#ECEEF9` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#DDD6FE` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#7C3AED` | `--color-ring` |
+### 1.1 Official 4 Themes (WCAG 2.2 AA Verified $\ge 12.5:1$)
 
-**Color Notes:** AI purple + cyan interactions [Accent adjusted from #06B6D4]
+| Theme | Selector | Surface Background | Primary Brand | Aesthetic Profile | Text Contrast |
+|---|---|---|---|---|---|
+| ☀️ **Light** (Default) | `:root`, `.light` | `#F8FAFC` (`210 40% 98%`) | `#2563EB` (`221 83% 53%`) | Soft Slate White & Oceanic Royal Blue | **14.2:1** |
+| 🌙 **Dark** | `.dark` | `#070B14` (`222 47% 5%`) | `#3768E2` (`223 75% 55%`) | Midnight Navy & Royal Study Blue / Gold | **13.8:1** |
+| 🌿 **Green** | `.green` | `#ECE8DF` (`42 24% 90%`) | `#2D5A47` (`155 33% 26%`) | Warm Vintage Paper & Deep Forest Green | **12.5:1** |
+| 🌸 **Pink** | `.pink` | `#FDF6F7` (`351 64% 98%`) | `#D47385` (`349 52% 64%`) | Soft Blush Cloud & Obsidian Rose | **14.5:1** |
 
-### Typography
+### 1.2 Semantic Status Triad Tokens (Mandatory Pairing)
 
-- **Heading Font:** Inter
-- **Body Font:** Inter
-- **Mood:** flat, clean, system, bold, geometric, cross-platform, icon, poster, minimal, functional, responsive
-- **Google Fonts:** [Inter + Inter](https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap)
+Never use單-token or raw Tailwind colors for status feedback. Always apply the full triad (`bg-*-bg`, `text-*-fg`, `border-*-border`):
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-```
+| Triad | Classes | Usage Context |
+|---|---|---|
+| **Success** | `bg-success-bg text-success-fg border-success-border` | Correct answer, completed sync, active user badge |
+| **Incorrect / Destructive** | `bg-incorrect-bg text-incorrect-fg border-incorrect-border` | Wrong answer, failed validation, critical error |
+| **Warning** | `bg-warning-bg text-warning-fg border-warning-border` | Unfinished session banner, duplicate code warning, pending review |
+| **Info** | `bg-info-bg text-info-fg border-info-border` | Contextual study tips, system announcements |
+| **Attempted** | `bg-attempted-bg text-attempted-fg border-attempted-border` | Answered question in navigator matrix |
+| **Quiz Domain** | `question-{unanswered,attempted,current,correct,incorrect,flagged}` | Exam & Practice question navigator and option cards |
 
-### Spacing Variables
+---
+
+## 2. Typography & Readability (`ui-ux-pro-max` Priority 6)
+
+- **Primary UI & Body Font:** `Inter` (`--font-sans`) — clean, high x-height legibility for long-form reading passages and exam prompts.
+- **Technical / Code / Timer Font:** `JetBrains Mono` / `Fira Code` (`font-mono`, `tabular-nums`) — mandatory `tabular-nums` on all countdown timers, score percentages, pagination counters, and KPI metrics to prevent horizontal layout jitter (CLS).
+- **Type Scale & Measure:**
+  - Base body text: `16px` (`text-base`) on mobile inputs to prevent iOS Safari auto-zoom (`text-base md:text-sm`).
+  - Line height: `1.5–1.75` (`leading-relaxed`) for question stems and explanations.
+  - Line length: `60–75ch` (`max-w-prose`) for reading passages and explanations.
+
+---
+
+## 3. Spacing, Elevation & Layout Rhythm (`ui-ux-pro-max` Priority 5)
 
 | Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+|---|---|---|
+| `--space-xs` | `4px` (`0.25rem`) | Inline badge/icon gaps |
+| `--space-sm` | `8px` (`0.5rem`) | Minimum gap between adjacent touch targets (`gap-2`) |
+| `--space-md` | `16px` (`1rem`) | Standard mobile container gutter & card padding |
+| `--space-lg` | `24px` (`1.5rem`) | Desktop card padding & Bento grid gap (`gap-6`) |
+| `--space-xl` | `32px` (`2rem`) | Section separation |
 
-### Shadow Depths
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+- **Single-Layer Card Elevation (`fquiz-code-refactor-performance`):**
+  - Every UI section (Header, Stats, Action Card) renders as a single-layer semantic surface (`bg-card text-card-foreground border border-border rounded-2xl shadow-xs hover:border-ring`).
+  - **No Double Card Wrappers:** Never nest a bordered `Card` inside an outer `div` with duplicate `border`, `shadow`, or `backdrop-blur`.
+- **Viewport & Safe Areas:**
+  - Prefer `min-h-dvh` over `100vh`.
+  - Mobile fixed footers (`MobileNav`, `MobileSessionFooter`) MUST include `pb-[max(0.75rem,env(safe-area-inset-bottom))]`.
+  - Mobile fixed headers (`MobileSessionHeader`) MUST include `pt-[env(safe-area-inset-top)]`.
 
 ---
 
-## Component Specs
+## 4. Touch, Interaction & Accessibility (`ui-ux-pro-max` Priority 1 & 2)
 
-### Buttons
-
-```css
-/* Primary Button */
-.btn-primary {
-  background: #0891B2;
-  color: #000000;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #7C3AED;
-  border: 2px solid #7C3AED;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #FAF5FF;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #7C3AED;
-  outline: none;
-  box-shadow: 0 0 0 3px #7C3AED20;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+1. **Touch Target Minimum (`44×44px`):**
+   - All primary mobile controls, exam header actions, and pagination buttons must meet `min-h-11 min-w-11` (`44×44px`) on mobile or `h-9 w-9` (`36×36px`) minimum for dense desktop table actions.
+2. **Contextual Icon Semantics (`icon-context-accessibility`):**
+   - Decorative icons beside visible text MUST carry `aria-hidden="true"`.
+   - Icon-only buttons MUST carry a descriptive `aria-label` (never rely on `title` alone) and `aria-pressed` / `aria-expanded` where stateful.
+3. **Focus Visibility & Not Obscured (WCAG 2.2 AA):**
+   - Never use `outline-none` without `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`.
+   - Dialogs and mobile drawers/sheets MUST expose `role="dialog"`, `aria-modal="true"`, trap focus, and support `Escape` dismissal.
+4. **Forms & Validation (`ui-ux-pro-max` Priority 8):**
+   - Every `<Input>` / `<Select>` / `<Textarea>` must have a programmatically linked `<label htmlFor="...">` or `aria-label`.
+   - Validation errors must appear adjacent to the field with `role="alert"` or `aria-describedby`.
+   - Never use blocking native `window.confirm()` or `window.alert()` — always use `@fquiz/ui` `<Dialog>`.
 
 ---
 
-## Style Guidelines
+## 5. Motion & GSAP Choreography (`ui-ux-pro-max` Priority 7 + `fquiz-gsap-ui-ux`)
 
-**Style:** AI-Native UI
-
-**Keywords:** Chatbot, conversational, voice, assistant, agentic, ambient, minimal chrome, streaming text, AI interactions
-
-**Best For:** AI products, chatbots, voice assistants, copilots, AI-powered tools, conversational interfaces
-
-**Key Effects:** Typing indicators (3-dot pulse), streaming text animations, pulse animations, context cards, smooth reveals
-
-### Page Pattern
-
-**Pattern Name:** Product Demo + Features
-
-- **Conversion Strategy:** Use an interactive demo only when it explains value better than static media. Provide captions, transcript, visible play/pause controls, and a non-video fallback; do not autoplay under reduced motion. Pause media when offscreen or hidden and keep the final product state available as static content.
-- **CTA Placement:** Video center + CTA right/bottom
-- **Section Order:** Hero > Product video/mockup (center) > Feature breakdown per section > Comparison (optional) > CTA
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Heavy chrome
-- ❌ Slow response feedback
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+- **React 18 Hook Contract:** Always use `useGSAP(() => { ... }, { scope: containerRef })` from `@gsap/react` for automatic unmount cleanup.
+- **GPU Transform Aliases Only:** Animate `x`, `y`, `scale`, `scaleX`, `rotation`, `autoAlpha`. Never animate layout properties (`width`, `height`, `top`, `left`).
+- **Mandatory Reduced-Motion Guard:**
+  ```tsx
+  useGSAP(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from('.bento-item', {
+        autoAlpha: 0,
+        y: 14,
+        scale: 0.97,
+        duration: 0.35,
+        stagger: { each: 0.05, from: 'start', grid: 'auto' },
+        ease: 'power2.out',
+      })
+    })
+  }, { scope: containerRef })
+  ```
 
 ---
 
-## Pre-Delivery Checklist
+## 6. Canonical Pre-Delivery Checklist
 
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+- [ ] Zero raw hex codes or hardcoded Tailwind palette classes in `.tsx` files (`node .agents/scripts/verify.js --strict` passes)
+- [ ] All shared primitives imported from `@fquiz/ui` (no local duplicate Shadcn primitives)
+- [ ] Decorative icons have `aria-hidden="true"`; icon-only buttons have `aria-label`
+- [ ] Touch targets $\ge 44\times 44\text{px}$ on mobile exam/navigation controls; safe-area insets applied
+- [ ] Heavy modals, drawers, and admin editors lazy-loaded via `next/dynamic(..., { ssr: false })`
+- [ ] `prefers-reduced-motion` honored across all GSAP and CSS animations
+- [ ] Exam Mode strictly disables AI Assistant and preserves session state on HTTP 401 via In-Place Re-auth Modal

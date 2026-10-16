@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
+import { verifyPassword } from '@fquiz/auth'
 import { connectDB } from '@/lib/db/mongodb'
 import { User } from '@/lib/models/User'
 import { LoginLog } from '@/lib/models/LoginLog'
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password_hash)
+    const isValidPassword = await verifyPassword(password, user.password_hash)
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }

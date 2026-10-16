@@ -69,3 +69,9 @@ export function generateCanonicalQuestionHash(q: QuestionASTInput): string {
   const hash = crypto.createHash('sha256').update(JSON.stringify(payload), 'utf8').digest('hex')
   return `ast_${hash.substring(0, 20)}`
 }
+
+export function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export const escapeRegex = escapeRegExp

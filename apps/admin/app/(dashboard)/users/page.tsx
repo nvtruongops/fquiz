@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -10,8 +10,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Search } from 'lucide-react'
-import { useAdminUsers } from '@/hooks/users/useAdminUsers'
+import { useAdminUsers, type User } from '@/hooks/users/useAdminUsers'
 import { UserTable } from '@/components/users/UserTable'
+import { UserDeleteDialog } from '@/components/users/UserDeleteDialog'
 
 export default function AdminUsersPage() {
   const {
@@ -29,6 +30,8 @@ export default function AdminUsersPage() {
     deleteMutation,
   } = useAdminUsers()
 
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -43,7 +46,7 @@ export default function AdminUsersPage() {
       {/* Filter Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="relative">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <Input
             placeholder="Search by username or email..."
             value={search}
@@ -62,7 +65,7 @@ export default function AdminUsersPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-label="Filter by role">
             <SelectValue placeholder="All roles" />
           </SelectTrigger>
           <SelectContent>
@@ -81,7 +84,7 @@ export default function AdminUsersPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-label="Filter by status">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -104,9 +107,21 @@ export default function AdminUsersPage() {
         onUpdateStatus={(id, newStatus) =>
           updateMutation.mutate({ id, updates: { status: newStatus } })
         }
-        onDeleteUser={(u) => {
-          if (confirm(`Are you sure you want to delete user ${u.username}?`)) {
-            deleteMutation.mutate(u._id)
+        onDeleteUser={(u) => setUserToDelete(u)}
+      />
+
+      <UserDeleteDialog
+        user={userToDelete}
+        open={Boolean(userToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setUserToDelete(null)
+        }}
+        isDeleting={deleteMutation.isPending}
+        onConfirm={() => {
+          if (userToDelete) {
+            deleteMutation.mutate(userToDelete._id, {
+              onSettled: () => setUserToDelete(null),
+            })
           }
         }}
       />

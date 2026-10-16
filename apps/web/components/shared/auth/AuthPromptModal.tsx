@@ -15,7 +15,7 @@ import { useTheme } from 'next-themes'
 import { cn } from '@/lib/core/utils/cn'
 
 export function AuthPromptModal() {
-  const { isOpen, title, description, featureName, targetUrl, closeAuthPrompt } = useAuthPrompt()
+  const { isOpen, title, description, featureName, targetUrl, newTab, closeAuthPrompt } = useAuthPrompt()
   const [mounted, setMounted] = useState(false)
   const [showCustomThemes, setShowCustomThemes] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -85,6 +85,8 @@ export function AuthPromptModal() {
               href={loginHref}
               onClick={closeAuthPrompt}
               prefetch={false}
+              target={newTab ? '_blank' : undefined}
+              rel={newTab ? 'noopener noreferrer' : undefined}
               className="w-full flex items-center justify-center gap-2.5 h-11 sm:h-12 px-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-black shadow-xs transition-all cursor-pointer active:scale-98"
             >
               <LogIn className="w-4 h-4" />
@@ -95,6 +97,8 @@ export function AuthPromptModal() {
               href={registerHref}
               onClick={closeAuthPrompt}
               prefetch={false}
+              target={newTab ? '_blank' : undefined}
+              rel={newTab ? 'noopener noreferrer' : undefined}
               className="w-full flex items-center justify-center gap-2.5 h-11 sm:h-12 px-4 rounded-2xl border border-border/70 bg-muted hover:bg-muted/80 text-foreground text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer active:scale-98"
             >
               <UserPlus className="w-4 h-4 text-primary" />
@@ -194,3 +198,5 @@ export function AuthPromptModal() {
     </Dialog>
   )
 }
+
+export default AuthPromptModal

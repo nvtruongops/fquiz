@@ -1,9 +1,5 @@
-import { Category } from '@/lib/modules/quiz/models/Category'
+import { Category, escapeRegex } from '@fquiz/models'
 import { Types } from 'mongoose'
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
 
 /**
  * Ensures a Category exists for a given course code.

@@ -49,9 +49,10 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-full sm:w-[260px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
               placeholder="Search questions, answers, codes..."
+              aria-label="Search questions, answers, codes"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-8 text-sm"
@@ -60,15 +61,16 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search query"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             )}
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectTrigger className="w-full sm:w-[220px]" aria-label="Filter by category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -96,7 +98,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden="true" />
         </div>
       ) : !data || !data.questions || data.questions.length === 0 ? (
         <Card>

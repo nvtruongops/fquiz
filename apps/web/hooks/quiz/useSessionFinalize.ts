@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useSessionLoader } from '@/components/quiz/shared/QuizLoader'
+import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
 interface UseSessionFinalizeParams {
   sessionId: string
@@ -33,9 +34,8 @@ export function useSessionFinalize({
       )
       if (!res.ok) {
         if (res.status === 401) {
-          const currentUrl = window.location.pathname + window.location.search
-          window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
-          throw new Error('Session expired. Redirecting to login...')
+          promptSessionReauth()
+          throw new Error('Session expired. Sign in again in the new tab, then submit again.')
         }
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error ?? 'Failed to submit quiz')

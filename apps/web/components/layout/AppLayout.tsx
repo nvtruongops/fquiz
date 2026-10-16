@@ -2,10 +2,15 @@
 
 import React from 'react'
 import { usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Sidebar, SidebarProvider, useSidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
-import { AuthPromptModal } from '@/components/shared/auth/AuthPromptModal'
 import { cn } from '@/lib/core/utils/cn'
+
+const AuthPromptModal = dynamic(
+  () => import('@/components/shared/auth/AuthPromptModal'),
+  { ssr: false }
+)
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -67,7 +72,7 @@ function AppLayoutContent({ children, user, showNavbar = true, className, fixedH
 
         <main
           className={cn(
-            'flex-1 w-full transition-all duration-300 overflow-x-hidden',
+            'flex-1 w-full transition-all duration-300 overflow-x-clip',
             showNavbar ? `${desktopLeftPadding} pt-0 pb-20 lg:pb-8` : 'pt-0 pb-8'
           )}
         >

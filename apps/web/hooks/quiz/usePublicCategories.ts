@@ -37,7 +37,7 @@ export function usePublicCategories(options?: UsePublicCategoriesOptions) {
   const query = useQuery<CategoryItem[]>({
     queryKey: ['public', 'categories'],
     queryFn: fetchPublicCategories,
-    initialData: options?.initialData && options.initialData.length > 0 ? options.initialData : undefined,
+    initialData: options?.initialData,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 2,

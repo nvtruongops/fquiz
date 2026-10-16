@@ -4,13 +4,19 @@
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./schemas": "./src/schemas/index.ts",
+    "./entities": "./src/entities/index.ts"
+  },
   "scripts": {
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@fquiz/database": "*",
-    "mongoose": "^9.4.1",
-    "zod": "^4.3.6"
+    "mongoose": "^9.11.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@fquiz/config-typescript": "*",

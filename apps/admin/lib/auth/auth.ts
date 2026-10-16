@@ -1,31 +1,13 @@
-import { jwtVerify, SignJWT } from 'jose'
+import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 import { connectDB } from '@/lib/db/mongodb'
 import { User } from '@/lib/models/User'
 import { JWT_EXPIRY, AUTH_COOKIE_NAME } from '@/lib/constants'
 
-export interface JWTPayload {
-  userId: string
-  role: string
-  username?: string
-  avatarUrl?: string
-  v?: number
-}
+import { decrypt, type JWTPayload as AuthJWTPayload } from '@fquiz/auth'
 
-export async function decrypt(token: string): Promise<JWTPayload | null> {
-  const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_PREV].filter(Boolean) as string[]
-  
-  for (const secretStr of secrets) {
-    try {
-      const secret = new TextEncoder().encode(secretStr)
-      const { payload } = await jwtVerify(token, secret)
-      return payload as unknown as JWTPayload
-    } catch {
-      continue
-    }
-  }
-  return null
-}
+export type JWTPayload = AuthJWTPayload
+export { decrypt }
 
 export async function verifyAdminToken(req?: Request): Promise<JWTPayload | null> {
   // 1. Check if edge proxy already verified JWT and injected x-admin-id & x-admin-role
