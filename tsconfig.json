@@ -30,14 +30,26 @@
       "@fquiz/database": [
         "./packages/database/src/index.ts"
       ],
+      "@fquiz/database/*": [
+        "./packages/database/src/*"
+      ],
       "@fquiz/models": [
         "./packages/models/src/index.ts"
+      ],
+      "@fquiz/models/*": [
+        "./packages/models/src/*"
       ],
       "@fquiz/auth": [
         "./packages/auth/src/index.ts"
       ],
+      "@fquiz/auth/*": [
+        "./packages/auth/src/*"
+      ],
       "@fquiz/ui": [
         "./packages/ui/src/index.ts"
+      ],
+      "@fquiz/ui/*": [
+        "./packages/ui/src/*"
       ],
       "@fquiz/config-typescript/*": [
         "./packages/config-typescript/*"

@@ -81,3 +81,14 @@ export function findDuplicateQuestions(
   
   return duplicates
 }
+
+export function hasOptionOverlap(opts1: string[], opts2: string[]): boolean {
+  if (!opts1 || !opts2 || opts1.length === 0 || opts2.length === 0) return false
+  const set2 = new Set(opts2.map((o) => normalizeOptionAST(o)).filter(Boolean))
+  let matches = 0
+  for (const o of opts1) {
+    const norm = normalizeOptionAST(o)
+    if (norm && set2.has(norm)) matches++
+  }
+  return matches >= 1 || matches / Math.max(opts1.length, opts2.length) >= 0.3
+}

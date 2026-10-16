@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
 class ApiError extends Error {
   constructor(
@@ -61,12 +62,10 @@ async function submitAnswer(
   })
 
   if (!res.ok) {
-    // Handle 401 Unauthorized - token expired
+    // Handle 401 Unauthorized - in-place re-auth, never unload the exam page
     if (res.status === 401) {
-      // Redirect to login with return URL
-      const currentUrl = window.location.pathname + window.location.search
-      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
-      throw new Error('Session expired. Redirecting to login...')
+      promptSessionReauth()
+      throw new Error('Session expired. Sign in again in the new tab, then retry.')
     }
 
     const error = await res.json().catch(() => ({})) as { message?: string; error?: string; code?: string }

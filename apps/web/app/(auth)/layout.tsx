@@ -1,9 +1,8 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { BookOpen, Sparkles, ArrowLeft } from 'lucide-react'
+import { Sparkles, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/core/utils/cn'
 
@@ -12,6 +11,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
   const pathname = usePathname()
   
   const isRegister = pathname === '/register'
+  const isLogin = pathname === '/login'
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8">
@@ -38,13 +38,12 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full mt-8 sm:mt-0">
-
         {/* Form Container */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, type: "spring", stiffness: 300, damping: 25 }}
-          className={cn("w-full relative transition-all duration-300", isRegister ? "max-w-[480px]" : "max-w-[440px]")}
+          className={cn("w-full relative transition-all duration-300", isRegister ? "max-w-[480px]" : isLogin ? "max-w-[440px] lg:max-w-4xl" : "max-w-[440px]")}
         >
           {children}
         </motion.div>

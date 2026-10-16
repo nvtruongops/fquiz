@@ -179,6 +179,8 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                     key={q._id || idx}
                     type="button"
                     onClick={() => handleSelectQuestion(idx)}
+                    aria-label={`Question ${idx + 1}: ${notAnswered ? 'Unanswered' : isCorrect ? 'Correct' : 'Incorrect'}`}
+                    aria-current={isSelected ? 'step' : undefined}
                     className={cn(
                       'w-6 h-6 sm:w-8 sm:h-8 rounded-lg text-[10px] sm:text-[11px] font-black transition-all flex items-center justify-center relative select-none mx-auto border border-transparent cursor-pointer',
                       btnBg,

@@ -46,8 +46,18 @@ const QuizHeader = React.memo(function QuizHeader({
             <span className="text-xs font-medium text-foreground shrink-0">
               There are <strong className="font-bold">{totalQuestions}</strong> questions, and your progress of answering is
             </span>
-            <div className="flex-1 h-3.5 bg-muted border border-border rounded-xs overflow-hidden">
-              <div className="h-full bg-emerald-500 transition-none" style={{ width: `${progressPercent}%` }} />
+            <div
+              className="flex-1 h-3.5 bg-muted border border-border rounded-xs overflow-hidden"
+              role="progressbar"
+              aria-valuenow={answeredCount}
+              aria-valuemin={0}
+              aria-valuemax={totalQuestions}
+              aria-label="Quiz progress"
+            >
+              <div
+                className="h-full w-full bg-success-fg origin-left transition-none will-change-transform"
+                style={{ transform: `scaleX(${progressPercent / 100})` }}
+              />
             </div>
           </div>
 
@@ -57,15 +67,17 @@ const QuizHeader = React.memo(function QuizHeader({
               <button
                 type="button"
                 onClick={onToggleNoteMode}
+                aria-label="Vocabulary lookup pen"
+                aria-pressed={isNoteMode}
                 className={cn(
                   "flex h-7 w-7 items-center justify-center border rounded transition-all cursor-pointer",
                   isNoteMode
-                    ? "border-amber-500 bg-amber-500 text-white font-bold animate-pulse ring-2 ring-amber-400/50"
+                    ? "border-warning-border bg-warning-bg text-warning-fg font-bold animate-pulse ring-2 ring-warning-border"
                     : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
                 title={isNoteMode ? "Vocabulary Lookup active: Select text to lookup words (Click to return to quiz)" : "Vocabulary Lookup Pen (Select text to lookup words without triggering answer selection)"}
               >
-                <PenTool className="w-3.5 h-3.5" />
+                <PenTool aria-hidden="true" className="w-3.5 h-3.5" />
               </button>
             )}
             {onToggleExplanation && (
@@ -123,10 +135,17 @@ const QuizHeader = React.memo(function QuizHeader({
               {progressPercent}%
             </span>
           </div>
-          <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden p-0.5 border border-border">
+          <div
+            className="h-2.5 w-full bg-muted rounded-full overflow-hidden p-0.5 border border-border"
+            role="progressbar"
+            aria-valuenow={answeredCount}
+            aria-valuemin={0}
+            aria-valuemax={totalQuestions}
+            aria-label="Quiz progress"
+          >
             <div
-              className="h-full bg-primary rounded-full transition-all duration-500 shadow-2xs"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full w-full bg-primary rounded-full origin-left transition-transform duration-500 ease-out will-change-transform shadow-2xs"
+              style={{ transform: `scaleX(${progressPercent / 100})` }}
             />
           </div>
         </div>
@@ -137,15 +156,17 @@ const QuizHeader = React.memo(function QuizHeader({
             <button
               type="button"
               onClick={onToggleNoteMode}
+              aria-label="Vocabulary lookup pen"
+              aria-pressed={isNoteMode}
               className={cn(
                 "inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95",
                 isNoteMode
-                  ? "bg-amber-500 text-white shadow-xs animate-pulse ring-2 ring-amber-400/50"
-                  : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
+                  ? "bg-warning-bg text-warning-fg border border-warning-border shadow-xs animate-pulse ring-2 ring-warning-border"
+                  : "bg-warning-bg/50 text-warning-fg hover:bg-warning-bg border border-warning-border/40"
               )}
               title={isNoteMode ? "Vocabulary Lookup active: Select text to lookup words (Click to return to quiz)" : "Vocabulary Lookup Pen (Select text to lookup words without triggering answer selection)"}
             >
-              <PenTool className="w-4 h-4" />
+              <PenTool aria-hidden="true" className="w-4 h-4" />
             </button>
           )}
           {onToggleExplanation && (

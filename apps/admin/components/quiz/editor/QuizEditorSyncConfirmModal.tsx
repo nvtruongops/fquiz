@@ -28,7 +28,7 @@ export function QuizEditorSyncConfirmModal({
       <Card className="max-w-xl w-full border-border bg-card shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
         <CardHeader className="p-5 pb-3.5 border-b border-border bg-destructive/10">
           <div className="flex items-center gap-2.5 text-destructive font-bold text-base">
-            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <AlertTriangle className="w-5 h-5 shrink-0" aria-hidden="true" />
             <span>Confirm Bank Answer Overwrite ({fileConflictItems.length} question(s))</span>
           </div>
           <CardDescription className="text-xs text-muted-foreground mt-1">
@@ -53,7 +53,7 @@ export function QuizEditorSyncConfirmModal({
                     Question {qIndex + 1}: {rawQ?.text}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                    <div className="p-2.5 rounded-lg bg-success-bg border border-success-border text-success-fg">
                       <span className="block font-bold text-[10px] uppercase">New Answer (Uploaded file):</span>
                       <span className="font-semibold text-xs">{detail.uploaded.answer_texts.join(', ')}</span>
                     </div>
@@ -89,12 +89,12 @@ export function QuizEditorSyncConfirmModal({
             size="sm"
             disabled={isSyncing}
             onClick={onConfirmSync}
-            className="font-bold gap-2 cursor-pointer bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm transition-all"
+            className="font-bold gap-2 cursor-pointer bg-warning-bg hover:bg-warning-bg/80 text-warning-fg border border-warning-border shadow-xs transition-all"
           >
             {isSyncing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
             )}
             Confirm Overwrite &amp; Apply
           </Button>

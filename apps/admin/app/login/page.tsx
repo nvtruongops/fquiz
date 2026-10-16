@@ -63,19 +63,20 @@ export default function AdminLoginPage() {
           <CardContent>
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+                <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                <label htmlFor="admin-identifier" className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Email or Username
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <Input
+                    id="admin-identifier"
                     type="text"
                     required
                     placeholder="admin@example.com"
@@ -87,12 +88,13 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                <label htmlFor="admin-password" className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <Input
+                    id="admin-password"
                     type="password"
                     required
                     placeholder="••••••••••••"
@@ -106,17 +108,17 @@ export default function AdminLoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 text-sm font-bold gap-2 mt-2 shadow-md"
+                className="w-full h-11 text-sm font-bold gap-2 mt-2 shadow-md cursor-pointer"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     Authenticating...
                   </>
                 ) : (
                   <>
                     Sign In
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </>
                 )}
               </Button>
@@ -129,7 +131,7 @@ export default function AdminLoginPage() {
             href={process.env.NEXT_PUBLIC_WEB_URL || 'https://example.invalid/login'}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg hover:bg-muted/50 border border-border/40"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
             Student &amp; Teacher Portal
           </a>
         </div>

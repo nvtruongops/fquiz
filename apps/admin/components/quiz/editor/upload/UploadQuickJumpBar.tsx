@@ -31,6 +31,7 @@ export function UploadQuickJumpBar({
                 onClick={() => onScrollToReviewQuestion(idx)}
                 className="w-6 h-6 rounded-md bg-destructive text-destructive-foreground font-bold text-xs hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
                 title={`Jump to Question ${idx + 1}`}
+                aria-label={`Jump to Conflict Question ${idx + 1}`}
               >
                 {idx + 1}
               </button>
@@ -48,6 +49,7 @@ export function UploadQuickJumpBar({
                 onClick={() => onScrollToReviewQuestion(idx)}
                 className="w-6 h-6 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
                 title={`Jump to Question ${idx + 1}`}
+                aria-label={`Jump to New Question ${idx + 1}`}
               >
                 {idx + 1}
               </button>
@@ -68,8 +70,9 @@ export function UploadQuickJumpBar({
                 key={idx}
                 type="button"
                 onClick={() => onScrollToReviewQuestion(idx)}
-                className="w-6 h-6 rounded-md bg-success-fg text-success-text font-bold text-xs hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
+                className="w-6 h-6 rounded-md bg-success-bg text-success-fg border border-success-border font-bold text-xs hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
                 title={`Jump to Question ${idx + 1}`}
+                aria-label={`Jump to Bank Question ${idx + 1}`}
               >
                 {idx + 1}
               </button>

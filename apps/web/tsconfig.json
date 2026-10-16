@@ -4,9 +4,13 @@
     "paths": {
       "@/*": ["./*"],
       "@fquiz/database": ["../../packages/database/src"],
+      "@fquiz/database/*": ["../../packages/database/src/*"],
       "@fquiz/models": ["../../packages/models/src"],
+      "@fquiz/models/*": ["../../packages/models/src/*"],
       "@fquiz/auth": ["../../packages/auth/src"],
-      "@fquiz/ui": ["../../packages/ui/src"]
+      "@fquiz/auth/*": ["../../packages/auth/src/*"],
+      "@fquiz/ui": ["../../packages/ui/src"],
+      "@fquiz/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [

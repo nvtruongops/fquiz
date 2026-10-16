@@ -6,7 +6,8 @@ import { User } from '@/lib/models/User'
 import { QuizSession } from '@/lib/models/QuizSession'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Layers, FileQuestion, Users, ClipboardList, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Layers, FileQuestion, Users, ClipboardList, ArrowRight } from 'lucide-react'
+import { RecentRegistrationsTable } from '@/components/dashboard/RecentRegistrationsTable'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,14 +26,7 @@ async function getDashboardData() {
     User.countDocuments({ role: 'student' }),
     QuizSession.aggregate([
       { $match: { status: 'completed' } },
-      {
-        $group: {
-          _id: {
-            student_id: '$student_id',
-            quiz_id: '$quiz_id',
-          },
-        },
-      },
+      { $group: { _id: { student_id: '$student_id', quiz_id: '$quiz_id' } } },
       { $count: 'total' },
     ]),
     User.find().select(SENSITIVE_FIELDS).sort({ created_at: -1 }).limit(5).lean(),
@@ -60,11 +54,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Overview of key metrics and system activity across FQuiz</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Overview of key metrics and system activity across FQuiz</p>
       </div>
 
       {/* Stat Cards */}
@@ -73,7 +65,7 @@ export default async function AdminDashboardPage() {
           <Card key={key} className="bg-card border-border shadow-xs hover:shadow-md transition-shadow text-card-foreground">
             <CardContent className="pt-5 pb-5 flex items-center gap-4">
               <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-6 h-6 ${color}`} />
+                <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
               </div>
               <div>
                 <p className="text-3xl font-bold text-card-foreground">{counts[key]}</p>
@@ -86,21 +78,11 @@ export default async function AdminDashboardPage() {
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">
-        <Button asChild>
-          <Link href="/categories">Manage Categories</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/quizzes">Manage Quizzes</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/question-bank">Question Bank</Link>
-        </Button>
-        <Button asChild>
-          <Link href="/users">Manage Users</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/settings">System Settings</Link>
-        </Button>
+        <Button asChild><Link href="/categories">Manage Categories</Link></Button>
+        <Button asChild><Link href="/quizzes">Manage Quizzes</Link></Button>
+        <Button asChild><Link href="/question-bank">Question Bank</Link></Button>
+        <Button asChild><Link href="/users">Manage Users</Link></Button>
+        <Button asChild variant="outline"><Link href="/settings">System Settings</Link></Button>
       </div>
 
       {/* Recent Registrations */}
@@ -109,53 +91,12 @@ export default async function AdminDashboardPage() {
           <CardTitle className="text-foreground text-lg">Recent Registrations</CardTitle>
           <Button asChild variant="ghost" size="sm">
             <Link href="/users" className="flex items-center gap-1">
-              View all <ArrowRight className="w-3.5 h-3.5" />
+              View all <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           </Button>
         </CardHeader>
         <CardContent>
-          {recentUsers.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-4">No users found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <tr>
-                    <th className="text-left py-3 px-3 font-semibold">User</th>
-                    <th className="text-left py-3 px-3 font-semibold">Email</th>
-                    <th className="text-left py-3 px-3 font-semibold">Role</th>
-                    <th className="text-left py-3 px-3 font-semibold">Status</th>
-                    <th className="text-right py-3 px-3 font-semibold">Joined Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {recentUsers.map((u: any) => (
-                    <tr key={u._id.toString()} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-3 px-3 font-medium text-foreground">{u.username}</td>
-                      <td className="py-3 px-3 text-muted-foreground">{u.email}</td>
-                      <td className="py-3 px-3">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase">
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          u.status === 'active' 
-                            ? 'bg-success-bg text-success-fg border border-success-border'
-                            : 'bg-destructive/10 text-destructive border border-destructive/30'
-                        }`}>
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right text-xs text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString('en-US')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <RecentRegistrationsTable users={recentUsers} />
         </CardContent>
       </Card>
     </div>

@@ -1,14 +1,12 @@
-import { jwtVerify, SignJWT } from 'jose'
+import { SignJWT } from 'jose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { logJWTVerificationFailed, logSecurityEvent } from '@/lib/core/utils/logger'
 import { JWT_EXPIRY } from '@/lib/core/constants'
+import { decrypt, checkRole, type JWTPayload as AuthJWTPayload } from '@fquiz/auth'
 
-export interface JWTPayload {
-  userId: string
-  role: string
-  v?: number // token version
-}
+export type JWTPayload = AuthJWTPayload
+export { decrypt, checkRole }
 
 // Short-lived cache for token_version and status to reduce DB load
 const userStatusCache = new Map<string, { version: number; status: string; expires: number }>()
@@ -56,23 +54,6 @@ async function checkUserSession(userId: string, version?: number): Promise<boole
   }
 }
 
-/**
- * Decrypt and verify JWT token using multiple possible secrets (rotation support)
- */
-export async function decrypt(token: string): Promise<JWTPayload | null> {
-  const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_PREV].filter(Boolean) as string[]
-  
-  for (const secretStr of secrets) {
-    try {
-      const secret = new TextEncoder().encode(secretStr)
-      const { payload } = await jwtVerify(token, secret)
-      return payload as unknown as JWTPayload
-    } catch (err) {
-      continue
-    }
-  }
-  return null
-}
 
 export async function verifyToken(req: Request): Promise<JWTPayload | null> {
   // Prefer cookie, fall back to Authorization Bearer header
@@ -124,13 +105,4 @@ export async function signToken(userId: string, role: string, v: number = 1, met
     .setIssuedAt()
     .setExpirationTime(JWT_EXPIRY)
     .sign(secret)
-}
-
-/**
- * Check if the payload role matches the required role.
- * Returns true if authorized, false otherwise.
- * Usage: if (!checkRole(payload, 'admin')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
- */
-export function checkRole(payload: JWTPayload, role: string): boolean {
-  return payload.role === role
 }

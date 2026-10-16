@@ -14,9 +14,17 @@ import {
   GraduationCap,
   Users,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useLogout } from '@/hooks/useLogout'
-import { MobileNavExamSheet } from '@/components/layout/MobileNavExamSheet'
-import { MobileNavUserSheet } from '@/components/layout/MobileNavUserSheet'
+
+const MobileNavExamSheet = dynamic(
+  () => import('@/components/layout/MobileNavExamSheet').then((mod) => mod.MobileNavExamSheet),
+  { ssr: false }
+)
+const MobileNavUserSheet = dynamic(
+  () => import('@/components/layout/MobileNavUserSheet').then((mod) => mod.MobileNavUserSheet),
+  { ssr: false }
+)
 
 interface MobileNavProps {
   user?: { name: string; role: string; avatarUrl?: string } | null

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import dynamic from 'next/dynamic'
 import { useQuizEditorForm } from '@/hooks/quiz/useQuizEditorForm'
 import { useQuizFileUpload } from '@/hooks/quiz/useQuizFileUpload'
 import { QuizEditorHeader } from './editor/QuizEditorHeader'
@@ -8,10 +9,18 @@ import { QuizEditorMetadataCard } from './editor/QuizEditorMetadataCard'
 import { QuizEditorQuestionList } from './editor/QuizEditorQuestionList'
 import { QuizEditorDiagnosticsHub } from './editor/QuizEditorDiagnosticsHub'
 import { QuizEditorStickyActionBar } from './editor/QuizEditorStickyActionBar'
-import { QuizEditorFileUploadModal } from './editor/QuizEditorFileUploadModal'
-import { QuizEditorSyncConfirmModal } from './editor/QuizEditorSyncConfirmModal'
 import { QuestionConflictModal } from './QuestionConflictModal'
 import type { Category, QuestionItem } from '@/hooks/quiz/types'
+
+const QuizEditorFileUploadModal = dynamic(
+  () => import('./editor/QuizEditorFileUploadModal').then((mod) => mod.QuizEditorFileUploadModal),
+  { ssr: false }
+)
+
+const QuizEditorSyncConfirmModal = dynamic(
+  () => import('./editor/QuizEditorSyncConfirmModal').then((mod) => mod.QuizEditorSyncConfirmModal),
+  { ssr: false }
+)
 
 export type { Category, QuestionItem }
 
@@ -115,7 +124,7 @@ export function QuizEditorWithQuestionBank({
         onSubmit={form.handleSubmit}
       />
 
-      {/* 5. Upload & Question Bank Review Modal */}
+      {/* 5. Upload & Question Bank Review Modal (Lazy-Loaded) */}
       <QuizEditorFileUploadModal
         open={fileUpload.showUploadModal}
         onClose={() => fileUpload.setShowUploadModal(false)}
@@ -132,7 +141,7 @@ export function QuizEditorWithQuestionBank({
         onScrollToReviewQuestion={fileUpload.scrollToReviewQuestion}
       />
 
-      {/* 6. Sync Overwrite Confirmation Modal */}
+      {/* 6. Sync Overwrite Confirmation Modal (Lazy-Loaded) */}
       <QuizEditorSyncConfirmModal
         open={fileUpload.showSyncConfirmModal}
         onClose={() => fileUpload.setShowSyncConfirmModal(false)}

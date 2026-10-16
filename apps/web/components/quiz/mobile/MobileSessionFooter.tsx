@@ -20,7 +20,7 @@ export function MobileSessionFooter({
   onSubmit,
 }: MobileSessionFooterProps) {
   return (
-    <footer className="sticky bottom-0 z-10 border-t border-border bg-card p-3 shadow-lg text-card-foreground">
+    <footer className="sticky bottom-0 z-10 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg text-card-foreground">
       <div className="flex items-center gap-2">
         {isRightHanded && (
           <Button
@@ -39,7 +39,7 @@ export function MobileSessionFooter({
           onClick={() => onNavigate(effectiveIndex - 1)}
           className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
         >
-          <ChevronLeft className="mr-1 h-5 w-5" />
+          <ChevronLeft aria-hidden="true" className="mr-1 h-5 w-5" />
           <span>Previous</span>
         </Button>
 
@@ -51,7 +51,7 @@ export function MobileSessionFooter({
           className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
         >
           <span>Next</span>
-          <ChevronRight className="ml-1 h-5 w-5" />
+          <ChevronRight aria-hidden="true" className="ml-1 h-5 w-5" />
         </Button>
 
         {!isRightHanded && (

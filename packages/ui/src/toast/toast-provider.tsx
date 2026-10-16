@@ -29,9 +29,9 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         aria-hidden="true"
         className={cn(
           'w-1 absolute left-0 inset-y-0 rounded-l-2xl',
-          toast.type === 'success' && 'bg-emerald-500',
-          toast.type === 'error' && 'bg-rose-500',
-          toast.type === 'warning' && 'bg-amber-500',
+          toast.type === 'success' && 'bg-success-fg',
+          toast.type === 'error' && 'bg-incorrect-fg',
+          toast.type === 'warning' && 'bg-warning-fg',
           toast.type === 'info' && 'bg-primary'
         )}
       />
@@ -40,9 +40,9 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       <div
         className={cn(
           'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5',
-          toast.type === 'success' && 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20',
-          toast.type === 'error' && 'bg-rose-500/10 text-rose-500 ring-1 ring-rose-500/20',
-          toast.type === 'warning' && 'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20',
+          toast.type === 'success' && 'bg-success-bg text-success-fg ring-1 ring-success-border',
+          toast.type === 'error' && 'bg-incorrect-bg text-incorrect-fg ring-1 ring-incorrect-border',
+          toast.type === 'warning' && 'bg-warning-bg text-warning-fg ring-1 ring-warning-border',
           toast.type === 'info' && 'bg-primary/10 text-primary ring-1 ring-primary/20'
         )}
       >
@@ -105,6 +105,9 @@ export function ToastProvider() {
 
   useEffect(() => {
     setIsMounted(true)
+    if (typeof window !== 'undefined') {
+      ;(window as any).__toast = useToast.getState().toast
+    }
   }, [])
 
   if (!isMounted || toasts.length === 0) return null
@@ -123,3 +126,4 @@ export function ToastProvider() {
 }
 
 export { ToastProvider as Toaster }
+export default ToastProvider

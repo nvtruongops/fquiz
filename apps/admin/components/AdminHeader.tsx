@@ -49,8 +49,9 @@ export function AdminHeader({ user }: AdminHeaderProps) {
           onClick={handleLogout}
           className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           title="Sign Out"
+          aria-label="Sign Out"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </header>

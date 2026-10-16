@@ -3,10 +3,20 @@
  * SOLE PURPOSE: Prevent MissingSchemaError in Next.js Serverless Routes.
  */
 
-const registry: Array<() => Promise<void> | void> = []
+type ModelRegistration = () => Promise<void> | void
 
-export function registerModel(registration: () => Promise<void> | void): void {
-  registry.push(registration)
+declare global {
+  // eslint-disable-next-line no-var
+  var __fquizModelRegistry: Array<ModelRegistration> | undefined
+}
+
+const registry: Array<ModelRegistration> =
+  global.__fquizModelRegistry ?? (global.__fquizModelRegistry = [])
+
+export function registerModel(registration: ModelRegistration): void {
+  if (!registry.includes(registration)) {
+    registry.push(registration)
+  }
 }
 
 export async function bootstrapModels(): Promise<void> {
@@ -14,3 +24,4 @@ export async function bootstrapModels(): Promise<void> {
     await register()
   }
 }
+

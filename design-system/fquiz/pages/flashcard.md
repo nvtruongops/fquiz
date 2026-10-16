@@ -1,46 +1,16 @@
-# Flashcard Page Overrides
+# Flashcard Page Overrides (`apps/web/app/quiz/[id]/session/[sessionId]/flashcard`)
 
 > **PROJECT:** FQuiz
-> **Generated:** 2026-10-15 18:10:32
-> **Page Type:** Dashboard / Data View
+> **Updated:** 2026-10-16
+> **Page Type:** Active Comprehension CSS 3D Flashcard Deck (Desktop & Mobile)
 
-> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
-> Only deviations from the Master are documented here. For all other rules, refer to the Master.
+> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/fquiz/MASTER.md`).
 
 ---
 
 ## Page-Specific Rules
 
-### Layout Overrides
-
-- **Max Width:** 1200px (standard)
-- **Layout:** Full-width sections, centered content
-
-### Spacing Overrides
-
-- No overrides — use Master spacing
-
-### Typography Overrides
-
-- No overrides — use Master typography
-
-### Color Overrides
-
-- No overrides — use Master colors
-
-### Component Overrides
-
-- Avoid: Load 50MB textures
-
----
-
-## Page-Specific Components
-
-- No unique components for this page
-
----
-
-## Recommendations
-
-- Effects: z-index stacking, box-shadow elevation (4 levels), transform: translateZ(), backdrop-filter, parallax
-- Sustainability: Compress and lazy load 3D models
+### Product Scope & Motion Invariants
+- **Strictly Text-Only CSS 3D Transforms:** Use GPU-accelerated CSS `perspective`, `transform-style: preserve-3d`, and `backface-visibility: hidden` (or GSAP `rotationY` / `x` / `autoAlpha`). **NEVER load WebGL, Three.js, 3D models, or audio assets.**
+- **Reduced Motion Fallback:** Under `prefers-reduced-motion: reduce`, replace 3D card flip rotation and swipe physics with an instant crossfade (`autoAlpha`).
+- **Gesture + Button Parity (`ui-ux-pro-max` `gesture-alternative`):** Every touch swipe action (Know / Still Learning / Undo) MUST have an explicit, visible button with $\ge 44\times 44\text{px}$ touch target and desktop keyboard shortcut (`Space` to flip, `ArrowLeft` / `ArrowRight` to grade, `Z` to undo).

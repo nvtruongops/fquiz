@@ -8,8 +8,14 @@ import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { SessionData } from '@/lib/modules/quiz/types/session'
 import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigation'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
+import dynamic from 'next/dynamic'
 import { cn } from '@/lib/core/utils/cn'
-import { QuizAIAssistantDrawer } from '@/components/quiz/session/QuizAIAssistantDrawer'
+import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
+
+const QuizAIAssistantDrawer = dynamic(
+  () => import('@/components/quiz/session/QuizAIAssistantDrawer').then((m) => m.QuizAIAssistantDrawer),
+  { ssr: false }
+)
 
 interface SessionLayoutProps {
   sessionData: SessionData
@@ -46,6 +52,9 @@ export const SessionLayout = React.memo(function SessionLayout({
 }: SessionLayoutProps) {
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
+  const isExam = session.mode === 'review'
+  const sessionId = (session._id || (session as any).id || '').toString()
+  const { isReadOnlyTab, takeOverLease } = useExamTabLease(sessionId, isExam)
 
   const { data: authData } = useAuth()
   const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
@@ -104,6 +113,23 @@ export const SessionLayout = React.memo(function SessionLayout({
 
   return (
     <div className="h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans bg-background text-foreground">
+      {/* Multi-Tab Authoritative Lease Warning Banner */}
+      {isReadOnlyTab && (
+        <div className="bg-warning-bg border-b border-warning-border text-warning-fg px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-medium z-50">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Chế độ xem (Multi-tab Lock):</span>
+            <span>Phiên thi này đang mở ở một tab khác. Tab này chỉ có quyền đọc để bảo toàn tiến độ thi.</span>
+          </div>
+          <button
+            type="button"
+            onClick={takeOverLease}
+            className="bg-warning-fg text-warning-bg px-2.5 py-1 rounded text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+          >
+            Tiếp tục làm tại tab này
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <QuizHeader
         categoryName={session.categoryName}
@@ -159,12 +185,14 @@ export const SessionLayout = React.memo(function SessionLayout({
           </aside>
         )}
 
-        {/* Dev Only AI Assistant Drawer */}
-        <QuizAIAssistantDrawer
-          sessionId={session._id || (session as any).id}
-          currentQuestionIndex={currentQuestionIndex}
-          currentQuestion={question}
-        />
+        {/* AI Assistant Drawer - STRICTLY Practice Mode ONLY (Prohibited in Exam/Review mode) */}
+        {session.mode === 'immediate' && (
+          <QuizAIAssistantDrawer
+            sessionId={session._id || (session as any).id}
+            currentQuestionIndex={currentQuestionIndex}
+            currentQuestion={question}
+          />
+        )}
       </div>
     </div>
   )

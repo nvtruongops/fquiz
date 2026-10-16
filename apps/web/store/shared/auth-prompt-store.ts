@@ -5,6 +5,8 @@ export interface AuthPromptOptions {
   description?: string
   featureName?: string
   targetUrl?: string
+  /** Open sign-in/register in a new tab so the current page (e.g. an active exam) is never unloaded. */
+  newTab?: boolean
 }
 
 interface AuthPromptStore {
@@ -13,6 +15,7 @@ interface AuthPromptStore {
   description: string
   featureName: string
   targetUrl: string
+  newTab: boolean
   openAuthPrompt: (options?: AuthPromptOptions) => void
   closeAuthPrompt: () => void
 }
@@ -27,6 +30,7 @@ export const useAuthPrompt = create<AuthPromptStore>((set) => ({
   description: DEFAULT_DESC,
   featureName: '',
   targetUrl: '',
+  newTab: false,
   openAuthPrompt: (options = {}) =>
     set({
       isOpen: true,
@@ -34,9 +38,25 @@ export const useAuthPrompt = create<AuthPromptStore>((set) => ({
       description: options.description || DEFAULT_DESC,
       featureName: options.featureName || '',
       targetUrl: options.targetUrl || '/dashboard',
+      newTab: options.newTab ?? false,
     }),
   closeAuthPrompt: () =>
     set({
       isOpen: false,
     }),
 }))
+
+/**
+ * In-place re-auth for quiz sessions (HTTP 401). Never navigates away from the
+ * session page: sign-in opens in a new tab so in-memory answers and timer survive.
+ */
+export function promptSessionReauth(): void {
+  useAuthPrompt.getState().openAuthPrompt({
+    title: 'Session Expired',
+    description:
+      'Your answers on this page are kept. Sign in again in the new tab, then come back here and retry.',
+    featureName: 'Session',
+    targetUrl: '/dashboard',
+    newTab: true,
+  })
+}

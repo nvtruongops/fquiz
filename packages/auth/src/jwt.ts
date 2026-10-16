@@ -1,6 +1,4 @@
 import { jwtVerify, SignJWT } from 'jose'
-import { connectDB } from '@fquiz/database'
-import { User } from '@fquiz/models'
 
 export interface JWTPayload {
   userId: string
@@ -11,41 +9,8 @@ export interface JWTPayload {
 }
 
 export const JWT_EXPIRY = '7d'
-
-// Short-lived cache for token_version and status to reduce DB load
-const userStatusCache = new Map<string, { version: number; status: string; expires: number }>()
-const CACHE_TTL = 60 * 1000 // 60 seconds
-
-export function clearUserStatusCache(userId: string): void {
-  userStatusCache.delete(userId)
-}
-
-export async function checkUserSession(userId: string, version?: number): Promise<boolean> {
-  const now = Date.now()
-  const cached = userStatusCache.get(userId)
-
-  if (cached && cached.expires > now) {
-    return cached.status === 'active' && (version === undefined || cached.version === version)
-  }
-
-  try {
-    await connectDB()
-    const user = await User.findById(userId).select('token_version status').lean()
-    
-    if (!user) return false
-
-    userStatusCache.set(userId, {
-      version: user.token_version || 1,
-      status: user.status,
-      expires: now + CACHE_TTL
-    })
-
-    return user.status === 'active' && (version === undefined || (user.token_version || 1) === version)
-  } catch (err) {
-    console.error('[checkUserSession] DB Error:', err)
-    return false
-  }
-}
+export const AUTH_COOKIE_NAME = 'auth-token'
+export const MAINTENANCE_COOKIE_NAME = 'maintenance-mode'
 
 export async function decrypt(token: string): Promise<JWTPayload | null> {
   const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_PREV].filter(Boolean) as string[]
@@ -76,20 +41,7 @@ export async function verifyToken(req: Request): Promise<JWTPayload | null> {
   }
 
   if (!token) return null
-
-  const jwtPayload = await decrypt(token)
-  if (!jwtPayload) return null
-
-  try {
-    const isValid = await checkUserSession(jwtPayload.userId, jwtPayload.v)
-    if (!isValid) {
-      return null
-    }
-
-    return jwtPayload
-  } catch (err) {
-    return null
-  }
+  return decrypt(token)
 }
 
 export async function signToken(

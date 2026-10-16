@@ -19,21 +19,27 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
 
   useGSAP(() => {
     if (!gridRef.current) return
-    const cards = gridRef.current.querySelectorAll('.bento-card')
-    if (cards.length > 0) {
-      gsap.fromTo(
-        cards,
-        { y: 20, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.4, stagger: 0.08, ease: 'power2.out' }
-      )
-    }
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const cards = gridRef.current?.querySelectorAll('.bento-card')
+      if (cards && cards.length > 0) {
+        gsap.fromTo(
+          cards,
+          { y: 20, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 0.4, stagger: 0.08, ease: 'power2.out' }
+        )
+      }
+    })
+    return () => mm.revert()
   }, { scope: gridRef })
 
   const handleCardMouseEnter = contextSafe((e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     gsap.to(e.currentTarget, { scale: 1.015, y: -3, duration: 0.25, ease: 'power2.out' })
   })
 
   const handleCardMouseLeave = contextSafe((e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.25, ease: 'power2.out' })
   })
 

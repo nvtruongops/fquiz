@@ -73,7 +73,7 @@ export function QuizEditorFileUploadModal({
         <CardHeader className="p-5 pb-3.5 border-b border-border flex flex-row items-center justify-between shrink-0 bg-muted/20">
           <div>
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
-              <UploadCloud className="w-5 h-5 text-primary" />
+              <UploadCloud className="w-5 h-5 text-primary" aria-hidden="true" />
               Upload &amp; Cross-Check Question Bank (.TXT / .JSON)
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -88,8 +88,9 @@ export function QuizEditorFileUploadModal({
               setFilePreview(null)
             }}
             className="h-8 w-8 p-0 cursor-pointer"
+            aria-label="Close modal"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </Button>
         </CardHeader>
 
@@ -163,8 +164,8 @@ export function QuizEditorFileUploadModal({
                       onClick={() => setReviewFilter('reused')}
                       className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
                         reviewFilter === 'reused'
-                          ? 'bg-success-fg text-success-text border-success-fg shadow-xs'
-                          : 'bg-success-bg border-success-border text-success-fg hover:bg-success-bg/80'
+                          ? 'bg-success-bg text-success-fg border-success-border shadow-xs'
+                          : 'bg-success-bg/40 border-success-border/60 text-success-fg hover:bg-success-bg/80'
                       }`}
                     >
                       In Bank ({reusedIndices.length})
@@ -230,7 +231,7 @@ export function QuizEditorFileUploadModal({
               onClick={onApplyFilePreview}
               className="font-bold gap-2 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
               Apply {filePreview.rawQuestions.length} Question(s) to Quiz
             </Button>
           </div>

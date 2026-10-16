@@ -17,11 +17,19 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
-import { QuizResumeSessionModal } from './QuizResumeSessionModal'
-import { GuestHistoryReminderModal } from './GuestHistoryReminderModal'
+
+const QuizResumeSessionModal = dynamic(
+  () => import('@/components/quiz/shared/QuizResumeSessionModal'),
+  { ssr: false }
+)
+const GuestHistoryReminderModal = dynamic(
+  () => import('./GuestHistoryReminderModal').then((mod) => mod.GuestHistoryReminderModal),
+  { ssr: false }
+)
 
 interface QuizActionCardProps {
   quizId: string

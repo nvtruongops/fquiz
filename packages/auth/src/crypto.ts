@@ -1,7 +1,23 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 
-const ENCRYPTION_SECRET = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || 'REMOVED_LEGACY_SECRET'
+function getPrimarySecret(): string {
+  return (
+    process.env.ENCRYPTION_KEY ||
+    process.env.JWT_SECRET ||
+    'REMOVED_LEGACY_SECRET'
+  )
+}
+
+function getCandidateSecrets(): string[] {
+  const candidates = [
+    process.env.ENCRYPTION_KEY,
+    process.env.JWT_SECRET,
+    'REMOVED_LEGACY_SECRET',
+    'REMOVED_LEGACY_SECRET',
+  ].filter((s): s is string => Boolean(s && s.trim()))
+  return Array.from(new Set(candidates))
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
@@ -9,6 +25,12 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash)
+}
+
+export const verifyPassword = comparePassword
+
+export function generateSecureToken(bytes = 32): string {
+  return crypto.randomBytes(bytes).toString('hex')
 }
 
 export function encryptSecret(plainText: string): string {
@@ -19,7 +41,7 @@ export function encryptSecret(plainText: string): string {
   if (isEncryptedSecret(trimmed)) return trimmed
 
   const iv = crypto.randomBytes(12)
-  const key = crypto.scryptSync(ENCRYPTION_SECRET, 'fquiz-salt', 32)
+  const key = crypto.scryptSync(getPrimarySecret(), 'fquiz-salt', 32)
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
 
   let encrypted = cipher.update(trimmed, 'utf8', 'hex')
@@ -38,24 +60,28 @@ export function decryptSecret(cipherText: string): string {
     return trimmed
   }
 
-  try {
-    const parts = trimmed.split(':')
-    if (parts.length !== 3) return trimmed
+  const parts = trimmed.split(':')
+  if (parts.length !== 3) return trimmed
 
-    const [ivHex, authTagHex, encryptedHex] = parts
-    const iv = Buffer.from(ivHex, 'hex')
-    const authTag = Buffer.from(authTagHex, 'hex')
-    const key = crypto.scryptSync(ENCRYPTION_SECRET, 'fquiz-salt', 32)
+  const [ivHex, authTagHex, encryptedHex] = parts
+  const iv = Buffer.from(ivHex, 'hex')
+  const authTag = Buffer.from(authTagHex, 'hex')
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
-    decipher.setAuthTag(authTag)
+  for (const secret of getCandidateSecrets()) {
+    try {
+      const key = crypto.scryptSync(secret, 'fquiz-salt', 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
+      decipher.setAuthTag(authTag)
 
-    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
-  } catch {
-    return trimmed
+      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
+      decrypted += decipher.final('utf8')
+      return decrypted
+    } catch {
+      // Try next candidate secret
+    }
   }
+
+  return trimmed
 }
 
 export function maskApiKey(cipherOrPlainText: string): string {
@@ -72,3 +98,4 @@ export function isEncryptedSecret(str: string): boolean {
   if (parts.length !== 3) return false
   return parts.every((p) => /^[a-f0-9]+$/i.test(p))
 }
+

@@ -1,48 +1,20 @@
-# Dashboard Page Overrides
+# Dashboard Page Overrides (`apps/web/app/(student)/dashboard`)
 
 > **PROJECT:** FQuiz
-> **Generated:** 2026-10-15 18:10:36
-> **Page Type:** Dashboard / Data View
+> **Updated:** 2026-10-16
+> **Page Type:** Student Learning Studio & Bento Analytics Dashboard
 
-> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
-> Only deviations from the Master are documented here. For all other rules, refer to the Master.
+> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/fquiz/MASTER.md`).
 
 ---
 
 ## Page-Specific Rules
 
-### Layout Overrides
+### Layout & Hierarchy
+- **Max Width:** `max-w-7xl` (`1280px`) with adaptive horizontal gutters (`px-4 sm:px-6 lg:px-8`).
+- **Grid Architecture:** 12-column Bento Grid (`LearningStudioGrid`) with single-layer `.glass-card` elevation (`bg-card text-card-foreground border-border hover:border-ring`).
+- **Section Priority:** Incomplete Exam Banner (Warning Triad) $\rightarrow$ Hero Welcome & Streak KPI $\rightarrow$ Quick-Start Studio Bento Cards $\rightarrow$ Recent Activity Timeline Rail.
 
-- **Max Width:** 1400px or full-width
-- **Grid:** 12-column grid for data flexibility
-- **Sections:** Hero > Bento Grid (Key Features) > Detail Cards > Tech Specs > CTA
-
-### Spacing Overrides
-
-- **Content Density:** High — optimize for information display
-
-### Typography Overrides
-
-- No overrides — use Master typography
-
-### Color Overrides
-
-- **Strategy:** Card backgrounds: #F5F5F7 or Glass. Icons: Vibrant brand colors. Text: Dark.
-
-### Component Overrides
-
-- Avoid: No indication of progress
-
----
-
-## Page-Specific Components
-
-- No unique components for this page
-
----
-
-## Recommendations
-
-- Effects: grid-template with varied spans, rounded-xl (16px), subtle shadows, hover scale (1.02), smooth transitions
-- Feedback: Step indicators or progress bar
-- CTA Placement: Floating Action Button or Bottom of Grid
+### Motion & Performance
+- **Bento Entrance Stagger:** Wrap all `useGSAP()` entrance animations in `gsap.matchMedia()` checking `(prefers-reduced-motion: no-preference)`.
+- **Progressive Loading:** Use `<Skeleton />` placeholders from `@fquiz/ui` matching exact card heights to guarantee `CLS < 0.02`.

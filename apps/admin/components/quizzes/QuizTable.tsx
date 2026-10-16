@@ -37,7 +37,7 @@ export function QuizTable({
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex justify-center items-center">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
             </div>
           ) : !data || data.quizzes.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground text-sm">
@@ -69,7 +69,7 @@ export function QuizTable({
                           value={q.status}
                           onValueChange={(status) => onUpdateStatus(q._id, status)}
                         >
-                          <SelectTrigger className="h-8 w-28 text-xs font-semibold">
+                          <SelectTrigger className="h-8 w-28 text-xs font-semibold" aria-label={`Change status for ${q.course_code}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -87,20 +87,22 @@ export function QuizTable({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 px-2 text-muted-foreground hover:text-primary"
+                              className="h-8 px-2 text-muted-foreground hover:text-primary cursor-pointer"
                               title="Edit quiz"
+                              aria-label={`Edit quiz ${q.course_code}`}
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-4 h-4" aria-hidden="true" />
                             </Button>
                           </Link>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onDeleteTarget(q)}
-                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
+                            className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                             title="Delete quiz"
+                            aria-label={`Delete quiz ${q.course_code}`}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
                           </Button>
                         </div>
                       </td>
@@ -124,8 +126,9 @@ export function QuizTable({
               size="sm"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
+              aria-label="Previous page"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </Button>
             <span className="text-xs font-medium px-2">
               Page {page} of {totalPages}
@@ -135,8 +138,9 @@ export function QuizTable({
               size="sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
+              aria-label="Next page"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

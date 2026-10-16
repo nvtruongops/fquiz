@@ -34,12 +34,13 @@ export const SessionQuestionQuerySchema = z.object({
 export const QuizListQuerySchema = PaginationQuerySchema.extend({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID').optional(),
   search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
+  status: z.enum(['draft', 'pending', 'published', 'archived', 'deleted', '']).optional(),
 }).strict()
 
 export const UserListQuerySchema = PaginationQuerySchema.extend({
   search: z.preprocess(v => v === null ? undefined : v, z.string().trim().max(200).optional()),
   role: z.enum(['student', 'teacher', 'admin', 'dev', '']).optional(),
-  status: z.enum(['active', 'banned', '']).optional(),
+  status: z.enum(['active', 'banned', 'pending_deletion', '']).optional(),
 }).strict()
 
 export const CategoryListQuerySchema = z.object({
