@@ -41,18 +41,18 @@ export const quizAssistantPrompt: PromptDefinition<QuizAssistantPromptParams, ty
       .map((opt, i) => {
         const letter = getLabel(i)
         const cleanOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '')
-        return `  Phương án ${letter}: ${cleanOpt}`
+        return `  Option ${letter}: ${cleanOpt}`
       })
       .join('\n')
 
     const getFormattedAnswerStr = (answer: number | number[] | null | undefined) => {
-      if (answer === null || answer === undefined) return 'Chưa chọn'
+      if (answer === null || answer === undefined) return 'Not answered yet'
       const idxs = Array.isArray(answer) ? answer : [answer]
       return idxs
         .map((i) => {
           const letter = getLabel(i)
           const cleanText = (params.options[i] ?? '').replace(/^[A-Z][\.\)]\s*/i, '')
-          return `Phương án ${letter} (${cleanText})`
+          return `Option ${letter} (${cleanText})`
         })
         .join(', ')
     }
@@ -60,55 +60,55 @@ export const quizAssistantPrompt: PromptDefinition<QuizAssistantPromptParams, ty
     const correctText = getFormattedAnswerStr(params.correctAnswer)
     const submittedText = getFormattedAnswerStr(params.submittedAnswer)
 
-    const courseStr = params.courseCode ? `môn ${params.courseCode}` : 'môn học này'
+    const courseStr = params.courseCode ? `subject ${params.courseCode}` : 'this subject'
 
-    let similarSection = `Trong ngân hàng đề ${courseStr}, không có câu hỏi nào khác sử dụng phương án này làm đáp án đúng.`
+    let similarSection = `In the question bank for ${courseStr}, no other question was found using this option as the correct answer.`
     if (params.similarQuestions && params.similarQuestions.length > 0) {
       similarSection = params.similarQuestions
         .map((q, idx) => {
           const qCorrect = Array.isArray(q.correctAnswer)
             ? q.correctAnswer.map((i) => getLabel(i)).join(', ')
             : getLabel(q.correctAnswer)
-          return `Câu trùng khớp #${idx + 1}:\n- Đề bài: ${q.text}\n- Đáp án đúng: Phương án ${qCorrect}`
+          return `Matching Question #${idx + 1}:\n- Question: ${q.text}\n- Correct Answer: Option ${qCorrect}`
         })
         .join('\n\n')
     }
 
-    return `Bạn là AI Quiz Assistant chuyên hỗ trợ phân tích câu hỏi trắc nghiệm và đối chiếu ngân hàng đề.
+    return `You are an AI Quiz Assistant specializing in analyzing multiple-choice questions and cross-referencing question bank data.
 
-NGỮ CẢNH CÂU HỎI HIỆN TẠI:
-- Mã môn học / Đề thi: ${params.courseCode ?? 'N/A'}
-- Đề bài: "${params.questionText}"
-- Các lựa chọn:
+CURRENT QUESTION CONTEXT:
+- Course Code / Exam: ${params.courseCode ?? 'N/A'}
+- Question: "${params.questionText}"
+- Options:
 ${formattedOptions}
-- Đáp án đúng của câu này: ${correctText}
-- Đáp án học viên đã chọn: ${submittedText}
+- Correct Answer for this question: ${correctText}
+- Student's Selected Answer: ${submittedText}
 
-THẮC MẮC CỦA HỌC VIÊN:
+STUDENT INQUIRY:
 "${params.userQuery}"
 
-KẾT QUẢ TRA CỨU NGÂN HÀNG ĐỀ ${courseStr.toUpperCase()}:
+QUESTION BANK SEARCH RESULTS (${courseStr.toUpperCase()}):
 ${similarSection}
 
-QUY TẮC PHẢN HỒI BẮT BUỘC (CỰC KỲ NGẮN GỌN & RÕ RÀNG):
+MANDATORY RESPONSE GUIDELINES (EXTREMELY CONCISE & CLEAR):
 
-1. NẾU TÌM THẤY CÂU HỎI TRÙNG KHỚP TRONG ${courseStr}:
-   - Bắt đầu ngay bằng: "**CÓ!** Trong ngân hàng đề ${courseStr}, tìm thấy câu hỏi sau có đáp án đúng là **"${params.targetOptionText ?? ''}"**:"
-   - Trích dẫn câu hỏi:
-     • **Đề bài**: "[Nội dung đề bài]"
-     • **Đáp án đúng trong câu đó**: Phương án [Letter] (${params.targetOptionText ?? ''})
+1. IF A MATCHING QUESTION IS FOUND IN ${courseStr}:
+   - Start immediately with: "**YES!** In the question bank for ${courseStr}, the following question was found with **"${params.targetOptionText ?? ''}"** as the correct answer:"
+   - Quote question:
+     • **Question**: "[Question text]"
+     • **Correct Answer in that question**: Option [Letter] (${params.targetOptionText ?? ''})
 
-2. NẾU KHÔNG TÌM THẤY CÂU HỎI TRÙNG KHỚP TRONG ${courseStr}:
-   - Bắt đầu ngay bằng: "**KHÔNG!** Trong ngân hàng đề ${courseStr}, không có câu hỏi nào khác sử dụng **"${params.targetOptionText ?? 'phương án này'}"** làm đáp án đúng."
-   - Giải thích ngắn 1 câu vì sao ở câu hỏi hiện tại, ${correctText} mới là đáp án đúng.
+2. IF NO MATCHING QUESTION IS FOUND IN ${courseStr}:
+   - Start immediately with: "**NO!** In the question bank for ${courseStr}, no other question was found that uses **"${params.targetOptionText ?? 'this option'}"** as the correct answer."
+   - Explain in 1 concise sentence why for the current question, ${correctText} is the correct answer.
 
-3. QUY ĐỊNH BẮT BUỘC KHÁC:
-   - Trả lời CỰC KỲ NGẮN GỌN (dưới 80 - 100 từ), rõ ràng, dễ hiểu. Tuyệt đối không mâu thuẫn ký hiệu giữa câu hỏi hiện tại và câu hỏi trong ngân hàng đề.
+3. OTHER MANDATORY GUIDELINES:
+   - Keep answers EXTREMELY CONCISE (under 80 - 100 words), clear, and pedagogical. Never contradict option letters between current and question bank questions.
 
-Trả về định dạng JSON chuẩn theo schema:
-- reply: Lời giải thích ngắn gọn, đi thẳng vào câu trả lời CÓ/KHÔNG bằng tiếng Việt.
-- formulaExplanation: Phân tích công thức hoặc bước tính toán (nếu có, ngắn gọn).
-- similarQuestionFound: true nếu phát hiện câu trùng khớp CÙNG CHỦ ĐỀ, ngược lại false.
-- similarQuestionDetails: Tóm tắt nội dung câu tìm thấy (nếu có).`
+Return standard JSON adhering to the schema:
+- reply: Concise explanation, directly providing the YES/NO answer in English.
+- formulaExplanation: Formula breakdown or calculation steps (if applicable, concise).
+- similarQuestionFound: true if a matching question on the SAME TOPIC is found, otherwise false.
+- similarQuestionDetails: Summary of found question content (if any).`
   },
 }

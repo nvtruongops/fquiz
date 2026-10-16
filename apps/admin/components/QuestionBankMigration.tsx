@@ -46,30 +46,30 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-card-foreground">Migration Ngân hàng Câu hỏi</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">Question Bank Migration</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Quét và migrate câu hỏi từ các quiz hiện có vào ngân hàng môn học
+          Scan and migrate questions from existing quizzes into the Question Bank
         </p>
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
         <StepIndicator
           number={1}
-          label="Chọn môn"
+          label="Select"
           active={step === 'select'}
           completed={['scan', 'review', 'migrate'].includes(step)}
         />
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={2}
-          label="Quét"
+          label="Scan"
           active={step === 'scan'}
           completed={['review', 'migrate'].includes(step)}
         />
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={3}
-          label="Xem xét"
+          label="Review"
           active={step === 'review'}
           completed={step === 'migrate'}
         />
@@ -80,13 +80,13 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
       {step === 'select' && (
         <Card>
           <CardHeader>
-            <CardTitle>Bước 1: Chọn môn học</CardTitle>
-            <CardDescription>Chọn môn học để quét và migrate câu hỏi vào ngân hàng</CardDescription>
+            <CardTitle>Step 1: Select Category</CardTitle>
+            <CardDescription>Select a category to scan and migrate questions into the Question Bank</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="-- Chọn môn học --" />
+                <SelectValue placeholder="-- Select category --" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -108,12 +108,12 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
               {scanning ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Đang quét...
+                  Scanning...
                 </>
               ) : (
                 <>
                   <Scan className="h-4 w-4" />
-                  Quét câu hỏi
+                  Scan Questions
                 </>
               )}
             </Button>
@@ -126,8 +126,8 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium">Đang quét câu hỏi...</p>
-              <p className="text-sm text-muted-foreground">Môn học: {selectedCategoryName}</p>
+              <p className="text-lg font-medium">Scanning questions...</p>
+              <p className="text-sm text-muted-foreground">Category: {selectedCategoryName}</p>
             </div>
           </CardContent>
         </Card>
@@ -152,9 +152,9 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
               <CheckCircle2 className="h-16 w-16 text-success-fg" />
-              <p className="text-2xl font-bold">Migration hoàn tất!</p>
-              <p className="text-muted-foreground">Câu hỏi đã được thêm vào ngân hàng môn học</p>
-              <Button onClick={reset}>Migrate môn học khác</Button>
+              <p className="text-2xl font-bold">Migration Completed!</p>
+              <p className="text-muted-foreground">Questions have been successfully migrated into the Question Bank</p>
+              <Button onClick={reset}>Migrate Another Category</Button>
             </div>
           </CardContent>
         </Card>

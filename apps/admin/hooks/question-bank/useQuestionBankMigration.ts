@@ -48,10 +48,10 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
       const data = await response.json()
       setScanResult(data)
       setStep('review')
-      toast({ title: 'Thành công', description: 'Quét câu hỏi hoàn tất!', type: 'success' })
+      toast({ title: 'Success', description: 'Question scan completed!', type: 'success' })
     } catch (error) {
       console.error('Scan error:', error)
-      toast({ title: 'Lỗi', description: 'Không thể quét câu hỏi', type: 'error' })
+      toast({ title: 'Error', description: 'Failed to scan questions', type: 'error' })
     } finally {
       setScanning(false)
     }
@@ -78,11 +78,11 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
       }
 
       const data = await response.json()
-      toast({ title: 'Thành công', description: data.summary || 'Migration thành công!', type: 'success' })
+      toast({ title: 'Success', description: data.summary || 'Migration completed successfully!', type: 'success' })
       setStep('migrate')
     } catch (error) {
       console.error('Migration error:', error)
-      toast({ title: 'Lỗi', description: 'Không thể migrate câu hỏi', type: 'error' })
+      toast({ title: 'Error', description: 'Failed to migrate questions', type: 'error' })
     } finally {
       setMigrating(false)
     }

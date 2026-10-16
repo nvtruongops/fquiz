@@ -72,7 +72,7 @@ async function fetchQuestions(token: string, csrf: string, sessionId: string): P
     headers: { Cookie: `auth-token=${token}; csrf-token=${csrf}` },
   })
   const data = await res.json()
-  log(`Fetch all questions (${data.totalQuestions} câu)`, Date.now() - t, `[${res.status}]`)
+  log(`Fetch all questions (${data.totalQuestions} questions)`, Date.now() - t, `[${res.status}]`)
   return data.questions ?? []
 }
 

@@ -54,14 +54,14 @@ export function GuestClaimBanner({
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Không thể lưu kết quả')
+        throw new Error(data.error || 'Failed to save results')
       }
 
       setIsClaimed(true)
-      toast.success('Đã lưu kết quả bài thi vào Hồ sơ học tập của bạn!')
+      toast.success('Quiz results saved to your study profile!')
       router.refresh()
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi lưu kết quả bài thi')
+      toast.error(err.message || 'Error saving quiz results')
     } finally {
       setIsClaiming(false)
     }
@@ -73,7 +73,7 @@ export function GuestClaimBanner({
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className="w-5 h-5 shrink-0 text-success-fg" />
           <p className="text-xs font-bold">
-            Kết quả bài thi này đã được lưu vào Hồ sơ học tập của bạn thành công!
+            This quiz result has been successfully saved to your study profile!
           </p>
         </div>
         <Button
@@ -81,7 +81,7 @@ export function GuestClaimBanner({
           onClick={() => router.push('/history')}
           className="h-8 px-3 rounded-xl bg-success-fg text-success-bg hover:opacity-90 font-black text-[11px] shrink-0 cursor-pointer"
         >
-          Xem Lịch sử
+          View History
         </Button>
       </div>
     )
@@ -95,10 +95,10 @@ export function GuestClaimBanner({
         </div>
         <div>
           <p className="text-xs font-black text-foreground">
-            Lưu bài thi này vào Hồ sơ cá nhân?
+            Save this quiz to your profile?
           </p>
           <p className="text-[11px] font-medium text-muted-foreground">
-            Bạn đang xem với tư cách Khách. Đăng nhập để lưu điểm số ({score}/{totalQuestions} câu đúng) và phân tích câu sai.
+            You are viewing as a guest. Sign in to save your score ({score}/{totalQuestions} correct) and analyze mistakes.
           </p>
         </div>
       </div>
@@ -112,12 +112,12 @@ export function GuestClaimBanner({
         {isClaiming ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Đang lưu...</span>
+            <span>Saving...</span>
           </>
         ) : (
           <>
             <LogIn className="w-3.5 h-3.5" />
-            <span>{currentUser ? 'Lưu vào tài khoản của tôi' : 'Đăng nhập để lưu kết quả'}</span>
+            <span>{currentUser ? 'Save to my account' : 'Sign in to save results'}</span>
           </>
         )}
       </Button>

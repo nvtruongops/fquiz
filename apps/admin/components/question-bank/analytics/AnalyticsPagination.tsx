@@ -24,7 +24,7 @@ export function AnalyticsPagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1 || loading}
       >
-        Trước
+        Previous
       </Button>
 
       <div className="flex items-center gap-1">
@@ -65,7 +65,7 @@ export function AnalyticsPagination({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages || loading}
       >
-        Sau
+        Next
       </Button>
     </div>
   )

@@ -49,19 +49,19 @@ export function UserTable({
             </div>
           ) : !data || data.users.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              Không tìm thấy tài khoản nào phù hợp
+              No matching accounts found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/30">
                   <tr>
-                    <th className="text-left py-3 px-4 font-semibold">Tài khoản</th>
+                    <th className="text-left py-3 px-4 font-semibold">User</th>
                     <th className="text-left py-3 px-4 font-semibold">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold">Vai trò</th>
-                    <th className="text-left py-3 px-4 font-semibold">Trạng thái</th>
-                    <th className="text-left py-3 px-4 font-semibold">Ngày tạo</th>
-                    <th className="text-right py-3 px-4 font-semibold">Thao tác</th>
+                    <th className="text-left py-3 px-4 font-semibold">Role</th>
+                    <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold">Created Date</th>
+                    <th className="text-right py-3 px-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -107,12 +107,12 @@ export function UserTable({
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-xs text-muted-foreground">
-                          {new Date(u.created_at).toLocaleDateString('vi-VN')}
+                          {new Date(u.created_at).toLocaleDateString('en-US')}
                         </td>
                         <td className="py-3 px-4 text-right">
                           {isRootAdmin ? (
                             <span className="text-[11px] text-muted-foreground font-mono italic pr-2">
-                              Hệ thống bảo vệ
+                              Protected
                             </span>
                           ) : (
                             <div className="flex items-center justify-end gap-1.5">
@@ -121,7 +121,7 @@ export function UserTable({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'banned')}
-                                  title="Khóa tài khoản"
+                                  title="Suspend account"
                                   className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                                 >
                                   <UserX className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function UserTable({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'active')}
-                                  title="Mở khóa tài khoản"
+                                  title="Activate account"
                                   className="h-8 px-2 text-muted-foreground hover:text-success-fg cursor-pointer"
                                 >
                                   <UserCheck className="w-4 h-4" />
@@ -142,7 +142,7 @@ export function UserTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onDeleteUser(u)}
-                                title="Xóa vĩnh viễn"
+                                title="Delete permanently"
                                 className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -163,7 +163,7 @@ export function UserTable({
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
-            Tổng cộng: <span className="font-semibold text-foreground">{data.total}</span> tài khoản
+            Total: <span className="font-semibold text-foreground">{data.total}</span> {data.total === 1 ? 'account' : 'accounts'}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -175,7 +175,7 @@ export function UserTable({
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-xs font-medium px-2">
-              Trang {page} / {data.totalPages}
+              Page {page} of {data.totalPages}
             </span>
             <Button
               variant="outline"

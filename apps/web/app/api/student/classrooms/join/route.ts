@@ -15,10 +15,10 @@ export const POST = withAuth(
       return NextResponse.json({
         classroom: result.classroom,
         alreadyJoined: result.alreadyJoined,
-        message: result.alreadyJoined ? 'Bạn đã ở trong lớp học này' : 'Gia nhập lớp học thành công',
+        message: result.alreadyJoined ? 'You are already in this classroom' : 'Successfully joined classroom',
       })
     } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Lỗi khi gia nhập lớp học' }, { status: 400 })
+      return NextResponse.json({ error: err.message || 'Failed to join classroom' }, { status: 400 })
     }
   },
   { roles: ['student', 'teacher', 'dev'] }

@@ -143,7 +143,7 @@ export function Sidebar({ user }: SidebarProps) {
             <Link
               href={user ? '/dashboard' : '/'}
               prefetch={false}
-              title={user ? 'Bảng điều khiển' : 'Trang chủ'}
+              title={user ? 'Dashboard' : 'Home'}
               onClick={(e) => {
                 if (!user && pathname !== '/') {
                   // If guest clicks dashboard item when on other page, allow navigating home or show auth prompt
@@ -165,7 +165,7 @@ export function Sidebar({ user }: SidebarProps) {
               )} />
               {!collapsed && (
                 <span className="whitespace-nowrap overflow-hidden text-xs font-bold tracking-tight">
-                  {user ? 'Bảng điều khiển' : 'Trang chủ'}
+                  {user ? 'Dashboard' : 'Home'}
                 </span>
               )}
             </Link>
@@ -237,7 +237,7 @@ export function Sidebar({ user }: SidebarProps) {
                         key={item.href + item.label}
                         href={item.href}
                         prefetch={false}
-                        title={item.label + (isLockedForGuest ? ' (Cần đăng nhập)' : '')}
+                        title={item.label + (isLockedForGuest ? ' (Sign in required)' : '')}
                         onClick={(e) => handleProtectedClick(e, item)}
                         className={cn(
                           'w-10 h-10 mx-auto flex items-center justify-center rounded-xl transition-all duration-150 group cursor-pointer my-0.5 relative',
@@ -275,17 +275,20 @@ export function Sidebar({ user }: SidebarProps) {
                   href="/login"
                   prefetch={false}
                   className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
-                  title="Đăng nhập / Đăng ký"
+                  title="Sign in / Sign up"
                 >
                   <LogIn className="w-4 h-4" />
                 </Link>
               )}
               <button
+                type="button"
                 onClick={toggleCollapsed}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!collapsed}
                 className="w-8 h-8 rounded-xl bg-card border border-border shadow-2xs flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer"
-                title="Mở rộng Sidebar"
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight aria-hidden="true" className="w-4 h-4" />
               </button>
             </div>
           ) : (
@@ -296,11 +299,14 @@ export function Sidebar({ user }: SidebarProps) {
                     <UserDropdown user={user} fullCard={true} />
                   </div>
                   <button
+                    type="button"
                     onClick={toggleCollapsed}
+                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    aria-expanded={!collapsed}
                     className="w-7 h-7 rounded-lg bg-card border border-border/80 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
-                    title="Thu gọn Sidebar"
+                    title="Collapse sidebar"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <ChevronLeft aria-hidden="true" className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
@@ -312,16 +318,19 @@ export function Sidebar({ user }: SidebarProps) {
                         <User className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black text-foreground truncate">Khách FQuiz</p>
-                        <p className="text-[10px] font-semibold text-muted-foreground truncate">Chưa đăng nhập</p>
+                        <p className="text-xs font-black text-foreground truncate">FQuiz Guest</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground truncate">Not signed in</p>
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={toggleCollapsed}
+                      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                      aria-expanded={!collapsed}
                       className="w-6 h-6 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
-                      title="Thu gọn Sidebar"
+                      title="Collapse sidebar"
                     >
-                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <ChevronLeft aria-hidden="true" className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
@@ -332,7 +341,7 @@ export function Sidebar({ user }: SidebarProps) {
                       className="flex items-center justify-center gap-1 h-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-black shadow-xs transition-all cursor-pointer"
                     >
                       <LogIn className="w-3 h-3" />
-                      <span>Đăng nhập</span>
+                      <span>Sign in</span>
                     </Link>
                     <Link
                       href="/register"
@@ -340,7 +349,7 @@ export function Sidebar({ user }: SidebarProps) {
                       className="flex items-center justify-center gap-1 h-8 rounded-xl border border-border bg-muted/50 hover:bg-muted text-foreground text-[11px] font-bold transition-all cursor-pointer"
                     >
                       <UserPlus className="w-3 h-3 text-primary" />
-                      <span>Đăng ký</span>
+                      <span>Sign up</span>
                     </Link>
                   </div>
                 </div>
@@ -374,10 +383,12 @@ export function Sidebar({ user }: SidebarProps) {
                   <span className="font-black text-foreground text-base">FQuiz Menu</span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
                   className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 cursor-pointer"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft aria-hidden="true" className="w-5 h-5" />
                 </button>
               </div>
 
@@ -395,7 +406,7 @@ export function Sidebar({ user }: SidebarProps) {
                   )}
                 >
                   <Home className={cn("w-4.5 h-4.5", (pathname === '/dashboard' || (pathname === '/' && !user)) ? "text-primary-foreground" : "text-muted-foreground")} />
-                  <span>{user ? 'Bảng điều khiển' : 'Trang chủ'}</span>
+                  <span>{user ? 'Dashboard' : 'Home'}</span>
                 </Link>
 
                 {visibleNavSections.map((sec) => (
@@ -446,8 +457,8 @@ export function Sidebar({ user }: SidebarProps) {
                 ) : (
                   <div className="space-y-2">
                     <div className="text-center pb-1">
-                      <p className="text-xs font-black text-foreground">Bạn chưa đăng nhập</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Đăng nhập để lưu tiến độ ôn thi</p>
+                      <p className="text-xs font-black text-foreground">You are not signed in</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">Sign in to save your practice progress</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Link
@@ -456,7 +467,7 @@ export function Sidebar({ user }: SidebarProps) {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl shadow-xs text-center"
                       >
-                        Đăng nhập
+                        Sign in
                       </Link>
                       <Link
                         href="/register"
@@ -464,7 +475,7 @@ export function Sidebar({ user }: SidebarProps) {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-center text-xs font-bold bg-card text-foreground border border-border px-3 py-2.5 rounded-xl shadow-xs text-center"
                       >
-                        Đăng ký
+                        Sign up
                       </Link>
                     </div>
                   </div>

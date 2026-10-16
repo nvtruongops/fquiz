@@ -8,11 +8,11 @@ test.describe('Admin Portal — Question Bank Hub', () => {
 
   test('should render Question Bank tabs and navigate between them', async ({ page }) => {
     await page.goto(`${ADMIN_APP_URL}/question-bank`)
-    await expect(page.getByRole('heading', { name: /Ngân hàng Câu hỏi/i }).first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Question Bank/i }).first()).toBeVisible()
 
     // Check all 4 tab triggers
-    const statusTab = page.getByRole('tab', { name: 'Trạng thái' })
-    const analyticsTab = page.getByRole('tab', { name: 'Thống kê' })
+    const statusTab = page.getByRole('tab', { name: /Status/i })
+    const analyticsTab = page.getByRole('tab', { name: /Analytics|Statistics/i })
     const migrationTab = page.getByRole('tab', { name: 'Migration' })
     const conflictsTab = page.getByRole('tab', { name: 'Conflicts' })
 
@@ -23,14 +23,14 @@ test.describe('Admin Portal — Question Bank Hub', () => {
 
     // Navigate to Analytics tab
     await analyticsTab.click()
-    await expect(page.getByText(/Thống kê Ngân hàng Câu hỏi/i)).toBeVisible()
+    await expect(page.getByText(/Question Bank Analytics/i)).toBeVisible()
 
     // Navigate to Conflicts tab
     await conflictsTab.click()
-    await expect(page.getByText(/Chọn môn học/i)).toBeVisible()
+    await expect(page.getByText(/Select course|Select subject/i)).toBeVisible()
 
     // Navigate to Migration tab
     await migrationTab.click()
-    await expect(page.getByText(/Migration Ngân hàng Câu hỏi/i)).toBeVisible()
+    await expect(page.getByText(/Question Bank Migration/i)).toBeVisible()
   })
 })

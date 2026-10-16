@@ -53,7 +53,7 @@ export function QuestionEditorCard({
             {isQuestionBankMatch && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 animate-pulse">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Đã có trong ngân hàng</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">In Question Bank</span>
               </div>
             )}
             {error && (
@@ -78,17 +78,17 @@ export function QuestionEditorCard({
           {/* Question Text & Image */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1 space-y-2">
-              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nội dung câu hỏi</label>
+              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground">Question Content</label>
               <Textarea
                 id={`question-text-${index}`}
-                placeholder="Nhập câu hỏi tại đây..."
+                placeholder="Enter question text here..."
                 value={question.text}
                 onChange={(e) => updateQuestion(index, 'text', e.target.value)}
                 className="min-h-[120px] rounded-xl border-border focus:ring-primary text-base bg-background text-foreground"
               />
             </div>
             <div className="w-full md:w-[240px] shrink-0">
-              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Hình ảnh minh họa</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Question Image</span>
               <ImageUpload
                 value={question.image_url}
                 onChange={(url) => updateQuestion(index, 'image_url', url)}
@@ -100,8 +100,8 @@ export function QuestionEditorCard({
           {/* Options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Các lựa chọn trả lời</span>
-              <span className="text-[10px] font-bold text-muted-foreground">Chọn tích xanh cho đáp án đúng (có thể chọn nhiều)</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Answer Options</span>
+              <span className="text-[10px] font-bold text-muted-foreground">Check the box for correct answer(s) (multiple allowed)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {question.options.map((option, oi) => (
@@ -123,7 +123,7 @@ export function QuestionEditorCard({
                     <Textarea
                       value={option}
                       onChange={(e) => updateOption(index, oi, e.target.value)}
-                      placeholder={`Lựa chọn ${OPTION_LABELS[oi]}...`}
+                      placeholder={`Option ${OPTION_LABELS[oi]}...`}
                       className="border-none bg-transparent focus-visible:ring-0 text-sm py-2 min-h-[40px] resize-none overflow-hidden text-foreground"
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
@@ -162,7 +162,7 @@ export function QuestionEditorCard({
                   className="h-14 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="text-sm font-bold">Thêm lựa chọn</span>
+                  <span className="text-sm font-bold">Add Option</span>
                 </button>
               )}
             </div>
@@ -170,10 +170,10 @@ export function QuestionEditorCard({
 
           {/* Explanation */}
           <div className="pt-4 border-t border-border">
-            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Giải thích đáp án</label>
+            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Answer Explanation</label>
             <Textarea
               id={`question-explanation-${index}`}
-              placeholder="Tại sao đáp án này lại đúng? Giải thích giúp người học hiểu rõ hơn..."
+              placeholder="Why is this answer correct? Explain to help learners understand..."
               value={question.explanation}
               onChange={(e) => updateQuestion(index, 'explanation', e.target.value)}
               className="rounded-xl border-border min-h-[80px] focus:ring-primary bg-card text-foreground"

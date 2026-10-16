@@ -20,7 +20,7 @@ export const POST = withAuth(
       const parsed = QuizAssistantRequestSchema.safeParse(body)
       if (!parsed.success) {
         return NextResponse.json(
-          { error: 'Dữ liệu yêu cầu không hợp lệ', details: parsed.error.issues },
+          { error: 'Invalid request data', details: parsed.error.issues },
           { status: 400 }
         )
       }

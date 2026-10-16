@@ -30,14 +30,14 @@ export function TopHeaderBar({ user }: TopHeaderBarProps) {
           prefetch={false}
           className="inline-flex items-center justify-center text-xs font-bold text-foreground hover:text-primary px-4 py-2 rounded-xl hover:bg-muted transition-all cursor-pointer h-9"
         >
-          Đăng nhập
+          Sign In
         </Link>
         <Link
           href={registerHref}
           prefetch={false}
           className="inline-flex items-center justify-center text-xs font-black bg-primary hover:bg-primary-hover text-primary-foreground px-5 py-2 rounded-xl shadow-xs transition-all cursor-pointer h-9"
         >
-          Đăng ký
+          Register
         </Link>
       </div>
     </header>

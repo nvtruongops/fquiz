@@ -63,7 +63,7 @@ export function useQuizLoader() {
     setLoadingOverlay({ isOpen: true, progress: 0, status })
   }, [])
 
-  const completeLoading = useCallback((status: string = 'Hoàn tất!') => {
+  const completeLoading = useCallback((status: string = 'Completed!') => {
     // Extend the suppression window so the flag stays active through navigation
     activateQuizLoaderFlag(3000)
     setLoadingOverlay(prev => ({ ...prev, progress: 100, status }))
@@ -119,7 +119,7 @@ export function useSessionLoader() {
     if (progress >= 100 && isOpen && !isNavigatingRef.current) {
       const timer = setTimeout(() => {
         setIsOpen(false)
-      }, 400)
+      }, 200)
       return () => clearTimeout(timer)
     }
   }, [progress, isOpen])
@@ -140,7 +140,7 @@ export function useSessionLoader() {
 
   const complete = useCallback(() => {
     const elapsed = Date.now() - openedAtRef.current
-    const delayNeeded = Math.max(0, 1000 - elapsed)
+    const delayNeeded = Math.max(0, 600 - elapsed)
     setTimeout(() => {
       setProgress(100)
     }, delayNeeded)
@@ -152,14 +152,14 @@ export function useSessionLoader() {
     isNavigatingRef.current = true             // Block auto-close
     activateQuizLoaderFlag(3000)               // Extend suppression window
     const elapsed = Date.now() - openedAtRef.current
-    const delayNeeded = Math.max(0, 1000 - elapsed)
+    const delayNeeded = Math.max(0, 600 - elapsed)
     setTimeout(() => {
       setProgress(100)
-      // Wait 400ms for 100% to render visually, then navigate
+      // Wait 200ms for 100% to render visually, then navigate
       setTimeout(() => {
         activateQuizLoaderFlag(3000)           // Re-extend for actual navigation
         navigateFn()
-      }, 400)
+      }, 200)
     }, delayNeeded)
   }, [])
 
@@ -223,11 +223,11 @@ export function QuizLoadingOverlay({
         {/* Top Header Section */}
         <div className="relative z-10 text-center space-y-1.5 pt-2">
           <h1 className={`text-2xl sm:text-3xl font-black tracking-widest ${colors.headerText} uppercase`}>
-            {status || 'ĐANG KHỞI TẠO QUIZ...'}
+            {status || 'INITIALIZING QUIZ...'}
           </h1>
           <div className={`flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider ${colors.subText} uppercase`}>
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
-            <span>Vui lòng chờ trong giây lát • Loading Quiz Session</span>
+            <span>Please wait a moment • Loading Quiz Session</span>
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
           </div>
         </div>

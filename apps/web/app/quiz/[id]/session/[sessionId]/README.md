@@ -1,65 +1,62 @@
 # Quiz Session Pages
 
-## Cấu trúc
+## Structure
 
-- `page.tsx` - Page desktop với layout ngang (sidebar + main content)
-- `mobile/page.tsx` - Page mobile-optimized với layout dọc
-- `/middleware.ts` (root) - Auto-detect mobile và redirect
+- `page.tsx`: Desktop page with horizontal layout (sidebar + main content)
+- `mobile/page.tsx`: Mobile-optimized page with vertical layout
+- `proxy.ts`: Middleware detecting mobile devices and redirecting accordingly
 
-## Auto-Detection
+## Device Auto-Detection
 
-Middleware Next.js tự động detect:
-- Mobile devices (Android, iPhone, iPod, BlackBerry, etc.)
+Next.js routing detects:
+- Mobile devices (Android, iPhone, iPod, etc.)
 - Tablets (iPad, Android tablets)
 - User-Agent header
 
-**Cách hoạt động:**
-1. User truy cập `/quiz/[id]/session/[sessionId]`
-2. Middleware check User-Agent
-3. Nếu mobile/tablet → Auto redirect sang `/quiz/[id]/session/[sessionId]/mobile`
-4. Nếu desktop → Giữ nguyên URL, dùng layout PC
+**Workflow:**
+1. User requests `/quiz/[id]/session/[sessionId]`
+2. Middleware inspects User-Agent
+3. If mobile/tablet → Redirect to `/quiz/[id]/session/[sessionId]/mobile`
+4. If desktop → Maintain desktop layout URL
 
-## Tính năng Mobile Page
+## Mobile Page Features
 
 ### Layout
-- Layout dọc thay vì ngang (không có sidebar cố định)
-- Header sticky với thông tin quiz và progress bar
-- Bottom navigation với nút Previous/Next/Submit
-- Question map trong dialog thay vì sidebar
+- Vertical layout without fixed sidebar
+- Sticky header displaying quiz information and progress bar
+- Bottom navigation with Previous, Next, and Submit controls
+- Question palette in a responsive drawer dialog
 
 ### UI/UX Improvements
-- Đáp án dạng card lớn, dễ touch
-- Spacing rộng hơn cho mobile
-- Icons và text size phù hợp với mobile
-- Smooth transitions và animations
-- Progress bar trực quan
-- Touch-friendly buttons (min 44x44px)
+- Large touch-friendly option cards (min 44x44px)
+- Generous touch margins and padding
+- Typography optimized for handheld screens
+- Fluid transitions and GSAP animations
+- Visual progress bar
 
-### Responsive
-- Tự động detect mobile device qua middleware
-- Dialogs với padding phù hợp mobile (w-[calc(100vw-2rem)])
-- ScrollArea cho nội dung dài
+### Responsive Design
+- Automatic device detection
+- Dialogs styled with mobile-appropriate padding (`w-[calc(100vw-2rem)]`)
+- ScrollArea for long questions and option text
 
-## Chế độ Quiz
+## Quiz Modes
 
-### Immediate Mode (Luyện tập)
-- Hiển thị đáp án đúng/sai ngay sau khi chọn
-- Hiển thị giải thích (nếu có)
-- Highlight đáp án đúng màu xanh, sai màu đỏ
-- Không thể thay đổi đáp án sau khi submit
+### Immediate / Practice Mode
+- Real-time correct/incorrect answer verification
+- Instant explanation panel
+- Green highlight for correct answers, red for incorrect
+- Answers locked upon choice submission
 
-### Review Mode (Kiểm tra)
-- Không hiển thị đáp án cho đến khi nộp bài
-- Chỉ lưu câu trả lời
-- Có thể thay đổi đáp án trước khi nộp
-- Xem kết quả sau khi nộp bài
+### Review / Exam Mode
+- Answers hidden until final exam submission
+- Option changes allowed until submission
+- Comprehensive result and review screen upon completion
 
 ## Navigation
-- Previous/Next buttons ở bottom bar
-- Question map dialog để jump đến câu bất kỳ
-- Progress tracking với visual progress bar
-- Exit confirmation khi thoát giữa chừng
-- Back button prevention với confirmation
+- Bottom navigation bar with Previous and Next buttons
+- Question palette dialog for quick jumping between questions
+- Visual progress tracking
+- Exit confirmation guard preventing accidental progress loss
 
 ## Testing
 
@@ -68,11 +65,11 @@ Middleware Next.js tự động detect:
 http://localhost:3000/quiz/[id]/session/[sessionId]
 ```
 
-**Mobile (manual):**
+**Mobile (direct URL):**
 ```
 http://localhost:3000/quiz/[id]/session/[sessionId]/mobile
 ```
 
 **Mobile (auto-redirect):**
-- Mở trên thiết bị mobile hoặc dùng Chrome DevTools Device Mode
-- Truy cập URL desktop, sẽ tự động redirect sang /mobile
+- Open on a mobile device or toggle Chrome DevTools Device Mode
+- Navigating to the desktop URL automatically redirects to `/mobile`

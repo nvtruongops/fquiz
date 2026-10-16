@@ -17,16 +17,16 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
 
   const navItems = [
     {
-      label: 'Quản lý Lớp học',
+      label: 'Classroom Management',
       href: '/teacher/classrooms',
       icon: School,
-      description: 'Danh sách lớp, học viên & bài tập',
+      description: 'Classrooms, students & assignments',
     },
     {
-      label: 'Quản lý Đề thi',
+      label: 'Quiz Management',
       href: '/teacher/quizzes',
       icon: FileText,
-      description: 'Tạo & quản lý các bộ đề trắc nghiệm',
+      description: 'Create & manage multiple-choice quizzes',
     },
   ]
 
@@ -48,7 +48,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
       <div className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
         <div className="space-y-1">
           <span className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-primary block mb-2 opacity-80">
-            GIẢNG DẠY & QUẢN LÝ
+            TEACHING & MANAGEMENT
           </span>
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
@@ -98,7 +98,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             prefetch={false}
             className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all"
           >
-            Đăng nhập Giáo viên
+            Teacher Sign In
           </Link>
         )}
       </div>

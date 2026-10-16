@@ -120,6 +120,20 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/my-quizzes',
+        destination: '/explore',
+        permanent: true,
+      },
+      {
+        source: '/my-quizzes/:path*',
+        destination: '/explore',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

@@ -31,7 +31,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const existing = await Category.findOne({ name: { $regex: `^${escaped}$`, $options: 'i' } })
     if (existing) {
-      return NextResponse.json({ error: 'Tên danh mục này đã tồn tại hoặc đang chờ duyệt.' }, { status: 400 })
+      return NextResponse.json({ error: 'This category name already exists or is pending approval.' }, { status: 400 })
     }
 
     const category = await Category.create({
@@ -44,6 +44,6 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     return NextResponse.json({ category })
   } catch (error: any) {
-    return NextResponse.json({ error: 'Không thể gửi yêu cầu lúc này.' }, { status: 500 })
+    return NextResponse.json({ error: 'Unable to submit request at this time.' }, { status: 500 })
   }
 }, { roles: ['student'] })

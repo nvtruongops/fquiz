@@ -17,9 +17,9 @@ interface AuthPromptStore {
   closeAuthPrompt: () => void
 }
 
-const DEFAULT_TITLE = 'Yêu cầu Đăng nhập'
+const DEFAULT_TITLE = 'Sign In Required'
 const DEFAULT_DESC =
-  'Vui lòng đăng nhập hoặc tạo tài khoản để sử dụng tính năng này, lưu trữ tiến độ ôn thi và cá nhân hóa trải nghiệm học tập của bạn.'
+  'Please sign in or create an account to use this feature, track your study progress, and personalize your learning experience.'
 
 export const useAuthPrompt = create<AuthPromptStore>((set) => ({
   isOpen: false,

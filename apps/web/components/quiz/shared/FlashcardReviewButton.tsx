@@ -39,7 +39,7 @@ export function FlashcardReviewButton({
 
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Vui lòng đăng nhập để sử dụng tính năng ôn tập Flashcard.')
+          throw new Error('Please sign in to use Flashcard review.')
         }
         const error = await res.json().catch(() => ({}))
         throw new Error(error.error || 'Failed to create review session')
@@ -56,7 +56,7 @@ export function FlashcardReviewButton({
       router.push(reviewUrl)
     } catch (error) {
       console.error('Failed to create review session:', error)
-      toast.error('Không thể tạo phiên ôn tập. Vui lòng thử lại.')
+      toast.error('Unable to create review session. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -76,14 +76,14 @@ export function FlashcardReviewButton({
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          <span className="hidden sm:inline">Đang tạo phiên ôn tập...</span>
-          <span className="sm:hidden">Đang tạo...</span>
+          <span className="hidden sm:inline">Creating review session...</span>
+          <span className="sm:hidden">Creating...</span>
         </>
       ) : (
         <>
           <RefreshCw className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Ôn lại {unknownCount} câu chưa biết</span>
-          <span className="sm:hidden">Ôn lại ({unknownCount})</span>
+          <span className="hidden sm:inline">Review {unknownCount} unknown cards</span>
+          <span className="sm:hidden">Review ({unknownCount})</span>
         </>
       )}
     </Button>

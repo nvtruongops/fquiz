@@ -7,5 +7,5 @@
   "dependsOn": [],
   "parallelizable": true,
   "supportsFix": false,
-  "description": "Kiểm tra và ngăn chặn hardcoded hex colors (#xxx, #xxxxxx) và direct color palette trong components."
+  "description": "Detects and prevents hardcoded hex colors (#xxx, #xxxxxx) and raw color palettes in components."
 }

@@ -11,8 +11,8 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
 /**
  * POST /api/question-bank/check
- * Kiểm tra danh sách câu hỏi có tồn tại trong ngân hàng không
- * Trả về conflicts nếu có
+ * Check if question list exists in question bank
+ * Returns conflicts if found
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
@@ -27,10 +27,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
-    // Kiểm tra tất cả câu hỏi
+    // Check all questions
     const conflicts = await checkQuestionsInBank(category_id, questions)
 
-    // Phân loại conflicts + gom nhóm variants cho từng conflict
+    // Classify conflicts and group variants for each conflict
     const categoryObjectId = new mongoose.Types.ObjectId(category_id)
     const conflictQuestionIds = new Map<number, string>()
 
@@ -51,10 +51,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
         different_answer: differentAnswerConflicts
       },
       summary: differentAnswerConflicts.length > 0
-        ? ` Phát hiện ${differentAnswerConflicts.length} câu hỏi có mâu thuẫn đáp án!`
+        ? `⚠️ Detected ${differentAnswerConflicts.length} questions with conflicting answers!`
         : sameAnswerConflicts.length > 0
-          ? `✅ ${sameAnswerConflicts.length} câu hỏi đã tồn tại trong ngân hàng (có thể tái sử dụng)`
-          : '✅ Tất cả câu hỏi đều mới'
+          ? `✅ ${sameAnswerConflicts.length} questions already exist in bank (reusable)`
+          : '✅ All questions are new'
     })
   } catch (error: any) {
     console.error('Error checking question bank:', error)

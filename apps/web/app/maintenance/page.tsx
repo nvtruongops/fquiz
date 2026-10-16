@@ -26,11 +26,11 @@ export default function MaintenancePage() {
         {/* Text */}
         <div className="space-y-3">
           <h1 className="text-3xl font-black text-primary">
-            Đang Nâng Cấp
+            System Maintenance
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            Hệ thống đang được bảo trì để mang lại trải nghiệm tốt hơn.
-            Vui lòng quay lại sau ít phút.
+            The system is currently undergoing scheduled maintenance to improve your experience.
+            Please check back shortly.
           </p>
         </div>
 
@@ -39,12 +39,12 @@ export default function MaintenancePage() {
 
         {/* Footer */}
         <p className="text-sm text-muted-foreground">
-          Nếu bạn là quản trị viên,{' '}
+          If you are an administrator,{' '}
           <Link
             href="/login?callbackUrl=%2Fadmin"
             className="text-primary font-semibold hover:underline"
           >
-            đăng nhập tại đây
+            log in here
           </Link>
         </p>
       </div>

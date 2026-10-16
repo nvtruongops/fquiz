@@ -1,8 +1,8 @@
 # Core Infrastructure (`lib/core/`)
 
-Hạ tầng dùng chung cho tất cả modules: database, DI container, AI providers, events, cache, search, security.
+Shared platform infrastructure for all modules: database, DI container, AI providers, events, cache, search, security.
 
-## Cấu trúc
+## Structure
 
 ```
 core/
@@ -79,7 +79,7 @@ Options:
 registerModel(fn: () => Promise<any>): void
 bootstrapModels(): Promise<void>  // execute all registrations
 ```
-Ngăn `MissingSchemaError` trong Next.js Serverless: mỗi module `index.ts` gọi `registerModel()`, `connectDB()` gọi `bootstrapModels()` sau khi kết nối.
+Prevents `MissingSchemaError` in Next.js Serverless runtime: each module's `index.ts` calls `registerModel()`, and `connectDB()` executes `bootstrapModels()` upon establishing the database connection.
 
 ### base-schema.ts
 ```
@@ -88,7 +88,7 @@ BaseEntityFields = {
   status, schemaVersion, contentVersion, metadata
 }
 ```
-Dùng cho tất cả Phase 2+ models (learning, AIAsset).
+Applied across all Phase 2+ models (learning, AIAsset).
 
 ## DI Container (`di/`)
 

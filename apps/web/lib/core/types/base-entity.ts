@@ -1,14 +1,14 @@
 import { Types } from 'mongoose'
 
 // ============================================================
-// BaseEntity — Áp dụng cho TẤT CẢ model mới từ Phase 2.1
+// BaseEntity — Applies to ALL new models from Phase 2.1
 // ============================================================
 
 export type EntityStatus =
-  | 'draft'        // Đang soạn thảo
-  | 'pending'      // Chờ review (AI-generated)
+  | 'draft'        // Drafting
+  | 'pending'      // Pending review (AI-generated)
   | 'published'    // Active
-  | 'archived'     // Đã archive
+  | 'archived'     // Archived
   | 'deleted'      // Soft deleted
 
 export interface IBaseMetadata {

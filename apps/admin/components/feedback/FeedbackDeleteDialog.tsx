@@ -28,14 +28,14 @@ export function FeedbackDeleteDialog({
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Xóa góp ý</DialogTitle>
+          <DialogTitle>Delete Feedback</DialogTitle>
           <DialogDescription>
-            Bạn có chắc chắn muốn xóa thư góp ý này? Thao tác này không thể hoàn tác.
+            Are you sure you want to delete this feedback? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Cancel
           </Button>
           <Button
             variant="destructive"
@@ -43,7 +43,7 @@ export function FeedbackDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Xác nhận xóa
+            Confirm Delete
           </Button>
         </DialogFooter>
       </DialogContent>

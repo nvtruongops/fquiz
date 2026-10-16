@@ -1,34 +1,34 @@
-# 🗺️ FQuiz — Sơ đồ Điều hướng & Định tuyến (Page Router Architecture Index)
+# 🗺️ FQuiz — Page Route Architecture Index (`docs/DESIGN_ROUTES.md`)
 
-Hệ thống FQuiz được tổ chức theo kiến trúc **Pure Symmetrical Turborepo Monorepo** với 2 ứng dụng độc lập, phân tách hoàn toàn domain và mã nguồn:
-
----
-
-## 1. Ứng dụng Web Học viên & Giáo viên (`apps/web` — Port 3000 / `https://example.invalid`)
-
-| Route Group | Đường dẫn | Đối tượng | Mô tả |
-|---|---|---|---|
-| `(auth)` | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/restore-account` | Khách | Quy trình đăng nhập, đăng ký và khôi phục tài khoản |
-| `(student)` | `/dashboard`, `/my-quizzes`, `/history`, `/history/[id]/[sessionId]`, `/community`, `/profile`, `/settings`, `/student/classrooms` | Học viên | Không gian học tập cá nhân, lớp học và cộng đồng |
-| `(teacher)` | `/teacher/classrooms`, `/teacher/classrooms/[id]`, `/teacher/quizzes`, `/teacher/quizzes/new` | Giáo viên | Quản lý lớp học, phân công bài tập và theo dõi điểm |
-| `quiz/` | `/quiz/[id]`, `/quiz/[id]/mode`, `/quiz/[id]/session/[sessionId]`, `/quiz/[id]/session/[sessionId]/flashcard`, `/quiz/[id]/session/[sessionId]/mobile`, `/quiz/[id]/session/[sessionId]/flashcard/mobile`, `/quiz/[id]/result/[sessionId]` | Chung | Phòng thi trắc nghiệm đa thiết bị (Desktop, Mobile, Flashcard) |
-| Public | `/`, `/explore`, `/courses/[code]`, `/privacy`, `/terms`, `/maintenance` | Công khai | Trang chủ, duyệt đề thi công khai, điều khoản, trang bảo trì |
-
-> 🛡️ **Middleware Web (`apps/web/proxy.ts`)**: Mọi request tới `/admin` hoặc `/admin/*` trên Web tự động được redirect sang Cổng Quản trị độc lập (`NEXT_PUBLIC_ADMIN_URL`). Mọi request tới `/api/admin/*` trả về `404 Not Found`.
+The FQuiz platform is structured as a **Pure Symmetrical Turborepo Monorepo** comprising two independent applications with fully isolated domains and codebases:
 
 ---
 
-## 2. Cổng Quản trị Hệ thống (`apps/admin` — Port 3001 / `https://example.invalid`)
+## 1. Student & Teacher Web Portal (`apps/web` — Port 3000 / `https://example.invalid`)
 
-| Phân hệ | Đường dẫn | Quyền hạn | Mô tả |
+| Route Group | Path | Audience | Description |
 |---|---|---|---|
-| **Xác thực** | `/login` | Admin / Dev | Đăng nhập bảng điều khiển quản trị |
-| **Tổng quan** | `/` (Dashboard) | Admin / Dev | Chỉ số tổng quan hệ thống, phân tích bài thi |
-| **Đề thi** | `/quizzes`, `/quizzes/new`, `/quizzes/[id]/edit` | Admin / Dev | Quản lý, tạo mới và chỉnh sửa đề thi chuẩn với Question Bank Sync |
-| **Người dùng** | `/users` | Admin / Dev | Quản lý tài khoản, phân quyền, khóa tài khoản (Ban), reset mật khẩu |
-| **Danh mục** | `/categories` | Admin / Dev | Quản lý danh mục môn học hệ thống |
-| **Ngân hàng câu hỏi** | `/question-bank` | Admin / Dev | Phân tích mâu thuẫn câu hỏi, migration và đồng bộ ngân hàng |
-| **Cài đặt** | `/settings` | Admin / Dev | Cấu hình tham số hệ thống, LLM API keys, maintenance mode |
-| **Hộp thư góp ý** | `/feedback` | Admin / Dev | Tiếp nhận, phản hồi và giải quyết ý kiến đóng góp |
+| `(auth)` | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/restore-account` | Guests | Authentication workflows: login, registration, password recovery |
+| `(student)` | `/dashboard`, `/history`, `/history/[id]/[sessionId]`, `/community`, `/profile`, `/settings`, `/student/classrooms` | Students | Personal learning studio, classrooms, study history, community forum |
+| `(teacher)` | `/teacher/classrooms`, `/teacher/classrooms/[id]`, `/teacher/quizzes`, `/teacher/quizzes/new` | Teachers | Classroom management, assignment dispatching, gradebook reports |
+| `quiz/` | `/quiz/[id]`, `/quiz/[id]/mode`, `/quiz/[id]/session/[sessionId]`, `/quiz/[id]/session/[sessionId]/flashcard`, `/quiz/[id]/session/[sessionId]/mobile`, `/quiz/[id]/session/[sessionId]/flashcard/mobile`, `/quiz/[id]/result/[sessionId]` | All Users | Cross-device quiz execution room (Desktop, Mobile, Flashcard, Results) |
+| Public | `/`, `/explore`, `/courses/[code]`, `/privacy`, `/terms`, `/maintenance` | Public | Home landing page, public course discovery, legal policies, maintenance fallback |
 
-> 🛡️ **Middleware Admin (`apps/admin/proxy.ts`)**: Áp dụng Zero-Trust Proxy, chặn toàn bộ non-admin requests và chuyển hướng về `/login`.
+> 🛡️ **Web Middleware (`apps/web/proxy.ts`)**: Any incoming request to `/admin` or `/admin/*` on the Web app is redirected to the dedicated Admin Portal (`NEXT_PUBLIC_ADMIN_URL`). Any request to `/api/admin/*` returns `404 Not Found`.
+
+---
+
+## 2. System Admin Portal (`apps/admin` — Port 3001 / `https://example.invalid`)
+
+| Subsystem | Path | Access | Description |
+|---|---|---|---|
+| **Auth** | `/login` | Admin / Dev | Dedicated administrative login portal |
+| **Overview** | `/` (Dashboard) | Admin / Dev | System overview metrics, examination activity analytics |
+| **Quizzes** | `/quizzes`, `/quizzes/new`, `/quizzes/[id]/edit` | Admin / Dev | Standardized quiz authoring, editing, and Question Bank synchronization |
+| **Users** | `/users` | Admin / Dev | User account management, role assignment, account bans, password resets |
+| **Categories** | `/categories` | Admin / Dev | System-wide course and category taxonomy management |
+| **Question Bank** | `/question-bank` | Admin / Dev | Conflict resolution, batch migrations, and question bank deduplication |
+| **Settings** | `/settings` | Admin / Dev | System configuration, LLM API keys, maintenance mode toggle |
+| **Feedback** | `/feedback` | Admin / Dev | User feedback intake, review, and resolution tracking |
+
+> 🛡️ **Admin Middleware (`apps/admin/proxy.ts`)**: Implements a Zero-Trust RBAC Proxy, denying all non-admin requests and redirecting unauthorized visitors to `/login`.

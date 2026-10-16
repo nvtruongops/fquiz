@@ -9,23 +9,23 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     {
       _id: 'q1',
       question_id: 'Q-001',
-      text: 'Triết học ra đời vào khoảng thời gian nào?',
-      options: ['Thế kỷ VIII - VI TCN', 'Thế kỷ X TCN', 'Thế kỷ I SCN', 'Thế kỷ V SCN'],
+      text: 'When was Philosophy founded?',
+      options: ['8th - 6th Century BC', '10th Century BC', '1st Century AD', '5th Century AD'],
       correct_answer: 0,
-      explanation: 'Triết học ra đời vào khoảng thế kỷ VIII - VI TCN tại các trung tâm văn minh lớn.',
+      explanation: 'Philosophy originated around the 8th - 6th century BC in major civilization centers.',
     },
     {
       _id: 'q2',
       question_id: 'Q-002',
-      text: 'Đối tượng nghiên cứu của triết học là gì?',
+      text: 'What is the subject matter of philosophy?',
       options: [
-        'Các quy luật chung nhất của tự nhiên, xã hội và tư duy',
-        'Thế giới tự nhiên',
-        'Tư duy con người',
-        'Xã hội loài người',
+        'The most general laws of nature, society, and thought',
+        'The natural world',
+        'Human thinking',
+        'Human society',
       ],
       correct_answer: 0,
-      explanation: 'Triết học nghiên cứu các quy luật vận động, phát triển chung nhất.',
+      explanation: 'Philosophy studies the most general laws of motion and development.',
     },
   ]
 
@@ -33,9 +33,9 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     // Mock public quiz detail
     await mockPublicQuizDetail(page, {
       id: mockQuizId,
-      title: 'Đề thi thử Triết học Mác - Lênin (Guest E2E Test)',
-      description: 'Bài kiểm tra mẫu cho chế độ khách',
-      categoryName: 'Khoa học Chính trị',
+      title: 'Philosophy Practice Quiz (Guest E2E Test)',
+      description: 'Sample practice quiz for guest mode',
+      categoryName: 'Political Science',
       course_code: 'MLN111',
       questionCount: 2,
       studentCount: 10,
@@ -51,25 +51,25 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     })
   })
 
-  test('Guest clicks "Bắt đầu ngay" -> Displays GuestHistoryReminderModal', async ({ page }) => {
+  test('Guest clicks "Start Now" -> Displays GuestHistoryReminderModal', async ({ page }) => {
     await page.goto(`/quiz/${mockQuizId}`)
 
-    // Click "Bắt đầu ngay"
-    const startButton = page.getByRole('button', { name: /Bắt đầu ngay/i })
+    // Click "Start Now"
+    const startButton = page.getByRole('button', { name: /Start Now/i })
     await expect(startButton).toBeVisible()
     await startButton.click()
 
     // Verify GuestHistoryReminderModal is rendered
-    const modalTitle = page.getByText(/LƯU LẠI TIẾN TRÌNH HỌC TẬP/i)
+    const modalTitle = page.getByText(/SAVE YOUR STUDY PROGRESS/i)
     await expect(modalTitle).toBeVisible()
 
-    const guestBadge = page.getByText(/Chế độ Khách · Guest Mode/i)
+    const guestBadge = page.getByText(/Guest Mode/i)
     await expect(guestBadge).toBeVisible()
 
-    const loginButton = page.getByRole('button', { name: /Đăng nhập để lưu tiến trình/i })
+    const loginButton = page.getByRole('button', { name: /Sign in to save progress/i })
     await expect(loginButton).toBeVisible()
 
-    const continueGuestButton = page.getByRole('button', { name: /Tiếp tục làm bài với tư cách Khách/i })
+    const continueGuestButton = page.getByRole('button', { name: /Continue as Guest/i })
     await expect(continueGuestButton).toBeVisible()
   })
 
@@ -77,21 +77,21 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     await page.goto(`/quiz/${mockQuizId}`)
 
     // Open reminder modal
-    await page.getByRole('button', { name: /Bắt đầu ngay/i }).click()
+    await page.getByRole('button', { name: /Start Now/i }).click()
 
-    // Click "Tiếp tục làm bài với tư cách Khách"
-    const continueGuestBtn = page.getByRole('button', { name: /Tiếp tục làm bài với tư cách Khách/i })
+    // Click "Continue as Guest"
+    const continueGuestBtn = page.getByRole('button', { name: /Continue as Guest/i })
     await continueGuestBtn.click()
 
     // Verify reminder modal closes and mode selection modal opens
-    const modeSelectTitle = page.getByText(/Tùy Chọn Luyện Tập/i)
+    const modeSelectTitle = page.getByText(/Practice Options/i)
     await expect(modeSelectTitle).toBeVisible()
 
     // Verify practice options
-    await expect(page.getByRole('button', { name: /Xem đáp án ngay/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Thi thử & Kiểm tra/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Học lật thẻ/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Bắt đầu làm bài/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Instant Feedback/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Mock Exam|Exam Simulation/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Flashcard/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Start Quiz|Start Practice/i })).toBeVisible()
   })
 
   test('Guest creates session & takes quiz -> redirects to session runner', async ({ page }) => {
@@ -105,11 +105,11 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
 
     await page.goto(`/quiz/${mockQuizId}`)
 
-    // Click "Bắt đầu ngay" -> "Tiếp tục làm bài với tư cách Khách" -> "Bắt đầu làm bài"
-    await page.getByRole('button', { name: /Bắt đầu ngay/i }).click()
-    await page.getByRole('button', { name: /Tiếp tục làm bài với tư cách Khách/i }).click()
+    // Click "Start Now" -> "Continue as Guest" -> "Start Practice"
+    await page.getByRole('button', { name: /Start Now/i }).click()
+    await page.getByRole('button', { name: /Continue as Guest/i }).click()
 
-    const startExamBtn = page.getByRole('button', { name: /Bắt đầu làm bài/i })
+    const startExamBtn = page.getByRole('button', { name: /Start Quiz|Start Practice/i })
     await expect(startExamBtn).toBeVisible()
     await startExamBtn.click()
 
@@ -122,7 +122,7 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     await page.goto(`/quiz/${mockQuizId}/result/${mockSessionId}`)
 
     // Verify GuestClaimBanner or Result layout is rendered
-    const claimBannerText = page.getByText(/Lưu bài thi này vào Hồ sơ cá nhân\?|Đăng nhập để lưu kết quả|Không tìm thấy kết quả/i)
+    const claimBannerText = page.getByText(/Save this exam to your personal profile|Sign in to save results|Result not found/i)
     await expect(claimBannerText.first()).toBeVisible()
   })
 })

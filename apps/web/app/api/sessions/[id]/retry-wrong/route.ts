@@ -62,7 +62,7 @@ export const POST = withAuth(async (
 
     if (wrongQuestionIndices.length === 0) {
       return NextResponse.json(
-        { error: 'Bạn đã làm đúng tất cả các câu hỏi trong lần thi này!' },
+        { error: 'You answered all questions correctly in this attempt!' },
         { status: 400 }
       )
     }
@@ -71,11 +71,18 @@ export const POST = withAuth(async (
     const wrongQuestionsCache = wrongQuestionIndices.map((actualIdx) => {
       const q = allQuestions[actualIdx]
       return {
-        _id: q._id,
+        _id:
+          q._id && mongoose.Types.ObjectId.isValid(q._id.toString())
+            ? new mongoose.Types.ObjectId(q._id.toString())
+            : new mongoose.Types.ObjectId(),
         question_id: q.question_id || generateQuestionId(q),
         text: q.text,
         options: q.options,
-        correct_answer: q.correct_answer,
+        correct_answer: Array.isArray(q.correct_answer)
+          ? q.correct_answer
+          : typeof q.correct_answer === 'number'
+            ? [q.correct_answer]
+            : [],
         explanation: q.explanation,
         ...(q.image_url ? { image_url: q.image_url } : {}),
       }

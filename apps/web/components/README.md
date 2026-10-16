@@ -1,63 +1,62 @@
 # 🧩 Components Library (`components/`)
 
-Thư viện thành phần giao diện người dùng (UI Component Library) của **FQuiz**, được tổ chức theo mô hình **Domain-Driven Component Architecture** kết hợp với hệ thống **shadcn/ui (Radix Primitives)**, **Tailwind CSS 3** và hoạt ảnh hiệu năng cao **GSAP 3**.
+Frontend UI component library for **FQuiz**, architected according to a **Domain-Driven Component Architecture** integrating **shadcn/ui (Radix Primitives)**, **Tailwind CSS 3**, and **GSAP 3** for high-performance animations.
 
 ---
 
-## 1. Cấu trúc Thư mục (Directory Structure)
+## 1. Directory Structure
 
 ```
 components/
-├── community/                 # Diễn đàn cộng đồng & bài viết học tập
-│   ├── CommunityHeader.tsx    # Header & thống kê bài viết
-│   ├── CommunityPostCard.tsx  # Thẻ hiển thị bài viết, likes, comments
-│   ├── CreatePostModal.tsx    # Modal tạo bài thảo luận mới
-│   └── FeedbackModal.tsx      # Modal tiếp nhận phản hồi người dùng
-├── dashboard/                 # Bảng điều khiển học tập cá nhân (Student Dashboard)
-│   ├── DashboardHeader.tsx    # Chào mừng & thống kê streak
-│   ├── IncompleteSessionBanner.tsx # Banner nhắc nhở tiếp tục bài thi đang dở
-│   ├── LearningStudioGrid.tsx # Lưới các công cụ học tập thông minh
-│   ├── PinnedCategoriesSection.tsx # Danh mục yêu thích được ghim
-│   └── RecentActivitiesFeed.tsx # Nhật ký hoạt động thi gần đây
-├── history/                   # Lịch sử thi & ôn tập
-│   └── HistorySkeleton.tsx    # Skeleton loading trạng thái lịch sử
-├── layout/                    # Layout khung toàn ứng dụng
-│   ├── AppLayout.tsx          # Wrapper layout chung (Header, Sidebar, Content, Footer)
-│   ├── Sidebar.tsx            # Sidebar điều hướng chính đa vai trò
-│   ├── TopHeaderBar.tsx       # Thanh header trên cùng, chuyển theme, notifications
-│   ├── MobileNav.tsx          # Thanh điều hướng dưới đáy cho màn hình di động
-│   ├── Footer.tsx             # Footer thông tin hệ thống và bản quyền
-│   └── UserDropdown.tsx       # Menu tài khoản, hồ sơ và đăng xuất
-├── quiz/                      # Động cơ & Giao diện Thi trắc nghiệm (Xem components/quiz/README.md)
-│   ├── detail/                # Chi tiết bài thi, thống kê và bảng xếp hạng
-│   ├── editor/                # Bộ soạn thảo đề thi kéo thả, form metadata
-│   ├── explore/               # Khám phá đề thi công khai, bộ lọc danh mục
-│   ├── my-quizzes/            # Quản lý kho đề thi cá nhân của học viên
-│   ├── question-bank/         # Tích hợp ngân hàng câu hỏi, cảnh báo conflict
-│   ├── session/               # Phòng thi trắc nghiệm (Immediate, Review, Flashcard)
-│   └── shared/                # Thành phần dùng chung: Timer, Badge, ImageUpload
-├── shared/                    # Các thành phần giao diện nền tảng (Xem components/shared/README.md)
-│   ├── ui/                    # shadcn/ui Primitives (button, card, dialog, select...)
-│   ├── auth/                  # Form đăng nhập, đăng ký, Google OAuth
+├── community/                 # Community discussions & learning posts
+│   ├── CommunityHeader.tsx    # Feed header & post statistics
+│   ├── CommunityPostCard.tsx  # Post cards with likes and comments
+│   ├── CreatePostModal.tsx    # Create new discussion thread modal
+│   └── FeedbackModal.tsx      # User feedback & bug report modal
+├── dashboard/                 # Student Learning Studio & Dashboard
+│   ├── DashboardHeader.tsx    # Welcome header & streak counters
+│   ├── IncompleteSessionBanner.tsx # In-progress session resume reminder
+│   ├── LearningStudioGrid.tsx # Smart learning tool cards
+│   ├── PinnedCategoriesSection.tsx # Pinned favorite subject shortcuts
+│   └── RecentActivitiesFeed.tsx # Recent quiz attempts activity feed
+├── history/                   # Exam & practice session history
+│   └── HistorySkeleton.tsx    # Loading skeleton for session history
+├── layout/                    # Application shell & navigation layouts
+│   ├── AppLayout.tsx          # Master layout wrapper (Header, Sidebar, Content, Footer)
+│   ├── Sidebar.tsx            # Multi-role navigation sidebar
+│   ├── TopHeaderBar.tsx       # Top bar with theme switchers & profile shortcuts
+│   ├── MobileNav.tsx          # Mobile bottom navigation bar
+│   ├── Footer.tsx             # System metadata and copyright footer
+│   └── UserDropdown.tsx       # Account profile and logout dropdown
+├── quiz/                      # Quiz engine UI (See components/quiz/README.md)
+│   ├── detail/                # Quiz landing page, stats, and mode selectors
+│   ├── editor/                # Drag-and-drop question editor & metadata forms
+│   ├── explore/               # Public quiz catalog & subject filters
+│   ├── question-bank/         # Question bank integration & conflict resolver
+│   ├── session/               # Exam room interfaces (Immediate, Review, Flashcard)
+│   └── shared/                # Shared widgets: Timer, Badges, ImageUpload
+├── shared/                    # Foundational design primitives (See components/shared/README.md)
+│   ├── ui/                    # shadcn/ui primitives (button, card, dialog, select...)
+│   ├── auth/                  # Authentication forms, Google OAuth button
 │   ├── gsap/                  # Animation components (ProgressBar, StaggerContainer)
 │   ├── providers/             # React Context Providers (QueryProvider, ThemeProvider)
-│   ├── selection/             # Tương tác văn bản tra cứu từ điển
-│   └── DevOnlyGuard.tsx       # Component bảo vệ các công cụ dev trên production
-├── student/                   # Không gian học sinh
-│   └── classrooms/            # Giao diện lớp học của học viên
-└── teacher/                   # Không gian giảng dạy
-    └── TeacherSidebar.tsx     # Sidebar điều hướng cho giáo viên
+│   ├── selection/             # In-text dictionary selection helpers
+│   └── DevOnlyGuard.tsx       # Development-only tools guard for production
+├── student/                   # Student workspaces
+│   └── classrooms/            # Student classroom views & joined courses
+└── teacher/                   # Teacher workspaces
+    └── TeacherSidebar.tsx     # Teacher dashboard sidebar
 ```
 
 ---
 
-## 2. Quy chuẩn Hoạt ảnh GSAP (GSAP Animation Standards)
+## 2. GSAP Animation Standards
 
-FQuiz sử dụng `@gsap/react` để đem lại trải nghiệm mượt mà 60fps với độ trễ thấp nhất:
+FQuiz utilizes `@gsap/react` for 60fps animations with minimal execution overhead:
 
-1. **Sử dụng `useGSAP()` Hook**: Luôn bọc animation trong `useGSAP(() => { ... }, { scope: containerRef })` để tự động dọn dẹp bộ nhớ (`ctx.revert()`) khi unmount.
-2. **GPU Performance First**: Chỉ animate các thuộc tính GPU transform (`x`, `y`, `scale`, `rotation`, `autoAlpha`). Tuyệt đối không animate layout properties (`width`, `height`, `top`, `left`).
-3. **Accessibility (`prefers-reduced-motion`)**: Sử dụng `gsap.matchMedia()` để tự động tắt animation nếu người dùng bật chế độ giảm chuyển động trong hệ điều hành:
+1. **`useGSAP()` Hook**: Always wrap animations inside `useGSAP(() => { ... }, { scope: containerRef })` to ensure automatic memory cleanup (`ctx.revert()`) on unmount.
+2. **GPU Performance First**: Animate transform aliases exclusively (`x`, `y`, `scale`, `rotation`, `autoAlpha`). Never animate layout properties (`width`, `height`, `top`, `left`).
+3. **Accessibility (`prefers-reduced-motion`)**: Leverage `gsap.matchMedia()` to disable non-essential motion when requested by operating system preferences:
 
 ```tsx
 useGSAP(() => {
@@ -79,20 +78,20 @@ useGSAP(() => {
 
 ---
 
-## 3. Quy chuẩn Design Tokens & Theme Governance
+## 3. Design Tokens & Theme Governance
 
-Mọi component trong thư viện phải tuân thủ nghiêm ngặt chuẩn **3-Tier Theme Governance**:
+All components strictly comply with the **3-Tier Theme Governance** standard:
 
-- ❌ **Cấm hardcoded Hex**: Không viết `color: #10b981` hoặc `#ffffff`.
-- ❌ **Cấm Tailwind Light Clashing**: Không viết `bg-white`, `text-black`, `bg-gray-100`.
-- ✅ **Sử dụng Semantic Variables**: Sử dụng `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`.
-- ✅ **Trật tự độ sáng Surface Elevation**: `Background` $\le$ `Card` $\le$ `Popover/Dialog`.
-- ✅ **Độ tương phản WCAG 2.2 AA**: Mọi văn bản kết hợp với nền phải đạt tỷ lệ tương phản $\ge 4.5:1$ trên cả 4 themes: `Light`, `Dark`, `Green`, `Pink`.
+- ❌ **No Hardcoded Hex**: Do not specify `color: #10b981` or `#ffffff`.
+- ❌ **No Tailwind Light Clashing**: Do not specify `bg-white`, `text-black`, `bg-gray-100`.
+- ✅ **Use Semantic Variables**: Use `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`.
+- ✅ **Surface Elevation Hierarchy**: `Background` $\le$ `Card` $\le$ `Popover/Dialog`.
+- ✅ **WCAG 2.2 AA Contrast**: Ensure minimum contrast ratios $\ge 4.5:1$ across all 4 themes: `Light`, `Dark`, `Green`, `Pink`.
 
 ---
 
-## 4. Tối ưu Hiệu năng Render (React Performance)
+## 4. Render Performance Optimization
 
-- **Lazy Loading với `next/dynamic`**: Các modal nặng hoặc trình soạn thảo đề thi phức tạp (`QuizEditorWithQuestionBank`, `CreatePostModal`) được load theo nhu cầu (on-demand) với `ssr: false`.
-- **Selector Memoization**: Khi kết nối với Zustand Store, luôn sử dụng selector nông (`state => state.field`) thay vì lấy toàn bộ state object để tránh re-render thừa.
-- **Tách Component hạt nhân**: Chia nhỏ các thẻ câu hỏi và bảng điều khiển thành các sub-components độc lập để tối ưu hóa việc render lại từng dòng khi học viên làm bài.
+- **Lazy Loading with `next/dynamic`**: Heavy modals and complex editors (`QuizEditorWithQuestionBank`, `CreatePostModal`) are loaded on-demand with `ssr: false`.
+- **Selector Memoization**: When accessing Zustand stores, always use shallow atomic selectors (`state => state.field`) to eliminate redundant re-renders.
+- **Component Decomposition**: Quiz question cards and option palettes are split into isolated sub-components to limit the blast radius of user input re-renders.

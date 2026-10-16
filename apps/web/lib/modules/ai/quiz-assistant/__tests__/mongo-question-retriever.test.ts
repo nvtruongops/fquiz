@@ -54,7 +54,7 @@ describe('MongoQuestionRetriever & Invariant 5 (Partial Failure Resiliency Tests
       categoryId: 'cat-1',
       currentQuestionText: 'Different question text',
       targetOptionText: 'Channels',
-      userQuery: 'Có câu nào đáp án Channels không?',
+      userQuery: 'Is there any question where Channels is the answer?',
       intent: 'FIND_SIMILAR_QUESTION',
     })
 
@@ -102,7 +102,7 @@ describe('MongoQuestionRetriever & Invariant 5 (Partial Failure Resiliency Tests
       categoryId: 'cat-1',
       currentQuestionText: currentQText,
       targetOptionText: '45',
-      userQuery: 'Tìm câu tương tự',
+      userQuery: 'Find similar question',
       intent: 'FIND_SIMILAR_QUESTION',
     })
 

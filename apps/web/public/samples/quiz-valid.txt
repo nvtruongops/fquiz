@@ -1,27 +1,26 @@
+Question 1:
+Question: What is the primary function of an operating system kernel?
+A. Managing system resources and hardware communication
+B. Compiling high-level programming code into machine instructions
+C. Rendering graphical user interfaces in a web browser
+D. Designing relational database schemas
+Answer: A
+Explanation: The kernel is the core component of an operating system responsible for managing CPU, memory, and hardware device interactions.
 
-Câu 1:
-Câu hỏi: Nội dung của câu hỏi số 1 là gì?
-A. Đây là đáp án A
-B. Đây là đáp án B
-C. Đây là đáp án C
-D. Đây là đáp án D
-Đáp án: A
-Mô tả: Giải thích: Đáp án A đúng vì đây là lựa chọn chính xác nhất.
+Question 2:
+Question: Which of the following are examples of non-relational (NoSQL) databases?
+A. PostgreSQL
+B. MongoDB
+C. Redis
+D. SQLite
+Answer: B, C
+Explanation: MongoDB (document-based) and Redis (key-value store) are NoSQL databases, whereas PostgreSQL and SQLite are relational SQL databases.
 
-Câu 2:
-Câu hỏi: Nội dung của câu hỏi số 2 là gì? (câu hỏi có nhiều đáp án đúng)
-A. Đáp án A
-B. Đáp án B (đúng)
-C. Đáp án C (đúng)
-D. Đáp án D
-Đáp án: B, C
-Mô tả: Giải thích: Cả B và C đều là đáp án đúng.
-
-Câu 3:
-Câu hỏi: Nội dung của câu hỏi số 3 là gì?
-A. Lựa chọn 1
-B. Lựa chọn 2
-C. Lựa chọn 3
-D. Lựa chọn 4
-Đáp án: D
-Mô tả: Giải thích: Lựa chọn 4 là đáp án đúng vì nó phù hợp nhất với yêu cầu.
+Question 3:
+Question: Which HTTP status code signifies that a requested resource was not found on the server?
+A. 200 OK
+B. 401 Unauthorized
+C. 403 Forbidden
+D. 404 Not Found
+Answer: D
+Explanation: HTTP 404 Not Found indicates that the origin server could not find a current representation for the target resource.

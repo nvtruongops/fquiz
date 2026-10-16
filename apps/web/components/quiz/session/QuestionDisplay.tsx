@@ -41,7 +41,9 @@ function useQuestionPin({
   quizTitle,
   quizId,
 }: Pick<QuestionDisplayProps, 'question' | 'showImmediateFeedback' | 'lastAnswerResult' | 'courseCode' | 'quizTitle' | 'quizId'>) {
-  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode)
+  const { pinnedQuestions, togglePinMutation } = usePinnedQuestions(courseCode, {
+    enabled: Boolean(courseCode),
+  })
   const isPinned = pinnedQuestions.some(
     (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
   )
@@ -178,7 +180,7 @@ function StandardQuestionView({
                   )}
                 >
                   {isFocused ? (
-                    <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <ChevronRight aria-hidden="true" className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                   ) : (
                     <span className="w-3.5 h-3.5 shrink-0" />
                   )}
@@ -220,15 +222,15 @@ function StandardQuestionView({
         <div
           onMouseDown={handleMouseDown}
           className="w-1.5 shrink-0 h-full bg-red-600 hover:bg-red-500 cursor-col-resize select-none transition-colors"
-          title="Kéo để điều chỉnh độ rộng 2 cột"
+          title="Drag to resize columns"
         />
 
         {/* Right Column: Flat Question Content (Attached near top margin) */}
         <div className="flex-1 min-w-0 h-full overflow-y-auto p-4 sm:p-6 space-y-4">
-          {/* Top Header Bar inside question area - Full Width (Không resize) */}
+          {/* Top Header Bar inside question area - Full Width (No resize) */}
           <div className="flex items-center justify-start gap-3 flex-wrap pb-2 border-b border-border w-full">
             <span className="text-xs font-bold text-foreground">
-              Câu hỏi {safeDisplayIndex}/{totalQuestions}
+              Question {safeDisplayIndex}/{totalQuestions}
             </span>
             <span className="text-[11px] text-muted-foreground italic">
               {requiredSelectionCount === 1 ? '(Choose 1 answer)' : `(Choose ${requiredSelectionCount} answers)`}
@@ -239,14 +241,13 @@ function StandardQuestionView({
               disabled={togglePinMutation.isPending}
               className="text-xs text-muted-foreground hover:text-foreground font-medium underline"
             >
-              {isPinned ? 'Bỏ ghim' : 'Ghim câu'}
+              {isPinned ? 'Unpin' : 'Pin question'}
             </button>
-            {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
-              <UsageBadge
-                count={question.usage_count}
-                used_in_quizzes={question.used_in_quizzes}
-              />
-            )}
+            <UsageBadge
+              count={question.usage_count}
+              used_in_quizzes={question.used_in_quizzes}
+              currentCourseCode={courseCode}
+            />
           </div>
 
           {/* Question Body & Options - Constrained max-w-3xl to avoid eye fatigue */}
@@ -261,7 +262,7 @@ function StandardQuestionView({
               <div className="my-3 border border-border bg-muted/20 p-2 rounded">
                 <img
                   src={question.image_url}
-                  alt="Minh họa câu hỏi"
+                  alt="Question illustration"
                   className="max-h-[360px] w-auto object-contain"
                 />
               </div>
@@ -278,14 +279,19 @@ function StandardQuestionView({
                 const isNoteActive = Boolean(isNoteMode)
 
                 return (
-                  <div
+                  <button
                     key={idx}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    aria-label={`Option ${letter}: ${option}`}
+                    disabled={isAnswerDisabled}
                     onClick={() => {
                       if (isAnswerDisabled || isNoteActive) return
                       onSelectOption(idx)
                     }}
                     className={cn(
-                      "p-2.5 rounded text-sm font-normal leading-relaxed font-[Arial,sans-serif] transition-none border flex items-center justify-between gap-3",
+                      "w-full text-left p-2.5 rounded text-sm font-normal leading-relaxed font-[Arial,sans-serif] transition-none border flex items-center justify-between gap-3",
                       !isAnswerDisabled && !isNoteActive && "cursor-pointer",
                       isAnswerDisabled && "cursor-not-allowed opacity-75",
                       isNoteActive && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
@@ -309,15 +315,15 @@ function StandardQuestionView({
 
                     {isCorrect && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0 animate-in fade-in duration-200">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Đáp án đúng
+                        <CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5" /> Correct answer
                       </span>
                     )}
                     {isWrongSelected && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0 animate-in fade-in duration-200">
-                        <XCircle className="w-3.5 h-3.5" /> Bạn đã chọn sai
+                        <XCircle aria-hidden="true" className="w-3.5 h-3.5" /> Your answer is incorrect
                       </span>
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -336,7 +342,7 @@ function StandardQuestionView({
               onChange={(e) => setWantFinish(e.target.checked)}
               className="w-3.5 h-3.5 rounded-xs accent-blue-600 cursor-pointer"
             />
-            <span>Tôi muốn nộp bài (I want to finish the exam).</span>
+            <span>I want to finish the exam.</span>
           </label>
           <button
             type="button"
@@ -344,7 +350,7 @@ function StandardQuestionView({
             disabled={!wantFinish}
             className="px-3 py-1 rounded border border-border bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-none"
           >
-            Nộp bài (Finish)
+            Finish Exam
           </button>
         </div>
 
@@ -356,7 +362,7 @@ function StandardQuestionView({
               onClick={onExit}
               className="px-3 py-1 rounded border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-none"
             >
-              Thoát (Exit)
+              Exit
             </button>
           )}
         </div>
@@ -411,21 +417,19 @@ function AnimatedQuestionView({
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-border pb-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs sm:text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 shadow-2xs">
-              Câu {safeDisplayIndex}/{totalQuestions}
+              Question {safeDisplayIndex}/{totalQuestions}
             </span>
             <span className="text-xs text-muted-foreground italic font-medium">
-              {requiredSelectionCount === 1 ? '(Chọn 1 đáp án)' : `(Chọn ${requiredSelectionCount} đáp án)`}
+              {requiredSelectionCount === 1 ? '(Choose 1 answer)' : `(Choose ${requiredSelectionCount} answers)`}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {(sessionMode === 'immediate' || (sessionMode === 'review' && submitted)) && (
-              <UsageBadge
-                count={question.usage_count}
-                used_in_quizzes={question.used_in_quizzes}
-                currentCourseCode={courseCode}
-              />
-            )}
+            <UsageBadge
+              count={question.usage_count}
+              used_in_quizzes={question.used_in_quizzes}
+              currentCourseCode={courseCode}
+            />
             <button
               type="button"
               onClick={handleTogglePin}
@@ -437,8 +441,8 @@ function AnimatedQuestionView({
                   : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <Bookmark className={cn("w-3.5 h-3.5 transition-transform", isPinned && "fill-current scale-110")} />
-              <span>{isPinned ? 'Đã ghim' : 'Ghim câu'}</span>
+              <Bookmark aria-hidden="true" className={cn("w-3.5 h-3.5 transition-transform", isPinned && "fill-current scale-110")} />
+              <span>{isPinned ? 'Pinned' : 'Pin question'}</span>
             </button>
           </div>
         </div>
@@ -447,8 +451,8 @@ function AnimatedQuestionView({
         {isNoteMode && (
           <div className="mb-4 flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold animate-in fade-in zoom-in-95 duration-200">
             <span className="flex items-center gap-2">
-              <PenTool className="w-4 h-4 text-amber-500 animate-bounce" />
-              <span>Chế độ Tra từ vựng đang bật: Thoải mái bôi đen text để tra từ (đáp án tạm ngưng click chọn).</span>
+              <PenTool aria-hidden="true" className="w-4 h-4 text-amber-500 animate-bounce" />
+              <span>Vocabulary Lookup Mode is active: Highlight text to look up definitions (option selection is paused).</span>
             </span>
           </div>
         )}
@@ -462,7 +466,7 @@ function AnimatedQuestionView({
             <div className="flex min-h-[220px] max-h-[420px] w-full items-center justify-center overflow-hidden rounded-lg bg-background">
               <img
                 src={question.image_url}
-                alt="Minh họa câu hỏi"
+                alt="Question illustration"
                 className="h-full max-h-[420px] w-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
             </div>
@@ -482,6 +486,10 @@ function AnimatedQuestionView({
             return (
               <button
                 key={optionKey}
+                type="button"
+                role="checkbox"
+                aria-checked={isSelected}
+                aria-label={`Option ${String.fromCodePoint(65 + idx)}: ${option}`}
                 onClick={() => {
                   if (isAnswerDisabled || isNoteActive) return
                   onSelectOption(idx)
@@ -513,12 +521,12 @@ function AnimatedQuestionView({
                 </span>
                 {isCorrect && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-success-fg bg-background/90 px-2.5 py-1 rounded-md border border-success-border shrink-0 animate-in zoom-in duration-300 shadow-xs">
-                    <CheckCircle2 className="w-4 h-4" /> Đáp án đúng
+                    <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Correct answer
                   </span>
                 )}
                 {isWrongSelected && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-incorrect-fg bg-background/90 px-2.5 py-1 rounded-md border border-incorrect-border shrink-0 animate-in zoom-in duration-300 shadow-xs">
-                    <XCircle className="w-4 h-4" /> Bạn đã chọn sai
+                    <XCircle aria-hidden="true" className="w-4 h-4" /> Your answer is incorrect
                   </span>
                 )}
               </button>
@@ -534,7 +542,7 @@ export const QuestionDisplay = React.memo(function QuestionDisplay(props: Questi
   if (!props.question || !Array.isArray(props.question.options)) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-muted-foreground font-medium">
-        Đang chuẩn bị câu hỏi...
+        Preparing question...
       </div>
     )
   }

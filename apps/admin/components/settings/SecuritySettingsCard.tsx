@@ -26,39 +26,39 @@ export const SecuritySettingsCard = React.memo(function SecuritySettingsCard({
       <Card className="border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground text-base font-bold flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-primary" /> Quy tắc Đăng ký &amp; Bảo mật
+            <KeyRound className="w-4 h-4 text-primary" /> Registration &amp; Security Rules
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">Kiểm soát quy tắc đăng ký và phiên làm việc học viên</CardDescription>
+          <CardDescription className="text-muted-foreground text-xs">Manage student registration rules and active sessions</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-muted/40 border border-border rounded-xl">
             <div className="space-y-1 pr-4">
-              <h4 className="font-semibold text-foreground text-sm">Cho phép đăng ký tài khoản mới</h4>
-              <p className="text-xs text-muted-foreground">Học viên có thể trực tiếp tạo tài khoản qua trang Register.</p>
+              <h4 className="font-semibold text-foreground text-sm">Allow New Account Registration</h4>
+              <p className="text-xs text-muted-foreground">Students can create new accounts directly via the Registration page.</p>
             </div>
             <Switch
               checked={Boolean(formState.allow_registration)}
               onCheckedChange={(checked) => setFormState((s) => ({ ...s, allow_registration: checked }))}
-              aria-label="Bật/tắt đăng ký tài khoản"
+              aria-label="Toggle user registration"
             />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-muted/40 border border-border rounded-xl">
             <div className="space-y-1 pr-4">
-              <h4 className="font-semibold text-foreground text-sm">Chống chia sẻ tài khoản</h4>
-              <p className="text-xs text-muted-foreground">Tự động khóa tài khoản khi phát hiện dấu hiệu chia sẻ bất thường.</p>
+              <h4 className="font-semibold text-foreground text-sm">Account Sharing Protection</h4>
+              <p className="text-xs text-muted-foreground">Automatically lock accounts upon detecting suspicious credential sharing.</p>
             </div>
             <Switch
               checked={Boolean(formState.anti_sharing_enabled)}
               onCheckedChange={(checked) => setFormState((s) => ({ ...s, anti_sharing_enabled: checked }))}
-              aria-label="Bật/tắt chống chia sẻ tài khoản"
+              aria-label="Toggle account sharing protection"
             />
           </div>
 
           {formState.anti_sharing_enabled && (
             <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-2 animate-in fade-in duration-200">
               <label htmlFor="max_violations" className="text-xs font-semibold text-foreground">
-                Ngưỡng vi phạm tối đa / tuần (Thứ 2 → Chủ nhật, giờ VN)
+                Max violation threshold / week (Monday → Sunday, UTC+7)
               </label>
               <Input
                 id="max_violations"
@@ -81,7 +81,7 @@ export const SecuritySettingsCard = React.memo(function SecuritySettingsCard({
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm px-6 rounded-xl cursor-pointer"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Lưu cấu hình Bảo mật
+          Save Security Settings
         </Button>
       </div>
     </div>

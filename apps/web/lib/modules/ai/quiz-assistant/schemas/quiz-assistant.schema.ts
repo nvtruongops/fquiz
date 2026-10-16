@@ -11,11 +11,11 @@ export const QuizAIIntentEnum = z.enum([
 ])
 export type QuizAIIntent = z.infer<typeof QuizAIIntentEnum>
 
-// Schema cho Request từ Client
+// Request Schema from Client
 export const QuizAssistantRequestSchema = z.object({
-  sessionId: z.string().min(1, 'Session ID không được để trống'),
-  questionIndex: z.number().int().min(0, 'Question index phải >= 0'),
-  userQuery: z.string().min(1, 'Câu hỏi không được để trống').max(1000, 'Câu hỏi quá dài'),
+  sessionId: z.string().min(1, 'Session ID is required'),
+  questionIndex: z.number().int().min(0, 'Question index must be >= 0'),
+  userQuery: z.string().min(1, 'Query is required').max(1000, 'Query is too long'),
   intent: QuizAIIntentEnum.optional(),
   questionText: z.string().optional(),
   options: z.array(z.string()).optional(),
@@ -24,7 +24,7 @@ export const QuizAssistantRequestSchema = z.object({
 })
 export type QuizAssistantRequest = z.infer<typeof QuizAssistantRequestSchema>
 
-// Schema cho LLM Generation Output thuần túy
+// Schema for pure LLM Generation Output
 export const LLMQuizAssistantOutputSchema = z.object({
   reply: z.string().min(1),
   formulaExplanation: z.string().nullable().optional(),
@@ -33,7 +33,7 @@ export const LLMQuizAssistantOutputSchema = z.object({
 })
 export type LLMQuizAssistantOutput = z.infer<typeof LLMQuizAssistantOutputSchema>
 
-// Schema Public Response trả về Client qua ResponseMapper (Tương thích ngược 100%)
+// Public Response Schema returned to Client via ResponseMapper (100% backward compatible)
 export const QuizAssistantResponseSchema = z.object({
   intent: QuizAIIntentEnum,
   reply: z.string(),

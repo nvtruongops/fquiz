@@ -69,10 +69,10 @@ export function QuestionBankStatus() {
         >
           <div className="flex items-center gap-2 mb-1">
             <XCircle className="w-5 h-5 text-destructive" />
-            <span className="text-sm font-bold text-destructive">Chưa migration</span>
+            <span className="text-sm font-bold text-destructive">Not Migrated</span>
           </div>
           <p className="text-3xl font-black text-destructive">{data?.not_migrated ?? '—'}</p>
-          <p className="text-xs text-muted-foreground mt-1">môn học</p>
+          <p className="text-xs text-muted-foreground mt-1">categories</p>
         </button>
 
         <button
@@ -86,10 +86,10 @@ export function QuestionBankStatus() {
         >
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="w-5 h-5 text-warning-fg" />
-            <span className="text-sm font-bold text-warning-fg">Có quiz mới</span>
+            <span className="text-sm font-bold text-warning-fg">Has New Quizzes</span>
           </div>
           <p className="text-3xl font-black text-warning-fg">{data?.partial ?? '—'}</p>
-          <p className="text-xs text-muted-foreground mt-1">môn học</p>
+          <p className="text-xs text-muted-foreground mt-1">categories</p>
         </button>
 
         <button
@@ -103,10 +103,10 @@ export function QuestionBankStatus() {
         >
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-5 h-5 text-success-fg" />
-            <span className="text-sm font-bold text-success-fg">Đã đồng bộ</span>
+            <span className="text-sm font-bold text-success-fg">Fully Synced</span>
           </div>
           <p className="text-3xl font-black text-success-fg">{data?.synced ?? '—'}</p>
-          <p className="text-xs text-muted-foreground mt-1">môn học</p>
+          <p className="text-xs text-muted-foreground mt-1">categories</p>
         </button>
       </div>
 
@@ -114,10 +114,10 @@ export function QuestionBankStatus() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              {filter === 'all' && `Tất cả môn học (${data?.total_categories ?? 0})`}
-              {filter === 'not_migrated' && `Chưa migration (${data?.not_migrated ?? 0})`}
-              {filter === 'partial' && `Có quiz mới chưa migration (${data?.partial ?? 0})`}
-              {filter === 'synced' && `Đã đồng bộ (${data?.synced ?? 0})`}
+              {filter === 'all' && `All Categories (${data?.total_categories ?? 0})`}
+              {filter === 'not_migrated' && `Not Migrated (${data?.not_migrated ?? 0})`}
+              {filter === 'partial' && `Has Unmigrated Quizzes (${data?.partial ?? 0})`}
+              {filter === 'synced' && `Fully Synced (${data?.synced ?? 0})`}
             </CardTitle>
             <Button
               size="sm"
@@ -141,7 +141,7 @@ export function QuestionBankStatus() {
 
           {!loading && filtered.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              Không có môn học nào
+              No categories found
             </div>
           )}
 
@@ -164,17 +164,17 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
   const statusConfig = {
     not_migrated: {
       icon: <XCircle className="w-4 h-4 text-destructive" />,
-      badge: <Badge variant="destructive" className="text-xs">Chưa migration</Badge>,
+      badge: <Badge variant="destructive" className="text-xs">Not Migrated</Badge>,
       bg: 'border-destructive/20 bg-destructive/5',
     },
     partial: {
       icon: <AlertTriangle className="w-4 h-4 text-warning-fg" />,
-      badge: <Badge variant="warning" className="text-xs">Có quiz mới</Badge>,
+      badge: <Badge variant="warning" className="text-xs">Has New Quizzes</Badge>,
       bg: 'border-warning-border/40 bg-warning-bg/20',
     },
     synced: {
       icon: <CheckCircle2 className="w-4 h-4 text-success-fg" />,
-      badge: <Badge variant="success" className="text-xs">Đã đồng bộ</Badge>,
+      badge: <Badge variant="success" className="text-xs">Fully Synced</Badge>,
       bg: 'border-success-border/40 bg-success-bg/20',
     },
   }
@@ -191,7 +191,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
         <span className="font-semibold text-card-foreground flex-1">{category.category_name}</span>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">
-            {category.total_quizzes} quiz • {category.total_bank_questions} câu trong ngân hàng
+            {category.total_quizzes} quizzes • {category.total_bank_questions} questions in bank
           </span>
           {config.badge}
           <span className="text-muted-foreground text-xs">{expanded ? '▲' : '▼'}</span>
@@ -204,7 +204,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
             <div>
               <p className="text-xs font-bold text-destructive mb-2 flex items-center gap-1">
                 <XCircle className="w-3 h-3" />
-                Chưa migration ({category.not_migrated_quiz_codes.length} mã quiz):
+                Not migrated ({category.not_migrated_quiz_codes.length} quiz codes):
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {category.not_migrated_quiz_codes.map(code => (
@@ -220,7 +220,7 @@ function CategoryRow({ category }: { category: CategoryStatus }) {
             <div>
               <p className="text-xs font-bold text-success-fg mb-2 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
-                Đã migration ({category.migrated_quiz_codes.length} mã quiz):
+                Migrated ({category.migrated_quiz_codes.length} quiz codes):
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {category.migrated_quiz_codes.map(code => (

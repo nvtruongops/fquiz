@@ -3,8 +3,8 @@ import type { IQuizAssignmentProgress } from '../entities/classroom.types'
 
 const QuizAssignmentProgressSchema = new Schema<IQuizAssignmentProgress>(
   {
-    assignment_id: { type: Schema.Types.ObjectId, ref: 'QuizAssignment', required: true, index: true },
-    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true, index: true },
+    assignment_id: { type: Schema.Types.ObjectId, ref: 'QuizAssignment', required: true },
+    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true },
     student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     latest_session_id: { type: Schema.Types.ObjectId, ref: 'QuizSession', default: null },
     best_score: { type: Number, default: 0 },

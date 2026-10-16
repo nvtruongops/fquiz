@@ -10,24 +10,28 @@ interface QuizStatsProps {
 
 export function QuizStats({ numQuestions, numAttempts }: QuizStatsProps) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-6">
-      <div className="group flex items-center gap-2.5 sm:gap-5 rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-xs transition-all hover:shadow-md">
-        <div className="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-all shrink-0">
-          <HelpCircle className="h-4 w-4 sm:h-6 sm:w-6" />
+    <div className="inline-flex items-center gap-1.5 sm:gap-2 flex-wrap">
+      {/* Total Questions */}
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl border border-border bg-card shadow-xs text-xs font-bold transition-colors">
+        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+          <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
         </div>
-        <div className="min-w-0">
-          <p className="mb-0.5 sm:mb-1.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground truncate">Quy mô</p>
-          <p className="text-xs sm:text-xl font-extrabold text-foreground tracking-tight truncate">{numQuestions} <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground">CÂU</span></p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Questions:</span>
+          <span className="font-black text-foreground text-xs sm:text-sm">{numQuestions}</span>
+          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">items</span>
         </div>
       </div>
 
-      <div className="group flex items-center gap-2.5 sm:gap-5 rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-5 shadow-xs transition-all hover:shadow-md">
-        <div className="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-all shrink-0">
-          <Users className="h-4 w-4 sm:h-6 sm:w-6" />
+      {/* Total Attempts */}
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl border border-border bg-card shadow-xs text-xs font-bold transition-colors">
+        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+          <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
         </div>
-        <div className="min-w-0">
-          <p className="mb-0.5 sm:mb-1.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground truncate">Lượt thi</p>
-          <p className="text-xs sm:text-xl font-extrabold text-foreground tracking-tight truncate">{numAttempts ?? 0} <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground">LƯỢT</span></p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Attempts:</span>
+          <span className="font-black text-foreground text-xs sm:text-sm">{numAttempts ?? 0}</span>
+          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">plays</span>
         </div>
       </div>
     </div>

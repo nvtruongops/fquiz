@@ -1,6 +1,5 @@
 import { 
   Compass, 
-  FileText, 
   Clock,
   GraduationCap,
   MessageSquare
@@ -26,54 +25,47 @@ export interface Section {
 export const NAV_SECTIONS: Section[] = [
   {
     id: 'quiz-exam',
-    title: 'ÔN THI TRẮC NGHIỆM',
+    title: 'QUIZZES & EXAMS',
     items: [
       {
-        label: 'Khám phá đề thi',
+        label: 'Explore Quizzes',
         href: '/explore',
         icon: Compass,
         requiresAuth: false,
-        description: 'Khám phá kho đề thi công khai và danh mục môn học',
+        description: 'Explore public quiz repository and subject categories',
       },
       {
-        label: 'Bộ đề của tôi',
-        href: '/my-quizzes',
-        icon: FileText,
-        requiresAuth: true,
-        description: 'Lưu trữ, quản lý các bộ đề yêu thích và tự tạo đề thi cá nhân',
-      },
-      {
-        label: 'Lịch sử làm bài',
+        label: 'Exam History',
         href: '/history',
         icon: Clock,
         requiresAuth: true,
-        description: 'Theo dõi tiến độ, xem lại kết quả và làm lại các câu sai',
+        description: 'Track progress, review results, and retry incorrect questions',
       },
     ],
   },
   {
     id: 'classroom-section',
-    title: 'LỚP HỌC',
+    title: 'CLASSROOMS',
     items: [
       {
-        label: 'Lớp học của tôi',
+        label: 'My Classrooms',
         href: '/student/classrooms',
         icon: GraduationCap,
         requiresAuth: true,
-        description: 'Tham gia lớp học của giáo viên, làm bài tập và xem bảng điểm',
+        description: 'Join teacher classrooms, submit assignments, and view grades',
       },
     ],
   },
   {
     id: 'community',
-    title: 'CỘNG ĐỒNG',
+    title: 'COMMUNITY',
     items: [
       {
-        label: 'Diễn đàn cộng đồng',
+        label: 'Community Forum',
         href: '/community',
         icon: MessageSquare,
         requiresAuth: false,
-        description: 'Trao đổi học thuật, thảo luận câu hỏi và kết nối bạn học',
+        description: 'Academic exchange, question discussions, and student networking',
       },
     ],
   },

@@ -43,10 +43,10 @@ async function getDashboardData() {
 }
 
 const statCards = [
-  { key: 'categories', label: 'Mã môn', icon: Layers, color: 'text-success-fg', bg: 'bg-success-bg' },
-  { key: 'quizzes', label: 'Mã quiz', icon: FileQuestion, color: 'text-info-fg', bg: 'bg-info-bg' },
-  { key: 'users', label: 'Học viên', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-  { key: 'sessions', label: 'Lượt thi', icon: ClipboardList, color: 'text-warning-fg', bg: 'bg-warning-bg' },
+  { key: 'categories', label: 'Categories', icon: Layers, color: 'text-success-fg', bg: 'bg-success-bg' },
+  { key: 'quizzes', label: 'Quizzes', icon: FileQuestion, color: 'text-info-fg', bg: 'bg-info-bg' },
+  { key: 'users', label: 'Students', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+  { key: 'sessions', label: 'Exam Attempts', icon: ClipboardList, color: 'text-warning-fg', bg: 'bg-warning-bg' },
 ] as const
 
 export default async function AdminDashboardPage() {
@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tổng quan các chỉ số hoạt động hệ thống FQuiz</p>
+          <p className="text-sm text-muted-foreground mt-1">Overview of key metrics and system activity across FQuiz</p>
         </div>
       </div>
 
@@ -87,45 +87,45 @@ export default async function AdminDashboardPage() {
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">
         <Button asChild>
-          <Link href="/categories">Quản lý Categories</Link>
+          <Link href="/categories">Manage Categories</Link>
         </Button>
         <Button asChild>
-          <Link href="/quizzes">Quản lý Quizzes</Link>
+          <Link href="/quizzes">Manage Quizzes</Link>
         </Button>
         <Button asChild>
-          <Link href="/question-bank">Ngân hàng câu hỏi</Link>
+          <Link href="/question-bank">Question Bank</Link>
         </Button>
         <Button asChild>
-          <Link href="/users">Quản lý Học viên</Link>
+          <Link href="/users">Manage Users</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/settings">Cài đặt Hệ thống</Link>
+          <Link href="/settings">System Settings</Link>
         </Button>
       </div>
 
       {/* Recent Registrations */}
       <Card className="bg-card border-border shadow-xs text-card-foreground">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-foreground text-lg">Đăng ký gần đây</CardTitle>
+          <CardTitle className="text-foreground text-lg">Recent Registrations</CardTitle>
           <Button asChild variant="ghost" size="sm">
             <Link href="/users" className="flex items-center gap-1">
-              Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
+              View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </Button>
         </CardHeader>
         <CardContent>
           {recentUsers.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-4">Chưa có học viên nào.</p>
+            <p className="text-muted-foreground text-sm py-4">No users found.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <tr>
-                    <th className="text-left py-3 px-3 font-semibold">Học viên</th>
+                    <th className="text-left py-3 px-3 font-semibold">User</th>
                     <th className="text-left py-3 px-3 font-semibold">Email</th>
-                    <th className="text-left py-3 px-3 font-semibold">Vai trò</th>
-                    <th className="text-left py-3 px-3 font-semibold">Trạng thái</th>
-                    <th className="text-right py-3 px-3 font-semibold">Ngày tạo</th>
+                    <th className="text-left py-3 px-3 font-semibold">Role</th>
+                    <th className="text-left py-3 px-3 font-semibold">Status</th>
+                    <th className="text-right py-3 px-3 font-semibold">Joined Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -148,7 +148,7 @@ export default async function AdminDashboardPage() {
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right text-xs text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString('vi-VN')}
+                        {new Date(u.created_at).toLocaleDateString('en-US')}
                       </td>
                     </tr>
                   ))}

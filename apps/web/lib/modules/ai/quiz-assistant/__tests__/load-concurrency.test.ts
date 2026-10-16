@@ -110,7 +110,7 @@ describe('Concurrency Load Matrix & MongoDB Capacity Benchmark (P1.5 Gate)', () 
           await new Promise((res) => setTimeout(res, delay))
           return {
             content: {
-              reply: 'Phân tích phương án...',
+              reply: 'Analysis of options...',
               formulaExplanation: null,
               similarQuestionFound: true,
               similarQuestionDetails: 'What is communication management?',

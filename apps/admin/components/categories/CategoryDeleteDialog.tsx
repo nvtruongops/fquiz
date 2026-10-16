@@ -28,15 +28,15 @@ export function CategoryDeleteDialog({
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Xóa danh mục môn thi</DialogTitle>
+          <DialogTitle>Delete Category</DialogTitle>
           <DialogDescription>
-            Bạn có chắc chắn muốn xóa danh mục{' '}
-            <span className="font-bold text-foreground">{deleteTarget?.name}</span>? Thao tác này không thể hoàn tác.
+            Are you sure you want to delete the category{' '}
+            <span className="font-bold text-foreground">{deleteTarget?.name}</span>? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Cancel
           </Button>
           <Button
             variant="destructive"
@@ -44,7 +44,7 @@ export function CategoryDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Xác nhận xóa
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

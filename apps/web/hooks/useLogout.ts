@@ -10,7 +10,7 @@ export function useLogout() {
 
   const handleLogout = useCallback(async (redirectUrl: string = '/login') => {
     // Trigger the single SHARED PageTransitionLoader
-    startGlobalPageLoader('ĐANG ĐĂNG XUẤT...', 'Đang dọn dẹp phiên làm việc • Closing Session')
+    startGlobalPageLoader('LOGGING OUT...', 'Clearing workspace and session data')
 
     const startTime = Date.now()
 
@@ -24,13 +24,13 @@ export function useLogout() {
     }
 
     const elapsed = Date.now() - startTime
-    const remainingDelay = Math.max(0, 1000 - elapsed)
+    const remainingDelay = Math.max(0, 600 - elapsed)
 
     setTimeout(() => {
       finishGlobalPageLoader()
       setTimeout(() => {
         globalThis.location.href = redirectUrl
-      }, 500)
+      }, 200)
     }, remainingDelay)
   }, [queryClient])
 

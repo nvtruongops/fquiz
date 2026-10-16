@@ -1,10 +1,10 @@
 import { z } from 'zod'
 
 export const createClassroomSchema = z.object({
-  name: z.string().trim().min(2, 'Tên lớp học phải có ít nhất 2 ký tự').max(100, 'Tên lớp tối đa 100 ký tự'),
-  password: z.string().trim().max(50, 'Mật khẩu tối đa 50 ký tự').optional().or(z.literal('')),
-  description: z.string().max(1000, 'Mô tả tối đa 1000 ký tự').optional(),
-  cover_image: z.string().url('URL ảnh không hợp lệ').optional().or(z.literal('')),
+  name: z.string().trim().min(2, 'Classroom name must be at least 2 characters').max(100, 'Classroom name cannot exceed 100 characters'),
+  password: z.string().trim().max(50, 'Password cannot exceed 50 characters').optional().or(z.literal('')),
+  description: z.string().max(1000, 'Description cannot exceed 1000 characters').optional(),
+  cover_image: z.string().url('Invalid image URL').optional().or(z.literal('')),
 })
 
 export const updateClassroomSchema = createClassroomSchema.partial().extend({
@@ -21,14 +21,14 @@ export const joinClassroomSchema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .length(6, 'Mã lớp phải gồm đúng 6 ký tự'),
+    .length(6, 'Class code must be exactly 6 characters'),
   password: z.string().trim().optional().or(z.literal('')),
 })
 
 export const createQuizAssignmentSchema = z.object({
-  classroom_id: z.string().min(1, 'Vui lòng chọn lớp học'),
-  quiz_id: z.string().min(1, 'Vui lòng chọn bộ đề Quiz'),
-  title: z.string().trim().min(2, 'Tiêu đề bài tập ít nhất 2 ký tự'),
+  classroom_id: z.string().min(1, 'Please select a classroom'),
+  quiz_id: z.string().min(1, 'Please select a quiz'),
+  title: z.string().trim().min(2, 'Assignment title must be at least 2 characters'),
   description: z.string().optional(),
   start_at: z.string().datetime().optional().nullable(),
   due_at: z.string().datetime().optional().nullable(),

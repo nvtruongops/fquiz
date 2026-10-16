@@ -31,11 +31,11 @@ export function UploadQuestionBreakdownItem({
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 flex-1">
           <span className="text-xs font-bold text-foreground leading-relaxed block">
-            Câu {item.questionIndex + 1}: {item.uploaded.text}
+            Question {item.questionIndex + 1}: {item.uploaded.text}
           </span>
           {item.uploaded.explanation && (
             <p className="text-[11px] text-muted-foreground italic">
-              Giải thích: {item.uploaded.explanation}
+              Explanation: {item.uploaded.explanation}
             </p>
           )}
         </div>
@@ -44,7 +44,7 @@ export function UploadQuestionBreakdownItem({
           variant={isConflict ? 'destructive' : isReused ? 'outline' : 'secondary'}
           className="text-[10px] uppercase font-bold shrink-0"
         >
-          {isConflict ? 'Mâu thuẫn' : isReused ? 'Đã có trong bank' : 'Câu mới'}
+          {isConflict ? 'Conflict' : isReused ? 'In Bank' : 'New'}
         </Badge>
       </div>
 
@@ -72,7 +72,7 @@ export function UploadQuestionBreakdownItem({
         <div className="p-3 bg-background border border-destructive/30 rounded-xl space-y-2.5 text-xs">
           <p className="font-bold text-destructive flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4" />
-            Phát hiện mâu thuẫn đáp án với Ngân hàng câu hỏi:
+            Answer conflict detected with Question Bank:
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -87,10 +87,10 @@ export function UploadQuestionBreakdownItem({
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-[11px] text-primary">Lựa chọn 1: Theo File Upload</span>
+                <span className="font-bold text-[11px] text-primary">Option 1: Use Uploaded File</span>
                 {choice === 'file' && <Check className="w-3.5 h-3.5 text-primary" />}
               </div>
-              <p className="text-xs font-semibold">Đáp án: {item.uploaded.answer_texts.join(', ')}</p>
+              <p className="text-xs font-semibold">Answer: {item.uploaded.answer_texts.join(', ')}</p>
             </button>
 
             {/* Choice 2: Use Bank Answer */}
@@ -104,12 +104,12 @@ export function UploadQuestionBreakdownItem({
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-[11px] text-primary">Lựa chọn 2: Theo Ngân hàng</span>
+                <span className="font-bold text-[11px] text-primary">Option 2: Use Question Bank</span>
                 {choice === 'bank' && <Check className="w-3.5 h-3.5 text-primary" />}
               </div>
-              <p className="text-xs font-semibold">Đáp án: {item.bank.answer_texts.join(', ')}</p>
+              <p className="text-xs font-semibold">Answer: {item.bank.answer_texts.join(', ')}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                (Đang dùng trong: {item.bank.quizzes.map((q) => q.course_code).join(', ')})
+                (Currently used in: {item.bank.quizzes.map((q) => q.course_code).join(', ')})
               </p>
             </button>
           </div>
@@ -118,7 +118,7 @@ export function UploadQuestionBreakdownItem({
             <div className="flex items-center gap-1.5 pt-1 text-[11px] text-primary/90 font-medium animate-in fade-in duration-150">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-primary" />
               <span>
-                Tự động đồng bộ cập nhật đáp án mới này vào Ngân hàng câu hỏi và toàn bộ {item.bank.quizzes.length} đề thi liên quan
+                Automatically sync and update this new answer into the Question Bank and all {item.bank.quizzes.length} related quiz(zes)
               </span>
             </div>
           )}

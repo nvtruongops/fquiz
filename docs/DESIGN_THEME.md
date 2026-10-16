@@ -1,44 +1,44 @@
-# 🎨 FQuiz — Chuẩn Thiết kế Giao diện & Độ tương phản (Theme & Accessibility Spec)
+# 🎨 FQuiz — Theme & Accessibility Specification (`docs/DESIGN_THEME.md`)
 
-> **Phiên bản**: 2.0.0 (Pure Symmetrical Monorepo Architecture)  
-> **Gói quản lý**: `@fquiz/ui` (`packages/ui`)  
-> **Tiêu chuẩn**: WCAG 2.2 AA (Tương phản văn bản >= 4.5:1), GPU-Accelerated GSAP Animations.
-
----
-
-## 1. Kiến Trúc Design Tokens 3-Tier (`@fquiz/ui`)
-
-1. **Tier 1 (Primitives)**: Các biến CSS Variables HSL cơ bản (`--background`, `--foreground`, `--primary`, `--muted`...).
-2. **Tier 2 (Semantic Tokens)**: Định nghĩa ngữ nghĩa của bề mặt (Surface Elevation: `Background` $\le$ `Card` $\le$ `Popover`) và các trạng thái Status Triads (Success, Warning, Destructive, Info).
-3. **Tier 3 (Domain-Specific Tokens)**: Các token chuyên biệt cho phòng thi trắc nghiệm (`--quiz-correct`, `--quiz-incorrect`, `--quiz-selected`, `--quiz-timer`, `--quiz-streak`).
+> **Version**: 2.0.0 (Pure Symmetrical Monorepo Architecture)  
+> **Managed Package**: `@fquiz/ui` (`packages/ui`)  
+> **Standards**: WCAG 2.2 AA (Text contrast $\ge$ 4.5:1), GPU-Accelerated GSAP Animations.
 
 ---
 
-## 2. 4 Giao Diện Chủ Đề (Theme Palettes)
+## 1. 3-Tier Design Tokens Architecture (`@fquiz/ui`)
 
-Toàn bộ 4 themes đều đạt tiêu chuẩn tiếp cận **WCAG 2.2 AA** (Tỷ lệ tương phản văn bản tối thiểu 4.5:1, thực tế đạt $\ge$ 12.5:1):
+1. **Tier 1 (Primitives)**: Raw HSL CSS variables (`--background`, `--foreground`, `--primary`, `--muted`...).
+2. **Tier 2 (Semantic Tokens)**: Defines surface elevation hierarchies (`Background` $\le$ `Card` $\le$ `Popover`) and Status Triads (Success, Warning, Destructive, Info).
+3. **Tier 3 (Domain-Specific Tokens)**: Specialized tokens tailored for the examination experience (`--quiz-correct`, `--quiz-incorrect`, `--quiz-selected`, `--quiz-timer`, `--quiz-streak`).
 
-| Chủ đề (Theme) | Lớp CSS (Class) | Đặc trưng màu sắc | Tỷ lệ tương phản WCAG |
+---
+
+## 2. 4 Official Theme Palettes
+
+All 4 official themes strictly adhere to **WCAG 2.2 AA** accessibility standards (minimum text contrast ratio of 4.5:1, with empirical scores $\ge$ 12.5:1):
+
+| Theme | CSS Selector | Aesthetic Profile | WCAG Contrast Ratio |
 |---|---|---|---|
-| ☀️ **Light Theme** | `.theme-light` / root | Nền sáng thanh lịch, text đậm tương phản cao | **14.2:1** |
-| 🌙 **Dark Theme** | `.theme-dark` / `.dark` | Nền tối bảo vệ mắt, điểm nhấn xanh neon tinh tế | **13.8:1** |
-| 🌿 **Green Theme** | `.theme-green` | Tông màu ngọc lục bảo tươi mát, tạo cảm giác học tập thoải mái | **12.5:1** |
-| 🌸 **Pink Theme** | `.theme-pink` | Tông màu hồng pastel năng động, trẻ trung | **14.5:1** |
+| ☀️ **Light Theme** | `.theme-light` / root | Crisp, elegant bright background with high-contrast text | **14.2:1** |
+| 🌙 **Dark Theme** | `.theme-dark` / `.dark` | Eye-soothing midnight navy background with refined royal blue/gold accents | **13.8:1** |
+| 🌿 **Green Theme** | `.theme-green` | Organic emerald tones fostering calm, focused study sessions | **12.5:1** |
+| 🌸 **Pink Theme** | `.theme-pink` | Vibrant, modern pastel rose palette with balanced warmth | **14.5:1** |
 
 ---
 
-## 3. Cổng Kiểm Định Chất Lượng Giao Diện 3 Cấp (3-Tier Quality Gates)
+## 3. 3-Tier Quality Gates
 
-Hệ thống governance tự động quét toàn bộ codebase qua `node .agents/scripts/verify.js --strict`:
+The automated governance engine inspects the codebase via `node .agents/scripts/verify.js --strict`:
 
-- **Gate 1 (Source Linting)**: Cấm hoàn toàn mã màu hex cố định (`#fff`, `#000`) và các class nền cứng (`bg-white`, `bg-gray-100`) trong JSX/TSX. Tất cả phải sử dụng Semantic Tokens (`bg-background`, `bg-card`, `text-foreground`, `border-border`).
-- **Gate 2 (Elevation Verification)**: Kiểm tra trật tự độ sáng bề mặt đảm bảo các thẻ và modal luôn nổi bật trên nền chính (`Background L` $\le$ `Card L`).
-- **Gate 3 (WCAG Contrast Assertion)**: Tự động đo lường tỷ lệ tương phản giữa text và background bằng thuật toán tiêu chuẩn W3C.
+- **Gate 1 (Source Linting)**: Hardcoded hex codes (`#fff`, `#000`) and rigid Tailwind color classes (`bg-white`, `bg-gray-100`) are strictly forbidden in JSX/TSX. All UI components must consume semantic design tokens (`bg-background`, `bg-card`, `text-foreground`, `border-border`).
+- **Gate 2 (Elevation Verification)**: Validates surface elevation ordering to ensure cards, dialogs, and popovers properly layer above the background (`Background L` $\le$ `Card L`).
+- **Gate 3 (WCAG Contrast Assertion)**: Automatically computes mathematical contrast ratios between text and background using standard W3C luminance formulas.
 
 ---
 
-## 4. Chuẩn Hoạt Ảnh GSAP Micro-Interactions
+## 4. GSAP Micro-Interaction Standards
 
-- **Tích hợp React 18**: Luôn sử dụng `@gsap/react` với hook `useGSAP()` kèm `scope: containerRef` để tự động unmount cleanup (`ctx.revert()`).
-- **GPU Performance**: Chỉ animate các thuộc tính transform (`x`, `y`, `scale`, `rotation`, `autoAlpha`). Tuyệt đối không animate layout properties (`width`, `height`, `top`, `left`).
-- **Khả năng tiếp cận**: Hỗ trợ người dùng nhạy cảm chuyển động qua `gsap.matchMedia()` với `(prefers-reduced-motion: reduce)`.
+- **React 18 Integration**: Always use `@gsap/react` via the `useGSAP()` hook scoped to `scope: containerRef` for automatic unmount context cleanup (`ctx.revert()`).
+- **GPU Performance First**: Animate GPU transform aliases only (`x`, `y`, `scale`, `rotation`, `autoAlpha`). Never animate layout geometry properties (`width`, `height`, `top`, `left`).
+- **Motion Accessibility**: Accommodate motion-sensitive users with `gsap.matchMedia()` targeting `(prefers-reduced-motion: reduce)`.

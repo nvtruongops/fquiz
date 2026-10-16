@@ -29,16 +29,16 @@ export function QuizEditorSyncConfirmModal({
         <CardHeader className="p-5 pb-3.5 border-b border-border bg-destructive/10">
           <div className="flex items-center gap-2.5 text-destructive font-bold text-base">
             <AlertTriangle className="w-5 h-5 shrink-0" />
-            <span>Xác nhận Ghi đè Đáp án Ngân hàng ({fileConflictItems.length} câu)</span>
+            <span>Confirm Bank Answer Overwrite ({fileConflictItems.length} question(s))</span>
           </div>
           <CardDescription className="text-xs text-muted-foreground mt-1">
-            Bạn đã chọn dùng đáp án từ file tải lên cho <strong>{fileConflictItems.length}</strong> câu hỏi bị mâu thuẫn. Khi xác nhận, đáp án mới sẽ được cập nhật vào Ngân hàng câu hỏi và toàn bộ các đề thi liên quan.
+            You selected answers from the uploaded file for <strong>{fileConflictItems.length}</strong> conflicting question(s). Once confirmed, the new answers will update the Question Bank and all associated quizzes.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="p-5 space-y-3 max-h-[360px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-            Danh sách câu mâu thuẫn sẽ được cập nhật:
+            Conflicting questions to be updated:
           </span>
           <div className="space-y-2.5">
             {fileConflictItems.map((detail) => {
@@ -50,21 +50,21 @@ export function QuizEditorSyncConfirmModal({
                   className="p-3 rounded-xl border border-border bg-muted/20 space-y-2 text-xs"
                 >
                   <div className="font-bold text-foreground">
-                    Câu {qIndex + 1}: {rawQ?.text}
+                    Question {qIndex + 1}: {rawQ?.text}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
                     <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                      <span className="block font-bold text-[10px] uppercase">Đáp án mới (File upload):</span>
+                      <span className="block font-bold text-[10px] uppercase">New Answer (Uploaded file):</span>
                       <span className="font-semibold text-xs">{detail.uploaded.answer_texts.join(', ')}</span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
-                      <span className="block font-bold text-[10px] uppercase">Đáp án cũ (Ngân hàng):</span>
+                      <span className="block font-bold text-[10px] uppercase">Previous Answer (Question Bank):</span>
                       <span className="font-semibold text-xs">{detail.bank?.answer_texts.join(', ')}</span>
                     </div>
                   </div>
                   {detail.bank?.quizzes && detail.bank.quizzes.length > 0 && (
                     <p className="text-[11px] text-muted-foreground pt-0.5">
-                      ⚠️ Sẽ tự động cập nhật lại đáp án cho {detail.bank.quizzes.length} đề thi: <strong className="font-mono text-foreground">{detail.bank.quizzes.map((qz) => qz.course_code).join(', ')}</strong>
+                      ⚠️ Will automatically update answers for {detail.bank.quizzes.length} quiz(zes): <strong className="font-mono text-foreground">{detail.bank.quizzes.map((qz) => qz.course_code).join(', ')}</strong>
                     </p>
                   )}
                 </div>
@@ -82,7 +82,7 @@ export function QuizEditorSyncConfirmModal({
             onClick={onClose}
             className="cursor-pointer"
           >
-            Hủy bỏ / Quay lại
+            Cancel / Go Back
           </Button>
           <Button
             type="button"
@@ -96,7 +96,7 @@ export function QuizEditorSyncConfirmModal({
             ) : (
               <CheckCircle2 className="w-4 h-4" />
             )}
-            Xác nhận ghi đè &amp; Áp dụng
+            Confirm Overwrite &amp; Apply
           </Button>
         </div>
       </Card>

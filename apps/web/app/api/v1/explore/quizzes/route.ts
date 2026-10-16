@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import '@/lib/modules/auth/models/User'
-import '@/lib/modules/quiz/models/Category'
+import { User } from '@/lib/modules/auth/models/User'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { Types } from 'mongoose'
 
@@ -43,12 +43,21 @@ export async function GET(request: NextRequest) {
 
     const quizzes = await Quiz.find(query)
       .select('title course_code category_id questionCount studentCount created_by created_at')
-      .populate('created_by', 'username')
-      .populate('category_id', 'name')
       .sort(sortOption)
       .skip(offset)
       .limit(limit)
       .lean()
+
+    const creatorIds = Array.from(new Set(quizzes.map((q: any) => q.created_by).filter(Boolean)))
+    const categoryIds = Array.from(new Set(quizzes.map((q: any) => q.category_id).filter(Boolean)))
+
+    const [creators, categories] = await Promise.all([
+      creatorIds.length > 0 ? User.find({ _id: { $in: creatorIds } }).select('username').lean() : [],
+      categoryIds.length > 0 ? Category.find({ _id: { $in: categoryIds } }).select('name').lean() : [],
+    ])
+
+    const creatorMap = new Map((creators as any[]).map((c: any) => [c._id.toString(), c.username]))
+    const categoryMap = new Map((categories as any[]).map((c: any) => [c._id.toString(), c.name]))
 
     // Try to get user session data if authenticated
     const sessionMap = new Map<string, { score: number; totalQuestions: number; durationMs: number }>()
@@ -107,12 +116,12 @@ export async function GET(request: NextRequest) {
         title: quiz.title,
         course_code: quiz.course_code,
         source_type: 'explore_public' as const,
-        source_label: 'Thư viện công khai',
-        source_creator_name: quiz.created_by?.username || null,
+        source_label: 'Public Library',
+        source_creator_name: quiz.created_by ? creatorMap.get(quiz.created_by.toString()) || null : null,
         questionCount: totalQuestions,
         studentCount: quiz.studentCount || 0,
-        categoryId: quiz.category_id?._id?.toString() || '',
-        categoryName: quiz.category_id?.name || 'Chưa phân loại',
+        categoryId: quiz.category_id ? quiz.category_id.toString() : '',
+        categoryName: quiz.category_id ? categoryMap.get(quiz.category_id.toString()) || 'Uncategorized' : 'Uncategorized',
         latestCorrectCount,
         latestTotalCount: latestCorrectCount !== null ? totalQuestions : null,
         latestScoreOnTen,

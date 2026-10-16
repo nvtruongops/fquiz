@@ -55,16 +55,16 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
 
   describe('sourceLabelFromType', () => {
     test('returns correct user-friendly string', () => {
-      expect(sourceLabelFromType('self_created')).toBe('Tự tạo')
-      expect(sourceLabelFromType('saved_explore')).toBe('Từ Explore')
-      expect(sourceLabelFromType('explore_public')).toBe('Từ Explore')
+      expect(sourceLabelFromType('self_created')).toBe('Self-created')
+      expect(sourceLabelFromType('saved_explore')).toBe('From Explore')
+      expect(sourceLabelFromType('explore_public')).toBe('From Explore')
     })
   })
 
   describe('mixQuizDisplayCode', () => {
     test('removes prefix and truncates long titles', () => {
-      expect(mixQuizDisplayCode('Quiz Trộn · Short Code')).toBe('Short Code')
-      expect(mixQuizDisplayCode('Quiz Trộn · MLN122_SP26_C1_FE_VERY_LONG_EXTENDED_SUBJECT_NAME')).toBe('MLN122_SP26_C1_FE_VERY_LONG_EXTENDED_...')
+      expect(mixQuizDisplayCode('Mixed Quiz · Short Code')).toBe('Short Code')
+      expect(mixQuizDisplayCode('Mixed Quiz · MLN122_SP26_C1_FE_VERY_LONG_EXTENDED_SUBJECT_NAME')).toBe('MLN122_SP26_C1_FE_VERY_LONG_EXTENDED_...')
     })
   })
 

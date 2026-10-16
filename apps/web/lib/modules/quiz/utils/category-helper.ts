@@ -39,7 +39,7 @@ export async function ensureCategoryForCourseCode(
   if (!category) {
     category = await Category.create({
       name: cleanCode,
-      description: `Danh mục môn học ${cleanCode}`,
+      description: `Course category for ${cleanCode}`,
       type: 'public',
       is_public: true,
       status: 'approved',

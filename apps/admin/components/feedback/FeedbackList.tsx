@@ -35,7 +35,7 @@ export function FeedbackList({
           </div>
         ) : feedbacks.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-sm">
-            Không có góp ý nào phù hợp
+            No feedback found
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -63,9 +63,9 @@ export function FeedbackList({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Chờ xem</SelectItem>
-                        <SelectItem value="reviewed">Đã xem</SelectItem>
-                        <SelectItem value="resolved">Đã xử lý</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -74,7 +74,7 @@ export function FeedbackList({
                       size="sm"
                       onClick={() => onReplyTarget(fb)}
                       className="h-7 px-2 text-muted-foreground hover:text-primary"
-                      title="Phản hồi"
+                      title="Reply"
                     >
                       <Reply className="w-3.5 h-3.5" />
                     </Button>
@@ -84,7 +84,7 @@ export function FeedbackList({
                       size="sm"
                       onClick={() => onDeleteTarget(fb)}
                       className="h-7 px-2 text-muted-foreground hover:text-destructive"
-                      title="Xóa"
+                      title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
@@ -99,14 +99,14 @@ export function FeedbackList({
                   <div className="ml-4 p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
                     <div className="text-xs font-bold text-primary flex items-center gap-1.5">
                       <MessageSquare className="w-3.5 h-3.5" />
-                      Phản hồi từ Admin:
+                      Admin Reply:
                     </div>
                     <p className="text-xs text-foreground/90 whitespace-pre-wrap">{fb.reply_message}</p>
                   </div>
                 )}
 
                 <div className="text-[11px] text-muted-foreground">
-                  Gửi lúc: {new Date(fb.created_at).toLocaleString('vi-VN')}
+                  Submitted: {new Date(fb.created_at).toLocaleString('en-US')}
                 </div>
               </div>
             ))}

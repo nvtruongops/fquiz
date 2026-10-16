@@ -123,7 +123,7 @@ describe('QuizContextResolver Tests & Invariant 1 & 2 Verification', () => {
     const context = await QuizContextResolver.resolve({
       sessionId: 'session-123',
       questionIndex: 1, // UI index 1 -> maps to question_order[1] = 0
-      userQuery: 'Tại sao đáp án A đúng?',
+      userQuery: 'Why is option A correct?',
       authenticatedUserId: 'user-a',
     })
 
@@ -166,7 +166,7 @@ describe('QuizContextResolver Tests & Invariant 1 & 2 Verification', () => {
       questionText: 'Matrix communication question',
       options: ['A. Simple', 'B. Open and accurate', 'C. Complex', 'D. Hard to automate'],
       correctAnswer: undefined, // ⚠️ Client anti-cheat omits correctAnswer
-      userQuery: 'Trong môn này có câu nào là đáp án B không ?',
+      userQuery: 'Is there any question where option B is the correct answer in this course?',
       authenticatedUserId: 'user-a',
     })
 

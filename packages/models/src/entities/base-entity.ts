@@ -1,10 +1,10 @@
 import { Types } from 'mongoose'
 
 export type EntityStatus =
-  | 'draft'        // Đang soạn thảo
-  | 'pending'      // Chờ review (AI-generated)
+  | 'draft'        // Draft
+  | 'pending'      // Pending review (AI-generated)
   | 'published'    // Active
-  | 'archived'     // Đã archive
+  | 'archived'     // Archived
   | 'deleted'      // Soft deleted
 
 export interface IBaseMetadata {

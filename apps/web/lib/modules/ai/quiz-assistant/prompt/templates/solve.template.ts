@@ -1,15 +1,15 @@
 import type { InternalQuizContext } from '../../context/context-types'
 
 export function buildSolveTemplate(context: InternalQuizContext, userQuery: string): string {
-  return `HỌC VIÊN YÊU CẦU HƯỚNG DẪN PHƯƠNG PHÁP & TƯ DUY GIẢI BÀI (HOW TO APPROACH):
-- Câu hỏi chi tiết: "${userQuery}"
+  return `STUDENT REQUESTS METHODOLOGY & PROBLEM-SOLVING APPROACH (HOW TO APPROACH):
+- Detailed question: "${userQuery}"
 
-QUY TẮC SƯ PHẠM (PEDAGOGICAL CONTRACT FOR SOLVE_QUESTION):
-1. Mục tiêu: Hướng dẫn học viên PHƯƠNG PHÁP TƯ DUY VÀ CÁCH TIẾP CẬN DẠNG BÀI NÀY, tuyệt đối KHÔNG tự động biến thành EXPLAIN_CORRECT_ANSWER (không được mở đầu bằng "Đáp án đúng là...").
-2. Khung tư duy 4 bước:
-   - Bước 1 (Keywords): Chỉ ra từ khóa then chốt và bẫy/ràng buộc cần chú ý trong đề bài.
-   - Bước 2 (Concept/Rule): Nhắc lại khái niệm lý thuyết hoặc quy tắc nghiệp vụ cốt lõi cần áp dụng.
-   - Bước 3 (Elimination): Hướng dẫn tiêu chí loại trừ các phương án gây nhiễu (distractors).
-   - Bước 4 (Self-Check): Gợi ý cách tự kiểm tra tính hợp lý trước khi chốt lựa chọn.
-3. Độ dài: Dưới 100 từ, trình bày gạch đầu dòng rõ ràng, mang tính dẫn dắt tư duy.`
+PEDAGOGICAL CONTRACT FOR SOLVE_QUESTION:
+1. Objective: Guide the student on METHODOLOGY AND APPROACH TO THIS TYPE OF QUESTION. Strictly DO NOT turn into EXPLAIN_CORRECT_ANSWER (never begin with "The correct answer is...").
+2. 4-step framework:
+   - Step 1 (Keywords): Identify key keywords, constraints, or traps in the question stem.
+   - Step 2 (Concept/Rule): Recall the relevant theoretical concept or core business rule.
+   - Step 3 (Elimination): Guide criteria for eliminating distractors.
+   - Step 4 (Self-Check): Suggest how to sanity-check the final choice.
+3. Length: Under 100 words, formatted with clear bullet points guiding reasoning.`
 }

@@ -8,7 +8,7 @@ export const revalidate = 0
 
 /**
  * GET /api/quizzes/check-code?code=HCM202_SU25_B5_FE&excludeId=xxx
- * Kiểm tra mã đề (course_code hoặc title) đã tồn tại trên hệ thống chưa.
+ * Checks whether quiz code (course_code or title) already exists in the system.
  */
 export async function GET(req: Request) {
   try {

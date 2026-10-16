@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/shared/ui/skeleton'
 export function HistorySkeleton() {
   return (
     <div className="w-full space-y-6 animate-pulse">
-      {/* Date Group 1: Hôm nay */}
+      {/* Date Group 1: Today */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 px-1">
           <Skeleton className="h-3.5 w-24 rounded-full" />
@@ -42,7 +42,7 @@ export function HistorySkeleton() {
         </div>
       </div>
 
-      {/* Date Group 2: Hôm qua */}
+      {/* Date Group 2: Yesterday */}
       <div className="space-y-3 pt-2">
         <div className="flex items-center gap-3 px-1">
           <Skeleton className="h-3.5 w-28 rounded-full" />

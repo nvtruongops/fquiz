@@ -77,7 +77,7 @@ export const sentenceGeneration: PromptDefinition<SentencePromptParams, z.ZodArr
   version: PROMPT_VERSION,
   schema: z.array(GeneratedSentenceSchema),
   buildPrompt: (params: SentencePromptParams): string => {
-    const expLang = params.explanationLanguage || 'Vietnamese'
+    const expLang = params.explanationLanguage || 'English'
     const vocabConstraint = params.targetVocab?.length
       ? `\n\nEach sentence MUST naturally include at least one of these vocabulary terms: ${params.targetVocab.join(', ')}`
       : ''

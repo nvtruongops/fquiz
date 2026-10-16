@@ -35,7 +35,7 @@ export function QuizEditorQuestionList({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-foreground">
-          2. Danh sách câu hỏi ({questions.length})
+          2. Question List ({questions.length})
         </h2>
         <Button
           type="button"
@@ -45,16 +45,16 @@ export function QuizEditorQuestionList({
           className="gap-1.5 text-xs font-semibold cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
-          Thêm câu hỏi
+          Add Question
         </Button>
       </div>
 
       {!isCategorySelected ? (
         <div className="p-8 border-2 border-dashed border-border rounded-2xl text-center bg-muted/10 space-y-2">
           <Lock className="w-8 h-8 text-muted-foreground mx-auto" />
-          <p className="text-sm font-bold text-foreground">Bảng soạn thảo đang tạm khóa</p>
+          <p className="text-sm font-bold text-foreground">Editor is temporarily locked</p>
           <p className="text-xs text-muted-foreground">
-            Vui lòng chọn Môn học ở mục 1 để mở khóa soạn thảo câu hỏi.
+            Please select a Category in section 1 to unlock the question editor.
           </p>
         </div>
       ) : (

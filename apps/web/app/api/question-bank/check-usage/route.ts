@@ -17,7 +17,7 @@ const CheckUsageSchema = z.object({
 
 /**
  * POST /api/question-bank/check-usage
- * Kiểm tra câu hỏi có trong Question Bank và đang được dùng ở đâu
+ * Check if question exists in Question Bank and where it is currently used
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {

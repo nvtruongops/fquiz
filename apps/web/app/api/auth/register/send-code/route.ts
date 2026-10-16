@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     const existingUser = await User.findOne({ email }).select('_id').lean()
     if (existingUser) {
-      return NextResponse.json({ error: 'Email đã được sử dụng' }, { status: 409 })
+      return NextResponse.json({ error: 'Email is already in use' }, { status: 409 })
     }
 
     const now = new Date()

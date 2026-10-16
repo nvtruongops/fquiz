@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
 
 export interface IPinnedQuestion {
-  _id?: any
+  _id?: mongoose.Types.ObjectId
   student_id: mongoose.Types.ObjectId
   question_id?: string
   quiz_id?: mongoose.Types.ObjectId
@@ -17,11 +17,11 @@ export interface IPinnedQuestion {
 
 const PinnedQuestionSchema = new Schema<IPinnedQuestion>(
   {
-    student_id: { type: Schema.Types.ObjectId, required: true, index: true },
+    student_id: { type: Schema.Types.ObjectId, required: true },
     question_id: { type: String, default: '' },
     quiz_id: { type: Schema.Types.ObjectId },
     quiz_title: { type: String, default: '' },
-    course_code: { type: String, required: true, index: true },
+    course_code: { type: String, required: true },
     text: { type: String, required: true },
     options: { type: [String], required: true },
     correct_answer: { type: [Number], required: true },
@@ -36,5 +36,5 @@ PinnedQuestionSchema.index({ student_id: 1, course_code: 1 })
 PinnedQuestionSchema.index({ student_id: 1, text: 1, course_code: 1 }, { unique: true })
 
 export const PinnedQuestion =
-  mongoose.models.PinnedQuestion ||
+  mongoose.models.PinnedQuestion ??
   mongoose.model<IPinnedQuestion>('PinnedQuestion', PinnedQuestionSchema)

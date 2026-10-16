@@ -75,24 +75,31 @@ export async function sendResetPasswordMail({ to, resetUrl }: SendResetPasswordM
   const { from } = getMailConfig()
   if (!from) throw new Error('Missing MAIL_FROM')
 
+  const appUrl = resolveAppBaseUrl()
   const transporter = createTransporter()
 
   await transporter.sendMail({
     from,
     to,
-    subject: 'FQuiz - Đặt lại mật khẩu',
-    text: `Bạn vừa yêu cầu đặt lại mật khẩu.\n\nNhấn vào đường dẫn sau (hiệu lực 15 phút):\n${resetUrl}\n\nNếu bạn không yêu cầu, vui lòng bỏ qua email này.`,
+    subject: 'FQuiz - Reset Your Password',
+    text: `You recently requested to reset your password.\n\nClick the link below (valid for 15 minutes):\n${resetUrl}\n\nIf you did not request this, please ignore this email.`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937">
-        <h2>Đặt lại mật khẩu</h2>
-        <p>Bạn vừa yêu cầu đặt lại mật khẩu tài khoản FQuiz.</p>
-        <p>
-          <a href="${resetUrl}" style="display:inline-block;padding:10px 14px;background:#5D7B6F;color:#fff;text-decoration:none;border-radius:6px">
-            Đặt lại mật khẩu
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:580px;margin:0 auto;border:1px solid #e5e7eb;border-radius:16px;padding:28px;background-color:#ffffff">
+        <div style="margin-bottom:20px;border-bottom:1px solid #f3f4f6;padding-bottom:16px">
+          <span style="font-size:18px;font-weight:900;color:#059669;letter-spacing:-0.5px">FQuiz</span>
+        </div>
+        <h2 style="color:#111827;margin-top:0;font-size:20px;font-weight:800">Reset Your Password</h2>
+        <p style="font-size:14px;color:#4b5563">You recently requested to reset the password for your FQuiz account.</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${resetUrl}" style="display:inline-block;padding:12px 28px;background-color:#059669;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(5,150,105,0.2)">
+            Reset Password Now
           </a>
+        </div>
+        <p style="font-size:13px;color:#6b7280;line-height:1.5">
+          This link is valid for <strong>15 minutes</strong>. If you did not make this request, your account remains secure and you can safely disregard this email.
         </p>
-        <p>Liên kết có hiệu lực trong 15 phút.</p>
-        <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0 16px 0"/>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">FQuiz — Smart Multiple-Choice Learning & Practice Platform</p>
       </div>
     `,
   })
@@ -104,20 +111,26 @@ export async function sendVerificationCodeMail({ to, code, purpose }: SendVerifi
 
   const transporter = createTransporter()
   const isRegister = purpose === 'register'
-  const title = isRegister ? 'FQuiz - Mã xác thực đăng ký' : 'FQuiz - Mã xác thực quên mật khẩu'
-  const intro = isRegister ? 'Mã xác thực đăng ký của bạn là:' : 'Mã xác thực quên mật khẩu của bạn là:'
+  const title = isRegister ? 'FQuiz - Verification Code for Registration' : 'FQuiz - Password Reset Verification Code'
+  const intro = isRegister ? 'Your FQuiz registration verification code is:' : 'Your password reset verification code is:'
 
   await transporter.sendMail({
     from,
     to,
     subject: title,
-    text: `${intro} ${code}\nHiệu lực: 10 phút.\nNếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.`,
+    text: `${intro} ${code}\nValid for: 10 minutes.\nIf you did not request this, please disregard this email.`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
-        <p>${intro}</p>
-        <p style="font-size:24px;font-weight:700;letter-spacing:6px;margin:8px 0">${code}</p>
-        <p>Hiệu lực: 10 phút.</p>
-        <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#111827;max-width:580px;margin:0 auto;border:1px solid #e5e7eb;border-radius:16px;padding:28px;background-color:#ffffff">
+        <div style="margin-bottom:20px;border-bottom:1px solid #f3f4f6;padding-bottom:16px">
+          <span style="font-size:18px;font-weight:900;color:#059669;letter-spacing:-0.5px">FQuiz</span>
+        </div>
+        <p style="font-size:14px;color:#4b5563;margin-top:0">${intro}</p>
+        <div style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;text-align:center;margin:20px 0">
+          <span style="font-size:32px;font-weight:800;letter-spacing:8px;color:#059669;font-family:monospace">${code}</span>
+        </div>
+        <p style="font-size:13px;color:#6b7280;margin:0">This code is valid for <strong>10 minutes</strong>. Never share this code with anyone.</p>
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0 16px 0"/>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">FQuiz — Smart Multiple-Choice Learning & Practice Platform</p>
       </div>
     `,
   })
@@ -128,38 +141,41 @@ export async function sendAccountDeletionNoticeMail({ to, username, restoreUrl, 
   if (!from) throw new Error('Missing MAIL_FROM')
 
   const transporter = createTransporter()
-  const formattedDate = new Date(scheduledFor).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+  const formattedDate = new Date(scheduledFor).toUTCString()
 
   await transporter.sendMail({
     from,
     to,
-    subject: 'FQuiz - Thông báo yêu cầu xóa tài khoản (Khôi phục trong 72h)',
-    text: `Xin chào ${username},\n\nHệ thống đã nhận được yêu cầu xóa tài khoản FQuiz của bạn.\n\nTài khoản sẽ được giữ và chính thức xóa hoàn toàn vào thời điểm: ${formattedDate} (sau 72 giờ).\n\nNếu KHÔNG PHẢI BẠN yêu cầu xóa tài khoản, vui lòng nhấn vào đường dẫn sau để KHÔI PHỤC TÀI KHOẢN ngay lập tức trước 72 giờ:\n${restoreUrl}\n\nTrân trọng,\nFQuiz Team`,
+    subject: 'FQuiz - Account Deletion Notice (Recoverable within 72 hours)',
+    text: `Hello ${username},\n\nWe received a request to delete your FQuiz account.\n\nYour account is scheduled for permanent deletion on: ${formattedDate} (72 hours from request).\n\nIf YOU DID NOT request this deletion, please click the following link immediately to RECOVER YOUR ACCOUNT within 72 hours:\n${restoreUrl}\n\nBest regards,\nThe FQuiz Team`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;padding:24px;background-color:#ffffff">
-        <h2 style="color:#dc2626;margin-top:0">Thông báo yêu cầu xóa tài khoản</h2>
-        <p>Xin chào <strong>${username}</strong>,</p>
-        <p>Hệ thống FQuiz đã ghi nhận yêu cầu xóa tài khoản của bạn.</p>
-        <div style="background-color:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;margin:16px 0;border-radius:4px">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#111827;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:16px;padding:28px;background-color:#ffffff">
+        <div style="margin-bottom:20px;border-bottom:1px solid #f3f4f6;padding-bottom:16px">
+          <span style="font-size:18px;font-weight:900;color:#dc2626;letter-spacing:-0.5px">FQuiz Account Security</span>
+        </div>
+        <h2 style="color:#dc2626;margin-top:0;font-size:20px;font-weight:800">Account Deletion Request Notice</h2>
+        <p style="font-size:14px;color:#374151">Hello <strong>${username}</strong>,</p>
+        <p style="font-size:14px;color:#374151">We received a request to delete your FQuiz account.</p>
+        <div style="background-color:#fef2f2;border-left:4px solid #ef4444;padding:14px 18px;margin:18px 0;border-radius:8px">
           <p style="margin:0;color:#991b1b;font-size:14px;font-weight:600">
-            Tài khoản của bạn sẽ được giữ tạm thời và chính thức xóa vĩnh viễn vào lúc:<br/>
-            <span style="font-size:16px;color:#dc2626">${formattedDate}</span> (72 giờ kể từ khi yêu cầu).
+            Your account is scheduled for permanent deletion on:<br/>
+            <span style="font-size:16px;color:#dc2626;font-weight:800">${formattedDate}</span> (72 hours from request).
           </p>
         </div>
         <p style="color:#374151;font-size:14px;margin-top:20px">
-          <strong>LƯU Ý QUAN TRỌNG:</strong> Nếu bạn <em>không phải là người thực hiện yêu cầu này</em> (hoặc đổi ý muốn giữ lại tài khoản), vui lòng nhấn vào nút bên dưới để khôi phục tài khoản trước thời hạn 72 giờ:
+          <strong>IMPORTANT:</strong> If you <em>did not request this</em> (or wish to keep your account), click the button below to recover your account immediately:
         </p>
         <div style="text-align:center;margin:28px 0">
-          <a href="${restoreUrl}" style="display:inline-block;padding:12px 24px;background-color:#059669;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:15px;box-shadow:0 2px 4px rgba(0,0,0,0.1)">
-            Khôi phục tài khoản ngay
+          <a href="${restoreUrl}" style="display:inline-block;padding:12px 28px;background-color:#059669;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;box-shadow:0 2px 4px rgba(5,150,105,0.2)">
+            Recover Account Now
           </a>
         </div>
         <p style="font-size:12px;color:#6b7280;line-height:1.4">
-          Nếu đường dẫn trên không bấm được, bạn có thể sao chép liên kết sau dán vào trình duyệt:<br/>
+          If the button does not work, copy and paste this link into your browser:<br/>
           <a href="${restoreUrl}" style="color:#2563eb;word-break:break-all">${restoreUrl}</a>
         </p>
         <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0 16px 0"/>
-        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">FQuiz — Nền tảng ôn tập & luyện thi thông minh</p>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">FQuiz — Smart Multiple-Choice Learning & Practice Platform</p>
       </div>
     `,
   })
@@ -172,57 +188,64 @@ export async function sendNewQuizNotificationMail({ to, username, courseCode, qu
   const appUrl = resolveAppBaseUrl()
   const quizUrl = `${appUrl}/quiz/${quizId}`
   const courseUrl = `${appUrl}/courses/${encodeURIComponent(courseCode)}`
+  const settingsUrl = `${appUrl}/settings`
   const transporter = createTransporter()
 
   const otherQuizzesHtml = otherQuizzes.length > 0 ? `
     <div style="margin-top:24px;border-top:1px dashed #e5e7eb;padding-top:16px">
-      <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 12px 0">Các bài quiz khác thuộc môn ${courseCode}:</p>
+      <p style="font-size:14px;font-weight:700;color:#374151;margin:0 0 12px 0">Other quizzes in ${courseCode}:</p>
       <ul style="padding-left:20px;margin:0;color:#4b5563;font-size:14px">
         ${otherQuizzes.map(q => `
           <li style="margin-bottom:8px">
-            <a href="${appUrl}/quiz/${q.id}" style="color:#5D7B6F;text-decoration:none;font-weight:600">${q.title}</a>
-            ${q.questionCount ? `<span style="color:#6b7280;font-size:12px"> (${q.questionCount} câu hỏi)</span>` : ''}
+            <a href="${appUrl}/quiz/${q.id}" style="color:#059669;text-decoration:none;font-weight:600">${q.title}</a>
+            ${q.questionCount ? `<span style="color:#6b7280;font-size:12px"> (${q.questionCount} questions)</span>` : ''}
           </li>
         `).join('')}
       </ul>
       <div style="margin-top:14px">
-        <a href="${courseUrl}" style="font-size:13px;color:#5D7B6F;text-decoration:underline;font-weight:600">
-          Xem tất cả bài quiz của môn ${courseCode} →
+        <a href="${courseUrl}" style="font-size:13px;color:#059669;text-decoration:underline;font-weight:600">
+          View all quizzes for ${courseCode} →
         </a>
       </div>
     </div>
   ` : ''
 
   const formatOtherQuizLine = (q: { id: string; title: string; questionCount?: number }) => {
-    const countStr = q.questionCount ? ` (${q.questionCount} câu)` : ''
+    const countStr = q.questionCount ? ` (${q.questionCount} questions)` : ''
     return `- ${q.title}${countStr}: ${appUrl}/quiz/${q.id}`
   }
 
-  const otherQuizzesText = otherQuizzes.length > 0 ? `\n\nCác bài quiz khác thuộc môn ${courseCode}:\n` +
+  const otherQuizzesText = otherQuizzes.length > 0 ? `\n\nOther quizzes in ${courseCode}:\n` +
     otherQuizzes.map(formatOtherQuizLine).join('\n') +
-    `\n\nXem tất cả quiz của môn ${courseCode}: ${courseUrl}` : ''
+    `\n\nView all quizzes for ${courseCode}: ${courseUrl}` : ''
 
   await transporter.sendMail({
     from,
     to,
-    subject: `[FQuiz] Quiz mới cho môn ${courseCode}`,
-    text: `Xin chào ${username},\n\nMôn học ${courseCode} mà bạn đã ghim vừa có quiz mới: "${quizTitle}".\n\nVào làm bài ngay tại:\n${quizUrl}${otherQuizzesText}\n\nTrân trọng,\nFQuiz Team`,
+    subject: `[FQuiz] New Quiz Available for ${courseCode}`,
+    text: `Hello ${username},\n\nA new quiz was just published for your pinned course ${courseCode}: "${quizTitle}".\n\nTake the quiz now at:\n${quizUrl}${otherQuizzesText}\n\nManage your notification settings at: ${settingsUrl}\n\nBest regards,\nThe FQuiz Team`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;padding:24px;background-color:#ffffff">
-        <h2 style="color:#5D7B6F;margin-top:0">Quiz mới cho môn ${courseCode}</h2>
-        <p>Xin chào <strong>${username}</strong>,</p>
-        <p>Môn học <strong>${courseCode}</strong> mà bạn đã ghim vừa có bài quiz mới được phát hành trên FQuiz:</p>
-        <div style="background-color:#f4f7f5;border-left:4px solid #5D7B6F;padding:14px 18px;margin:16px 0;border-radius:6px">
-          <p style="margin:0;color:#2c3e35;font-size:16px;font-weight:700">✨ ${quizTitle}</p>
-          <div style="margin-top:10px">
-            <a href="${quizUrl}" style="display:inline-block;padding:8px 16px;background-color:#5D7B6F;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px">
-              Vào làm Quiz ngay
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#111827;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:16px;padding:28px;background-color:#ffffff">
+        <div style="margin-bottom:20px;border-bottom:1px solid #f3f4f6;padding-bottom:16px">
+          <span style="font-size:18px;font-weight:900;color:#059669;letter-spacing:-0.5px">FQuiz Course Notification</span>
+        </div>
+        <h2 style="color:#059669;margin-top:0;font-size:20px;font-weight:800">New Quiz Available for ${courseCode}</h2>
+        <p style="font-size:14px;color:#374151">Hello <strong>${username}</strong>,</p>
+        <p style="font-size:14px;color:#374151">A new quiz has just been released for your pinned course <strong>${courseCode}</strong> on FQuiz:</p>
+        <div style="background-color:#f0fdf4;border-left:4px solid #059669;padding:16px 20px;margin:18px 0;border-radius:8px">
+          <p style="margin:0;color:#065f46;font-size:16px;font-weight:800">✨ ${quizTitle}</p>
+          <div style="margin-top:14px">
+            <a href="${quizUrl}" style="display:inline-block;padding:10px 22px;background-color:#059669;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(5,150,105,0.2)">
+              Start Quiz Now →
             </a>
           </div>
         </div>
         ${otherQuizzesHtml}
-        <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0 16px 0"/>
-        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0">Bạn nhận được email này vì đã ghim môn học và bật nhận thông báo trên FQuiz.</p>
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:28px 0 16px 0"/>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0;line-height:1.5">
+          You are receiving this email because you pinned this course and enabled notifications on FQuiz.<br/>
+          You can <a href="${settingsUrl}" style="color:#059669;text-decoration:underline">manage notification preferences</a> anytime.
+        </p>
       </div>
     `,
   })

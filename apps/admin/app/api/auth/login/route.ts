@@ -15,39 +15,39 @@ export async function POST(request: Request) {
     const { identifier, password } = body
 
     if (!identifier || !password) {
-      return NextResponse.json({ error: 'Vui lòng nhập đầy đủ thông tin' }, { status: 400 })
+      return NextResponse.json({ error: 'Please enter all required fields' }, { status: 400 })
     }
 
     await connectDB()
 
     const isEmail = String(identifier).includes('@')
     const user = isEmail
-      ? await User.findOne({ email: String(identifier).toLowerCase().trim() })
+      ? await User.findOne({ email: String(identifier).toLowerCase().trim() }).select('+password_hash')
       : await User.findOne({
           $or: [
             { username: String(identifier).trim() },
             { username_lower: String(identifier).toLowerCase().trim() },
           ],
-        })
+        }).select('+password_hash')
 
     if (!user) {
-      return NextResponse.json({ error: 'Tài khoản không tồn tại hoặc sai mật khẩu' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     if (user.status === 'banned') {
-      return NextResponse.json({ error: 'Tài khoản đã bị tạm khóa' }, { status: 403 })
+      return NextResponse.json({ error: 'Account has been suspended' }, { status: 403 })
     }
 
     if (user.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Truy cập bị từ chối: Chỉ tài khoản Quản trị viên (Admin) mới có quyền truy cập Cổng Quản trị' },
+        { error: 'Access denied: Only Administrator accounts can access the Admin Portal' },
         { status: 403 }
       )
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password_hash)
     if (!isValidPassword) {
-      return NextResponse.json({ error: 'Tài khoản không tồn tại hoặc sai mật khẩu' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     // Record login log
@@ -91,6 +91,6 @@ export async function POST(request: Request) {
     return response
   } catch (error: any) {
     console.error('Admin login error:', error)
-    return NextResponse.json({ error: 'Lỗi máy chủ nội bộ' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

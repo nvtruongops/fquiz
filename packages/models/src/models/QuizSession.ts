@@ -25,7 +25,7 @@ const FlashcardStatsSchema = new Schema<FlashcardStats>(
 
 const QuestionCacheSchema = new Schema<IQuestion>(
   {
-    _id: { type: Schema.Types.ObjectId, required: true },
+    _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
     text: { type: String, required: true },
     options: { type: [String], required: true },
     correct_answer: { type: [Number], required: true },

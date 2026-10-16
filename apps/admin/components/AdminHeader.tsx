@@ -48,7 +48,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         <button
           onClick={handleLogout}
           className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-          title="Đăng xuất"
+          title="Sign Out"
         >
           <LogOut className="w-4 h-4" />
         </button>

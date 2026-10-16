@@ -19,7 +19,14 @@ export interface PinnedQuestionItem {
   created_at?: string
 }
 
-export function usePinnedQuestions(courseCode?: string) {
+export interface UsePinnedQuestionsOptions {
+  enabled?: boolean
+}
+
+export function usePinnedQuestions(
+  courseCode?: string,
+  options?: UsePinnedQuestionsOptions
+) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -40,6 +47,7 @@ export function usePinnedQuestions(courseCode?: string) {
       const data = await res.json()
       return data.pinnedQuestions ?? []
     },
+    enabled: options?.enabled ?? true,
     staleTime: 30_000,
   })
 
@@ -63,23 +71,23 @@ export function usePinnedQuestions(courseCode?: string) {
       })
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Vui lòng đăng nhập để ghim và lưu câu hỏi ôn tập.')
+          throw new Error('Please sign in to pin and save questions for review.')
         }
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Không thể thực hiện thao tác ghim.')
+        throw new Error(err.error || 'Unable to pin or unpin question.')
       }
       return res.json()
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
       if (data.pinned) {
-        toast.success('Đã ghim câu hỏi thành công')
+        toast.success('Question pinned successfully')
       } else {
-        toast.info('Đã bỏ ghim câu hỏi')
+        toast.info('Question unpinned')
       }
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Lỗi thao tác ghim câu hỏi')
+      toast.error(err.message || 'Failed to pin/unpin question')
     },
   })
 
@@ -92,19 +100,19 @@ export function usePinnedQuestions(courseCode?: string) {
       })
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Vui lòng đăng nhập để thực hiện thao tác này.')
+          throw new Error('Please sign in to perform this action.')
         }
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Không thể xóa câu ghim.')
+        throw new Error(err.error || 'Failed to delete pinned question.')
       }
       return res.json()
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
-      toast.success('Đã xóa câu hỏi khỏi danh sách ghim')
+      toast.success('Question removed from pinned list')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Không thể xóa câu ghim')
+      toast.error(err.message || 'Failed to delete pinned question')
     },
   })
 
@@ -119,19 +127,19 @@ export function usePinnedQuestions(courseCode?: string) {
       })
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Vui lòng đăng nhập để thực hiện thao tác này.')
+          throw new Error('Please sign in to perform this action.')
         }
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Không thể xóa tất cả câu ghim.')
+        throw new Error(err.error || 'Failed to delete all pinned questions.')
       }
       return res.json()
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
-      toast.success('Đã xóa tất cả câu hỏi ghim')
+      toast.success('All pinned questions cleared')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Lỗi khi xóa câu ghim')
+      toast.error(err.message || 'Error clearing pinned questions')
     },
   })
 
@@ -147,13 +155,13 @@ export function usePinnedQuestions(courseCode?: string) {
       if (!res.ok) {
         if (res.status === 401) {
           throw {
-            message: 'Vui lòng đăng nhập để tạo bài kiểm tra từ câu ghim.',
+            message: 'Please sign in to create a quiz from pinned questions.',
             quotaExceeded: false,
             status: 401,
           }
         }
         throw {
-          message: data.error || 'Không thể tạo bài kiểm tra từ câu ghim.',
+          message: data.error || 'Failed to create quiz from pinned questions.',
           quotaExceeded: Boolean(data.quotaExceeded),
           status: res.status,
         }
@@ -162,7 +170,7 @@ export function usePinnedQuestions(courseCode?: string) {
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
-      toast.success(data.message || 'Đã tạo bài kiểm tra từ câu ghim thành công!')
+      toast.success(data.message || 'Quiz created from pinned questions successfully!')
     },
   })
 

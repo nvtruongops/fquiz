@@ -49,7 +49,7 @@ async function addIndexes() {
       { original_quiz_id: 1 },
       { name: 'original_quiz' }
     )
-    // Index for /my-quizzes page - filter by user and category
+    // Index for student quizzes - filter by user and category
     await Quiz.collection.createIndex(
       { created_by: 1, category_id: 1 },
       { name: 'created_by_category' }

@@ -13,8 +13,8 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
     text: {
       type: String,
       required: true,
-      minlength: [1, 'Câu hỏi không được để trống'],
-      maxlength: [10000, 'Câu hỏi tối đa 10000 ký tự'],
+      minlength: [1, 'Question text cannot be empty'],
+      maxlength: [10000, 'Question text cannot exceed 10000 characters'],
     },
     options: {
       type: [String],
@@ -23,7 +23,7 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
         validator: function (v: string[]) {
           return v.length >= 2
         },
-        message: 'Cần ít nhất 2 lựa chọn',
+        message: 'At least 2 options are required',
       },
     },
     correct_answer: {

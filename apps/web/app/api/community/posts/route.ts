@@ -71,13 +71,13 @@ export async function GET(req: Request) {
         .lean(),
       Post.countDocuments(query),
       Post.aggregate([
-        // Chỉ lọc các post có hashtag (tags array tồn tại và không rỗng)
+        // Only filter posts with hashtags (tags array exists and non-empty)
         {
           $match: {
             tags: { $exists: true, $not: { $size: 0 } }
           }
         },
-        // Đếm tổng số lượt xem (dựa trên mảng views) của bài viết
+        // Count total view count (based on views array) of the post
         {
           $project: {
             tags: 1,
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
           }
         },
         { $unwind: '$tags' },
-        // Nhóm theo hashtag, tính tổng lượt xem và số bài viết
+        // Group by hashtag, calculate total views and post count
         {
           $group: {
             _id: { $toLower: { $trim: { input: '$tags' } } },
@@ -94,7 +94,7 @@ export async function GET(req: Request) {
             postCount: { $sum: 1 }
           }
         },
-        // Sắp xếp ưu tiên dựa trên tổng lượt xem (totalViews) giảm dần
+        // Sort descending by total views (totalViews)
         { $sort: { totalViews: -1, postCount: -1 } },
         { $limit: 10 }
       ])
@@ -157,10 +157,10 @@ export async function POST(req: Request) {
     const cleanContent = DOMPurify.sanitize(content).trim()
 
     if (!cleanTitle || !cleanContent) {
-      return NextResponse.json({ error: 'Nội dung hoặc tiêu đề không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid title or content' }, { status: 400 })
     }
 
-    // Trích xuất tự động hashtag từ title và content nếu viết #hashtag
+    // Automatically extract hashtags from title and content when written as #hashtag
     const extractHashtags = (text: string): string[] => {
       const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || []
       return matches.map(m => m.replace(/^#/, '').trim()).filter(Boolean)

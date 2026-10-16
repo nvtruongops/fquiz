@@ -10,10 +10,10 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     await connectDB()
     const userId = new Types.ObjectId(payload.userId)
 
-    // Find category IDs used by any of the student's saved quizzes
+    // Find category IDs used by any of the student's saved or custom/pinned quizzes
     const quizCategoryIds = await Quiz.distinct('category_id', { 
       created_by: userId,
-      is_saved_from_explore: true,
+      is_temp: { $ne: true },
     })
 
     if (quizCategoryIds.length === 0) {
@@ -37,7 +37,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
                   $and: [
                     { $eq: ['$category_id', '$$categoryId'] },
                     { $eq: ['$created_by', '$$userId'] },
-                    { $eq: ['$is_saved_from_explore', true] },
+                    { $ne: ['$is_temp', true] },
                   ],
                 },
               },

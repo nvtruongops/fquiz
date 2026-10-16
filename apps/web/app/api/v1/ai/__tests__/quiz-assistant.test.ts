@@ -89,7 +89,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
 
     const res = await POST(req)
     expect(res.status).toBe(400)
-    expect(res.body.error).toContain('không hợp lệ')
+    expect(res.body.error).toContain('Invalid request data')
   })
 
   it('should return 404 if session is not found', async () => {
@@ -104,7 +104,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
 
     const res = await POST(req)
     expect(res.status).toBe(404)
-    expect(res.body.error).toContain('Không tìm thấy phiên làm bài')
+    expect(res.body.error).toContain('Quiz session not found')
   })
 
   it('should return 403 if session belongs to different student_id than JWT payload', async () => {
@@ -150,8 +150,8 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
     const mockAiContentService = {
       generate: jest.fn().mockResolvedValue({
         content: {
-          reply: 'Phân tích phương án A vs C...',
-          formulaExplanation: 'Công thức N*(N-1)/2',
+          reply: 'Analysis of option A vs C...',
+          formulaExplanation: 'Formula N*(N-1)/2',
           similarQuestionFound: false,
           similarQuestionDetails: null,
         },
@@ -166,7 +166,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
       body: JSON.stringify({
         sessionId: 'session-123',
         questionIndex: 0,
-        userQuery: 'Có câu nào tương tự nhưng là đáp án A không ?',
+        userQuery: 'Is there any similar question where option A is correct?',
       }),
     })
 
@@ -174,7 +174,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
 
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(true)
-    expect(res.body.data.reply).toContain('Phân tích phương án')
+    expect(res.body.data.reply).toContain('Analysis of option')
     expect(res.body.data.responseMode).toBe('llm')
     expect(res.body.data.fallback).toBe(false)
     expect(Array.isArray(res.body.data.evidenceUsed)).toBe(true)
@@ -212,7 +212,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
       body: JSON.stringify({
         sessionId: 'session-123',
         questionIndex: 0,
-        userQuery: 'Tại sao đáp án D sai?',
+        userQuery: 'Why is option D incorrect?',
       }),
     })
 
@@ -221,6 +221,6 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(true)
     expect(res.body.data.responseMode).toBe('db_fallback')
-    expect(res.body.data.reply).toContain('Phân tích phương án bạn đã chọn')
+    expect(res.body.data.reply).toContain('Analysis of your selected option')
   })
 })

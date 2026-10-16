@@ -15,7 +15,6 @@ import {
   History,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { vi } from 'date-fns/locale'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 
@@ -96,58 +95,68 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
         <div className="flex items-center justify-between pb-3 border-b border-border/60 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
-              <History className="w-4 h-4" />
+              <History aria-hidden="true" className="w-4 h-4" />
             </div>
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-foreground whitespace-nowrap">
-              Dòng Thời Gian Học Tập
+              Study Timeline
             </h3>
           </div>
           <Link
             href="/history"
             className="text-xs font-bold text-primary hover:underline transition-colors flex items-center gap-0.5 shrink-0"
           >
-            Xem tất cả <ChevronRight className="w-3.5 h-3.5" />
+            View all <ChevronRight aria-hidden="true" className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {/* Filter Segmented Controls */}
         {rawActivities.length > 0 && (
-          <div className="flex items-center gap-1 p-1 bg-surface-inset rounded-xl border border-border/50 text-[10px] sm:text-[11px] font-bold">
+          <div
+            role="tablist"
+            aria-label="Filter recent study activities"
+            className="flex items-center gap-1 p-1 bg-surface-inset rounded-xl border border-border/50 text-[10px] sm:text-[11px] font-bold"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={filter === 'all'}
               onClick={() => setFilter('all')}
               className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap',
+                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap min-h-[36px] flex items-center justify-center active:scale-[0.98]',
                 filter === 'all'
                   ? 'bg-card text-foreground font-black shadow-2xs border border-border/60'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Tất cả ({rawActivities.length})
+              All ({rawActivities.length})
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={filter === 'active'}
               onClick={() => setFilter('active')}
               className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap',
+                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap min-h-[36px] active:scale-[0.98]',
                 filter === 'active'
                   ? 'bg-card text-warning-fg font-black shadow-2xs border border-border/60'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Đang dở {activeCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" />} ({activeCount})
+              In Progress {activeCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" aria-hidden="true" />} ({activeCount})
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={filter === 'completed'}
               onClick={() => setFilter('completed')}
               className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap',
+                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap min-h-[36px] flex items-center justify-center active:scale-[0.98]',
                 filter === 'completed'
                   ? 'bg-card text-foreground font-black shadow-2xs border border-border/60'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Hoàn thành ({completedCount})
+              Completed ({completedCount})
             </button>
           </div>
         )}
@@ -157,30 +166,30 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
           {filteredActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
               <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground border border-border shadow-2xs">
-                <HelpCircle className="w-6 h-6" />
+                <HelpCircle aria-hidden="true" className="w-6 h-6" />
               </div>
               <div className="space-y-1 max-w-[260px]">
                 <p className="text-xs text-foreground font-black">
                   {filter === 'all'
-                    ? 'Chưa có lịch sử làm bài'
+                    ? 'No study history yet'
                     : filter === 'active'
-                    ? 'Không có bài thi nào đang làm dở'
-                    : 'Chưa có bài thi nào hoàn thành'}
+                    ? 'No quizzes in progress'
+                    : 'No quizzes completed yet'}
                 </p>
                 <p className="text-[11px] text-muted-foreground font-medium">
                   {filter === 'all'
-                    ? 'Bắt đầu làm bài thi để ghi nhận kết quả và xây dựng dòng thời gian học tập.'
-                    : 'Chọn đề thi bất kỳ để bắt đầu ôn luyện ngay.'}
+                    ? 'Start practicing quizzes to record your results and build your study timeline.'
+                    : 'Select any quiz to start practicing now.'}
                 </p>
               </div>
               {filter === 'all' && (
                 <Button
                   asChild
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-8 px-4 rounded-xl shadow-xs transition-all mt-1 cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-9 sm:h-10 px-4 rounded-xl shadow-xs transition-all mt-1 cursor-pointer active:scale-[0.98]"
                 >
                   <Link href="/explore">
-                    Làm bài ngay <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    Practice Now <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1" />
                   </Link>
                 </Button>
               )}
@@ -207,10 +216,10 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
               asChild
               variant="ghost"
               size="sm"
-              className="w-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-xl h-9 cursor-pointer"
+              className="w-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-xl h-10 min-h-[40px] cursor-pointer active:scale-[0.98] transition-transform"
             >
               <Link href="/history" className="flex items-center justify-center gap-1.5">
-                Xem toàn bộ lịch sử làm bài <ArrowRight className="w-3.5 h-3.5" />
+                View Full Quiz History <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
               </Link>
             </Button>
           </div>
@@ -228,36 +237,36 @@ function getTimelineNodeStyles(
   if (isResumable) {
     return {
       container: 'bg-warning-bg text-warning-fg border-warning-border',
-      icon: <Clock className="w-4 h-4" />,
+      icon: <Clock aria-hidden="true" className="w-4 h-4" />,
     }
   }
   if (isFlashcard) {
     return {
       container: 'bg-primary/10 text-primary border-primary/20',
-      icon: <Layers className="w-4 h-4" />,
+      icon: <Layers aria-hidden="true" className="w-4 h-4" />,
     }
   }
   if (scoreNum !== null) {
     if (scoreNum >= 8) {
       return {
         container: 'bg-success-bg text-success-fg border-success-border',
-        icon: <Trophy className="w-4 h-4" />,
+        icon: <Trophy aria-hidden="true" className="w-4 h-4" />,
       }
     }
     if (scoreNum >= 5) {
       return {
         container: 'bg-primary/10 text-primary border-primary/20',
-        icon: <CheckCircle2 className="w-4 h-4" />,
+        icon: <CheckCircle2 aria-hidden="true" className="w-4 h-4" />,
       }
     }
     return {
       container: 'bg-incorrect-bg text-incorrect-fg border-incorrect-border',
-      icon: <AlertCircle className="w-4 h-4" />,
+      icon: <AlertCircle aria-hidden="true" className="w-4 h-4" />,
     }
   }
   return {
     container: 'bg-primary/10 text-primary border-primary/20',
-    icon: <FileText className="w-4 h-4" />,
+    icon: <FileText aria-hidden="true" className="w-4 h-4" />,
   }
 }
 
@@ -280,8 +289,8 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
   if (isResumable) {
     return (
       <Badge className="bg-warning-bg text-warning-fg border border-warning-border text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wide shadow-2xs flex items-center gap-1 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" />
-        Đang dở
+        <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" aria-hidden="true" />
+        In Progress
       </Badge>
     )
   }
@@ -299,7 +308,7 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
   }
   return (
     <Badge className="bg-success-bg text-success-fg border border-success-border text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wide shadow-2xs shrink-0">
-      Hoàn thành
+      Completed
     </Badge>
   )
 })
@@ -353,12 +362,12 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
     ? (activity.activeTotalCount ?? 0)
     : (activity.totalCount ?? 0)
   const progressPercent = progressTotal > 0 ? Math.min(100, Math.round((progressAnswered / progressTotal) * 100)) : 0
-  const progressText = progressTotal > 0 ? `${progressAnswered}/${progressTotal} câu` : ''
+  const progressText = progressTotal > 0 ? `${progressAnswered}/${progressTotal} questions` : ''
 
   const displayTime = activity.activityAt || activity.completedAt
   const timeAgo = displayTime
-    ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: vi })
-    : 'Gần đây'
+    ? formatDistanceToNow(new Date(displayTime), { addSuffix: true })
+    : 'Recently'
 
   const { showBadge, code, title } = resolveActivityTitle(activity.quizTitle, activity.quizCode)
   const nodeStyles = getTimelineNodeStyles(isResumable, isFlashcard, scoreNum)
@@ -374,11 +383,11 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
         )}
         <div className="flex items-start gap-3 relative z-10 opacity-50 cursor-not-allowed">
           <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shrink-0 border border-border shadow-2xs">
-            <FileText className="w-4 h-4" />
+            <FileText aria-hidden="true" className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0 p-3 rounded-2xl border border-border bg-muted/40 space-y-1">
             <h4 className="text-xs font-bold text-foreground truncate">{title}</h4>
-            <span className="text-[10px] text-muted-foreground font-semibold block">{timeAgo} • Đã xóa</span>
+            <span className="text-[10px] text-muted-foreground font-semibold block">{timeAgo} • Deleted</span>
           </div>
         </div>
       </div>
@@ -442,7 +451,7 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
           {isResumable && progressTotal > 0 && (
             <div className="space-y-1 pt-0.5">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
-                <span>Tiến độ hoàn thành</span>
+                <span>Completion Progress</span>
                 <span className="text-warning-fg font-black">{progressText} ({progressPercent}%)</span>
               </div>
               <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
@@ -459,7 +468,7 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
               <span>{timeAgo}</span>
               <span>•</span>
-              <span>{isFlashcard ? 'Thẻ Flashcard' : 'Trắc nghiệm'}</span>
+              <span>{isFlashcard ? 'Flashcards' : 'Quiz'}</span>
               {!isResumable && progressText && (
                 <>
                   <span>•</span>
@@ -469,7 +478,7 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
             </div>
 
             <span className="text-primary font-bold text-[10px] flex items-center gap-0.5 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0">
-              {isResumable ? 'Tiếp tục' : 'Xem lại'} <ChevronRight className="w-3 h-3" />
+              {isResumable ? 'Continue' : 'Review'} <ChevronRight aria-hidden="true" className="w-3 h-3" />
             </span>
           </div>
         </div>

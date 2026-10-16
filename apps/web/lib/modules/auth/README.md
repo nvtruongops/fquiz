@@ -1,16 +1,16 @@
 # Auth Module (`lib/modules/auth/`)
 
-Module xác thực và phân quyền — JWT, password hashing, role-based access, site settings.
+Authentication and authorization module — JWT lifecycle, password hashing, role-based access control (RBAC), and site settings.
 
-## Cấu trúc
+## Structure
 
 ```
 auth/
 ├── models/
-│   ├── User.ts                # User model (role, token_version, ban)
+│   ├── User.ts                # User model (role, token_version, ban status)
 │   ├── EmailVerification.ts   # OTP verification
 │   ├── LoginLog.ts            # Login audit trail
-│   ├── SiteSettings.ts        # Global config (maintenance, LLM)
+│   ├── SiteSettings.ts        # Global config (maintenance, LLM keys)
 │   └── Feedback.ts            # User feedback
 ├── types/
 │   ├── user.ts                # IUser interface
@@ -32,29 +32,29 @@ auth/
 
 ## Core Auth Flow
 
-### JWT (jose library)
+### JWT (`jose` library)
 ```
 User login → signToken(userId, role, tokenVersion) → set auth-token cookie
                                                      (httpOnly, sameSite: strict, secure)
 
 Request → verifySession() → read cookie → decrypt JWT → check DB:
-  1. User tồn tại + active (60s in-memory cache)
-  2. token_version trong JWT === token_version trong DB
+  1. User exists and is active (60s in-memory cache)
+  2. token_version in JWT === token_version in DB
   → return SessionUser { userId, role, username... }
-  → fail: clearUserStatusCache() + 401
+  → fail: clearUserStatusCache() + 401 Unauthorized
 ```
 
 ### Token Rotation
-- `JWT_SECRET`: current signing key
-- `JWT_SECRET_PREV`: previous key (for transition period)
-- Middleware: try verify with `JWT_SECRET` → fallback to `JWT_SECRET_PREV`
-- On key rotation: update `JWT_SECRET_PREV = old JWT_SECRET`, set new `JWT_SECRET`
+- `JWT_SECRET`: Current active signing key
+- `JWT_SECRET_PREV`: Previous key (for seamless transition during key rotation)
+- Verification: Attempt verify with `JWT_SECRET` $\rightarrow$ fallback to `JWT_SECRET_PREV`
+- On key rotation: Set `JWT_SECRET_PREV = old JWT_SECRET`, deploy new `JWT_SECRET`
 
 ### Token Versioning
-- `token_version` in User document incremented on:
+- `token_version` in User document is incremented upon:
   - Password change
-  - Admin ban user
-- All existing tokens for that user become invalid immediately
+  - Admin banning the user
+- All existing active tokens for that user are immediately invalidated
 
 ## withAuth HOF
 
@@ -64,10 +64,10 @@ export function withAuth<P = any>(
   options: { roles?: string[] } = {}
 )
 ```
-- Verifies JWT from cookie or Authorization header
-- Role check if roles specified
-- Injects `payload` (userId, role) into handler
-- Returns 401/403 on failure
+- Verifies JWT from cookie or `Authorization` header
+- Performs role check if `roles` are specified
+- Injects verified `payload` (`userId`, `role`) into the route handler
+- Returns 401 Unauthorized or 403 Forbidden upon failure
 
 ## UserService
 
@@ -77,7 +77,7 @@ class UserService implements IUserService {
 }
 ```
 
-Implements `IUserService` interface (defined in quiz module). Used by quiz module for username lookups without importing User model.
+Implements the `IUserService` interface (defined in the quiz module). Used by the quiz module for username batch lookups without cross-importing the `User` model.
 
 ## SiteSettings
 
@@ -99,8 +99,8 @@ interface ISiteSettings {
 
 ## Security Features
 
-- Password: `bcryptjs` with cost factor 10
-- Email verification: 6-digit OTP, hashed before DB storage
-- Password reset: random token, 1h TTL
-- `sharing_violations` counter for abuse detection
+- Passwords: `bcryptjs` with salt work factor 10
+- Email verification: 6-digit OTP, hashed before DB persistence
+- Password reset: Cryptographically secure random token, 1-hour TTL
+- `sharing_violations` counter for account sharing abuse detection
 - Login audit trail via `LoginLog` collection

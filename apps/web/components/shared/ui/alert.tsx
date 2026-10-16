@@ -1,20 +1,25 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@/lib/core/utils/cn"
+import * as React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '@/lib/core/utils/cn'
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  'relative w-full rounded-2xl border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-2px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4.5 transition-colors',
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: 'bg-card text-foreground border-border shadow-2xs',
         destructive:
-          "border-red-500/50 text-red-600 dark:border-red-500 [&>svg]:text-red-600 bg-red-50",
+          'border-destructive/30 bg-destructive/10 text-destructive [&>svg]:text-destructive shadow-2xs',
+        warning:
+          'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 [&>svg]:text-amber-700 dark:[&>svg]:text-amber-400 shadow-2xs',
+        success:
+          'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 [&>svg]:text-emerald-700 dark:[&>svg]:text-emerald-400 shadow-2xs',
+        info:
+          'border-primary/30 bg-primary/10 text-primary [&>svg]:text-primary shadow-2xs',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
   }
 )
@@ -30,7 +35,7 @@ const Alert = React.forwardRef<
     {...props}
   />
 ))
-Alert.displayName = "Alert"
+Alert.displayName = 'Alert'
 
 const AlertTitle = React.forwardRef<
   HTMLParagraphElement,
@@ -38,13 +43,13 @@ const AlertTitle = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn('mb-1 font-black text-sm leading-none tracking-tight', className)}
     {...props}
   >
     {children}
   </h5>
 ))
-AlertTitle.displayName = "AlertTitle"
+AlertTitle.displayName = 'AlertTitle'
 
 const AlertDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -52,10 +57,10 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn('text-xs leading-relaxed font-medium', className)}
     {...props}
   />
 ))
-AlertDescription.displayName = "AlertDescription"
+AlertDescription.displayName = 'AlertDescription'
 
 export { Alert, AlertTitle, AlertDescription }

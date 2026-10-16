@@ -73,7 +73,7 @@ export const GET = withAuth(async (req) => {
     const { invalidCategory, page, per_page, search, category_id } = parseAnalyticsParams(url.searchParams)
 
     if (invalidCategory) {
-      return NextResponse.json({ error: 'Mã môn học không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
     }
 
     await connectDB()

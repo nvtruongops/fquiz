@@ -19,7 +19,7 @@ async function seedPublicQuizzes() {
     
     if (!category) {
       category = await Category.create({
-        name: 'Toán học',
+        name: 'Mathematics',
         is_public: true,
         status: 'approved',
         type: 'public',
@@ -51,8 +51,8 @@ async function seedPublicQuizzes() {
     // Sample quiz data
     const sampleQuizzes = [
       {
-        title: 'Đại số cơ bản',
-        description: 'Kiểm tra kiến thức về đại số cơ bản',
+        title: 'Basic Algebra',
+        description: 'Test your foundational algebra knowledge',
         course_code: 'MATH101',
         questions: [
           {
@@ -76,27 +76,27 @@ async function seedPublicQuizzes() {
         ],
       },
       {
-        title: 'Hình học cơ bản',
-        description: 'Các câu hỏi về hình học',
+        title: 'Basic Geometry',
+        description: 'Fundamental questions on geometry concepts',
         course_code: 'MATH102',
         questions: [
           {
-            text: 'Hình vuông có mấy cạnh?',
+            text: 'How many sides does a square have?',
             options: ['3', '4', '5', '6'],
             correct_answer: [1],
-            explanation: 'Hình vuông có 4 cạnh',
+            explanation: 'A square has 4 sides',
           },
           {
-            text: 'Tổng các góc trong tam giác bằng bao nhiêu độ?',
+            text: 'What is the sum of angles in a triangle?',
             options: ['90°', '180°', '270°', '360°'],
             correct_answer: [1],
-            explanation: 'Tổng các góc trong tam giác = 180°',
+            explanation: 'The sum of angles in any triangle is 180°',
           },
         ],
       },
       {
-        title: 'Phân số và số thập phân',
-        description: 'Bài tập về phân số và số thập phân',
+        title: 'Fractions and Decimals',
+        description: 'Practice exercises on fractions and decimals',
         course_code: 'MATH103',
         questions: [
           {

@@ -50,10 +50,10 @@ export function QuizEditorMetadataCard({
     <Card className="border-border bg-card shadow-xs">
       <CardHeader className="pb-3 border-b border-border/60">
         <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
-          <span>1. Thông tin Môn học &amp; Mã đề</span>
+          <span>1. Category &amp; Quiz Code</span>
           {!isCategorySelected && (
             <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/40 bg-amber-500/10">
-              Chờ chọn môn học
+              Awaiting category selection
             </Badge>
           )}
         </CardTitle>
@@ -63,11 +63,11 @@ export function QuizEditorMetadataCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1">
-              Chọn Môn học <span className="text-destructive">*</span>
+              Category <span className="text-destructive">*</span>
             </label>
             <Select value={categoryId} onValueChange={onSelectCategory}>
               <SelectTrigger id="category-select-trigger" className="h-10 bg-background">
-                <SelectValue placeholder="— Bấm để chọn môn học —" />
+                <SelectValue placeholder="— Click to select a category —" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
@@ -77,19 +77,19 @@ export function QuizEditorMetadataCard({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">Môn học chứa bộ đề và ngân hàng câu hỏi</p>
+            <p className="text-[11px] text-muted-foreground">Category containing quizzes and question bank</p>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center gap-1">
-                Mã đề thi (Quiz Code) <span className="text-destructive">*</span>
+                Quiz Code <span className="text-destructive">*</span>
               </span>
               {isCheckingCode && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
             </label>
             <div className="relative">
               <Input
-                placeholder="Nhập mã đề thi..."
+                placeholder="Enter quiz code..."
                 value={courseCode}
                 onChange={(e) => onChangeCourseCode(e.target.value.toUpperCase())}
                 className={`font-mono uppercase h-10 ${
@@ -112,10 +112,10 @@ export function QuizEditorMetadataCard({
             </div>
             {codeDuplicateInfo?.exists ? (
               <p className="text-[11px] font-semibold text-destructive">
-                ⚠️ Mã đề này đã tồn tại ({codeDuplicateInfo.quiz?.course_code} - {codeDuplicateInfo.quiz?.questionCount} câu)
+                ⚠️ This quiz code already exists ({codeDuplicateInfo.quiz?.course_code} - {codeDuplicateInfo.quiz?.questionCount} {codeDuplicateInfo.quiz?.questionCount === 1 ? 'question' : 'questions'})
               </p>
             ) : (
-              <p className="text-[11px] text-muted-foreground">Mã nhận diện đề thi trong hệ thống</p>
+              <p className="text-[11px] text-muted-foreground">Unique identifier for this quiz in the system</p>
             )}
           </div>
         </div>
@@ -123,10 +123,10 @@ export function QuizEditorMetadataCard({
         {/* Row 2: Description */}
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-            Mô tả / Ghi chú đề thi
+            Description / Quiz Notes
           </label>
           <Input
-            placeholder="Nhập mô tả hoặc ghi chú đề thi..."
+            placeholder="Enter description or quiz notes..."
             value={description}
             onChange={(e) => onChangeDescription(e.target.value)}
             className="h-10"
@@ -138,7 +138,7 @@ export function QuizEditorMetadataCard({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary shrink-0" />
             <span>
-              Tạo nhanh khung đề: <strong>{currentQuestionsCount}</strong> câu hiện có
+              Quick question scaffolding: <strong>{currentQuestionsCount}</strong> current question(s)
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export function QuizEditorMetadataCard({
               disabled={typeof targetCount !== 'number' || targetCount <= currentQuestionsCount}
               className="h-8 text-xs cursor-pointer"
             >
-              Áp dụng
+              Apply
             </Button>
           </div>
         </div>

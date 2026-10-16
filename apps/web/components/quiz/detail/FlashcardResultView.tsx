@@ -62,7 +62,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   })
 
   const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
-  const gradeLabel = percentage >= 80 ? 'XUẤT SẮC!' : percentage >= 50 ? 'KHÁ TỐT!' : 'CẦN CỐ GẮNG THÊM!'
+  const gradeLabel = percentage >= 80 ? 'EXCELLENT!' : percentage >= 50 ? 'GOOD JOB!' : 'NEEDS PRACTICE!'
 
   // Handle Reviewing only Unknown Cards (reuses session)
   const handleReviewUnknown = async () => {
@@ -74,7 +74,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
       })
       const resData = await res.json()
       if (!res.ok) {
-        throw new Error(resData.error || 'Không thể thiết lập ôn tập thẻ chưa nhớ')
+        throw new Error(resData.error || 'Failed to configure review session for unmastered cards')
       }
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
       const reviewUrl = isMobile
@@ -83,7 +83,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
 
       router.push(reviewUrl)
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi thiết lập ôn tập')
+      toast.error(err.message || 'Error setting up review session')
     } finally {
       setLoadingUnknown(false)
       setShowReviewModal(false)
@@ -104,7 +104,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
       })
       const resData = await res.json()
       if (!res.ok) {
-        throw new Error(resData.error || 'Không thể tạo phiên học lật thẻ mới')
+        throw new Error(resData.error || 'Failed to create new flashcard session')
       }
       const newSessionId = resData.session?._id || resData.session?.id || resData.sessionId
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -114,14 +114,14 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
 
       router.push(reviewUrl)
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi tạo phiên học mới')
+      toast.error(err.message || 'Error creating new session')
     } finally {
       setLoadingAll(false)
       setShowReviewModal(false)
     }
   }
 
-  // Click handler for top "Ôn lại" button
+  // Click handler for top "Review" button
   const handleOnClickReview = () => {
     if (flashcard_stats.cards_unknown > 0) {
       handleReviewUnknown()
@@ -138,20 +138,20 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
           <div className="flex items-center gap-3.5">
             <div className="flex items-baseline gap-1">
               <span className={`text-2xl sm:text-3xl font-black ${gradeColor} tracking-tight`}>{percentage}%</span>
-              <span className="text-xs font-black text-muted-foreground">nhớ bài</span>
+              <span className="text-xs font-black text-muted-foreground">mastered</span>
             </div>
             <div className="h-6 w-px bg-border" />
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-wider">{gradeLabel}</p>
               <p className="text-[11px] font-bold text-muted-foreground">
-                Đã nhớ <strong className="text-success-fg">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} thẻ · Cần ôn lại <strong className="text-incorrect-fg">{flashcard_stats.cards_unknown}</strong> thẻ · {completedDate}
+                Mastered <strong className="text-success-fg">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} cards · Review needed for <strong className="text-incorrect-fg">{flashcard_stats.cards_unknown}</strong> cards · {completedDate}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Badge className="bg-primary text-primary-foreground border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-2xs">
-              Học Lật Thẻ (Flashcard)
+              Flashcard Study
             </Badge>
             {is_temp ? (
               <ExitMixQuizButton sessionId={sessionId} />
@@ -168,17 +168,17 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   ) : (
                     <RotateCcw className="mr-1 h-3.5 w-3.5" />
                   )}
-                  Ôn lại
+                  Review
                 </Button>
 
                 <Link href={is_guest ? "/explore" : "/dashboard"}>
                   <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
-                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> {is_guest ? "Khám phá" : "Dashboard"}
+                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> {is_guest ? "Explore" : "Dashboard"}
                   </Button>
                 </Link>
                 <Link href="/history">
                   <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
-                    <BookOpen className="mr-1 h-3.5 w-3.5" /> Lịch sử
+                    <BookOpen className="mr-1 h-3.5 w-3.5" /> History
                   </Button>
                 </Link>
               </>
@@ -205,15 +205,15 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
         <div className="grid grid-cols-3 gap-4 p-6 bg-card rounded-2xl border border-border">
           <div className="text-center p-4 bg-muted/80 rounded-2xl border border-border">
             <p className="text-2xl sm:text-3xl font-black text-foreground">{flashcard_stats.total_cards}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">Tổng thẻ</p>
+            <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">Total Cards</p>
           </div>
           <div className="text-center p-4 bg-success-bg rounded-2xl border border-success-border">
             <p className="text-2xl sm:text-3xl font-black text-success-fg">{flashcard_stats.cards_known}</p>
-            <p className="text-[10px] text-success-fg mt-1 font-black uppercase tracking-wider">Đã nhớ</p>
+            <p className="text-[10px] text-success-fg mt-1 font-black uppercase tracking-wider">Mastered</p>
           </div>
           <div className="text-center p-4 bg-incorrect-bg rounded-2xl border border-incorrect-border">
             <p className="text-2xl sm:text-3xl font-black text-incorrect-fg">{flashcard_stats.cards_unknown}</p>
-            <p className="text-[10px] text-incorrect-fg mt-1 font-black uppercase tracking-wider">Cần ôn lại</p>
+            <p className="text-[10px] text-incorrect-fg mt-1 font-black uppercase tracking-wider">Needs Review</p>
           </div>
         </div>
       )}

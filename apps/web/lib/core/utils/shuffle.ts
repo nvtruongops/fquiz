@@ -25,6 +25,11 @@ const DEPENDENT_OPTION_PATTERNS = [
   /(?:cả|gồm|bao\s+gồm|chỉ|ý|đáp\s+án|phương\s+án|câu)?\s*\b[A-H]\b\s*(?:,|và)\s*\b[A-H]\b/i,
   /\b[A-H]\s*,\s*[A-H]\b/i,
   /\b[A-H]\b\s*(?:và|,)\s*\b[A-H]\b\s*(?:đều\s+)?(?:đúng|sai)/i,
+  // English dependent options
+  /all\s+(of\s+)?(the\s+)?above/i,
+  /none\s+(of\s+)?(the\s+)?above/i,
+  /both\s+[A-H]\s+and\s+[A-H]/i,
+  /both\s+(?:are\s+)?(?:correct|true|false|wrong)/i,
 ]
 /* eslint-enable security/detect-unsafe-regex */
 
@@ -56,7 +61,7 @@ export interface QuestionWithOptions {
 /**
  * Shuffles question options and updates correct_answer indices accordingly.
  * Supports single-answer (number or [number]) and multi-answer ([number, number, ...]).
- * Preserves questions that have dependent options (e.g. "Tất cả các đáp án trên", "Cả A và B").
+ * Preserves questions that have dependent options (e.g. "All of the above", "Both A and B").
  * Cleans leading prefixes like "A. ", "B. ", "C. ", "D. ", "E. ", "F. ", "G. ", "H. ".
  */
 export function shuffleQuestionOptions<T extends QuestionWithOptions>(question: T): T {
@@ -64,7 +69,7 @@ export function shuffleQuestionOptions<T extends QuestionWithOptions>(question: 
     return question
   }
 
-  // If question options contain dependent phrases like "Tất cả đáp án trên" or "Cả A và B", skip shuffling
+  // If question options contain dependent phrases like "All of the above" or "Both A and B", skip shuffling
   if (hasDependentOptions(question.options)) {
     return question
   }

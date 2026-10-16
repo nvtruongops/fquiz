@@ -1,44 +1,44 @@
 {
   "questions": [
     {
-      "question": "Nội dung của câu hỏi số 1 là gì?",
+      "question": "What is the primary function of an operating system kernel?",
       "options": [
-        "Đây là đáp án A",
-        "Đây là đáp án B",
-        "Đây là đáp án C",
-        "Đây là đáp án D"
+        "Managing system resources and hardware communication",
+        "Compiling high-level programming code into machine instructions",
+        "Rendering graphical user interfaces in a web browser",
+        "Designing relational database schemas"
       ],
       "correct_answer": [
         0
       ],
-      "explanation": "Giải thích: Đáp án A đúng vì đây là lựa chọn chính xác nhất."
+      "explanation": "The kernel is the core component of an operating system responsible for managing CPU, memory, and hardware device interactions."
     },
     {
-      "question": "Nội dung của câu hỏi số 2 là gì? (câu hỏi có nhiều đáp án đúng)",
+      "question": "Which of the following are examples of non-relational (NoSQL) databases? (Multiple correct answers)",
       "options": [
-        "Đáp án A",
-        "Đáp án B (đúng)",
-        "Đáp án C (đúng)",
-        "Đáp án D"
+        "PostgreSQL",
+        "MongoDB",
+        "Redis",
+        "SQLite"
       ],
       "correct_answer": [
         1,
         2
       ],
-      "explanation": "Giải thích: Cả B và C đều là đáp án đúng."
+      "explanation": "MongoDB (document-based) and Redis (key-value store) are NoSQL databases, whereas PostgreSQL and SQLite are relational SQL databases."
     },
     {
-      "question": "Nội dung của câu hỏi số 3 là gì?",
+      "question": "Which HTTP status code signifies that a requested resource was not found on the server?",
       "options": [
-        "Lựa chọn 1",
-        "Lựa chọn 2",
-        "Lựa chọn 3",
-        "Lựa chọn 4"
+        "200 OK",
+        "401 Unauthorized",
+        "403 Forbidden",
+        "404 Not Found"
       ],
       "correct_answer": [
         3
       ],
-      "explanation": "Giải thích: Lựa chọn 4 là đáp án đúng vì nó phù hợp nhất với yêu cầu."
+      "explanation": "HTTP 404 Not Found indicates that the origin server could not find a current representation for the target resource."
     }
   ]
 }

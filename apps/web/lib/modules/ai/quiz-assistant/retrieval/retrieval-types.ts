@@ -28,8 +28,8 @@ export interface RetrievalResult {
   options?: string[]
   correctAnswer?: number | number[]
   explanation?: string
-  score: number // Điểm liên quan chuẩn hóa [0.0 - 1.0]
-  matchedAnswerText?: string // Văn bản đáp án đúng của câu đối chiếu
+  score: number // Normalized relevance score [0.0 - 1.0]
+  matchedAnswerText?: string // Correct answer text of reference question
   breakdown?: {
     optionScore: number
     questionScore: number

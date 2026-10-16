@@ -1,25 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
-import type { Types } from 'mongoose'
+import type { IQuestionBank } from '../entities/quiz.types'
 
-export interface IQuestionBank {
-  _id: Types.ObjectId
-  category_id: Types.ObjectId
-  question_id: string
-  text: string
-  options: string[]
-  correct_answer: number[]
-  explanation?: string
-  image_url?: string
-  created_by: Types.ObjectId
-  created_at: Date
-  updated_at: Date
-  usage_count: number
-  used_in_quizzes: string[]
-  used_in_quiz_ids: Types.ObjectId[]
-  has_conflicts: boolean
-  conflict_notes?: string
-}
-
+export type { IQuestionBank }
 export type QuestionBankDoc = IQuestionBank
 
 const QuestionBankSchema = new Schema<IQuestionBank>(
@@ -27,8 +9,7 @@ const QuestionBankSchema = new Schema<IQuestionBank>(
     category_id: { 
       type: Schema.Types.ObjectId, 
       ref: 'Category', 
-      required: true,
-      index: true
+      required: true
     },
     question_id: { 
       type: String, 

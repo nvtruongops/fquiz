@@ -33,7 +33,7 @@ export async function mockAuthUser(
     avatarUrl?: string
   } | null = {
     _id: '507f1f77bcf86cd799439099',
-    name: 'Sinh viên FQuiz',
+    name: 'FQuiz Student',
     email: 'student@example.invalid',
     role: 'student',
   }
@@ -55,8 +55,8 @@ export async function mockPublicQuizDetail(page: Page, quiz: MockQuizData) {
     data: {
       id: quiz.id,
       title: quiz.title,
-      description: quiz.description || 'Mô tả bộ đề thi mẫu FQuiz E2E',
-      categoryName: quiz.categoryName || 'Công nghệ Thông tin',
+      description: quiz.description || 'Sample FQuiz E2E quiz description',
+      categoryName: quiz.categoryName || 'Information Technology',
       course_code: quiz.course_code || 'PRN211',
       questionCount: quiz.questionCount ?? 5,
       studentCount: quiz.studentCount ?? 12,
@@ -80,8 +80,8 @@ export async function mockPublicQuizDetail(page: Page, quiz: MockQuizData) {
         quiz: {
           _id: quiz.id,
           title: quiz.title,
-          description: quiz.description || 'Mô tả bộ đề thi mẫu FQuiz E2E',
-          category_id: { name: quiz.categoryName || 'Công nghệ Thông tin' },
+          description: quiz.description || 'Sample FQuiz E2E quiz description',
+          category_id: { name: quiz.categoryName || 'Information Technology' },
           course_code: quiz.course_code || 'PRN211',
           num_questions: quiz.questionCount ?? 5,
           num_attempts: quiz.studentCount ?? 12,
@@ -252,7 +252,7 @@ export async function mockQuizSession(
           correctAnswers: Array.isArray(targetQuestion.correct_answer)
             ? targetQuestion.correct_answer
             : [targetQuestion.correct_answer ?? 0],
-          explanation: targetQuestion.explanation || 'Giải thích chi tiết cho câu hỏi mẫu.',
+          explanation: targetQuestion.explanation || 'Detailed explanation for sample question.',
           score: isCorrect ? 1 : 0,
           answeredCount: body.questionIndex + 1,
           totalQuestions: questions.length,

@@ -59,7 +59,7 @@ export function useQuestionBankCheck({
   const [result, setResult] = useState<CheckResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Debounce questions để tránh check quá nhiều
+  // Debounce questions to prevent excessive API requests
   const debouncedQuestions = useDebounce(questions, debounceMs)
 
   const checkQuestions = useCallback(async () => {
@@ -68,7 +68,7 @@ export function useQuestionBankCheck({
       return
     }
 
-    // Chỉ check câu hỏi có nội dung
+    // Only check questions that have non-empty content
     const validQuestions = debouncedQuestions.filter(
       q => q.text.trim() && q.options.some(o => o.trim())
     )
@@ -113,7 +113,7 @@ export function useQuestionBankCheck({
     }
   }, [categoryId, debouncedQuestions, enabled])
 
-  // Auto-check khi questions thay đổi (debounced)
+  // Auto-check when questions change (debounced)
   useEffect(() => {
     if (autoCheck) {
       checkQuestions()

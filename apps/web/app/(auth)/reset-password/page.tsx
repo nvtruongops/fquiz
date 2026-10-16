@@ -23,10 +23,10 @@ function ResetPasswordForm() {
       <div className="w-full max-w-md">
         <div className="bg-card text-card-foreground rounded-2xl shadow-sm border border-destructive/30 p-8 text-center">
           <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-card-foreground mb-2">Link không hợp lệ</h2>
-          <p className="text-sm text-muted-foreground mb-4">Token đặt lại mật khẩu bị thiếu hoặc không hợp lệ.</p>
+          <h2 className="text-lg font-bold text-card-foreground mb-2">Invalid Link</h2>
+          <p className="text-sm text-muted-foreground mb-4">Password reset token is missing or invalid.</p>
           <Link href="/forgot-password" className="text-sm text-primary font-medium hover:underline">
-            Yêu cầu link mới
+            Request a new link
           </Link>
         </div>
       </div>
@@ -38,8 +38,8 @@ function ResetPasswordForm() {
     setServerError('')
     const errs: typeof errors = {}
 
-    if (password.length < 8) errs.password = 'Mật khẩu tối thiểu 8 ký tự'
-    if (password !== confirm) errs.confirm = 'Mật khẩu xác nhận không khớp'
+    if (password.length < 8) errs.password = 'Password must be at least 8 characters'
+    if (password !== confirm) errs.confirm = 'Passwords do not match'
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
     setLoading(true)
@@ -53,14 +53,14 @@ function ResetPasswordForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setServerError(data.error ?? 'Có lỗi xảy ra')
+        setServerError(data.error ?? 'An error occurred')
         return
       }
 
       setSuccess(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch {
-      setServerError('Có lỗi xảy ra, vui lòng thử lại')
+      setServerError('An error occurred, please try again')
     } finally {
       setLoading(false)
     }
@@ -73,8 +73,8 @@ function ResetPasswordForm() {
           <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-7 h-7 text-success-fg" />
           </div>
-          <h2 className="text-xl font-bold text-card-foreground mb-2">Đặt lại thành công!</h2>
-          <p className="text-sm text-muted-foreground">Đang chuyển hướng đến trang đăng nhập…</p>
+          <h2 className="text-xl font-bold text-card-foreground mb-2">Reset Successful!</h2>
+          <p className="text-sm text-muted-foreground">Redirecting to sign-in page…</p>
         </div>
       </div>
     )
@@ -87,14 +87,14 @@ function ResetPasswordForm() {
       
       <div className="relative bg-card text-card-foreground rounded-[32px] shadow-sm border border-border p-8 sm:p-10 transition-all duration-500">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-card-foreground">Đặt lại mật khẩu</h1>
-          <p className="text-sm text-muted-foreground mt-1">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+          <h1 className="text-2xl font-bold text-card-foreground">Reset Password</h1>
+          <p className="text-sm text-muted-foreground mt-1">Enter a new password for your account.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-card-foreground mb-1.5">
-              Mật khẩu mới
+              New Password
             </label>
             <div className="relative">
               <input
@@ -102,7 +102,7 @@ function ResetPasswordForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự"
+                placeholder="At least 8 characters"
                 className={`w-full rounded-xl border px-3.5 py-2.5 pr-10 text-sm outline-none transition-colors
                   focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
                   ${errors.password ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
@@ -111,7 +111,7 @@ function ResetPasswordForm() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground cursor-pointer"
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -121,14 +121,14 @@ function ResetPasswordForm() {
 
           <div>
             <label htmlFor="confirm" className="block text-sm font-medium text-card-foreground mb-1.5">
-              Xác nhận mật khẩu
+              Confirm Password
             </label>
             <input
               id="confirm"
               type={showPassword ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Nhập lại mật khẩu"
+              placeholder="Re-enter password"
               className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors
                 focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
                 ${errors.confirm ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
@@ -147,7 +147,7 @@ function ResetPasswordForm() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl shadow-md transition-all disabled:opacity-60 cursor-pointer"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Đặt lại mật khẩu'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reset Password'}
           </button>
         </form>
       </div>

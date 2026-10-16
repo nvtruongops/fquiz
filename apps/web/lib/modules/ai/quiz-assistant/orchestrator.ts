@@ -294,14 +294,14 @@ export class QuizAIOrchestrator {
   ): LLMQuizAssistantOutput {
     const hasSimilar = evidences.length > 0
     const courseCode = context.courseCode || ''
-    const courseStr = courseCode ? `môn ${courseCode}` : 'môn học này'
+    const courseStr = courseCode ? `course ${courseCode}` : 'this course'
     const getLabel = (idx: number) => String.fromCharCode(65 + idx)
-    const optionStr = context.targetOptionText || 'phương án này'
+    const optionStr = context.targetOptionText || 'this option'
 
     // 🛡️ Scope Guard: Detect unrelated non-academic or foreign-subject queries
     if (userQuery && this.isOutOfScopeQuery(userQuery, context)) {
       return {
-        reply: `⚠️ **Câu hỏi ngoài phạm vi ${courseStr}!**\n\nTôi là Trợ lý AI Phòng Thi chuyên hỗ trợ kiến thức ${courseStr} và nội dung bài thi trắc nghiệm. Câu hỏi của bạn không thuộc phạm vi ôn tập của môn học này.\n\n👉 Vui lòng đặt các câu hỏi liên quan đến kiến thức ${courseStr} hoặc bài thi hiện tại!`,
+        reply: `⚠️ **Question out of scope for ${courseStr}!**\n\nI am the Exam AI Assistant specialized in supporting ${courseStr} and quiz content. Your question is outside the scope of this course.\n\n👉 Please ask questions related to ${courseStr} or the current quiz!`,
         formulaExplanation: null,
         similarQuestionFound: false,
         similarQuestionDetails: null,
@@ -327,41 +327,41 @@ export class QuizAIOrchestrator {
 
     // 1. Solving mindset & approach (SOLVE_QUESTION)
     if (intent === 'SOLVE_QUESTION') {
-      replyText = `💡 **Hướng dẫn phương pháp tư duy 4 bước (${courseStr})**:\n\n1. **Từ khóa then chốt (Keywords)**: Đọc kỹ đề bài để xác định mục tiêu chính và loại tài liệu/quy trình được yêu cầu.\n2. **Nguyên lý cốt lõi (Concept/Rule)**: Liên hệ với các định nghĩa và tiêu chuẩn quy trình của môn học.\n3. **Loại trừ bẫy (Elimination)**: Loại bỏ các phương án có phạm vi quá rộng, chỉ mang tính quy trình chung, hoặc không trực tiếp giải quyết yêu cầu cụ thể của đề bài.\n4. **Tự kiểm tra (Self-Check)**: Đối chiếu từng lựa chọn A, B, C, D với yêu cầu then chốt để tự tin đưa ra quyết định!`
+      replyText = `💡 **4-Step Thinking Method (${courseStr})**:\n\n1. **Keywords**: Read the question carefully to identify the core objective and required process or concept.\n2. **Core Principle (Concept/Rule)**: Connect with standard subject definitions and guidelines.\n3. **Elimination**: Eliminate options that are overly broad, generic, or do not directly resolve the specific prompt.\n4. **Self-Check**: Compare options A, B, C, D against the key requirements to confidently make your choice!`
     }
     // 2. Explaining why selected answer is wrong
     else if (intent === 'EXPLAIN_WRONG_ANSWER') {
       if (context.targetOptionText) {
         if (isNegativeQuestion) {
-          replyText = `Phân tích phương án bạn đã chọn${optLabel} ("${context.targetOptionText}"):\n\n💡 **Phân tích sư phạm**: Đề bài chứa từ khóa phủ định (**NOT / KHÔNG PHẢI**). Phương án này thực chất là một đặc điểm/nhược điểm có thật, do đó **không thỏa mãn** yêu cầu tìm phương án "không phải" của đề bài.\n\n👉 **Gợi ý**: Hãy đọc kỹ từ khóa phủ định trong đề bài và chọn phương án không thuộc nhóm đặc điểm/nhược điểm này!`
+          replyText = `Analysis of your selected option${optLabel} ("${context.targetOptionText}"):\n\n💡 **Pedagogical Analysis**: The prompt contains a negative keyword (**NOT / EXCEPT**). This option is actually a valid characteristic/feature, and therefore **does not satisfy** the requirement to find the "not" option.\n\n👉 **Hint**: Re-read the negative condition and select the option outside this group!`
         } else if (!isTargetCorrect) {
-          replyText = `Phân tích phương án bạn đã chọn${optLabel} ("${context.targetOptionText}"):\n\n💡 **Phân tích sư phạm**: Phương án này chưa chính xác hoặc không phải là bước ưu tiên theo quy trình chuẩn của môn học.\n\n👉 **Gợi ý**: Hãy đọc lại đề bài và áp dụng phương pháp loại trừ để tìm phương án phù hợp nhất!`
+          replyText = `Analysis of your selected option${optLabel} ("${context.targetOptionText}"):\n\n💡 **Pedagogical Analysis**: This option is inaccurate or not the prioritized step in standard coursework procedures.\n\n👉 **Hint**: Re-read the prompt and apply process of elimination to find the best option!`
         } else {
-          replyText = `Phân tích phương án bạn đã chọn${optLabel} ("${context.targetOptionText}"):\n\n💡 **Phân tích sư phạm**: Phương án này thực tế là phương án đáp ứng đúng định nghĩa và yêu cầu của đề bài.`
+          replyText = `Analysis of your selected option${optLabel} ("${context.targetOptionText}"):\n\n💡 **Pedagogical Analysis**: This option actually satisfies the definition and requirements of the question.`
         }
       } else {
-        replyText = `⚠️ **Bạn chưa chọn phương án nào cho câu hỏi này!**\n\nVui lòng chọn một phương án trước để tôi phân tích chi tiết vì sao lựa chọn đó đúng hay chưa đúng.\n\n💡 **Gợi ý tư duy**: Hãy đọc kỹ các từ khóa then chốt trong đề bài và áp dụng phương pháp loại trừ các phương án hành động vội vàng trước khi đánh giá tác động.`
+        replyText = `⚠️ **You have not selected an option for this question yet!**\n\nPlease select an option first so I can analyze why that choice is correct or incorrect.\n\n💡 **Thinking Hint**: Read the key terms carefully and eliminate hasty actions before evaluating impact.`
       }
     }
     // 3. Explaining correct answer
     else if (intent === 'EXPLAIN_CORRECT_ANSWER') {
       if (context.targetOptionText) {
         if (!isTargetCorrect) {
-          replyText = `Phân tích phương án${optLabel} ("${context.targetOptionText}"):\n\n⚠️ **Lưu ý**: Phương án${optLabel} **chưa phải là phương án chính xác** cho câu hỏi này.\n\n💡 **Gợi ý tư duy**: Hãy đối chiếu lại định nghĩa chuẩn và tiêu chí đề bài yêu cầu để tìm phương án đúng nhất!`
+          replyText = `Analysis of option${optLabel} ("${context.targetOptionText}"):\n\n⚠️ **Note**: Option${optLabel} **is not the correct answer** for this question.\n\n💡 **Thinking Hint**: Compare against standard definitions and criteria to find the correct option!`
         } else {
-          replyText = `Phân tích phương án bạn đang xem xét${optLabel} ("${context.targetOptionText}"):\n\n💡 **Phân tích chuyên môn**: Phương án này đáp ứng chính xác yêu cầu của đề bài và định nghĩa chuẩn của môn học.`
+          replyText = `Analysis of the option you are considering${optLabel} ("${context.targetOptionText}"):\n\n💡 **Professional Analysis**: This option accurately satisfies the question's requirements and subject definitions.`
         }
       } else {
-        replyText = `⚠️ **Bạn đang làm bài và chưa chọn đáp án!**\n\nĐể đảm bảo tính trung thực trong phòng thi, AI không tiết lộ trực tiếp đáp án đúng. Dưới đây là hướng dẫn tư duy khái niệm để bạn tự suy luận:\n\n💡 **Gợi ý phương pháp**: Hãy phân tích mục đích và vai trò của từng phương án lựa chọn (A, B, C, D) đối với yêu cầu cụ thể trong đề bài để tìm ra câu trả lời chính xác nhất.\n\n👉 Hãy đối chiếu 4 phương án và chọn câu trả lời bạn cho là chính xác nhất!`
+        replyText = `⚠️ **You are currently taking the quiz and have not selected an answer!**\n\nTo ensure academic integrity, AI does not reveal the answer directly. Here is conceptual guidance:\n\n💡 **Method Hint**: Analyze the purpose and role of each option (A, B, C, D) relative to the prompt's requirement.\n\n👉 Compare the 4 options and select the answer you believe is correct!`
       }
     }
     // 4. Comparing options
     else if (intent === 'COMPARE_OPTIONS') {
-      replyText = `Phân tích và so sánh các khái niệm trong câu hỏi:\n\n💡 **Nguyên lý phân biệt**: Hãy phân biệt phạm vi áp dụng, vai trò và thời điểm sử dụng của từng phương án lựa chọn A, B, C, D.\n\n👉 Hãy chú ý điểm khác biệt then chốt giữa các thuật ngữ để đưa ra quyết định chính xác.`
+      replyText = `Analysis and comparison of concepts in the question:\n\n💡 **Distinguishing Principle**: Differentiate the scope, purpose, and usage timing of options A, B, C, and D.\n\n👉 Pay attention to key differences between terms to make an accurate choice.`
     }
     // 5. Formula inquiries
     else if (intent === 'EXPLAIN_FORMULA') {
-      replyText = `Phân tích công thức & phương pháp tính toán:\n\n💡 **Hướng dẫn**: Hãy xác định các tham số đầu vào trong đề bài và áp dụng công thức chuẩn của môn học để tự tính ra kết quả.`
+      replyText = `Analysis of formula & calculation method:\n\n💡 **Guidance**: Identify the input parameters in the prompt and apply the standard subject formula to compute the result.`
     }
     // 6. Searching for similar questions in Question Bank
     else if (intent === 'FIND_SIMILAR_QUESTION') {
@@ -372,14 +372,14 @@ export class QuizAIOrchestrator {
           : (topEvidence.correctAnswer !== undefined ? getLabel(topEvidence.correctAnswer) : 'N/A')
 
         const matchedAnswer = topEvidence.matchedAnswerText || optionStr
-        replyText = `**CÓ!** Trong dữ liệu đối chiếu ${courseStr}, tìm thấy câu hỏi sau có đáp án đúng là **"${matchedAnswer}"**:\n\n• **Đề bài**: "${topEvidence.content}"\n• **Đáp án đúng trong câu đó**: Phương án ${qCorrect} (${matchedAnswer})`
+        replyText = `**YES!** In reference data ${courseStr}, found the following question with correct answer **"${matchedAnswer}"**:\n\n• **Question**: "${topEvidence.content}"\n• **Correct answer in that question**: Option ${qCorrect} (${matchedAnswer})`
       } else {
-        replyText = `Hiện tại **không tìm thấy câu hỏi tương tự đủ phù hợp** trong dữ liệu đối chiếu ${courseStr} sử dụng **"${optionStr}"** làm đáp án đúng.`
+        replyText = `Currently **no matching similar question found** in reference data ${courseStr} using **"${optionStr}"** as the correct answer.`
       }
     }
     // 7. General inquiry
     else {
-      replyText = `Phân tích câu hỏi ${courseStr}:\n\n💡 **Gợi ý tư duy**: Hãy phân tích kỹ các từ khóa trong đề bài và đối chiếu với 4 phương án lựa chọn A, B, C, D để tự tìm ra đáp án chính xác!`
+      replyText = `Analysis of question ${courseStr}:\n\n💡 **Thinking Hint**: Carefully analyze keywords in the prompt and compare against options A, B, C, and D to identify the correct answer!`
     }
 
     return {

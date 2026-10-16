@@ -7,5 +7,5 @@
   "dependsOn": [],
   "parallelizable": true,
   "supportsFix": false,
-  "description": "Kiểm tra các vi phạm lint cơ bản: rỗng catch block, unreachable code, lạm dụng explicit any."
+  "description": "Validates fundamental lint standards: empty catch blocks, unreachable code, and excessive explicit any usage."
 }

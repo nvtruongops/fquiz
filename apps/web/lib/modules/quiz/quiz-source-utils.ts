@@ -15,18 +15,24 @@ export function inferSourceType(quiz: QuizSourceProjection, studentUserId: strin
 }
 
 export function sourceLabelFromType(sourceType: SourceType): string {
-  if (sourceType === 'self_created') return 'Tự tạo'
-  return 'Từ Explore'
+  if (sourceType === 'self_created') return 'Self-created'
+  return 'From Explore'
 }
 
 /**
  * Extract display code from mix quiz title.
- * "Quiz Trộn · MLN122_SP26_C1_FE + MLN122_SP26_C2_FE" → "MLN122_SP26_C1_FE + ..."
+ * "Mixed Quiz · MLN122_SP26_C1_FE + MLN122_SP26_C2_FE" → "MLN122_SP26_C1_FE + ..."
  * Truncates to keep it readable.
  */
 export function mixQuizDisplayCode(title: string): string {
-  const prefix = 'Quiz Trộn · '
-  const raw = title.startsWith(prefix) ? title.slice(prefix.length) : title
+  const prefixes = ['Mixed Quiz \u00B7 ', 'Quiz Tr\u1ED9n \u00B7 ']
+  let raw = title
+  for (const prefix of prefixes) {
+    if (raw.startsWith(prefix)) {
+      raw = raw.slice(prefix.length)
+      break
+    }
+  }
   if (raw.length > 40) return raw.slice(0, 37) + '...'
   return raw
 }

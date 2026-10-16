@@ -38,15 +38,15 @@ export default function AdminQuizzesPage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Quản lý Đề thi</h1>
+          <h1 className="text-2xl font-bold text-foreground">Quiz Management</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Theo dõi, duyệt xuất bản và tạo mới đề thi trắc nghiệm trên hệ thống
+            Manage, review, publish, and create quizzes across the platform
           </p>
         </div>
         <Link href="/quizzes/new">
           <Button className="gap-2 font-bold shadow-sm cursor-pointer">
             <Plus className="w-4 h-4" />
-            Tạo Quiz mới
+            Create New Quiz
           </Button>
         </Link>
       </div>
@@ -56,7 +56,7 @@ export default function AdminQuizzesPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Tìm theo tiêu đề hoặc mã môn..."
+            placeholder="Search by title or category..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -74,10 +74,10 @@ export default function AdminQuizzesPage() {
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Tất cả danh mục" />
+            <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả danh mục môn</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c._id} value={c._id}>
                 {c.name}

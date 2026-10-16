@@ -9,23 +9,23 @@ function runCommand(command: string): string {
 }
 
 function main() {
-  console.log('\x1b[36m%s\x1b[0m', '🚀 Bắt đầu quá trình tự động commit và push...')
+  console.log('\x1b[36m%s\x1b[0m', '🚀 Starting automated commit and push workflow...')
 
   try {
-    // 1. Kiểm tra trạng thái Git
+    // 1. Check Git status
     const status = runCommand('git status --porcelain')
     if (!status) {
-      console.log('\x1b[32m%s\x1b[0m', '✅ Không có thay đổi nào cần commit.')
+      console.log('\x1b[32m%s\x1b[0m', '✅ No changes detected to commit.')
       return
     }
 
-    // Lấy danh sách các file thay đổi để tạo commit message tự động
+    // Retrieve list of changed files for automatic commit message
     const changedFiles = status
       .split('\n')
       .map(line => line.slice(3).trim())
       .filter(Boolean)
 
-    // 2. Xác định commit message
+    // 2. Resolve commit message
     const args = process.argv.slice(2)
     let commitMessage = args.join(' ').trim()
 
@@ -33,32 +33,32 @@ function main() {
       const maxFilesToShow = 3
       const fileSummary = changedFiles.slice(0, maxFilesToShow).join(', ')
       const remainingCount = changedFiles.length - maxFilesToShow
-      const fileSuffix = remainingCount > 0 ? ` và ${remainingCount} file khác` : ''
-      const timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+      const fileSuffix = remainingCount > 0 ? ` and ${remainingCount} other files` : ''
+      const timestamp = new Date().toISOString()
       
-      commitMessage = `auto: cập nhật ${fileSummary}${fileSuffix} [${timestamp}]`
+      commitMessage = `auto: update ${fileSummary}${fileSuffix} [${timestamp}]`
     }
 
     console.log('\x1b[33m%s\x1b[0m', `📝 Commit message: "${commitMessage}"`)
 
-    // 3. Thực hiện git add
+    // 3. Execute git add
     console.log('Staging changes...')
     runCommand('git add .')
 
-    // 4. Thực hiện git commit
+    // 4. Execute git commit
     console.log('Committing changes...')
     // Escape double quotes in commit message
     const escapedMsg = commitMessage.replace(/"/g, '\\"')
     runCommand(`git commit -m "${escapedMsg}"`)
 
-    // 5. Thực hiện git push
+    // 5. Execute git push
     console.log('Pushing to remote repository...')
-    // Để hiển thị tiến trình push trực tiếp lên terminal
+    // Display push progress directly in terminal
     execSync('git push', { stdio: 'inherit' })
 
-    console.log('\x1b[32m%s\x1b[0m', '🎉 Tự động push hoàn tất thành công!')
+    console.log('\x1b[32m%s\x1b[0m', '🎉 Automated push completed successfully!')
   } catch (error: any) {
-    console.error('\x1b[31m%s\x1b[0m', '❌ Đã xảy ra lỗi trong quá trình thực hiện:')
+    console.error('\x1b[31m%s\x1b[0m', '❌ An error occurred during execution:')
     console.error(error.message || error)
     process.exit(1)
   }

@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
       const normalizedEmail = parsed.data.email.toLowerCase().trim()
       if (!isValidVerificationCode(parsed.data.code.trim())) {
-        return NextResponse.json({ error: 'Mã xác thực không hợp lệ' }, { status: 400 })
+        return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
       }
 
       const tempUser = await User.findOne({ email: normalizedEmail }).select('_id reset_token reset_token_expires reset_token_attempts')
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       }
 
       if ((tempUser.reset_token_attempts || 0) >= 5) {
-        return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+        return NextResponse.json({ error: 'Too many attempts. Please request a new code.' }, { status: 429 })
       }
 
       const codeHash = hashVerificationCode(parsed.data.code.trim())

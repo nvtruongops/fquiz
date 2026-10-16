@@ -1,18 +1,17 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Menu, Bookmark, Hand, PenTool } from 'lucide-react'
+import { XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
-import { cn } from '@/lib/core/utils/cn'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
-import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { QuizLoadingOverlay, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useMobileQuizSessionController } from '@/hooks/quiz/useMobileQuizSessionController'
-import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
-import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useAuth } from '@/hooks/auth/useAuth'
+import { MobileSessionHeader } from '@/components/quiz/mobile/MobileSessionHeader'
+import { MobileSessionQuestionCard } from '@/components/quiz/mobile/MobileSessionQuestionCard'
+import { MobileSessionFooter } from '@/components/quiz/mobile/MobileSessionFooter'
+import { MobileSessionDialogs } from '@/components/quiz/mobile/MobileSessionDialogs'
 
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
@@ -27,9 +26,9 @@ export default function QuizSessionMobilePage() {
       <div className="flex h-screen items-center justify-center bg-page-bg p-6 text-card-foreground">
         <div className="w-full max-w-md rounded-2xl border-2 border-border bg-card p-8 text-center shadow-xl">
           <XCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-          <h2 className="mb-2 text-xl font-black text-card-foreground">Lỗi phòng thi</h2>
+          <h2 className="mb-2 text-xl font-black text-card-foreground">Exam Room Error</h2>
           <p className="mb-6 text-sm text-muted-foreground">
-            {(ctrl.initialError as any)?.message || 'Vui lòng kiểm tra kết nối mạng và thử lại'}
+            {(ctrl.initialError as any)?.message || 'Please check your network connection and try again'}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <Button
@@ -44,14 +43,14 @@ export default function QuizSessionMobilePage() {
               }}
               className="w-full py-6 font-bold border-border text-card-foreground hover:bg-muted cursor-pointer"
             >
-              Quay lại
+              Back
             </Button>
             <Button
               type="button"
               onClick={() => ctrl.router.push('/dashboard')}
               className="w-full bg-primary py-6 text-primary-foreground hover:bg-primary/90 font-black cursor-pointer"
             >
-              Về Dashboard
+              Back to Dashboard
             </Button>
           </div>
         </div>
@@ -64,7 +63,7 @@ export default function QuizSessionMobilePage() {
       <QuizLoadingOverlay
         isOpen={true}
         progress={ctrl.sessionLoader.progress}
-        status={ctrl.sessionLoader.status || 'Đang tải bộ câu hỏi...'}
+        status={ctrl.sessionLoader.status || 'Loading questions...'}
       />
     )
   }
@@ -104,7 +103,7 @@ export default function QuizSessionMobilePage() {
       course_code: session.courseCode || 'GENERAL',
       text: question.text,
       options: question.options,
-      correct_answer: (question as any).correct_answer || [0],
+      correct_answer: (question as any).correct_answer || (ctrl.lastAnswerResult?.correctAnswers ? ctrl.lastAnswerResult.correctAnswers : []),
       explanation: (question as any).explanation || '',
       image_url: question.image_url || '',
     })
@@ -112,93 +111,30 @@ export default function QuizSessionMobilePage() {
 
   return (
     <div className="flex h-screen flex-col bg-page-bg text-card-foreground">
-      <QuizLoadingOverlay 
-        isOpen={ctrl.sessionLoader.isOpen} 
-        progress={ctrl.sessionLoader.progress} 
-        status={ctrl.sessionLoader.status} 
+      <QuizLoadingOverlay
+        isOpen={ctrl.sessionLoader.isOpen}
+        progress={ctrl.sessionLoader.progress}
+        status={ctrl.sessionLoader.status}
       />
-      
+
       {/* Mobile Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-card shadow-sm text-card-foreground">
-        <div className="flex items-center justify-between px-2 py-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => ctrl.setQuestionMapOpen(true)}
-              className="h-10 w-10 rounded-xl bg-muted text-primary hover:bg-muted/80 cursor-pointer"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{session.categoryName}</p>
-              <p className="text-sm font-black text-primary">{session.courseCode}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {isDevOrAdmin && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleNoteMode}
-                title={isNoteMode ? 'Đang bật Bút Tra Từ (Nhấn để quay lại làm bài)' : 'Bật Bút Tra Từ (Để bôi đen tra từ không lo chọn nhầm đáp án)'}
-                className={cn(
-                  "h-10 w-10 rounded-xl transition-all flex items-center justify-center cursor-pointer",
-                  isNoteMode
-                    ? "bg-amber-500 text-white border border-amber-400 shadow-sm animate-pulse"
-                    : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20"
-                )}
-              >
-                <PenTool className="h-4 w-4" />
-              </Button>
-            )}
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={ctrl.toggleHandedness}
-              title={ctrl.isRightHanded ? 'Đang ở chế độ Tay phải (Nhấn để đổi Tay trái)' : 'Đang ở chế độ Tay trái (Nhấn để đổi Tay phải)'}
-              className={cn(
-                "h-10 w-10 rounded-xl transition-all flex items-center justify-center gap-0.5 cursor-pointer",
-                ctrl.isRightHanded
-                  ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-sm"
-                  : "bg-muted text-primary hover:bg-muted/80 border border-transparent"
-              )}
-            >
-              <Hand className={cn("h-4 w-4 transition-transform duration-200", !ctrl.isRightHanded ? "scale-x-[-1]" : "")} />
-              <span className="text-[9px] font-black tracking-tighter uppercase">{ctrl.isRightHanded ? 'R' : 'L'}</span>
-            </Button>
-
-            <div className="flex flex-col items-end">
-              <QuizTimer
-                startedAt={session.started_at}
-                pausedAt={session.paused_at}
-                totalPausedDurationMs={session.total_paused_duration_ms}
-                sessionId={ctrl.resolvedSessionId}
-                className="text-primary text-sm"
-              />
-              <p className="text-[10px] font-bold text-muted-foreground">
-                {answeredCount}/{effectiveTotal} câu
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => ctrl.setExitConfirmOpen(true)}
-              className="h-10 w-10 rounded-xl bg-incorrect-bg text-destructive hover:bg-incorrect-bg/80 cursor-pointer"
-            >
-              <XCircle className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-        <div className="h-1 bg-muted">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(answeredCount / effectiveTotal) * 100}%` }}
-          />
-        </div>
-      </header>
+      <MobileSessionHeader
+        categoryName={session.categoryName}
+        courseCode={session.courseCode}
+        isDevOrAdmin={isDevOrAdmin}
+        isNoteMode={isNoteMode}
+        toggleNoteMode={toggleNoteMode}
+        isRightHanded={ctrl.isRightHanded}
+        toggleHandedness={ctrl.toggleHandedness}
+        startedAt={session.started_at}
+        pausedAt={session.paused_at}
+        totalPausedDurationMs={session.total_paused_duration_ms}
+        sessionId={ctrl.resolvedSessionId}
+        answeredCount={answeredCount}
+        effectiveTotal={effectiveTotal}
+        onOpenQuestionMap={() => ctrl.setQuestionMapOpen(true)}
+        onOpenExitConfirm={() => ctrl.setExitConfirmOpen(true)}
+      />
 
       {/* Main Content */}
       <ScrollArea className="flex-1">
@@ -210,272 +146,53 @@ export default function QuizSessionMobilePage() {
           onTouchEnd={ctrl.handleTouchEnd}
           className="space-y-4 p-4 pb-20 transition-transform duration-150 ease-out"
         >
-          {/* Note Mode Alert Banner */}
-          {isNoteMode && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 text-xs font-bold text-amber-600 dark:text-amber-400">
-              <PenTool className="h-4 w-4 text-amber-500 shrink-0 animate-bounce" />
-              <span>Chế độ Tra từ đang bật: Bạn có thể tự do bôi đen text để tra từ (đáp án tạm ngưng click chọn).</span>
-            </div>
-          )}
-
-          {/* Question Meta Bar */}
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary border border-primary/20">
-                Câu {effectiveIndex + 1}/{effectiveTotal}
-              </span>
-              <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                {requiredSelectionCount <= 1
-                  ? '• Chọn 1 đáp án'
-                  : `• Chọn ${requiredSelectionCount} đáp án`}
-                <span className="hidden sm:inline"> • Vuốt 👈 👉 để lật câu</span>
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={handleTogglePin}
-                disabled={ctrl.togglePinMutation.isPending}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0",
-                  isQuestionPinned
-                    ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : "bg-card text-card-foreground border-border hover:bg-muted"
-                )}
-              >
-                <Bookmark className={cn("w-3.5 h-3.5", isQuestionPinned && "fill-current text-amber-600")} />
-                <span>{isQuestionPinned ? 'Đã ghim' : 'Ghim câu'}</span>
-              </button>
-
-              {(session.mode === 'immediate' || (session.mode === 'review' && ctrl.submitted)) && (
-                <UsageBadge
-                  count={question.usage_count}
-                  used_in_quizzes={question.used_in_quizzes}
-                  currentCourseCode={session.courseCode}
-                  size="sm"
-                  align="right"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Question Text */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-card-foreground">
-            <p className="whitespace-pre-wrap text-base leading-relaxed text-card-foreground">
-              <InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} />
-            </p>
-
-            {question.image_url && (
-              <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                <img
-                  src={question.image_url}
-                  alt="Question Attachment"
-                  className="max-h-64 w-full object-contain bg-muted"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Options List */}
-          <div className="space-y-3">
-            {question.options.map((optText, optIndex) => {
-              const isSelected = ctrl.selectedOptions.includes(optIndex)
-              let statusStyle = 'border-border bg-card text-card-foreground hover:border-primary/50 hover:bg-muted'
-
-              if (showImmediateFeedback) {
-                const isCorrect = correctAnswerSet.includes(optIndex)
-                if (isCorrect) {
-                  statusStyle = 'border-success-border bg-success-bg text-success-fg font-bold ring-1 ring-success-border/30'
-                } else if (isSelected) {
-                  statusStyle = 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-bold ring-1 ring-incorrect-border/30'
-                }
-              } else if (isSelected) {
-                statusStyle = 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
-              }
-
-              return (
-                <button
-                  key={optIndex}
-                  type="button"
-                  onClick={() => {
-                    if (isNoteMode) return
-                    ctrl.handleSelectOption(optIndex)
-                  }}
-                  disabled={ctrl.submitted || ctrl.submitMutation.isPending || isNoteMode}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer",
-                    isNoteMode && "cursor-text border-dashed border-amber-500/40 bg-amber-500/5",
-                    statusStyle
-                  )}
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border font-bold text-xs">
-                    {String.fromCharCode(65 + optIndex)}
-                  </div>
-                  <span className="flex-1 text-sm font-medium leading-normal">
-                    <InteractiveText content={optText} sourceType="quiz" sourceId={question._id} />
-                  </span>
-                  {showImmediateFeedback && correctAnswerSet.includes(optIndex) && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0">
-                      <CheckCircle2 className="h-4 w-4 text-success-fg" /> Đúng
-                    </span>
-                  )}
-                  {showImmediateFeedback && !correctAnswerSet.includes(optIndex) && isSelected && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0">
-                      <XCircle className="h-4 w-4 text-incorrect-fg" /> Sai
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          <MobileSessionQuestionCard
+            question={question}
+            effectiveIndex={effectiveIndex}
+            effectiveTotal={effectiveTotal}
+            requiredSelectionCount={requiredSelectionCount}
+            isQuestionPinned={isQuestionPinned}
+            isPinPending={ctrl.togglePinMutation.isPending}
+            onTogglePin={handleTogglePin}
+            isNoteMode={isNoteMode}
+            showImmediateFeedback={showImmediateFeedback}
+            correctAnswerSet={correctAnswerSet}
+            selectedOptions={ctrl.selectedOptions}
+            submitted={ctrl.submitted}
+            isSubmitting={ctrl.submitMutation.isPending}
+            onSelectOption={ctrl.handleSelectOption}
+            mode={session.mode}
+            currentCourseCode={session.courseCode}
+          />
         </div>
       </ScrollArea>
 
       {/* Navigation Footer */}
-      <footer className="sticky bottom-0 z-10 border-t border-border bg-card p-3 shadow-lg text-card-foreground">
-        <div className="flex items-center gap-2">
-          {ctrl.isRightHanded && (
-            <Button
-              type="button"
-              onClick={ctrl.handleSubmit}
-              className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90 shadow-md cursor-pointer"
-            >
-              <span>Nộp bài</span>
-            </Button>
-          )}
+      <MobileSessionFooter
+        isRightHanded={ctrl.isRightHanded}
+        effectiveIndex={effectiveIndex}
+        effectiveTotal={effectiveTotal}
+        onNavigate={ctrl.handleNavigate}
+        onSubmit={ctrl.handleSubmit}
+      />
 
-          <Button
-            type="button"
-            variant="outline"
-            disabled={effectiveIndex <= 0}
-            onClick={() => ctrl.handleNavigate(effectiveIndex - 1)}
-            className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
-          >
-            <ChevronLeft className="mr-1 h-5 w-5" />
-            <span>Câu trước</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            disabled={effectiveIndex >= effectiveTotal - 1}
-            onClick={() => ctrl.handleNavigate(effectiveIndex + 1)}
-            className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
-          >
-            <span>Câu sau</span>
-            <ChevronRight className="ml-1 h-5 w-5" />
-          </Button>
-
-          {!ctrl.isRightHanded && (
-            <Button
-              type="button"
-              onClick={ctrl.handleSubmit}
-              className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90 shadow-md cursor-pointer"
-            >
-              <span>Nộp bài</span>
-            </Button>
-          )}
-        </div>
-      </footer>
-
-      {/* Submit Confirmation Dialog */}
-      <Dialog open={ctrl.confirmOpen} onOpenChange={ctrl.setConfirmOpen}>
-        <DialogContent className="max-w-xs rounded-2xl p-6 bg-card text-card-foreground border-border">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-card-foreground">Xác nhận nộp bài</DialogTitle>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              Bạn đã hoàn thành {answeredCount}/{effectiveTotal} câu hỏi. Bạn có chắc chắn muốn nộp bài?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex flex-col gap-2">
-            <Button
-              type="button"
-              onClick={ctrl.handleConfirmSubmit}
-              disabled={ctrl.finalizeMutation.isPending}
-              className="w-full bg-primary py-5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
-            >
-              Đồng ý nộp bài
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => ctrl.setConfirmOpen(false)}
-              className="w-full py-5 font-bold text-muted-foreground"
-            >
-              Làm tiếp
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Exit Confirmation Dialog */}
-      <Dialog open={ctrl.exitConfirmOpen} onOpenChange={ctrl.setExitConfirmOpen}>
-        <DialogContent className="max-w-xs rounded-2xl p-6">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-foreground">Thoát phòng thi?</DialogTitle>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              Tiến trình làm bài của bạn sẽ được lưu tự động. Bạn có thể tiếp tục làm lại sau.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex flex-col gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={ctrl.handleConfirmExitQuiz}
-              className="w-full py-5 font-bold"
-            >
-              Thoát phòng thi
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => ctrl.setExitConfirmOpen(false)}
-              className="w-full py-5 font-bold text-muted-foreground"
-            >
-              Ở lại làm tiếp
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Question Map Dialog (Danh sách câu hỏi 3 gạch menu) */}
-      <Dialog open={ctrl.questionMapOpen} onOpenChange={ctrl.setQuestionMapOpen}>
-        <DialogContent className="max-w-xs rounded-2xl p-5 bg-card text-card-foreground border-border">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black text-card-foreground">Danh sách câu hỏi</DialogTitle>
-          </DialogHeader>
-          <div className="my-3 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-5 gap-2">
-              {Array.from({ length: effectiveTotal }, (_, i) => {
-                const isCurrent = i === effectiveIndex
-                const isAnswered = answeredFromSession.has(i)
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => ctrl.handleNavigate(i)}
-                    className={cn(
-                      "h-10 rounded-xl font-black text-xs border transition-all active:scale-95 cursor-pointer flex items-center justify-center relative",
-                      isCurrent
-                        ? "bg-primary text-primary-foreground border-primary shadow-xs ring-2 ring-primary/30"
-                        : isAnswered
-                          ? "bg-primary/10 text-primary border-primary/30 font-bold"
-                          : "bg-muted text-card-foreground border-border hover:bg-muted/80"
-                    )}
-                  >
-                    {i + 1}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => ctrl.setQuestionMapOpen(false)} className="w-full h-10 rounded-xl font-bold border-border text-card-foreground">
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <MobileSessionDialogs
+        confirmOpen={ctrl.confirmOpen}
+        setConfirmOpen={ctrl.setConfirmOpen}
+        exitConfirmOpen={ctrl.exitConfirmOpen}
+        setExitConfirmOpen={ctrl.setExitConfirmOpen}
+        questionMapOpen={ctrl.questionMapOpen}
+        setQuestionMapOpen={ctrl.setQuestionMapOpen}
+        answeredCount={answeredCount}
+        effectiveTotal={effectiveTotal}
+        effectiveIndex={effectiveIndex}
+        answeredFromSession={answeredFromSession}
+        onConfirmSubmit={ctrl.handleConfirmSubmit}
+        onConfirmExitQuiz={ctrl.handleConfirmExitQuiz}
+        onNavigate={ctrl.handleNavigate}
+        isFinalizePending={ctrl.finalizeMutation.isPending}
+      />
     </div>
   )
 }

@@ -45,7 +45,7 @@ export const vocabularyGeneration: PromptDefinition<VocabularyPromptParams, z.Zo
   version: PROMPT_VERSION,
   schema: z.array(GeneratedVocabularySchema),
   buildPrompt: (params: VocabularyPromptParams): string => {
-    const expLang = params.explanationLanguage || 'Vietnamese'
+    const expLang = params.explanationLanguage || 'English'
     const exclude = params.existingTerms?.length
       ? `\n\nEXCLUDED TERMS (do NOT generate these): ${params.existingTerms.join(', ')}`
       : ''

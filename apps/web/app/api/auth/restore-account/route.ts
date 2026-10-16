@@ -8,7 +8,7 @@ import { purgeUserData } from '@/lib/modules/auth/account-deletion'
 export const dynamic = 'force-dynamic'
 
 const RestoreAccountSchema = z.object({
-  token: z.string().min(1, 'Token khôi phục không hợp lệ'),
+  token: z.string().min(1, 'Invalid restore token'),
 })
 
 export async function POST(req: Request) {
@@ -17,12 +17,12 @@ export async function POST(req: Request) {
     try {
       body = await req.json()
     } catch {
-      return NextResponse.json({ error: 'Dữ liệu không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 })
     }
 
     const parsed = RestoreAccountSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Mã token khôi phục là bắt buộc' }, { status: 400 })
+      return NextResponse.json({ error: 'Restore token is required' }, { status: 400 })
     }
 
     const { token } = parsed.data
@@ -34,13 +34,13 @@ export async function POST(req: Request) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'Mã khôi phục không tồn tại hoặc tài khoản đã được khôi phục' }, { status: 404 })
+      return NextResponse.json({ error: 'Restore token does not exist or account has already been restored' }, { status: 404 })
     }
 
     const now = new Date()
     if (user.deletion_token_expires && user.deletion_token_expires < now) {
       await purgeUserData(user._id.toString())
-      return NextResponse.json({ error: 'Liên kết khôi phục đã hết hạn (quá thời hạn 72 giờ). Tài khoản và toàn bộ dữ liệu đã bị xóa hoàn toàn.' }, { status: 400 })
+      return NextResponse.json({ error: 'The restore link has expired (past 72 hours). Your account and all data have been permanently deleted.' }, { status: 400 })
     }
 
     user.status = 'active'
@@ -55,10 +55,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Tài khoản của bạn đã được khôi phục thành công! Vui lòng đăng nhập lại.',
+      message: 'Your account has been successfully restored! Please log in again.',
     })
   } catch (err) {
     console.error('POST /api/auth/restore-account error:', err)
-    return NextResponse.json({ error: 'Lỗi máy chủ khi xử lý khôi phục tài khoản' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error while restoring account' }, { status: 500 })
   }
 }

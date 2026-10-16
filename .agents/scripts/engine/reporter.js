@@ -59,7 +59,7 @@ class RuleReporter {
       console.error(`❌ [FAILURE] VIOLATIONS DETECTED (Errors: ${totalErrors}, Strict Warnings: ${totalWarnings})`);
       return false;
     } else {
-      console.log(`🎉 TẤT CẢ CÁC QUY TẮC ĐỀU HỢP LỆ!`);
+      console.log(`🎉 ALL RULES PASSED VERIFICATION!`);
       return true;
     }
   }

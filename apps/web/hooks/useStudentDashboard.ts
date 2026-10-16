@@ -50,6 +50,7 @@ export function useStudentDashboard() {
       if (!res.ok) throw new Error('Failed to fetch dashboard data')
       return res.json()
     },
+    enabled: Boolean(user),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

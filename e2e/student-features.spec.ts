@@ -61,8 +61,8 @@ test.describe('Student Features & Profile Management', () => {
       await page.goto('/settings')
 
       // Check for headings or settings sections
-      await expect(page.getByText('Cài đặt tài khoản').first()).toBeVisible()
-      await expect(page.getByText('Đổi mật khẩu').first()).toBeVisible()
+      await expect(page.getByText(/Account Settings/i).first()).toBeVisible()
+      await expect(page.getByText(/Change Password/i).first()).toBeVisible()
 
       // Password inputs
       const currentPass = page.locator('#current-password')
@@ -82,7 +82,7 @@ test.describe('Student Features & Profile Management', () => {
           body: JSON.stringify({
             settings: {
               timezone: 'Asia/Ho_Chi_Minh',
-              language: 'vi',
+              language: 'en',
               notifyEmail: true,
               notifyQuizReminder: true,
               privacyShareActivity: false,
@@ -93,10 +93,10 @@ test.describe('Student Features & Profile Management', () => {
 
       await page.goto('/settings')
 
-      const submitBtn = page.getByRole('button', { name: /Đổi mật khẩu|Cập nhật/i })
+      const submitBtn = page.getByRole('button', { name: /Change Password|Update/i })
       if (await submitBtn.isVisible()) {
         await submitBtn.click()
-        await expect(page.getByText(/Vui lòng nhập mật khẩu hiện tại/i)).toBeVisible()
+        await expect(page.getByText(/Please enter your current password/i)).toBeVisible()
       }
     })
   })
@@ -113,11 +113,11 @@ test.describe('Student Features & Profile Management', () => {
               {
                 _id: 'sess-1',
                 quiz_id: '507f1f77bcf86cd799439011',
-                quiz_title: 'Đề thi trắc nghiệm C# & .NET Core',
+                quiz_title: 'C# & .NET Core Practice Quiz',
                 quiz_code: 'PRN211',
                 category_name: 'PRN211',
                 source_type: 'practice',
-                source_label: 'Luyện tập',
+                source_label: 'Practice',
                 source_creator_name: null,
                 score: 9,
                 total_questions: 10,
@@ -141,8 +141,8 @@ test.describe('Student Features & Profile Management', () => {
       await page.goto('/history')
 
       // Verify search input and filters are visible
-      await expect(page.getByPlaceholder(/Tìm kiếm mã môn/i)).toBeVisible()
-      await expect(page.getByRole('button', { name: /Hoàn thành/i })).toBeVisible()
+      await expect(page.getByPlaceholder(/Search course code/i)).toBeVisible()
+      await expect(page.getByRole('button', { name: /Completed/i })).toBeVisible()
     })
   })
 })

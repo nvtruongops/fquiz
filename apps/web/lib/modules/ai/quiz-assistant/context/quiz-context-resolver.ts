@@ -26,7 +26,7 @@ export class QuizContextResolver {
     // 1. Fetch Session from DB
     const session = (await QuizSession.findById(sessionId).lean()) as any
     if (!session) {
-      const notFoundErr = new Error('Không tìm thấy phiên làm bài')
+      const notFoundErr = new Error('Quiz session not found')
       ;(notFoundErr as any).status = 404
       throw notFoundErr
     }
@@ -106,7 +106,7 @@ export class QuizContextResolver {
     }
 
     if (!resolvedQuestion) {
-      const badReqErr = new Error('Không tìm thấy thông tin câu hỏi')
+      const badReqErr = new Error('Question information not found')
       ;(badReqErr as any).status = 400
       throw badReqErr
     }
@@ -123,7 +123,7 @@ export class QuizContextResolver {
     // 6. Target Option Detection (e.g. A, B, C, D)
     let targetOptionIndex: number | null = null
     let targetOptionLetter = ''
-    const letterMatch = userQuery.match(/(?:đáp án|phương án|chọn|câu)\s*([A-D])\b/i) || userQuery.match(/(?:^|\s+)([A-D])(?:\s+|\?|$)/i)
+    const letterMatch = userQuery.match(/(?:đáp án|phương án|chọn|câu|option|choice|answer)\s*([A-D])\b/i) || userQuery.match(/(?:^|\s+)([A-D])(?:\s+|\?|$)/i)
     if (letterMatch) {
       targetOptionLetter = (letterMatch[1] || letterMatch[2] || '').toUpperCase()
       if (targetOptionLetter) {

@@ -41,9 +41,9 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-card-foreground">Thống kê Ngân hàng Câu hỏi</h2>
+          <h2 className="text-2xl font-bold text-card-foreground">Question Bank Analytics</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Phân tích mức độ sử dụng và chất lượng câu hỏi
+            Analyze question usage frequency and quality across subjects
           </p>
         </div>
 
@@ -51,7 +51,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm câu hỏi, đáp án, mã môn..."
+              placeholder="Search questions, answers, codes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-8 text-sm"
@@ -69,10 +69,10 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[220px]">
-              <SelectValue placeholder="Chọn môn học" />
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả môn học</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   {cat.name}
@@ -86,7 +86,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            {debouncedSearch ? 'Số câu hỏi tìm thấy' : 'Tổng câu hỏi'}
+            {debouncedSearch ? 'Questions Found' : 'Total Questions'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -102,20 +102,20 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             {debouncedSearch
-              ? `Không tìm thấy câu hỏi phù hợp với từ khóa "${debouncedSearch}"`
+              ? `No questions found matching "${debouncedSearch}"`
               : selectedCategory !== 'all'
-              ? 'Chưa có câu hỏi nào trong ngân hàng môn học này'
-              : 'Chưa có câu hỏi nào trong ngân hàng'}
+              ? 'No questions found in this category'
+              : 'No questions in the Question Bank'}
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Danh sách câu hỏi</CardTitle>
+              <CardTitle>Questions List</CardTitle>
               {data.total_pages > 1 && (
                 <div className="text-sm text-muted-foreground">
-                  Trang {data.page} / {data.total_pages} (Tổng: {data.total_questions} câu)
+                  Page {data.page} of {data.total_pages} (Total: {data.total_questions} questions)
                 </div>
               )}
             </div>

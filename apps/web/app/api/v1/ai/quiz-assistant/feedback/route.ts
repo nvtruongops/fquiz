@@ -28,7 +28,7 @@ export const POST = withAuth(
       const parsed = FeedbackRequestSchema.safeParse(body)
       if (!parsed.success) {
         return NextResponse.json(
-          { error: 'Dữ liệu phản hồi không hợp lệ', details: parsed.error.issues },
+          { error: 'Invalid feedback data', details: parsed.error.issues },
           { status: 400 }
         )
       }
@@ -47,7 +47,7 @@ export const POST = withAuth(
         timestamp: new Date().toISOString(),
       })
 
-      return NextResponse.json({ ok: true, message: 'Phản hồi đã được ghi nhận thành công' })
+      return NextResponse.json({ ok: true, message: 'Feedback recorded successfully' })
     } catch (err: any) {
       console.error('[POST /api/v1/ai/quiz-assistant/feedback] Error:', err)
       const message = err instanceof Error ? err.message : 'Internal server error'

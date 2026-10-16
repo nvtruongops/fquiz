@@ -14,7 +14,7 @@ const ListQuestionsSchema = z.object({
 
 /**
  * GET /api/question-bank/list
- * Lấy danh sách câu hỏi từ ngân hàng môn học
+ * Get list of questions from subject question bank
  */
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {

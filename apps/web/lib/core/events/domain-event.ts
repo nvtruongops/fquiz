@@ -1,16 +1,16 @@
 import { Types } from 'mongoose'
 
 /**
- * IDomainEvent — Chuẩn hóa Domain Event.
+ * IDomainEvent — Standardized Domain Event.
  * Domain Event = internal aggregate change.
  * Integration Event = external system notification.
  *
  * eventId: UUID
  * eventType: 'VocabularyCreated' | 'LessonCompleted' | ...
  * occurredAt: timestamp
- * aggregateId: ID của entity phát sinh event
+ * aggregateId: ID of entity raising the event
  * aggregateType: 'Vocabulary' | 'Lesson' | ...
- * payload: dữ liệu thay đổi
+ * payload: change data
  */
 
 export interface IDomainEvent<T = unknown> {

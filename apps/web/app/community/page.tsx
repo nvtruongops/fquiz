@@ -8,8 +8,8 @@ import { CommunitySkeleton } from '@/components/community/CommunitySkeleton'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Diễn đàn Cộng đồng | FQuiz',
-  description: 'Thảo luận kinh nghiệm ôn thi, hỏi đáp bài tập và chia sẻ tài liệu học tập cùng cộng đồng FQuiz.',
+  title: 'Community Forum | FQuiz',
+  description: 'Discuss exam preparation, ask homework questions, and share study materials with the FQuiz community.',
 }
 
 export default async function CommunityPage() {

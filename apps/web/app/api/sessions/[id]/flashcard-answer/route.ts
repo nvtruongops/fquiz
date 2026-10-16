@@ -180,8 +180,8 @@ export const POST = withAuth(async (
     const quiz = await Quiz.findById(updated.quiz_id)
       .select('title course_code questions question_refs category_id').lean() as any
     const categoryName = quiz?.category_id
-      ? ((await Category.findById(quiz.category_id).select('name').lean()) as any)?.name || 'Chưa phân loại'
-      : 'Chưa phân loại'
+      ? ((await Category.findById(quiz.category_id).select('name').lean()) as any)?.name || 'Uncategorized'
+      : 'Uncategorized'
     const nextQ = (!isLast && quiz) ? await getNextQuestion(quiz, updated, nextIndex) : null
 
     return NextResponse.json({

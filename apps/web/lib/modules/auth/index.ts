@@ -1,11 +1,11 @@
 /**
- * Auth Module Bootstrap — Đăng ký tất cả model trong module auth.
- * File này được import tĩnh trong mongodb.ts để đảm bảo model sẵn sàng.
+ * Auth Module Bootstrap — Registers all models in the auth module.
+ * This file is statically imported in mongodb.ts to ensure models are ready.
  */
 import { registerModel } from '@/lib/core/db/model-registry'
 
 registerModel(() => {
-  // Side-effect import: tự động đăng ký model với Mongoose
+  // Side-effect import: automatically registers models with Mongoose
   import('./models/User')
   import('./models/EmailVerification')
   import('./models/LoginLog')

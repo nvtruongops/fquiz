@@ -37,7 +37,7 @@ export function QuizEditorDiagnosticsHub({
           <div className="flex items-center gap-2">
             <LayoutDashboard className="w-4 h-4 text-primary" />
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Tiến độ Hoàn thiện
+              Completion Progress
             </CardTitle>
           </div>
           <Badge
@@ -52,9 +52,9 @@ export function QuizEditorDiagnosticsHub({
           {/* Progress Bar */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground font-medium">Độ hợp lệ</span>
+              <span className="text-muted-foreground font-medium">Validity</span>
               <span className="font-bold text-foreground">
-                {diagnostics.completed} / {diagnostics.total} câu
+                {diagnostics.completed} / {diagnostics.total} {diagnostics.total === 1 ? 'question' : 'questions'}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
@@ -72,35 +72,35 @@ export function QuizEditorDiagnosticsHub({
             <div className="flex items-center justify-between text-[11px] font-semibold">
               <span className="flex items-center gap-1.5 text-foreground">
                 <Database className="w-3.5 h-3.5 text-primary" />
-                Ngân hàng câu hỏi
+                Question Bank
               </span>
               {isCheckingBank ? (
                 <Loader2 className="w-3 h-3 animate-spin text-primary" />
               ) : bankStatus.hasConflicts ? (
-                <span className="text-destructive font-bold">Mâu thuẫn</span>
+                <span className="text-destructive font-bold">Conflicts</span>
               ) : (
-                <span className="text-success-fg font-bold">Đã kiểm tra</span>
+                <span className="text-success-fg font-bold">Checked</span>
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
               {isCheckingBank
-                ? 'Đang rà soát trùng lặp...'
+                ? 'Checking for duplicates...'
                 : bankStatus.hasConflicts
-                ? `Có ${bankStatus.conflicts.length} câu mâu thuẫn đáp án với ngân hàng.`
-                : 'Tất cả câu hỏi sẵn sàng đồng bộ.'}
+                ? `${bankStatus.conflicts.length} question(s) have answer conflicts with the bank.`
+                : 'All questions ready for synchronization.'}
             </p>
           </div>
 
           {/* Issue List / Warnings */}
           <div className="space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Danh sách lưu ý ({diagnostics.errors.length})
+              Diagnostics &amp; Issues ({diagnostics.errors.length})
             </span>
 
             {diagnostics.errors.length === 0 ? (
               <div className="p-3 bg-success-bg/40 border border-success-border/60 rounded-xl flex items-center gap-2 text-success-fg text-xs font-medium">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Đề thi hoàn thiện và hợp lệ 100%!</span>
+                <span>Quiz is 100% complete and valid!</span>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -115,7 +115,7 @@ export function QuizEditorDiagnosticsHub({
                     <div className="flex-1 min-w-0">
                       <div className="font-bold flex items-center justify-between">
                         <span>
-                          {typeof err.questionIndex === 'number' ? `Câu ${err.questionIndex + 1}` : 'Chung'}
+                          {typeof err.questionIndex === 'number' ? `Question ${err.questionIndex + 1}` : 'General'}
                         </span>
                         {typeof err.questionIndex === 'number' && (
                           <ChevronRight className="w-3 h-3 opacity-60 group-hover:opacity-100" />
@@ -127,7 +127,7 @@ export function QuizEditorDiagnosticsHub({
                 ))}
                 {diagnostics.errors.length > 8 && (
                   <p className="text-[10px] text-muted-foreground text-center pt-1 font-medium">
-                    và {diagnostics.errors.length - 8} lưu ý khác...
+                    and {diagnostics.errors.length - 8} more issues...
                   </p>
                 )}
               </div>
@@ -137,7 +137,7 @@ export function QuizEditorDiagnosticsHub({
           {/* Quick Question Number Navigator */}
           <div className="space-y-1.5 pt-2 border-t border-border">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Điều hướng nhanh ({questions.length} câu)
+              Quick Navigation ({questions.length} {questions.length === 1 ? 'question' : 'questions'})
             </span>
             <div className="max-h-56 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="grid grid-cols-5 gap-1.5">
@@ -153,7 +153,7 @@ export function QuizEditorDiagnosticsHub({
                           ? 'bg-muted/40 hover:bg-muted text-foreground border-border'
                           : 'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20'
                       }`}
-                      title={`Xem câu ${idx + 1}`}
+                      title={`Jump to question ${idx + 1}`}
                     >
                       {idx + 1}
                     </button>

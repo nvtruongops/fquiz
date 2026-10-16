@@ -7,7 +7,7 @@
   "forbiddenPatterns": [
     {
       "regex": "const\\s+mock[A-Z]\\w+\\s*=",
-      "reason": "Phát hiện khai báo mock object trực tiếp trong môi trường production code"
+      "reason": "Detected direct mock object declaration in production code"
     }
   ]
 }

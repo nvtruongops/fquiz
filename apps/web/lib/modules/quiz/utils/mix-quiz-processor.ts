@@ -35,7 +35,7 @@ function extractSameSubjectCourseCode(quizzes: any[]): string {
   const prefixes = quizzes.map((q) => extractSubjectPrefix(q.course_code)).filter(Boolean)
   const firstPrefix = prefixes[0]
   const isSameSubjectMix = Boolean(firstPrefix && prefixes.every((p) => p === firstPrefix))
-  return isSameSubjectMix ? firstPrefix : 'TRỘN'
+  return isSameSubjectMix ? firstPrefix : 'MIXED'
 }
 
 function deduplicateQuizzesPools(validQuizzes: any[]): IQuestion[][] {
@@ -141,7 +141,7 @@ async function createTempQuizWithRetry({
   for (let retries = 0; retries < 2; retries++) {
     try {
       return await Quiz.create({
-        title: `Quiz Trộn · ${titlePreview}`,
+        title: `Mixed Quiz · ${titlePreview}`,
         course_code: courseCode,
         category_id: categoryId,
         questions: finalSampled,

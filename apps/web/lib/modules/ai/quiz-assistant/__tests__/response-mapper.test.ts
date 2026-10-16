@@ -20,10 +20,10 @@ describe('ResponseMapper & Invariant 4 (Anti-Leakage DTO Tests)', () => {
     const response = ResponseMapper.toPublicResponse({
       intent: 'EXPLAIN_WRONG_ANSWER',
       llmOutput: {
-        reply: 'Phân tích phương án...',
+        reply: 'Analysis of options...',
         formulaExplanation: null,
         similarQuestionFound: true,
-        similarQuestionDetails: 'Câu hỏi tương tự',
+        similarQuestionDetails: 'Similar question details',
       },
       confidence: 'high',
       evidences,

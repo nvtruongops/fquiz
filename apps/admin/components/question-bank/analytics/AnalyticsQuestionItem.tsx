@@ -25,11 +25,11 @@ export function AnalyticsQuestionItem({ question, index }: AnalyticsQuestionItem
 
           <div className="flex items-center gap-3 ml-8 flex-wrap">
             <Badge variant="secondary" className="text-xs">
-              Dùng {question.usage_count} lần
+              Used {question.usage_count} time{question.usage_count === 1 ? '' : 's'}
             </Badge>
             {question.used_in_quizzes.length > 0 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">Trong:</span>
+                <span className="text-xs text-muted-foreground">In:</span>
                 {question.used_in_quizzes.slice(0, 3).map((code) => (
                   <Badge key={code} variant="outline" className="text-[10px]">
                     {code}
@@ -49,12 +49,12 @@ export function AnalyticsQuestionItem({ question, index }: AnalyticsQuestionItem
           {isOpen ? (
             <>
               <ChevronUp className="h-4 w-4" />
-              Ẩn
+              Hide
             </>
           ) : (
             <>
               <ChevronDown className="h-4 w-4" />
-              Xem
+              View
             </>
           )}
         </Button>

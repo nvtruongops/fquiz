@@ -7,5 +7,5 @@
   "dependsOn": [],
   "parallelizable": true,
   "supportsFix": false,
-  "description": "Kiểm tra tính hợp lệ của tất cả các skills trong thư mục .agents/skills (bắt buộc chứa SKILL.md có YAML frontmatter name & description)."
+  "description": "Validates integrity of all skills in .agents/skills (requires SKILL.md with YAML frontmatter name & description)."
 }

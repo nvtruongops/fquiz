@@ -25,7 +25,7 @@ export const CommunitySearchFilterBar = React.memo(function CommunitySearchFilte
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Tìm kiếm thảo luận, tiêu đề, chủ đề ôn tập..."
+          placeholder="Search discussions, titles, topics..."
           className="pl-11 h-11 rounded-2xl border-2 border-input text-xs font-semibold focus:border-primary bg-card text-foreground placeholder:text-muted-foreground"
         />
       </div>
@@ -33,7 +33,7 @@ export const CommunitySearchFilterBar = React.memo(function CommunitySearchFilte
       {tagsToDisplay.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 shrink-0">
-            <Tag className="w-3 h-3" /> Từ khóa hot:
+            <Tag className="w-3 h-3" /> Popular tags:
           </span>
           {tagsToDisplay.map((t) => {
             const isActive = searchQuery.toLowerCase() === t.toLowerCase()

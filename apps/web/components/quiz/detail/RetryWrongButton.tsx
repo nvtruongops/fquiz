@@ -35,9 +35,9 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
       const resData = await res.json().catch(() => ({}))
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Vui lòng đăng nhập để làm lại các câu sai.')
+          throw new Error('Please sign in to retry incorrect questions.')
         }
-        throw new Error(resData.error || 'Không thể tạo phiên sửa câu sai')
+        throw new Error(resData.error || 'Failed to create retry session')
       }
 
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -47,7 +47,7 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
 
       router.push(targetUrl)
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi tạo phiên làm lại câu sai')
+      toast.error(err.message || 'Error creating retry session')
     } finally {
       setLoading(false)
     }
@@ -68,7 +68,7 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
       ) : (
         <RotateCcw className="h-3.5 w-3.5 shrink-0" />
       )}
-      Luyện lại {wrongCount} câu sai
+      Retry {wrongCount} wrong questions
     </Button>
   )
 }

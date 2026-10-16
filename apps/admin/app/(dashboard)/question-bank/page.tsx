@@ -22,9 +22,9 @@ export default async function QuestionBankPage() {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Ngân hàng Câu hỏi</h1>
+          <h1 className="text-2xl font-bold text-foreground">Question Bank</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Quản lý, phân tích chất lượng, phát hiện xung đột và đồng bộ câu hỏi theo môn học
+            Manage, analyze quality, resolve conflicts, and synchronize questions by subject
           </p>
         </div>
 
@@ -35,9 +35,9 @@ export default async function QuestionBankPage() {
     console.error('Error loading question bank page:', error)
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-bold text-destructive mb-2">Lỗi tải dữ liệu</h2>
+        <h2 className="text-xl font-bold text-destructive mb-2">Error Loading Data</h2>
         <p className="text-muted-foreground text-sm">
-          Không thể kết nối database. Vui lòng thử lại.
+          Unable to connect to the database. Please try again.
         </p>
       </div>
     )

@@ -10,7 +10,7 @@ function TabLoadingFallback() {
   return (
     <div className="py-12 flex flex-col items-center justify-center text-muted-foreground gap-3">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      <span className="text-sm font-medium">Đang tải phân hệ...</span>
+      <span className="text-sm font-medium">Loading module...</span>
     </div>
   )
 }
@@ -43,8 +43,8 @@ export function QuestionBankTabs({ categories }: QuestionBankTabsProps) {
   return (
     <Tabs defaultValue="status" className="space-y-6">
       <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-xl">
-        <TabsTrigger value="status">Trạng thái</TabsTrigger>
-        <TabsTrigger value="analytics">Thống kê</TabsTrigger>
+        <TabsTrigger value="status">Status</TabsTrigger>
+        <TabsTrigger value="analytics">Analytics</TabsTrigger>
         <TabsTrigger value="migration">Migration</TabsTrigger>
         <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
       </TabsList>

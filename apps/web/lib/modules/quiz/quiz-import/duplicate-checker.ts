@@ -27,7 +27,7 @@ export function checkDuplicateQuestions(
       diagnostics.push({
         level: 'warning',
         code: 'DUPLICATE_QUESTION',
-        message: `Câu hỏi ${firstIndex + 1} bị trùng lặp ở vị trí: ${duplicateIndices.map(i => i + 1).join(', ')}`,
+        message: `Question ${firstIndex + 1} is duplicated at position(s): ${duplicateIndices.map(i => i + 1).join(', ')}`,
         questionIndex: firstIndex,
         field: `questions[${firstIndex}]`,
         metadata: {

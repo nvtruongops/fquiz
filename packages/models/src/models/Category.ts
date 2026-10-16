@@ -4,6 +4,8 @@ import type { ICategory } from '../entities/quiz.types'
 const CategorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true, trim: true },
+    description: { type: String, default: '', trim: true },
+    slug: { type: String, default: null, sparse: true, trim: true },
     owner_id: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     is_public: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },

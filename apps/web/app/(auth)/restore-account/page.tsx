@@ -18,7 +18,7 @@ function RestoreAccountContent() {
     if (!token) {
       setLoading(false)
       setSuccess(false)
-      setMessage('Không tìm thấy mã khôi phục tài khoản trong liên kết.')
+      setMessage('Account recovery token not found in link.')
       return
     }
 
@@ -34,15 +34,15 @@ function RestoreAccountContent() {
 
         if (!res.ok) {
           setSuccess(false)
-          setMessage(data?.error ?? 'Khôi phục tài khoản thất bại hoặc liên kết đã hết hạn.')
+          setMessage(data?.error ?? 'Account recovery failed or link has expired.')
           return
         }
 
         setSuccess(true)
-        setMessage(data?.message ?? 'Tài khoản của bạn đã được khôi phục thành công!')
+        setMessage(data?.message ?? 'Your account has been successfully restored!')
       } catch {
         setSuccess(false)
-        setMessage('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.')
+        setMessage('Unable to connect to server. Please check your network connection.')
       } finally {
         setLoading(false)
       }
@@ -55,8 +55,8 @@ function RestoreAccountContent() {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <h2 className="text-lg font-black text-card-foreground">Đang xác thực và khôi phục tài khoản...</h2>
-        <p className="text-xs text-muted-foreground font-medium">Vui lòng chờ trong giây lát.</p>
+        <h2 className="text-lg font-black text-card-foreground">Authenticating and restoring account...</h2>
+        <p className="text-xs text-muted-foreground font-medium">Please wait a moment.</p>
       </div>
     )
   }
@@ -72,7 +72,7 @@ function RestoreAccountContent() {
           )}
         </div>
         <h1 className="text-xl sm:text-2xl font-black text-card-foreground">
-          {success ? 'Khôi phục tài khoản thành công!' : 'Khôi phục thất bại'}
+          {success ? 'Account Restored Successfully!' : 'Recovery Failed'}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed">
           {message}
@@ -82,10 +82,10 @@ function RestoreAccountContent() {
       {success && (
         <div className="rounded-2xl bg-success-bg border border-success-border p-4 space-y-2 text-center">
           <div className="flex items-center justify-center gap-1.5 text-success-fg font-bold text-xs">
-            <ShieldCheck className="w-4 h-4" /> Tài khoản đã an toàn
+            <ShieldCheck className="w-4 h-4" /> Account is Secured
           </div>
           <p className="text-[11px] text-success-fg font-medium">
-            Lịch xóa tài khoản trong 72 giờ đã được hủy bỏ hoàn toàn. Bạn có thể đăng nhập lại ngay bây giờ.
+            The 72-hour scheduled account deletion has been cancelled. You can now sign in immediately.
           </p>
         </div>
       )}
@@ -95,7 +95,7 @@ function RestoreAccountContent() {
           href="/login"
           className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-md transition-all cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Trở về trang đăng nhập
+          <ArrowLeft className="w-4 h-4" /> Back to Sign In
         </Link>
       </div>
     </div>
@@ -104,13 +104,13 @@ function RestoreAccountContent() {
 
 export default function RestoreAccountPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-page-bg px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md bg-card text-card-foreground rounded-3xl border border-border shadow-xl overflow-hidden">
         <Suspense
           fallback={
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-medium">Đang tải...</p>
+              <p className="text-xs text-muted-foreground font-medium">Loading...</p>
             </div>
           }
         >

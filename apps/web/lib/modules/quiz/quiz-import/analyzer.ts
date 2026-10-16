@@ -57,10 +57,10 @@ export function analyzeQuestionStructure(
     } else {
       const reasons: string[] = []
       if (optionCount !== 4) {
-        reasons.push(`${optionCount} phương án (chuẩn là 4)`)
+        reasons.push(`${optionCount} options (standard is 4)`)
       }
       if (correctCount !== 1) {
-        reasons.push(correctCount === 0 ? '0 đáp án đúng' : `${correctCount} đáp án đúng (chuẩn là 1)`)
+        reasons.push(correctCount === 0 ? '0 correct answers' : `${correctCount} correct answers (standard is 1)`)
       }
       nonStandardQuestions.push({
         questionIndex: idx,

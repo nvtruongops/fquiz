@@ -136,7 +136,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const quizDocs = Array.from(quizMapByObjId.values())
     const quizMetaMap = quizMapByObjId
 
-    // Lấy category IDs từ populated data
+    // Extract category IDs from populated session data
     const sessionCategoryIds = [...recentActivitiesRaw, ...activeActivitiesRaw]
       .map((session: any) => session.quiz_id?.category_id?.toString?.() ?? null)
       .filter((id): id is string => Boolean(id))
@@ -186,7 +186,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
           activeAnsweredCount: answeredCount,
           activeTotalCount: Math.max(totalQuestions, 0),
           activeStartedAt: activeSession.started_at,
-          activityAt: activeSession.started_at, // dùng thời gian active session để sort đúng
+          activityAt: activeSession.started_at, // Use active session start time for accurate chronological sorting
         }
       }
       return activity
@@ -345,7 +345,7 @@ function quizQuestionCountOf(quizDoc: any): number {
 
 function mapMixSessionToActivity(session: any, quizId: string) {
   const isActive = session.status === 'active'
-  const quizTitle = session.quiz_id?.title ?? 'Quiz Trộn'
+  const quizTitle = session.quiz_id?.title ?? 'Mix Quiz'
   const fallbackCount = session.quiz_id ? Number(session.quiz_id.questionCount ?? 0) : (session.user_answers?.length || 0)
   const totalQuestions = resolveSessionTotalQuestions(session, fallbackCount)
   let answeredCount = 0
@@ -369,10 +369,10 @@ function mapMixSessionToActivity(session: any, quizId: string) {
     id: session._id.toString(),
     quizId,
     quizTitle,
-    quizCode: session.quiz_id ? mixQuizDisplayCode(quizTitle) : 'TRỘN',
-    categoryName: 'Quiz Trộn',
+    quizCode: session.quiz_id ? mixQuizDisplayCode(quizTitle) : 'MIX',
+    categoryName: 'Mix Quiz',
     sourceType: 'mix_quiz',
-    sourceLabel: 'Quiz Trộn',
+    sourceLabel: 'Mix Quiz',
     sourceCreatorName: null,
     mode: session.mode as string,
     status: session.status as 'active' | 'completed',
@@ -392,11 +392,11 @@ function mapDeletedSessionToActivity(session: any, quizId: string) {
   return {
     id: session._id.toString(),
     quizId,
-    quizTitle: 'Quiz đã bị xóa',
+    quizTitle: 'Deleted Quiz',
     quizCode: 'N/A',
-    categoryName: 'Chưa phân loại',
+    categoryName: 'Uncategorized',
     sourceType: 'deleted',
-    sourceLabel: 'Quiz đã bị xóa',
+    sourceLabel: 'Deleted Quiz',
     sourceCreatorName: null,
     mode: session.mode as string,
     status: isActive ? 'active' : 'completed',
@@ -465,11 +465,11 @@ function mapRegularSessionToActivity(
   return {
     id: session._id.toString(),
     quizId,
-    quizTitle: session.quiz_id?.title || 'Bộ đề không xác định',
+    quizTitle: session.quiz_id?.title || 'Unknown Quiz',
     quizCode: quizMeta?.course_code || session.quiz_id?.course_code || 'N/A',
     categoryName: session.quiz_id?.category_id
-      ? categoryNameMap.get(session.quiz_id.category_id.toString()) ?? 'Chưa phân loại'
-      : 'Chưa phân loại',
+      ? categoryNameMap.get(session.quiz_id.category_id.toString()) ?? 'Uncategorized'
+      : 'Uncategorized',
     sourceType,
     sourceLabel: sourceLabelFromType(sourceType),
     sourceCreatorName: sourceCreatorId ? creatorNameMap.get(sourceCreatorId) ?? null : null,

@@ -12,6 +12,7 @@ interface GoogleSignInButtonProps {
   callbackUrl?: string | null
   className?: string
   text?: string
+  showDivider?: boolean
 }
 
 declare global {
@@ -51,7 +52,7 @@ function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
   )
 }
 
-export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tục với Google' }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ callbackUrl, className, text = 'Continue with Google', showDivider = true }: GoogleSignInButtonProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -63,7 +64,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
   const handleGoogleResponse = useCallback(
     async (response: { credential?: string }) => {
       if (!response.credential) {
-        toast.error('Không nhận được thông tin xác thực từ Google.')
+        toast.error('Failed to receive authentication credentials from Google.')
         return
       }
 
@@ -83,12 +84,12 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
         }
 
         if (!res.ok) {
-          toast.error(data.error || 'Đăng nhập Google không thành công.')
+          toast.error(data.error || 'Google sign-in was unsuccessful.')
           setLoading(false)
           return
         }
 
-        toast.success('Đăng nhập Google thành công!')
+        toast.success('Google sign-in successful!')
 
         if (data.user) {
           queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
@@ -101,7 +102,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
         router.push(effectiveCallback || (data.role === 'admin' ? '/admin' : '/dashboard'))
         router.refresh()
       } catch {
-        toast.error('Có lỗi xảy ra khi kết nối tới máy chủ.')
+        toast.error('An error occurred connecting to the server.')
         setLoading(false)
       }
     },
@@ -158,7 +159,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
             width: String(btnWidth),
             text: 'signin_with',
             shape: 'pill',
-            locale: 'vi',
+            locale: 'en',
             logo_alignment: 'center',
           })
         }
@@ -191,21 +192,23 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
   return (
     <div className={cn("w-full space-y-4", className)}>
       {/* Sleek Divider */}
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+      {showDivider && (
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+            <span className="bg-card px-3 text-muted-foreground">or</span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
-          <span className="bg-card px-3 text-muted-foreground">hoặc</span>
-        </div>
-      </div>
+      )}
 
       {/* Google Button Container */}
       <div ref={containerRef} className="relative w-full">
         {loading ? (
           <div className="w-full h-12 rounded-2xl bg-card border-2 border-primary/30 shadow-xs flex items-center justify-center gap-2.5 text-xs font-bold text-primary">
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
-            <span>Đang xác thực Google...</span>
+            <span>Authenticating Google...</span>
           </div>
         ) : (
           <div className="relative w-full">
@@ -223,7 +226,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Tiếp tụ
             <div
               id="google-signin-btn-container"
               className="absolute inset-0 opacity-0 cursor-pointer overflow-hidden rounded-2xl [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:!opacity-0"
-              title="Đăng nhập với Google"
+              title="Sign in with Google"
             />
           </div>
         )}

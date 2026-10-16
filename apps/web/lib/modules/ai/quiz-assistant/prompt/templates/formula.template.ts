@@ -1,13 +1,13 @@
 import type { InternalQuizContext } from '../../context/context-types'
 
 export function buildFormulaTemplate(context: InternalQuizContext, userQuery: string): string {
-  return `HỌC VIÊN YÊU CẦU GIẢI THÍCH CÔNG THỨC & CÁC BƯỚC TÍNH TOÁN:
-- Câu hỏi chi tiết: "${userQuery}"
+  return `STUDENT REQUESTS FORMULA EXPLANATION & CALCULATION STEPS:
+- Detailed question: "${userQuery}"
 
-HƯỚNG DẪN TRÌNH BÀY CÔNG THỨC (STEP-BY-STEP CALCULATION GUIDE):
-1. Nêu rõ tên công thức và biểu thức toán học / logic chuẩn.
-2. Định nghĩa các biến số / tham số trích xuất từ đề bài.
-3. Hướng dẫn cách thay số và phép tính cần thực hiện để học viên tự bấm máy ra kết quả.
-4. Đặt toàn bộ các bước tính toán vào trường "formulaExplanation" và tóm tắt nguyên lý trong "reply".
-5. Trình bày dưới 80 từ.`
+STEP-BY-STEP CALCULATION GUIDE:
+1. State the formula name and standard mathematical / logical expression clearly.
+2. Define the variables and parameters extracted from the question stem.
+3. Guide the substitution of values and operations needed so the student can compute the result.
+4. Place the complete calculation steps in the "formulaExplanation" field and summarize the concept in "reply".
+5. Keep the response under 80 words.`
 }

@@ -29,13 +29,13 @@ export default function AdminLoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Đăng nhập thất bại')
+        throw new Error(data.error || 'Login failed')
       }
 
       router.push('/')
       router.refresh()
     } catch (err: any) {
-      setError(err.message || 'Lỗi đăng nhập')
+      setError(err.message || 'Login error')
     } finally {
       setLoading(false)
     }
@@ -50,14 +50,14 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">FQuiz Admin Console</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Cổng quản trị bảo mật cao cấp dành cho Quản trị viên</p>
+          <p className="text-sm text-muted-foreground mt-1.5">Secure Administration Portal for Administrators</p>
         </div>
 
         <Card className="border-border bg-card/80 backdrop-blur-xl shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-bold">Đăng nhập Quản trị</CardTitle>
+            <CardTitle className="text-lg font-bold">Admin Sign In</CardTitle>
             <CardDescription className="text-xs">
-              Chỉ tài khoản có quyền Quản trị viên (Admin) mới có thể truy cập
+              Only accounts with Administrator privileges can access this portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Email hoặc Tên đăng nhập
+                  Email or Username
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Mật khẩu
+                  Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -111,11 +111,11 @@ export default function AdminLoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang xác thực...
+                    Authenticating...
                   </>
                 ) : (
                   <>
-                    Đăng nhập Hệ thống
+                    Sign In
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -130,7 +130,7 @@ export default function AdminLoginPage() {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg hover:bg-muted/50 border border-border/40"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Đăng nhập Học viên
+            Student &amp; Teacher Portal
           </a>
         </div>
 

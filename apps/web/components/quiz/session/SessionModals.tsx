@@ -4,6 +4,7 @@ import React from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { Button } from '@/components/shared/ui/button'
 import { AlertCircle, HelpCircle, Loader2, Pause, CheckCircle2, ArrowRight } from 'lucide-react'
+import { cn } from '@/lib/core/utils/cn'
 
 interface SessionModalsProps {
   confirmOpen: boolean
@@ -41,10 +42,24 @@ export const SessionModals = React.memo(function SessionModals({
       <>
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl text-card-foreground">
-            <DialogHeader>
-              <DialogTitle className="text-center text-base font-bold text-foreground">Xác nhận nộp bài</DialogTitle>
+            <DialogHeader className="text-center sm:text-center">
+              <div
+                className={cn(
+                  'mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border shadow-xs transition-colors',
+                  answeredCount < totalQuestions
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-primary/10 text-primary border-primary/20'
+                )}
+              >
+                {answeredCount < totalQuestions ? (
+                  <AlertCircle className="h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <HelpCircle className="h-6 w-6" aria-hidden="true" />
+                )}
+              </div>
+              <DialogTitle className="text-center text-base font-bold text-foreground">Confirm Submission</DialogTitle>
               <DialogDescription className="pt-1 text-center text-sm text-muted-foreground">
-                Bạn đã làm <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> câu. Bạn có chắc chắn muốn nộp không?
+                You have answered <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> questions. Are you sure you want to submit?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2 sm:justify-center">
@@ -54,7 +69,7 @@ export const SessionModals = React.memo(function SessionModals({
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-xl border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
               >
-                Hủy
+                Cancel
               </Button>
               <Button
                 type="button"
@@ -62,7 +77,7 @@ export const SessionModals = React.memo(function SessionModals({
                 disabled={isPending}
                 className="rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary-hover shadow-xs"
               >
-                {isPending ? 'Đang nộp...' : 'Nộp bài'}
+                {isPending ? 'Submitting...' : 'Submit'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -70,10 +85,13 @@ export const SessionModals = React.memo(function SessionModals({
 
         <Dialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
           <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl text-card-foreground">
-            <DialogHeader>
-              <DialogTitle className="text-center text-base font-bold text-foreground">Dừng làm bài?</DialogTitle>
+            <DialogHeader className="text-center sm:text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
+                <Pause className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <DialogTitle className="text-center text-base font-bold text-foreground">Pause Quiz?</DialogTitle>
               <DialogDescription className="pt-1 text-center text-sm text-muted-foreground">
-                Tiến trình của bạn đã được lưu tự động. Bạn có muốn tạm dừng và quay lại sau không?
+                Your progress has been saved automatically. Do you want to pause and resume later?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2 sm:justify-center">
@@ -83,14 +101,14 @@ export const SessionModals = React.memo(function SessionModals({
                 onClick={() => setExitConfirmOpen(false)}
                 className="rounded-xl border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
               >
-                Tiếp tục làm bài
+                Resume Quiz
               </Button>
               <Button
                 type="button"
                 onClick={onConfirmExit}
                 className="rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary-hover shadow-xs"
               >
-                Tạm dừng &amp; Thoát
+                Pause &amp; Exit
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -99,10 +117,13 @@ export const SessionModals = React.memo(function SessionModals({
         {/* 5-minute Inactivity Pause Modal */}
         <Dialog open={inactivityPauseOpen} onOpenChange={setInactivityPauseOpen}>
           <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl text-card-foreground">
-            <DialogHeader>
-              <DialogTitle className="text-center text-base font-bold text-foreground">Đã tự động tạm dừng</DialogTitle>
+            <DialogHeader className="text-center sm:text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
+                <Pause className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <DialogTitle className="text-center text-base font-bold text-foreground">Auto-Paused</DialogTitle>
               <DialogDescription className="pt-1 text-center text-sm text-muted-foreground">
-                Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình của bạn.
+                You have been inactive for over 5 minutes. The timer has been paused to protect your exam progress.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2 sm:justify-center">
@@ -111,7 +132,7 @@ export const SessionModals = React.memo(function SessionModals({
                 onClick={() => onResumeInactivity?.()}
                 className="rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary-hover shadow-xs"
               >
-                Tiếp tục làm bài
+                Resume Quiz
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -126,14 +147,25 @@ export const SessionModals = React.memo(function SessionModals({
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-card-foreground">
           <DialogHeader className="text-center sm:text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <HelpCircle className="h-7 w-7" />
+            <div
+              className={cn(
+                'mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border shadow-xs transition-colors',
+                answeredCount < totalQuestions
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                  : 'bg-primary/10 text-primary border-primary/20'
+              )}
+            >
+              {answeredCount < totalQuestions ? (
+                <AlertCircle className="h-7 w-7" aria-hidden="true" />
+              ) : (
+                <HelpCircle className="h-7 w-7" aria-hidden="true" />
+              )}
             </div>
             <DialogTitle className="text-center text-xl font-bold text-foreground">
-              Xác nhận nộp bài thi
+              Confirm Exam Submission
             </DialogTitle>
             <DialogDescription className="pt-2 text-center text-sm leading-relaxed text-muted-foreground">
-              Bạn đã hoàn thành <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> câu hỏi. Bạn có muốn nộp bài ngay bây giờ không?
+              You have completed <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> questions. Do you want to submit your exam now?
             </DialogDescription>
           </DialogHeader>
 
@@ -144,7 +176,7 @@ export const SessionModals = React.memo(function SessionModals({
               onClick={() => setConfirmOpen(false)}
               className="h-11 flex-1 rounded-xl border-border bg-card font-semibold text-foreground hover:bg-muted"
             >
-              Hủy bỏ
+              Cancel
             </Button>
             <Button
               type="button"
@@ -153,7 +185,7 @@ export const SessionModals = React.memo(function SessionModals({
               className="h-11 flex-1 rounded-xl bg-primary hover:bg-primary-hover font-bold text-primary-foreground shadow-md transition-all cursor-pointer"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {isPending ? 'Đang gửi...' : 'Nộp bài thi'}
+              {isPending ? 'Submitting...' : 'Submit Exam'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -167,13 +199,13 @@ export const SessionModals = React.memo(function SessionModals({
           <div className="px-6 pt-6 pb-2">
             <DialogHeader className="text-center sm:text-center space-y-4">
               {/* Icon */}
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-2xs">
-                <Pause className="h-7 w-7 text-primary" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-xs text-primary">
+                <Pause className="h-7 w-7" aria-hidden="true" />
               </div>
 
               <div className="space-y-2">
                 <DialogTitle className="text-center text-lg font-black text-foreground tracking-tight">
-                  Tạm dừng bài thi?
+                  Pause Exam?
                 </DialogTitle>
                 <DialogDescription asChild>
                   <div className="space-y-3">
@@ -181,19 +213,19 @@ export const SessionModals = React.memo(function SessionModals({
                     <div className="mx-auto flex items-center justify-center gap-3 rounded-2xl bg-muted border border-border px-4 py-3">
                       <div className="text-center">
                         <div className="text-2xl font-black text-foreground tabular-nums">{answeredCount}<span className="text-muted-foreground text-lg font-bold">/{totalQuestions}</span></div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Câu đã làm</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Answered</div>
                       </div>
                       <div className="h-8 w-px bg-border" />
                       <div className="text-center">
                         <div className="text-2xl font-black text-primary tabular-nums">{Math.max(totalQuestions - answeredCount, 0)}</div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Câu còn lại</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Remaining</div>
                       </div>
                     </div>
 
                     {/* Auto-save notice */}
                     <div className="flex items-center justify-center gap-1.5 text-primary">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span className="text-xs font-bold">Tiến trình đã được lưu tự động</span>
+                      <span className="text-xs font-bold">Progress saved automatically</span>
                     </div>
                   </div>
                 </DialogDescription>
@@ -207,7 +239,7 @@ export const SessionModals = React.memo(function SessionModals({
               onClick={() => setExitConfirmOpen(false)}
               className="w-full h-12 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-sm shadow-md transition-all cursor-pointer"
             >
-              Tiếp tục làm bài
+              Resume Quiz
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
             <Button
@@ -216,7 +248,7 @@ export const SessionModals = React.memo(function SessionModals({
               onClick={onConfirmExit}
               className="w-full h-11 rounded-2xl border-border bg-card text-muted-foreground font-semibold text-sm hover:bg-muted hover:text-foreground transition-all cursor-pointer"
             >
-              Tạm dừng & Thoát
+              Pause & Exit
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -228,15 +260,15 @@ export const SessionModals = React.memo(function SessionModals({
           <div className="h-1.5 w-full bg-primary" />
           <div className="px-6 pt-6 pb-2">
             <DialogHeader className="text-center sm:text-center space-y-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-2xs text-primary">
-                <Pause className="h-7 w-7" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-xs text-primary">
+                <Pause className="h-7 w-7" aria-hidden="true" />
               </div>
               <div className="space-y-2">
                 <DialogTitle className="text-center text-lg font-black text-foreground tracking-tight">
-                  Đã tự động tạm dừng
+                  Auto-Paused
                 </DialogTitle>
                 <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
-                  Bạn đã dừng thao tác trên câu hỏi này quá 5 phút. Bài thi đã tự động tạm dừng đếm giờ để bảo toàn tiến trình làm bài của bạn.
+                  You have been inactive for over 5 minutes. The timer has been paused to protect your exam progress.
                 </DialogDescription>
               </div>
             </DialogHeader>
@@ -247,7 +279,7 @@ export const SessionModals = React.memo(function SessionModals({
               onClick={() => onResumeInactivity?.()}
               className="w-full h-12 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-sm shadow-md transition-all cursor-pointer"
             >
-              Tiếp tục làm bài
+              Resume Quiz
             </Button>
           </DialogFooter>
         </DialogContent>

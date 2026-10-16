@@ -15,7 +15,7 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
     await page.goto('/explore')
 
     // Verify search input
-    const searchInput = page.getByPlaceholder(/Tìm kiếm môn học/i)
+    const searchInput = page.getByPlaceholder(/Search courses/i)
     await expect(searchInput).toBeVisible()
 
     // Verify category cards render
@@ -27,7 +27,7 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
   test('should filter categories in real-time when user types in search bar', async ({ page }) => {
     await page.goto('/explore')
 
-    const searchInput = page.getByPlaceholder(/Tìm kiếm môn học/i)
+    const searchInput = page.getByPlaceholder(/Search courses/i)
     await searchInput.fill('PRN')
 
     // PRN211 should be visible, MLN111 should be hidden
@@ -35,7 +35,7 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
     await expect(page.getByText('MLN111')).not.toBeVisible()
 
     // Clear search with clear button
-    const clearBtn = page.getByTitle(/Xóa tìm kiếm/i)
+    const clearBtn = page.getByTitle(/Clear search/i)
     if (await clearBtn.isVisible()) {
       await clearBtn.click()
       await expect(page.getByText('MLN111')).toBeVisible()
@@ -55,8 +55,8 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
           quizzes: [
             {
               _id: 'quiz-prn211-1',
-              title: 'Đề thi trắc nghiệm C# & .NET Core (PRN211)',
-              description: 'Bộ đề 50 câu ôn tập cuối kỳ',
+              title: 'C# & .NET Core Practice Quiz (PRN211)',
+              description: '50-question comprehensive final review',
               course_code: 'PRN211',
               questionCount: 50,
               studentCount: 88,
@@ -83,11 +83,11 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
     await page.goto('/explore')
 
     // Find pin button
-    const pinBtn = page.getByTitle(/Ghim danh mục lên đầu|Bỏ ghim danh mục/i).first()
+    const pinBtn = page.getByTitle(/Pin category|Unpin category/i).first()
     await expect(pinBtn).toBeVisible()
     await pinBtn.click()
 
     // Verify toast confirmation
-    await expect(page.getByText(/Đã ghim danh mục|Đã bỏ ghim danh mục/i)).toBeVisible()
+    await expect(page.getByText(/Pinned category|Unpinned category/i)).toBeVisible()
   })
 })

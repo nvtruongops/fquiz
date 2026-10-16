@@ -80,7 +80,7 @@ describe('Question Bank Manager', () => {
 
       expect(result.hasConflict).toBe(true)
       expect(result.conflictType).toBe('same_answer')
-      expect(result.message).toContain('đã tồn tại trong môn học với cùng đáp án')
+      expect(result.message).toContain('already exists in this course with the same answer')
     })
 
     it('should return conflictType: different_answer if answers differ', async () => {
@@ -102,7 +102,7 @@ describe('Question Bank Manager', () => {
 
       expect(result.hasConflict).toBe(true)
       expect(result.conflictType).toBe('different_answer')
-      expect(result.message).toContain('MÂU THUẪN: Câu hỏi tương tự đã tồn tại nhưng có đáp án khác!')
+      expect(result.message).toContain('CONFLICT: A similar question already exists with a different answer!')
     })
   })
 
@@ -139,7 +139,7 @@ describe('Question Bank Manager', () => {
 
     it('should NOT generate conflict if question text matches generic stem but options differ completely', async () => {
       const questions = [
-        { text: 'Hồ Chí Minh cho rằng:', options: ['Đạo đức cách mạng là...', 'Ý B'], correct_answer: 0 },
+        { text: 'According to the philosopher:', options: ['Revolutionary ethics is...', 'Option B'], correct_answer: 0 },
       ]
 
       const mockExisting = [
@@ -147,8 +147,8 @@ describe('Question Bank Manager', () => {
           _id: 'doc-existing',
           category_id: 'cat-123',
           question_id: 'q_other_hash',
-          text: 'Hồ Chí Minh cho rằng:',
-          options: ['Văn hoá là tổng hợp...', 'Ý D'],
+          text: 'According to the philosopher:',
+          options: ['Culture is a synthesis of...', 'Option D'],
           correct_answer: [0],
           used_in_quizzes: ['COURSE1'],
           usage_count: 1,

@@ -12,7 +12,7 @@ import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 export const dynamic = 'force-dynamic'
 
 const RequestDeletionSchema = z.object({
-  password: z.string().min(1, 'Vui lòng nhập mật khẩu xác nhận'),
+  password: z.string().min(1, 'Please enter confirmation password'),
 })
 
 export const POST = withAuth(async (req: Request, { payload }) => {
@@ -21,29 +21,29 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     try {
       body = await req.json()
     } catch {
-      return NextResponse.json({ error: 'Dữ liệu không hợp lệ' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 })
     }
 
     const parsed = RequestDeletionSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Mật khẩu xác nhận là bắt buộc' }, { status: 400 })
+      return NextResponse.json({ error: 'Confirmation password is required' }, { status: 400 })
     }
 
     const { password } = parsed.data
 
     await connectDB()
-    const user = await User.findById(payload.userId)
+    const user = await User.findById(payload.userId).select('+password_hash')
     if (!user) {
-      return NextResponse.json({ error: 'Không tìm thấy tài khoản' }, { status: 404 })
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
     if (user.status === 'pending_deletion') {
-      return NextResponse.json({ error: 'Tài khoản của bạn đã được gửi yêu cầu xóa trước đó' }, { status: 400 })
+      return NextResponse.json({ error: 'A deletion request has already been submitted for your account' }, { status: 400 })
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password_hash)
     if (!isValidPassword) {
-      return NextResponse.json({ error: 'Mật khẩu xác nhận không chính xác' }, { status: 400 })
+      return NextResponse.json({ error: 'Incorrect confirmation password' }, { status: 400 })
     }
 
     // Generate random recovery token & calculate 72 hours from now
@@ -73,7 +73,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Đã gửi yêu cầu xóa tài khoản thành công. Email hướng dẫn khôi phục đã được gửi.',
+      message: 'Account deletion request submitted successfully. An email with recovery instructions has been sent.',
     })
 
     response.cookies.set('auth-token', '', {
@@ -87,6 +87,6 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return response
   } catch (err) {
     console.error('POST /api/student/account/request-deletion error:', err)
-    return NextResponse.json({ error: 'Lỗi máy chủ khi xử lý yêu cầu xóa tài khoản' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error while processing account deletion' }, { status: 500 })
   }
 }, { roles: ['student', 'admin', 'dev'] })

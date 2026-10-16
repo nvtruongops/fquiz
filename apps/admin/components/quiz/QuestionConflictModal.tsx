@@ -39,10 +39,10 @@ export function QuestionConflictModal({
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive font-bold text-lg">
             <ShieldAlert className="w-5 h-5" />
-            Phát hiện Mâu thuẫn Đáp án ({totalConflicts} câu)
+            Answer Conflicts Detected ({totalConflicts} {totalConflicts === 1 ? 'question' : 'questions'})
           </div>
           <DialogDescription className="text-xs text-muted-foreground">
-            Một số câu hỏi trong đề thi này đã tồn tại trong Ngân hàng câu hỏi nhưng có đáp án đúng khác với dữ liệu hiện tại.
+            Some questions in this quiz already exist in the Question Bank but have different correct answers from your current selection.
           </DialogDescription>
         </DialogHeader>
 
@@ -51,13 +51,13 @@ export function QuestionConflictModal({
             conflicts.map((c: any, i: number) => (
               <div key={i} className="p-3 rounded-lg border border-border bg-muted/20 space-y-2 text-xs">
                 <div className="font-semibold text-foreground flex items-center justify-between">
-                  <span>Câu hỏi: {c.text || `Mục ${i + 1}`}</span>
+                  <span>Question: {c.text || `Item ${i + 1}`}</span>
                   <Badge variant="destructive" className="text-[10px]">
-                    Mâu thuẫn
+                    Conflict
                   </Badge>
                 </div>
                 <div className="text-muted-foreground">
-                  <p className="font-medium text-foreground">Ngân hàng câu hỏi lưu đáp án khác với lựa chọn của bạn.</p>
+                  <p className="font-medium text-foreground">The Question Bank stores a different correct answer than your current selection.</p>
                 </div>
               </div>
             ))}
@@ -70,7 +70,7 @@ export function QuestionConflictModal({
             onClick={() => onResolve('edit')}
             className="cursor-pointer"
           >
-            Quay lại chỉnh sửa câu hỏi
+            Back to Edit Questions
           </Button>
           <Button
             type="button"
@@ -78,7 +78,7 @@ export function QuestionConflictModal({
             onClick={() => onResolve('force')}
             className="cursor-pointer font-bold"
           >
-            Vẫn giữ đáp án trong đề thi này
+            Keep Current Quiz Answers
           </Button>
         </DialogFooter>
       </DialogContent>

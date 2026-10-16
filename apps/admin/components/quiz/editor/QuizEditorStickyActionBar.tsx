@@ -22,7 +22,7 @@ export function QuizEditorStickyActionBar({
     <div className="flex items-center justify-between pt-4 border-t border-border sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border">
       <Link href="/quizzes">
         <Button type="button" variant="outline" className="cursor-pointer">
-          Hủy bỏ
+          Cancel
         </Button>
       </Link>
 
@@ -37,7 +37,7 @@ export function QuizEditorStickyActionBar({
           {isSubmitting && submitAction === 'draft' ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : null}
-          Lưu nháp (Draft)
+          Save as Draft
         </Button>
 
         <Button
@@ -51,7 +51,7 @@ export function QuizEditorStickyActionBar({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          Xuất bản Đề thi
+          Publish Quiz
         </Button>
       </div>
     </div>

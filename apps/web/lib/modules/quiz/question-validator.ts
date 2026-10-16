@@ -1,7 +1,7 @@
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 
 /**
- * Kết quả validation cho một câu hỏi.
+ * Validation result for a single question.
  */
 export interface QuestionValidationResult {
   valid: boolean
@@ -22,8 +22,8 @@ export interface QuestionValidationError {
 }
 
 /**
- * Validate một câu hỏi trước khi migrate.
- * Trả về danh sách lỗi + cảnh báo.
+ * Validate a question prior to migration.
+ * Returns a list of errors and warnings.
  */
 export function validateQuestion(q: {
   text: string
@@ -34,7 +34,7 @@ export function validateQuestion(q: {
   const warnings: string[] = []
   const answers = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
 
-  // 1. Text rỗng
+  // 1. Empty text
   if (!q.text || q.text.trim().length === 0) {
     errors.push({ code: 'EMPTY_TEXT', message: 'Question text is empty' })
   }
@@ -43,19 +43,19 @@ export function validateQuestion(q: {
   if (!q.options || q.options.length === 0) {
     errors.push({ code: 'EMPTY_OPTIONS', message: 'Options array is empty' })
   } else {
-    // 2a. Ít hơn 2 options
+    // 2a. Less than 2 options
     if (q.options.length < 2) {
       errors.push({ code: 'INSUFFICIENT_OPTIONS', message: `Only ${q.options.length} option(s), need at least 2` })
     }
 
-    // 2b. Option rỗng
+    // 2b. Empty option
     const trimmedOpts = q.options.map((o) => o.trim())
     const emptyIdx = trimmedOpts.findIndex((o) => o.length === 0)
     if (emptyIdx >= 0) {
       errors.push({ code: 'EMPTY_OPTION', message: `Option #${emptyIdx + 1} is empty or whitespace-only` })
     }
 
-    // 2c. Duplicate options (sau khi trim + lowercase)
+    // 2c. Duplicate options (after trim + lowercase)
     const normalized = trimmedOpts.map((o) => o.toLowerCase())
     const seen = new Set<string>()
     for (const opt of normalized) {
@@ -98,7 +98,7 @@ export function validateQuestion(q: {
 }
 
 /**
- * Tóm tắt validation thành object để log.
+ * Summarizes validation as an object for logging.
  */
 export function summarizeValidation(questions: Array<{
   text: string

@@ -33,7 +33,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
   }
 
   if (current.length >= MAX_PINS) {
-    return NextResponse.json({ error: `Tối đa ${MAX_PINS} danh mục được ghim` }, { status: 400 })
+    return NextResponse.json({ error: `Maximum ${MAX_PINS} categories can be pinned` }, { status: 400 })
   }
 
   // Pin

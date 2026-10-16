@@ -1,7 +1,7 @@
-# 🎓 FQuiz — Nền tảng Thi Trắc nghiệm & Ôn luyện Kiến thức Thông minh
+# 🎓 FQuiz — Intelligent Quiz & Exam Preparation Platform
 
 <p align="center">
-  <strong>Nền tảng thi trắc nghiệm trực tuyến, quản lý ngân hàng câu hỏi và lớp học thông minh tích hợp AI Assistant thời gian thực.</strong>
+  <strong>An online quiz and exam platform featuring smart question bank management, classroom assignment workflows, and real-time AI assistance.</strong>
 </p>
 
 <p align="center">
@@ -17,27 +17,27 @@
 
 ---
 
-## 🌟 Điểm nổi bật (Key Features)
+## 🌟 Key Features
 
-- ⚡ **3 Chế độ Thi Linh hoạt**: Chấm ngay từng câu (`Immediate`), Nộp bài cuối giờ (`Review`), và Lật thẻ ghi nhớ (`Flashcard`).
-- 🤖 **Trợ lý Phòng thi AI (Quiz AI Assistant)**: Giải đáp thắc mắc, phân tích đáp án đúng/sai, tìm kiếm câu tương tự trong Ngân hàng đề theo thời gian thực (hỗ trợ Gemini / OpenAI / Custom endpoints).
-- 📚 **Ngân hàng Câu hỏi (Question Bank)**: Tự động đối chiếu conflict đáp án, đồng bộ hóa và quản lý câu hỏi tái sử dụng theo môn học (`course_code`).
-- 🏫 **Lớp học & Giao bài tập (Classrooms & Assignments)**: Giáo viên tạo lớp học, giao đề thi trắc nghiệm có hạn nộp và thống kê phổ điểm học sinh; học sinh tham gia nhanh qua mã code.
-- 🔀 **Trộn đề Thi (Mix Quiz)**: Tự động kết hợp câu hỏi ngẫu nhiên hoặc tuần tự từ nhiều bộ đề thi khác nhau.
-- 🎨 **Thiết kế Chuẩn mực & Accessibility**: Hỗ trợ 4 theme modes (`Light`, `Dark`, `Green`, `Pink`) đạt chuẩn tương phản màu **WCAG 2.2 AA** và hoạt ảnh mượt mà với `@gsap/react`.
-- 🛡️ **Bảo mật Đa tầng**: Xác thực JWT Rotation, chống tấn công CSRF Double-Submit Cookie, Rate Limiting công khai, và kiểm soát dữ liệu nghiêm ngặt.
+- ⚡ **3 Flexible Exam & Practice Modes**: Instant question-by-question scoring (`Immediate`), end-of-session submission (`Review`), and 3D card flipping (`Flashcard`).
+- 🤖 **Quiz AI Assistant**: Real-time answer breakdown, mistake explanation, and conceptual question lookup in the question bank (supports Gemini, OpenAI, and custom endpoints).
+- 📚 **Question Bank**: Automatic conflict reconciliation, course-level synchronization (`course_code`), and reusable question lifecycle management.
+- 🏫 **Classrooms & Assignments**: Teachers create classes, assign timed quizzes with deadlines, and monitor student score distributions; students join quickly via class codes.
+- 🔀 **Mix Quiz**: Dynamically combine and shuffle questions across multiple quizzes and categories into a custom practice test.
+- 🎨 **Design System & Accessibility**: 4 distinct theme modes (`Light`, `Dark`, `Green`, `Pink`) adhering to **WCAG 2.2 AA** contrast ratios with smooth `@gsap/react` micro-interactions.
+- 🛡️ **Defense-in-Depth Security**: JWT rotation, Double-Submit CSRF cookie protection, sliding window rate limiting, and zero-trust proxy boundaries.
 
 ---
 
 ## 🛠️ Tech Stack & Monorepo Architecture
 
-| Phân hệ | Công nghệ / Thư viện |
+| Subsystem | Technology / Library |
 |---|---|
 | **Monorepo Engine** | [Turborepo 2.x](https://turbo.build/) + npm Workspaces |
-| **Applications** | `apps/web` (Học viên & Giáo viên :3000) + `apps/admin` (Cổng Quản trị :3001) |
+| **Applications** | `apps/web` (Student & Teacher Portal :3000) + `apps/admin` (System Admin Portal :3001) |
 | **Shared Packages** | `@fquiz/database`, `@fquiz/models`, `@fquiz/auth`, `@fquiz/ui`, `@fquiz/config-typescript` |
 | **Core Framework** | [Next.js 16 (App Router)](https://nextjs.org/) + [React 18](https://react.dev/) |
-| **Ngôn ngữ** | [TypeScript 5 (Strict Mode)](https://www.typescriptlang.org/) |
+| **Language** | [TypeScript 5 (Strict Mode)](https://www.typescriptlang.org/) |
 | **Database & ODM** | [MongoDB Atlas](https://www.mongodb.com/atlas) + [Mongoose 9](https://mongoosejs.com/) |
 | **UI & Styling** | [Tailwind CSS 3](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) (Radix Primitives) |
 | **Micro-Animations** | [GSAP](https://gsap.com/) (`@gsap/react` with GPU Transforms) + [Framer Motion 12](https://motion.dev/) |
@@ -48,66 +48,66 @@
 
 ---
 
-## 🚀 Bắt đầu Nhanh (Quick Start)
+## 🚀 Quick Start
 
-### 1. Yêu cầu Tiên quyết
-- **Node.js** 18.18+ hoặc 20+
-- **npm** (dự án dùng `.npmrc` với `legacy-peer-deps=true`)
-- MongoDB Connection String (MongoDB Atlas hoặc local MongoDB 7+)
+### 1. Prerequisites
+- **Node.js** 18.18+ or 20+
+- **npm** (repository uses `.npmrc` configured with `legacy-peer-deps=true`)
+- MongoDB connection string (MongoDB Atlas or local MongoDB 7+)
 
-### 2. Cài đặt & Khởi chạy
+### 2. Installation & Setup
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/nvtruongops/fquiz.git
 cd fquiz
 
-# 2. Cài đặt dependencies toàn bộ monorepo
+# 2. Install monorepo dependencies
 npm install
 
-# 3. Thiết lập biến môi trường
+# 3. Configure environment variables
 cp .env.example .env.local
-# Cập nhật MONGODB_URI, JWT_SECRET trong .env.local
+# Set MONGODB_URI, JWT_SECRET, etc. in .env.local
 
-# 4. Seed dữ liệu mẫu (Tùy chọn)
-npm run seed                 # Tạo tài khoản admin & student mẫu
-npm run seed:public-quizzes  # Tạo ngân hàng đề thi công khai mẫu
+# 4. Seed initial database records (optional)
+npm run seed                 # Create sample admin & student accounts
+npm run seed:public-quizzes  # Create sample public quiz banks
 
-# 5. Khởi chạy song song cả 2 ứng dụng Web (:3000) và Admin (:3001)
+# 5. Launch both Web (:3000) and Admin (:3001) concurrently
 npm run dev
 ```
 
-Mở trình duyệt:
-- 🎓 **Web Học viên & Giáo viên**: [http://localhost:3000](http://localhost:3000)
-- 🛡️ **Cổng Quản trị Admin**: [http://localhost:3001](http://localhost:3001)
+Open your browser:
+- 🎓 **Student & Teacher Web Portal**: [http://localhost:3000](http://localhost:3000)
+- 🛡️ **Admin Portal**: [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## 📜 Các Lệnh Scripts Thường dùng
+## 📜 Common Scripts & Commands
 
-| Lệnh | Mục đích |
+| Command | Description |
 |---|---|
-| `npm run dev` | Khởi chạy song song cả Web (`:3000`) và Admin (`:3001`) qua Turborepo |
-| `npm run dev:web` | Khởi chạy riêng Web học viên (`http://localhost:3000`) |
-| `npm run dev:admin` | Khởi chạy riêng Admin Portal (`http://localhost:3001`) |
-| `npm run build` | Biên dịch production toàn bộ Monorepo (`apps/web` + `apps/admin`) |
-| `npm run build:web` | Biên dịch production riêng Web học viên |
-| `npm run build:admin` | Biên dịch production riêng Admin Portal |
-| `npm run lint` | Kiểm tra chất lượng mã nguồn & bảo mật với ESLint (0 errors) |
-| `npm run check-types` | Kiểm tra kiểu dữ liệu TypeScript trên 7 workspaces qua Turborepo |
-| `npm test` | Chạy toàn bộ 66 Jest Unit & Property-based test suites (430 tests) |
-| `npx playwright test` | Chạy toàn bộ 57 Playwright E2E tests đa máy chủ (`:3000` & `:3001`) |
-| `npm run codegraph:sync` | Đồng bộ chỉ mục đồ thị mã nguồn CodeGraph (`.codegraph/`) |
-| `node .agents/scripts/verify.js --strict` | Chạy bộ kiểm tra AI Agent Rule Engine (18 quy chuẩn nghiêm ngặt) |
+| `npm run dev` | Run Web (`:3000`) and Admin (`:3001`) concurrently via Turborepo |
+| `npm run dev:web` | Run Web portal independently (`http://localhost:3000`) |
+| `npm run dev:admin` | Run Admin portal independently (`http://localhost:3001`) |
+| `npm run build` | Build entire monorepo for production (`apps/web` + `apps/admin`) |
+| `npm run build:web` | Build Web application for production |
+| `npm run build:admin` | Build Admin application for production |
+| `npm run lint` | Run ESLint code quality and security checks (0 errors) |
+| `npm run check-types` | Run TypeScript type checks across all 7 workspaces via Turborepo |
+| `npm test` | Run all 66 Jest unit and property-based test suites (430 tests) |
+| `npx playwright test` | Run all 57 Playwright multi-server E2E tests (`:3000` & `:3001`) |
+| `npm run codegraph:sync` | Synchronize CodeGraph AST index (`.codegraph/`) |
+| `node .agents/scripts/verify.js --strict` | Run AI Agent Governance Rule Engine (18 strict checks) |
 
 ---
 
-## 📂 Cấu trúc Thư mục Tổng quan (Pure Symmetrical Monorepo)
+## 📂 Monorepo Structure (Pure Symmetrical Monorepo)
 
 ```
 fquiz/
 ├── apps/
-│   ├── web/                            # 🎓 Web Học Viên & Giáo Viên (Port 3000 / @fquiz/web)
+│   ├── web/                            # 🎓 Student & Teacher Web Portal (Port 3000 / @fquiz/web)
 │   │   ├── app/                        # Next.js 16 App Router ((auth), (student), (teacher), quiz, community)
 │   │   ├── components/                 # Web UI Components (Quiz, Classroom, Community, AI)
 │   │   ├── hooks/                      # Custom React Hooks
@@ -115,7 +115,7 @@ fquiz/
 │   │   ├── lib/                        # Web Services & Feature Modules
 │   │   └── proxy.ts                    # Web Edge Proxy Middleware
 │   │
-│   └── admin/                          # 🛡️ Cổng Quản Trị Hệ Thống (Port 3001 / @fquiz/admin)
+│   └── admin/                          # 🛡️ Admin Portal (Port 3001 / @fquiz/admin)
 │       ├── app/                        # Next.js 16 App Router (Categories, Feedback, Question Bank, Quizzes)
 │       ├── components/                 # Admin UI Components & Subcomponents
 │       ├── hooks/                      # Admin Custom Hooks Layer
@@ -129,34 +129,34 @@ fquiz/
 │   └── config-typescript/              # ⚙️ Shared TypeScript Configs (@fquiz/config-typescript)
 │
 ├── e2e/                                # 🧪 Multi-Server End-to-End Test Suite (Playwright - 57 Tests)
-├── docs/                               # 📚 Trung tâm Tài liệu Kỹ thuật Chi tiết
+├── docs/                               # 📚 Technical Documentation Hub
 ├── scripts/                            # CLI Tools: Seeders, Migrations, Audits, Benchmarks
 └── .agents/                            # AI Agent Governance, Rule Engine & Pipeline Policies
 ```
 
 ---
 
-## 📚 Trung tâm Tài liệu Kỹ thuật (`docs/`)
+## 📚 Technical Documentation Hub (`docs/`)
 
-Để tìm hiểu sâu về kiến trúc, đặc tả API, bảo mật và thiết kế chi tiết, vui lòng tham khảo các tài liệu chuyên biệt tại **[Documentation Hub](file:///d:/Code/fquiz/docs/README.md)**:
+For in-depth architectural specifications, API schemas, security policies, and technical designs, refer to the **[Documentation Hub](file:///d:/Code/fquiz/docs/README.md)**:
 
-| Tài liệu | Mô tả Trọng tâm | Liên kết |
+| Document | Core Focus | Link |
 |---|---|:---:|
-| 🏛️ **Kiến trúc Tổng thể** | Pure Symmetrical Monorepo, 8 Invariants, Data Flow, AI Pipeline, Package Matrix | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
-| 📐 **Đặc tả Thiết kế Kỹ thuật** | Data Models, Mongoose Schemas, Quiz Engine Lifecycle, AI Pipeline | [`docs/DESIGN.md`](./docs/DESIGN.md) |
-| 🔌 **Đặc tả 80+ API Endpoints** | Request/Response contracts, Auth roles, Query parameters, Mã lỗi | [`docs/API.md`](./docs/API.md) |
-| 🛡️ **Kiến trúc Bảo mật** | Token Rotation, Double-Submit CSRF, Content Security Policy (CSP), Rate Limit | [`docs/SECURITY.md`](./docs/SECURITY.md) |
-| 🧪 **Chiến lược Kiểm thử** | Jest Unit Tests (66 suites), Playwright Multi-Server E2E, AI Rule Engine | [`docs/TESTING.md`](./docs/TESTING.md) |
-| 🚀 **Hướng dẫn Triển khai** | Triển khai Dual Vercel Projects, MongoDB Atlas, Biến môi trường, Migrations | [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) |
-| 🌐 **Bản đồ Page Routes** | Danh mục Page Routes Web Học viên & Admin Portal | [`docs/DESIGN_ROUTES.md`](./docs/DESIGN_ROUTES.md) |
-| 🎨 **Design Token Contract** | Hệ thống Design Tokens 3-Tier, 4 Theme Modes và Chuẩn WCAG 2.2 AA | [`docs/DESIGN_THEME.md`](./docs/DESIGN_THEME.md) |
-| 🤖 **Hướng dẫn AI Agents** | Quản trị quy chuẩn mã nguồn, CI/CD Engine, CodeGraph và Ponytail mode | [`.agents/AGENTS.md`](./.agents/AGENTS.md) |
+| 🏛️ **Master Architecture** | Pure Symmetrical Monorepo, 8 Invariants, Data Flow, AI Pipeline, Package Matrix | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
+| 📐 **Technical Design Specification** | Data Models, Mongoose Schemas, Quiz Engine Lifecycle, AI Pipeline | [`docs/DESIGN.md`](./docs/DESIGN.md) |
+| 🔌 **API Catalog (80+ Endpoints)** | Request/Response contracts, Auth roles, Query parameters, Error codes | [`docs/API.md`](./docs/API.md) |
+| 🛡️ **Security Architecture** | Token Rotation, Double-Submit CSRF, Content Security Policy (CSP), Rate Limiting | [`docs/SECURITY.md`](./docs/SECURITY.md) |
+| 🧪 **Testing Strategy** | Jest Unit Tests (66 suites), Playwright Multi-Server E2E, AI Rule Engine | [`docs/TESTING.md`](./docs/TESTING.md) |
+| 🚀 **Deployment & Operations Guide** | Dual Vercel Projects, MongoDB Atlas, Environment Variables, Migrations | [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) |
+| 🌐 **Route Catalog** | Complete Page Route Mapping for Web & Admin Portals | [`docs/DESIGN_ROUTES.md`](./docs/DESIGN_ROUTES.md) |
+| 🎨 **Design Tokens & Themes** | 3-Tier Design Tokens, 4 Theme Modes, and WCAG 2.2 AA Contrast Compliance | [`docs/DESIGN_THEME.md`](./docs/DESIGN_THEME.md) |
+| 🤖 **AI Agent Governance** | Code quality governance, CI/CD Engine, CodeGraph, and Ponytail workflow | [`.agents/AGENTS.md`](./.agents/AGENTS.md) |
 
 ---
 
-## 🛡️ Giấy phép & Đóng góp (License & Contribution)
+## 🛡️ Contribution & Verification Standards
 
-Dự án tuân thủ quy chuẩn mã nguồn nghiêm ngặt. Trước khi tạo Pull Request, vui lòng đảm bảo vượt qua toàn bộ quy tắc:
+This repository enforces strict code quality and security standards. Before creating a Pull Request, ensure all checks pass:
 ```bash
 node .agents/scripts/verify.js --strict && npm run lint && npm test && npm run build
 ```

@@ -3,12 +3,37 @@ import CategoryFilter from '@/components/quiz/explore/CategoryFilter'
 import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
 import { ExploreSkeleton } from '@/components/quiz/explore/ExploreSkeleton'
+import { getPublicCategories, getStudentPinnedCategoryIds } from '@/lib/modules/quiz/services/category.service'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Khám phá Môn Học & Đề Thi | FQuiz',
-  description: 'Tìm kiếm và khám phá thư viện câu hỏi trắc nghiệm đa chuyên ngành trên FQuiz.',
+  title: 'Explore Courses & Quizzes | FQuiz',
+  description: 'Search and explore the comprehensive multiple-choice question library across disciplines on FQuiz.',
+}
+
+async function CategoryFilterLoader({ userId }: { userId?: string }) {
+  let initialCategories = undefined
+  let initialPinnedCategories = undefined
+
+  try {
+    const [categories, pinned] = await Promise.all([
+      getPublicCategories(),
+      userId ? getStudentPinnedCategoryIds(userId) : Promise.resolve([]),
+    ])
+    initialCategories = categories
+    initialPinnedCategories = pinned
+  } catch (err) {
+    // If server-side query fails, gracefully fallback to client-side fetching in CategoryFilter
+    console.error('[ExplorePage] Error pre-fetching categories:', err)
+  }
+
+  return (
+    <CategoryFilter
+      initialCategories={initialCategories}
+      initialPinnedCategories={initialPinnedCategories}
+    />
+  )
 }
 
 export default async function ExplorePage() {
@@ -24,18 +49,17 @@ export default async function ExplorePage() {
       <div className="w-full pt-1 sm:pt-3 pb-24 sm:pb-28 lg:pb-16 relative z-10 space-y-3 sm:space-y-6">
         <div className="text-center max-w-3xl mx-auto px-2 space-y-1.5">
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-3 duration-500">
-            Khám phá Danh mục & Đề Thi
+            Explore Courses & Quizzes
           </h1>
           <p className="text-xs sm:text-sm font-semibold text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
-            Tìm kiếm môn học chuyên ngành, luyện tập bộ đề thi trắc nghiệm và trộn đề thông minh.
+            Discover academic courses, practice verified quizzes, and generate smart mixed exams.
           </p>
         </div>
 
         <Suspense fallback={<ExploreSkeleton />}>
-          <CategoryFilter />
+          <CategoryFilterLoader userId={user?.userId} />
         </Suspense>
       </div>
     </AppLayout>
   )
 }
-

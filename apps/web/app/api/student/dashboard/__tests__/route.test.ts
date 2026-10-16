@@ -57,8 +57,8 @@ jest.mock('@/lib/modules/auth/models/User', () => ({
 
 jest.mock('@/lib/modules/quiz/quiz-source-utils', () => ({
   inferSourceType: jest.fn().mockReturnValue('own'),
-  sourceLabelFromType: jest.fn().mockReturnValue('Của tôi'),
-  mixQuizDisplayCode: jest.fn().mockReturnValue('TRỘN'),
+  sourceLabelFromType: jest.fn().mockReturnValue('Mine'),
+  mixQuizDisplayCode: jest.fn().mockReturnValue('MIX'),
   buildOriginalCreatorMap: jest.fn().mockResolvedValue(new Map()),
   buildCategoryNameMap: jest.fn().mockResolvedValue(new Map()),
   buildCreatorNameMap: jest.fn().mockResolvedValue(new Map()),

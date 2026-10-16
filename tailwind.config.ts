@@ -31,6 +31,7 @@ const config: Config = {
         },
         'secondary-accent': 'hsl(var(--secondary-accent))',
         'app-bg': 'hsl(var(--app-bg))',
+        'page-bg': 'hsl(var(--surface-page))',
         
         /* === Visual Role Layer 2: Surface Palette === */
         surface: {

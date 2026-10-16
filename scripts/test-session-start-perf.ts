@@ -61,7 +61,7 @@ async function fetchQuestions(token: string, sessionId: string): Promise<number>
     headers: { Cookie: `auth-token=${token}` },
   })
   const data = await res.json()
-  log(`Fetch Questions (${data.totalQuestions ?? '?'} câu)`, Date.now() - t, res.status)
+  log(`Fetch Questions (${data.totalQuestions ?? '?'} questions)`, Date.now() - t, res.status)
   return data.totalQuestions ?? 0
 }
 
@@ -71,7 +71,7 @@ async function fetchSessionState(token: string, sessionId: string): Promise<void
     headers: { Cookie: `auth-token=${token}` },
   })
   const data = await res.json()
-  log(`Fetch Session State (câu ${(data.session?.current_question_index ?? 0) + 1})`, Date.now() - t, res.status)
+  log(`Fetch Session State (question ${(data.session?.current_question_index ?? 0) + 1})`, Date.now() - t, res.status)
 }
 
 async function main() {
@@ -84,13 +84,13 @@ async function main() {
   if (!auth) { console.error('❌ Login failed'); process.exit(1) }
   const { token, csrf } = auth
 
-  // Step 2: Simulate "Bắt đầu ngay" → POST /api/sessions
+  // Step 2: Simulate "Start Now" → POST /api/sessions
   console.log('\n--- Scenario 1: First attempt (create or detect existing) ---')
   const totalNew = Date.now()
   const newSession = await createSession(token, csrf, 'immediate', 'random')
 
   if (newSession.code === 'ACTIVE_SESSION_EXISTS') {
-    console.log(`ℹ️  Active session: ${newSession.activeSession?.answeredCount}/${newSession.activeSession?.totalQuestions} câu`)
+    console.log(`ℹ️  Active session: ${newSession.activeSession?.answeredCount}/${newSession.activeSession?.totalQuestions} questions`)
     console.log(`   Mode: ${newSession.activeSession?.mode}, Difficulty: ${newSession.activeSession?.difficulty}`)
     log('Detect existing session (409)', Date.now() - totalNew)
 

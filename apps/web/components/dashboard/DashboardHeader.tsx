@@ -36,14 +36,14 @@ export const DashboardHeader = React.memo(function DashboardHeader({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground leading-tight">
-              Xin chào, {user?.name || 'Học viên'}! 👋
+              Welcome, {user?.name || 'Student'}! 👋
             </h1>
             <Badge className="bg-primary/10 text-primary border border-primary/20 text-[10px] font-extrabold uppercase rounded-full px-2.5 py-0.5">
               {isDevOrAdmin ? (user?.role === 'admin' ? 'Administrator' : 'Developer') : 'Student Member'}
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-text-secondary font-medium">
-            Sẵn sàng cho các thử thách trắc nghiệm & bài học hôm nay cùng FQuiz!
+            Ready for today&apos;s quizzes and practice challenges on FQuiz!
           </p>
         </div>
       </div>
@@ -53,10 +53,11 @@ export const DashboardHeader = React.memo(function DashboardHeader({
           onClick={onRefetch}
           variant="outline"
           size="sm"
-          className="h-10 w-10 p-0 rounded-2xl border-subtle text-text-tertiary hover:text-foreground hover:bg-surface-inset cursor-pointer"
-          title="Làm mới dữ liệu"
+          className="h-11 w-11 min-w-[44px] min-h-[44px] p-0 rounded-2xl border-subtle text-text-tertiary hover:text-foreground hover:bg-surface-inset cursor-pointer active:scale-95 transition-transform"
+          title="Refresh data"
+          aria-label="Refresh dashboard data"
         >
-          <RefreshCw className={cn('w-4 h-4', isRefetching && 'animate-spin text-primary')} />
+          <RefreshCw aria-hidden="true" className={cn('w-4 h-4', isRefetching && 'animate-spin text-primary')} />
         </Button>
       </div>
     </div>

@@ -32,12 +32,12 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
           taggedStatus === 'unknown' && "ring-2 ring-destructive ring-offset-2 ring-offset-background border-destructive font-black bg-destructive/20"
         )}
       >
-        <XCircle className="w-5 h-5 text-destructive shrink-0" />
-        <span>Chưa thuộc</span>
+        <XCircle aria-hidden="true" className="w-5 h-5 text-destructive shrink-0" />
+        <span>Still Learning</span>
         {taggedStatus === 'unknown' ? (
-          <span className="text-[10px] font-black uppercase text-destructive-foreground bg-destructive px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Đã chọn</span>
+          <span className="text-[10px] font-black uppercase text-destructive-foreground bg-destructive px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Selected</span>
         ) : (
-          <span className="hidden sm:inline-block text-[10px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md ml-auto">← vuốt trái</span>
+          <span className="hidden sm:inline-block text-[10px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md ml-auto">← swipe left</span>
         )}
       </Button>
 
@@ -52,12 +52,12 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
           taggedStatus === 'known' && "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary font-black shadow-lg"
         )}
       >
-        <CheckCircle className="w-5 h-5 shrink-0 text-primary-foreground" />
-        <span>Đã thuộc</span>
+        <CheckCircle aria-hidden="true" className="w-5 h-5 shrink-0 text-primary-foreground" />
+        <span>Mastered</span>
         {taggedStatus === 'known' ? (
-          <span className="text-[10px] font-black uppercase text-primary bg-primary-foreground px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Đã chọn</span>
+          <span className="text-[10px] font-black uppercase text-primary bg-primary-foreground px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Selected</span>
         ) : (
-          <span className="hidden sm:inline-block text-[10px] font-bold text-primary-foreground/90 bg-primary-foreground/15 px-1.5 py-0.5 rounded-md ml-auto">vuốt phải →</span>
+          <span className="hidden sm:inline-block text-[10px] font-bold text-primary-foreground/90 bg-primary-foreground/15 px-1.5 py-0.5 rounded-md ml-auto">swipe right →</span>
         )}
       </Button>
     </div>

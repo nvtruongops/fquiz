@@ -7,7 +7,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['eslint-validation'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc ESLINT_VALIDATION bị tắt.');
+      ctx.logger.pass('Rule ESLINT_VALIDATION is disabled.');
       return { passed: true };
     }
 
@@ -22,7 +22,7 @@ module.exports = {
         maxBuffer: 10 * 1024 * 1024
       });
 
-      ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & Security (0 Error).');
+      ctx.logger.pass('FQuiz source code meets 100% of ESLint TypeScript & security standards (0 Errors).');
       return { passed: true };
     } catch (err) {
       const output = err.stdout || '';
@@ -31,7 +31,7 @@ module.exports = {
       try {
         eslintResults = JSON.parse(output);
       } catch (parseErr) {
-        ctx.logger.warn(`Không thể parse JSON kết quả ESLint: ${err.message}`);
+        ctx.logger.warn(`Failed to parse ESLint JSON output: ${err.message}`);
         return { passed: true };
       }
 
@@ -54,12 +54,12 @@ module.exports = {
       }
 
       if (totalErrors > 0) {
-        ctx.logger.warn(`Phát hiện ${totalErrors} vi phạm ESLint TypeScript/Security trong mã nguồn:`);
+        ctx.logger.warn(`Detected ${totalErrors} ESLint TypeScript/security violation(s) in source code:`);
         reportedIssues.slice(0, 15).forEach(issue => {
           ctx.logger.warn(`  - [${issue.ruleId}] ${issue.file}:${issue.line} -> ${issue.message}`);
         });
       } else {
-        ctx.logger.pass('Mã nguồn fquiz đạt 100% tiêu chuẩn ESLint TypeScript & Security (0 Error).');
+        ctx.logger.pass('FQuiz source code meets 100% of ESLint TypeScript & security standards (0 Errors).');
       }
 
       return { passed: true };

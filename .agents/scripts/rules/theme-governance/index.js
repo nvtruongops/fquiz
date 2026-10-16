@@ -32,7 +32,7 @@ module.exports = {
   async execute(ctx) {
     const policy = ctx.policies['theme-governance'] || {};
     if (policy.enabled === false) {
-      ctx.logger.pass('Quy tắc THEME_GOVERNANCE bị tắt.');
+      ctx.logger.pass('Rule THEME_GOVERNANCE is disabled.');
       return { passed: true };
     }
 
@@ -98,11 +98,11 @@ module.exports = {
     scanDirs.forEach(dir => scanDir(dir));
 
     if (policy.severity === 'ERROR' && (hardcodedHexCount > 0 || hardcodedClassCount > 0)) {
-      ctx.logger.error(`THEME_SOURCE_FAIL: Phát hiện ${hardcodedHexCount} hardcoded hex và ${hardcodedClassCount} hardcoded light classes trong source code. Yêu cầu chuyển 100% sang semantic design tokens.`);
+      ctx.logger.error(`THEME_SOURCE_FAIL: Detected ${hardcodedHexCount} hardcoded hex and ${hardcodedClassCount} hardcoded light classes in source code. 100% migration to semantic design tokens is required.`);
       return { passed: false };
     }
 
-    ctx.logger.pass(`[TIER 1 SOURCE]: Audit source code hoàn tất. Hardcoded Hex: ${hardcodedHexCount}, Hardcoded Light Classes: ${hardcodedClassCount}.`);
+    ctx.logger.pass(`[TIER 1 SOURCE]: Source code audit complete. Hardcoded Hex: ${hardcodedHexCount}, Hardcoded Light Classes: ${hardcodedClassCount}.`);
 
     // ──────────────────────────────────────────────────────────────────────────
     // TIER 2: CONTRACT GOVERNANCE (Surface Elevation Hierarchy Order)

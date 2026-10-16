@@ -46,8 +46,8 @@ export function ScrollToTopButton({ threshold = 300, className }: Readonly<Scrol
     <button
       type="button"
       onClick={scrollToTop}
-      aria-label="Cuộn lên đầu trang"
-      title="Cuộn lên đầu trang"
+      aria-label="Scroll to top"
+      title="Scroll to top"
       className={cn(
         'fixed bottom-6 right-6 z-50 flex items-center justify-center p-3.5 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 border border-white/20 transition-all duration-300 transform active:scale-95 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
         isVisible

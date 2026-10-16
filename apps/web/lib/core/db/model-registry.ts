@@ -1,11 +1,11 @@
 /**
- * Model Registry — Giải pháp thay thế import tĩnh trong mongodb.ts.
+ * Model Registry — Alternative solution to static imports in mongodb.ts.
  *
- * Mỗi module tự đăng ký model của mình. Khi connectDB() được gọi,
- * bootstrapModels() đảm bảo tất cả model đã được import → đăng ký với Mongoose.
+ * Each module registers its own models. When connectDB() is called,
+ * bootstrapModels() ensures all models are imported → registered with Mongoose.
  *
- * Mục đích DUY NHẤT: tránh MissingSchemaError trong Next.js Serverless Routes.
- * KHÔNG phải là DI container hay framework.
+ * SOLE PURPOSE: Prevent MissingSchemaError in Next.js Serverless Routes.
+ * NOT a DI container or framework.
  */
 
 const registry: Array<() => Promise<void> | void> = []

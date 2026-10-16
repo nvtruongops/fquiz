@@ -1,8 +1,8 @@
 # Community Module (`lib/modules/community/`)
 
-Module quản lý thảo luận cộng đồng — posts, comments, likes.
+Community discussions module — posts, comments, and likes.
 
-## Cấu trúc
+## Structure
 
 ```
 community/
@@ -40,9 +40,9 @@ interface IComment {
 ## Indexes
 
 - Text index: `{ title, tags }` — full-text search
-- `{ createdAt: -1 }` — sort by newest
+- Index: `{ createdAt: -1 }` — sort by newest
 
-## API
+## API Endpoints
 
 | Method | Endpoint | Auth |
 |--------|----------|------|
@@ -56,13 +56,13 @@ interface IComment {
 
 ## Authorization
 
-`validatePostRequest(postId)` — kiểm tra:
-1. Post tồn tại
-2. User là author → full CRUD
-3. Không phải author → read-only
+`validatePostRequest(postId)` — validates:
+1. Post existence
+2. If user is author $\rightarrow$ full CRUD permissions
+3. If not author $\rightarrow$ read-only access
 
-## Module Rules
+## Module Invariants
 
-- Không import model từ module khác
-- `index.ts` chỉ chứa `registerModel()` call
-- Không dùng DI container (legacy pattern)
+- No cross-module model imports
+- `index.ts` exclusively handles `registerModel()` calls
+- Pure service functions without unnecessary DI boilerplate

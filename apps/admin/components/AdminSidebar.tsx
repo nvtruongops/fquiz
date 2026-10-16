@@ -14,10 +14,10 @@ const navItems = [
   { href: '/',               label: 'Dashboard',           icon: LayoutDashboard, exact: true },
   { href: '/categories',     label: 'Categories',          icon: Layers,          exact: false },
   { href: '/quizzes',        label: 'Quizzes',             icon: FileQuestion,    exact: false },
-  { href: '/question-bank',  label: 'Ngân hàng câu hỏi',   icon: Database,        exact: false },
-  { href: '/users',          label: 'Học viên',            icon: Users,           exact: false },
-  { href: '/feedback',       label: 'Góp ý',               icon: MessageSquare,   exact: false },
-  { href: '/settings',       label: 'Cài đặt',             icon: Settings,        exact: false },
+  { href: '/question-bank',  label: 'Question Bank',       icon: Database,        exact: false },
+  { href: '/users',          label: 'Users',               icon: Users,           exact: false },
+  { href: '/feedback',       label: 'Feedback',            icon: MessageSquare,   exact: false },
+  { href: '/settings',       label: 'Settings',            icon: Settings,        exact: false },
 ]
 
 interface AdminSidebarProps {
@@ -46,7 +46,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     return (
       <>
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5" onClick={onNavigate}>
+          <Link href="/" prefetch={false} className="flex items-center gap-2.5" onClick={onNavigate}>
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
               <ShieldCheck className="w-5 h-5" />
             </div>
@@ -64,6 +64,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               <Link
                 key={href}
                 href={href}
+                prefetch={false}
                 onClick={onNavigate}
                 className={cn(
                   'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -97,7 +98,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            Đăng xuất
+            Sign Out
           </button>
         </div>
       </>
@@ -113,7 +114,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
 
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border flex items-center justify-between px-4 z-30">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" prefetch={false} className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
             <ShieldCheck className="w-4 h-4" />
           </div>

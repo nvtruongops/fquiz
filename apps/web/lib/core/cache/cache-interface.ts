@@ -5,8 +5,8 @@
  * Example: cache.set('vocab:en:hello', data, 300, ['vocabulary', 'language:en'])
  *
  * Implementations:
- * - InMemoryCache (hiện tại)
- * - RedisCache (tùy chọn)
+ * - InMemoryCache (current)
+ * - RedisCache (optional)
  */
 
 export interface ICache {

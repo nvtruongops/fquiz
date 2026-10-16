@@ -76,7 +76,7 @@ async function resolveQuizCourseCodes(questions: any[]) {
 
 /**
  * GET /api/question-bank/analytics
- * Thống kê ngân hàng câu hỏi
+ * Question bank analytics and statistics
  */
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {

@@ -154,13 +154,13 @@ test.describe('Cross-App Interoperability & Zero-Conflict Verification', () => {
         'Content-Type': 'application/json',
       },
       data: {
-        app_name: 'FQuiz - Nền Tảng Ôn Thi Trực Tuyến',
-        app_description: 'Nền tảng thi trắc nghiệm hiện đại',
+        app_name: 'FQuiz - Online Quiz Platform',
+        app_description: 'Modern quiz platform',
       },
     })
 
     expect(updateRes.status()).toBe(200)
     const updated = await updateRes.json()
-    expect(updated.settings.app_name).toBe('FQuiz - Nền Tảng Ôn Thi Trực Tuyến')
+    expect(updated.settings.app_name).toBe('FQuiz - Online Quiz Platform')
   })
 })

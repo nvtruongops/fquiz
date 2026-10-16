@@ -24,12 +24,12 @@ async function handleSessionResponse(res: Response, context: 'session' | 'questi
     throw new Error('Session expired. Redirecting to login...')
   }
   if (res.status === 404) {
-    const apiError = new Error('Phiên làm bài không tồn tại hoặc đã bị xóa.') as SessionApiError
+    const apiError = new Error('Quiz session does not exist or has been removed.') as SessionApiError
     apiError.status = 404
     throw apiError
   }
   if (res.status === 410) {
-    const apiError = new Error('Phiên làm bài đã tự động kết thúc do tạm dừng quá 5 phút.') as SessionApiError
+    const apiError = new Error('Quiz session ended automatically due to being paused for over 5 minutes.') as SessionApiError
     apiError.status = 410
     throw apiError
   }

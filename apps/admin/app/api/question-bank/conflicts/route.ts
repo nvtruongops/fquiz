@@ -216,8 +216,8 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({
       success: true,
       message: update_quizzes
-        ? `Đã resolve conflict và cập nhật ${updatedQuizzes} quiz`
-        : 'Đã resolve conflict và lưu vào ngân hàng',
+        ? `Conflict resolved and ${updatedQuizzes} quizzes updated`
+        : 'Conflict resolved and saved to Question Bank',
       updated_quizzes: updatedQuizzes,
     })
   } catch (error: any) {

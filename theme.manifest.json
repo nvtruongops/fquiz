@@ -9,16 +9,16 @@
   ],
   "brandThemes": {
     "light": {
-      "name": "Giao diện Sáng",
-      "description": "Nền sáng thanh lịch, tương phản tối ưu cho môi trường ánh sáng mạnh"
+      "name": "Light Theme",
+      "description": "Elegant light background, optimal contrast for bright environments"
     },
     "dark": {
-      "name": "Giao diện Tối",
-      "description": "Nền Deep Forest Charcoal (#0F1814) chống mỏi mắt ban đêm"
+      "name": "Dark Theme",
+      "description": "Deep Forest Charcoal (#0F1814) background to reduce eye strain at night"
     },
     "green": {
-      "name": "Giao diện Xanh",
-      "description": "Màu nhận diện thương hiệu FQuiz: Nền Kem Be ấm (#EAE7D6) phối Xanh Sage (#5D7B6F)"
+      "name": "Green Theme",
+      "description": "FQuiz brand identity: Warm beige cream (#EAE7D6) paired with Sage Green (#5D7B6F)"
     }
   },
   "tokenArchitecture": {

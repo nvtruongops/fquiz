@@ -33,23 +33,23 @@ async function handleVerify(body: unknown, ip: string) {
   const code = verifyParsed.data.code.trim()
 
   if (!isValidVerificationCode(code)) {
-    return NextResponse.json({ error: 'Mã xác thực không hợp lệ' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
   }
 
   const user = await User.findOne({ email }).select('_id reset_token reset_token_expires reset_token_attempts').lean()
   const isExpired = !user?.reset_token_expires || new Date(user.reset_token_expires) <= new Date()
   if (!user?.reset_token || isExpired) {
-    return NextResponse.json({ error: 'Mã xác thực đã hết hạn hoặc không tồn tại' }, { status: 400 })
+    return NextResponse.json({ error: 'Verification code expired or does not exist' }, { status: 400 })
   }
 
   if ((user.reset_token_attempts || 0) >= 5) {
-    return NextResponse.json({ error: 'Quá nhiều lần thử. Vui lòng yêu cầu mã mới.' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many attempts. Please request a new code.' }, { status: 429 })
   }
 
   const codeHash = hashVerificationCode(code)
   if (user.reset_token !== codeHash) {
     await User.updateOne({ _id: user._id }, { $inc: { reset_token_attempts: 1 } })
-    return NextResponse.json({ error: 'Mã xác thực không đúng' }, { status: 400 })
+    return NextResponse.json({ error: 'Incorrect verification code' }, { status: 400 })
   }
 
   // On success, reset attempts
@@ -122,9 +122,8 @@ async function handleSend(
         ip,
         err: mailErr instanceof Error ? mailErr.message : 'Unknown mail error',
       }, 'Failed to send verification email')
-      // Vẫn trả về success message để không tiết lộ email có tồn tại hay không,
-      // nhưng trong thực tế email chưa được gửi. Hoặc có thể trả về lỗi 500.
-      // Ở đây ta throw để catch block bên ngoài xử lý và trả về 500.
+      // Still return success message to avoid leaking whether email exists,
+      // but in reality email failed to send. Throw to catch block for 500 handling.
       throw mailErr
     }
   }

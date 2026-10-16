@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Compass, Sparkles, Layers, MessageSquare, BrainCircuit, GraduationCap, FileText, School } from 'lucide-react'
+import { ArrowRight, Compass, Sparkles, Layers, MessageSquare, BrainCircuit, GraduationCap, Clock, School } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import gsap from 'gsap'
@@ -41,12 +41,12 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
     <div ref={gridRef} className="space-y-4">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-black uppercase tracking-wider text-text-tertiary flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" /> Không Gian Ôn Luyện & Lớp Học
+          <Sparkles aria-hidden="true" className="w-4 h-4 text-primary" /> Learning Studio & Classrooms
         </h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-        {/* Bento 1: Khám Phá Đề Thi (Feature Hero Card — Col 7/12) */}
+        {/* Bento 1: Explore Quizzes (Feature Hero Card — Col 7/12) */}
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
@@ -55,35 +55,35 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-                <Compass className="w-5 h-5" />
+                <Compass aria-hidden="true" className="w-5 h-5" />
               </div>
               <Badge className="bg-primary/10 text-primary border border-primary/20 font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full">
-                Khám phá đề thi
+                Explore Quizzes
               </Badge>
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground tracking-tight">Khám Phá & Làm Đề Thi</h3>
+              <h3 className="text-lg font-black text-foreground tracking-tight">Explore & Practice Quizzes</h3>
               <p className="text-xs text-text-secondary leading-relaxed mt-1.5 font-medium">
-                Kho đề thi trắc nghiệm phong phú nhiều môn học, hỗ trợ chế độ thi thử tính giờ và thẻ ghi nhớ flashcard.
+                Rich collection of multiple-choice quizzes across subjects, supporting timed exams and flashcards.
               </p>
             </div>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
               <Badge variant="outline" className="text-[10px] font-bold border-subtle text-text-tertiary">
-                <Layers className="w-3 h-3 mr-1 text-primary inline" /> Đa dạng môn
+                <Layers aria-hidden="true" className="w-3 h-3 mr-1 text-primary inline" /> Multiple Subjects
               </Badge>
               <Badge variant="outline" className="text-[10px] font-bold border-subtle text-text-tertiary">
-                <BrainCircuit className="w-3 h-3 mr-1 text-primary inline" /> Trộn ngẫu nhiên
+                <BrainCircuit aria-hidden="true" className="w-3 h-3 mr-1 text-primary inline" /> Random Mix
               </Badge>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-black text-xs h-10 rounded-xl mt-5 shadow-xs w-fit relative z-10 cursor-pointer">
+          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-black text-xs h-10 sm:h-11 rounded-xl mt-5 shadow-xs w-fit relative z-10 cursor-pointer active:scale-[0.98] transition-transform">
             <Link href="/explore">
-              Khám phá ngay <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              Explore Now <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </Button>
         </div>
 
-        {/* Bento 2: Lớp Học & Bài Tập (Col 5/12) */}
+        {/* Bento 2: Classrooms (Col 5/12) */}
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
@@ -92,27 +92,27 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-                <GraduationCap className="w-5 h-5" />
+                <GraduationCap aria-hidden="true" className="w-5 h-5" />
               </div>
               <Badge variant="outline" className="text-[10px] font-bold border-primary/20 text-primary bg-primary/10">
-                <School className="w-3 h-3 mr-1 inline" /> Lớp học
+                <School aria-hidden="true" className="w-3 h-3 mr-1 inline" /> Classroom
               </Badge>
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground">Lớp Học Của Tôi</h3>
+              <h3 className="text-base font-black text-foreground">My Classrooms</h3>
               <p className="text-xs text-text-secondary leading-relaxed mt-1 font-medium">
-                Tham gia lớp học của giáo viên, nhận bài tập được giao và theo dõi kết quả làm bài.
+                Join teacher classrooms, receive assignments, and track your practice results.
               </p>
             </div>
           </div>
-          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-black text-xs h-10 rounded-xl mt-4 shadow-xs w-fit relative z-10 cursor-pointer">
+          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-black text-xs h-10 sm:h-11 rounded-xl mt-4 shadow-xs w-fit relative z-10 cursor-pointer active:scale-[0.98] transition-transform">
             <Link href="/student/classrooms">
-              Vào lớp học <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              Enter Classrooms <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </Button>
         </div>
 
-        {/* Bento 3: Bộ Đề Của Tôi (Col 6/12) */}
+        {/* Bento 3: Quiz History (Col 6/12) */}
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
@@ -121,27 +121,27 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-                <FileText className="w-5 h-5" />
+                <Clock aria-hidden="true" className="w-5 h-5" />
               </div>
               <Badge variant="outline" className="text-[10px] font-bold border-subtle text-text-tertiary">
-                Đã lưu
+                Progress
               </Badge>
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground">Bộ Đề Đã Lưu</h3>
+              <h3 className="text-base font-black text-foreground">Quiz History</h3>
               <p className="text-xs text-text-secondary leading-relaxed mt-1 font-medium">
-                Tập trung luyện tập các bộ đề yêu thích được lưu từ thư viện chung.
+                Track study progress, review scorecards, and retry previously missed questions.
               </p>
             </div>
           </div>
-          <Button asChild size="sm" variant="outline" className="font-bold text-xs h-9 rounded-xl mt-3 w-fit relative z-10 cursor-pointer hover:bg-muted">
-            <Link href="/my-quizzes">
-              Xem bộ đề <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+          <Button asChild size="sm" variant="outline" className="font-bold text-xs h-10 sm:h-11 rounded-xl mt-3 w-fit relative z-10 cursor-pointer hover:bg-muted active:scale-[0.98] transition-transform">
+            <Link href="/history">
+              View History <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </Button>
         </div>
 
-        {/* Bento 4: Diễn Đàn Cộng Đồng (Col 6/12) */}
+        {/* Bento 4: Community Forum (Col 6/12) */}
         <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
@@ -150,22 +150,22 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-                <MessageSquare className="w-5 h-5" />
+                <MessageSquare aria-hidden="true" className="w-5 h-5" />
               </div>
               <Badge variant="outline" className="text-[10px] font-bold border-subtle text-text-tertiary">
-                Thảo luận
+                Discussions
               </Badge>
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground">Diễn Đàn Cộng Đồng</h3>
+              <h3 className="text-base font-black text-foreground">Community Forum</h3>
               <p className="text-xs text-text-secondary leading-relaxed mt-1 font-medium">
-                Trao đổi, thảo luận lời giải và hỏi đáp câu hỏi trắc nghiệm cùng cộng đồng.
+                Discuss solutions, ask questions, and share knowledge with fellow learners.
               </p>
             </div>
           </div>
-          <Button asChild size="sm" variant="outline" className="font-bold text-xs h-9 rounded-xl mt-3 w-fit relative z-10 cursor-pointer hover:bg-muted">
+          <Button asChild size="sm" variant="outline" className="font-bold text-xs h-10 sm:h-11 rounded-xl mt-3 w-fit relative z-10 cursor-pointer hover:bg-muted active:scale-[0.98] transition-transform">
             <Link href="/community">
-              Vào diễn đàn <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              Join Forum <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1.5" />
             </Link>
           </Button>
         </div>

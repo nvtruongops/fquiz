@@ -24,7 +24,7 @@ const UserSchema = new Schema({
   ban_reason: { type: String, default: null },
   sharing_violations: { type: Number, default: 0 },
   timezone: { type: String, default: 'Asia/Ho_Chi_Minh' },
-  language: { type: String, default: 'vi' },
+  language: { type: String, default: 'en' },
   notify_email: { type: Boolean, default: true },
   notify_quiz_reminder: { type: Boolean, default: true },
   privacy_share_activity: { type: Boolean, default: true },

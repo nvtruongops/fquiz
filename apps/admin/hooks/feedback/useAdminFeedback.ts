@@ -15,10 +15,10 @@ export interface Feedback {
 }
 
 export const TYPE_LABELS: Record<string, string> = {
-  bug: 'Báo lỗi',
-  feature: 'Đề xuất tính năng',
-  content: 'Góp ý nội dung',
-  other: 'Khác',
+  bug: 'Bug report',
+  feature: 'Feature request',
+  content: 'Content feedback',
+  other: 'Other',
 }
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -39,7 +39,7 @@ async function fetchFeedbacks(
   if (search.trim()) params.set('search', search.trim())
 
   const res = await fetch(`/api/feedback?${params.toString()}`, { credentials: 'include' })
-  if (!res.ok) throw new Error('Không thể tải danh sách góp ý')
+  if (!res.ok) throw new Error('Failed to load feedback list')
   const data = await res.json()
   return data.feedbacks || []
 }
@@ -56,6 +56,7 @@ export function useAdminFeedback() {
   const { data: feedbacks = [], isLoading } = useQuery({
     queryKey: ['admin', 'feedback', type, status, search],
     queryFn: () => fetchFeedbacks(type, status, search),
+    staleTime: 30 * 1000,
   })
 
   const updateStatusMutation = useMutation({
@@ -65,12 +66,12 @@ export function useAdminFeedback() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      if (!res.ok) throw new Error('Cập nhật trạng thái thất bại')
+      if (!res.ok) throw new Error('Failed to update status')
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
-      toast({ title: 'Thành công', description: 'Đã cập nhật trạng thái góp ý', type: 'success' })
+      toast({ title: 'Success', description: 'Feedback status updated successfully', type: 'success' })
     },
   })
 
@@ -81,30 +82,30 @@ export function useAdminFeedback() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reply_message }),
       })
-      if (!res.ok) throw new Error('Gửi phản hồi thất bại')
+      if (!res.ok) throw new Error('Failed to send reply')
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
       setReplyTarget(null)
       setReplyText('')
-      toast({ title: 'Thành công', description: 'Đã gửi phản hồi', type: 'success' })
+      toast({ title: 'Success', description: 'Reply sent successfully', type: 'success' })
     },
     onError: (err: Error) => {
-      toast({ title: 'Lỗi', description: err.message, type: 'error' })
+      toast({ title: 'Error', description: err.message, type: 'error' })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Xóa góp ý thất bại')
+      if (!res.ok) throw new Error('Failed to delete feedback')
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
       setDeleteTarget(null)
-      toast({ title: 'Thành công', description: 'Đã xóa góp ý', type: 'success' })
+      toast({ title: 'Success', description: 'Feedback deleted successfully', type: 'success' })
     },
   })
 

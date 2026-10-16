@@ -44,9 +44,9 @@ const QuizSidebar = React.memo(function QuizSidebar({
             onClick={() => onNavigate(currentIndex - 1)}
             disabled={currentIndex === 0}
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
-            title="Câu trước (←)"
+            title="Previous question (←)"
           >
-            <ChevronLeft className="mr-1 h-4 w-4 text-primary" /> Trước
+            <ChevronLeft className="mr-1 h-4 w-4 text-primary" /> Prev
           </Button>
           <Button
             type="button"
@@ -54,9 +54,9 @@ const QuizSidebar = React.memo(function QuizSidebar({
             onClick={() => onNavigate(currentIndex + 1)}
             disabled={currentIndex === totalQuestions - 1}
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
-            title="Câu sau (→)"
+            title="Next question (→)"
           >
-            Sau <ChevronRight className="ml-1 h-4 w-4 text-primary" />
+            Next <ChevronRight className="ml-1 h-4 w-4 text-primary" />
           </Button>
         </div>
 
@@ -64,10 +64,10 @@ const QuizSidebar = React.memo(function QuizSidebar({
         <div className="flex-1 min-h-0 bg-muted/50 p-3 rounded-2xl border border-border flex flex-col">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              Ma trận câu hỏi
+              Question Palette
             </h4>
             <span className="text-[11px] font-black text-primary">
-              {answeredCount}/{totalQuestions} câu
+              {answeredCount}/{totalQuestions} questions
             </span>
           </div>
 
@@ -109,10 +109,10 @@ const QuizSidebar = React.memo(function QuizSidebar({
           >
             {isPending ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Đang nộp bài...
+                <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
               </span>
             ) : (
-              <span>Nộp bài thi ({answeredCount}/{totalQuestions})</span>
+              <span>Submit Quiz ({answeredCount}/{totalQuestions})</span>
             )}
           </Button>
 
@@ -122,7 +122,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             onClick={onExit}
             className="w-full h-10 rounded-xl border border-border bg-card text-destructive font-bold text-xs hover:bg-destructive/10 shadow-2xs transition-all cursor-pointer"
           >
-            Tạm dừng & Thoát
+            Pause & Exit
           </Button>
         </div>
       </div>
