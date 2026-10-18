@@ -13,6 +13,7 @@ interface QuizSidebarProps {
   isPending: boolean
   submitDisabled?: boolean
   answeredCount: number
+  navigationDisabled?: boolean
   enableAnimation?: boolean
   answeredSet?: Set<number>
   onExit?: () => void
@@ -26,6 +27,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
   isPending,
   submitDisabled,
   answeredCount,
+  navigationDisabled = false,
   enableAnimation = true,
   answeredSet,
   onExit,
@@ -44,7 +46,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             type="button"
             variant="outline"
             onClick={() => onNavigate(currentIndex - 1)}
-            disabled={currentIndex === 0}
+            disabled={navigationDisabled || currentIndex === 0}
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Previous question (←)"
           >
@@ -54,7 +56,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
             type="button"
             variant="outline"
             onClick={() => onNavigate(currentIndex + 1)}
-            disabled={currentIndex === totalQuestions - 1}
+            disabled={navigationDisabled || currentIndex === totalQuestions - 1}
             className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
             title="Next question (→)"
           >
@@ -84,6 +86,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
                     key={i}
                     type="button"
                     onClick={() => onNavigate(i)}
+                    disabled={navigationDisabled}
                     aria-label={`Question ${i + 1}${isAnswered ? ', answered' : ', not answered'}`}
                     aria-current={isCurrent ? 'step' : undefined}
                     className={cn(

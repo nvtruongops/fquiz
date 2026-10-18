@@ -26,6 +26,7 @@ interface MobileSessionDialogsProps {
   onConfirmSubmit: () => void
   onConfirmExitQuiz: () => void
   onNavigate: (index: number) => void
+  navigationDisabled?: boolean
   isFinalizePending: boolean
   submitDisabled?: boolean
 }
@@ -44,6 +45,7 @@ export function MobileSessionDialogs({
   onConfirmSubmit,
   onConfirmExitQuiz,
   onNavigate,
+  navigationDisabled = false,
   isFinalizePending,
   submitDisabled,
 }: MobileSessionDialogsProps) {
@@ -121,6 +123,7 @@ export function MobileSessionDialogs({
                   <button
                     key={i}
                     type="button"
+                    disabled={navigationDisabled}
                     onClick={() => {
                       onNavigate(i)
                       setQuestionMapOpen(false)

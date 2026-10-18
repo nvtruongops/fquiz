@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/shared/ui/skeleton'
 
 export function QuizSessionSkeleton() {
   return (
-    <div className="h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans bg-background text-foreground select-none">
+    <div data-testid="quiz-session-skeleton" className="h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col font-sans bg-background text-foreground select-none">
       {/* Top Header Skeleton */}
       <header className="h-14 shrink-0 border-b border-border bg-card px-3 sm:px-6 flex items-center justify-between gap-3 z-10">
         <div className="flex items-center gap-2.5">

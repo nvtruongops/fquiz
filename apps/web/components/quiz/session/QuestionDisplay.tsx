@@ -18,6 +18,7 @@ interface QuestionDisplayProps {
   lastAnswerResult: QuestionFeedback | null
   onSelectOption: (idx: number) => void
   onNavigate?: (idx: number) => void
+  navigationDisabled?: boolean
   onSubmit?: () => void
   onExit?: () => void
   isPending: boolean
@@ -92,6 +93,7 @@ function StandardQuestionView({
   lastAnswerResult,
   onSelectOption,
   onNavigate,
+  navigationDisabled,
   onSubmit,
   onExit,
   isPending,
@@ -204,7 +206,7 @@ function StandardQuestionView({
             <button
               type="button"
               onClick={() => onNavigate?.(currentIndex - 1)}
-              disabled={currentIndex === 0}
+              disabled={navigationDisabled || currentIndex === 0}
               className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs"
             >
               Back
@@ -212,7 +214,7 @@ function StandardQuestionView({
             <button
               type="button"
               onClick={() => onNavigate?.(currentIndex + 1)}
-              disabled={currentIndex === totalQuestions - 1}
+              disabled={navigationDisabled || currentIndex === totalQuestions - 1}
               className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs"
             >
               Next

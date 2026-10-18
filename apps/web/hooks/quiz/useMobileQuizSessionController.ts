@@ -12,6 +12,7 @@ import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
+import { isQuestionNavigationReady, isSessionQuestionReady } from '@/hooks/quiz/session-rendering'
 
 function triggerVibration() {
   if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -37,7 +38,7 @@ export function useMobileQuizSessionController() {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
-  const sessionLoader = useSessionLoader()
+  const sessionLoader = useSessionLoader(true)
 
   const {
     initialData,
@@ -49,7 +50,6 @@ export function useMobileQuizSessionController() {
     activeData,
     currentQuestion,
     preloadedQuestions,
-    isPreloading,
     isPreloadError,
     preloadError,
     refetchPreload,
@@ -152,7 +152,11 @@ export function useMobileQuizSessionController() {
     }
   }, [sessionLoader])
 
-  const isStillLoading = isPreloading || isInitialLoading || !isReadyToRender || !activeData || activeData?.session.status === 'preparing'
+  const isStillLoading = !isSessionQuestionReady({
+    isInitialLoading,
+    isReadyToRender,
+    sessionStatus: activeData?.session.status,
+  })
 
   useEffect(() => {
     if (!sessionLoaderStartedRef.current || !sessionLoader.isOpen) return
@@ -212,14 +216,19 @@ export function useMobileQuizSessionController() {
     })
   }, [markExiting, reportSessionActivity, setExitConfirmOpen, sessionLoader, activeData?.session, resolvedQuizId, router])
 
+  const canNavigateQuestions = isQuestionNavigationReady(
+    preloadedQuestions?.length,
+    activeData?.session.totalQuestions ?? 0,
+  )
+
   const handleNavigate = useCallback((index: number) => {
-    if (!isHydratedFromServer) return
+    if (!isHydratedFromServer || !canNavigateQuestions) return
     const effectiveTotal = activeData?.session.totalQuestions || 0
     if (index < 0 || index >= effectiveTotal) return
     
     navigateToQuestion(index)
     setQuestionMapOpen(false)
-  }, [isHydratedFromServer, activeData?.session.totalQuestions, navigateToQuestion])
+  }, [isHydratedFromServer, canNavigateQuestions, activeData?.session.totalQuestions, navigateToQuestion])
 
   const rafRef = useRef<number | null>(null)
 
@@ -302,6 +311,7 @@ export function useMobileQuizSessionController() {
     refetchPreload,
     activeData,
     isStillLoading,
+    navigationDisabled: !canNavigateQuestions,
     isHydratedFromServer,
     finalizeMutation,
     submitMutation,

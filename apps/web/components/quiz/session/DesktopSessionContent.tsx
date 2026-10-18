@@ -19,6 +19,11 @@ import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
 import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
+import {
+  isQuestionNavigationReady,
+  isSessionQuestionReady,
+  shouldShowSessionSkeleton,
+} from '@/hooks/quiz/session-rendering'
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
@@ -53,7 +58,7 @@ export function DesktopSessionContent({
   const navigateToQuestion = useQuizSessionStore((s) => s.navigateToQuestion)
 
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const sessionLoader = useSessionLoader()
+  const sessionLoader = useSessionLoader(true)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -72,7 +77,6 @@ export function DesktopSessionContent({
     activeData,
     currentQuestion,
     preloadedQuestions,
-    isPreloading,
     isPreloadError,
     preloadError,
     refetchPreload,
@@ -152,12 +156,11 @@ export function DesktopSessionContent({
     }
   }, [activeData?.session, quizId, sessionId])
 
-  const isStillLoading =
-    isPreloading ||
-    isInitialLoading ||
-    !isReadyToRender ||
-    !activeData ||
-    activeData?.session.status === 'preparing'
+  const isStillLoading = !isSessionQuestionReady({
+    isInitialLoading,
+    isReadyToRender,
+    sessionStatus: activeData?.session.status,
+  })
 
   useEffect(() => {
     if (sessionLoaderStartedRef.current && sessionLoader.isOpen) {
@@ -172,6 +175,16 @@ export function DesktopSessionContent({
       }
     }
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
+
+  const canNavigateQuestions = isQuestionNavigationReady(
+    preloadedQuestions?.length,
+    activeData?.session.totalQuestions ?? 0,
+  )
+  const handleNavigate = useCallback((index: number) => {
+    const totalQuestions = activeData?.session.totalQuestions ?? 0
+    if (!canNavigateQuestions || index < 0 || index >= totalQuestions) return
+    navigateToQuestion(index)
+  }, [activeData?.session.totalQuestions, canNavigateQuestions, navigateToQuestion])
 
   if (isPreloadError || isInitialError) {
     return (
@@ -198,13 +211,13 @@ export function DesktopSessionContent({
     )
   }
 
-  if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
-    if (!sessionLoader.isOpen) {
+  if (isStillLoading || !activeData) {
+    if (shouldShowSessionSkeleton(isStillLoading, sessionLoader.isOpen, isQuizLoaderActive())) {
       return <QuizSessionSkeleton />
     }
     return (
       <QuizLoadingOverlay
-        isOpen={sessionLoader.isOpen}
+        isOpen={true}
         progress={sessionLoader.progress}
         status={sessionLoader.status || 'Loading questions...'}
       />
@@ -245,7 +258,8 @@ export function DesktopSessionContent({
         enableAnimation={enableAnimation}
         onToggleAnimation={setEnableAnimation}
         onSelectOption={handleSelectOption}
-        onNavigate={navigateToQuestion}
+        onNavigate={handleNavigate}
+        navigationDisabled={!canNavigateQuestions}
         onSubmit={handleSubmit}
         onExit={handleExit}
         explanationContent={
@@ -259,7 +273,7 @@ export function DesktopSessionContent({
           />
         }
       >
-        <SessionSaveStatus status={saveStatus} onRetry={retryFailedAnswer} onReviewDraft={() => { if (unsavedQuestionIndex !== null) navigateToQuestion(unsavedQuestionIndex) }} onDiscardDraft={discardUnsavedAnswer} draftQuestionNumber={unsavedQuestionIndex === null ? null : unsavedQuestionIndex + 1} disabled={isReadOnlyTab || isSubmitting || finalizeMutation.isPending} />
+        <SessionSaveStatus status={saveStatus} onRetry={retryFailedAnswer} onReviewDraft={() => { if (unsavedQuestionIndex !== null) handleNavigate(unsavedQuestionIndex) }} onDiscardDraft={discardUnsavedAnswer} draftQuestionNumber={unsavedQuestionIndex === null ? null : unsavedQuestionIndex + 1} disabled={isReadOnlyTab || isSubmitting || finalizeMutation.isPending} />
         <PendingAnswerIndicator
           mode={session.mode}
           submitted={submitted}
@@ -275,7 +289,7 @@ export function DesktopSessionContent({
           showImmediateFeedback={showImmediateFeedback}
           lastAnswerResult={lastAnswerResult}
           onSelectOption={handleSelectOption}
-          onNavigate={navigateToQuestion}
+          onNavigate={handleNavigate}
           isPending={isReadOnlyTab || isSubmitting || finalizeMutation.isPending}
           submitDisabled={submitDisabled}
           sessionMode={session.mode}
