@@ -179,4 +179,42 @@ describe('useQuizKeyboardNavigation Hook Test Suite', () => {
     handleKeyDown({ key: 'ArrowUp', preventDefault, target: {} })
     expect(setFocusedOptionMock).not.toHaveBeenCalled()
   })
+
+  test.each([
+    ['Enter', { tagName: 'BUTTON' }, false],
+    [' ', { tagName: 'INPUT', type: 'checkbox' }, false],
+    ['Enter', { tagName: 'INPUT', type: 'checkbox' }, false],
+    ['ArrowRight', { tagName: 'SELECT' }, false],
+    ['ArrowRight', { closest: () => ({ role: 'dialog' }) }, false],
+    ['ArrowRight', {}, true],
+  ])('preserves native or modal %s events', (key, target, defaultPrevented) => {
+    const onNavigate = jest.fn()
+    const onSelectOption = jest.fn()
+    focusedOptionState = 1
+    useQuizKeyboardNavigation({ currentIndex: 1, totalQuestions: 5, optionCount: 4, onNavigate, onSelectOption })
+    const preventDefault = jest.fn()
+    listeners.keydown({ key, target, defaultPrevented, preventDefault })
+    expect(onNavigate).not.toHaveBeenCalled()
+    expect(onSelectOption).not.toHaveBeenCalled()
+    expect(preventDefault).not.toHaveBeenCalled()
+  })
+
+  test('ignores quiz navigation while a portal dialog is open', () => {
+    const onNavigate = jest.fn()
+    global.document = { querySelector: () => ({}) } as any
+    try {
+      useQuizKeyboardNavigation({ currentIndex: 1, totalQuestions: 5, optionCount: 4, onNavigate, onSelectOption: jest.fn() })
+      listeners.keydown({ key: 'ArrowRight', target: {}, preventDefault: jest.fn() })
+      expect(onNavigate).not.toHaveBeenCalled()
+    } finally {
+      delete (global as any).document
+    }
+  })
+
+  test('ignores arrow keys outside the quiz content', () => {
+    const onNavigate = jest.fn()
+    useQuizKeyboardNavigation({ currentIndex: 1, totalQuestions: 5, optionCount: 4, onNavigate, onSelectOption: jest.fn() })
+    listeners.keydown({ key: 'ArrowRight', target: { closest: () => null }, preventDefault: jest.fn() })
+    expect(onNavigate).not.toHaveBeenCalled()
+  })
 })

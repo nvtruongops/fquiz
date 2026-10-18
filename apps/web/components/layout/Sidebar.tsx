@@ -9,11 +9,10 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserDropdown } from '@/components/layout/UserDropdown'
-import { NAV_SECTIONS, Section, NavItem } from '@/lib/core/constants/navigation'
+import { NAV_SECTIONS, NavItem } from '@/lib/core/constants/navigation'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 
-export type { NavItem, Section }
-export const navSections = NAV_SECTIONS
+const navSections = NAV_SECTIONS
 
 // ─── Context ─────────────────────────────────────────────────────
 interface SidebarContextType {
@@ -120,7 +119,7 @@ export function Sidebar({ user }: SidebarProps) {
           "h-16 flex items-center border-b border-border flex-shrink-0 transition-all",
           collapsed ? "justify-center px-2" : "px-6"
         )}>
-          <Link href="/" prefetch={false} className="flex items-center gap-2 group overflow-hidden">
+          <Link href="/" prefetch={false} data-desktop-nav-home="true" className="flex items-center gap-2 group overflow-hidden">
             {collapsed ? (
               <span className="text-xl font-black text-primary">F</span>
             ) : (

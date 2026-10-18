@@ -27,6 +27,7 @@ interface MobileSessionDialogsProps {
   onConfirmExitQuiz: () => void
   onNavigate: (index: number) => void
   isFinalizePending: boolean
+  submitDisabled?: boolean
 }
 
 export function MobileSessionDialogs({
@@ -44,6 +45,7 @@ export function MobileSessionDialogs({
   onConfirmExitQuiz,
   onNavigate,
   isFinalizePending,
+  submitDisabled,
 }: MobileSessionDialogsProps) {
   return (
     <>
@@ -60,7 +62,7 @@ export function MobileSessionDialogs({
             <Button
               type="button"
               onClick={onConfirmSubmit}
-              disabled={isFinalizePending}
+              disabled={isFinalizePending || submitDisabled}
               className="w-full bg-primary py-5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
             >
               Submit Quiz

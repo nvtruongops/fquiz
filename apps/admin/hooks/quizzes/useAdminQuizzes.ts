@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
 
 export interface Quiz {
@@ -13,7 +13,7 @@ export interface Quiz {
   status: 'published' | 'draft' | 'archived'
 }
 
-export interface Category {
+interface Category {
   _id: string
   name: string
 }
@@ -21,7 +21,8 @@ export interface Category {
 async function fetchQuizzes(
   page: number,
   categoryId: string,
-  search: string
+  search: string,
+  signal: AbortSignal
 ): Promise<{ quizzes: Quiz[]; total: number }> {
   const params = new URLSearchParams()
   params.set('page', String(page))
@@ -29,7 +30,7 @@ async function fetchQuizzes(
   if (categoryId && categoryId !== 'all') params.set('category_id', categoryId)
   if (search.trim()) params.set('search', search.trim())
 
-  const res = await fetch(`/api/quizzes?${params.toString()}`, { credentials: 'include' })
+  const res = await fetch(`/api/quizzes?${params.toString()}`, { credentials: 'include', signal })
   if (!res.ok) throw new Error('Failed to load quiz list')
   return res.json()
 }
@@ -45,8 +46,20 @@ export function useAdminQuizzes() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [category, setCategory] = useState('all')
   const [deleteTarget, setDeleteTarget] = useState<Quiz | null>(null)
+  const normalizedSearch = search.trim()
+  const isSearchPending = normalizedSearch !== debouncedSearch
+
+  useEffect(() => {
+    if (!isSearchPending) return
+    const timer = setTimeout(() => {
+      setDebouncedSearch(normalizedSearch)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [isSearchPending, normalizedSearch])
 
   const { data: categories = [] } = useQuery({
     queryKey: ['admin', 'categories'],
@@ -54,9 +67,11 @@ export function useAdminQuizzes() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'quizzes', page, category, search],
-    queryFn: () => fetchQuizzes(page, category, search),
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['admin', 'quizzes', page, category, debouncedSearch],
+    queryFn: ({ signal }) => fetchQuizzes(page, category, debouncedSearch, signal),
+    enabled: !isSearchPending,
+    placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   })
 
@@ -109,6 +124,8 @@ export function useAdminQuizzes() {
     categories,
     data,
     isLoading,
+    isFetching,
+    isSearchPending,
     totalPages,
     updateStatusMutation,
     deleteMutation,

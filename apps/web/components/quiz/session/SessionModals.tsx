@@ -17,6 +17,7 @@ interface SessionModalsProps {
   answeredCount: number
   totalQuestions: number
   isPending: boolean
+  submitDisabled?: boolean
   enableAnimation?: boolean
   onConfirmSubmit: () => void
   onConfirmExit: () => void
@@ -33,6 +34,7 @@ export const SessionModals = React.memo(function SessionModals({
   answeredCount,
   totalQuestions,
   isPending,
+  submitDisabled,
   enableAnimation = true,
   onConfirmSubmit,
   onConfirmExit
@@ -74,7 +76,7 @@ export const SessionModals = React.memo(function SessionModals({
               <Button
                 type="button"
                 onClick={onConfirmSubmit}
-                disabled={isPending}
+                disabled={isPending || submitDisabled}
                 className="rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary-hover shadow-xs"
               >
                 {isPending ? 'Submitting...' : 'Submit'}
@@ -181,7 +183,7 @@ export const SessionModals = React.memo(function SessionModals({
             <Button
               type="button"
               onClick={onConfirmSubmit}
-              disabled={isPending}
+              disabled={isPending || submitDisabled}
               className="h-11 flex-1 rounded-xl bg-primary hover:bg-primary-hover font-bold text-primary-foreground shadow-md transition-all cursor-pointer"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

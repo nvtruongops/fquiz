@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
 
 export interface User {
@@ -22,7 +22,8 @@ async function fetchUsers(
   page: number,
   search: string,
   role: string,
-  status: string
+  status: string,
+  signal: AbortSignal
 ): Promise<UsersResponse> {
   const params = new URLSearchParams()
   params.set('page', String(page))
@@ -31,7 +32,7 @@ async function fetchUsers(
   if (role) params.set('role', role)
   if (status) params.set('status', status)
 
-  const res = await fetch(`/api/users?${params.toString()}`, { credentials: 'include' })
+  const res = await fetch(`/api/users?${params.toString()}`, { credentials: 'include', signal })
   if (!res.ok) throw new Error('Failed to load user list')
   return res.json()
 }
@@ -40,12 +41,26 @@ export function useAdminUsers() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
+  const normalizedSearch = search.trim()
+  const isSearchPending = normalizedSearch !== debouncedSearch
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'users', page, search, role, status],
-    queryFn: () => fetchUsers(page, search, role, status),
+  useEffect(() => {
+    if (!isSearchPending) return
+    const timer = setTimeout(() => {
+      setDebouncedSearch(normalizedSearch)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [isSearchPending, normalizedSearch])
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'users', page, debouncedSearch, role, status],
+    queryFn: ({ signal }) => fetchUsers(page, debouncedSearch, role, status, signal),
+    enabled: !isSearchPending,
+    placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   })
 
@@ -100,6 +115,11 @@ export function useAdminUsers() {
     setStatus,
     data,
     isLoading,
+    isFetching,
+    isSearchPending,
+    isError,
+    error,
+    refetch,
     updateMutation,
     deleteMutation,
   }

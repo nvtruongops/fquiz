@@ -33,13 +33,15 @@ export default function RegisterPage() {
   useGSAP(
     () => {
       if (!cardRef.current) return
-      gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      const media = gsap.matchMedia()
+      media.add('(prefers-reduced-motion: no-preference)', () => {
         gsap.fromTo(
           cardRef.current,
           { autoAlpha: 0, y: 16, scale: 0.98 },
           { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
         )
       })
+      return () => media.revert()
     },
     { scope: cardRef }
   )
@@ -58,7 +60,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div ref={cardRef} className="w-full relative group opacity-0">
+    <div ref={cardRef} className="w-full relative group">
       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-[2rem] sm:rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       <RegisterFormFields
         form={form}

@@ -29,6 +29,8 @@ export default function AdminQuizzesPage() {
     categories,
     data,
     isLoading,
+    isFetching,
+    isSearchPending,
     totalPages,
     updateStatusMutation,
     deleteMutation,
@@ -60,7 +62,6 @@ export default function AdminQuizzesPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
-              setPage(1)
             }}
             className="pl-9"
           />
@@ -88,15 +89,17 @@ export default function AdminQuizzesPage() {
       </div>
 
       {/* Quizzes Table */}
-      <QuizTable
-        isLoading={isLoading}
-        data={data}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status })}
-        onDeleteTarget={setDeleteTarget}
-      />
+      <div aria-busy={isFetching || isSearchPending}>
+        <QuizTable
+          isLoading={isLoading}
+          data={data}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status })}
+          onDeleteTarget={setDeleteTarget}
+        />
+      </div>
 
       {/* Delete Dialog */}
       <QuizDeleteDialog

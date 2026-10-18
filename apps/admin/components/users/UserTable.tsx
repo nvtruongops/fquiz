@@ -22,6 +22,9 @@ import type { User, UsersResponse } from '@/hooks/users/useAdminUsers'
 
 interface UserTableProps {
   isLoading: boolean
+  isError: boolean
+  error: Error | null
+  onRetry: () => void
   data?: UsersResponse
   page: number
   onPageChange: (page: number) => void
@@ -32,6 +35,9 @@ interface UserTableProps {
 
 export function UserTable({
   isLoading,
+  isError,
+  error,
+  onRetry,
   data,
   page,
   onPageChange,
@@ -41,13 +47,19 @@ export function UserTable({
 }: UserTableProps) {
   return (
     <div className="space-y-4">
+      {isError && (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <span>{error?.message || 'Failed to load user list'}</span>
+          <Button type="button" variant="outline" onClick={onRetry}>Retry</Button>
+        </div>
+      )}
       <Card className="border-border bg-card">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex justify-center items-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
             </div>
-          ) : !data || data.users.length === 0 ? (
+          ) : !data || (isError && data.users.length === 0) ? null : data.users.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
               No matching accounts found
             </div>

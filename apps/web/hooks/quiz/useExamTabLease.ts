@@ -5,17 +5,20 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 export interface ExamTabLeaseResult {
   isReadOnlyTab: boolean
   takeOverLease: () => void
+  canWrite: () => boolean
 }
 
 /**
- * Authoritative Multi-Tab Lease for active exam rooms (BroadcastChannel).
+ * Local multi-tab coordination for active quiz rooms (BroadcastChannel).
  * Ensures that only one active browser tab holds submission authority for a session.
  * If another tab opens or claims the session, this tab transitions to read-only mode.
  */
 export function useExamTabLease(sessionId: string, enabled = true): ExamTabLeaseResult {
-  const [isReadOnlyTab, setIsReadOnlyTab] = useState(false)
+  const [leaseState, setLeaseState] = useState({ sessionId: '', readOnly: true })
   const tabIdRef = useRef<string>('')
   const channelRef = useRef<BroadcastChannel | null>(null)
+  const authorityRef = useRef({ sessionId: '', writable: false })
+  const canWrite = useCallback(() => authorityRef.current.sessionId === sessionId && authorityRef.current.writable, [sessionId])
 
   if (!tabIdRef.current) {
     tabIdRef.current = typeof crypto !== 'undefined' && crypto.randomUUID
@@ -40,11 +43,15 @@ export function useExamTabLease(sessionId: string, enabled = true): ExamTabLease
   }, [sessionId])
 
   const takeOverLease = useCallback(() => {
-    setIsReadOnlyTab(false)
+    if (authorityRef.current.sessionId !== sessionId) return
+    authorityRef.current.writable = true
+    setLeaseState({ sessionId, readOnly: false })
     broadcastClaim(true)
-  }, [broadcastClaim])
+  }, [broadcastClaim, sessionId])
 
   useEffect(() => {
+    authorityRef.current = { sessionId, writable: Boolean(sessionId) }
+    setLeaseState({ sessionId, readOnly: false })
     if (!enabled || !sessionId || typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
       return
     }
@@ -57,10 +64,11 @@ export function useExamTabLease(sessionId: string, enabled = true): ExamTabLease
 
       const handleMessage = (event: MessageEvent) => {
         const data = event.data
-        if (!data || data.sessionId !== sessionId) return
+        if (!data || data.sessionId !== sessionId || authorityRef.current.sessionId !== sessionId) return
 
         if (data.type === 'CLAIM_LEASE' && data.tabId !== tabIdRef.current) {
-          setIsReadOnlyTab(true)
+          authorityRef.current.writable = false
+          setLeaseState({ sessionId, readOnly: true })
         }
       }
 
@@ -68,6 +76,7 @@ export function useExamTabLease(sessionId: string, enabled = true): ExamTabLease
       broadcastClaim(false)
 
       return () => {
+        authorityRef.current.writable = false
         channel?.removeEventListener('message', handleMessage)
         channel?.close()
         channelRef.current = null
@@ -77,5 +86,5 @@ export function useExamTabLease(sessionId: string, enabled = true): ExamTabLease
     }
   }, [enabled, sessionId, broadcastClaim])
 
-  return { isReadOnlyTab, takeOverLease }
+  return { isReadOnlyTab: leaseState.sessionId !== sessionId || leaseState.readOnly, takeOverLease, canWrite }
 }

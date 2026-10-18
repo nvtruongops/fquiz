@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
 import { useQuizDiagnostics } from './useQuizDiagnostics'
 import { useCourseCodeCheck } from './useCourseCodeCheck'
@@ -13,6 +14,7 @@ interface UseQuizEditorFormProps {
 
 export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [categoryId, setCategoryId] = useState(initialData?.category_id || '')
   const [description, setDescription] = useState(initialData?.description || '')
 
@@ -139,8 +141,8 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
         description: targetStatus === 'published' ? 'Quiz published successfully' : 'Draft saved successfully',
         type: 'success',
       })
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
       router.push('/quizzes')
-      router.refresh()
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, type: 'error' })
     } finally {

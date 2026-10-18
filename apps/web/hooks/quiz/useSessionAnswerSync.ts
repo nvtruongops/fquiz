@@ -1,9 +1,18 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { SessionData, SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { computeQuestionFeedback } from '@/lib/modules/quiz/feedback-utils'
+
+type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error'
+interface AnswerDraft {
+  answerIndexes: number[]
+  status: SaveStatus
+  feedback?: QuestionFeedback | null
+  acknowledged?: boolean
+  lastSaved?: { answerIndexes: number[]; feedback?: QuestionFeedback | null }
+}
 
 interface UseSessionAnswerSyncParams {
   activeData: SessionData | undefined
@@ -12,201 +21,123 @@ interface UseSessionAnswerSyncParams {
   preloadedQuestions: SessionQuestion[] | null
   submitAnswer: (vars: { questionIndex: number; answerIndexes: number[] }, opts?: any) => void
   isSubmitting: boolean
-}
-
-interface UseSessionAnswerSyncResult {
-  selectedOptions: number[]
-  setSelectedOptions: (opts: number[]) => void
-  submitted: boolean
-  feedbackByQuestion: Record<number, QuestionFeedback>
-  submitInImmediateMode: (answerIndexes: number[]) => void
-  handleSelectOption: (idx: number) => void
+  canWrite?: () => boolean
 }
 
 export function useSessionAnswerSync({
-  activeData,
-  currentQuestionIndex,
-  currentQuestion,
-  preloadedQuestions,
-  submitAnswer,
-  isSubmitting,
-}: UseSessionAnswerSyncParams): UseSessionAnswerSyncResult {
+  activeData, currentQuestionIndex, currentQuestion, preloadedQuestions,
+  submitAnswer, isSubmitting, canWrite = () => true,
+}: UseSessionAnswerSyncParams) {
   const { setLastAnswerResult } = useQuizSessionStore()
-  const [selectedOptions, setSelectedOptions] = useState<number[]>([])
-  const [submitted, setSubmitted] = useState(false)
-  const submittedRef = useRef(false)
-  const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<number, QuestionFeedback>>({})
-  const lastSyncedQuestionIndexRef = useRef<number | null>(null)
+  const sessionId = activeData?.session._id
+  const [draftState, setDraftState] = useState<{ sessionId?: string; answers: Record<number, AnswerDraft> }>({ answers: {} })
+  const drafts = draftState.sessionId === sessionId ? draftState.answers : {}
+  const draftsRef = useRef(drafts)
+  draftsRef.current = drafts
+  const sessionRef = useRef(sessionId)
+  sessionRef.current = sessionId
+  const permissionRef = useRef(canWrite)
+  permissionRef.current = canWrite
 
-  // Keep a ref of feedbackByQuestion so the effect can read it without re-triggering
-  const feedbackByQuestionRef = useRef(feedbackByQuestion)
-  feedbackByQuestionRef.current = feedbackByQuestion
+  const updateDraft = useCallback((index: number, draft: AnswerDraft) => {
+    const answers = { ...draftsRef.current, [index]: {
+      ...draft,
+      acknowledged: draft.status === 'saved' || draftsRef.current[index]?.acknowledged,
+      lastSaved: draft.status === 'saved'
+        ? { answerIndexes: draft.answerIndexes, feedback: draft.feedback }
+        : draftsRef.current[index]?.lastSaved,
+    } }
+    draftsRef.current = answers
+    setDraftState({ sessionId, answers })
+  }, [sessionId])
 
-  // Keep refs for unstable dependencies to avoid re-triggering the effect
-  const activeDataRef = useRef(activeData)
-  activeDataRef.current = activeData
-  const setLastAnswerResultRef = useRef(setLastAnswerResult)
-  setLastAnswerResultRef.current = setLastAnswerResult
+  const removeDraft = useCallback((index: number) => {
+    const answers = { ...draftsRef.current }
+    delete answers[index]
+    draftsRef.current = answers
+    setDraftState({ sessionId, answers })
+  }, [sessionId])
 
-  // Answer-sync effect — restore state when navigating between questions
-  // Only depends on currentQuestionIndex and currentQuestion identity
+  const existing = activeData?.session.user_answers.find((answer) => answer.question_index === currentQuestionIndex)
+  const draft = drafts[currentQuestionIndex]
+  const selectedOptions = useMemo(() => draft?.answerIndexes ?? (existing?.answer_indexes?.length ? existing.answer_indexes : existing ? [existing.answer_index] : []), [draft, existing])
+  const isImmediate = activeData?.session.mode === 'immediate'
+  const submitted = Boolean(isImmediate && (draft ? draft.status === 'saving' || draft.status === 'saved' : existing))
+  const feedback = useMemo(() => submitted
+    ? draft?.feedback ?? (existing ? {
+        isCorrect: existing.is_correct,
+        correctAnswer: Array.isArray(currentQuestion?.correct_answer) ? currentQuestion.correct_answer[0] : currentQuestion?.correct_answer ?? (existing.is_correct ? selectedOptions[0] : -1),
+        correctAnswers: Array.isArray(currentQuestion?.correct_answer) ? currentQuestion.correct_answer : currentQuestion?.correct_answer !== undefined ? [currentQuestion.correct_answer] : existing.is_correct ? selectedOptions : [],
+        explanation: currentQuestion?.explanation,
+      } : null)
+    : null, [submitted, draft, existing, currentQuestion, selectedOptions])
+
   useEffect(() => {
-    const data = activeDataRef.current
-    if (!data?.session) return
+    setLastAnswerResult(feedback)
+    // Feedback belongs to the visible question; late callbacks only update its draft.
+  }, [sessionId, currentQuestionIndex, feedback, setLastAnswerResult])
 
-    // Guard: skip if already synced for this question index
-    if (lastSyncedQuestionIndexRef.current === currentQuestionIndex) return
-    lastSyncedQuestionIndexRef.current = currentQuestionIndex
+  const hasUnsavedAnswers = useCallback(() =>
+    Object.values(draftsRef.current).some((answer) => answer.status !== 'saved'), [])
 
-    const state = getRestoredAnswerState(data, currentQuestionIndex, currentQuestion, feedbackByQuestionRef.current)
-
-    if (state.hasAnswer) {
-      setSelectedOptions(state.restored)
-      setSubmitted(state.submitted)
-      submittedRef.current = state.submitted
-      if (state.feedback) {
-        setFeedbackByQuestion((prev) => {
-          const existing = prev[currentQuestionIndex]
-          if (existing && existing.isCorrect === state.feedback!.isCorrect && existing.correctAnswer === state.feedback!.correctAnswer) return prev
-          return { ...prev, [currentQuestionIndex]: state.feedback! }
-        })
-      }
-      setLastAnswerResultRef.current(state.feedback)
-    } else if (state.useLocalFeedback) {
-      setSubmitted(true)
-      submittedRef.current = true
-      setLastAnswerResultRef.current(state.feedback)
-    } else {
-      setSelectedOptions([])
-      setSubmitted(false)
-      submittedRef.current = false
-      setLastAnswerResultRef.current(null)
-    }
-  }, [currentQuestionIndex, currentQuestion])
-
-  const submitInImmediateMode = useCallback((answerIndexes: number[]) => {
-    if (!activeData?.session || submittedRef.current) return
-    submittedRef.current = true
-    setSubmitted(true)
-
-    const feedback = computeQuestionFeedback(
-      preloadedQuestions?.[currentQuestionIndex]?.correct_answer,
+  const saveAnswer = useCallback((questionIndex: number, answerIndexes: number[]) => {
+    if (!sessionId || !permissionRef.current() || isSubmitting || Object.values(draftsRef.current).some((answer) => answer.status === 'saving')) return
+    const pending: AnswerDraft = {
       answerIndexes,
-      preloadedQuestions?.[currentQuestionIndex]?.explanation,
-    )
-    if (feedback) {
-      setFeedbackByQuestion((prev) => ({ ...prev, [currentQuestionIndex]: feedback }))
-      setLastAnswerResult(feedback)
+      status: 'saving',
+      feedback: isImmediate ? computeQuestionFeedback(preloadedQuestions?.[questionIndex]?.correct_answer, answerIndexes, preloadedQuestions?.[questionIndex]?.explanation) : null,
     }
-
-    submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes }, {
+    updateDraft(questionIndex, pending)
+    submitAnswer({ questionIndex, answerIndexes }, {
       onSuccess: (data: any) => {
-        if ('isCorrect' in data) {
-          const fb: QuestionFeedback = {
-            isCorrect: data.isCorrect,
-            correctAnswer: data.correctAnswer,
-            correctAnswers: data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : []),
-            explanation: data.explanation,
-          }
-          setFeedbackByQuestion((prev) => ({
-            ...prev,
-            [currentQuestionIndex]: fb,
-          }))
-          setLastAnswerResult(fb)
-        }
+        if (sessionRef.current !== sessionId) return
+        const feedback = 'isCorrect' in data ? {
+          isCorrect: data.isCorrect,
+          correctAnswer: data.correctAnswer,
+          correctAnswers: data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : []),
+          explanation: data.explanation,
+        } : pending.feedback
+        updateDraft(questionIndex, { ...pending, status: 'saved', feedback })
       },
       onError: () => {
-        submittedRef.current = false
-        setSubmitted(false)
+        if (sessionRef.current === sessionId) updateDraft(questionIndex, { ...pending, status: 'error' })
       },
     })
-  }, [activeData?.session, currentQuestionIndex, preloadedQuestions, setLastAnswerResult, submitAnswer])
+  }, [sessionId, isSubmitting, isImmediate, preloadedQuestions, updateDraft, submitAnswer])
 
-  const handleSelectOption = useCallback((idx: number) => {
-    if (!activeData?.session || submitted || isSubmitting) return
+  const handleSelectOption = useCallback((index: number) => {
+    if (!activeData?.session || !permissionRef.current() || submitted || isSubmitting || Object.values(draftsRef.current).some((answer) => answer.status === 'saving')) return
     const required = Math.max(activeData.question.answer_selection_count ?? 1, 1)
-    const exists = selectedOptions.includes(idx)
-    let nextSelections: number[]
-    if (required === 1 && activeData.session.mode === 'review') nextSelections = [idx]
-    else if (exists) nextSelections = selectedOptions.filter((v) => v !== idx)
-    else if (selectedOptions.length >= required) nextSelections = selectedOptions
-    else nextSelections = [...selectedOptions, idx].sort((a, b) => a - b)
-
-    if (JSON.stringify(nextSelections) === JSON.stringify(selectedOptions)) return
-    setSelectedOptions(nextSelections)
-    if (nextSelections.length === required) {
-      if (activeData.session.mode === 'immediate') submitInImmediateMode(nextSelections)
-      else submitAnswer({ questionIndex: currentQuestionIndex, answerIndexes: nextSelections })
+    const next = required === 1 && !isImmediate ? [index]
+      : selectedOptions.includes(index) ? selectedOptions.filter((option) => option !== index)
+      : selectedOptions.length < required ? [...selectedOptions, index].sort((a, b) => a - b) : selectedOptions
+    if (JSON.stringify(next) === JSON.stringify(selectedOptions)) return
+    if (next.length === 0 && !existing && draftsRef.current[currentQuestionIndex]?.status === 'unsaved' && !draftsRef.current[currentQuestionIndex]?.acknowledged) {
+      removeDraft(currentQuestionIndex)
+      return
     }
-  }, [activeData?.session, activeData?.question, submitted, isSubmitting, selectedOptions, currentQuestionIndex, submitAnswer, submitInImmediateMode])
+    updateDraft(currentQuestionIndex, { answerIndexes: next, status: 'unsaved' })
+    if (next.length === required) saveAnswer(currentQuestionIndex, next)
+  }, [activeData, submitted, isSubmitting, isImmediate, selectedOptions, currentQuestionIndex, existing, removeDraft, updateDraft, saveAnswer])
 
-  return {
-    selectedOptions,
-    setSelectedOptions,
-    submitted,
-    feedbackByQuestion,
-    submitInImmediateMode,
-    handleSelectOption,
-  }
-}
+  const discardUnsavedAnswer = useCallback(() => {
+    if (!permissionRef.current()) return
+    const entry = Object.entries(draftsRef.current).find(([, answer]) => answer.status === 'unsaved')
+    if (!entry) return
+    const [index, answer] = entry
+    if (answer.lastSaved) updateDraft(Number(index), { ...answer.lastSaved, status: 'saved' })
+    else removeDraft(Number(index))
+  }, [removeDraft, updateDraft])
 
-function getRestoredAnswerState(
-  activeData: any,
-  currentQuestionIndex: number,
-  currentQuestion: any,
-  feedbackByQuestion: Record<number, QuestionFeedback>,
-) {
-  const existing = activeData?.session?.user_answers?.find((a: any) => a.question_index === currentQuestionIndex)
-  if (existing) {
-    const restored = existing.answer_indexes && existing.answer_indexes.length > 0
-      ? existing.answer_indexes : [existing.answer_index]
-    const isImmediate = activeData?.session?.mode === 'immediate'
-    let feedback = isImmediate ? feedbackByQuestion[currentQuestionIndex] : undefined
-    if (isImmediate && !feedback) {
-      if (currentQuestion?.correct_answer !== undefined) {
-        const correctAnswerIndexes = Array.isArray(currentQuestion.correct_answer)
-          ? currentQuestion.correct_answer : [currentQuestion.correct_answer]
-        feedback = {
-          isCorrect: existing.is_correct,
-          correctAnswer: correctAnswerIndexes[0],
-          correctAnswers: correctAnswerIndexes,
-          explanation: currentQuestion.explanation,
-        }
-      } else if (existing.is_correct !== undefined) {
-        const correctAnswers = existing.is_correct ? restored : []
-        feedback = {
-          isCorrect: existing.is_correct,
-          correctAnswer: correctAnswers[0],
-          correctAnswers,
-          explanation: currentQuestion?.explanation || '',
-        }
-      }
-    }
-    return {
-      hasAnswer: true,
-      restored,
-      submitted: isImmediate,
-      feedback: feedback ?? null,
-      useLocalFeedback: false,
-    }
-  }
+  const retryFailedAnswer = useCallback(() => {
+    const failed = Object.entries(draftsRef.current).find(([, answer]) => answer.status === 'error')
+    if (failed) saveAnswer(Number(failed[0]), failed[1].answerIndexes)
+  }, [saveAnswer])
 
-  const localFeedback = activeData?.session?.mode === 'immediate' ? feedbackByQuestion[currentQuestionIndex] : undefined
-  if (localFeedback) {
-    return {
-      hasAnswer: false,
-      restored: [],
-      submitted: true,
-      feedback: localFeedback,
-      useLocalFeedback: true,
-    }
-  }
+  const statuses = Object.values(drafts).map((answer) => answer.status)
+  const saveStatus: SaveStatus = statuses.includes('saving') ? 'saving' : statuses.includes('error') ? 'error' : statuses.includes('unsaved') ? 'unsaved' : draft?.status ?? (existing ? 'saved' : 'idle')
+  const unsavedQuestionIndex = Object.entries(drafts).find(([, answer]) => answer.status === 'unsaved')?.[0]
+  const acknowledgedQuestions = new Set(Object.entries(drafts).filter(([, answer]) => answer.acknowledged).map(([index]) => Number(index)))
 
-  return {
-    hasAnswer: false,
-    restored: [],
-    submitted: false,
-    feedback: null,
-    useLocalFeedback: false,
-  }
+  return { selectedOptions, submitted, handleSelectOption, saveStatus, retryFailedAnswer, hasUnsavedAnswers, discardUnsavedAnswer, unsavedQuestionIndex: unsavedQuestionIndex === undefined ? null : Number(unsavedQuestionIndex), acknowledgedQuestions }
 }

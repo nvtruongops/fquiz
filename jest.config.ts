@@ -1,11 +1,10 @@
 import type { Config } from 'jest'
 
-const config: Config = {
+const sharedConfig: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jest-environment-node',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/apps/web/$1',
     '^@fquiz/database$': '<rootDir>/packages/database/src/index.ts',
     '^@fquiz/database/(.*)$': '<rootDir>/packages/database/src/$1',
     '^@fquiz/models$': '<rootDir>/packages/models/src/index.ts',
@@ -29,12 +28,6 @@ const config: Config = {
       },
     }],
   },
-  testMatch: [
-    '**/__tests__/**/*.test.ts',
-    '**/__tests__/**/*.test.tsx',
-    '**/*.test.ts',
-    '**/*.test.tsx',
-  ],
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/.kilo/', '/.codeql-db/'],
   watchPathIgnorePatterns: [
     '<rootDir>/node_modules/',
@@ -46,6 +39,30 @@ const config: Config = {
   modulePathIgnorePatterns: ['<rootDir>/.codeql-db', '<rootDir>/.next'],
   transformIgnorePatterns: [
     '/node_modules/(?!(jose)/)',
+  ],
+}
+
+const config: Config = {
+  projects: [
+    {
+      ...sharedConfig,
+      displayName: 'web',
+      testMatch: ['<rootDir>/apps/web/**/*.test.ts', '<rootDir>/apps/web/**/*.test.tsx'],
+      moduleNameMapper: { '^@/(.*)$': '<rootDir>/apps/web/$1', ...sharedConfig.moduleNameMapper },
+    },
+    {
+      ...sharedConfig,
+      displayName: 'admin',
+      testMatch: ['<rootDir>/apps/admin/**/*.test.ts', '<rootDir>/apps/admin/**/*.test.tsx'],
+      moduleNameMapper: { '^@/(.*)$': '<rootDir>/apps/admin/$1', ...sharedConfig.moduleNameMapper },
+    },
+    {
+      ...sharedConfig,
+      displayName: 'shared',
+      testMatch: ['<rootDir>/**/*.test.ts', '<rootDir>/**/*.test.tsx'],
+      testPathIgnorePatterns: [...sharedConfig.testPathIgnorePatterns!, '<rootDir>/apps/web/', '<rootDir>/apps/admin/'],
+      moduleNameMapper: { '^@/(.*)$': '<rootDir>/apps/web/$1', ...sharedConfig.moduleNameMapper },
+    },
   ],
   reporters: ['default'],
   // Coverage thresholds
