@@ -135,11 +135,28 @@ export function useSubmitAnswer(sessionId: string, canWrite: () => boolean = () 
         })
       }
 
-      // Defer session invalidation to keep user_answers in sync for navigation without blocking UI
-      if (timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sessions', requestSessionId, 'initial'] })
-      }, 500)
+      // Optimistically update session user_answers in React Query cache without triggering a background server refetch
+      queryClient.setQueryData<any>(['sessions', requestSessionId, 'initial'], (old: any) => {
+        if (!old?.session) return old
+        const existingAnswers = Array.isArray(old.session.user_answers) ? old.session.user_answers : []
+        const existingIndex = existingAnswers.findIndex((a: any) => a.question_index === context.questionIndex)
+        const updatedAnswer = {
+          question_index: context.questionIndex,
+          answer_index: _variables.answerIndexes[0],
+          answer_indexes: _variables.answerIndexes,
+          is_correct: 'isCorrect' in data ? data.isCorrect : false,
+        }
+        const updatedUserAnswers = existingIndex >= 0
+          ? existingAnswers.map((a: any, i: number) => i === existingIndex ? updatedAnswer : a)
+          : [...existingAnswers, updatedAnswer]
+        return {
+          ...old,
+          session: {
+            ...old.session,
+            user_answers: updatedUserAnswers,
+          },
+        }
+      })
     },
 
     onError: (error, _variables, context) => {
