@@ -29,7 +29,7 @@
 
 - [x] Confirm each client page retains its own query-backed skeleton.
 - [x] Remove route fallbacks so each loading state has one owner.
-- [x] Verify production quiz and session page GETs return 200; warm request times were 504 ms and 187 ms in `sin1`.
+- [x] Verify final production quiz and session page GETs return 200 in `sin1`; timings were 1.83 s / 0.48 s for quiz and 0.49 s / 0.41 s for session (first / warm).
 
 ### Task 2: Make pending answers visibly responsive and measurable
 
@@ -63,6 +63,6 @@
 ### Task 5: Verify, deploy, and smoke-test
 
 - [x] Run lint, typecheck, strict verification, and all tests. `npm test -- --maxWorkers=2` passed all 562 tests; strict verification passed 18 checks. Lint and typecheck exited 0; lint reported 158 existing warnings.
-- [ ] Deploy the final committed source to production with Vercel CLI and `--regions sin1`; inspect the new deployment region.
-- [ ] Smoke-test production quiz/session page GETs (200) and verify `Server-Timing` in the answer route test. Do not submit to the user's live session; no isolated production answer session is configured.
-- [ ] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
+- [x] Deploy production commit `d966e59` with Vercel CLI and `--regions sin1`; inspect deployment `dpl_HHLDE5YPmEHFSWvLgDbjjJsYisxS`, whose server functions are in `sin1`.
+- [x] Smoke-test production quiz/session page GETs (200) and verify `Server-Timing` in the answer route test. No production answer POST was sent because the available session belongs to the user and no isolated test session is configured.
+- [x] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
