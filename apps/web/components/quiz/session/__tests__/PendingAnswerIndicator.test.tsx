@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { PendingAnswerIndicator } from '../PendingAnswerIndicator'
 
 describe('PendingAnswerIndicator', () => {
-  it('announces a pending immediate answer without revealing correctness', () => {
+  it('announces answer checking before immediate feedback is available', () => {
     const markup = renderToStaticMarkup(React.createElement(PendingAnswerIndicator, {
       mode: 'immediate',
       submitted: true,
@@ -17,7 +17,18 @@ describe('PendingAnswerIndicator', () => {
     expect(markup).not.toContain('Incorrect')
   })
 
-  it('stays hidden for review mode or after server feedback arrives', () => {
+  it('announces answer saving while immediate feedback is already visible', () => {
+    const markup = renderToStaticMarkup(React.createElement(PendingAnswerIndicator, {
+      mode: 'immediate',
+      submitted: true,
+      isPending: true,
+      showImmediateFeedback: true,
+    }))
+
+    expect(markup).toContain('Saving answer')
+  })
+
+  it('stays hidden for review mode or after the answer request completes', () => {
     const review = renderToStaticMarkup(React.createElement(PendingAnswerIndicator, {
       mode: 'review',
       submitted: true,
