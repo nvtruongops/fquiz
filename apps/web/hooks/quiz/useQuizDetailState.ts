@@ -233,24 +233,14 @@ export function useQuizDetailState() {
       const sessionData = await res.json()
 
       if (sessionData.sessionId) {
-        try {
-          updateStatus('Preparing question set...')
-          const [qRes, sRes] = await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`),
-            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${sessionData.sessionId}`),
-          ])
-
-          if (qRes.ok) {
-            const qData = await qRes.json()
-            sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
-          }
-          if (sRes.ok) {
-            const sData = await sRes.json()
-            sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sData))
-          }
-        } catch (e) {
-          console.warn('Pre-load failed', e)
-        }
+        // Non-blocking background preload to warm cache without halting UI navigation
+        Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`).then(r => r.ok ? r.json() : null),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${sessionData.sessionId}`).then(r => r.ok ? r.json() : null),
+        ]).then(([qData, sData]) => {
+          if (qData) sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
+          if (sData) sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sData))
+        }).catch(() => {})
       }
 
       return sessionData as CreateSessionResponse
@@ -268,7 +258,7 @@ export function useQuizDetailState() {
           : `/quiz/${quizId}/session/${nextSessionId}`
 
       completeLoading()
-      setTimeout(() => router.push(targetUrl), 200)
+      router.push(targetUrl)
     },
     onError: (err: StartSessionError) => {
       stopLoading()

@@ -85,10 +85,11 @@ async function tryPersistAnswerIteration(
   sessionId: string | mongoose.Types.ObjectId,
   userAnswer: UserAnswer,
   options: PersistAnswerOptions,
-  select: string
+  select: string,
+  providedSession?: any
 ): Promise<{ success: boolean; score: number | null }> {
   const { updateScore, isLast, nextIndex, questionIndex, isCorrect } = options
-  const currentSession = await QuizSession.findById(sessionId).select(select).lean()
+  const currentSession = providedSession || await QuizSession.findById(sessionId).select(select).lean()
   if (!currentSession) throw new Error('Session not found')
 
   const updatedAnswers = upsertAnswer(currentSession.user_answers || [], userAnswer)
@@ -129,12 +130,14 @@ async function tryPersistAnswerIteration(
 async function persistAnswerWithOCC(
   sessionId: string | mongoose.Types.ObjectId,
   userAnswer: UserAnswer,
-  options: PersistAnswerOptions
+  options: PersistAnswerOptions,
+  cachedSession?: any
 ): Promise<{ score: number | null }> {
   const select = options.updateScore ? 'answer_version user_answers score' : 'answer_version user_answers'
   let retries = 3
   while (retries > 0) {
-    const { success, score } = await tryPersistAnswerIteration(sessionId, userAnswer, options, select)
+    const sessionToUse = retries === 3 && cachedSession?.answer_version !== undefined ? cachedSession : undefined
+    const { success, score } = await tryPersistAnswerIteration(sessionId, userAnswer, options, select, sessionToUse)
     if (success) return { score }
     retries--
     if (retries === 0) {
@@ -256,7 +259,7 @@ export async function processImmediateAnswer(
       nextIndex,
       questionIndex,
       isCorrect,
-    })
+    }, session)
 
     return {
       isCorrect,
@@ -349,7 +352,7 @@ export async function processReviewAnswer(
         nextIndex,
         questionIndex,
         isCorrect,
-      })
+      }, session)
 
       // Return next question with correct_answer and explanation stripped (Req 12.1, 12.3)
       const nextActualQuestionIndex = resolvedOrder[nextIndex]
@@ -380,7 +383,7 @@ export async function processReviewAnswer(
       nextIndex,
       questionIndex,
       isCorrect,
-    })
+    }, session)
 
     return { completed: false, score: score ?? 0 }
   } catch (err) {

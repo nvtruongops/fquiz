@@ -24,7 +24,17 @@ export type QuestionUsageQuery = string | QuestionUsageQueryItem
  * 3. Supports lookup by exact question_id AND question text to bridge QuestionBank cache and Quiz collection seamlessly.
  * 4. Combines results from both QuestionBank (denormalized fast cache) and direct Quiz collection queries.
  */
+const usageCache = new Map<string, { result: QuestionUsageResult; expiresAt: number }>()
+const USAGE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
 export class QuestionUsageService {
+  /**
+   * Clear in-memory cache (useful for testing or cache resets)
+   */
+  static clearCache(): void {
+    usageCache.clear()
+  }
+
   /**
    * Normalize course code and filter out invalid/temporary codes
    */
@@ -63,12 +73,37 @@ export class QuestionUsageService {
     }
 
     const validCurrentCode = this.normalizeCourseCode(currentCourseCode)
+    const now = Date.now()
 
-    // Extract valid search keys
+    // 1. Resolve from in-memory cache first
+    const missingItems: QuestionUsageQuery[] = []
+    for (const item of items) {
+      const qId = typeof item === 'string' ? item.trim() : (item?.question_id || '').trim()
+      const qText = typeof item === 'object' && item?.text ? item.text.trim() : ''
+      const cacheKey = `${validCurrentCode || ''}:${qId || qText}`
+
+      const cached = usageCache.get(cacheKey)
+      if (cached && cached.expiresAt > now) {
+        if (typeof item === 'string') {
+          resultMap.set(item, cached.result)
+        } else if (item && typeof item === 'object') {
+          if (item.question_id) resultMap.set(item.question_id, cached.result)
+          if (item.text) resultMap.set(item.text, cached.result)
+        }
+      } else {
+        missingItems.push(item)
+      }
+    }
+
+    if (missingItems.length === 0) {
+      return resultMap
+    }
+
+    // Extract valid search keys from items not in cache
     const validIds: string[] = []
     const validTexts: string[] = []
 
-    for (const item of items) {
+    for (const item of missingItems) {
       if (typeof item === 'string') {
         const trimmed = item.trim()
         if (trimmed.length > 0) validIds.push(trimmed)
@@ -115,7 +150,7 @@ export class QuestionUsageService {
     ])
 
     // Aggregate matches for each item
-    for (const item of items) {
+    for (const item of missingItems) {
       const qId = typeof item === 'string' ? item.trim() : (item?.question_id || '').trim()
       const qText = typeof item === 'object' && item?.text ? item.text.trim() : ''
 
@@ -166,9 +201,16 @@ export class QuestionUsageService {
 
       if (typeof item === 'string') {
         resultMap.set(item, usageResult)
+        usageCache.set(`${validCurrentCode || ''}:${item}`, { result: usageResult, expiresAt: now + USAGE_CACHE_TTL_MS })
       } else if (item && typeof item === 'object') {
-        if (item.question_id) resultMap.set(item.question_id, usageResult)
-        if (item.text) resultMap.set(item.text, usageResult)
+        if (item.question_id) {
+          resultMap.set(item.question_id, usageResult)
+          usageCache.set(`${validCurrentCode || ''}:${item.question_id}`, { result: usageResult, expiresAt: now + USAGE_CACHE_TTL_MS })
+        }
+        if (item.text) {
+          resultMap.set(item.text, usageResult)
+          usageCache.set(`${validCurrentCode || ''}:${item.text}`, { result: usageResult, expiresAt: now + USAGE_CACHE_TTL_MS })
+        }
       }
     }
 
