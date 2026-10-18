@@ -54,6 +54,7 @@ describe('installed query-core pending mutation session identity', () => {
   })
 
   it('does not navigate to s2 results for an s1 finalization response', async () => {
+    const invalidateQueries = jest.spyOn(mockClient, 'invalidateQueries')
     let finish!: (value: any) => void
     const started = new Promise<void>((resolve) => {
       global.fetch = jest.fn(() => {
@@ -70,5 +71,29 @@ describe('installed query-core pending mutation session identity', () => {
     finish({ ok: true, json: async () => ({ completed: true, score: 1, totalQuestions: 1 }) })
     await pending
     expect(mockEvents).toEqual(['submit:s1'])
+    expect(invalidateQueries).not.toHaveBeenCalled()
+  })
+
+  it('invalidates dashboard and history before navigating after current-session finalization', async () => {
+    global.fetch = jest.fn(async () => {
+      mockEvents.push('submit:s1')
+      return { ok: true, json: async () => ({ completed: true, score: 1, totalQuestions: 1 }) }
+    }) as any
+    const invalidateQueries = jest.spyOn(mockClient, 'invalidateQueries').mockImplementation(async ({ queryKey }: any) => {
+      mockEvents.push(`invalidate:${JSON.stringify(queryKey)}`)
+    })
+    const options = renderHook(() => useSessionFinalize({ sessionId: 's1', quizId: 'q1' })).finalizeMutation as any
+    const observer = new MutationObserver(mockClient, options)
+
+    await observer.mutate(undefined)
+
+    expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ['student', 'dashboard'] })
+    expect(invalidateQueries).toHaveBeenNthCalledWith(2, { queryKey: ['history'] })
+    expect(mockEvents).toEqual([
+      'submit:s1',
+      'invalidate:["student","dashboard"]',
+      'invalidate:["history"]',
+      'navigate:/quiz/q1/result/s1',
+    ])
   })
 })
