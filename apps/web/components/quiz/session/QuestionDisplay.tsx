@@ -164,10 +164,10 @@ function StandardQuestionView({
           {/* Checkbox / Radio list for A, B, C, D */}
           <div className="space-y-3 flex flex-col items-center justify-start pt-2">
             {question.options.map((_, idx) => {
+              const letter = String.fromCharCode(65 + idx)
               const isSelected = selectedOptions.includes(idx)
               const isFocused = focusedOption === idx
-              const letter = String.fromCodePoint(65 + idx)
-              const isDisabled = submitted || isPending
+              const isDisabled = submitted
 
               return (
                 <label
@@ -480,7 +480,7 @@ function AnimatedQuestionView({
             const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
             const isFocused = focusedOption === idx
             const optionKey = `${idx}-${option}`
-            const isAnswerDisabled = submitted || isPending
+            const isAnswerDisabled = submitted
             const isNoteActive = Boolean(isNoteMode)
 
             return (

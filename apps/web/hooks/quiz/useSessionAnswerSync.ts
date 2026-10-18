@@ -81,7 +81,7 @@ export function useSessionAnswerSync({
     Object.values(draftsRef.current).some((answer) => answer.status !== 'saved'), [])
 
   const saveAnswer = useCallback((questionIndex: number, answerIndexes: number[]) => {
-    if (!sessionId || !permissionRef.current() || isSubmitting || Object.values(draftsRef.current).some((answer) => answer.status === 'saving')) return
+    if (!sessionId || !permissionRef.current() || draftsRef.current[questionIndex]?.status === 'saving') return
     const pending: AnswerDraft = {
       answerIndexes,
       status: 'saving',
@@ -103,10 +103,10 @@ export function useSessionAnswerSync({
         if (sessionRef.current === sessionId) updateDraft(questionIndex, { ...pending, status: 'error' })
       },
     })
-  }, [sessionId, isSubmitting, isImmediate, preloadedQuestions, updateDraft, submitAnswer])
+  }, [sessionId, isImmediate, preloadedQuestions, updateDraft, submitAnswer])
 
   const handleSelectOption = useCallback((index: number) => {
-    if (!activeData?.session || !permissionRef.current() || submitted || isSubmitting || Object.values(draftsRef.current).some((answer) => answer.status === 'saving')) return
+    if (!activeData?.session || !permissionRef.current() || submitted || draftsRef.current[currentQuestionIndex]?.status === 'saving') return
     const required = Math.max(activeData.question.answer_selection_count ?? 1, 1)
     const next = required === 1 && !isImmediate ? [index]
       : selectedOptions.includes(index) ? selectedOptions.filter((option) => option !== index)

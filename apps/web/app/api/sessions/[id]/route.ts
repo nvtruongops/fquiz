@@ -196,14 +196,20 @@ export const GET = withAuth(async (
 
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
-    const questionId = (rawQuestion as any).question_id || generateQuestionId(rawQuestion as any)
-    const usageInfo = await QuestionUsageService.getQuestionPublicUsage(
-      {
-        question_id: questionId,
-        text: rawQuestion.text,
-      },
-      quiz?.course_code
-    )
+    let usageCount = (rawQuestion as any).usage_count ?? 1
+    let usedInQuizzes: string[] = (rawQuestion as any).used_in_quizzes ?? []
+    if ((rawQuestion as any).usage_count === undefined) {
+      const questionId = (rawQuestion as any).question_id || generateQuestionId(rawQuestion as any)
+      const usageInfo = await QuestionUsageService.getQuestionPublicUsage(
+        {
+          question_id: questionId,
+          text: rawQuestion.text,
+        },
+        quiz?.course_code
+      )
+      usageCount = usageInfo.count
+      usedInQuizzes = usageInfo.quizzes
+    }
 
     const isCompleted = session.status === 'completed'
     const isFlashcardMode = session.mode === 'flashcard'
@@ -216,8 +222,8 @@ export const GET = withAuth(async (
     return NextResponse.json({
       session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
       question: formatQuestionResponse(rawQuestion, shouldShowAnswers, {
-        usage_count: usageInfo.count,
-        used_in_quizzes: usageInfo.quizzes,
+        usage_count: usageCount,
+        used_in_quizzes: usedInQuizzes,
       }),
     }, { status: 200 })
   } catch (err) {

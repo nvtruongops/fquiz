@@ -95,7 +95,7 @@ export function useQuizSessionQueries(
     },
     enabled: resolvedSessionId.length > 0 &&
              resolvedSessionId !== 'undefined' &&
-             initialData?.session.status !== 'preparing',
+             (initialData ? initialData.session.status !== 'preparing' : true),
     staleTime: Infinity,
     retry: (failureCount, error) => {
       const err = error as SessionApiError
