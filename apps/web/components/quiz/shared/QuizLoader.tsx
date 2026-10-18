@@ -94,10 +94,10 @@ export function useQuizLoader() {
 
 // ── Standalone hook for session pages (manages its own 0→100 animation) ──
 
-export function useSessionLoader() {
+export function useSessionLoader(initiallyOpen = false) {
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(initiallyOpen)
   const openedAtRef = useRef<number>(0)
   const isNavigatingRef = useRef(false) // Prevents auto-close during navigation
 
@@ -138,11 +138,7 @@ export function useSessionLoader() {
   }, [])
 
   const complete = useCallback(() => {
-    const elapsed = Date.now() - openedAtRef.current
-    const delayNeeded = Math.max(0, 600 - elapsed)
-    setTimeout(() => {
-      setProgress(100)
-    }, delayNeeded)
+    setProgress(100)
   }, [])
 
   // Complete to 100%, wait for it to display, then navigate.

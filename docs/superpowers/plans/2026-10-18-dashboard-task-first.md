@@ -85,6 +85,6 @@
 - Deploy only the root-linked `fquiz` Web project to `https://fquiz-web.vercel.app`.
 
 - [x] Confirm the correct root `.vercel/project.json` project ID.
-- [ ] Commit the verified changes and push the current feature branch.
-- [ ] Deploy with `npx vercel --prod --yes --scope nvtruongops` from the monorepo root.
-- [ ] Verify deployment status and public route response without claiming an authenticated visual test.
+- [x] Commit the verified changes and push the current feature branch.
+- [x] Deploy with `npx vercel --prod --yes --scope nvtruongops` from the monorepo root.
+- [x] Verify deployment status and public route response without claiming an authenticated visual test.

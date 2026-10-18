@@ -23,6 +23,7 @@ interface SessionLayoutProps {
   submitted: boolean
   isPending: boolean
   answersDisabled?: boolean
+  navigationDisabled?: boolean
   submitDisabled?: boolean
   isReadOnlyTab: boolean
   takeOverLease: () => void
@@ -44,6 +45,7 @@ export const SessionLayout = React.memo(function SessionLayout({
   submitted,
   isPending,
   answersDisabled,
+  navigationDisabled,
   submitDisabled,
   isReadOnlyTab,
   takeOverLease,
@@ -91,6 +93,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         onToggleNoteMode: handleToggleNoteMode,
         focusedOption,
         onNavigate,
+        navigationDisabled,
         onSubmit,
         onExit,
       } as any)
@@ -152,6 +155,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         {enableAnimation && (
           <QuizSidebar
             onNavigate={onNavigate}
+            navigationDisabled={navigationDisabled}
             onSubmit={onSubmit}
             onExit={onExit}
             currentIndex={currentQuestionIndex}

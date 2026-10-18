@@ -55,4 +55,64 @@ test.describe('Quiz Session Runner Interactive Experience', () => {
     // Option should receive selected or active highlight styling
     await expect(optionA).toBeVisible()
   })
+
+  test('shows the mobile current question before the full question preload finishes', async ({ page }) => {
+    let preloadFinished = false
+    await page.addInitScript(() => {
+      const trackedWindow = window as Window & {
+        __QUIZ_LOADER_ACTIVE_UNTIL__?: number
+        __quizSessionSkeletonSeen?: boolean
+      }
+      trackedWindow.__QUIZ_LOADER_ACTIVE_UNTIL__ = Date.now() + 5000
+      trackedWindow.__quizSessionSkeletonSeen = false
+
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('[data-testid="quiz-session-skeleton"]')) {
+          trackedWindow.__quizSessionSkeletonSeen = true
+        }
+      })
+      observer.observe(document, { childList: true, subtree: true })
+    })
+
+    await mockQuizSession(page, {
+      quizId: mockQuizId,
+      sessionId: mockSessionId,
+      mode: 'immediate',
+      questions: mockQuestions,
+      isGuest: true,
+      questionsDelayMs: 1800,
+      onQuestionsFulfilled: () => { preloadFinished = true },
+    })
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}/mobile`)
+
+    await expect(page.getByText(mockQuestions[0].text, { exact: true })).toBeVisible({ timeout: 1000 })
+    await expect(page.getByText('Please wait a moment • Loading Quiz Session', { exact: true }))
+      .toBeHidden({ timeout: 1000 })
+    expect(preloadFinished).toBe(false)
+    expect(await page.evaluate(() => (window as any).__quizSessionSkeletonSeen)).toBe(false)
+    await expect.poll(() => preloadFinished, { timeout: 2500 }).toBe(true)
+  })
+
+  test('shows answer checking immediately while the answer request is pending', async ({ page }) => {
+    await mockQuizSession(page, {
+      quizId: mockQuizId,
+      sessionId: mockSessionId,
+      mode: 'immediate',
+      questions: mockQuestions,
+      isGuest: true,
+      answerDelayMs: 1800,
+    })
+    await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}`)
+
+    const optionA = page.getByText(mockQuestions[0].options[0], { exact: true })
+    await expect(optionA).toBeVisible()
+    await optionA.click()
+
+    const pendingStatus = page.getByRole('status').filter({ hasText: 'Checking answer' })
+    await expect(pendingStatus).toBeVisible({ timeout: 300 })
+    await expect(page.getByText('Correct answer', { exact: true })).toBeVisible({ timeout: 3000 })
+    await expect(pendingStatus).toBeHidden()
+  })
 })

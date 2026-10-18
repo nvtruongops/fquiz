@@ -11,6 +11,7 @@ interface MobileSessionFooterProps {
   onNavigate: (index: number) => void
   onSubmit: () => void
   submitDisabled?: boolean
+  navigationDisabled?: boolean
 }
 
 export function MobileSessionFooter({
@@ -20,6 +21,7 @@ export function MobileSessionFooter({
   onNavigate,
   onSubmit,
   submitDisabled,
+  navigationDisabled = false,
 }: MobileSessionFooterProps) {
   return (
     <footer className="sticky bottom-0 z-10 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg text-card-foreground">
@@ -38,7 +40,7 @@ export function MobileSessionFooter({
         <Button
           type="button"
           variant="outline"
-          disabled={effectiveIndex <= 0}
+          disabled={navigationDisabled || effectiveIndex <= 0}
           onClick={() => onNavigate(effectiveIndex - 1)}
           className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
         >
@@ -49,7 +51,7 @@ export function MobileSessionFooter({
         <Button
           type="button"
           variant="outline"
-          disabled={effectiveIndex >= effectiveTotal - 1}
+          disabled={navigationDisabled || effectiveIndex >= effectiveTotal - 1}
           onClick={() => onNavigate(effectiveIndex + 1)}
           className="h-12 flex-1 rounded-xl font-bold border-border text-card-foreground cursor-pointer disabled:opacity-40"
         >

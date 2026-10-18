@@ -15,6 +15,7 @@ import { MobileSessionDialogs } from '@/components/quiz/mobile/MobileSessionDial
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
+import { shouldShowSessionSkeleton } from '@/hooks/quiz/session-rendering'
 
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
@@ -50,8 +51,8 @@ export default function QuizSessionMobilePage() {
     )
   }
 
-  if ((ctrl.isStillLoading && !isQuizLoaderActive()) || !ctrl.activeData) {
-    if (!ctrl.sessionLoader.isOpen) {
+  if (ctrl.isStillLoading || !ctrl.activeData) {
+    if (shouldShowSessionSkeleton(ctrl.isStillLoading, ctrl.sessionLoader.isOpen, isQuizLoaderActive())) {
       return <QuizSessionSkeleton />
     }
     return (
@@ -179,6 +180,7 @@ export default function QuizSessionMobilePage() {
         onNavigate={ctrl.handleNavigate}
         onSubmit={ctrl.handleSubmit}
         submitDisabled={ctrl.submitDisabled}
+        navigationDisabled={ctrl.navigationDisabled}
       />
 
       {/* Dialogs */}
@@ -196,6 +198,7 @@ export default function QuizSessionMobilePage() {
         onConfirmSubmit={ctrl.handleConfirmSubmit}
         onConfirmExitQuiz={ctrl.handleConfirmExitQuiz}
         onNavigate={ctrl.handleNavigate}
+        navigationDisabled={ctrl.navigationDisabled}
         isFinalizePending={ctrl.finalizeMutation.isPending}
         submitDisabled={ctrl.submitDisabled}
       />

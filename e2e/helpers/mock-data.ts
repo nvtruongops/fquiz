@@ -152,9 +152,21 @@ export async function mockQuizSession(
     mode?: 'immediate' | 'review' | 'flashcard'
     questions: MockQuestionItem[]
     isGuest?: boolean
+    questionsDelayMs?: number
+    answerDelayMs?: number
+    onQuestionsFulfilled?: () => void
   }
 ) {
-  const { quizId, sessionId, mode = 'immediate', questions, isGuest = false } = options
+  const {
+    quizId,
+    sessionId,
+    mode = 'immediate',
+    questions,
+    isGuest = false,
+    questionsDelayMs = 0,
+    answerDelayMs = 0,
+    onQuestionsFulfilled,
+  } = options
 
   // Mock session list/check
   await page.route('**/api/sessions?**', async (route) => {
@@ -185,6 +197,8 @@ export async function mockQuizSession(
 
   // Mock session questions metadata
   await page.route(`**/api/sessions/${sessionId}/questions`, async (route) => {
+    if (questionsDelayMs > 0) await page.waitForTimeout(questionsDelayMs)
+    onQuestionsFulfilled?.()
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -235,26 +249,33 @@ export async function mockQuizSession(
   })
 
   // Mock answer submit POST
-  await page.route(`**/api/sessions/${sessionId}/answers`, async (route) => {
+  await page.route(`**/api/sessions/${sessionId}/answer`, async (route) => {
     if (route.request().method() === 'POST') {
       const body = JSON.parse(route.request().postData() || '{}')
-      const targetQuestion = questions[body.questionIndex] || questions[0]
+      const questionIndex = body.question_index ?? 0
+      const targetQuestion = questions[questionIndex] || questions[0]
+      const submittedIndexes: number[] = body.answer_indexes?.length
+        ? body.answer_indexes
+        : typeof body.answer_index === 'number' ? [body.answer_index] : []
+      const correctAnswers = Array.isArray(targetQuestion.correct_answer)
+        ? targetQuestion.correct_answer
+        : [targetQuestion.correct_answer ?? 0]
       const isCorrect = Array.isArray(targetQuestion.correct_answer)
-        ? targetQuestion.correct_answer.includes(body.selectedOptions?.[0] ?? body.answerIndex)
-        : (targetQuestion.correct_answer ?? 0) === (body.selectedOptions?.[0] ?? body.answerIndex)
+        ? JSON.stringify([...submittedIndexes].sort()) === JSON.stringify([...correctAnswers].sort())
+        : (targetQuestion.correct_answer ?? 0) === submittedIndexes[0]
+
+      if (answerDelayMs > 0) await page.waitForTimeout(answerDelayMs)
 
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          success: true,
           isCorrect,
-          correctAnswers: Array.isArray(targetQuestion.correct_answer)
-            ? targetQuestion.correct_answer
-            : [targetQuestion.correct_answer ?? 0],
+          correctAnswer: correctAnswers[0],
+          correctAnswers,
           explanation: targetQuestion.explanation || 'Detailed explanation for sample question.',
           score: isCorrect ? 1 : 0,
-          answeredCount: body.questionIndex + 1,
+          answeredCount: questionIndex + 1,
           totalQuestions: questions.length,
         }),
       })
