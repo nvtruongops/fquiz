@@ -1,50 +1,18 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, Compass, Sparkles, Layers, MessageSquare, BrainCircuit, GraduationCap, Clock, School } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
 
 interface LearningStudioGridProps {
   isDevOrAdmin?: boolean
 }
 
 export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: LearningStudioGridProps) {
-  const gridRef = useRef<HTMLDivElement>(null)
-
-  const { contextSafe } = useGSAP({ scope: gridRef })
-
-  useGSAP(() => {
-    if (!gridRef.current) return
-    const mm = gsap.matchMedia()
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      const cards = gridRef.current?.querySelectorAll('.bento-card')
-      if (cards && cards.length > 0) {
-        gsap.fromTo(
-          cards,
-          { y: 20, autoAlpha: 0 },
-          { y: 0, autoAlpha: 1, duration: 0.4, stagger: 0.08, ease: 'power2.out' }
-        )
-      }
-    })
-    return () => mm.revert()
-  }, { scope: gridRef })
-
-  const handleCardMouseEnter = contextSafe((e: React.MouseEvent<HTMLDivElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    gsap.to(e.currentTarget, { scale: 1.015, y: -3, duration: 0.25, ease: 'power2.out' })
-  })
-
-  const handleCardMouseLeave = contextSafe((e: React.MouseEvent<HTMLDivElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.25, ease: 'power2.out' })
-  })
-
   return (
-    <div ref={gridRef} className="space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-black uppercase tracking-wider text-text-tertiary flex items-center gap-2">
           <Sparkles aria-hidden="true" className="w-4 h-4 text-primary" /> Learning Studio & Classrooms
@@ -54,9 +22,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
         {/* Bento 1: Explore Quizzes (Feature Hero Card — Col 7/12) */}
         <div
-          onMouseEnter={handleCardMouseEnter}
-          onMouseLeave={handleCardMouseLeave}
-          className="bento-card sm:col-span-7 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg min-h-[220px]"
+          className="bento-card sm:col-span-7 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-200 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01] min-h-[220px]"
         >
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
@@ -91,9 +57,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
 
         {/* Bento 2: Classrooms (Col 5/12) */}
         <div
-          onMouseEnter={handleCardMouseEnter}
-          onMouseLeave={handleCardMouseLeave}
-          className="bento-card sm:col-span-5 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg min-h-[220px]"
+          className="bento-card sm:col-span-5 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-200 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01] min-h-[220px]"
         >
           <div className="space-y-3.5 relative z-10">
             <div className="flex items-center justify-between">
@@ -120,9 +84,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
 
         {/* Bento 3: Quiz History (Col 6/12) */}
         <div
-          onMouseEnter={handleCardMouseEnter}
-          onMouseLeave={handleCardMouseLeave}
-          className="bento-card sm:col-span-6 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg min-h-[190px]"
+          className="bento-card sm:col-span-6 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-200 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01] min-h-[190px]"
         >
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
@@ -149,9 +111,7 @@ export const LearningStudioGrid = React.memo(function LearningStudioGrid({}: Lea
 
         {/* Bento 4: Community Forum (Col 6/12) */}
         <div
-          onMouseEnter={handleCardMouseEnter}
-          onMouseLeave={handleCardMouseLeave}
-          className="bento-card sm:col-span-6 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-300 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg min-h-[190px]"
+          className="bento-card sm:col-span-6 glass-card text-foreground rounded-[24px] p-6 shadow-xs flex flex-col justify-between group transition-all duration-200 relative overflow-hidden border border-subtle hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01] min-h-[190px]"
         >
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">

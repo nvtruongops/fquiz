@@ -8,7 +8,6 @@ import { PinnedCategoriesSection } from '@/components/dashboard/PinnedCategories
 import { LearningStudioGrid } from '@/components/dashboard/LearningStudioGrid'
 import { RecentActivitiesFeed } from '@/components/dashboard/RecentActivitiesFeed'
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
-import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
 
 export default function DashboardPage() {
   const {
@@ -28,9 +27,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto space-y-6 font-sans text-foreground pb-12 p-4 sm:p-6 md:p-8">
-      <GsapStaggerContainer selector=".dash-section" stagger={0.06} y={12}>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="w-full max-w-[1400px] mx-auto space-y-6 font-sans text-foreground pb-12 p-4 sm:p-6 md:p-8 animate-in fade-in-50 duration-300">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column (7/12): Header, Incomplete Banner, Pinned Categories (Top for quick access), Bento Studio */}
           <div className="lg:col-span-7 space-y-6">
             {/* 1. Header Greeting */}
@@ -69,7 +67,6 @@ export default function DashboardPage() {
             <RecentActivitiesFeed recentActivities={recentActivities} />
           </div>
         </div>
-      </GsapStaggerContainer>
-    </div>
+      </div>
   )
 }

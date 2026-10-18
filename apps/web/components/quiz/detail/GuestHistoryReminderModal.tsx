@@ -1,8 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
+import React from 'react'
 import {
   LogIn,
   Sparkles,
@@ -35,37 +33,6 @@ export function GuestHistoryReminderModal({
   onContinueAsGuest,
   onLogin,
 }: GuestHistoryReminderModalProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useGSAP(
-    () => {
-      if (!open || !containerRef.current) return
-
-      const mm = gsap.matchMedia()
-
-      mm.add('(prefers-reduced-motion: reduce)', () => {
-        gsap.set('.gsap-reminder-item', { autoAlpha: 1, y: 0 })
-      })
-
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.fromTo(
-          '.gsap-reminder-item',
-          { autoAlpha: 0, y: 12 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.3,
-            stagger: 0.05,
-            ease: 'power2.out',
-            clearProps: 'transform',
-          }
-        )
-      })
-
-      return () => mm.revert()
-    },
-    { scope: containerRef, dependencies: [open] }
-  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +40,7 @@ export function GuestHistoryReminderModal({
         closeButtonAriaLabel="Close sign-in reminder"
         className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md rounded-t-[24px] rounded-b-none sm:rounded-[24px] border-t sm:border border-border p-0 shadow-2xl overflow-hidden bg-card text-foreground flex flex-col z-50 [&>button]:z-20 [&>button]:top-3.5 sm:[&>button]:top-4.5 [&>button]:right-3.5 sm:[&>button]:right-4.5 [&>button]:w-9 [&>button]:h-9 [&>button]:rounded-full [&>button]:bg-muted/60 [&>button:hover]:bg-muted [&>button]:text-muted-foreground [&>button:hover]:text-foreground [&>button]:border [&>button]:border-border/60 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:transition-all"
       >
-        <div ref={containerRef} className="flex flex-col h-full w-full">
+        <div className="flex flex-col h-full w-full">
           {/* Header Banner */}
           <div className="bg-card border-b border-border/80 px-5 pt-3 pb-4 sm:px-6 sm:pt-5 sm:pb-5 relative shrink-0 text-center">
             <div className="w-10 h-1.5 rounded-full bg-muted-foreground/20 mx-auto mb-3 sm:hidden" />

@@ -1,8 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
+import React from 'react'
 import { BookOpen, RotateCcw, Play, Sparkles } from 'lucide-react'
 import {
   Dialog,
@@ -30,39 +28,6 @@ export function QuizResumeSessionModal({
   onRestart,
   onCloseResumeDialog,
 }: QuizResumeSessionModalProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  // GSAP Entrance Stagger & Micro-interactions
-  useGSAP(
-    () => {
-      if (!open || !containerRef.current) return
-
-      const mm = gsap.matchMedia()
-
-      mm.add('(prefers-reduced-motion: reduce)', () => {
-        gsap.set('.gsap-resume-item', { autoAlpha: 1, y: 0 })
-      })
-
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.fromTo(
-          '.gsap-resume-item',
-          { autoAlpha: 0, y: 10 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.3,
-            stagger: 0.04,
-            ease: 'power2.out',
-            clearProps: 'transform',
-          }
-        )
-      })
-
-      return () => mm.revert()
-    },
-    { scope: containerRef, dependencies: [open] }
-  )
-
   const isFlashcardMode =
     activeSessionInfo?.mode === 'flashcard' || activeSessionInfo?.cardsUnknown > 0
 
@@ -72,7 +37,7 @@ export function QuizResumeSessionModal({
         closeButtonAriaLabel="Close previous session dialog"
         className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md rounded-t-[24px] rounded-b-none sm:rounded-[24px] border-t sm:border border-border p-0 shadow-2xl overflow-hidden bg-card text-card-foreground flex flex-col h-auto max-h-[88dvh] sm:max-h-[90vh] max-sm:data-[state=open]:slide-in-from-left-0 max-sm:data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-bottom-full data-[state=closed]:slide-out-to-bottom-full sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-1/2 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-1/2 sm:data-[state=closed]:zoom-out-95 [&>button]:z-20 [&>button]:top-3.5 sm:[&>button]:top-4.5 [&>button]:right-3.5 sm:[&>button]:right-4.5 [&>button]:w-9 [&>button]:h-9 [&>button]:rounded-full [&>button]:bg-muted/60 [&>button:hover]:bg-muted [&>button]:text-muted-foreground [&>button:hover]:text-foreground [&>button]:border [&>button]:border-border/60 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:transition-all z-50"
       >
-        <div ref={containerRef} className="flex flex-col h-full w-full">
+        <div className="flex flex-col h-full w-full">
           {isFlashcardMode ? (
             <>
               {/* Header */}
