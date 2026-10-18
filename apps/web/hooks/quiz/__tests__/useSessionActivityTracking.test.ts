@@ -159,8 +159,6 @@ describe('session activity tracking', () => {
     await Promise.resolve()
     await Promise.resolve()
     await Promise.resolve()
-    globalListeners.get('blur')?.(new Event('blur'))
-
     dateNow.mockReturnValue(now + 2_000)
     ;(document as any).visibilityState = 'hidden'
     documentListeners.get('visibilitychange')?.(new Event('visibilitychange'))
@@ -168,10 +166,23 @@ describe('session activity tracking', () => {
 
     ;(document as any).visibilityState = 'visible'
     documentListeners.get('visibilitychange')?.(new Event('visibilitychange'))
-    globalListeners.get('focus')?.(new Event('focus'))
     expect(fetchSpy).toHaveBeenCalledTimes(3) // mount resume, pause, resume
     const events = fetchSpy.mock.calls.map(([, init]) => JSON.parse(init.body).event)
     expect(events).toEqual(['resume', 'pause', 'resume'])
+  })
+
+  it('does not send activity requests for window focus or blur when tab visibility has not changed', async () => {
+    render()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    globalListeners.get('blur')?.(new Event('blur'))
+    globalListeners.get('focus')?.(new Event('focus'))
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1) // mount resume only
+    expect(global.addEventListener).not.toHaveBeenCalledWith('blur', expect.any(Function))
+    expect(global.addEventListener).not.toHaveBeenCalledWith('focus', expect.any(Function))
   })
 
   it('still opens the inactivity pause after five minutes without interaction', () => {

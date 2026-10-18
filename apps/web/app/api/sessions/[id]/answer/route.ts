@@ -6,6 +6,15 @@ import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SubmitAnswerSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { processImmediateAnswer, processReviewAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
 
+function answerResponse(result: unknown, requestStart: number, sessionDuration: number, answerStart: number) {
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      'Server-Timing': `app;dur=${(performance.now() - requestStart).toFixed(1)}, session;dur=${sessionDuration.toFixed(1)}, answer;dur=${(performance.now() - answerStart).toFixed(1)}`,
+    },
+  })
+}
+
 /**
  * POST /api/sessions/[id]/answer
  * Submits an answer for the current question in a quiz session.
@@ -15,14 +24,17 @@ export const POST = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
 ) => {
+  const requestStart = performance.now()
   try {
     const { id } = await params
 
+    const sessionStart = performance.now()
     const validation = await validateQuizSessionRequest(id, payload, {
       select: '_id student_id is_guest guest_id status expires_at mode current_question_index user_answers score questions_cache question_order answer_version quiz_id'
     })
     if (!validation.isValid) return validation.response
 
+    const sessionDuration = performance.now() - sessionStart
     const session = validation.session
 
     let body: unknown
@@ -66,19 +78,21 @@ export const POST = withAuth(async (
     if (session.mode === 'immediate') {
       const existingAnswer = session.user_answers?.find((a: { question_index: number }) => a.question_index === targetIndex)
       if (existingAnswer) {
+        const answerStart = performance.now()
         const result = await getImmediateAnswerResult(session, targetIndex)
-        return NextResponse.json(result, { status: 200 })
+        return answerResponse(result, requestStart, sessionDuration, answerStart)
       }
     }
 
     // Delegate to quiz engine based on mode (processImmediateAnswer & processReviewAnswer handle atomic upsert via OCC)
+    const answerStart = performance.now()
     if (session.mode === 'immediate') {
       const result = await processImmediateAnswer(session, submittedAnswerIndexes, targetIndex)
-      return NextResponse.json(result, { status: 200 })
+      return answerResponse(result, requestStart, sessionDuration, answerStart)
     } else {
       // review mode allows changing/updating answers before final submission
       const result = await processReviewAnswer(session, submittedAnswerIndexes, targetIndex)
-      return NextResponse.json(result, { status: 200 })
+      return answerResponse(result, requestStart, sessionDuration, answerStart)
     }
   } catch (err) {
     // Handle race condition: session completed concurrently

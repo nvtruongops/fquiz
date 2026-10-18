@@ -191,7 +191,7 @@ export function useSessionActivityTracking({
     }
   }, [exitConfirmOpen, sessionId, reportSessionActivity, queryClient, canWrite])
 
-  // Visibility/pagehide/blur guard with 5-minute timeout check
+  // Visibility/pagehide guard with 5-minute timeout check
   useEffect(() => {
     if (!shouldWarnBeforeLeave || !sessionId || isExitingRef.current) return
 
@@ -252,19 +252,12 @@ export function useSessionActivityTracking({
       }
     }
 
-    const handleWindowBlur = () => handlePause()
-    const handleWindowFocus = () => handleResume()
-
     globalThis.addEventListener('pagehide', handlePageHide)
-    globalThis.addEventListener('blur', handleWindowBlur)
-    globalThis.addEventListener('focus', handleWindowFocus)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       if (idleTimer) clearTimeout(idleTimer)
       globalThis.removeEventListener('pagehide', handlePageHide)
-      globalThis.removeEventListener('blur', handleWindowBlur)
-      globalThis.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [shouldWarnBeforeLeave, sessionId, inactivityPauseOpen, reportSessionActivity, queryClient, canWrite])
