@@ -23,7 +23,7 @@ export function LoginForm() {
   } = useLoginForm()
 
   return (
-    <div ref={cardRef} className="w-full relative group opacity-0 flex-1 max-w-[440px]">
+    <div ref={cardRef} className="w-full relative group flex-1 max-w-[440px]">
       {/* Glow behind the card */}
       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-[2.5rem] blur-xl transition duration-500 opacity-60" />
       
@@ -45,7 +45,10 @@ export function LoginForm() {
             <div className="relative">
               <input
                 id="identifier"
+                name="identifier"
                 type="text"
+                aria-invalid={!!errors.identifier}
+                aria-describedby={errors.identifier ? 'identifier-error' : undefined}
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
@@ -59,7 +62,7 @@ export function LoginForm() {
               />
             </div>
             {errors.identifier && (
-              <p className="text-destructive text-xs font-bold ml-1 mt-1">
+              <p id="identifier-error" className="text-destructive text-xs font-bold ml-1 mt-1">
                 {errors.identifier}
               </p>
             )}
@@ -78,7 +81,10 @@ export function LoginForm() {
             <div className="relative">
               <input
                 id="password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -93,14 +99,14 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors cursor-pointer"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-destructive text-xs font-bold ml-1 mt-1">
+              <p id="password-error" className="text-destructive text-xs font-bold ml-1 mt-1">
                 {errors.password}
               </p>
             )}

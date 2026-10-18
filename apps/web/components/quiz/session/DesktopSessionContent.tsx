@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
@@ -18,6 +17,9 @@ import { useSessionActivityTracking } from '@/hooks/quiz/useSessionActivityTrack
 import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
+import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
+import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
+import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 
 const SessionModals = dynamic(
   () => import('@/components/quiz/session/SessionModals').then((mod) => mod.SessionModals),
@@ -64,11 +66,14 @@ export function DesktopSessionContent({
     isInitialFetching,
     isInitialError,
     initialError,
+    refetchInitial,
     activeData,
     currentQuestion,
     preloadedQuestions,
     isPreloading,
     isPreloadError,
+    preloadError,
+    refetchPreload,
   } = useQuizSessionQueries(resolvedSessionId, currentQuestionIndex)
 
   const { isReadyToRender } = useSessionHydration({
@@ -81,19 +86,19 @@ export function DesktopSessionContent({
     initialError,
   })
 
-  const { finalizeMutation } = useSessionFinalize({
-    sessionId,
-    quizId,
-  })
-
-  const { mutate: submitAnswer, isPending: isSubmitting } = useSubmitAnswer(resolvedSessionId)
+  const { isReadOnlyTab, takeOverLease, canWrite } = useExamTabLease(resolvedSessionId)
+  const { mutate: submitAnswer, isPending: isSubmitting } = useSubmitAnswer(resolvedSessionId, canWrite)
 
   const {
     selectedOptions,
-    setSelectedOptions,
     submitted,
-    feedbackByQuestion,
     handleSelectOption,
+    saveStatus,
+    retryFailedAnswer,
+    hasUnsavedAnswers,
+    discardUnsavedAnswer,
+    unsavedQuestionIndex,
+    acknowledgedQuestions,
   } = useSessionAnswerSync({
     activeData,
     currentQuestionIndex,
@@ -101,7 +106,12 @@ export function DesktopSessionContent({
     preloadedQuestions,
     submitAnswer,
     isSubmitting,
+    canWrite,
   })
+
+  const canFinalize = useCallback(() => canWrite() && !isSubmitting && !hasUnsavedAnswers(), [canWrite, isSubmitting, hasUnsavedAnswers])
+  const { finalizeMutation } = useSessionFinalize({ sessionId, quizId, canFinalize })
+  const submitDisabled = isReadOnlyTab || isSubmitting || hasUnsavedAnswers() || finalizeMutation.isPending
 
   const {
     exitConfirmOpen,
@@ -116,9 +126,10 @@ export function DesktopSessionContent({
     currentQuestionIndex,
     activeData,
     resolvedQuizId,
+    canWrite,
   })
 
-  const handleSubmit = useCallback(() => setConfirmOpen(true), [])
+  const handleSubmit = useCallback(() => { if (canFinalize()) setConfirmOpen(true) }, [canFinalize])
   const handleExit = useCallback(() => setExitConfirmOpen(true), [setExitConfirmOpen])
 
   const sessionLoaderStartedRef = useRef(false)
@@ -161,40 +172,27 @@ export function DesktopSessionContent({
   }, [isStillLoading, isReadyToRender, isInitialError, activeData?.session.status, sessionLoader])
 
   if (isPreloadError || isInitialError) {
-    const errorMsg = (initialError as any)?.message || 'Unable to load test session.'
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4 font-sans">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
-          <XCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-          <h2 className="mb-2 text-xl font-black uppercase tracking-tight text-foreground">
-            Session Error
-          </h2>
-          <p className="mb-6 text-sm font-medium text-muted-foreground">{errorMsg}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (typeof window !== 'undefined' && window.history.length > 1) {
-                  router.back()
-                } else {
-                  router.push('/dashboard')
-                }
-              }}
-              className="h-11 rounded-xl border-border text-xs font-bold"
-            >
-              Go Back
-            </Button>
-            <Button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="h-11 rounded-xl bg-primary text-primary-foreground text-xs font-black"
-            >
-              Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
+      <SessionQueryError
+        title="Session Error"
+        message={initialError?.message || preloadError?.message || 'Unable to load test session.'}
+        backLabel="Go Back"
+        dashboardLabel="Dashboard"
+        canRetry={(isInitialError && initialError?.status !== 404 && initialError?.status !== 410) ||
+          (isPreloadError && preloadError?.status !== 404 && preloadError?.status !== 410)}
+        onRetry={() => {
+          if (isInitialError && initialError?.status !== 404 && initialError?.status !== 410) void refetchInitial()
+          if (isPreloadError && preloadError?.status !== 404 && preloadError?.status !== 410) void refetchPreload()
+        }}
+        onBack={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            router.back()
+          } else {
+            router.push('/dashboard')
+          }
+        }}
+        onDashboard={() => router.push('/dashboard')}
+      />
     )
   }
 
@@ -214,25 +212,11 @@ export function DesktopSessionContent({
     .filter((i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions)
 
   const answeredSet = new Set(validAnsweredFromDb)
-  if (
-    selectedOptions.length > 0 &&
-    currentQuestionIndex >= 0 &&
-    currentQuestionIndex < session.totalQuestions
-  ) {
-    answeredSet.add(currentQuestionIndex)
-  }
+  acknowledgedQuestions.forEach((index) => answeredSet.add(index))
 
   const isMatchingSessionStore = storeSessionId === resolvedSessionId
-  const validStoreAnsweredCount = isMatchingSessionStore
-    ? Array.from(answeredQuestions).filter(
-        (i) => Number.isInteger(i) && i >= 0 && i < session.totalQuestions
-      ).length
-    : 0
-
-  const answeredCount = Math.min(
-    Math.max(validStoreAnsweredCount, answeredSet.size),
-    session.totalQuestions
-  )
+  if (isMatchingSessionStore) answeredQuestions.forEach((index) => { if (index >= 0 && index < session.totalQuestions) answeredSet.add(index) })
+  const answeredCount = Math.min(answeredSet.size, session.totalQuestions)
   const showImmediateFeedback = session.mode === 'immediate' && submitted && lastAnswerResult !== null
 
   return (
@@ -246,9 +230,13 @@ export function DesktopSessionContent({
         sessionData={activeData}
         currentQuestionIndex={currentQuestionIndex}
         answeredCount={answeredCount}
-        selectedOptions={selectedOptions}
         submitted={submitted}
         isPending={finalizeMutation.isPending}
+        answersDisabled={isReadOnlyTab || isSubmitting || finalizeMutation.isPending}
+        submitDisabled={submitDisabled}
+        isReadOnlyTab={isReadOnlyTab}
+        takeOverLease={takeOverLease}
+        answeredSet={answeredSet}
         enableAnimation={enableAnimation}
         onToggleAnimation={setEnableAnimation}
         onSelectOption={handleSelectOption}
@@ -266,6 +254,7 @@ export function DesktopSessionContent({
           />
         }
       >
+        <SessionSaveStatus status={saveStatus} onRetry={retryFailedAnswer} onReviewDraft={() => { if (unsavedQuestionIndex !== null) navigateToQuestion(unsavedQuestionIndex) }} onDiscardDraft={discardUnsavedAnswer} draftQuestionNumber={unsavedQuestionIndex === null ? null : unsavedQuestionIndex + 1} disabled={isReadOnlyTab || isSubmitting || finalizeMutation.isPending} />
         <QuestionDisplay
           question={question}
           currentIndex={currentQuestionIndex}
@@ -276,7 +265,8 @@ export function DesktopSessionContent({
           lastAnswerResult={lastAnswerResult}
           onSelectOption={handleSelectOption}
           onNavigate={navigateToQuestion}
-          isPending={finalizeMutation.isPending}
+          isPending={isReadOnlyTab || isSubmitting || finalizeMutation.isPending}
+          submitDisabled={submitDisabled}
           sessionMode={session.mode}
           enableAnimation={enableAnimation}
           courseCode={session.courseCode}
@@ -294,10 +284,11 @@ export function DesktopSessionContent({
           answeredCount={answeredCount}
           totalQuestions={session.totalQuestions}
           isPending={finalizeMutation.isPending}
+          submitDisabled={submitDisabled}
           enableAnimation={enableAnimation}
           onConfirmSubmit={() => {
+            if (!canFinalize() || finalizeMutation.isPending) return
             setConfirmOpen(false)
-            sessionLoader.open('Submitting answers and compiling results...')
             finalizeMutation.mutate()
           }}
           onConfirmExit={() => {

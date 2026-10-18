@@ -10,10 +10,13 @@ interface UseQuizSessionQueriesResult {
   isInitialLoading: boolean
   isInitialFetching: boolean
   isInitialError: boolean
-  initialError: Error | null
+  initialError: SessionApiError | null
+  refetchInitial: () => Promise<unknown>
   preloadData: PreloadedQuestions | undefined
   isPreloading: boolean
   isPreloadError: boolean
+  preloadError: SessionApiError | null
+  refetchPreload: () => Promise<unknown>
   activeData: SessionData | undefined
   currentQuestion: SessionQuestion | undefined
   preloadedQuestions: SessionQuestion[] | null
@@ -30,9 +33,10 @@ export function useQuizSessionQueries(
     data: initialData,
     isLoading: isInitialLoading,
     isFetching: isInitialFetching,
-    isError: isInitialError,
+    isError: hasInitialError,
     error: initialError,
-  } = useQuery<SessionData, Error>({
+    refetch: refetchInitial,
+  } = useQuery<SessionData, SessionApiError>({
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: async () => {
       try {
@@ -69,8 +73,10 @@ export function useQuizSessionQueries(
   const {
     data: preloadData,
     isLoading: isPreloading,
-    isError: isPreloadError,
-  } = useQuery<PreloadedQuestions, Error>({
+    isError: hasPreloadError,
+    error: preloadError,
+    refetch: refetchPreload,
+  } = useQuery<PreloadedQuestions, SessionApiError>({
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
       try {
@@ -110,6 +116,8 @@ export function useQuizSessionQueries(
   )
 
   const currentQuestion = preloadedQuestions?.[clampedQuestionIndex]
+  const isInitialError = hasInitialError && !initialData
+  const isPreloadError = hasPreloadError && !preloadData
 
   const activeData: SessionData | undefined = initialData && currentQuestion
     ? { session: initialData.session, question: currentQuestion }
@@ -121,9 +129,12 @@ export function useQuizSessionQueries(
     isInitialFetching,
     isInitialError,
     initialError,
+    refetchInitial,
     preloadData,
     isPreloading,
     isPreloadError,
+    preloadError,
+    refetchPreload,
     activeData,
     currentQuestion,
     preloadedQuestions,

@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { QuizLoadingOverlay, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
@@ -12,6 +11,8 @@ import { MobileSessionHeader } from '@/components/quiz/mobile/MobileSessionHeade
 import { MobileSessionQuestionCard } from '@/components/quiz/mobile/MobileSessionQuestionCard'
 import { MobileSessionFooter } from '@/components/quiz/mobile/MobileSessionFooter'
 import { MobileSessionDialogs } from '@/components/quiz/mobile/MobileSessionDialogs'
+import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
+import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
@@ -23,38 +24,27 @@ export default function QuizSessionMobilePage() {
 
   if (ctrl.isPreloadError || ctrl.isInitialError) {
     return (
-      <div className="flex h-screen items-center justify-center bg-page-bg p-6 text-card-foreground">
-        <div className="w-full max-w-md rounded-2xl border-2 border-border bg-card p-8 text-center shadow-xl">
-          <XCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-          <h2 className="mb-2 text-xl font-black text-card-foreground">Exam Room Error</h2>
-          <p className="mb-6 text-sm text-muted-foreground">
-            {(ctrl.initialError as any)?.message || 'Please check your network connection and try again'}
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (typeof window !== 'undefined' && window.history.length > 1) {
-                  ctrl.router.back()
-                } else {
-                  ctrl.router.push('/dashboard')
-                }
-              }}
-              className="w-full py-6 font-bold border-border text-card-foreground hover:bg-muted cursor-pointer"
-            >
-              Back
-            </Button>
-            <Button
-              type="button"
-              onClick={() => ctrl.router.push('/dashboard')}
-              className="w-full bg-primary py-6 text-primary-foreground hover:bg-primary/90 font-black cursor-pointer"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
+      <SessionQueryError
+        title="Exam Room Error"
+        message={ctrl.initialError?.message || ctrl.preloadError?.message || 'Please check your network connection and try again'}
+        backLabel="Back"
+        dashboardLabel="Back to Dashboard"
+        mobile
+        canRetry={(ctrl.isInitialError && ctrl.initialError?.status !== 404 && ctrl.initialError?.status !== 410) ||
+          (ctrl.isPreloadError && ctrl.preloadError?.status !== 404 && ctrl.preloadError?.status !== 410)}
+        onRetry={() => {
+          if (ctrl.isInitialError && ctrl.initialError?.status !== 404 && ctrl.initialError?.status !== 410) void ctrl.refetchInitial()
+          if (ctrl.isPreloadError && ctrl.preloadError?.status !== 404 && ctrl.preloadError?.status !== 410) void ctrl.refetchPreload()
+        }}
+        onBack={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            ctrl.router.back()
+          } else {
+            ctrl.router.push('/dashboard')
+          }
+        }}
+        onDashboard={() => ctrl.router.push('/dashboard')}
+      />
     )
   }
 
@@ -76,15 +66,10 @@ export default function QuizSessionMobilePage() {
       .map((answer) => answer.question_index)
       .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal)
   )
-  if (ctrl.selectedOptions.length > 0 && ctrl.currentQuestionIndex >= 0 && ctrl.currentQuestionIndex < effectiveTotal) {
-    answeredFromSession.add(ctrl.currentQuestionIndex)
-  }
+  ctrl.acknowledgedQuestions.forEach((index) => answeredFromSession.add(index))
   const isMatchingSessionStore = ctrl.storeSessionId === ctrl.resolvedSessionId
-  const validStoreCount = isMatchingSessionStore
-    ? Array.from(ctrl.answeredQuestions).filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal).length
-    : 0
-
-  const answeredCount = Math.min(Math.max(validStoreCount, answeredFromSession.size), effectiveTotal)
+  if (isMatchingSessionStore) ctrl.answeredQuestions.forEach((index) => { if (index >= 0 && index < effectiveTotal) answeredFromSession.add(index) })
+  const answeredCount = Math.min(answeredFromSession.size, effectiveTotal)
   const showImmediateFeedback = session.mode === 'immediate' && ctrl.submitted && ctrl.lastAnswerResult !== null
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const correctAnswerSet = showImmediateFeedback
@@ -116,6 +101,14 @@ export default function QuizSessionMobilePage() {
         progress={ctrl.sessionLoader.progress}
         status={ctrl.sessionLoader.status}
       />
+
+      {ctrl.isReadOnlyTab && (
+        <div className="flex items-center justify-between gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-xs text-warning-fg">
+          <span>Read-only: session open in another tab.</span>
+          <button type="button" onClick={ctrl.takeOverLease} className="shrink-0 font-semibold underline">Continue here</button>
+        </div>
+      )}
+      <SessionSaveStatus status={ctrl.saveStatus} onRetry={ctrl.retryFailedAnswer} onReviewDraft={() => { if (ctrl.unsavedQuestionIndex !== null) ctrl.handleNavigate(ctrl.unsavedQuestionIndex) }} onDiscardDraft={ctrl.discardUnsavedAnswer} draftQuestionNumber={ctrl.unsavedQuestionIndex === null ? null : ctrl.unsavedQuestionIndex + 1} disabled={ctrl.isReadOnlyTab || ctrl.submitMutation.isPending || ctrl.finalizeMutation.isPending} />
 
       {/* Mobile Header */}
       <MobileSessionHeader
@@ -159,7 +152,7 @@ export default function QuizSessionMobilePage() {
             correctAnswerSet={correctAnswerSet}
             selectedOptions={ctrl.selectedOptions}
             submitted={ctrl.submitted}
-            isSubmitting={ctrl.submitMutation.isPending}
+            isSubmitting={ctrl.isReadOnlyTab || ctrl.submitMutation.isPending || ctrl.finalizeMutation.isPending}
             onSelectOption={ctrl.handleSelectOption}
             mode={session.mode}
             currentCourseCode={session.courseCode}
@@ -174,6 +167,7 @@ export default function QuizSessionMobilePage() {
         effectiveTotal={effectiveTotal}
         onNavigate={ctrl.handleNavigate}
         onSubmit={ctrl.handleSubmit}
+        submitDisabled={ctrl.submitDisabled}
       />
 
       {/* Dialogs */}
@@ -192,6 +186,7 @@ export default function QuizSessionMobilePage() {
         onConfirmExitQuiz={ctrl.handleConfirmExitQuiz}
         onNavigate={ctrl.handleNavigate}
         isFinalizePending={ctrl.finalizeMutation.isPending}
+        submitDisabled={ctrl.submitDisabled}
       />
     </div>
   )

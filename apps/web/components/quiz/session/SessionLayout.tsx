@@ -10,7 +10,6 @@ import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigatio
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import dynamic from 'next/dynamic'
 import { cn } from '@/lib/core/utils/cn'
-import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
 
 const QuizAIAssistantDrawer = dynamic(
   () => import('@/components/quiz/session/QuizAIAssistantDrawer').then((m) => m.QuizAIAssistantDrawer),
@@ -21,9 +20,13 @@ interface SessionLayoutProps {
   sessionData: SessionData
   currentQuestionIndex: number
   answeredCount: number
-  selectedOptions: number[]
   submitted: boolean
   isPending: boolean
+  answersDisabled?: boolean
+  submitDisabled?: boolean
+  isReadOnlyTab: boolean
+  takeOverLease: () => void
+  answeredSet: Set<number>
   enableAnimation?: boolean
   onToggleAnimation?: (enabled: boolean) => void
   children: React.ReactNode
@@ -38,9 +41,13 @@ export const SessionLayout = React.memo(function SessionLayout({
   sessionData,
   currentQuestionIndex,
   answeredCount,
-  selectedOptions,
   submitted,
   isPending,
+  answersDisabled,
+  submitDisabled,
+  isReadOnlyTab,
+  takeOverLease,
+  answeredSet,
   enableAnimation = true,
   onToggleAnimation,
   children,
@@ -52,9 +59,6 @@ export const SessionLayout = React.memo(function SessionLayout({
 }: SessionLayoutProps) {
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
-  const isExam = session.mode === 'review'
-  const sessionId = (session._id || (session as any).id || '').toString()
-  const { isReadOnlyTab, takeOverLease } = useExamTabLease(sessionId, isExam)
 
   const { data: authData } = useAuth()
   const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
@@ -72,21 +76,10 @@ export const SessionLayout = React.memo(function SessionLayout({
     currentIndex: currentQuestionIndex,
     totalQuestions: effectiveTotal,
     optionCount: question?.options?.length ?? 0,
-    disabled: submitted || isPending,
+    disabled: submitted || isPending || answersDisabled,
     onNavigate,
     onSelectOption,
   })
-
-  const answeredSet = React.useMemo(() => {
-    const set = new Set<number>()
-    session.user_answers?.forEach((ans) => {
-      if (typeof ans.question_index === 'number') set.add(ans.question_index)
-    })
-    if (selectedOptions.length > 0) {
-      set.add(currentQuestionIndex)
-    }
-    return set
-  }, [session.user_answers, selectedOptions, currentQuestionIndex])
 
   // Inject explanation toggle props & focusedOption into children (QuestionDisplay & SessionModals)
   const augmentedChildren = React.Children.map(children, (child) => {
@@ -164,6 +157,7 @@ export const SessionLayout = React.memo(function SessionLayout({
             currentIndex={currentQuestionIndex}
             totalQuestions={effectiveTotal}
             isPending={isPending}
+            submitDisabled={submitDisabled}
             answeredCount={answeredCount}
             enableAnimation={enableAnimation}
             answeredSet={answeredSet}
@@ -171,7 +165,7 @@ export const SessionLayout = React.memo(function SessionLayout({
         )}
 
         {/* Column 2: Center Question & Options Display */}
-        <main className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-background">
+        <main data-quiz-content className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-background">
           {augmentedChildren}
         </main>
 

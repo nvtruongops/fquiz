@@ -23,11 +23,21 @@ interface InteractiveResultViewerProps {
 
 type FilterType = 'all' | 'correct' | 'incorrect' | 'unanswered'
 
+function isUnanswered(q: ResultQuestion) {
+  return q.submitted_answer === null || q.submitted_answer === undefined || (Array.isArray(q.submitted_answer) && q.submitted_answer.length === 0)
+}
+
+function matchesFilter(q: ResultQuestion, filter: FilterType) {
+  return filter === 'all' ||
+    (filter === 'correct' && q.is_correct) ||
+    (filter === 'incorrect' && !q.is_correct && !isUnanswered(q)) ||
+    (filter === 'unanswered' && isUnanswered(q))
+}
+
 export function InteractiveResultViewer({ questions }: Readonly<InteractiveResultViewerProps>) {
   // Find first wrong or unanswered question as default selected index, or 0
-  const initialIndex = questions.findIndex(q => !q.is_correct) >= 0 
-    ? questions.findIndex(q => !q.is_correct) 
-    : 0
+  const firstWrongIndex = questions.findIndex(q => !q.is_correct)
+  const initialIndex = firstWrongIndex >= 0 ? firstWrongIndex : 0
 
   const [selectedIndex, setSelectedIndex] = useState<number>(initialIndex)
   const [filter, setFilter] = useState<FilterType>('all')
@@ -41,26 +51,31 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
     )
   }
 
-  const currentQuestion = questions[selectedIndex] || questions[0]
   const totalQuestions = questions.length
 
   // Stats calculation
   const correctCount = questions.filter(q => q.is_correct).length
-  const unansweredCount = questions.filter(
-    q => q.submitted_answer === null || q.submitted_answer === undefined || (Array.isArray(q.submitted_answer) && q.submitted_answer.length === 0)
-  ).length
+  const unansweredCount = questions.filter(isUnanswered).length
   const incorrectCount = totalQuestions - correctCount - unansweredCount
+  const filteredIndices = questions.flatMap((q, idx) => matchesFilter(q, filter) ? [idx] : [])
+  const activeIndex = filteredIndices.includes(selectedIndex) ? selectedIndex : filteredIndices[0]
+  const filteredPosition = filteredIndices.indexOf(activeIndex)
+  const canPrev = filteredPosition > 0
+  const canNext = filteredPosition >= 0 && filteredPosition < filteredIndices.length - 1
 
   const handlePrev = () => {
-    if (selectedIndex > 0) {
-      setSelectedIndex(selectedIndex - 1)
-    }
+    if (canPrev) setSelectedIndex(filteredIndices[filteredPosition - 1])
   }
 
   const handleNext = () => {
-    if (selectedIndex < totalQuestions - 1) {
-      setSelectedIndex(selectedIndex + 1)
-    }
+    if (canNext) setSelectedIndex(filteredIndices[filteredPosition + 1])
+  }
+
+  const handleFilterChange = (nextFilter: FilterType) => {
+    setFilter(nextFilter)
+    setSelectedIndex(index => questions[index] && matchesFilter(questions[index], nextFilter)
+      ? index
+      : questions.findIndex(q => matchesFilter(q, nextFilter)))
   }
 
   const handleSelectQuestion = (idx: number) => {
@@ -98,7 +113,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-xl text-[9px] sm:text-[10px] font-black select-none my-2 sm:my-3 shrink-0 border border-border">
             <button
               type="button"
-              onClick={() => setFilter('all')}
+              onClick={() => handleFilterChange('all')}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'all'
@@ -110,7 +125,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             </button>
             <button
               type="button"
-              onClick={() => setFilter('correct')}
+              onClick={() => handleFilterChange('correct')}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'correct'
@@ -122,7 +137,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             </button>
             <button
               type="button"
-              onClick={() => setFilter('incorrect')}
+              onClick={() => handleFilterChange('incorrect')}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'incorrect'
@@ -134,7 +149,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             </button>
             <button
               type="button"
-              onClick={() => setFilter('unanswered')}
+              onClick={() => handleFilterChange('unanswered')}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'unanswered'
@@ -149,21 +164,14 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           {/* Matrix Grid (Compact Buttons w-6 h-6 on mobile, 8-10 cols) */}
           <div className="max-h-[160px] md:max-h-none flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar">
             <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1 sm:gap-1.5 p-0.5">
-              {questions.map((q, idx) => {
-                const notAnswered =
-                  q.submitted_answer === null ||
-                  q.submitted_answer === undefined ||
-                  (Array.isArray(q.submitted_answer) && q.submitted_answer.length === 0)
+              {filteredIndices.map(idx => {
+                const q = questions[idx]
+                const notAnswered = isUnanswered(q)
 
                 const isCorrect = q.is_correct
                 const isIncorrect = !notAnswered && !isCorrect
 
-                // Apply Filter logic
-                if (filter === 'correct' && !isCorrect) return null
-                if (filter === 'incorrect' && !isIncorrect) return null
-                if (filter === 'unanswered' && !notAnswered) return null
-
-                const isSelected = selectedIndex === idx
+                const isSelected = activeIndex === idx
 
                 let btnBg = 'bg-muted text-card-foreground hover:bg-muted/80'
                 if (notAnswered) {
@@ -212,14 +220,22 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
 
       {/* Right Panel: Detailed View of Active Selected Question */}
       <div className="md:col-span-9 lg:col-span-9 xl:col-span-9 h-full min-h-0 flex flex-col overflow-hidden">
-        <QuestionDetailCard
-          key={currentQuestion._id || selectedIndex}
-          question={currentQuestion}
-          index={selectedIndex}
-          totalQuestions={totalQuestions}
-          onPrev={handlePrev}
-          onNext={handleNext}
-        />
+        {filteredPosition < 0 ? (
+          <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-bold text-xs">
+            No questions match this filter.
+          </div>
+        ) : (
+          <QuestionDetailCard
+            key={questions[activeIndex]._id || activeIndex}
+            question={questions[activeIndex]}
+            index={activeIndex}
+            totalQuestions={totalQuestions}
+            canPrev={canPrev}
+            canNext={canNext}
+            onPrev={handlePrev}
+            onNext={handleNext}
+          />
+        )}
       </div>
     </div>
   )
@@ -229,12 +245,16 @@ function QuestionDetailCard({
   question: q,
   index: idx,
   totalQuestions,
+  canPrev,
+  canNext,
   onPrev,
   onNext,
 }: Readonly<{
   question: ResultQuestion
   index: number
   totalQuestions: number
+  canPrev: boolean
+  canNext: boolean
   onPrev: () => void
   onNext: () => void
 }>) {
@@ -399,7 +419,7 @@ function QuestionDetailCard({
         <Button
           variant="outline"
           onClick={onPrev}
-          disabled={idx === 0}
+          disabled={!canPrev}
           className="h-10 sm:h-9 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border-border disabled:opacity-40 text-muted-foreground bg-muted/80 hover:bg-muted cursor-pointer"
         >
           <ChevronLeft aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> PREV QUESTION
@@ -411,7 +431,7 @@ function QuestionDetailCard({
 
         <Button
           onClick={onNext}
-          disabled={idx === totalQuestions - 1}
+          disabled={!canNext}
           className="h-10 sm:h-9 px-4 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs uppercase tracking-wider disabled:opacity-40 cursor-pointer"
         >
           NEXT QUESTION <ChevronRight aria-hidden="true" className="ml-1 h-3.5 w-3.5" />

@@ -1,4 +1,5 @@
 import { SessionData, PreloadedQuestions } from '@/lib/modules/quiz/types/session'
+import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
 export type SessionApiError = Error & {
   status?: number
@@ -19,9 +20,10 @@ async function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = 
 
 async function handleSessionResponse(res: Response, context: 'session' | 'questions'): Promise<never> {
   if (res.status === 401) {
-    const currentUrl = window.location.pathname + window.location.search
-    window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}&reason=session_expired`
-    throw new Error('Session expired. Redirecting to login...')
+    promptSessionReauth()
+    const apiError = new Error('Session expired. Please sign in again.') as SessionApiError
+    apiError.status = res.status
+    throw apiError
   }
   if (res.status === 404) {
     const apiError = new Error('Quiz session does not exist or has been removed.') as SessionApiError

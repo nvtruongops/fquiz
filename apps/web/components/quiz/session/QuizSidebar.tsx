@@ -11,6 +11,7 @@ interface QuizSidebarProps {
   currentIndex: number
   totalQuestions: number
   isPending: boolean
+  submitDisabled?: boolean
   answeredCount: number
   enableAnimation?: boolean
   answeredSet?: Set<number>
@@ -23,6 +24,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
   currentIndex,
   totalQuestions,
   isPending,
+  submitDisabled,
   answeredCount,
   enableAnimation = true,
   answeredSet,
@@ -105,7 +107,7 @@ const QuizSidebar = React.memo(function QuizSidebar({
           <Button
             type="button"
             onClick={onSubmit}
-            disabled={isPending}
+            disabled={isPending || submitDisabled}
             className="w-full h-12 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-sm shadow-md transition-all cursor-pointer active:scale-98"
           >
             {isPending ? (

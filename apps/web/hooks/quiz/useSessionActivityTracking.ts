@@ -10,11 +10,12 @@ interface UseSessionActivityTrackingParams {
   currentQuestionIndex: number
   activeData: SessionData | undefined
   resolvedQuizId: string
+  canWrite: () => boolean
 }
 
 interface UseSessionActivityTrackingResult {
   shouldWarnBeforeLeave: boolean
-  reportSessionActivity: (event: 'pause' | 'resume') => Promise<void>
+  reportSessionActivity: (event: 'pause' | 'resume') => Promise<boolean>
   exitConfirmOpen: boolean
   setExitConfirmOpen: (open: boolean) => void
   inactivityPauseOpen: boolean
@@ -29,12 +30,22 @@ export function useSessionActivityTracking({
   sessionId,
   currentQuestionIndex,
   activeData,
+  canWrite,
 }: UseSessionActivityTrackingParams): UseSessionActivityTrackingResult {
   const queryClient = useQueryClient()
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [inactivityPauseOpen, setInactivityPauseOpen] = useState(false)
   const isExitingRef = useRef(false)
-  const lastReportRef = useRef<{ event: string; time: number; index: number }>({ event: '', time: 0, index: -1 })
+  const currentQuestionIndexRef = useRef(currentQuestionIndex)
+  currentQuestionIndexRef.current = currentQuestionIndex
+  const lastReportRef = useRef<{ sessionId: string; event: 'pause' | 'resume' | null; sequence: number }>({ sessionId, event: null, sequence: 0 })
+  const acceptedReportRef = useRef<{ sessionId: string; event: 'pause' | 'resume' | null; sequence: number }>({ sessionId, event: null, sequence: 0 })
+  const reportSequenceRef = useRef(0)
+  if (lastReportRef.current.sessionId !== sessionId) {
+    lastReportRef.current = { sessionId, event: null, sequence: 0 }
+    acceptedReportRef.current = { sessionId, event: null, sequence: 0 }
+    reportSequenceRef.current += 1
+  }
 
   const markExiting = useCallback(() => {
     isExitingRef.current = true
@@ -42,45 +53,54 @@ export function useSessionActivityTracking({
 
   const reportSessionActivity = useCallback(
     async (event: 'pause' | 'resume') => {
-      if (!sessionId) return
-      const now = Date.now()
-      if (
-        lastReportRef.current.event === event &&
-        lastReportRef.current.index === currentQuestionIndex &&
-        now - lastReportRef.current.time < 1500
-      ) {
-        return
-      }
-      lastReportRef.current = { event, time: now, index: currentQuestionIndex }
+      if (!sessionId || !canWrite() || lastReportRef.current.event === event) return false
+      const sequence = ++reportSequenceRef.current
+      lastReportRef.current = { sessionId, event, sequence }
 
-      const payload = JSON.stringify({ event, current_question_index: currentQuestionIndex })
+      const payload = JSON.stringify({ event, current_question_index: currentQuestionIndexRef.current })
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/activity`
+      let accepted = false
       try {
-        await fetch(url, {
+        const response = await fetch(url, {
           method: 'POST',
           headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
           body: payload,
           keepalive: true,
         })
+        if (!response.ok) return false
+        accepted = true
+        if (acceptedReportRef.current.sessionId === sessionId && sequence > acceptedReportRef.current.sequence) {
+          acceptedReportRef.current = { sessionId, event, sequence }
+        }
+        return true
       } catch (err) {
         console.error('Failed to report session activity', err)
+        return false
+      } finally {
+        if (
+          lastReportRef.current.sessionId === sessionId &&
+          (lastReportRef.current.sequence === sequence || (accepted && lastReportRef.current.sequence < sequence))
+        ) {
+          lastReportRef.current = acceptedReportRef.current
+        }
       }
     },
-    [sessionId, currentQuestionIndex],
+    [sessionId, canWrite],
   )
 
   const handleResumeInactivity = useCallback(async () => {
-    if (!sessionId) return
+    if (!sessionId || !canWrite()) return
+
+    // Await API POST activity call to guarantee DB removes paused_at
+    const didReport = await reportSessionActivity('resume')
+    if (!didReport) return
     if (typeof window !== 'undefined') {
       localStorage.removeItem(`session_paused_at_${sessionId}`)
     }
     setInactivityPauseOpen(false)
 
-    // Await API POST activity call to guarantee DB removes paused_at
-    await reportSessionActivity('resume')
-
     // Optimistically update TanStack Query cache to remove paused_at before invalidating
-    queryClient.setQueryData(['sessions', sessionId], (old: SessionData | undefined) => {
+    queryClient.setQueryData(['sessions', sessionId, 'initial'], (old: SessionData | undefined) => {
       if (!old?.session) return old
       const newSession = { ...old.session }
       delete newSession.paused_at
@@ -90,12 +110,12 @@ export function useSessionActivityTracking({
       }
     })
 
-    void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
-  }, [sessionId, reportSessionActivity, queryClient])
+    void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'], exact: true })
+  }, [sessionId, reportSessionActivity, queryClient, canWrite])
 
   // Resume activity on mount + check if stored pause time exceeded 5 mins
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || !canWrite()) return
 
     let isPausedOver5Mins = false
     if (typeof window !== 'undefined') {
@@ -120,7 +140,7 @@ export function useSessionActivityTracking({
     } else {
       void reportSessionActivity('resume')
     }
-  }, [sessionId, activeData?.session?.paused_at, reportSessionActivity])
+  }, [sessionId, activeData?.session?.paused_at, reportSessionActivity, canWrite])
 
   const shouldWarnBeforeLeave = Boolean(
     activeData?.session && activeData.session.status !== 'completed',
@@ -147,7 +167,7 @@ export function useSessionActivityTracking({
 
   // Sync pause state when manual exit confirm modal opens/closes
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || !canWrite()) return
     if (exitConfirmOpen) {
       const now = Date.now()
       if (typeof window !== 'undefined') {
@@ -160,13 +180,16 @@ export function useSessionActivityTracking({
         if (stored) {
           localStorage.removeItem(`session_paused_at_${sessionId}`)
           if (!isExitingRef.current) {
-            void reportSessionActivity('resume')
-            void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+            void reportSessionActivity('resume').then((didReport) => {
+              if (didReport) {
+                void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'], exact: true })
+              }
+            })
           }
         }
       }
     }
-  }, [exitConfirmOpen, sessionId, reportSessionActivity, queryClient])
+  }, [exitConfirmOpen, sessionId, reportSessionActivity, queryClient, canWrite])
 
   // Visibility/pagehide/blur guard with 5-minute timeout check
   useEffect(() => {
@@ -175,7 +198,7 @@ export function useSessionActivityTracking({
     let idleTimer: NodeJS.Timeout | null = null
 
     const handlePause = () => {
-      if (isExitingRef.current) return
+      if (isExitingRef.current || !canWrite()) return
       const now = Date.now()
       if (typeof window !== 'undefined') {
         localStorage.setItem(`session_paused_at_${sessionId}`, now.toString())
@@ -190,7 +213,7 @@ export function useSessionActivityTracking({
     }
 
     const handleResume = () => {
-      if (isExitingRef.current) return
+      if (isExitingRef.current || !canWrite()) return
       if (idleTimer) {
         clearTimeout(idleTimer)
         idleTimer = null
@@ -212,8 +235,11 @@ export function useSessionActivityTracking({
         }
       }
 
-      void reportSessionActivity('resume')
-      void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId] })
+      void reportSessionActivity('resume').then((didReport) => {
+        if (didReport) {
+          void queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'], exact: true })
+        }
+      })
     }
 
     const handlePageHide = () => handlePause()
@@ -241,7 +267,7 @@ export function useSessionActivityTracking({
       globalThis.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, inactivityPauseOpen, reportSessionActivity, queryClient])
+  }, [shouldWarnBeforeLeave, sessionId, inactivityPauseOpen, reportSessionActivity, queryClient, canWrite])
 
   // Per-question 5-minute inactivity timer (no user interaction for 5 minutes)
   useEffect(() => {
@@ -252,7 +278,7 @@ export function useSessionActivityTracking({
     const resetQuestionIdleTimer = () => {
       if (questionIdleTimer) clearTimeout(questionIdleTimer)
       questionIdleTimer = setTimeout(() => {
-        if (isExitingRef.current) return
+        if (isExitingRef.current || !canWrite()) return
         // Paused due to 5 minutes of no user interaction on the question
         const now = Date.now()
         if (typeof window !== 'undefined') {
@@ -284,7 +310,7 @@ export function useSessionActivityTracking({
         window.removeEventListener(evt, handleUserInteraction)
       })
     }
-  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, inactivityPauseOpen, reportSessionActivity])
+  }, [shouldWarnBeforeLeave, sessionId, currentQuestionIndex, inactivityPauseOpen, reportSessionActivity, canWrite])
 
   return {
     shouldWarnBeforeLeave,

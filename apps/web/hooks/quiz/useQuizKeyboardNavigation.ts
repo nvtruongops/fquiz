@@ -21,7 +21,7 @@ interface UseQuizKeyboardNavigationOptions {
 function isTextInputTarget(target: any): boolean {
   if (!target) return false
   const tagName = target.tagName?.toUpperCase()
-  if (tagName === 'TEXTAREA') return true
+  if (tagName === 'TEXTAREA' || tagName === 'SELECT') return true
   if (target.isContentEditable) return true
   if (tagName === 'INPUT') {
     const type = (target.type || 'text').toLowerCase()
@@ -53,8 +53,12 @@ export function useQuizKeyboardNavigation({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore keydown ONLY if user is actively typing in a text input, textarea, or contenteditable element
-      if (isTextInputTarget(e.target)) return
+      const target = e.target as HTMLElement | null
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || isTextInputTarget(target)) return
+      if (target?.closest?.('[role="dialog"], [role="alertdialog"], [aria-modal="true"]') || (typeof document !== 'undefined' && document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], [aria-modal="true"], dialog[open]'))) return
+      const nativeControl = target?.closest?.('button, a, input, [role="button"], [role="checkbox"], [role="radio"]') || ['BUTTON', 'A', 'INPUT'].includes(target?.tagName?.toUpperCase() ?? '')
+      if ((e.key === 'Enter' || e.key === ' ') && nativeControl) return
+      if (target?.closest && !target.closest('[data-quiz-content]')) return
 
       // ArrowLeft and ArrowRight (question navigation) ALWAYS work even if current question is submitted/disabled
       switch (e.key) {

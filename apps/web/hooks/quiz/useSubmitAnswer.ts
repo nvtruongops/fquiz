@@ -75,41 +75,45 @@ async function submitAnswer(
   return res.json()
 }
 
-export function useSubmitAnswer(sessionId: string) {
+export function useSubmitAnswer(sessionId: string, canWrite: () => boolean = () => true) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const {
-    optimisticallyMarkAnswered,
-    rollbackOptimisticAnswer,
-    confirmAnswer,
+    markAnswered,
     setLastAnswerResult,
   } = useQuizSessionStore()
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const permissionRef = useRef({ sessionId, canWrite })
+  permissionRef.current = { sessionId, canWrite }
 
   // Cleanup pending invalidation timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [])
+  }, [sessionId])
 
-  return useMutation<SubmitAnswerResponse, Error, SubmitAnswerVariables, { questionIndex: number }>({
-    mutationFn: ({ questionIndex, answerIndexes }) => submitAnswer(sessionId, questionIndex, answerIndexes),
+  return useMutation<SubmitAnswerResponse, Error, SubmitAnswerVariables, { sessionId: string; questionIndex: number }>({
+    mutationKey: ['sessions', sessionId, 'answer'],
+    mutationFn: async ({ questionIndex, answerIndexes }) => {
+      if (permissionRef.current.sessionId !== sessionId || !permissionRef.current.canWrite()) throw new Error('This tab is read-only. Continue in this tab to save answers.')
+      return submitAnswer(sessionId, questionIndex, answerIndexes)
+    },
 
     onMutate: async ({ questionIndex }) => {
       // Clear any pending invalidation from a previous answer to avoid stacking timers
       if (timerRef.current) clearTimeout(timerRef.current)
-      optimisticallyMarkAnswered(questionIndex)
-      return { questionIndex }
+      return { sessionId, questionIndex }
     },
 
     onSuccess: (data, _variables, context) => {
-      confirmAnswer(context.questionIndex)
-
+      if (!context || permissionRef.current.sessionId !== context.sessionId) return
+      const requestSessionId = context.sessionId
       const currentStore = useQuizSessionStore.getState()
+      if (currentStore.sessionId === requestSessionId) markAnswered(context.questionIndex)
       if ('isCorrect' in data) {
         const rawCorrect = data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : [])
-        setLastAnswerResult({
+        if (currentStore.sessionId === requestSessionId && currentStore.currentQuestionIndex === context.questionIndex) setLastAnswerResult({
           isCorrect: data.isCorrect,
           correctAnswer: data.correctAnswer,
           correctAnswers: rawCorrect,
@@ -117,7 +121,7 @@ export function useSubmitAnswer(sessionId: string) {
         })
 
         // Update preloaded questions cache in React Query so current session question contains correct answer
-        queryClient.setQueryData<any>(['sessions', sessionId, 'all-questions'], (old: any) => {
+        queryClient.setQueryData<any>(['sessions', requestSessionId, 'all-questions'], (old: any) => {
           if (!old || !Array.isArray(old.questions)) return old
           const updatedQuestions = [...old.questions]
           if (updatedQuestions[context.questionIndex]) {
@@ -134,14 +138,12 @@ export function useSubmitAnswer(sessionId: string) {
       // Defer session invalidation to keep user_answers in sync for navigation without blocking UI
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['sessions', sessionId, 'initial'] })
+        queryClient.invalidateQueries({ queryKey: ['sessions', requestSessionId, 'initial'] })
       }, 500)
     },
 
     onError: (error, _variables, context) => {
-      if (context) {
-        rollbackOptimisticAnswer(context.questionIndex)
-      }
+      if (context && permissionRef.current.sessionId !== context.sessionId) return
       toast.error(error.message || 'Failed to submit answer, please try again')
     },
   })

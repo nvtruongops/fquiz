@@ -28,13 +28,15 @@ export function useLoginForm() {
   useGSAP(
     () => {
       if (!cardRef.current) return
-      gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      const media = gsap.matchMedia()
+      media.add('(prefers-reduced-motion: no-preference)', () => {
         gsap.fromTo(
           cardRef.current,
           { autoAlpha: 0, y: 16, scale: 0.98 },
           { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
         )
       })
+      return () => media.revert()
     },
     { scope: cardRef }
   )
@@ -69,7 +71,7 @@ export function useLoginForm() {
     }
   }, [searchParams, toast])
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     const result = LoginSchema.safeParse({ identifier, password })
@@ -80,6 +82,8 @@ export function useLoginForm() {
         if (!mapped[key]) mapped[key] = issue.message
       }
       setErrors(mapped as { identifier?: string; password?: string })
+      const firstInvalid = e.currentTarget.elements.namedItem(mapped.identifier ? 'identifier' : 'password') as HTMLInputElement | null
+      firstInvalid?.focus()
       return
     }
 

@@ -11,6 +11,7 @@ import { useSessionHydration } from '@/hooks/quiz/useSessionHydration'
 import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
+import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
 
 function triggerVibration() {
   if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -44,11 +45,14 @@ export function useMobileQuizSessionController() {
     isInitialFetching,
     isInitialError,
     initialError,
+    refetchInitial,
     activeData,
     currentQuestion,
     preloadedQuestions,
     isPreloading,
     isPreloadError,
+    preloadError,
+    refetchPreload,
   } = useQuizSessionQueries(resolvedSessionId, currentQuestionIndex)
 
   const { isReadyToRender, isHydratedFromServer } = useSessionHydration({
@@ -61,19 +65,19 @@ export function useMobileQuizSessionController() {
     initialError,
   })
 
-  const { finalizeMutation } = useSessionFinalize({
-    sessionId: resolvedSessionId,
-    quizId: resolvedQuizId,
-  })
-
-  const submitMutation = useSubmitAnswer(resolvedSessionId)
+  const { isReadOnlyTab, takeOverLease, canWrite } = useExamTabLease(resolvedSessionId)
+  const submitMutation = useSubmitAnswer(resolvedSessionId, canWrite)
 
   const {
     selectedOptions,
-    setSelectedOptions,
     submitted,
-    feedbackByQuestion,
     handleSelectOption,
+    saveStatus,
+    retryFailedAnswer,
+    hasUnsavedAnswers,
+    discardUnsavedAnswer,
+    unsavedQuestionIndex,
+    acknowledgedQuestions,
   } = useSessionAnswerSync({
     activeData,
     currentQuestionIndex,
@@ -81,7 +85,12 @@ export function useMobileQuizSessionController() {
     preloadedQuestions,
     submitAnswer: submitMutation.mutate,
     isSubmitting: submitMutation.isPending,
+    canWrite,
   })
+
+  const canFinalize = useCallback(() => canWrite() && !submitMutation.isPending && !hasUnsavedAnswers(), [canWrite, submitMutation.isPending, hasUnsavedAnswers])
+  const { finalizeMutation } = useSessionFinalize({ sessionId: resolvedSessionId, quizId: resolvedQuizId, canFinalize })
+  const submitDisabled = isReadOnlyTab || submitMutation.isPending || hasUnsavedAnswers() || finalizeMutation.isPending
 
   const {
     exitConfirmOpen,
@@ -96,6 +105,7 @@ export function useMobileQuizSessionController() {
     currentQuestionIndex,
     activeData,
     resolvedQuizId,
+    canWrite,
   })
 
   const courseCode = activeData?.session?.courseCode
@@ -172,20 +182,19 @@ export function useMobileQuizSessionController() {
   }, [currentQuestionIndex])
 
   const handleSubmit = useCallback(() => {
-    if (!activeData?.session) return
+    if (!activeData?.session || !canFinalize()) return
     setConfirmOpen(true)
-  }, [activeData?.session])
+  }, [activeData?.session, canFinalize])
 
   const handleConfirmSubmit = useCallback(() => {
-    if (!activeData?.session || finalizeMutation.isPending || submitMutation.isPending) {
+    if (!activeData?.session || finalizeMutation.isPending || !canFinalize()) {
       setConfirmOpen(false)
       return
     }
 
     setConfirmOpen(false)
-    sessionLoader.open('Submitting answers and compiling results...')
     finalizeMutation.mutate()
-  }, [activeData?.session, finalizeMutation, submitMutation.isPending, sessionLoader])
+  }, [activeData?.session, finalizeMutation, canFinalize])
 
   const handleConfirmExitQuiz = useCallback(() => {
     markExiting()
@@ -288,6 +297,9 @@ export function useMobileQuizSessionController() {
     initialError,
     isInitialError,
     isPreloadError,
+    refetchInitial,
+    preloadError,
+    refetchPreload,
     activeData,
     isStillLoading,
     isHydratedFromServer,
@@ -295,8 +307,15 @@ export function useMobileQuizSessionController() {
     submitMutation,
     selectedOptions,
     submitted,
-    feedbackByQuestion,
     handleSelectOption,
+    isReadOnlyTab,
+    takeOverLease,
+    submitDisabled,
+    saveStatus,
+    retryFailedAnswer,
+    acknowledgedQuestions,
+    discardUnsavedAnswer,
+    unsavedQuestionIndex,
     exitConfirmOpen,
     setExitConfirmOpen,
     inactivityPauseOpen,

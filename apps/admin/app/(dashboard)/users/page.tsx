@@ -26,6 +26,11 @@ export default function AdminUsersPage() {
     setStatus,
     data,
     isLoading,
+    isFetching,
+    isSearchPending,
+    isError,
+    error,
+    refetch,
     updateMutation,
     deleteMutation,
   } = useAdminUsers()
@@ -52,7 +57,6 @@ export default function AdminUsersPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
-              setPage(1)
             }}
             className="pl-9"
           />
@@ -96,19 +100,24 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <UserTable
-        isLoading={isLoading}
-        data={data}
-        page={page}
-        onPageChange={setPage}
-        onUpdateRole={(id, newRole) =>
-          updateMutation.mutate({ id, updates: { role: newRole } })
-        }
-        onUpdateStatus={(id, newStatus) =>
-          updateMutation.mutate({ id, updates: { status: newStatus } })
-        }
-        onDeleteUser={(u) => setUserToDelete(u)}
-      />
+      <div aria-busy={isFetching || isSearchPending}>
+        <UserTable
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+          onRetry={refetch}
+          data={data}
+          page={page}
+          onPageChange={setPage}
+          onUpdateRole={(id, newRole) =>
+            updateMutation.mutate({ id, updates: { role: newRole } })
+          }
+          onUpdateStatus={(id, newStatus) =>
+            updateMutation.mutate({ id, updates: { status: newStatus } })
+          }
+          onDeleteUser={(u) => setUserToDelete(u)}
+        />
+      </div>
 
       <UserDeleteDialog
         user={userToDelete}

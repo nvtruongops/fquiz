@@ -1,59 +1,37 @@
-/**
- * @jest-environment node
- */
-import React from 'react'
 import { useSessionActivityTracking } from '../useSessionActivityTracking'
+import { renderHook, resetHooks } from '../../../../../test/hookHarness'
 
-let stateSetters: Record<string, jest.Mock> = {}
-
-jest.mock('react', () => {
-  const original = jest.requireActual('react')
-  return {
-    ...original,
-    useState: (initial: any) => {
-      const key = typeof initial === 'boolean' ? (initial ? 'true' : 'false') : String(initial)
-      if (!stateSetters[key]) {
-        stateSetters[key] = jest.fn()
-      }
-      return [initial, stateSetters[key]]
-    },
-    useCallback: (fn: any) => fn,
-    useRef: (initial: any) => ({ current: initial }),
-    useEffect: (fn: any) => {
-      try {
-        fn()
-      } catch {
-        // Ignore effect cleanup mock errors in unit tests
-      }
-    },
-  }
-})
+jest.mock('react', () => require('../../../../../test/hookHarness').reactHooks)
+jest.mock('@tanstack/react-query', () => ({ useQueryClient: () => mockQueryClient }))
+jest.mock('@/lib/core/security/csrf', () => ({ withCsrfHeaders: (headers: any) => headers }))
 
 const mockQueryClient = {
   invalidateQueries: jest.fn().mockResolvedValue(undefined),
   setQueryData: jest.fn(),
 }
 
-jest.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => mockQueryClient,
-}))
-
-describe('useSessionActivityTracking Unit Test Suite', () => {
+describe('session activity tracking', () => {
   const sessionId = 'sess_test_123'
   const resolvedQuizId = 'quiz_test_456'
   let fetchSpy: jest.SpyInstance
+  let props: any
+  let localValues: Map<string, string>
+  let globalListeners: Map<string, EventListener>
+  let documentListeners: Map<string, EventListener>
+
+  const render = () => renderHook(() => useSessionActivityTracking(props)) as any
 
   beforeEach(() => {
+    resetHooks()
     jest.clearAllMocks()
-    stateSetters = {}
-
-    // Mock window & localStorage in Node environment
-    const store: Record<string, string> = {}
+    localValues = new Map()
+    globalListeners = new Map()
+    documentListeners = new Map()
     const mockStorage = {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value },
-      removeItem: (key: string) => { delete store[key] },
-      clear: () => { Object.keys(store).forEach(k => delete store[k]) },
+      getItem: (key: string) => localValues.get(key) ?? null,
+      setItem: (key: string, value: string) => { localValues.set(key, value) },
+      removeItem: (key: string) => { localValues.delete(key) },
+      clear: () => { localValues.clear() },
       length: 0,
       key: () => null,
     }
@@ -67,122 +45,168 @@ describe('useSessionActivityTracking Unit Test Suite', () => {
       writable: true,
       configurable: true,
     })
-
     Object.defineProperty(globalThis, 'localStorage', {
       value: mockStorage,
       writable: true,
       configurable: true,
     })
-
     Object.defineProperty(globalThis, 'document', {
       value: {
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
+        addEventListener: jest.fn((type: string, listener: EventListener) => documentListeners.set(type, listener)),
+        removeEventListener: jest.fn((type: string) => documentListeners.delete(type)),
         visibilityState: 'visible',
         cookie: '',
       },
       writable: true,
       configurable: true,
     })
+    Object.defineProperty(globalThis, 'history', {
+      value: { pushState: jest.fn() },
+      writable: true,
+      configurable: true,
+    })
+    Object.defineProperty(globalThis, 'location', {
+      value: { href: 'http://localhost/session' },
+      writable: true,
+      configurable: true,
+    })
+    globalThis.addEventListener = jest.fn((type: string, listener: EventListener) => globalListeners.set(type, listener)) as any
+    globalThis.removeEventListener = jest.fn((type: string) => globalListeners.delete(type)) as any
 
-    fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
     )
+    props = {
+      sessionId,
+      currentQuestionIndex: 0,
+      activeData: { session: { _id: sessionId, status: 'active' } },
+      resolvedQuizId,
+      canWrite: () => true,
+    }
   })
 
   afterEach(() => {
+    resetHooks()
     fetchSpy.mockRestore()
+    jest.restoreAllMocks()
+    jest.useRealTimers()
   })
 
-  test('should construct hook and expose tracking methods', () => {
-    const activeData = {
-      session: {
-        _id: sessionId,
-        status: 'active',
-      },
-    } as any
+  it('keeps the activity callback stable and reads the latest question index', async () => {
+    const first = render()
+    const report = first.reportSessionActivity
+    expect(fetchSpy).toHaveBeenCalledTimes(1) // one mount resume
 
-    const tracking = useSessionActivityTracking({
-      sessionId,
-      currentQuestionIndex: 1,
-      activeData,
-      resolvedQuizId,
+    for (let index = 1; index <= 20; index += 1) {
+      props.currentQuestionIndex = index
+      expect(render().reportSessionActivity).toBe(report)
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    await report('pause')
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(JSON.parse(fetchSpy.mock.calls[1][1].body)).toEqual({
+      event: 'pause',
+      current_question_index: 20,
     })
-
-    expect(tracking.shouldWarnBeforeLeave).toBe(true)
-    expect(typeof tracking.reportSessionActivity).toBe('function')
-    expect(typeof tracking.handleResumeInactivity).toBe('function')
-    expect(typeof tracking.markExiting).toBe('function')
   })
 
-  test('handleResumeInactivity should clear localStorage, set state false, await API resume, and update query cache', async () => {
-    localStorage.setItem(`session_paused_at_${sessionId}`, Date.now().toString())
+  it('does not write activity or optimistic cache state without the exam lease', async () => {
+    props.canWrite = () => false
+    localStorage.setItem(`session_paused_at_${sessionId}`, '123')
 
-    const activeData = {
+    const tracking = render()
+    await tracking.reportSessionActivity('pause')
+    await tracking.handleResumeInactivity()
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(localStorage.getItem(`session_paused_at_${sessionId}`)).toBe('123')
+    expect(mockQueryClient.setQueryData).not.toHaveBeenCalled()
+    expect(mockQueryClient.invalidateQueries).not.toHaveBeenCalled()
+  })
+
+  it('updates and invalidates only the initial session query when resuming', async () => {
+    props.activeData = {
       session: {
         _id: sessionId,
         status: 'active',
         paused_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
       },
-    } as any
-
-    const tracking = useSessionActivityTracking({
-      sessionId,
-      currentQuestionIndex: 2,
-      activeData,
-      resolvedQuizId,
-    })
-
+    }
+    const tracking = render()
+    localStorage.setItem(`session_paused_at_${sessionId}`, Date.now().toString())
     await tracking.handleResumeInactivity()
 
-    // 1. LocalStorage item should be removed
     expect(localStorage.getItem(`session_paused_at_${sessionId}`)).toBeNull()
-
-    // 2. reportSessionActivity('resume') should be posted to API
-    expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/sessions/${sessionId}/activity`),
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ event: 'resume', current_question_index: 2 }),
-      })
-    )
-
-    // 3. TanStack Query cache setQueryData should be called with updater removing paused_at
     expect(mockQueryClient.setQueryData).toHaveBeenCalledWith(
-      ['sessions', sessionId],
-      expect.any(Function)
+      ['sessions', sessionId, 'initial'],
+      expect.any(Function),
     )
-
-    const updaterFn = mockQueryClient.setQueryData.mock.calls[0][1]
-    const updatedCache = updaterFn(activeData)
-    expect(updatedCache.session.paused_at).toBeUndefined()
-
-    // 4. Query invalidation should be triggered after DB update
+    const updater = mockQueryClient.setQueryData.mock.calls[0][1]
+    const updated = updater(props.activeData)
+    expect(updated.session.paused_at).toBeUndefined()
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['sessions', sessionId],
+      queryKey: ['sessions', sessionId, 'initial'],
+      exact: true,
     })
+    expect(mockQueryClient.invalidateQueries.mock.calls).toHaveLength(1)
   })
 
-  test('reportSessionActivity should post pause event to activity route', async () => {
-    const activeData = {
-      session: { _id: sessionId, status: 'active' },
-    } as any
+  it('sends one request for each actual pause or resume transition across browser events', async () => {
+    const now = Date.now()
+    const dateNow = jest.spyOn(Date, 'now').mockReturnValue(now)
+    render()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    globalListeners.get('blur')?.(new Event('blur'))
 
-    const tracking = useSessionActivityTracking({
-      sessionId,
-      currentQuestionIndex: 5,
-      activeData,
-      resolvedQuizId,
-    })
+    dateNow.mockReturnValue(now + 2_000)
+    ;(document as any).visibilityState = 'hidden'
+    documentListeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    globalListeners.get('pagehide')?.(new Event('pagehide'))
 
-    await tracking.reportSessionActivity('pause')
+    ;(document as any).visibilityState = 'visible'
+    documentListeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    globalListeners.get('focus')?.(new Event('focus'))
+    expect(fetchSpy).toHaveBeenCalledTimes(3) // mount resume, pause, resume
+    const events = fetchSpy.mock.calls.map(([, init]) => JSON.parse(init.body).event)
+    expect(events).toEqual(['resume', 'pause', 'resume'])
+  })
 
-    expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/sessions/${sessionId}/activity`),
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ event: 'pause', current_question_index: 5 }),
-      })
-    )
+  it('still opens the inactivity pause after five minutes without interaction', () => {
+    jest.useFakeTimers()
+    render()
+
+    jest.advanceTimersByTime(5 * 60 * 1000)
+
+    expect(render().inactivityPauseOpen).toBe(true)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(JSON.parse(fetchSpy.mock.calls[1][1].body).event).toBe('pause')
+  })
+
+  it('allows the same transition to retry after the activity API returns an error', async () => {
+    const tracking = render()
+    fetchSpy.mockResolvedValueOnce(new Response(null, { status: 503 }))
+
+    await expect(tracking.reportSessionActivity('pause')).resolves.toBe(false)
+    await expect(tracking.reportSessionActivity('pause')).resolves.toBe(true)
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3) // mount resume, failed pause, retry pause
+  })
+
+  it('does not roll back to an unconfirmed transition when requests finish out of order', async () => {
+    let resolveMountResume!: (response: Response) => void
+    fetchSpy.mockImplementationOnce(() => new Promise((resolve) => { resolveMountResume = resolve }))
+    const tracking = render()
+    fetchSpy.mockResolvedValueOnce(new Response(null, { status: 503 }))
+
+    await expect(tracking.reportSessionActivity('pause')).resolves.toBe(false)
+    await expect(tracking.reportSessionActivity('resume')).resolves.toBe(true)
+    resolveMountResume(new Response(null, { status: 503 }))
+    await Promise.resolve()
+
+    await expect(tracking.reportSessionActivity('resume')).resolves.toBe(false)
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
   })
 })

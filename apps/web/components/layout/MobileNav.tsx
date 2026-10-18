@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
+import type { AuthResponse } from '@/hooks/auth/useAuth'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useToast } from '@/store/shared/toast-store'
 import { cn } from '@/lib/core/utils/cn'
 import {
   Home,
@@ -36,26 +38,70 @@ export function MobileNav({ user }: MobileNavProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [examMenuOpen, setExamMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const examTriggerRef = useRef<HTMLButtonElement>(null)
+  const userTriggerRef = useRef<HTMLButtonElement>(null)
 
   const { theme, setTheme } = useTheme()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const themeRequestRef = useRef(0)
+  const selectedThemeRef = useRef(theme ?? 'light')
+
+  useEffect(() => {
+    selectedThemeRef.current = theme ?? 'light'
+  }, [theme])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const handleThemeChange = (newTheme: string) => {
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const closeAtDesktop = () => {
+      if (media.matches) {
+        setExamMenuOpen(false)
+        setUserMenuOpen(false)
+      }
+    }
+    media.addEventListener('change', closeAtDesktop)
+    closeAtDesktop()
+    return () => media.removeEventListener('change', closeAtDesktop)
+  }, [])
+
+  const handleThemeChange = async (newTheme: string) => {
+    const previousTheme = selectedThemeRef.current
+    if (newTheme === previousTheme) return
+
+    const requestId = ++themeRequestRef.current
+    selectedThemeRef.current = newTheme
     setTheme(newTheme)
-    if (user) {
-      fetch('/api/v1/user/theme', {
+    if (!user) return
+
+    try {
+      const response = await fetch('/api/v1/user/theme', {
         method: 'PUT',
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ theme: newTheme }),
       })
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['auth-user'] })
-        })
-        .catch(() => {})
+      if (!response.ok) throw new Error('Could not save your theme preference. Try again.')
+
+      const data = await response.json()
+      if (requestId !== themeRequestRef.current) return
+
+      const savedTheme = data.themePreference ?? data.theme ?? newTheme
+      if (savedTheme !== selectedThemeRef.current) {
+        selectedThemeRef.current = savedTheme
+        setTheme(savedTheme)
+      }
+      queryClient.setQueryData<AuthResponse | undefined>(['auth-user'], (current) => current?.user ? {
+        ...current,
+        user: { ...current.user, themePreference: savedTheme, theme_preference: savedTheme },
+      } : current)
+    } catch (error) {
+      if (requestId !== themeRequestRef.current) return
+      selectedThemeRef.current = previousTheme
+      setTheme(previousTheme)
+      toast.error(error)
     }
   }
 
@@ -96,6 +142,7 @@ export function MobileNav({ user }: MobileNavProps) {
         pathname={pathname}
         user={user}
         onClose={closeAllMenus}
+        triggerRef={examTriggerRef}
       />
 
       {/* BOTTOM SHEET 2: USER ACCOUNT */}
@@ -107,6 +154,7 @@ export function MobileNav({ user }: MobileNavProps) {
         onThemeChange={handleThemeChange}
         onLogout={handleLogout}
         onClose={closeAllMenus}
+        triggerRef={userTriggerRef}
       />
 
       {/* MAIN FIXED BOTTOM NAV BAR */}
@@ -118,6 +166,7 @@ export function MobileNav({ user }: MobileNavProps) {
           {/* TAB 1: Home */}
           <Link
             href="/"
+            prefetch={false}
             onClick={closeAllMenus}
             className={cn(
               'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
@@ -135,6 +184,7 @@ export function MobileNav({ user }: MobileNavProps) {
 
           {/* TAB 2: Practice (Drawer) */}
           <button
+            ref={examTriggerRef}
             type="button"
             aria-label="Open practice menu"
             aria-expanded={examMenuOpen}
@@ -163,6 +213,7 @@ export function MobileNav({ user }: MobileNavProps) {
           {/* TAB 3: Classroom */}
           <Link
             href={classroomHref}
+            prefetch={false}
             onClick={closeAllMenus}
             className={cn(
               'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
@@ -184,6 +235,7 @@ export function MobileNav({ user }: MobileNavProps) {
           {/* TAB 4: Community */}
           <Link
             href="/community"
+            prefetch={false}
             onClick={closeAllMenus}
             className={cn(
               'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
@@ -201,6 +253,7 @@ export function MobileNav({ user }: MobileNavProps) {
 
           {/* TAB 5: Account (Drawer) */}
           <button
+            ref={userTriggerRef}
             type="button"
             aria-label="Open account menu"
             aria-expanded={userMenuOpen}

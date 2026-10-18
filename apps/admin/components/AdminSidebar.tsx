@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -8,7 +8,8 @@ import {
   LogOut, Users, Settings, MessageSquare, Menu, X,
   Database,
 } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '../lib/utils/cn'
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog'
 
 const navItems = [
   { href: '/',               label: 'Dashboard',           icon: LayoutDashboard, exact: true },
@@ -32,6 +33,15 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const mobileTriggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)')
+    const closeAtDesktop = () => { if (media.matches) setMobileOpen(false) }
+    media.addEventListener('change', closeAtDesktop)
+    closeAtDesktop()
+    return () => media.removeEventListener('change', closeAtDesktop)
+  }, [])
 
   async function handleLogout() {
     try {
@@ -46,7 +56,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     return (
       <>
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-          <Link href="/" prefetch={false} className="flex items-center gap-2.5" onClick={onNavigate}>
+          <Link href="/" prefetch={false} data-desktop-nav-home={onNavigate ? undefined : 'true'} className="flex items-center gap-2.5" onClick={onNavigate}>
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
               <ShieldCheck className="w-5 h-5" />
             </div>
@@ -121,26 +131,33 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           <span className="font-bold text-foreground text-sm">FQuiz Admin</span>
         </Link>
         <button
+          ref={mobileTriggerRef}
+          type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+          aria-haspopup="dialog"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="relative w-64 bg-card border-r border-border flex flex-col h-full z-50">
-            {renderNavLinks(() => setMobileOpen(false))}
-          </aside>
-        </div>
-      )}
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DialogContent
+          aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            if (mobileTriggerRef.current?.getClientRects().length) mobileTriggerRef.current.focus()
+            else document.querySelector<HTMLElement>('[data-desktop-nav-home]')?.focus()
+          }}
+          className="left-0 top-0 translate-x-0 translate-y-0 w-64 max-w-none h-[100dvh] max-h-[100dvh] bg-card border-r border-border rounded-none p-0 gap-0 flex flex-col overflow-y-auto md:hidden"
+        >
+          <DialogTitle className="sr-only">Admin menu</DialogTitle>
+          {renderNavLinks(() => setMobileOpen(false))}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

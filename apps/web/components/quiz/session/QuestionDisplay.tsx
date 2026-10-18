@@ -21,6 +21,7 @@ interface QuestionDisplayProps {
   onSubmit?: () => void
   onExit?: () => void
   isPending: boolean
+  submitDisabled?: boolean
   sessionMode: 'immediate' | 'review' | 'flashcard'
   enableAnimation?: boolean
   isExplanationOpen?: boolean
@@ -94,7 +95,7 @@ function StandardQuestionView({
   onSubmit,
   onExit,
   isPending,
-  sessionMode,
+  submitDisabled,
   courseCode,
   quizTitle,
   quizId,
@@ -347,7 +348,7 @@ function StandardQuestionView({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={!wantFinish}
+            disabled={!wantFinish || isPending || submitDisabled}
             className="px-3 py-1 rounded border border-border bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-none"
           >
             Finish Exam
@@ -387,7 +388,6 @@ function AnimatedQuestionView({
   lastAnswerResult,
   onSelectOption,
   isPending,
-  sessionMode,
   courseCode,
   quizTitle,
   quizId,
