@@ -5,10 +5,14 @@
  * Usage: npm run test:session-perf
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fquiz-web.vercel.app'
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'student@fquiz.dev'
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'Student@123456'
-const TEST_QUIZ_ID = process.argv[2] || '69d47fb250cdb1d6b9ab2c32'
+const API_BASE = process.env.TEST_API_BASE_URL || 'http://localhost:3000'
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || ''
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || ''
+const TEST_QUIZ_ID = process.argv[2] || process.env.TEST_QUIZ_ID || ''
+
+if (!TEST_EMAIL || !TEST_PASSWORD || !TEST_QUIZ_ID) {
+  throw new Error('Set TEST_USER_EMAIL, TEST_USER_PASSWORD, and TEST_QUIZ_ID for a dedicated test account and quiz.')
+}
 
 interface Timing { label: string; ms: number; status?: number }
 const timings: Timing[] = []

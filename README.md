@@ -69,11 +69,7 @@ npm install
 cp .env.example .env.local
 # Set MONGODB_URI, JWT_SECRET, etc. in .env.local
 
-# 4. Seed initial database records (optional)
-npm run seed                 # Create sample admin & student accounts
-npm run seed:public-quizzes  # Create sample public quiz banks
-
-# 5. Launch both Web (:3000) and Admin (:3001) concurrently
+# 4. Launch both Web (:3000) and Admin (:3001) concurrently
 npm run dev
 ```
 

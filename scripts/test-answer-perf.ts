@@ -5,11 +5,15 @@
  * Usage: npm run test:answer-perf [quizId]
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fquiz-web.vercel.app'
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'student@fquiz.dev'
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'Student@123456'
-const QUIZ_ID = process.argv[2] || '69d47fb250cdb1d6b9ab2c32'
+const API_BASE = process.env.TEST_API_BASE_URL || 'http://localhost:3000'
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || ''
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || ''
+const QUIZ_ID = process.argv[2] || process.env.TEST_QUIZ_ID || ''
 const ANSWERS_TO_TEST = 5
+
+if (!TEST_EMAIL || !TEST_PASSWORD || !QUIZ_ID) {
+  throw new Error('Set TEST_USER_EMAIL, TEST_USER_PASSWORD, and TEST_QUIZ_ID for a dedicated test account and quiz.')
+}
 
 interface Timing { label: string; ms: number }
 const timings: Timing[] = []
