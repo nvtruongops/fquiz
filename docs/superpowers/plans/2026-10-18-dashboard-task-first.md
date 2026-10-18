@@ -108,4 +108,4 @@
 - [x] Convert recent activity into compact, equal-height responsive cards without timeline connector rails.
 - [x] Review keyboard-focus states and 320px responsive classes in source; verify all four theme tiers. Authenticated visual rendering is unavailable in this session.
 - [x] Run lint, type checks, repository verification, and a production build; inspect the final diff.
-- [ ] Commit, push the feature branch, deploy the Web project, and smoke-check the production alias.
+- [x] Commit, push the feature branch, deploy the Web project, and smoke-check the production alias.
