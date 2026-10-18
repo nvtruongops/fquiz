@@ -26,6 +26,8 @@ export interface CreateSessionResponse {
   mode?: string
   difficulty?: 'sequential' | 'random'
   resumed?: boolean
+  initialData?: any
+  preloadData?: any
 }
 
 export interface ActiveSessionPayload {
@@ -134,6 +136,7 @@ async function fetchQuizDetail(id: string, isAuth?: boolean): Promise<QuizDetail
 
 export function useQuizDetailState() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const params = useParams<{ id?: string | string[] }>()
   const quizId = Array.isArray(params?.id) ? params?.id[0] : params?.id
@@ -233,21 +236,46 @@ export function useQuizDetailState() {
       const sessionData = await res.json()
 
       if (sessionData.sessionId) {
-        // Non-blocking background preload to warm cache without halting UI navigation
-        Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.QUESTIONS(sessionData.sessionId)}`).then(r => r.ok ? r.json() : null),
-          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.SESSIONS.BASE}/${sessionData.sessionId}`).then(r => r.ok ? r.json() : null),
-        ]).then(([qData, sData]) => {
-          if (qData) sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(qData))
-          if (sData) sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sData))
-        }).catch(() => {})
+        if (sessionData.initialData) {
+          queryClient.setQueryData(['sessions', sessionData.sessionId, 'initial'], sessionData.initialData)
+          try {
+            sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sessionData.initialData))
+          } catch (_storageErr) {
+            // Ignore sessionStorage quota or access errors in private browsing
+          }
+        }
+        if (sessionData.preloadData) {
+          queryClient.setQueryData(['sessions', sessionData.sessionId, 'all-questions'], sessionData.preloadData)
+          try {
+            sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(sessionData.preloadData))
+          } catch (_storageErr) {
+            // Ignore sessionStorage quota or access errors in private browsing
+          }
+        }
       }
 
       return sessionData as CreateSessionResponse
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       const nextSessionId = data.sessionId
       if (!nextSessionId) return
+
+      if (data.initialData) {
+        queryClient.setQueryData(['sessions', nextSessionId, 'initial'], data.initialData)
+        try {
+          sessionStorage.setItem(`session_initial_preload_${nextSessionId}`, JSON.stringify(data.initialData))
+        } catch (_storageErr) {
+          // Ignore sessionStorage quota or access errors in private browsing
+        }
+      }
+      if (data.preloadData) {
+        queryClient.setQueryData(['sessions', nextSessionId, 'all-questions'], data.preloadData)
+        try {
+          sessionStorage.setItem(`session_preload_${nextSessionId}`, JSON.stringify(data.preloadData))
+        } catch (_storageErr) {
+          // Ignore sessionStorage quota or access errors in private browsing
+        }
+      }
 
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const targetUrl =

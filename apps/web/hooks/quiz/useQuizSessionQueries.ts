@@ -27,7 +27,22 @@ export function useQuizSessionQueries(
   resolvedSessionId: string,
   currentQuestionIndex: number,
 ): UseQuizSessionQueriesResult {
-  const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(null)
+  const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+            return parsed.questions
+          }
+        }
+      }
+    } catch (_storageErr) {
+      // Ignore sessionStorage access errors
+    }
+    return null
+  })
 
   const {
     data: initialData,
@@ -110,18 +125,20 @@ export function useQuizSessionQueries(
     if (preloadData?.questions) setPreloadedQuestions(preloadData.questions)
   }, [preloadData])
 
+  const effectiveQuestions = preloadedQuestions || preloadData?.questions || (initialData?.question ? [initialData.question] : null)
+
   const clampedQuestionIndex = Math.min(
     Math.max(currentQuestionIndex, 0),
-    Math.max((initialData?.session.totalQuestions ?? 1) - 1, 0),
+    Math.max((initialData?.session.totalQuestions ?? effectiveQuestions?.length ?? 1) - 1, 0),
   )
 
-  const currentQuestion = preloadedQuestions?.[clampedQuestionIndex]
+  const currentQuestion = effectiveQuestions?.[clampedQuestionIndex] || initialData?.question
   const isInitialError = hasInitialError && !initialData
   const isPreloadError = hasPreloadError && !preloadData
 
-  const activeData: SessionData | undefined = initialData && currentQuestion
-    ? { session: initialData.session, question: currentQuestion }
-    : initialData
+  const activeData: SessionData | undefined = initialData
+    ? { session: initialData.session, question: currentQuestion || initialData.question }
+    : undefined
 
   return {
     initialData,

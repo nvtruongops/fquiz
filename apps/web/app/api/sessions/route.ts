@@ -4,12 +4,14 @@ import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Category } from '@/lib/modules/quiz/models/Category'
 import mongoose from 'mongoose'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle'
+import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
 
 
 export const GET = withAuth(async (req, { payload }) => {
@@ -145,7 +147,7 @@ export const POST = withAuth(async (req, { payload }) => {
     const { quiz_id, mode, difficulty, action, shuffle_options } = parsed.data
     await connectDB()
 
-    const quiz = await Quiz.findById(quiz_id).select('questions original_quiz_id created_by is_public status is_saved_from_explore').lean() as any
+    const quiz = await Quiz.findById(quiz_id).select('questions original_quiz_id created_by is_public status is_saved_from_explore course_code title category_id').lean() as any
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     const isGuest = !payload.userId
@@ -181,6 +183,68 @@ export const POST = withAuth(async (req, { payload }) => {
       }
     })
 
+    const buildInitialAndPreloadPayloads = async (createdSession: any) => {
+      let categoryName = 'General'
+      if (quiz.category_id) {
+        const cat = await Category.findById(quiz.category_id).select('name').lean() as any
+        if (cat?.name) categoryName = cat.name
+      }
+
+      const formattedQuestions = questionOrder.map((origIdx: number) => {
+        const q = questionsCache[origIdx] ?? questionsCache[0] ?? {}
+        const baseQuestion = {
+          _id: q._id ? q._id.toString() : undefined,
+          text: q.text,
+          options: q.options,
+          answer_selection_count: getAnswerSelectionCount(q),
+          usage_count: 1,
+          used_in_quizzes: [],
+          ...(q.image_url ? { image_url: q.image_url } : {}),
+        }
+        if (createdSession.mode === 'flashcard') {
+          return {
+            ...baseQuestion,
+            correct_answer: q.correct_answer,
+            explanation: q.explanation,
+          }
+        }
+        return baseQuestion
+      })
+
+      const initialData = {
+        session: {
+          _id: createdSession._id.toString(),
+          mode: createdSession.mode,
+          status: createdSession.status,
+          current_question_index: 0,
+          user_answers: [],
+          score: createdSession.score ?? 0,
+          totalQuestions: effective.questions.length,
+          courseCode: quiz.course_code || '',
+          categoryName,
+          title: quiz.title || '',
+          started_at: createdSession.started_at ? createdSession.started_at.toISOString() : new Date().toISOString(),
+          paused_at: null,
+          total_paused_duration_ms: 0,
+          is_temp: Boolean(createdSession.is_temp),
+          quiz_id: createdSession.quiz_id.toString(),
+          ...(createdSession.mode === 'flashcard' && createdSession.flashcard_stats ? { flashcard_stats: createdSession.flashcard_stats } : {}),
+        },
+        question: formattedQuestions[0] || null,
+      }
+
+      const preloadData = {
+        sessionId: createdSession._id.toString(),
+        mode: createdSession.mode,
+        difficulty: createdSession.difficulty,
+        status: createdSession.status,
+        totalQuestions: effective.questions.length,
+        questions: formattedQuestions,
+      }
+
+      return { initialData, preloadData }
+    }
+
     // --- GUEST FLOW ---
     if (isGuest) {
       const guestId = crypto.randomUUID()
@@ -209,12 +273,16 @@ export const POST = withAuth(async (req, { payload }) => {
       syncUniqueStudentCount(effective.id)
         .catch(err => console.error('Failed to sync stats for guest session:', err))
 
+      const { initialData, preloadData } = await buildInitialAndPreloadPayloads(session)
+
       return NextResponse.json({
         sessionId: session._id,
         mode: session.mode,
         difficulty: session.difficulty,
         totalQuestions: effective.questions.length,
         isGuest: true,
+        initialData,
+        preloadData,
       }, { status: 201 })
     }
 
@@ -287,7 +355,17 @@ export const POST = withAuth(async (req, { payload }) => {
     // Sync stats in background
     syncUniqueStudentCount(effective.id)
       .catch(err => console.error('Failed to sync stats:', err))
-    return NextResponse.json({ sessionId: session._id, mode: session.mode, difficulty: session.difficulty, totalQuestions: effective.questions.length }, { status: 201 })
+
+    const { initialData, preloadData } = await buildInitialAndPreloadPayloads(session)
+
+    return NextResponse.json({
+      sessionId: session._id,
+      mode: session.mode,
+      difficulty: session.difficulty,
+      totalQuestions: effective.questions.length,
+      initialData,
+      preloadData,
+    }, { status: 201 })
   } catch (err) {
     console.error('POST /api/sessions error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
