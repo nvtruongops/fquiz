@@ -15,9 +15,6 @@ import {
   History,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
-
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
@@ -34,10 +31,7 @@ type FilterType = 'all' | 'active' | 'completed'
 export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
   recentActivities,
 }: RecentActivitiesFeedProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
   const [filter, setFilter] = useState<FilterType>('all')
-
-  const { contextSafe } = useGSAP({ scope: containerRef })
 
   const rawActivities = useMemo(
     () => (recentActivities || []).slice(0, MAX_FEED_ITEMS),
@@ -64,37 +58,8 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
     return rawActivities
   }, [rawActivities, filter])
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return
-      const mm = gsap.matchMedia()
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const items = containerRef.current?.querySelectorAll('.timeline-item')
-        if (items && items.length > 0) {
-          gsap.fromTo(
-            items,
-            { y: 10, autoAlpha: 0 },
-            { y: 0, autoAlpha: 1, duration: 0.35, stagger: 0.05, ease: 'power2.out' }
-          )
-        }
-      })
-      return () => mm.revert()
-    },
-    { scope: containerRef, dependencies: [filteredActivities] }
-  )
-
-  const handleItemHover = contextSafe((e: React.MouseEvent<HTMLElement>, isEnter: boolean) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    gsap.to(e.currentTarget, {
-      scale: isEnter ? 1.01 : 1,
-      x: isEnter ? 2 : 0,
-      duration: 0.2,
-      ease: 'power2.out',
-    })
-  })
-
   return (
-    <div ref={containerRef} className="w-full">
+    <div className="w-full">
       <div className="glass-card p-5 sm:p-6 rounded-[28px] border border-border shadow-xs flex flex-col space-y-4">
         {/* Header with Title and Link */}
         <div className="flex items-center justify-between pb-3 border-b border-border/60 gap-2">
@@ -206,8 +171,6 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
                   key={act.id}
                   activity={act}
                   isLast={index === filteredActivities.length - 1}
-                  onMouseEnter={(e) => handleItemHover(e, true)}
-                  onMouseLeave={(e) => handleItemHover(e, false)}
                 />
               ))}
             </div>
@@ -345,15 +308,11 @@ function resolveActivityTitle(quizTitle: string, quizCode?: string) {
 interface TimelineRowItemProps {
   activity: ActivityItem
   isLast: boolean
-  onMouseEnter: (e: React.MouseEvent<HTMLElement>) => void
-  onMouseLeave: (e: React.MouseEvent<HTMLElement>) => void
 }
 
 const TimelineRowItem = React.memo(function TimelineRowItem({
   activity,
   isLast,
-  onMouseEnter,
-  onMouseLeave,
 }: TimelineRowItemProps) {
   const isResumable = activity.status === 'active' || activity.hasActiveSession === true
   const isFlashcard = activity.mode === 'flashcard'
@@ -411,8 +370,6 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
 
       <Link
         href={getActivityHref(activity, isResumable)}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
         className="flex items-start gap-3 relative z-10 group/link cursor-pointer focus:outline-none"
       >
         {/* Timeline Status Node Icon */}

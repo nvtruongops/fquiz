@@ -5,7 +5,6 @@ import AppLayout from '@/components/layout/AppLayout'
 import { Footer } from '@/components/layout/Footer'
 import { Compass, BookCheck, Layers, GraduationCap, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
-import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,15 +20,15 @@ export default async function HomePage() {
     <AppLayout
       user={user ? { name: user.username, role: user.role, avatarUrl: user.avatarUrl } : null}
     >
-      {/* Background Soft Glow */}
-      <div className="absolute inset-x-0 top-0 h-[500px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center transform-gpu">
-        <div className="w-full max-w-7xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent blur-3xl opacity-70 transform-gpu" />
+      {/* Background Subtle Glow without expensive blur filters */}
+      <div className="absolute inset-x-0 top-0 h-[360px] w-full overflow-hidden -z-10 pointer-events-none flex justify-center">
+        <div className="w-full max-w-6xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/12 via-primary/3 to-transparent opacity-60" />
       </div>
 
       <div className="-my-4 -mx-3 sm:-mx-8 flex-1 flex flex-col justify-between min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-2rem)]">
         {/* Main Content */}
-        <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 my-auto flex-1 flex flex-col justify-center space-y-6 sm:space-y-8">
-          <GsapStaggerContainer selector=".hero-stagger" stagger={0.08} y={16}>
+        <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 my-auto flex-1 flex flex-col justify-center space-y-6 sm:space-y-8 animate-in fade-in-50 duration-300">
+          <div className="space-y-6 sm:space-y-8">
             {/* Hero Section */}
             <section className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5">
               {/* Badge */}
@@ -103,7 +102,7 @@ export default async function HomePage() {
                 </p>
               </div>
             </section>
-          </GsapStaggerContainer>
+          </div>
         </main>
 
         {/* Landing Page Full-Width Footer */}

@@ -6,8 +6,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
 import { startGlobalPageLoader } from '@/components/shared/ui/page-transition-loader'
 
 export function useLoginForm() {
@@ -24,22 +22,6 @@ export function useLoginForm() {
   const [loading, setLoading] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
-
-  useGSAP(
-    () => {
-      if (!cardRef.current) return
-      const media = gsap.matchMedia()
-      media.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.fromTo(
-          cardRef.current,
-          { autoAlpha: 0, y: 16, scale: 0.98 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
-        )
-      })
-      return () => media.revert()
-    },
-    { scope: cardRef }
-  )
 
   useEffect(() => {
     const error = searchParams.get('error')

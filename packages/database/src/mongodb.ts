@@ -46,13 +46,15 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   // Start a new connection promise if none in-flight
   if (!cached.promise) {
+    const maxPool = Number(process.env.MONGODB_MAX_POOL_SIZE || 2)
     const connectOptions = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      maxPoolSize: 10,
+      maxPoolSize: maxPool,
       minPoolSize: 0,
+      maxIdleTimeMS: 10000,
     }
 
     cached.promise = mongoose

@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useIsFetching } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Cpu, Database, CheckCircle2, Leaf, Sparkles } from 'lucide-react'
-import { isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
+import { ShieldCheck, Cpu, Database, CheckCircle2 } from 'lucide-react'
+
+function isQuizLoaderActive(): boolean {
+  if (typeof window === 'undefined') return false
+  const until = (window as unknown as { __QUIZ_LOADER_ACTIVE_UNTIL__?: number }).__QUIZ_LOADER_ACTIVE_UNTIL__ || 0
+  return Date.now() < until
+}
 
 interface PageTransitionLoaderProps {
   forcedLoading?: boolean
@@ -219,17 +223,12 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className={`fixed inset-0 z-[99999] ${loaderColors.bgOverlay} backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-4 font-sans select-none overflow-hidden transition-colors duration-300`}
-      >
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr ${loaderColors.glowGrad} rounded-full blur-3xl opacity-75`} />
-        </div>
+    <div
+      className={`fixed inset-0 z-[99999] ${loaderColors.bgOverlay} backdrop-blur-md flex flex-col items-center justify-between py-10 px-4 font-sans select-none overflow-hidden transition-opacity duration-200 animate-in fade-in-0`}
+    >
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] bg-gradient-to-tr ${loaderColors.glowGrad} rounded-full blur-xl opacity-30`} />
+      </div>
 
         <div className="relative z-10 text-center space-y-1.5 pt-2">
           <h1 className={`text-3xl sm:text-4xl font-black tracking-widest ${loaderColors.headerText} uppercase`}>
@@ -327,10 +326,9 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
         <div className="relative z-10 w-full max-w-xl space-y-5 px-2">
           <div className="flex items-center gap-4">
             <div className={`flex-1 h-3.5 ${loaderColors.progressTrackBg} rounded-full p-0.5 overflow-hidden shadow-inner`}>
-              <motion.div
-                className={`h-full ${loaderColors.progressFillBg} rounded-full shadow-sm`}
+              <div
+                className={`h-full ${loaderColors.progressFillBg} rounded-full shadow-sm transition-[width] duration-200 ease-out`}
                 style={{ width: `${progress}%` }}
-                transition={{ ease: 'easeOut', duration: 0.2 }}
               />
             </div>
             <span className={`text-xl font-black ${loaderColors.percentageText} font-mono tracking-wider w-14 text-right`}>
@@ -368,8 +366,7 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
             </div>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   )
 }
 

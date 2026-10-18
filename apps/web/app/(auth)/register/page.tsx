@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from 'react'
 import { useToast } from '@/store/shared/toast-store'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
 import { useRegisterForm } from '@/hooks/auth/useRegisterForm'
 import { RegisterSuccessView } from '@/components/auth/RegisterSuccessView'
 import { RegisterFormFields } from '@/components/auth/RegisterFormFields'
@@ -29,22 +27,6 @@ export default function RegisterPage() {
     passwordStrength,
     sendCodeLabel,
   } = useRegisterForm()
-
-  useGSAP(
-    () => {
-      if (!cardRef.current) return
-      const media = gsap.matchMedia()
-      media.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.fromTo(
-          cardRef.current,
-          { autoAlpha: 0, y: 16, scale: 0.98 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }
-        )
-      })
-      return () => media.revert()
-    },
-    { scope: cardRef }
-  )
 
   useEffect(() => {
     if (typeof window === 'undefined') return

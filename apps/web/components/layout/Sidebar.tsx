@@ -7,7 +7,6 @@ import { cn } from '@/lib/core/utils/cn'
 import {
   ChevronLeft, ChevronRight, Home, LogIn, User, UserPlus, Lock
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { UserDropdown } from '@/components/layout/UserDropdown'
 import { NAV_SECTIONS, NavItem } from '@/lib/core/constants/navigation'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
@@ -109,10 +108,11 @@ export function Sidebar({ user }: SidebarProps) {
   return (
     <>
       {/* ─── DESKTOP PERMANENT SIDEBAR (lg:flex) ──────────────────────── */}
-      <motion.aside
-        animate={{ width: collapsed ? 76 : 252 }}
-        transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-        className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40 bg-card/95 backdrop-blur-xl border-r border-border shadow-xs overflow-hidden"
+      <aside
+        className={cn(
+          "hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40 bg-card/95 backdrop-blur-md border-r border-border shadow-xs overflow-hidden transition-[width] duration-300 ease-in-out",
+          collapsed ? "w-[76px]" : "w-[252px]"
+        )}
       >
         {/* Brand Header */}
         <div className={cn(
@@ -356,27 +356,23 @@ export function Sidebar({ user }: SidebarProps) {
             </div>
           )}
         </div>
-      </motion.aside>
+      </aside>
 
       {/* ─── MOBILE DRAWER (lg:hidden) ────────────────────────────────── */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs lg:hidden"
-            />
+      <div
+        onClick={() => setMobileOpen(false)}
+        className={cn(
+          "fixed inset-0 z-50 bg-background/80 backdrop-blur-xs lg:hidden transition-opacity duration-300",
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      />
 
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-              className="fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border flex flex-col overflow-hidden lg:hidden shadow-2xl"
-            >
+      <aside
+        className={cn(
+          "fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border flex flex-col overflow-hidden lg:hidden shadow-2xl transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-foreground text-base">FQuiz Menu</span>
@@ -480,10 +476,7 @@ export function Sidebar({ user }: SidebarProps) {
                   </div>
                 )}
               </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+            </aside>
     </>
   )
 }
