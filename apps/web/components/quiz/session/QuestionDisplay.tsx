@@ -101,6 +101,7 @@ function StandardQuestionView({
   quizId,
   focusedOption,
   isNoteMode,
+  sessionMode,
 }: QuestionDisplayProps) {
   const [leftWidth, setLeftWidth] = React.useState<number>(220)
   const [wantFinish, setWantFinish] = React.useState<boolean>(false)
@@ -167,7 +168,7 @@ function StandardQuestionView({
               const letter = String.fromCharCode(65 + idx)
               const isSelected = selectedOptions.includes(idx)
               const isFocused = focusedOption === idx
-              const isDisabled = submitted
+              const isDisabled = showImmediateFeedback || (sessionMode === 'review' && submitted)
 
               return (
                 <label
@@ -175,9 +176,9 @@ function StandardQuestionView({
                   className={cn(
                     "flex items-center gap-1.5 py-0.5 px-2 text-xs font-semibold cursor-pointer transition-none select-none rounded w-24 justify-start",
                     isFocused && "bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold ring-1 ring-blue-500/40",
-                    isSelected && !isFocused && "text-blue-600 dark:text-blue-400 font-bold",
+                    isSelected && "text-blue-600 dark:text-blue-400 font-bold",
                     !isSelected && !isFocused && "text-foreground hover:text-blue-500",
-                    isDisabled && "opacity-60 cursor-not-allowed"
+                    isDisabled && "cursor-not-allowed"
                   )}
                 >
                   {isFocused ? (
@@ -393,6 +394,7 @@ function AnimatedQuestionView({
   quizId,
   focusedOption,
   isNoteMode,
+  sessionMode,
 }: QuestionDisplayProps) {
   const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
   const rawCorrect = lastAnswerResult?.correctAnswers ??
@@ -480,7 +482,7 @@ function AnimatedQuestionView({
             const isWrongSelected = showImmediateFeedback && isSelected && !correctAnswerSet.includes(idx)
             const isFocused = focusedOption === idx
             const optionKey = `${idx}-${option}`
-            const isAnswerDisabled = submitted
+            const isAnswerDisabled = showImmediateFeedback || (sessionMode === 'review' && submitted)
             const isNoteActive = Boolean(isNoteMode)
 
             return (
@@ -497,13 +499,13 @@ function AnimatedQuestionView({
                 disabled={isAnswerDisabled}
                 className={cn(
                   'option-card w-full min-h-[50px] py-2.5 px-4 text-left text-sm sm:text-base leading-relaxed transition-all duration-200 rounded-xl border-2 flex items-center gap-3.5 relative overflow-hidden group shadow-2xs',
-                  isAnswerDisabled && 'cursor-not-allowed opacity-75',
+                  isAnswerDisabled && 'cursor-not-allowed opacity-90',
                   !isAnswerDisabled && !isNoteActive && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
                   isNoteActive && 'cursor-text border-dashed border-amber-500/40 bg-amber-500/5',
                   isFocused && 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary shadow-md',
                   isCorrect && 'border-success-border bg-success-bg text-success-fg font-semibold shadow-xs ring-2 ring-success-border/30 animate-in zoom-in-95 duration-200',
                   isWrongSelected && 'border-incorrect-border bg-incorrect-bg text-incorrect-fg font-semibold shadow-xs ring-2 ring-incorrect-border/30 animate-in shake duration-200',
-                  !isCorrect && !isWrongSelected && isSelected && !submitted && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
+                  !isCorrect && !isWrongSelected && isSelected && 'border-primary bg-primary/10 font-semibold text-primary shadow-sm ring-2 ring-primary/20',
                   !isCorrect && !isWrongSelected && !isSelected && !isNoteActive && 'border-border bg-card/80 text-foreground hover:border-primary/50 hover:bg-muted/60'
                 )}
               >

@@ -8,6 +8,7 @@ export interface ValidateQuizSessionOptions {
   checkCompleted?: boolean
   checkExpired?: boolean
   lean?: boolean
+  select?: string
 }
 
 export async function validateQuizSessionRequest(
@@ -29,6 +30,9 @@ export async function validateQuizSessionRequest(
 
   const lean = options.lean !== false
   const query = QuizSession.findById(sessionId)
+  if (options.select) {
+    query.select(options.select)
+  }
   const session = await (lean ? query.lean() : query)
 
   if (!session) {

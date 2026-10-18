@@ -18,7 +18,9 @@ export const POST = withAuth(async (
   try {
     const { id } = await params
 
-    const validation = await validateQuizSessionRequest(id, payload)
+    const validation = await validateQuizSessionRequest(id, payload, {
+      select: '_id student_id is_guest guest_id status expires_at mode current_question_index user_answers score questions_cache question_order answer_version quiz_id'
+    })
     if (!validation.isValid) return validation.response
 
     const session = validation.session
