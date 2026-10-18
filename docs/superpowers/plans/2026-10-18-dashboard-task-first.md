@@ -109,3 +109,29 @@
 - [x] Review keyboard-focus states and 320px responsive classes in source; verify all four theme tiers. Authenticated visual rendering is unavailable in this session.
 - [x] Run lint, type checks, repository verification, and a production build; inspect the final diff.
 - [x] Commit, push the feature branch, deploy the Web project, and smoke-check the production alias.
+
+### Task 6: Rebuild the dashboard as a compact editorial learning home
+
+**Approved direction:** User selected the editorial layout in chat after reviewing the deployed dashboard screenshot.
+
+**Files:**
+- Modify: `apps/web/app/(student)/dashboard/page.tsx`
+- Create: `apps/web/components/dashboard/DashboardPrimaryAction.tsx`
+- Modify: `apps/web/components/dashboard/PinnedCategoriesSection.tsx`
+- Modify: `apps/web/components/dashboard/RecentActivitiesFeed.tsx`
+- Modify: `apps/web/components/dashboard/DashboardSkeleton.tsx`
+- Remove: `apps/web/components/dashboard/IncompleteSessionBanner.tsx`
+- Test: `apps/web/components/dashboard/__tests__/DashboardPrimaryAction.test.tsx`
+- Test: `apps/web/components/dashboard/__tests__/RecentActivitiesFeed.test.tsx`
+
+**Interfaces:**
+- Keep the current dashboard API, routes, and response data unchanged.
+- Keep one primary action that resumes the current quiz or opens Explore when none is active; omit the featured activity from the recent list.
+- Use a restrained desktop content width with recent activity as a compact list and pinned subjects in a supporting column; stack those regions on mobile.
+- Use semantic theme tokens and keyboard-visible focus states; keep the skeleton in the same layout.
+
+- [x] Add component tests for one primary start/resume action and for omitting the featured quiz from recent activity; both fail before implementation.
+- [x] Implement the compact start/resume card, row-based activity history, pinned-subject panel, and editorial desktop/mobile page composition.
+- [x] Align the skeleton; review fresh 1440px, 390px, and 320px rendering, all four themes, and keyboard focus styles.
+- [x] Run lint, type checks, 104 Jest suites/578 tests, Playwright desktop/mobile smoke, strict verification, production build, and inspect the final diff.
+- [ ] Commit and push the redesign, deploy via Vercel CLI, and smoke-check the production alias.
