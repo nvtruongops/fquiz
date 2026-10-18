@@ -80,6 +80,6 @@
 **Interfaces:**
 - Push the verified changes to the current feature branch and deploy the root-linked `fquiz` Web project with `npx vercel --prod --yes --scope nvtruongops`.
 
-- [ ] Commit and push the verified implementation.
-- [ ] Verify the production deployment reaches `READY` and retains the `https://fquiz-web.vercel.app` alias.
-- [ ] Smoke-check public routes and report that authenticated quiz interaction latency remains unmeasured without an authenticated production session.
+- [x] Commit and push the verified implementation (`13c51ad`, `codex/ui-ux-usability`).
+- [x] Verify the production deployment reaches `READY` and retains the `https://fquiz-web.vercel.app` alias (`dpl_EjgGzMTShQc86ebYKeMfpgFyyXJQ`).
+- [x] Smoke-check `/`, the quiz route, and the session route (all HTTP 200); authenticated quiz interaction latency remains unmeasured without an authenticated production session.
