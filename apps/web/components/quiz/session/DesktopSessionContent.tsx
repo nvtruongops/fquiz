@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 import { SessionLayout } from '@/components/quiz/session/SessionLayout'
 import { QuestionDisplay } from '@/components/quiz/session/QuestionDisplay'
+import { PendingAnswerIndicator } from '@/components/quiz/session/PendingAnswerIndicator'
 import { ExplanationPanel } from '@/components/quiz/session/ExplanationPanel'
 import { useQuizSessionQueries } from '@/hooks/quiz/useQuizSessionQueries'
 import { useSessionAnswerSync } from '@/hooks/quiz/useSessionAnswerSync'
@@ -259,6 +260,12 @@ export function DesktopSessionContent({
         }
       >
         <SessionSaveStatus status={saveStatus} onRetry={retryFailedAnswer} onReviewDraft={() => { if (unsavedQuestionIndex !== null) navigateToQuestion(unsavedQuestionIndex) }} onDiscardDraft={discardUnsavedAnswer} draftQuestionNumber={unsavedQuestionIndex === null ? null : unsavedQuestionIndex + 1} disabled={isReadOnlyTab || isSubmitting || finalizeMutation.isPending} />
+        <PendingAnswerIndicator
+          mode={session.mode}
+          submitted={submitted}
+          isPending={isSubmitting}
+          showImmediateFeedback={showImmediateFeedback}
+        />
         <QuestionDisplay
           question={question}
           currentIndex={currentQuestionIndex}

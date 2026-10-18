@@ -9,6 +9,7 @@ import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { MobileSessionHeader } from '@/components/quiz/mobile/MobileSessionHeader'
 import { MobileSessionQuestionCard } from '@/components/quiz/mobile/MobileSessionQuestionCard'
+import { PendingAnswerIndicator } from '@/components/quiz/session/PendingAnswerIndicator'
 import { MobileSessionFooter } from '@/components/quiz/mobile/MobileSessionFooter'
 import { MobileSessionDialogs } from '@/components/quiz/mobile/MobileSessionDialogs'
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
@@ -104,6 +105,12 @@ export default function QuizSessionMobilePage() {
         isOpen={ctrl.sessionLoader.isOpen}
         progress={ctrl.sessionLoader.progress}
         status={ctrl.sessionLoader.status}
+      />
+      <PendingAnswerIndicator
+        mode={session.mode}
+        submitted={ctrl.submitted}
+        isPending={ctrl.submitMutation.isPending}
+        showImmediateFeedback={showImmediateFeedback}
       />
 
       {ctrl.isReadOnlyTab && (

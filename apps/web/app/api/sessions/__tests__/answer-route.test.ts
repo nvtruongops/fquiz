@@ -5,7 +5,7 @@ import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 // Mock dependencies
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: jest.fn((body, init) => ({ body, status: init?.status ?? 200 })),
+    json: jest.fn((body, init) => ({ body, status: init?.status ?? 200, headers: new Headers(init?.headers) })),
   },
 }))
 
@@ -172,5 +172,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
 
     expect(res.status).toBe(200)
     expect(processImmediateAnswer).toHaveBeenCalledWith(mockSession, [1], 1)
+    expect(res.headers.get('Server-Timing')).toContain('session;dur=')
+    expect(res.headers.get('Server-Timing')).toContain('answer;dur=')
   })
 })

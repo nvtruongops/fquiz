@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Cpu, Database, CheckCircle2, Leaf, Sparkles } from 'lucide-react'
+import { ShieldCheck, Cpu, Database, CheckCircle2 } from 'lucide-react'
 
 // ── Global suppression flag (time-based, auto-expiring) ──────────────────
 // When a quiz-specific loader is active, the global PageTransitionLoader
@@ -207,18 +206,7 @@ export function QuizLoadingOverlay({
   const strokeDashoffset = circumference - (pct / 100) * circumference
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className={`fixed inset-0 z-[99999] ${colors.bgOverlay} backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-4 font-sans select-none overflow-hidden`}
-      >
-        {/* Background Ambient Glow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr ${colors.glowGrad} rounded-full blur-3xl opacity-75`} />
-        </div>
+      <div className={`fixed inset-0 z-50 ${colors.bgOverlay} bg-background/95 flex flex-col items-center justify-between py-10 px-4 font-sans select-none overflow-hidden`}>
 
         {/* Top Header Section */}
         <div className="relative z-10 text-center space-y-1.5 pt-2">
@@ -233,9 +221,9 @@ export function QuizLoadingOverlay({
         </div>
 
         {/* Central Graphic Section (Mascot Robot + Circular Progress Ring) */}
-        <div className="relative z-10 flex items-center justify-center w-[340px] h-[340px] my-auto">
+        <div className="relative z-10 flex items-center justify-center w-80 h-80 my-auto">
           {/* SVG Circular Progress Bar */}
-          <svg className="w-[320px] h-[320px] transform -rotate-90">
+          <svg className="w-80 h-80 -rotate-90">
             {/* Background Track Ring */}
             <circle
               cx="160"
@@ -257,16 +245,13 @@ export function QuizLoadingOverlay({
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               fill="transparent"
-              style={{ filter: colors.fillDropShadow }}
             />
           </svg>
 
           {/* Center Mascot: AI Robot Sprout */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="relative w-48 h-48 flex items-center justify-center">
-              <div className={`absolute bottom-2 w-28 h-8 ${colors.mascotGlow} rounded-full blur-md`} />
-
-              <svg className={`w-48 h-48 ${colors.mascotShadow}`} viewBox="0 0 200 200" fill="none">
+              <svg className="w-48 h-48" viewBox="0 0 200 200" fill="none">
                 {/* Sprout Leaves on Antenna */}
                 <path d="M100 24C92 10 76 8 66 16C56 24 74 38 100 38Z" fill={colors.sproutLeaf1} />
                 <path d="M100 24C108 10 124 8 134 16C144 24 126 38 100 38Z" fill={colors.sproutLeaf2} />
@@ -320,34 +305,14 @@ export function QuizLoadingOverlay({
             </div>
           </div>
 
-          {/* Left Stats Indicator */}
-          <div className="absolute left-[-60px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-end space-y-1 text-right">
-            <span className={`text-[10px] font-black uppercase ${colors.statsTitle} tracking-wider`}>PREPARING</span>
-            <span className={`text-2xl font-black ${colors.percentageText} font-mono`}>{pct}%</span>
-            <div className="flex gap-1">
-              <span className={`w-1.5 h-3 ${colors.dotColor} rounded-xs animate-pulse`} />
-              <span className={`w-1.5 h-3 ${colors.dotColor}/60 rounded-xs`} />
-              <span className={`w-1.5 h-3 ${colors.dotColor}/30 rounded-xs`} />
-            </div>
-          </div>
-
-          {/* Right Stats Indicator */}
-          <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-start space-y-1 text-left">
-            <span className={`text-[10px] font-black uppercase ${colors.statsTitle} tracking-wider`}>GENERATING...</span>
-            <span className={`text-[11px] font-bold ${colors.subText} max-w-[100px] leading-tight`}>LOADING QUESTIONS PLEASE WAIT</span>
-          </div>
         </div>
 
         {/* Bottom Section: Horizontal Progress Bar & Milestones */}
         <div className="relative z-10 w-full max-w-xl space-y-5 px-2">
           {/* Progress Bar & Percentage */}
           <div className="flex items-center gap-4">
-            <div className={`flex-1 h-3.5 ${colors.progressTrackBg} rounded-full p-0.5 overflow-hidden shadow-[inset_0_0_8px_rgba(0,0,0,0.8)]`}>
-              <motion.div
-                className={`h-full ${colors.progressFillBg} rounded-full shadow-md`}
-                style={{ width: `${pct}%` }}
-                transition={{ ease: 'easeOut', duration: 0.2 }}
-              />
+            <div className={`flex-1 h-3.5 ${colors.progressTrackBg} rounded-full p-0.5 overflow-hidden`}>
+              <div className={`h-full ${colors.progressFillBg} rounded-full`} style={{ width: `${pct}%` }} />
             </div>
             <span className={`text-xl font-black ${colors.percentageText} font-mono tracking-wider w-14 text-right`}>
               {pct}%
@@ -356,28 +321,28 @@ export function QuizLoadingOverlay({
 
           {/* Milestone Badges */}
           <div className="grid grid-cols-4 gap-2 pt-1 text-center">
-            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
+            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 25 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <ShieldCheck className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">SECURE</span>
             </div>
 
-            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
+            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 50 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Cpu className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">PROCESSING</span>
             </div>
 
-            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
+            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 75 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Database className="w-4 h-4" />
               <span className="text-[10px] font-black tracking-wider uppercase">LOAD QUESTIONS</span>
             </div>
 
-            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
+            <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 95 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <CheckCircle2 className="w-4 h-4" />
@@ -385,7 +350,6 @@ export function QuizLoadingOverlay({
             </div>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   )
 }
