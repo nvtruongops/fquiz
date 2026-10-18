@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
@@ -24,6 +24,7 @@ export function useSessionFinalize({
   canFinalize = () => true,
 }: UseSessionFinalizeParams): UseSessionFinalizeResult {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const sessionLoader = useSessionLoader()
   const permissionRef = useRef({ sessionId, canFinalize })
   permissionRef.current = { sessionId, canFinalize }
@@ -52,8 +53,12 @@ export function useSessionFinalize({
       if (permissionRef.current.sessionId === sessionId) sessionLoader.advance(95, 'Preparing result summary...')
       return res.json()
     },
-    onSuccess: (_data, _variables, request) => {
+    onSuccess: async (_data, _variables, request) => {
       if (!request || permissionRef.current.sessionId !== request.sessionId) return
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['student', 'dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['history'] }),
+      ])
       sessionLoader.completeAndNavigate(() => {
         router.push(`/quiz/${request.quizId}/result/${request.sessionId}`)
       })
