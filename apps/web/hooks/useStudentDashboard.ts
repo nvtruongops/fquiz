@@ -38,12 +38,7 @@ export interface PinnedCategoryItem {
 export function useStudentDashboard() {
   const { data: authData } = useAuth()
   const user = authData?.user ?? null
-  const isDevOrAdmin = useMemo(
-    () => user?.role === 'admin' || user?.role === 'dev',
-    [user?.role]
-  )
-
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data, isLoading, refetch, isRefetching, isError } = useQuery({
     queryKey: ['student', 'dashboard'],
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.DASHBOARD}`)
@@ -73,20 +68,15 @@ export function useStudentDashboard() {
     [recentActivities]
   )
 
-  const userInitial = useMemo(
-    () => (user?.name?.[0] || 'U').toUpperCase(),
-    [user?.name]
-  )
-
   return {
     user,
-    isDevOrAdmin,
     isLoading,
+    isError,
+    hasData: data !== undefined,
     isRefetching,
     refetch,
     recentActivities,
     pinnedCategories,
     primaryIncomplete,
-    userInitial,
   }
 }

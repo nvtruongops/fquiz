@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 import Link from 'next/link'
 import {
-  ArrowRight,
   HelpCircle,
   Layers,
   FileText,
@@ -15,7 +14,6 @@ import {
   History,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
 import type { ActivityItem } from '@/hooks/useStudentDashboard'
@@ -24,39 +22,15 @@ interface RecentActivitiesFeedProps {
   recentActivities: ActivityItem[]
 }
 
-const MAX_FEED_ITEMS = 6
-
-type FilterType = 'all' | 'active' | 'completed'
+const MAX_FEED_ITEMS = 5
 
 export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
   recentActivities,
 }: RecentActivitiesFeedProps) {
-  const [filter, setFilter] = useState<FilterType>('all')
-
   const rawActivities = useMemo(
     () => (recentActivities || []).slice(0, MAX_FEED_ITEMS),
     [recentActivities]
   )
-
-  const activeCount = useMemo(
-    () => rawActivities.filter((a) => (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted).length,
-    [rawActivities]
-  )
-
-  const completedCount = useMemo(
-    () => rawActivities.filter((a) => a.status === 'completed' && !a.quizDeleted).length,
-    [rawActivities]
-  )
-
-  const filteredActivities = useMemo(() => {
-    if (filter === 'active') {
-      return rawActivities.filter((a) => (a.status === 'active' || a.hasActiveSession) && !a.quizDeleted)
-    }
-    if (filter === 'completed') {
-      return rawActivities.filter((a) => a.status === 'completed' && !a.quizDeleted)
-    }
-    return rawActivities
-  }, [rawActivities, filter])
 
   return (
     <div className="w-full">
@@ -67,9 +41,9 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
             <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
               <History aria-hidden="true" className="w-4 h-4" />
             </div>
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-foreground whitespace-nowrap">
-              Study Timeline
-            </h3>
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-foreground whitespace-nowrap">
+              Recent activity
+            </h2>
           </div>
           <Link
             href="/history"
@@ -79,119 +53,33 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
           </Link>
         </div>
 
-        {/* Filter Segmented Controls */}
-        {rawActivities.length > 0 && (
-          <div
-            role="tablist"
-            aria-label="Filter recent study activities"
-            className="flex items-center gap-1 p-1 bg-surface-inset rounded-xl border border-border/50 text-[10px] sm:text-[11px] font-bold"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === 'all'}
-              onClick={() => setFilter('all')}
-              className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap min-h-[36px] flex items-center justify-center active:scale-[0.98]',
-                filter === 'all'
-                  ? 'bg-card text-foreground font-black shadow-2xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              All ({rawActivities.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === 'active'}
-              onClick={() => setFilter('active')}
-              className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap min-h-[36px] active:scale-[0.98]',
-                filter === 'active'
-                  ? 'bg-card text-warning-fg font-black shadow-2xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              In Progress {activeCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" aria-hidden="true" />} ({activeCount})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === 'completed'}
-              onClick={() => setFilter('completed')}
-              className={cn(
-                'flex-1 py-1 px-1.5 sm:px-2.5 rounded-lg transition-all text-center cursor-pointer whitespace-nowrap min-h-[36px] flex items-center justify-center active:scale-[0.98]',
-                filter === 'completed'
-                  ? 'bg-card text-foreground font-black shadow-2xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Completed ({completedCount})
-            </button>
-          </div>
-        )}
-
         {/* Timeline Stream List */}
-        <div className="min-h-[260px] flex flex-col justify-center">
-          {filteredActivities.length === 0 ? (
+        <div className="space-y-3">
+          {rawActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
               <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground border border-border shadow-2xs">
                 <HelpCircle aria-hidden="true" className="w-6 h-6" />
               </div>
               <div className="space-y-1 max-w-[260px]">
-                <p className="text-xs text-foreground font-black">
-                  {filter === 'all'
-                    ? 'No study history yet'
-                    : filter === 'active'
-                    ? 'No quizzes in progress'
-                    : 'No quizzes completed yet'}
-                </p>
-                <p className="text-[11px] text-muted-foreground font-medium">
-                  {filter === 'all'
-                    ? 'Start practicing quizzes to record your results and build your study timeline.'
-                    : 'Select any quiz to start practicing now.'}
+                <p className="text-xs font-bold text-foreground">No study history yet</p>
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Start a quiz to see your recent activity here.
                 </p>
               </div>
-              {filter === 'all' && (
-                <Button
-                  asChild
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs h-9 sm:h-10 px-4 rounded-xl shadow-xs transition-all mt-1 cursor-pointer active:scale-[0.98]"
-                >
-                  <Link href="/explore">
-                    Practice Now <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 ml-1" />
-                  </Link>
-                </Button>
-              )}
             </div>
           ) : (
             <div className="space-y-3 pt-0.5">
-              {filteredActivities.map((act, index) => (
+              {rawActivities.map((act, index) => (
                 <TimelineRowItem
                   key={act.id}
                   activity={act}
-                  isLast={index === filteredActivities.length - 1}
+                  isLast={index === rawActivities.length - 1}
                 />
               ))}
             </div>
           )}
         </div>
 
-        {/* Footer CTA */}
-        {rawActivities.length > 0 && (
-          <div className="pt-2 border-t border-border/40">
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-xl h-10 min-h-[40px] cursor-pointer active:scale-[0.98] transition-transform"
-            >
-              <Link href="/history" className="flex items-center justify-center gap-1.5">
-                View Full Quiz History <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
-              </Link>
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -257,7 +145,7 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
   if (isResumable) {
     return (
       <Badge className="bg-warning-bg text-warning-fg border border-warning-border text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wide shadow-2xs flex items-center gap-1 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-warning-fg animate-pulse" aria-hidden="true" />
+        <span className="w-1.5 h-1.5 rounded-full bg-warning-fg motion-safe:animate-pulse" aria-hidden="true" />
         In Progress
       </Badge>
     )
@@ -370,12 +258,12 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
 
       <Link
         href={getActivityHref(activity, isResumable)}
-        className="flex items-start gap-3 relative z-10 group/link cursor-pointer focus:outline-none"
+        className="group/link relative z-10 flex items-start gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* Timeline Status Node Icon */}
         <div
           className={cn(
-            'w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-2xs transition-transform duration-200 group-hover/link:scale-105 group-hover/link:shadow-xs relative z-10',
+            'relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-2xs',
             nodeStyles.container
           )}
         >

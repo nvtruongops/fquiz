@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useCallback } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Pin } from 'lucide-react'
 import type { PinnedCategoryItem } from '@/hooks/useStudentDashboard'
@@ -10,47 +10,6 @@ interface PinnedCategoriesSectionProps {
 }
 
 export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSection({ categories }: PinnedCategoriesSectionProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isDraggingRef = useRef(false)
-  const startXRef = useRef(0)
-  const scrollLeftRef = useRef(0)
-  const dragDistanceRef = useRef(0)
-  const [isGrabbing, setIsGrabbing] = useState(false)
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
-    isDraggingRef.current = true
-    setIsGrabbing(true)
-    startXRef.current = e.pageX - containerRef.current.offsetLeft
-    scrollLeftRef.current = containerRef.current.scrollLeft
-    dragDistanceRef.current = 0
-  }
-
-  const handleMouseLeave = () => {
-    isDraggingRef.current = false
-    setIsGrabbing(false)
-  }
-
-  const handleMouseUp = () => {
-    isDraggingRef.current = false
-    setIsGrabbing(false)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current || !containerRef.current) return
-    const x = e.pageX - containerRef.current.offsetLeft
-    const walk = (x - startXRef.current) * 1.5
-    dragDistanceRef.current += Math.abs(x - startXRef.current)
-    containerRef.current.scrollLeft = scrollLeftRef.current - walk
-  }
-
-  const handleCardClick = useCallback((e: React.MouseEvent) => {
-    if (dragDistanceRef.current > 6) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-  }, [])
-
   if (!categories || categories.length === 0) return null
 
   return (
@@ -64,35 +23,27 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
         </Link>
       </div>
       <div
-        ref={containerRef}
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-        className={`flex gap-3 sm:gap-3.5 overflow-x-auto pt-1.5 pb-3.5 px-0.5 scrollbar-thin custom-scrollbar snap-x snap-mandatory scroll-smooth w-full select-none ${
-          isGrabbing ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+        className="flex w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-0.5 pb-3.5 pt-1.5 touch-pan-x scrollbar-thin custom-scrollbar sm:gap-3.5"
       >
         {categories.map((cat) => (
           <Link
             key={cat.id}
             href={`/courses/${encodeURIComponent(cat.name.toLowerCase())}`}
-            onClick={handleCardClick}
-            className="group relative flex items-center gap-2.5 px-3.5 py-3 rounded-2xl glass-card border border-subtle shadow-2xs hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5 hover:z-10 active:scale-[0.98] transition-all duration-200 shrink-0 min-w-[150px] max-w-[200px] snap-start"
+            className="group flex min-h-[60px] min-w-[150px] max-w-[200px] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-subtle bg-card px-3.5 py-3 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={cat.name}
           >
-            <span className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
               <BookOpen aria-hidden="true" className="w-4 h-4 text-primary transition-colors" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-xs font-black text-foreground uppercase tracking-tight truncate group-hover:text-primary transition-colors">
+              <span className="block truncate text-xs font-bold uppercase tracking-tight text-foreground group-hover:text-primary">
                 {cat.name}
               </span>
               <span className="block text-[10px] font-bold text-text-tertiary mt-0.5">
                 {cat.quizCount} quizzes
               </span>
             </span>
-            <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 text-text-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+            <ArrowRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
           </Link>
         ))}
         {/* Trailing spacer to prevent last card from clipping on right edge when scrolling */}
