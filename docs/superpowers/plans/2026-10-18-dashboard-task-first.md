@@ -88,3 +88,24 @@
 - [x] Commit the verified changes and push the current feature branch.
 - [x] Deploy with `npx vercel --prod --yes --scope nvtruongops` from the monorepo root.
 - [x] Verify deployment status and public route response without claiming an authenticated visual test.
+
+### Task 5: Rebuild dashboard density from authenticated visual feedback
+
+**Files:**
+- Modify: `apps/web/app/(student)/dashboard/page.tsx`
+- Modify: `apps/web/components/dashboard/IncompleteSessionBanner.tsx`
+- Modify: `apps/web/components/dashboard/PinnedCategoriesSection.tsx`
+- Modify: `apps/web/components/dashboard/RecentActivitiesFeed.tsx`
+- Modify: `apps/web/components/dashboard/DashboardSkeleton.tsx`
+
+**Interfaces:**
+- Keep the active-session banner first, followed by pinned subjects, recent activity, then compact secondary links.
+- Render recent activity in a responsive full-width card grid; use a single column on mobile and multiple columns on wide screens.
+- Preserve existing activity links, status labels, quiz/session data, API response, semantic theme tokens, and mobile navigation spacing.
+- Use light surfaces and color-only hover states; remove the large glass activity container and vertical timeline rails from the dashboard.
+
+- [x] Update the page and loading skeleton to use the full-width section order.
+- [x] Convert recent activity into compact, equal-height responsive cards without timeline connector rails.
+- [x] Review keyboard-focus states and 320px responsive classes in source; verify all four theme tiers. Authenticated visual rendering is unavailable in this session.
+- [x] Run lint, type checks, repository verification, and a production build; inspect the final diff.
+- [ ] Commit, push the feature branch, deploy the Web project, and smoke-check the production alias.

@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   if (isError && !hasData) {
     return (
-      <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 md:p-8">
+      <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 md:p-8">
         <section role="alert" className="space-y-3 rounded-2xl border border-border bg-card p-5 text-card-foreground">
           <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground">We couldn&apos;t load your dashboard. Please try again.</p>
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] space-y-5 p-4 pb-20 font-sans text-foreground sm:p-6 lg:pb-8 md:p-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-7 p-4 pb-24 font-sans text-foreground sm:p-6 md:p-8 lg:pb-8">
       <DashboardHeader
         user={user}
         isRefetching={isRefetching}
@@ -49,17 +49,12 @@ export default function DashboardPage() {
         onRefetch={refetch}
       />
 
-      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
-        <section className="order-1 min-w-0 space-y-5 lg:col-span-8" aria-label="Your next steps">
-          {primaryIncomplete && <IncompleteSessionBanner item={primaryIncomplete} />}
-          {pinnedCategories.length > 0 && <PinnedCategoriesSection categories={pinnedCategories} />}
-        </section>
+      <div className="space-y-7">
+        {primaryIncomplete && <IncompleteSessionBanner item={primaryIncomplete} />}
+        {pinnedCategories.length > 0 && <PinnedCategoriesSection categories={pinnedCategories} />}
+        <RecentActivitiesFeed recentActivities={recentActivities} />
 
-        <aside className="order-2 min-w-0 lg:col-span-4" aria-label="Recent activity">
-          <RecentActivitiesFeed recentActivities={recentActivities} />
-        </aside>
-
-        <nav aria-label="More learning destinations" className="order-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-8">
+        <nav aria-label="More learning destinations" className="grid grid-cols-1 gap-3 border-t border-border pt-5 sm:grid-cols-2">
           <Link
             href="/student/classrooms"
             className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

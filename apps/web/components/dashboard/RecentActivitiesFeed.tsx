@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo } from 'react'
 import Link from 'next/link'
 import {
   HelpCircle,
@@ -33,59 +33,49 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
   )
 
   return (
-    <div className="w-full">
-      <div className="glass-card p-5 sm:p-6 rounded-[28px] border border-border shadow-xs flex flex-col space-y-4">
-        {/* Header with Title and Link */}
-        <div className="flex items-center justify-between pb-3 border-b border-border/60 gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
-              <History aria-hidden="true" className="w-4 h-4" />
-            </div>
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-foreground whitespace-nowrap">
+    <section aria-labelledby="recent-activity-title" className="w-full space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+            <History aria-hidden="true" className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 id="recent-activity-title" className="text-lg font-semibold tracking-tight text-foreground">
               Recent activity
             </h2>
+            <p className="text-sm text-muted-foreground">Pick up where you left off or review a completed quiz.</p>
           </div>
-          <Link
-            href="/history"
-            className="text-xs font-bold text-primary hover:underline transition-colors flex items-center gap-0.5 shrink-0"
-          >
-            View all <ChevronRight aria-hidden="true" className="w-3.5 h-3.5" />
-          </Link>
         </div>
-
-        {/* Timeline Stream List */}
-        <div className="space-y-3">
-          {rawActivities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground border border-border shadow-2xs">
-                <HelpCircle aria-hidden="true" className="w-6 h-6" />
-              </div>
-              <div className="space-y-1 max-w-[260px]">
-                <p className="text-xs font-bold text-foreground">No study history yet</p>
-                <p className="text-[11px] font-medium text-muted-foreground">
-                  Start a quiz to see your recent activity here.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3 pt-0.5">
-              {rawActivities.map((act, index) => (
-                <TimelineRowItem
-                  key={act.id}
-                  activity={act}
-                  isLast={index === rawActivities.length - 1}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
+        <Link
+          href="/history"
+          className="flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          View history <ChevronRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
       </div>
-    </div>
+
+      {rawActivities.length === 0 ? (
+        <div className="flex min-h-36 items-center gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <HelpCircle aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">No study history yet</p>
+            <p className="text-sm text-muted-foreground">Start a quiz to see your recent activity here.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {rawActivities.map((activity) => (
+            <ActivityCard key={activity.id} activity={activity} />
+          ))}
+        </div>
+      )}
+    </section>
   )
 })
 
-function getTimelineNodeStyles(
+function getActivityStatusStyles(
   isResumable: boolean,
   isFlashcard: boolean,
   scoreNum: number | null
@@ -193,15 +183,7 @@ function resolveActivityTitle(quizTitle: string, quizCode?: string) {
   return { showBadge: true, code: cleanCode, title: cleanTitle }
 }
 
-interface TimelineRowItemProps {
-  activity: ActivityItem
-  isLast: boolean
-}
-
-const TimelineRowItem = React.memo(function TimelineRowItem({
-  activity,
-  isLast,
-}: TimelineRowItemProps) {
+const ActivityCard = React.memo(function ActivityCard({ activity }: { activity: ActivityItem }) {
   const isResumable = activity.status === 'active' || activity.hasActiveSession === true
   const isFlashcard = activity.mode === 'flashcard'
   const scoreNum = activity.score != null ? Number(activity.score) : null
@@ -222,117 +204,86 @@ const TimelineRowItem = React.memo(function TimelineRowItem({
     : 'Recently'
 
   const { showBadge, code, title } = resolveActivityTitle(activity.quizTitle, activity.quizCode)
-  const nodeStyles = getTimelineNodeStyles(isResumable, isFlashcard, scoreNum)
-
-  if (activity.quizDeleted) {
-    return (
-      <div className="timeline-item relative group/item">
-        {!isLast && (
-          <div
-            className="absolute left-[19px] top-[40px] -bottom-3 w-[2px] bg-border/60 rounded-full pointer-events-none z-0"
-            aria-hidden="true"
-          />
+  const nodeStyles = getActivityStatusStyles(isResumable, isFlashcard, scoreNum)
+  const cardContent = (
+    <div className={cn(
+      'flex h-full min-h-[156px] items-start gap-3 rounded-xl border p-4',
+      activity.quizDeleted
+        ? 'border-border bg-muted/40 opacity-70'
+        : 'border-border bg-card transition-colors group-hover/link:border-ring group-hover/link:bg-muted/30'
+    )}>
+      <div
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border',
+          activity.quizDeleted ? 'border-border bg-muted text-muted-foreground' : nodeStyles.container
         )}
-        <div className="flex items-start gap-3 relative z-10 opacity-50 cursor-not-allowed">
-          <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shrink-0 border border-border shadow-2xs">
-            <FileText aria-hidden="true" className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0 p-3 rounded-2xl border border-border bg-muted/40 space-y-1">
-            <h4 className="text-xs font-bold text-foreground truncate">{title}</h4>
-            <span className="text-[10px] text-muted-foreground font-semibold block">{timeAgo} • Deleted</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="timeline-item relative group/item">
-      {/* Sleek Segment Connector Track between this node and the next node */}
-      {!isLast && (
-        <div
-          className="absolute left-[19px] top-[42px] -bottom-3.5 w-[2px] bg-gradient-to-b from-border via-border/70 to-border/40 rounded-full pointer-events-none z-0"
-          aria-hidden="true"
-        />
-      )}
-
-      <Link
-        href={getActivityHref(activity, isResumable)}
-        className="group/link relative z-10 flex items-start gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {/* Timeline Status Node Icon */}
-        <div
-          className={cn(
-            'relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-2xs',
-            nodeStyles.container
-          )}
-        >
-          {nodeStyles.icon}
-        </div>
+        {activity.quizDeleted ? <FileText aria-hidden="true" className="h-4 w-4" /> : nodeStyles.icon}
+      </div>
 
-        {/* Content Card */}
-        <div className="flex-1 min-w-0 p-3 sm:p-3.5 rounded-2xl border border-subtle bg-surface-card/80 group-hover/link:bg-muted/50 group-hover/link:border-primary/40 group-hover/link:shadow-xs transition-all duration-200 space-y-1.5">
-          {/* Top Row: Title + Code + Score */}
-          <div className="flex items-start justify-between gap-2 min-w-0">
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex items-center gap-1.5 min-w-0">
-                {showBadge && (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border shrink-0 max-w-[90px] truncate">
-                    {code}
-                  </span>
-                )}
-                <h4
-                  className="text-xs sm:text-sm font-bold text-foreground truncate group-hover/link:text-primary transition-colors leading-tight"
-                  title={title}
-                >
-                  {title}
-                </h4>
-              </div>
-            </div>
-
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0 space-y-1">
+            {showBadge && (
+              <span className="block max-w-28 truncate text-[10px] font-medium text-muted-foreground">
+                {code}
+              </span>
+            )}
+            <h3 className="truncate text-sm font-semibold leading-snug text-foreground" title={title}>
+              {title}
+            </h3>
+          </div>
+          {!activity.quizDeleted && (
             <ActivityStatusBadge
               isResumable={isResumable}
               formattedScore={formattedScore}
               scoreNum={scoreNum}
             />
-          </div>
-
-          {/* Progress Bar for Active / Resumable sessions */}
-          {isResumable && progressTotal > 0 && (
-            <div className="space-y-1 pt-0.5">
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
-                <span>Completion Progress</span>
-                <span className="text-warning-fg font-black">{progressText} ({progressPercent}%)</span>
-              </div>
-              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-warning-fg rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
           )}
-
-          {/* Meta Info Row */}
-          <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground font-medium pt-0.5">
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span>{timeAgo}</span>
-              <span>•</span>
-              <span>{isFlashcard ? 'Flashcards' : 'Quiz'}</span>
-              {!isResumable && progressText && (
-                <>
-                  <span>•</span>
-                  <span className="text-foreground font-bold">{progressText}</span>
-                </>
-              )}
-            </div>
-
-            <span className="text-primary font-bold text-[10px] flex items-center gap-0.5 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0">
-              {isResumable ? 'Continue' : 'Review'} <ChevronRight aria-hidden="true" className="w-3 h-3" />
-            </span>
-          </div>
         </div>
-      </Link>
+
+        {isResumable && progressTotal > 0 && !activity.quizDeleted && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>Progress</span>
+              <span className="shrink-0 font-medium tabular-nums text-foreground">{progressText} ({progressPercent}%)</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-warning-fg" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex min-w-0 items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span>{timeAgo}</span>
+            <span aria-hidden="true">·</span>
+            <span>{activity.quizDeleted ? 'Deleted' : isFlashcard ? 'Flashcards' : 'Quiz'}</span>
+            {!activity.quizDeleted && !isResumable && progressText && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-medium text-foreground">{progressText}</span>
+              </>
+            )}
+          </div>
+          {!activity.quizDeleted && (
+            <span className="flex shrink-0 items-center gap-0.5 font-medium text-primary">
+              {isResumable ? 'Continue' : 'Review'} <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
+            </span>
+          )}
+        </div>
+      </div>
     </div>
+  )
+
+  if (activity.quizDeleted) return <div className="h-full">{cardContent}</div>
+
+  return (
+    <Link
+      href={getActivityHref(activity, isResumable)}
+      className="group/link block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {cardContent}
+    </Link>
   )
 })
