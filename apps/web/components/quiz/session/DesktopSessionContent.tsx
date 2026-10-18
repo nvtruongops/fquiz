@@ -20,6 +20,7 @@ import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
 import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
+import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
 
 const SessionModals = dynamic(
   () => import('@/components/quiz/session/SessionModals').then((mod) => mod.SessionModals),
@@ -197,6 +198,9 @@ export function DesktopSessionContent({
   }
 
   if ((isStillLoading && !isQuizLoaderActive()) || !activeData) {
+    if (!sessionLoader.isOpen) {
+      return <QuizSessionSkeleton />
+    }
     return (
       <QuizLoadingOverlay
         isOpen={sessionLoader.isOpen}

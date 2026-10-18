@@ -13,6 +13,7 @@ import { MobileSessionFooter } from '@/components/quiz/mobile/MobileSessionFoote
 import { MobileSessionDialogs } from '@/components/quiz/mobile/MobileSessionDialogs'
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
+import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
 
 export default function QuizSessionMobilePage() {
   const ctrl = useMobileQuizSessionController()
@@ -49,6 +50,9 @@ export default function QuizSessionMobilePage() {
   }
 
   if ((ctrl.isStillLoading && !isQuizLoaderActive()) || !ctrl.activeData) {
+    if (!ctrl.sessionLoader.isOpen) {
+      return <QuizSessionSkeleton />
+    }
     return (
       <QuizLoadingOverlay
         isOpen={true}
