@@ -29,7 +29,7 @@
 
 - [x] Confirm each client page retains its own query-backed skeleton.
 - [x] Remove route fallbacks so each loading state has one owner.
-- [x] Verify final production quiz and session page GETs return 200 in `sin1`; timings were 1.83 s / 0.48 s for quiz and 0.49 s / 0.41 s for session (first / warm).
+- [x] Verify final production quiz and session page GETs return 200 in `sin1`; timings were 2.12 s / 0.22 s for quiz and 0.47 s / 0.21 s for session (first / warm).
 
 ### Task 2: Make pending answers visibly responsive and measurable
 
@@ -62,7 +62,7 @@
 
 ### Task 5: Verify, deploy, and smoke-test
 
-- [ ] Verify the final source revision with the full test suite and strict checks; the focused pending-answer test, lint, and typecheck pass after the saving-status adjustment.
-- [ ] Deploy the final source revision with Vercel CLI and `--regions sin1`; inspect the deployment region.
-- [ ] Smoke-test production quiz/session page GETs and verify `Server-Timing` in the answer route test. Do not submit to the user's live session; no isolated production answer session is configured.
-- [ ] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
+- [x] Verify the final source revision: 99 suites / 563 tests passed, strict verification passed 18 checks, lint and typecheck exited 0. Lint reported 158 existing warnings.
+- [x] Deploy source commit `d91065e` with Vercel CLI and `--regions sin1`; inspect deployment `dpl_9SFqwEacZjwUTJ1CmUe9wDNNPXN8`, whose server functions are in `sin1`.
+- [x] Smoke-test production quiz/session page GETs (200) and verify `Server-Timing` in the answer route test. No production answer POST was sent because the available session belongs to the user and no isolated test session is configured.
+- [x] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
