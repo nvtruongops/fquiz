@@ -134,4 +134,4 @@
 - [x] Implement the compact start/resume card, row-based activity history, pinned-subject panel, and editorial desktop/mobile page composition.
 - [x] Align the skeleton; review fresh 1440px, 390px, and 320px rendering, all four themes, and keyboard focus styles.
 - [x] Run lint, type checks, 104 Jest suites/578 tests, Playwright desktop/mobile smoke, strict verification, production build, and inspect the final diff.
-- [ ] Commit and push the redesign, deploy via Vercel CLI, and smoke-check the production alias.
+- [x] Commit and push the redesign, deploy via Vercel CLI, and smoke-check the production alias (Ready; public routes return 200, protected dashboard redirects to login).
