@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 
 const ANIMATION_PREF_KEY = 'fquiz_enable_animation'
 
-export function useAnimationPreference(initialValue: boolean = true) {
+export function useAnimationPreference(initialValue: boolean = false) {
   const [enableAnimation, setEnableAnimationState] = useState<boolean>(() => {
     if (typeof window === 'undefined') return initialValue
     try {

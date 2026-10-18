@@ -140,7 +140,7 @@ export function MobileSessionQuestionCard({
               disabled={submitted || isSubmitting || isNoteMode}
               aria-pressed={isSelected}
               className={cn(
-                'flex w-full items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer',
+                'flex w-full items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-none cursor-pointer',
                 isNoteMode && 'cursor-text border-dashed border-warning-border bg-warning-bg/10',
                 statusStyle
               )}

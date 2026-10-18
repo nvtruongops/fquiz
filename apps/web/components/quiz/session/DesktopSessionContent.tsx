@@ -43,7 +43,7 @@ export function DesktopSessionContent({
   setIsMobile,
 }: DesktopSessionContentProps) {
   const router = useRouter()
-  const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
+  const [enableAnimation, setEnableAnimation] = useAnimationPreference(false)
 
   const storeSessionId = useQuizSessionStore((s) => s.sessionId)
   const currentQuestionIndex = useQuizSessionStore((s) => s.currentQuestionIndex)

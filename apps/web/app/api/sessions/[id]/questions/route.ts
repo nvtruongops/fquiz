@@ -14,6 +14,23 @@ import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selec
  * - Review mode: excludes correct_answer and explanation
  * Requirements: 6.1, 12.1, 12.3
  */
+async function getQuestionUsageMap(
+  session: { status: string; mode: string },
+  questionOrder: number[],
+  rawQuestions: any[],
+  courseCode?: string
+) {
+  if (session.status === 'active' && session.mode !== 'flashcard') {
+    return new Map<string, { count: number; quizzes: string[] }>()
+  }
+
+  const questionQueries = questionOrder.map((i) => {
+    const q = rawQuestions[i]
+    return { question_id: q?.question_id, text: q?.text }
+  })
+  return QuestionUsageService.getBatchQuestionPublicUsage(questionQueries, courseCode)
+}
+
 export const GET = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
@@ -81,18 +98,9 @@ export const GET = withAuth(async (
       await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 
-    // Batch lookup public usage via QuestionUsageService (Single Source of Truth)
-    const questionQueries = questionOrder.map((i: number) => {
-      const q = rawQuestions[i]
-      return {
-        question_id: q?.question_id,
-        text: q?.text,
-      }
-    })
-    const usageMap = await QuestionUsageService.getBatchQuestionPublicUsage(
-      questionQueries,
-      quiz?.course_code
-    )
+    // Active multiple-choice sessions don't need the optional usage badge metadata.
+    // Keep the lookup for completed sessions and flashcards, where that context remains visible.
+    const usageMap = await getQuestionUsageMap(session, questionOrder, rawQuestions, quiz?.course_code)
 
     // Set of display indexes that have already been answered by the student
     const answeredDisplayIndexes = new Set(
