@@ -4,7 +4,7 @@
 
 **Goal:** Make quiz loading occur once and make answer selection visibly responsive while measuring the real answer request.
 
-**Architecture:** Keep question correctness and persistence server-authoritative. Remove route fallback skeletons that duplicate client loading states, reduce redundant activity events, show a lightweight answer-pending cue, and expose safe `Server-Timing` measurements on successful answer responses.
+**Architecture:** Keep the existing immediate-mode feedback from preloaded question data while answers save asynchronously; show a lightweight saving cue during the request. Remove route fallback skeletons that duplicate client loading states, reduce redundant activity events, and expose safe `Server-Timing` measurements on successful answer responses.
 
 **Tech Stack:** Next.js App Router, React, TanStack Query, MongoDB/Mongoose, Jest, Vercel CLI.
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Do not expose correct answers before the answer API confirms the submission.
+- Do not change the existing immediate-mode feedback contract; the answer API still persists and returns the final result.
 - MongoDB's read-only `hello` request reports `AP_SOUTHEAST_1` (Singapore); Vercel's current production functions were observed in `iad1`, so deploy with `sin1`.
 - Do not submit answers to the user's live session during testing; no isolated production answer session is configured.
 - Add no new package dependencies.
@@ -39,7 +39,7 @@
 - Modify: `apps/web/app/api/sessions/[id]/answer/route.ts`
 - Test: pending indicator and answer route timing header.
 
-- [x] Add an accessible pending status while an immediate answer is awaiting server feedback; keep correctness server-authoritative.
+- [x] Add an accessible pending status while an immediate answer is awaiting server persistence; show `Saving answer…` alongside existing immediate feedback.
 - [x] Add `Server-Timing` for route, session validation, and answer processing to successful answer responses.
 - [x] Verify the response timing header in route tests and record a read-only MongoDB handshake at 971 ms; no live answer POST was sent.
 
@@ -62,7 +62,7 @@
 
 ### Task 5: Verify, deploy, and smoke-test
 
-- [x] Run lint, typecheck, strict verification, and all tests. `npm test -- --maxWorkers=2` passed all 562 tests; strict verification passed 18 checks. Lint and typecheck exited 0; lint reported 158 existing warnings.
-- [x] Deploy production commit `d966e59` with Vercel CLI and `--regions sin1`; inspect deployment `dpl_HHLDE5YPmEHFSWvLgDbjjJsYisxS`, whose server functions are in `sin1`.
-- [x] Smoke-test production quiz/session page GETs (200) and verify `Server-Timing` in the answer route test. No production answer POST was sent because the available session belongs to the user and no isolated test session is configured.
-- [x] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
+- [ ] Verify the final source revision with the full test suite and strict checks; the focused pending-answer test, lint, and typecheck pass after the saving-status adjustment.
+- [ ] Deploy the final source revision with Vercel CLI and `--regions sin1`; inspect the deployment region.
+- [ ] Smoke-test production quiz/session page GETs and verify `Server-Timing` in the answer route test. Do not submit to the user's live session; no isolated production answer session is configured.
+- [ ] Report the measurement boundary: answer POST latency is instrumented and covered by route tests, while a successful production answer POST requires an isolated test session.
