@@ -46,41 +46,34 @@ export type QuizDetailApiError = Error & { status?: number; code?: string; hint?
 export type StartSessionError = Error & { status?: number; code?: string; activeSession?: ActiveSessionPayload }
 
 async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {
-  try {
-    const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.QUIZZES(id)}`)
+  const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.QUIZZES(id)}`)
 
-    if (studentRes.ok) {
-      const data = await studentRes.json()
-      const q = data.quiz ?? data
-      return {
-        _id: q._id,
-        title: q.title,
-        description: q.description || '',
-        category_id: { name: q.category_id?.name || q.categoryName || 'General' },
-        course_code: q.course_code,
-        num_questions: q.num_questions ?? q.questionCount ?? q.questions?.length ?? 0,
-        num_attempts: q.num_attempts ?? q.studentCount ?? 0,
-        created_at: q.created_at ?? q.createdAt,
-        is_temp: q.is_temp,
-      }
+  if (studentRes.ok) {
+    const data = await studentRes.json()
+    const q = data.quiz ?? data
+    return {
+      _id: q._id,
+      title: q.title,
+      description: q.description || '',
+      category_id: { name: q.category_id?.name || q.categoryName || 'General' },
+      course_code: q.course_code,
+      num_questions: q.num_questions ?? q.questionCount ?? q.questions?.length ?? 0,
+      num_attempts: q.num_attempts ?? q.studentCount ?? 0,
+      created_at: q.created_at ?? q.createdAt,
+      is_temp: q.is_temp,
     }
+  }
 
-    if (studentRes.status === 401 || studentRes.status === 404) {
-      return null
-    }
-
-    const data = (await studentRes.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
-    const error = new Error(data.error || `You do not have permission to access this quiz (Error ${studentRes.status}).`) as QuizDetailApiError
-    error.status = studentRes.status
-    error.code = data.code
-    error.hint = data.hint
-    throw error
-  } catch (e) {
-    if ((e as QuizDetailApiError).status && (e as QuizDetailApiError).status !== 401 && (e as QuizDetailApiError).status !== 404) {
-      throw e
-    }
+  if (studentRes.status === 401 || studentRes.status === 404) {
     return null
   }
+
+  const data = (await studentRes.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
+  const error = new Error(data.error || `You do not have permission to access this quiz (Error ${studentRes.status}).`) as QuizDetailApiError
+  error.status = studentRes.status
+  error.code = data.code
+  error.hint = data.hint
+  throw error
 }
 
 async function fetchPublicQuizDetail(id: string): Promise<QuizDetail> {
@@ -118,20 +111,11 @@ async function fetchQuizDetail(id: string, isAuth?: boolean): Promise<QuizDetail
   const hasToken = Boolean(isAuth) || hasCookieToken()
 
   if (hasToken) {
-    const studentDetail = await fetchStudentQuizDetail(id).catch(() => null)
+    const studentDetail = await fetchStudentQuizDetail(id)
     if (studentDetail) return studentDetail
   }
 
-  try {
-    return await fetchPublicQuizDetail(id)
-  } catch (publicErr: any) {
-    // If public call returns 404 or fails, fallback to student API smoothly without unhandled errors
-    if (!hasToken) {
-      const studentDetail = await fetchStudentQuizDetail(id).catch(() => null)
-      if (studentDetail) return studentDetail
-    }
-    throw publicErr
-  }
+  return fetchPublicQuizDetail(id)
 }
 
 export function useQuizDetailState() {
