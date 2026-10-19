@@ -3,7 +3,7 @@ import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { validateQuizSessionRequest, pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
+import { activeSessionWriteFilter, validateQuizSessionRequest, pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 import { calculateScore, syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
@@ -51,7 +51,7 @@ export const POST = withAuth(async (
     const completed = await QuizSession.findOneAndUpdate(
       {
         _id: id,
-        status: 'active',
+        ...activeSessionWriteFilter(),
       },
       updateDoc,
       { new: true }

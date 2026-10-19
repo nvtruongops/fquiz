@@ -14,6 +14,16 @@ export interface ValidateQuizSessionOptions {
 
 const SESSION_OWNERSHIP_FIELDS = ['student_id', 'is_guest', 'guest_id']
 
+export function activeSessionWriteFilter(now = new Date()) {
+  return {
+    status: 'active' as const,
+    $or: [
+      { expires_at: null },
+      { expires_at: { $gt: now } },
+    ],
+  }
+}
+
 function getSessionStatusResponse(status: string, options: ValidateQuizSessionOptions): NextResponse | null {
   if (options.checkCompleted && status === 'completed') {
     return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
