@@ -4,13 +4,12 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 
 export interface ResolvedAnswer {
   questionIndex: number

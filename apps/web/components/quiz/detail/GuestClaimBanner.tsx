@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Sparkles, LogIn, CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
+import { Sparkles, LogIn, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { useToast } from '@/store/shared/toast-store'

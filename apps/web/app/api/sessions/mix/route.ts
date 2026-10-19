@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import crypto from 'crypto'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
@@ -15,7 +13,6 @@ import {
   MIX_QUIZ_RATE_LIMIT_WINDOW,
 } from '@/lib/modules/quiz/constants/mix-quiz'
 import { z } from 'zod'
-import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { processMixQuizGeneration } from '@/lib/modules/quiz/utils/mix-quiz-processor'
 
 const CreateMixSessionSchema = z.object({
@@ -29,15 +26,6 @@ const CreateMixSessionSchema = z.object({
   // Question order: sequential or random
   difficulty: z.enum(['sequential', 'random']).default('random'),
 })
-
-
-
-/**
- * Generate a unique temp course_code.
- */
-async function generateTempCourseCode(): Promise<string> {
-  return `TEMP_${crypto.randomBytes(4).toString('hex').toUpperCase()}`
-}
 
 // Mix quiz rate limiter: 5 per hour per user
 const mixRateLimiter = providerFactory.createProvider(
@@ -91,7 +79,6 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
     }
 
-    const now = new Date()
     const studentId = new mongoose.Types.ObjectId(payload.userId)
 
     // 4. Concurrent check — only 1 active temp session allowed

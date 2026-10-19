@@ -119,7 +119,6 @@ async function main() {
   const answerTimes: number[] = []
 
   for (let i = 0; i < Math.min(ANSWERS_TO_TEST, questions.length); i++) {
-    const q = questions[i]
     const answerIdx = 0 // Always pick first option for testing
 
     const { isCorrect, ms } = await submitAnswer(token, csrf, sessionId, i, answerIdx)

@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldCheck, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface AdminHeaderProps {

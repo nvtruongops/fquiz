@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import crypto from 'crypto'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'

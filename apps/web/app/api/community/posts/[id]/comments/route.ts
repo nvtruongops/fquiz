@@ -18,7 +18,7 @@ export async function POST(
     const validation = await validatePostRequest(id)
     if (!validation.isValid) return validation.response
 
-    const { post, session } = validation
+    const { session } = validation
 
     const body = await req.json().catch(() => null)
     if (!body) {

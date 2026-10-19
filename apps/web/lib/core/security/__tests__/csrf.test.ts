@@ -1,4 +1,4 @@
-import { safeCompare, getCsrfTokenFromCookie, withCsrfHeaders, validateCsrfRequest, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '../csrf'
+import { safeCompare, validateCsrfRequest, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '../csrf'
 
 describe('safeCompare', () => {
   it('should return true for equal strings', () => {

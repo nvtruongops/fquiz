@@ -3,12 +3,10 @@ import {
   checkQuestionsInBank,
   addOrUpdateQuestionInBank,
   syncQuizToQuestionBank,
-  getPopularQuestions,
   renameQuizCodeInBank,
   removeQuizFromBank,
 } from '../question-bank-manager'
 import { QuestionBank } from '../models/QuestionBank'
-import { connectDB } from '@/lib/core/db/mongodb'
 import { generateQuestionId } from '../question-id-generator'
 
 // Mock dependencies

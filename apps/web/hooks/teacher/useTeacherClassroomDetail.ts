@@ -116,16 +116,6 @@ export function useTeacherClassroomDetail(classroomId: string) {
     }
   }, [classroomId])
 
-  const fetchMyQuizzes = useCallback(async () => {
-    try {
-      const res = await fetch('/api/student/quizzes')
-      const data = await res.json()
-      if (res.ok) setMyQuizzes(data.quizzes || [])
-    } catch (err) {
-      console.error('Error fetching quizzes:', err)
-    }
-  }, [])
-
   const loadAllClassroomData = useCallback(async () => {
     if (!classroomId) return
     try {

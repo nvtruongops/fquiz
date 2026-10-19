@@ -1,8 +1,8 @@
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 
-function runCommand(command: string): string {
+function runGit(args: string[]): string {
   try {
-    return execSync(command, { encoding: 'utf-8', stdio: 'pipe' }).trim()
+    return execFileSync('git', args, { encoding: 'utf-8', stdio: 'pipe' }).trim()
   } catch (error: any) {
     throw new Error(error.stderr?.trim() || error.message)
   }
@@ -13,7 +13,7 @@ function main() {
 
   try {
     // 1. Check Git status
-    const status = runCommand('git status --porcelain')
+    const status = runGit(['status', '--porcelain'])
     if (!status) {
       console.log('\x1b[32m%s\x1b[0m', '✅ No changes detected to commit.')
       return
@@ -43,18 +43,16 @@ function main() {
 
     // 3. Execute git add
     console.log('Staging changes...')
-    runCommand('git add .')
+    runGit(['add', '.'])
 
     // 4. Execute git commit
     console.log('Committing changes...')
-    // Escape double quotes in commit message
-    const escapedMsg = commitMessage.replace(/"/g, '\\"')
-    runCommand(`git commit -m "${escapedMsg}"`)
+    runGit(['commit', '-m', commitMessage])
 
     // 5. Execute git push
     console.log('Pushing to remote repository...')
     // Display push progress directly in terminal
-    execSync('git push', { stdio: 'inherit' })
+    execFileSync('git', ['push'], { stdio: 'inherit' })
 
     console.log('\x1b[32m%s\x1b[0m', '🎉 Automated push completed successfully!')
   } catch (error: any) {

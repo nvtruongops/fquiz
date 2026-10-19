@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { QuizEditorWithQuestionBank, type Category } from '@/components/quiz/QuizEditorWithQuestionBank'
 import { Loader2 } from 'lucide-react'

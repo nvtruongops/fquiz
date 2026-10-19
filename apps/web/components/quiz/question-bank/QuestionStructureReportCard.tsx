@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
-import { FileText, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, ChevronUp, Layers, ListChecks, HelpCircle, X, RefreshCw } from 'lucide-react'
+import { FileText, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, ChevronUp, HelpCircle, X, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import type { QuestionStructureReport } from '@/lib/modules/quiz/quiz-import/types'
 

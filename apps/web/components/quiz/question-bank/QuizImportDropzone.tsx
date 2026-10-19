@@ -107,7 +107,7 @@ export function QuizImportDropzone({
           <Button
             type="button"
             onClick={onPreview}
-            disabled={!file || !fileSnapshot || loading || preparingFile}
+            disabled={!fileSnapshot || loading || preparingFile}
             className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto cursor-pointer"
           >
             {loading || preparingFile ? (

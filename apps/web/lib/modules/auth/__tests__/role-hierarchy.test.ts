@@ -1,4 +1,4 @@
-import { expandAllowedRoles, ROLE_ACCESS_HIERARCHY } from '../constants'
+import { expandAllowedRoles } from '../constants'
 
 describe('Role Access Hierarchy & expandAllowedRoles', () => {
   it('should expand student requirement to student, teacher, admin, and dev identities', () => {
