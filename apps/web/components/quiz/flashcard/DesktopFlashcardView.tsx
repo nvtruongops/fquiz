@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Lightbulb, ArrowLeft, ArrowRight, Info } from 'lucide-react'
+import { Lightbulb, ArrowLeft, Info } from 'lucide-react'
 import { FlashcardView, type FlashcardViewRef } from '@/components/quiz/session/FlashcardView'
 import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
 import { QuizLoadingOverlay, useSessionLoader } from '@/components/quiz/shared/QuizLoader'
@@ -32,7 +32,6 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
     error,
     submitAnswer,
     isSubmitting,
-    stats,
     setStats,
     displayIndex,
     setDisplayIndex,

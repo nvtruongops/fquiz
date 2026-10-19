@@ -18,10 +18,6 @@ const MigrateSchema = z.object({
   resolve_conflicts: z.enum(['skip', 'keep_first', 'keep_most_used']).default('skip'),
 })
 
-const CleanupSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  mode: z.literal('cleanup'),
-})
 
 interface QuestionVariant {
   course_code: string

@@ -104,7 +104,7 @@ async function main() {
       const tContinue = Date.now()
 
       // Simulate what UI does: continue action + parallel questions+state fetch
-      const [continueRes] = await Promise.all([
+      await Promise.all([
         createSession(token, csrf, 'immediate', 'random', 'continue'),
       ])
       log('Continue session', Date.now() - tContinue)
@@ -137,7 +137,6 @@ async function main() {
   console.log('\n' + '='.repeat(50))
   console.log('📊 PERFORMANCE SUMMARY')
   console.log('='.repeat(50))
-  const total = timings.reduce((s, t) => s + t.ms, 0)
   timings.forEach(t => {
     const bar = '█'.repeat(Math.min(Math.round(t.ms / 100), 30))
     console.log(`  ${t.label.padEnd(40)} ${t.ms}ms ${bar}`)

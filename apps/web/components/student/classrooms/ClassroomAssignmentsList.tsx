@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/shared/ui/card'
+import { Card } from '@/components/shared/ui/card'
 import { Button } from '@/components/shared/ui/button'
 import { BookOpen, Clock, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react'
 import type { Classroom, Assignment } from '@/hooks/useStudentClassrooms'

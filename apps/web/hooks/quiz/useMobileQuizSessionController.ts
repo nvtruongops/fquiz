@@ -97,7 +97,6 @@ export function useMobileQuizSessionController() {
     setExitConfirmOpen,
     reportSessionActivity,
     inactivityPauseOpen,
-    setInactivityPauseOpen,
     handleResumeInactivity,
     markExiting,
   } = useSessionActivityTracking({

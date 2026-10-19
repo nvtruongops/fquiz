@@ -6,7 +6,7 @@ export function normalizeTextAST(text: string): string {
 
   const normalized = text
     .toLowerCase()
-    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^<>]*>/g, ' ')
     .replace(/&(nbsp|amp|lt|gt|quot|#39|apos);/gi, (_, entity) => {
       const entMap: Record<string, string> = {
         nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'"
@@ -22,7 +22,7 @@ export function normalizeTextAST(text: string): string {
     .replace(/^(?:question\s+\d+|câu\s+\d+|cau\s+\d+|q\d+)[:.]\s*/gi, '')
     .replace(/^(?:\[[a-z0-9]+\]|\([a-z0-9]+\)|[a-z][.\):/-]|\d+[.\):/-](?!\d))\s*/gi, '')
     .replace(/\s+([?.!,:;])/g, '$1')
-    .replace(/^[.?!:,;\s]+|[.?!:,;\s]+$/g, '')
+    .replace(/^[.?!:,;\s]+|(?<![.?!:,;\s])[.?!:,;\s]+$/g, '')
     .trim()
 
   return normalized || text.trim().toLowerCase()
@@ -34,7 +34,7 @@ export function normalizeOptionAST(opt: string): string {
   if (/^(?:a|an|the)$/i.test(s)) return s
   const stripped = s.replace(/^(?:a|an|the)\s+/i, '')
   s = stripped.length > 0 ? stripped : s
-  s = s.replace(/^[.?!:,;\s]+|[.?!:,;\s]+$/g, '').trim()
+  s = s.replace(/^[.?!:,;\s]+|(?<![.?!:,;\s])[.?!:,;\s]+$/g, '').trim()
   return s
 }
 

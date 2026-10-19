@@ -4,13 +4,6 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { z } from 'zod'
-
-const AnalyticsSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  page: z.string().optional(),
-  per_page: z.string().optional(),
-})
 
 function parseAnalyticsParams(searchParams: URLSearchParams) {
   const categoryIdParam = searchParams.get('category_id')

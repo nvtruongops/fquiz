@@ -4,10 +4,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { validationErrorResponse } from '@/lib/core/api-helpers'
 import { syncQuizToQuestionBank } from '@/lib/modules/quiz/question-bank-manager'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import {
-  QuestionInputSchema,
-  SyncQuizSchema,
-} from '@/lib/modules/quiz/schemas/quiz'
+import { SyncQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
 
 
 /**

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Eye, EyeOff, Loader2, ArrowRight, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'

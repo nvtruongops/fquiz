@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { User } from '@/lib/modules/auth/models/User'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
 
@@ -53,10 +52,7 @@ export async function GET(
       )
     }
 
-    // Application-level join for creator + category
-    const [creator] = quiz.created_by
-      ? await User.find({ _id: quiz.created_by }).select('username').lean()
-      : []
+    // Application-level join for category
     const [category] = quiz.category_id
       ? await Category.find({ _id: quiz.category_id }).select('name').lean()
       : []

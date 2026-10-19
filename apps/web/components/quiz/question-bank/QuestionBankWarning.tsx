@@ -73,7 +73,7 @@ export function QuestionBankWarning({
         throw new Error('Failed to sync update')
       }
 
-      const data = await response.json()
+      await response.json()
 
       onUpdateAll()
       onOpenChange(false)

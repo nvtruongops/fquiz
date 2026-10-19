@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
@@ -45,8 +45,6 @@ export const POST = withAuth(async (
       }
       setPayload.paused_at = now
     }
-
-    const AUTO_PAUSE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
 
     const updateQuery: Record<string, any> = { $set: setPayload }
 

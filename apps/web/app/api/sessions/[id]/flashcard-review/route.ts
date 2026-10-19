@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { secureShuffle } from '@/lib/core/utils/shuffle'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { User, LogOut, Settings, ChevronDown, Sparkles, School, GraduationCap, Sun, Moon, Monitor, Palette, Heart, Leaf, Check } from 'lucide-react'
+import { User, LogOut, Settings, ChevronDown, Sparkles, School, GraduationCap, Sun, Moon, Palette, Heart, Leaf, Check } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,

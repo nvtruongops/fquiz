@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePinnedQuestions, PinnedQuestionItem } from '@/hooks/quiz/usePinnedQuestions'
-import { Bookmark, BookmarkCheck, Trash2, PlusCircle, AlertCircle, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bookmark, Trash2, PlusCircle, AlertCircle, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { motion, AnimatePresence } from 'framer-motion'

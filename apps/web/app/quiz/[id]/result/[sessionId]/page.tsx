@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { CheckCircle2, XCircle, BookOpen, LayoutDashboard, RotateCcw, Trophy, Sparkles } from 'lucide-react'
+import { BookOpen, LayoutDashboard, RotateCcw } from 'lucide-react'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'

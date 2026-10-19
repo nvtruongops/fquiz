@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { X, ImageIcon, AlertCircle, Link as LinkIcon } from 'lucide-react'
 import Image from 'next/image'

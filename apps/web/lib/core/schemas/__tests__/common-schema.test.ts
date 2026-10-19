@@ -2,10 +2,6 @@ import {
   PaginationQuerySchema,
   SearchQuerySchema,
   PublicQuizzesQuerySchema,
-  SessionQuestionQuerySchema,
-  QuizListQuerySchema,
-  UserListQuerySchema,
-  CategoryListQuerySchema,
 } from '../common'
 
 describe('Pagination Query Schemas', () => {

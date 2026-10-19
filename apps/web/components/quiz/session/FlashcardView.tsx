@@ -65,7 +65,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   taggedStatus,
 }, ref) => {
   const [isFlipped, setIsFlipped] = useState(false)
-  const [showExplanation, setShowExplanation] = useState(false)
+  const [, setShowExplanation] = useState(false)
 
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-200, 200], [-8, 8])

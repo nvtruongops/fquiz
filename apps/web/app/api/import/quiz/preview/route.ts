@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { buildQuizImportPreview } from '@/lib/modules/quiz/quiz-import'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'

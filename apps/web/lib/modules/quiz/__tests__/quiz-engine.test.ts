@@ -8,7 +8,6 @@ import {
 } from '../quiz-engine'
 import { Quiz } from '../models/Quiz'
 import { QuizSession } from '../models/QuizSession'
-import { connectDB } from '@/lib/core/db/mongodb'
 
 // Mock dependencies
 jest.mock('@/lib/core/db/mongodb', () => ({

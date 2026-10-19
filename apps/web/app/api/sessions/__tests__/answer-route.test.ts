@@ -1,5 +1,5 @@
 import { POST } from '../[id]/answer/route'
-import { processImmediateAnswer, processReviewAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
+import { processImmediateAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 
 // Mock dependencies
