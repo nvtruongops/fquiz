@@ -16,14 +16,14 @@
 
 ## 2. 4 Official Theme Palettes
 
-All 4 official themes strictly adhere to **WCAG 2.2 AA** accessibility standards (minimum text contrast ratio of 4.5:1, with empirical scores $\ge$ 12.5:1):
+The text contrast target for normal text is **4.5:1 or higher**. Theme-level automated checks are useful evidence, but verify the current rendered color pairs and interaction states before claiming full WCAG conformance.
 
-| Theme | CSS Selector | Aesthetic Profile | WCAG Contrast Ratio |
+| Theme | CSS Selector | Aesthetic Profile | Contrast guidance |
 |---|---|---|---|
-| ☀️ **Light Theme** | `.theme-light` / root | Crisp, elegant bright background with high-contrast text | **14.2:1** |
-| 🌙 **Dark Theme** | `.theme-dark` / `.dark` | Eye-soothing midnight navy background with refined royal blue/gold accents | **13.8:1** |
-| 🌿 **Green Theme** | `.theme-green` | Organic emerald tones fostering calm, focused study sessions | **12.5:1** |
-| 🌸 **Pink Theme** | `.theme-pink` | Vibrant, modern pastel rose palette with balanced warmth | **14.5:1** |
+| ☀️ **Light Theme** | `.theme-light` / root | Bright background with high-contrast text | Meet 4.5:1 for normal text; verify current pairs |
+| 🌙 **Dark Theme** | `.theme-dark` / `.dark` | Midnight navy background with blue and gold accents | Meet 4.5:1 for normal text; verify current pairs |
+| 🌿 **Green Theme** | `.theme-green` | Green palette | Meet 4.5:1 for normal text; verify current pairs |
+| 🌸 **Pink Theme** | `.theme-pink` | Rose palette | Meet 4.5:1 for normal text; verify current pairs |
 
 ---
 

@@ -1,6 +1,6 @@
 # 📋 Tasks & Feature Specifications (`tasks/`)
 
-This directory houses requirement specifications, technical design documents, and implementation progress trackers for complex subsystems in **FQuiz**.
+This directory contains feature specifications and implementation reports. Treat each task folder as a dated project record, not as a live status page; verify behavior and measurements against current code before relying on them.
 
 ---
 
@@ -8,14 +8,10 @@ This directory houses requirement specifications, technical design documents, an
 
 | Subsystem / Feature | Directory | Status | Description |
 |---|---|---|---|
-| 🧠 **Quiz AI Assistant** | [`tasks/quiz-ai-assistant/`](./quiz-ai-assistant/) | ✅ Complete | Real-time exam room assistant: explanation generation, question bank verification, and hallucination prevention |
+| 🧠 **Quiz AI Assistant** | [`tasks/quiz-ai-assistant/`](./quiz-ai-assistant/) | Historical report | Requirements, design, implementation notes, and a dated summary |
 
 ---
 
 ## Standard Specification Structure per Task
 
-Each task directory in `tasks/` is standardized across 4 core engineering documents:
-1. `requirements.md`: Functional requirements (FR), non-functional requirements (NFR), and acceptance criteria (AC).
-2. `design.md`: Solution architecture, DTOs, schemas, data pipelines, and sequence diagrams.
-3. `tasks.md`: Detailed work breakdown structure (WBS) and milestone checklists.
-4. `SUMMARY.md`: Final completion report, performance benchmarks, and deployment review.
+Task folders may include `requirements.md`, `design.md`, `tasks.md`, and `SUMMARY.md`. Keep original decision and run dates in archived reports. Add current status only when it has been checked against the implementation; report performance with the run conditions and evidence.

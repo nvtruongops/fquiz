@@ -11,20 +11,22 @@
 **Category:** Academic Examination, Active Comprehension & Analytics SaaS Platform (Text-Only Scope)
 **Design Dials (`ui-ux-pro-max`):** Variance `7/10` (Modern Bento Grid) · Motion `6/10` (GPU GSAP Micro-interactions) · Density `7/10` (Balanced Academic / High-Density Admin)
 
+Theme values and accessibility requirements below are design guidance. A token-level checker does not establish full WCAG compliance across every component state, viewport, or assistive technology; verify the current color pairs before making a compliance claim.
+
 ---
 
 ## 1. 3-Tier Design Token & 4-Theme Architecture (`@fquiz/ui`)
 
 All UI components across `apps/web`, `apps/admin`, and `packages/ui` **MUST** use semantic CSS variables and Tailwind token classes. Raw hex values (`#...`) and hardcoded palette utilities (`bg-white`, `bg-slate-*`, `text-gray-*`, `bg-amber-*`, `bg-emerald-*`) in `.tsx` files are strictly prohibited.
 
-### 1.1 Official 4 Themes (WCAG 2.2 AA Verified $\ge 12.5:1$)
+### 1.1 Theme selectors and contrast target
 
-| Theme | Selector | Surface Background | Primary Brand | Aesthetic Profile | Text Contrast |
+| Theme | Selector | Surface Background | Primary Brand | Aesthetic Profile | Contrast target |
 |---|---|---|---|---|---|
-| ☀️ **Light** (Default) | `:root`, `.light` | `#F8FAFC` (`210 40% 98%`) | `#2563EB` (`221 83% 53%`) | Soft Slate White & Oceanic Royal Blue | **14.2:1** |
-| 🌙 **Dark** | `.dark` | `#070B14` (`222 47% 5%`) | `#3768E2` (`223 75% 55%`) | Midnight Navy & Royal Study Blue / Gold | **13.8:1** |
-| 🌿 **Green** | `.green` | `#ECE8DF` (`42 24% 90%`) | `#2D5A47` (`155 33% 26%`) | Warm Vintage Paper & Deep Forest Green | **12.5:1** |
-| 🌸 **Pink** | `.pink` | `#FDF6F7` (`351 64% 98%`) | `#D47385` (`349 52% 64%`) | Soft Blush Cloud & Obsidian Rose | **14.5:1** |
+| ☀️ **Light** (Default) | `:root`, `.light` | `#F8FAFC` (`210 40% 98%`) | `#2563EB` (`221 83% 53%`) | Soft Slate White & Oceanic Royal Blue | At least **4.5:1** for normal text; verify current pairs |
+| 🌙 **Dark** | `.dark` | `#070B14` (`222 47% 5%`) | `#3768E2` (`223 75% 55%`) | Midnight Navy & Royal Study Blue / Gold | At least **4.5:1** for normal text; verify current pairs |
+| 🌿 **Green** | `.green` | `#ECE8DF` (`42 24% 90%`) | `#2D5A47` (`155 33% 26%`) | Warm Vintage Paper & Deep Forest Green | At least **4.5:1** for normal text; verify current pairs |
+| 🌸 **Pink** | `.pink` | `#FDF6F7` (`351 64% 98%`) | `#D47385` (`349 52% 64%`) | Soft Blush Cloud & Obsidian Rose | At least **4.5:1** for normal text; verify current pairs |
 
 ### 1.2 Semantic Status Triad Tokens (Mandatory Pairing)
 

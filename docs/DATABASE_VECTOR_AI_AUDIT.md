@@ -2,6 +2,7 @@
 
 > **Version**: 1.0.0 (Strict Technical Audit)  
 > **Audit Date**: 2026-08-29  
+> **Evidence status**: Historical snapshot. Findings, scores, proposed changes, and test notes below have not been refreshed as part of this document update. Recheck source and run the relevant checks before treating them as current.
 > **Audit Scope**:  
 > 1. **Vector Index & Semantic Search**: Representation of vector embeddings, Atlas Vector Search, Hybrid search for User, QuestionBank, and Quiz entities.  
 > 2. **Database Query Logic & DAL**: Application-level batch `$in` joins, Projections, Index coverage, Race condition guards, TTL indexes.  
@@ -336,15 +337,15 @@ gantt
 Execute the mandatory verification sequence following any vector search or query optimization:
 
 ```bash
-# 1. Type-Check across all 7 packages
+# 1. Type-check configured workspaces
 npm run check-types
 
 # 2. Linting & Security Code Quality
 npm run lint
 
-# 3. Jest Unit & Integration Tests (69 suites, 450 tests)
+# 3. Jest unit and integration tests selected by `jest.config.ts`
 npm test
 
-# 4. Strict AI Rule Engine Verification (18/18 Checks)
+# 4. Strict repository governance verification
 node .agents/scripts/verify.js --strict
 ```
