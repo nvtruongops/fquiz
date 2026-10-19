@@ -29,7 +29,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const [
       latestSessionIdsByQuiz,
       latestActiveIdsByQuiz,
-      allCompletedGroupsAgg,
       pinnedCategories,
     ] = await Promise.all([
       QuizSession.aggregate([
@@ -75,23 +74,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
         { $limit: 10 },
         { $project: { _id: 0, latestSessionId: 1 } },
       ]),
-      QuizSession.aggregate([
-        {
-          $match: {
-            student_id: userId,
-            status: 'completed',
-          },
-        },
-        {
-          $group: {
-            _id: {
-              quiz_id: '$quiz_id',
-              mode_group: { $cond: [{ $in: ['$mode', ['flashcard']] }, 'learning', 'assessment'] },
-            },
-          },
-        },
-        { $project: { _id: 1 } },
-      ]),
       resolvePinnedCategories(payload.userId),
     ])
 
@@ -129,10 +111,6 @@ export const GET = withAuth(async (req: Request, { payload }) => {
       }
     })
 
-    const completedQuizModeGroups = new Set(
-      allCompletedGroupsAgg.map((x: any) => `${x._id.quiz_id.toString()}::${x._id.mode_group}`)
-    )
-
     const quizDocs = Array.from(quizMapByObjId.values())
     const quizMetaMap = quizMapByObjId
 
@@ -145,12 +123,18 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const originalCreatorMap = await buildOriginalCreatorMap(quizDocs)
     const creatorNameMap = await buildCreatorNameMap(quizDocs, originalCreatorMap, new UserService())
 
+    const LEARNING_MODES = ['flashcard']
     const completedActivities = recentActivitiesRaw.map((session: any) =>
       mapSessionToActivity(session, payload.userId, quizMetaMap, categoryNameMap, originalCreatorMap, creatorNameMap)
     )
+    const completedQuizModeGroups = new Set(
+      completedActivities.map((activity) => {
+        const group = LEARNING_MODES.includes(activity.mode ?? '') ? 'learning' : 'assessment'
+        return `${activity.quizId}::${group}`
+      })
+    )
 
     // Map active sessions by "quizId::modeGroup" for precise lookup
-    const LEARNING_MODES = ['flashcard']
     const activeSessionsByQuizMode = new Map<string, any>()
     activeActivitiesRaw.forEach((session: any) => {
       const quizId = session.quiz_id?._id?.toString?.() || session.quiz_id?.toString?.() || ''
