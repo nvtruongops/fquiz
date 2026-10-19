@@ -51,6 +51,9 @@ async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {
   if (studentRes.ok) {
     const data = await studentRes.json()
     const q = data.quiz ?? data
+    if (typeof q?._id !== 'string' || !q._id.trim() || typeof q.title !== 'string' || !q.title.trim()) {
+      throw new Error('Invalid student quiz detail response: missing quiz id or title.')
+    }
     return {
       _id: q._id,
       title: q.title,
