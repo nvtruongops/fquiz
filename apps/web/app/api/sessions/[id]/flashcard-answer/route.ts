@@ -5,20 +5,12 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Question } from '@/lib/modules/quiz/models/Question'
-import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
+import { activeSessionWriteFilter, validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { z } from 'zod'
 
 const FlashcardAnswerSchema = z.object({
   knows: z.boolean(),
   question_index: z.number().int().min(0).optional(),
-})
-
-const activeSessionWriteFilter = () => ({
-  status: 'active',
-  $or: [
-    { expires_at: null },
-    { expires_at: { $gt: new Date() } },
-  ],
 })
 
 async function resolveQuestion(

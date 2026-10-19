@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { normalizeIndexes, isExactArrayMatch } from '@/lib/core/utils/array-utils'
+import { activeSessionWriteFilter } from '@/lib/modules/quiz/session-utils'
 
 export interface ImmediateAnswerResult {
   isCorrect: boolean
@@ -108,7 +109,7 @@ async function tryPersistAnswerIteration(
   const updatedCurrentIndex = Math.max(currentSession.current_question_index ?? 0, targetNextIndex)
 
   const result = await QuizSession.updateOne(
-    { _id: sessionId, ...versionFilter, status: 'active' },
+    { $and: [{ _id: sessionId }, activeSessionWriteFilter(), versionFilter] },
     {
       $set: {
         user_answers: updatedAnswers,
