@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useToast } from "@/hooks/useToast"
-import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react"
+import { CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react"
 
 export function Toaster() {
   const { toasts } = useToast()

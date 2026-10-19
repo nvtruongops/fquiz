@@ -3,8 +3,6 @@ import { connectDB } from '@/lib/mongodb'
 import { QuizSession } from '@/models/QuizSession'
 import { Quiz } from '@/models/Quiz'
 import { Category } from '@/models/Category'
-import { User } from '@/models/User'
-import { Types } from 'mongoose'
 
 async function check() {
   await connectDB()

@@ -2,7 +2,6 @@ import {
   RANKING_WEIGHTS,
   MIN_RELEVANCE_SCORE,
   computeOptionMatch,
-  calculateRelevanceScore,
   calculateRelevanceBreakdown,
   rankRetrievalCandidates,
   tokenize,

@@ -1,6 +1,5 @@
 import { processImmediateAnswer, processReviewAnswer, calculateScore } from '@/lib/modules/quiz/quiz-engine'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 
 jest.mock('@/lib/core/db/mongodb', () => ({
   connectDB: jest.fn().mockResolvedValue(true),

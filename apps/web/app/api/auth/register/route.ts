@@ -6,7 +6,6 @@ import { User } from '@/lib/modules/auth/models/User'
 import { EmailVerification } from '@/lib/modules/auth/models/EmailVerification'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
-import { isMailConfigured } from '@/lib/core/mail/mail'
 import { hashVerificationCode, isValidVerificationCode } from '@/lib/modules/auth/verification-code'
 
 export async function POST(request: Request) {

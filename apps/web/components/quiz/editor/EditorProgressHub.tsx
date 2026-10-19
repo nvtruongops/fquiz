@@ -5,7 +5,7 @@ import { Card } from '@/components/shared/ui/card'
 import { Progress } from '@/components/shared/ui/progress'
 import { Badge } from '@/components/shared/ui/badge'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
-import { LayoutDashboard, Loader2, CheckCircle2, AlertTriangle, AlertCircle, ChevronRight, History } from 'lucide-react'
+import { LayoutDashboard, Loader2, CheckCircle2, AlertTriangle, AlertCircle, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 
 import { analyzeQuestionStructure } from '@/lib/modules/quiz/quiz-import/analyzer'

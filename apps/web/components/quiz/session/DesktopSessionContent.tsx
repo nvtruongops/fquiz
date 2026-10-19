@@ -1,8 +1,6 @@
 'use client'
-
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/shared/ui/button'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useSubmitAnswer } from '@/hooks/quiz/useSubmitAnswer'
 import { QuizLoadingOverlay, useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'

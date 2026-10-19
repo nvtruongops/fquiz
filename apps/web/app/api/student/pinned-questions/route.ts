@@ -150,35 +150,6 @@ async function resolveOriginalQuizForQuestion(params: {
   }
 }
 
-async function autoHealPin(pin: any, courseCodeParam: string | null) {
-  const { originalQuizId, originalQuizTitle, originalCourseCode, correctAnswer, explanation } = await resolveOriginalQuizForQuestion({
-    quiz_id: pin.quiz_id?.toString(),
-    clientCourseCode: courseCodeParam || pin.course_code,
-    clientQuizTitle: pin.quiz_title,
-    text: pin.text,
-    question_id: pin.question_id,
-  })
-
-  const updates: any = {}
-  if (originalCourseCode && originalCourseCode !== 'GENERAL' && !originalCourseCode.startsWith('TEMP_') && pin.course_code !== originalCourseCode) {
-    updates.course_code = originalCourseCode
-    updates.quiz_title = originalQuizTitle
-    if (originalQuizId) updates.quiz_id = originalQuizId
-  }
-
-  if (correctAnswer && correctAnswer.length > 0 && JSON.stringify(pin.correct_answer) !== JSON.stringify(correctAnswer)) {
-    updates.correct_answer = correctAnswer
-  }
-
-  if (explanation && (!pin.explanation || pin.explanation.trim() === '')) {
-    updates.explanation = explanation
-  }
-
-  if (Object.keys(updates).length > 0) {
-    await PinnedQuestion.updateOne({ _id: pin._id }, { $set: updates })
-  }
-}
-
 /**
  * GET /api/student/pinned-questions
  * Optional query: course_code=NWC303

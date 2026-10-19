@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { CheckCircle2, RotateCcw, Layers, Eye, EyeOff, Check, HelpCircle, BookOpen } from 'lucide-react'
+import { CheckCircle2, RotateCcw, Layers, Eye, EyeOff, HelpCircle, BookOpen } from 'lucide-react'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'

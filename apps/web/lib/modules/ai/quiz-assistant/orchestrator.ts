@@ -42,7 +42,7 @@ export class QuizAIOrchestrator {
   async execute(params: ResolveContextParams): Promise<QuizAssistantResponse> {
     const requestId = QuizAITelemetry.generateRequestId()
     const overallStart = performance.now()
-    let stageStart = overallStart
+    let stageStart: number
 
     const durations: StageDurations = {
       contextMs: 0,
@@ -146,9 +146,6 @@ export class QuizAIOrchestrator {
         evidences,
       })
       durations.promptMs = Number((performance.now() - stageStart).toFixed(2))
-
-      // Compute canonical cache key
-      const canonicalKey = this.computeCanonicalHash(context.courseCode, context.question.id, intent, params.userQuery)
 
       // -------------------------------------------------------------
       // STAGE 6: LLM Execution with Deadline Management & DB Fallback

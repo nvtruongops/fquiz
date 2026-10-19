@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@/components/shared/ui/button'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { QuizLoadingOverlay, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useMobileQuizSessionController } from '@/hooks/quiz/useMobileQuizSessionController'

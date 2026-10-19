@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, XCircle, Lightbulb, HelpCircle, Sparkles, ChevronRight, X } from 'lucide-react'
+import { CheckCircle2, XCircle, Lightbulb, HelpCircle, Sparkles, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { InteractiveText } from '@/components/shared/selection/InteractiveText'

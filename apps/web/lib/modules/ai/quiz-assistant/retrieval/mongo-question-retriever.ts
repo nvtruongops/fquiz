@@ -1,7 +1,7 @@
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank' // ponytail: allow-cross-module
 import { Quiz } from '@/lib/modules/quiz/models/Quiz' // ponytail: allow-cross-module
 import type { IRetrievalEngine, RetrievalInput, RetrievalResult, DetailedRetrievalOutput } from './retrieval-types'
-import { calculateRelevanceScore, calculateRelevanceBreakdown, rankRetrievalCandidates } from './ranking'
+import { calculateRelevanceBreakdown, rankRetrievalCandidates } from './ranking'
 import type { SubSourceDurations } from '../telemetry/telemetry-types'
 
 export class MongoQuestionRetriever implements IRetrievalEngine {
@@ -17,7 +17,7 @@ export class MongoQuestionRetriever implements IRetrievalEngine {
   }
 
   async searchDetailed(input: RetrievalInput): Promise<DetailedRetrievalOutput> {
-    const { courseCode, categoryId, currentQuestionText, targetOptionText, limit = 2 } = input
+    const { currentQuestionText, limit = 2 } = input
 
     let qbStart = performance.now()
     let qbDuration = 0

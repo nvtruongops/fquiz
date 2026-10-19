@@ -6,9 +6,7 @@ import { format } from 'date-fns'
 import { 
   History, 
   Trophy, 
-  Clock, 
   RotateCcw, 
-  CheckCircle2, 
   ArrowRight, 
   Zap, 
   BookOpen, 

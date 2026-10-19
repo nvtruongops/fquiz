@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AuthResponse } from '@/hooks/auth/useAuth'
@@ -34,7 +34,6 @@ interface MobileNavProps {
 
 export function MobileNav({ user }: MobileNavProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [examMenuOpen, setExamMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)

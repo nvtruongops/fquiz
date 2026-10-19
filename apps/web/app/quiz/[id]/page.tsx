@@ -15,7 +15,6 @@ import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContai
 export default function QuizDetailPage() {
   const {
     router,
-    quizId,
     resolvedQuizId,
     quiz,
     isLoading,

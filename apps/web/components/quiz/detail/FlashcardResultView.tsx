@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { RotateCcw, LayoutDashboard, BookOpen, Sparkles, Loader2, RefreshCw, X, Layers, AlertCircle, Info } from 'lucide-react'
+import { RotateCcw, LayoutDashboard, BookOpen, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import ExitMixQuizButton from '@/components/quiz/detail/ExitMixQuizButton'
@@ -48,7 +48,7 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   const router = useRouter()
   const { toast } = useToast()
 
-  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [, setShowReviewModal] = useState(false)
   const [loadingUnknown, setLoadingUnknown] = useState(false)
   const [loadingAll, setLoadingAll] = useState(false)
 

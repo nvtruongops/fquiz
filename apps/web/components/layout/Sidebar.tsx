@@ -282,10 +282,10 @@ export function Sidebar({ user }: SidebarProps) {
               <button
                 type="button"
                 onClick={toggleCollapsed}
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                aria-expanded={!collapsed}
+                aria-label="Expand sidebar"
+                aria-expanded={false}
                 className="w-8 h-8 rounded-xl bg-card border border-border shadow-2xs flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer"
-                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title="Expand sidebar"
               >
                 <ChevronRight aria-hidden="true" className="w-4 h-4" />
               </button>
@@ -300,8 +300,8 @@ export function Sidebar({ user }: SidebarProps) {
                   <button
                     type="button"
                     onClick={toggleCollapsed}
-                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    aria-expanded={!collapsed}
+                    aria-label="Collapse sidebar"
+                    aria-expanded={true}
                     className="w-7 h-7 rounded-lg bg-card border border-border/80 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
                     title="Collapse sidebar"
                   >
@@ -324,8 +324,8 @@ export function Sidebar({ user }: SidebarProps) {
                     <button
                       type="button"
                       onClick={toggleCollapsed}
-                      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                      aria-expanded={!collapsed}
+                      aria-label="Collapse sidebar"
+                      aria-expanded={true}
                       className="w-6 h-6 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
                       title="Collapse sidebar"
                     >

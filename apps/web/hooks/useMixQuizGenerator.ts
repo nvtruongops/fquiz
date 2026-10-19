@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query'
 import { useToast } from '@/store/shared/toast-store'

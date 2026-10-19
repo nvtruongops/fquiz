@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
-import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SubmitAnswerSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { processImmediateAnswer, processReviewAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'

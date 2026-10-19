@@ -75,7 +75,6 @@ export async function sendResetPasswordMail({ to, resetUrl }: SendResetPasswordM
   const { from } = getMailConfig()
   if (!from) throw new Error('Missing MAIL_FROM')
 
-  const appUrl = resolveAppBaseUrl()
   const transporter = createTransporter()
 
   await transporter.sendMail({

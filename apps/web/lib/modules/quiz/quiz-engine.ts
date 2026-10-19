@@ -198,25 +198,6 @@ async function resolveQuestion(
   return { question, totalQuestions, questionOrder }
 }
 
-function hasAnsweredAllQuestions(userAnswers: UserAnswer[], totalQuestions: number): boolean {
-  if (totalQuestions <= 0) return false
-  if (userAnswers.length !== totalQuestions) return false
-
-  const answeredIndexes = new Set<number>()
-  for (const answer of userAnswers) {
-    if (answer.question_index < 0 || answer.question_index >= totalQuestions) return false
-    answeredIndexes.add(answer.question_index)
-  }
-
-  if (answeredIndexes.size !== totalQuestions) return false
-
-  for (let i = 0; i < totalQuestions; i += 1) {
-    if (!answeredIndexes.has(i)) return false
-  }
-
-  return true
-}
-
 /**
  * Immediate mode: persist answer to DB, return correctness + correct_answer + explanation.
  * Requirements: 7.1, 7.2, 7.3, 13.1
