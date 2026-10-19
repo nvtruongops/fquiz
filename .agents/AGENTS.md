@@ -16,9 +16,9 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 | `npm run build:admin` | Next.js production build for Admin (`apps/admin`) |
 | `npm run check-types` | TypeScript type-check across all 7 workspaces (`apps/*` & `packages/*`) |
 | `npm run lint` | ESLint across entire monorepo |
-| `npm test` | Jest unit & integration tests (66 suites, 430 tests) |
-| `npx playwright test` | Playwright multi-server E2E tests (57 tests) |
-| `node .agents/scripts/verify.js --strict` | Rule Engine Verification (18 checks - Strict Mode) |
+| `npm test` | Run Jest tests selected by `jest.config.ts` |
+| `npm run test:e2e` | Run Playwright tests selected by `playwright.config.ts` |
+| `node .agents/scripts/verify.js --strict` | Run repository governance checks in strict mode |
 
 ## Architecture
 
@@ -69,11 +69,11 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 ## UI/UX & Experience Modes Architecture
 
 - **4 Experience Modes Mental Model** (Reference [`fquiz-ui-ux-audit`](./skills/fquiz-ui-ux-audit/SKILL.md)):
-  1. `Learn Mode`: 3D Flashcards, Instant Explanations, AI Assistant, Swipe Gestures with Undo.
+  1. `Learn Mode`: Flashcards, Instant Explanations, AI Assistant, Swipe Gestures with Undo.
   2. `Practice Mode`: Multi-category Mix Quiz, Retry Wrong Questions, Smart Filters.
   3. `Exam Mode`: EOS-standard minimalist UI, ALL AI & Distracting Widgets DISABLED, Authoritative Multi-tab lock, Maximum Exam State Preservation.
   4. `Result & Mastery Mode`: Visual score analysis, Auto-focus first incorrect question, Knowledge mastery level radar/charts.
-- **Mission-Critical Exam Reliability**: Exam completion and state preservation rate $\ge 99.9\%$.
+- **Exam Reliability Evidence**: Report completion and state preservation rates only when backed by a dated, reproducible measurement.
 - **In-Place Re-auth Mandate**: Strictly no redirect to `/login` upon 401 in exam rooms (`/session/*`). Mandatory In-Place Re-auth Modal to preserve client memory state.
 - **Authoritative Multi-Tab Lease**: Use `BroadcastChannel` to lock submission authority to a single active tab.
 - **Mobile Safe-Area Inset**: Apply `padding-bottom: max(0.75rem, env(safe-area-inset-bottom))` across all mobile footers.
@@ -89,7 +89,7 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 ## Testing & Verification Standard
 
 - **Environment**: Node (not jsdom).
-- **Pattern**: `**/__tests__/**/*.test.{ts,tsx}` and `e2e/**/*.spec.ts`.
+- **Pattern**: Jest discovers `.test.ts` and `.test.tsx` files according to `jest.config.ts`; Playwright specs live in `e2e/**/*.spec.ts` according to `playwright.config.ts`.
 - **Routine Verification (Default after every task)**:
   `npm run lint` → `npm run check-types` → `npm test` → `node .agents/scripts/verify.js --strict`
 - **E2E Playwright Tests (`npx playwright test`)**:

@@ -26,7 +26,7 @@ When conducting any UI/UX audit report, always provide two independent score met
 All UI design must adhere to strict boundary separation across four distinct experience modes:
 
 1. **Learn Mode (Active Comprehension)**:
-   - 3D Flashcards (`DesktopFlashcardView`, `MobileFlashcardView`).
+   - Flashcard study interactions (`DesktopFlashcardView`, `MobileFlashcardView`).
    - Instant step-by-step explanations, touch swipe gestures with a dedicated **Undo** action.
    - Deep AI Assistant integration (question breakdown, keyword analysis, conceptual background).
 2. **Practice Mode (Skill Reinforcement)**:
@@ -53,7 +53,7 @@ Exam disruptions represent the highest criticality level (**Mission-Critical**).
   - **In-Place Re-auth Modal**: When tokens expire, render the re-authentication modal directly within the exam session; **STRICTLY PROHIBITED from redirecting to `/login` which purges client-side question state**.
   - **Reconcile State**: Automatically synchronize locally cached responses with MongoDB upon network reconnection.
   - **Authoritative Multi-Tab Lease**: Grant submission authority to only one active tab (`Active`). Concurrently opened tabs transition to `Read-Only` with a *"Transfer authority to this tab"* action.
-  - **Exam Reliability Metric**: Submission and state preservation success rate must achieve $\ge 99.9\%$.
+  - **Exam Reliability Metric**: Report submission and state preservation rates only from a dated, reproducible measurement with its environment and sample size.
   - **Zero Unload Invariant**: Direct assignment to `window.location.href` is forbidden across all session hooks when encountering network or auth errors.
 
 ---
@@ -69,7 +69,7 @@ Mandatory accessibility testing across the multi-platform assistive technology m
 | **Reflow (320px)** | 320px Viewport (iPhone SE Gen 1) | Zero horizontal scrollbars. |
 | **Zoom (200%)** | 200% Browser Zoom | Fully responsive text scaling without clipping, truncation, or overlapping elements. |
 | **Focus Trap & Restoration** | Radix Dialog / Modals | Modal open: Focus trapped on initial focusable element; Modal close: Focus restored to triggering element. |
-| **Reduced Motion** | OS `prefers-reduced-motion` | Disable all 3D card flips, sliding panels, and non-essential transitions. |
+| **Reduced Motion** | OS `prefers-reduced-motion` | Disable card turns, sliding panels, and non-essential transitions. |
 
 ---
 
@@ -83,7 +83,7 @@ Mandatory accessibility testing across the multi-platform assistive technology m
 
 ## 6. Tiered P75 Web Vitals
 
-Performance benchmarks based on real user monitoring (**P75 Field Data** via Speed Insights & Lighthouse CI):
+The following values are targets for planning. They are not measured results. Report current performance only with dated RUM or lab evidence and its collection method:
 
 | Tier | LCP (Largest Contentful Paint) | INP (Interaction to Next Paint) | CLS (Cumulative Layout Shift) | First Load JS Bundle |
 |---|:---:|:---:|:---:|:---:|
