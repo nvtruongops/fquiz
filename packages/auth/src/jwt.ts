@@ -3,6 +3,7 @@ import { jwtVerify, SignJWT } from 'jose'
 export interface JWTPayload {
   userId: string
   role: string
+  guestId?: string
   v?: number
   username?: string
   avatarUrl?: string
@@ -10,6 +11,7 @@ export interface JWTPayload {
 
 export const JWT_EXPIRY = '7d'
 export const AUTH_COOKIE_NAME = 'auth-token'
+export const GUEST_ID_COOKIE_NAME = 'fquiz-guest-id'
 export const MAINTENANCE_COOKIE_NAME = 'maintenance-mode'
 
 export async function decrypt(token: string): Promise<JWTPayload | null> {

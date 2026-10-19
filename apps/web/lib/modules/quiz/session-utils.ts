@@ -11,6 +11,8 @@ export interface ValidateQuizSessionOptions {
   select?: string
 }
 
+const SESSION_OWNERSHIP_FIELDS = ['student_id', 'is_guest', 'guest_id']
+
 export async function validateQuizSessionRequest(
   sessionId: string,
   payload: JWTPayload,
@@ -31,7 +33,12 @@ export async function validateQuizSessionRequest(
   const lean = options.lean !== false
   const query = QuizSession.findById(sessionId)
   if (options.select) {
-    query.select(options.select)
+    const selectedFields = options.select.trim().split(/\s+/).filter(Boolean)
+    const exclusionOnly = selectedFields.length > 0 && selectedFields.every(field => field.startsWith('-'))
+    const selection = exclusionOnly
+      ? selectedFields.filter(field => !SESSION_OWNERSHIP_FIELDS.includes(field.slice(1))).join(' ')
+      : [...new Set([...selectedFields, ...SESSION_OWNERSHIP_FIELDS])].join(' ')
+    if (selection) query.select(selection)
   }
   const session = await (lean ? query.lean() : query)
 
@@ -42,8 +49,10 @@ export async function validateQuizSessionRequest(
     }
   }
 
-  // Verify session belongs to the requesting student (unless it is a guest session)
-  if (!session.is_guest && (!payload.userId || session.student_id?.toString() !== payload.userId)) {
+  const isOwnedSession = session.is_guest
+    ? Boolean(payload.guestId && session.guest_id === payload.guestId)
+    : Boolean(payload.userId && session.student_id?.toString() === payload.userId)
+  if (!isOwnedSession) {
     return {
       isValid: false,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
@@ -118,13 +127,16 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 
-export async function getQuizSessionResult(sessionId: string, userId?: string) {
+export async function getQuizSessionResult(sessionId: string, userId?: string, guestId?: string) {
   if (!mongoose.Types.ObjectId.isValid(sessionId)) return null
   await connectDB()
 
   const session = (await QuizSession.findById(sessionId).lean()) as any
   if (!session) return null
-  if (!session.is_guest && userId && session.student_id?.toString() !== userId) return null
+  const isOwnedSession = session.is_guest
+    ? Boolean(guestId && session.guest_id === guestId)
+    : Boolean(userId && session.student_id?.toString() === userId)
+  if (!isOwnedSession) return null
   if (session.status !== 'completed') return null
 
   const quizDoc = (await Quiz.findById(session.quiz_id).select('questions updatedAt').lean()) as any
