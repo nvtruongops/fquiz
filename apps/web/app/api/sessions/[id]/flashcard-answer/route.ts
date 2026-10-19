@@ -13,6 +13,14 @@ const FlashcardAnswerSchema = z.object({
   question_index: z.number().int().min(0).optional(),
 })
 
+const activeSessionWriteFilter = () => ({
+  status: 'active',
+  $or: [
+    { expires_at: null },
+    { expires_at: { $gt: new Date() } },
+  ],
+})
+
 async function resolveQuestion(
   quiz: any,
   index: number
@@ -73,9 +81,10 @@ export const POST = withAuth(async (
     
     // Initialize flashcard_stats if missing (should be set on session creation, but defensive)
     if (!session.flashcard_stats) {
-      await QuizSession.findByIdAndUpdate(id, {
-        $set: { flashcard_stats: { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 } }
-      })
+      await QuizSession.findOneAndUpdate(
+        { _id: id, ...activeSessionWriteFilter(), flashcard_stats: null },
+        { $set: { flashcard_stats: { total_cards: session.question_order.length, cards_known: 0, cards_unknown: 0, time_spent_ms: 0, current_round: 1 } } }
+      )
     }
 
     // Check if we are updating a previous answer
@@ -86,7 +95,7 @@ export const POST = withAuth(async (
       const updated = await QuizSession.findOneAndUpdate(
         { 
           _id: id,
-          status: 'active',
+          ...activeSessionWriteFilter(),
           user_answers: { 
             $elemMatch: { 
               question_index: question_index, 
@@ -135,7 +144,7 @@ export const POST = withAuth(async (
     const updated = await QuizSession.findOneAndUpdate(
       {
         _id: id,
-        status: 'active',
+        ...activeSessionWriteFilter(),
         'user_answers.question_index': { $ne: currentIndex }
       },
       {
