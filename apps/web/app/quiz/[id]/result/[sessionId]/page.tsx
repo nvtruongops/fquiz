@@ -8,7 +8,6 @@ import { InteractiveResultViewer } from '@/components/quiz/detail/InteractiveRes
 import { FlashcardResultView } from '@/components/quiz/detail/FlashcardResultView'
 import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
 import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
-import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
 
 interface ResultQuestion {
   _id: string
@@ -42,13 +41,6 @@ interface ResultData {
 }
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
-  try {
-    const directResult = await getQuizSessionResult(sessionId)
-    if (directResult) return directResult as unknown as ResultData
-  } catch (err) {
-    console.error('Direct getQuizSessionResult error, falling back to fetch:', err)
-  }
-
   const headersList = await headers()
   const host = headersList.get('host') ?? 'localhost:3000'
   const protocol = host.includes('localhost') ? 'http' : 'https'
