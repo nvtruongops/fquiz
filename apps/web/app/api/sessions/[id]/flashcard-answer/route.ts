@@ -1,33 +1,17 @@
 import { NextResponse } from 'next/server'
-import mongoose from 'mongoose'
-import { connectDB } from '@/lib/core/db/mongodb'
 import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Question } from '@/lib/modules/quiz/models/Question'
+import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { z } from 'zod'
 
 const FlashcardAnswerSchema = z.object({
   knows: z.boolean(),
   question_index: z.number().int().min(0).optional(),
 })
-
-/**
- * POST /api/sessions/[id]/flashcard-answer
- * Records user's self-assessment for a flashcard (knows/doesn't know)
- */
-function validateFlashcardSession(session: any, userId: string) {
-  if (!session) return { error: 'Session not found', status: 404 }
-  if (session.student_id.toString() !== userId) return { error: 'Forbidden', status: 403 }
-  if (session.mode !== 'flashcard') return { error: 'Not a flashcard session', status: 400 }
-  if (session.status === 'completed') return { error: 'Session already completed', status: 409 }
-  if (session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-    return { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED', status: 410 }
-  }
-  return null
-}
 
 async function resolveQuestion(
   quiz: any,
@@ -74,19 +58,15 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: 'Invalid session id' }, { status: 400 })
 
     const body = await req.json().catch(() => null)
     const parsed = FlashcardAnswerSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
 
-    await connectDB()
-    
-    // First read for validation (lean for performance)
-    const session = await QuizSession.findById(id).lean()
-    if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-    const validationError = validateFlashcardSession(session, payload.userId)
-    if (validationError) return NextResponse.json(validationError, { status: validationError.status })
+    const validation = await validateQuizSessionRequest(id, payload, { requireActive: true })
+    if (!validation.isValid) return validation.response
+    const { session } = validation
+    if (session.mode !== 'flashcard') return NextResponse.json({ error: 'Not a flashcard session' }, { status: 400 })
 
     const { knows, question_index } = parsed.data
     const currentIndex = question_index ?? session.current_question_index
@@ -106,6 +86,7 @@ export const POST = withAuth(async (
       const updated = await QuizSession.findOneAndUpdate(
         { 
           _id: id,
+          status: 'active',
           user_answers: { 
             $elemMatch: { 
               question_index: question_index, 
