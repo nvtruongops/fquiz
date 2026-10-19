@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GUEST_ID_COOKIE_NAME } from '@fquiz/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -246,7 +247,7 @@ export const POST = withAuth(async (req, { payload }) => {
 
     // --- GUEST FLOW ---
     if (isGuest) {
-      const guestId = crypto.randomUUID()
+      const guestId = payload.guestId ?? crypto.randomUUID()
       const session = await QuizSession.create({
         student_id: null,
         is_guest: true,
@@ -274,7 +275,7 @@ export const POST = withAuth(async (req, { payload }) => {
 
       const { initialData, preloadData } = await buildInitialAndPreloadPayloads(session)
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         sessionId: session._id,
         mode: session.mode,
         difficulty: session.difficulty,
@@ -283,6 +284,14 @@ export const POST = withAuth(async (req, { payload }) => {
         initialData,
         preloadData,
       }, { status: 201 })
+      response.cookies.set(GUEST_ID_COOKIE_NAME, guestId, {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60,
+      })
+      return response
     }
 
     // --- AUTHENTICATED STUDENT FLOW ---

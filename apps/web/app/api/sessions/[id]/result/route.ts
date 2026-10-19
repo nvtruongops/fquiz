@@ -14,7 +14,7 @@ export const GET = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    const result = await getQuizSessionResult(id, payload.userId)
+    const result = await getQuizSessionResult(id, payload.userId, payload.guestId)
     if (!result) {
       return NextResponse.json({ error: 'Result not found or not completed' }, { status: 404 })
     }
