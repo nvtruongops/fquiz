@@ -8,10 +8,26 @@ export interface ValidateQuizSessionOptions {
   checkCompleted?: boolean
   checkExpired?: boolean
   lean?: boolean
+  requireActive?: boolean
   select?: string
 }
 
 const SESSION_OWNERSHIP_FIELDS = ['student_id', 'is_guest', 'guest_id']
+
+function getSessionStatusResponse(status: string, options: ValidateQuizSessionOptions): NextResponse | null {
+  if (options.checkCompleted && status === 'completed') {
+    return NextResponse.json({ error: 'Session already completed' }, { status: 409 })
+  }
+
+  if (options.requireActive && status !== 'active') {
+    return NextResponse.json(
+      { error: status === 'completed' ? 'Session already completed' : 'Session is not active' },
+      { status: 409 }
+    )
+  }
+
+  return null
+}
 
 export async function validateQuizSessionRequest(
   sessionId: string,
@@ -70,11 +86,11 @@ export async function validateQuizSessionRequest(
     }
   }
 
-  // Check completed status
-  if (options.checkCompleted && session.status === 'completed') {
+  const statusResponse = getSessionStatusResponse(session.status, options)
+  if (statusResponse) {
     return {
       isValid: false,
-      response: NextResponse.json({ error: 'Session already completed' }, { status: 409 }),
+      response: statusResponse,
     }
   }
 
