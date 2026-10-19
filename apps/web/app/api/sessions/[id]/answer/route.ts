@@ -29,6 +29,7 @@ export const POST = withAuth(async (
 
     const sessionStart = performance.now()
     const validation = await validateQuizSessionRequest(id, payload, {
+      requireActive: true,
       select: '_id student_id is_guest guest_id status expires_at mode current_question_index user_answers score questions_cache question_order answer_version quiz_id'
     })
     if (!validation.isValid) return validation.response

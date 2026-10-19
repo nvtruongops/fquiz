@@ -108,7 +108,7 @@ async function tryPersistAnswerIteration(
   const updatedCurrentIndex = Math.max(currentSession.current_question_index ?? 0, targetNextIndex)
 
   const result = await QuizSession.updateOne(
-    { _id: sessionId, ...versionFilter },
+    { _id: sessionId, ...versionFilter, status: 'active' },
     {
       $set: {
         user_answers: updatedAnswers,

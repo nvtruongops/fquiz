@@ -18,7 +18,7 @@ export const POST = withAuth(async (
 ) => {
   try {
     const { id } = await params
-    const validation = await validateQuizSessionRequest(id, payload, { checkCompleted: true })
+    const validation = await validateQuizSessionRequest(id, payload, { requireActive: true })
     if (!validation.isValid) return validation.response
 
     const session = validation.session
@@ -51,7 +51,7 @@ export const POST = withAuth(async (
     const completed = await QuizSession.findOneAndUpdate(
       {
         _id: id,
-        status: { $ne: 'completed' },
+        status: 'active',
       },
       updateDoc,
       { new: true }
