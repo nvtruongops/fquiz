@@ -40,6 +40,7 @@ export function HistoryFilterBar({
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl border border-border/60 shrink-0 overflow-x-auto scrollbar-none">
         <button
           type="button"
+          aria-pressed={statusFilter === 'all' && modeFilter === 'all'}
           onClick={() => {
             onStatusFilterChange('all')
             onModeFilterChange('all')
@@ -55,6 +56,7 @@ export function HistoryFilterBar({
         </button>
         <button
           type="button"
+          aria-pressed={statusFilter === 'completed'}
           onClick={() => onStatusFilterChange(statusFilter === 'completed' ? 'all' : 'completed')}
           className={cn(
             'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
@@ -68,6 +70,7 @@ export function HistoryFilterBar({
         </button>
         <button
           type="button"
+          aria-pressed={statusFilter === 'active'}
           onClick={() => onStatusFilterChange(statusFilter === 'active' ? 'all' : 'active')}
           className={cn(
             'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
@@ -81,6 +84,7 @@ export function HistoryFilterBar({
         </button>
         <button
           type="button"
+          aria-pressed={modeFilter === 'flashcard'}
           onClick={() => onModeFilterChange(modeFilter === 'flashcard' ? 'all' : 'flashcard')}
           className={cn(
             'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
