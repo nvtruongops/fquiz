@@ -192,7 +192,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 sm:left-4 text-primary h-4 w-4 pointer-events-none" aria-hidden="true" />
             <Input
-              placeholder="Search courses, study categories..."
+              placeholder="Search study categories by name..."
               className="w-full h-10 sm:h-12 pl-10 sm:pl-11 pr-12 text-xs sm:text-sm border border-input bg-card/90 backdrop-blur-xl rounded-full shadow-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200 placeholder:text-muted-foreground font-medium text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
