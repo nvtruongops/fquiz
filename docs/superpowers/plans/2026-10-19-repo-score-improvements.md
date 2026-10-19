@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** Fix the highest-impact security, session integrity, history accuracy, dashboard selection, CI, and accessibility findings from the departmental repo review.
+**Goal:** Fix the highest-impact security, session integrity, history accuracy, dashboard selection, CI, accessibility, error-handling, and search-copy findings from the departmental repo review.
 
 **Architecture:** Keep the existing route and model boundaries. Bind guest sessions to a random browser capability cookie, enforce active status at both request and atomic-write boundaries, move history paging and filters into the database query, and keep the dashboard feed selection bounded.
 
@@ -18,6 +18,8 @@
 - Preserve the existing history page size default of 20 and maximum of 100.
 - Add no dependencies.
 - Do not add or run test suites in this execution; run the repository lint, typecheck, and strict governance checks.
+- Do not expand Explore search into quiz-title/API search; keep the current local category-name filter.
+- Preserve unexpected student-quiz errors so server and network failures remain visible to the query error state.
 
 ## Progress
 
@@ -27,6 +29,8 @@
 - [x] Task 4: Keep active dashboard work visible
 - [x] Task 5: Page and filter history in MongoDB
 - [x] Task 6: Make lint blocking and expose selected filter state
+- [x] Task 7: Preserve unexpected quiz-detail errors
+- [x] Task 8: Make Explore search copy match category filtering
 
 ---
 
@@ -140,6 +144,36 @@
 - Each history filter button exposes its current selected state to assistive technology.
 
 ---
+
+### Task 7: Preserve unexpected quiz-detail errors
+
+**Files:**
+- Modify: apps/web/hooks/quiz/useQuizDetailState.ts
+
+**Interfaces:**
+- Return `null` from the student detail request only for expected 401/404 responses so the public detail endpoint can be tried.
+- Propagate network, malformed-response, and other HTTP failures without silently switching endpoints.
+- When no authentication token is present, request public quiz detail directly.
+
+**Acceptance:**
+- A student endpoint 401/404 may fall back to public detail.
+- Student endpoint network/5xx failures reach the query error state and do not trigger a public request.
+- An anonymous public failure is surfaced without an unnecessary student endpoint request.
+
+### Task 8: Make Explore search copy match category filtering
+
+**Files:**
+- Modify: apps/web/components/quiz/explore/CategoryFilter.tsx
+- Modify: apps/web/app/explore/page.tsx
+
+**Interfaces:**
+- Describe the input as searching study-category names, matching its local `category.name` filter.
+- Adjust Explore metadata and visible supporting copy so they describe category browsing and quiz discovery without promising whole-library or quiz-title search.
+- Keep the existing local filtering behavior and avoid a search API or other feature expansion.
+
+**Acceptance:**
+- Search copy accurately describes the fields filtered.
+- Search behavior, request count, and page data contract remain unchanged.
 
 ### Verification
 
