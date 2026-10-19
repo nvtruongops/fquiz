@@ -4,6 +4,22 @@ import { useSearchParams } from 'next/navigation'
 import { isToday, isYesterday, format } from 'date-fns'
 import { useAuth } from '@/hooks/auth/useAuth'
 
+const MAX_HISTORY_SEARCH_LENGTH = 100
+
+interface HistoryStats {
+  totalQuizzes: number
+  totalAttempts: number
+  completedCount: number
+  perfectScores: number
+}
+
+const EMPTY_STATS: HistoryStats = {
+  totalQuizzes: 0,
+  totalAttempts: 0,
+  completedCount: 0,
+  perfectScores: 0,
+}
+
 export interface HistoryItem {
   _id: string
   quiz_id: string
@@ -38,12 +54,13 @@ export interface GroupedQuiz {
   attempts: HistoryItem[]
 }
 
-export interface HistoryResponse {
+interface HistoryResponse {
   history: HistoryItem[]
   total: number
   page: number
   limit: number
   totalPages: number
+  stats: HistoryStats
 }
 
 export interface DateGroup {
@@ -54,8 +71,18 @@ export interface DateGroup {
 export type FilterStatus = 'all' | 'completed' | 'active'
 export type FilterMode = 'all' | 'immediate' | 'review' | 'flashcard'
 
-async function fetchHistory(page: number): Promise<HistoryResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?page=${page}&limit=20`)
+async function fetchHistory(
+  page: number,
+  search: string,
+  status: FilterStatus,
+  mode: FilterMode,
+): Promise<HistoryResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: '20' })
+  if (search) params.set('search', search)
+  if (status !== 'all') params.set('status', status)
+  if (mode !== 'all') params.set('mode', mode)
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?${params.toString()}`)
   if (!res.ok) throw new Error('Failed to fetch history')
   return res.json()
 }
@@ -70,51 +97,40 @@ export function useStudentHistory() {
   const { data: authData } = useAuth()
 
   useEffect(() => {
-    if (searchFromUrl) {
-      setSearch(searchFromUrl)
-    }
+    setSearch(searchFromUrl.slice(0, MAX_HISTORY_SEARCH_LENGTH))
+    setPage(1)
   }, [searchFromUrl])
 
+  const normalizedSearch = search.trim().slice(0, MAX_HISTORY_SEARCH_LENGTH)
+  const updateSearch = (value: string) => {
+    setSearch(value.slice(0, MAX_HISTORY_SEARCH_LENGTH))
+    setPage(1)
+  }
+  const updateStatusFilter = (value: FilterStatus) => {
+    setStatusFilter(value)
+    setPage(1)
+  }
+  const updateModeFilter = (value: FilterMode) => {
+    setModeFilter(value)
+    setPage(1)
+  }
+
   const { data, isLoading, isError } = useQuery<HistoryResponse>({
-    queryKey: ['history', page],
-    queryFn: () => fetchHistory(page),
+    queryKey: ['history', page, normalizedSearch, statusFilter, modeFilter],
+    queryFn: () => fetchHistory(page, normalizedSearch, statusFilter, modeFilter),
     enabled: Boolean(authData?.user),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   })
 
-  // Quick statistics calculation
-  const stats = useMemo(() => {
-    if (!data?.history) return { totalQuizzes: 0, totalAttempts: 0, completedCount: 0, perfectScores: 0 }
-    const totalAttempts = data.history.length
-    const completedCount = data.history.filter((h) => h.status === 'completed').length
-    const perfectScores = data.history.filter((h) => h.status === 'completed' && h.total_questions > 0 && h.score >= h.total_questions).length
-    const uniqueQuizzes = new Set(data.history.map((h) => h.quiz_id || h.quiz_code)).size
-
-    return { totalQuizzes: uniqueQuizzes, totalAttempts, completedCount, perfectScores }
-  }, [data?.history])
+  const stats = data?.stats ?? EMPTY_STATS
 
   const dateGroups: DateGroup[] = useMemo(() => {
     if (!data?.history) return []
 
-    const q = search.toLowerCase().trim()
     const groupsMap = new Map<string, Map<string, GroupedQuiz>>()
 
     data.history.forEach((item) => {
-      // Search text filter
-      if (q) {
-        const matchesCode = item.quiz_code?.toLowerCase().includes(q)
-        const matchesCat = item.category_name?.toLowerCase().includes(q)
-        const matchesTitle = item.quiz_title?.toLowerCase().includes(q)
-        if (!matchesCode && !matchesCat && !matchesTitle) return
-      }
-
-      // Status filter
-      if (statusFilter !== 'all' && item.status !== statusFilter) return
-
-      // Mode filter
-      if (modeFilter !== 'all' && item.mode !== modeFilter) return
-
       const date = new Date(item.started_at)
       const dateTitle = isToday(date) ? 'Today' : isYesterday(date) ? 'Yesterday' : format(date, 'dd/MM/yyyy')
       if (!groupsMap.has(dateTitle)) groupsMap.set(dateTitle, new Map())
@@ -147,17 +163,17 @@ export function useStudentHistory() {
       title,
       quizzes: Array.from(quizMap.values()),
     }))
-  }, [data?.history, search, statusFilter, modeFilter])
+  }, [data?.history])
 
   return {
     page,
     setPage,
     search,
-    setSearch,
+    setSearch: updateSearch,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: updateStatusFilter,
     modeFilter,
-    setModeFilter,
+    setModeFilter: updateModeFilter,
     data,
     isLoading,
     isError,
