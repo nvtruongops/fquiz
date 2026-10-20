@@ -12,7 +12,7 @@ import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { useSessionLoader, isQuizLoaderActive } from '@/components/quiz/shared/QuizLoader'
 import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
-import { isQuestionNavigationReady, isSessionQuestionReady } from '@/hooks/quiz/session-rendering'
+import { getSessionSubmitAvailability, isQuestionNavigationReady, isSessionQuestionReady } from '@/hooks/quiz/session-rendering'
 
 function triggerVibration() {
   if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -90,7 +90,13 @@ export function useMobileQuizSessionController() {
 
   const canFinalize = useCallback(() => canWrite() && !submitMutation.isPending && !hasUnsavedAnswers(), [canWrite, submitMutation.isPending, hasUnsavedAnswers])
   const { finalizeMutation } = useSessionFinalize({ sessionId: resolvedSessionId, quizId: resolvedQuizId, canFinalize })
-  const submitDisabled = isReadOnlyTab || submitMutation.isPending || hasUnsavedAnswers() || finalizeMutation.isPending
+  const submitAvailability = getSessionSubmitAvailability({
+    isReadOnlyTab,
+    isAnswerSavePending: submitMutation.isPending,
+    hasUnsavedAnswers: hasUnsavedAnswers(),
+    isFinalizing: finalizeMutation.isPending,
+  })
+  const submitDisabled = submitAvailability.submitActionDisabled
 
   const {
     exitConfirmOpen,
@@ -185,15 +191,12 @@ export function useMobileQuizSessionController() {
   }, [currentQuestionIndex])
 
   const handleSubmit = useCallback(() => {
-    if (!activeData?.session || !canFinalize()) return
+    if (!activeData?.session || submitDisabled) return
     setConfirmOpen(true)
-  }, [activeData?.session, canFinalize])
+  }, [activeData?.session, submitDisabled])
 
   const handleConfirmSubmit = useCallback(() => {
-    if (!activeData?.session || finalizeMutation.isPending || !canFinalize()) {
-      setConfirmOpen(false)
-      return
-    }
+    if (!activeData?.session || finalizeMutation.isPending || !canFinalize()) return
 
     setConfirmOpen(false)
     finalizeMutation.mutate()
@@ -320,6 +323,7 @@ export function useMobileQuizSessionController() {
     isReadOnlyTab,
     takeOverLease,
     submitDisabled,
+    confirmSubmitDisabled: submitAvailability.confirmationDisabled,
     saveStatus,
     retryFailedAnswer,
     acknowledgedQuestions,

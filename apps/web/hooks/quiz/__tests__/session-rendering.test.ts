@@ -1,4 +1,5 @@
 import {
+  getSessionSubmitAvailability,
   isQuestionNavigationReady,
   isSessionQuestionReady,
   shouldShowSessionSkeleton,
@@ -59,5 +60,47 @@ describe('question navigation readiness', () => {
   it('allows navigation when a session has no other question to visit', () => {
     expect(isQuestionNavigationReady(null, 1)).toBe(true)
     expect(isQuestionNavigationReady(0, 0)).toBe(false)
+  })
+})
+
+describe('session submission availability', () => {
+  it('keeps the finish action available while an answer saves, then enables confirmation after it is saved', () => {
+    expect(getSessionSubmitAvailability({
+      isReadOnlyTab: false,
+      isAnswerSavePending: true,
+      hasUnsavedAnswers: true,
+      isFinalizing: false,
+    })).toEqual({
+      submitActionDisabled: false,
+      confirmationDisabled: true,
+    })
+
+    expect(getSessionSubmitAvailability({
+      isReadOnlyTab: false,
+      isAnswerSavePending: false,
+      hasUnsavedAnswers: false,
+      isFinalizing: false,
+    })).toEqual({
+      submitActionDisabled: false,
+      confirmationDisabled: false,
+    })
+  })
+
+  it('keeps read-only tabs and active finalization disabled', () => {
+    expect(getSessionSubmitAvailability({
+      isReadOnlyTab: true,
+      isAnswerSavePending: false,
+      hasUnsavedAnswers: false,
+      isFinalizing: false,
+    }).submitActionDisabled).toBe(true)
+    expect(getSessionSubmitAvailability({
+      isReadOnlyTab: false,
+      isAnswerSavePending: false,
+      hasUnsavedAnswers: false,
+      isFinalizing: true,
+    })).toEqual({
+      submitActionDisabled: true,
+      confirmationDisabled: true,
+    })
   })
 })

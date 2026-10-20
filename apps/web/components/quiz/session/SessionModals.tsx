@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/shared/ui/button'
 import { AlertCircle, HelpCircle, Loader2, Pause, CheckCircle2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
+import { AnswerSaveBlockedNotice } from '@/components/quiz/session/SessionSaveStatus'
 
 interface SessionModalsProps {
   confirmOpen: boolean
@@ -64,6 +65,7 @@ export const SessionModals = React.memo(function SessionModals({
                 You have answered <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> questions. Are you sure you want to submit?
               </DialogDescription>
             </DialogHeader>
+            <AnswerSaveBlockedNotice blocked={Boolean(submitDisabled)} />
             <DialogFooter className="mt-4 flex gap-2 sm:justify-center">
               <Button
                 type="button"
@@ -170,6 +172,8 @@ export const SessionModals = React.memo(function SessionModals({
               You have completed <strong className="text-primary font-bold">{answeredCount}/{totalQuestions}</strong> questions. Do you want to submit your exam now?
             </DialogDescription>
           </DialogHeader>
+
+          <AnswerSaveBlockedNotice blocked={Boolean(submitDisabled)} />
 
           <DialogFooter className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
             <Button

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/shared/ui/dialog'
 import { cn } from '@/lib/core/utils/cn'
+import { AnswerSaveBlockedNotice } from '@/components/quiz/session/SessionSaveStatus'
 
 interface MobileSessionDialogsProps {
   confirmOpen: boolean
@@ -60,6 +61,7 @@ export function MobileSessionDialogs({
               You have answered {answeredCount}/{effectiveTotal} questions. Are you sure you want to submit?
             </DialogDescription>
           </DialogHeader>
+          <AnswerSaveBlockedNotice blocked={Boolean(submitDisabled)} />
           <DialogFooter className="mt-4 flex flex-col gap-2">
             <Button
               type="button"

@@ -1,6 +1,13 @@
 import React from 'react'
 import { SessionSaveStatus } from '../SessionSaveStatus'
 
+it('keeps ordinary background saving out of the visible layout', () => {
+  expect(SessionSaveStatus({
+    status: 'saving', onRetry: jest.fn(), onReviewDraft: jest.fn(),
+    onDiscardDraft: jest.fn(), draftQuestionNumber: 2, disabled: false,
+  })).toBeNull()
+})
+
 it('offers navigation and discard actions for an incomplete draft', () => {
   const review = jest.fn()
   const discard = jest.fn()

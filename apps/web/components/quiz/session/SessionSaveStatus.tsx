@@ -2,6 +2,15 @@
 
 import React from 'react'
 
+export function AnswerSaveBlockedNotice({ blocked }: { blocked: boolean }) {
+  if (!blocked) return null
+  return (
+    <p role="status" className="text-center text-xs text-muted-foreground">
+      Finish saving, or close this dialog to retry or resolve an answer draft before submitting.
+    </p>
+  )
+}
+
 export function SessionSaveStatus({ status, onRetry, onReviewDraft, onDiscardDraft, draftQuestionNumber, disabled }: {
   status: 'idle' | 'unsaved' | 'saving' | 'saved' | 'error'
   onRetry: () => void
