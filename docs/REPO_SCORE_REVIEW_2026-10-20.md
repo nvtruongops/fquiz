@@ -129,4 +129,13 @@ Fallow's fresh new-only audit against `main` at `557afb3` passed: 0 introduced d
 
 Vercel production environment listings confirmed the names `JWT_SECRET` and `MONGODB_URI` for both `fquiz-web` and `fquiz-admin`; no values were retrieved. This narrows the current production crypto-fallback concern but does not prove runtime behavior or the settings of preview/development environments. The findings above are accepted as documented follow-ups, not represented as fixes or as measured production impact.
 
-The earlier “Commit gate status” paragraph is historical. The refreshed Fallow gate now passes; ordinary commit, push, and production deployment are the remaining release actions.
+The earlier “Commit gate status” paragraph is historical. The final commit, push, deployment, and post-deployment verification are recorded below.
+
+## Release follow-up — 2026-10-20
+
+- The ordinary Fallow pre-commit hook accepted the release changes. Commit `4e05c7b` was pushed fast-forward to `main`; the installed pre-push pipeline passed 18 strict governance checks and Jest passed 104 suites / 578 tests. No hook was bypassed.
+- Production deployments are `READY`: Web `dpl_BZgZVRNGs2BhoTMmAVQ8ett5G2oB` (`https://fquiz-web.vercel.app`) and Admin `dpl_6z84t4MuC4ZRvssZGsfAsH9NuHUC` (`https://fquiz-admin.vercel.app`). The Web home page, Admin login page, and Web sitemap each returned HTTP 200.
+- The first Web deployment exposed a build-time configuration gap: Turbo strict mode filtered `MONGODB_URI`, so the sitemap contained only four static URLs. Added a Web-only package Turbo configuration for `MONGODB_URI`, then redeployed. The new Web build connected to MongoDB and the production sitemap now contains 15 course URLs.
+- Turbo/Vercel still reports environment variables that are only needed by runtime tasks but are not allowlisted to build tasks. They were not broadly passed into builds. Both builds completed successfully; the remaining Vercel output also includes 33 dependency audit advisories (21 moderate, 12 high), an install-script notice, and the existing React 18 / Next 16 deprecation warning. These were not changed in this release.
+
+The departmental scores above remain static-review scores for the reviewed source snapshot. Deployment readiness and the sitemap correction are operational verification results, not a re-score or a user-experience measurement.

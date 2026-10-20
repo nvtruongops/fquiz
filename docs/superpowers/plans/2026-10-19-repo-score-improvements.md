@@ -493,11 +493,11 @@ Run `npm run check-types`, `npm run lint`, `node .agents/scripts/verify.js --str
 - [x] Task 45: Show a visible retry cue after finalization errors on desktop and mobile.
 - [x] Update security documentation and the dated report with the follow-up findings and scoped scores.
 - [x] Re-run fresh static checks and synchronize CodeGraph.
-- [ ] Review and commit the complete diff; attempt an ordinary fast-forward push to `main`.
+- [x] Review and commit the complete diff; complete the ordinary fast-forward push to `main` in Phase 13.
 
 The blind panel scores in the report apply to the snapshot reviewed before Tasks 40–45 were closed. Follow-up reviewers rechecked only the closed findings and gave revised scoped scores; these are not described as a blind whole-repository re-score. Final follow-up mean: 7.00/10 (Engineering 8.0, Security/Reliability/QA 5.5, Product/UX/Ops 7.5).
 
-The ordinary commit was attempted but the pre-commit Fallow gate rejected the diff: 52 introduced complexity findings, 14 introduced duplicate-code groups, and 16 introduced Tailwind token-drift findings; no new dead-code finding was reported. No hook bypass was used. Commit and push remain pending a focused simplification pass.
+At that phase, the ordinary commit was attempted but the pre-commit Fallow gate rejected the diff: 52 introduced complexity findings, 14 introduced duplicate-code groups, and 16 introduced Tailwind token-drift findings; no new dead-code finding was reported. No hook bypass was used. Phase 13 records the later cleanup and successful release.
 
 ### Phase 12: Close final blind-panel findings and re-score
 
@@ -505,12 +505,12 @@ The ordinary commit was attempted but the pre-commit Fallow gate rejected the di
 - [x] Task 47: Correct conditional registration/reset delivery copy, add classroom assignment loading and stale-response guards, and stop substituting the first question for a missing result reference.
 - [x] Task 48: Synchronize CodeGraph and rerun type check, lint, strict repository verification, and whitespace validation; do not run tests.
 - [x] Task 49: Complete the post-fix blind panel and chair adjudication; update the dated report.
-- [ ] Task 50: Complete the ordinary hook-checked commit and fast-forward push to `main` (the Fallow cleanup is recorded in Phase 13).
+- [x] Task 50: Complete the ordinary hook-checked commit and fast-forward push to `main` (the Fallow cleanup is recorded in Phase 13).
 - [x] Task 51: Explicitly accept and document the remaining conditional blind-panel findings after checking production variable configuration.
 
 Phase 12 static checks after Tasks 47–48: `npm run check-types` passed (6/6 workspace tasks); `npm run lint` passed with 0 errors (151 Web and 44 Admin warnings); `node .agents/scripts/verify.js --strict` passed 18 checks with 0 errors/warnings and 6 info; `git diff --check HEAD` passed. No test suites were added or run. CodeGraph is synchronized (936 files, 7,253 nodes, 16,858 edges).
 
-The Fallow audit still reports 52 introduced complexity findings, 14 introduced duplicate-code groups, and 16 introduced Tailwind token-drift findings. This gate remains pending cleanup; no commit or push has been made.
+At the start of Phase 13, the Fallow audit still reported 52 introduced complexity findings, 14 introduced duplicate-code groups, and 16 introduced Tailwind token-drift findings. The gate was subsequently cleared as recorded below.
 
 The second blind panel scored the corrected snapshot 7.00/10 independent and 6.50/10 after cross-challenge. Accepted follow-ups include a safe exam-tab lease fallback/server-side rule if one-writer integrity is required, language annotations for Vietnamese content, trusted shared rate limiting after ingress verification, a defined revocation freshness guarantee, and in-flight AI generation coordination/cancellation. The exception-capture observation remains conditional on host-level logging. Details and severity conditions are in `docs/REPO_SCORE_REVIEW_2026-10-20.md`.
 
@@ -519,12 +519,16 @@ The second blind panel scored the corrected snapshot 7.00/10 independent and 6.5
 - [x] Re-run the new-only Fallow audit against `main` before commit; it passes with 0 introduced dead-code, complexity, duplicate-code, and styling findings. The 11 dead-code items, 74 complexity findings, 28 duplicate groups, and 2 styling findings are inherited and outside this gate.
 - [x] Run the last blind cross-challenge and record its final scores and chair decisions in the dated review report.
 - [x] Verify that production `JWT_SECRET` and `MONGODB_URI` variables are configured for both Vercel projects by listing variable names only; values were not read.
-- [ ] Task 50: Create an ordinary commit through the installed hook and fast-forward push to `main`.
+- [x] Task 50: Create an ordinary commit through the installed hook and fast-forward push to `main` (`4e05c7b`).
 - [x] Task 51: Explicitly accept and document the remaining conditional operational, credential-contract, and accessibility follow-ups after checking production variable configuration.
-- [ ] Deploy Web and Admin to production through Vercel CLI; verify deployment readiness, aliases, and public routes.
+- [x] Fix the Web sitemap build input: expose `MONGODB_URI` only to `@fquiz/web#build`, then confirm Turbo resolves it in strict mode.
+- [x] Deploy Web and Admin to production through Vercel CLI; both deployments reached `READY`, production aliases resolved to those deployments, and `/`, `/login`, and `/sitemap.xml` returned HTTP 200.
+- [x] Verify the production sitemap includes database-backed course routes (15 course URLs after the Web redeploy).
 
 Final cross-challenge scores for this snapshot: Engineering 5.5/10, Security/Reliability/QA 7.0/10, and Product/UX/Operations 6.2/10 (equal-weight mean 6.23/10). This is a static source review and is not a runtime or user study.
 
-Fallow refreshed on 2026-10-20 at `557afb3`: `verdict=pass`; all four introduced finding counts are 0. `npm run check-types` passed (6/6 workspace tasks), `node .agents/scripts/verify.js --strict` passed (18 checks, 0 errors/warnings, 6 info), `git diff --check HEAD` passed, and CodeGraph is up to date (941 files, 7,765 nodes, 18,208 edges). No tests were added or run. Earlier successful Web and Admin production builds remain applicable because no source files changed after those builds.
+Pre-release gate snapshot refreshed on 2026-10-20 at `557afb3`: `verdict=pass`; all four introduced finding counts are 0. `npm run check-types` passed (6/6 workspace tasks), `node .agents/scripts/verify.js --strict` passed (18 checks, 0 errors/warnings, 6 info), `git diff --check HEAD` passed, and CodeGraph was up to date (941 files, 7,765 nodes, 18,208 edges). No tests were added or run at that snapshot; the pre-push hook later ran Jest as recorded in the release close-out.
 
 Chair disposition: production environment listings contain `JWT_SECRET` and `MONGODB_URI` for both projects, reducing the production crypto-fallback concern for these deployments; this does not establish configuration for every environment. Keep the source-literal fallback as a fail-closed hardening follow-up. Retain the web login response's reusable JWT as a P2 contract question until external clients are ruled out. Keep process-local rate-limit aggregation, web's bounded 60-second authorization cache, forwarded-header trust, AI in-flight coordination, mobile question-map semantics, generic image alt text, manual flashcard retry, and toolchain major-version drift in the prioritized backlog at the severities and confidence stated in the review report.
+
+Release close-out: `4e05c7b` is pushed to `main`. The pre-push pipeline passed 18 strict checks and 104 Jest suites / 578 tests. Vercel deployments are READY: Web `dpl_BZgZVRNGs2BhoTMmAVQ8ett5G2oB` and Admin `dpl_6z84t4MuC4ZRvssZGsfAsH9NuHUC`. The first Web deploy showed a sitemap build-time MongoDB omission; `apps/web/turbo.json` now scopes `MONGODB_URI` to the Web build task. The next Web deploy connected to MongoDB and the production sitemap returned 15 course URLs. See the release follow-up in `docs/REPO_SCORE_REVIEW_2026-10-20.md` for remaining build warnings.
