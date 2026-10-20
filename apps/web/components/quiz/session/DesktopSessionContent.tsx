@@ -153,7 +153,7 @@ function SessionFinalizationFailure({ isError }: { isError: boolean }) {
   )
 }
 
-function DesktopSessionQuestionBody({
+export function DesktopSessionQuestionBody({
   activeData,
   currentQuestionIndex,
   isReadOnlyTab,
@@ -166,6 +166,7 @@ function DesktopSessionQuestionBody({
   lastAnswerResult,
   showImmediateFeedback,
   resolvedQuizId,
+  onSubmit,
   isFinalizing,
   hasFinalizationError,
 }: {
@@ -181,6 +182,7 @@ function DesktopSessionQuestionBody({
   lastAnswerResult: DesktopLastAnswerResult
   showImmediateFeedback: boolean
   resolvedQuizId: string
+  onSubmit: () => void
   isFinalizing: boolean
   hasFinalizationError: boolean
 }) {
@@ -212,6 +214,7 @@ function DesktopSessionQuestionBody({
         submitDisabled={submitDisabled}
         sessionMode={session.mode}
         enableAnimation={enableAnimation}
+        onSubmit={onSubmit}
         courseCode={session.courseCode}
         quizTitle={session.title}
         quizId={getSessionQuestionQuizId(session, resolvedQuizId)}
@@ -405,6 +408,7 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
           lastAnswerResult={lastAnswerResult}
           showImmediateFeedback={showImmediateFeedback}
           resolvedQuizId={resolvedQuizId}
+          onSubmit={onSubmit}
           isFinalizing={finalizeMutation.isPending}
           hasFinalizationError={finalizeMutation.isError}
         />
