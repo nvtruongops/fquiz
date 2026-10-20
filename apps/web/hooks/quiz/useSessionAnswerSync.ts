@@ -234,9 +234,11 @@ function useAnswerDraftState(
   sessionRef.current = sessionId
   const permissionRef = useRef(canWrite)
   permissionRef.current = canWrite
+  const restoredSessionRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
-    if (!sessionId || typeof window === 'undefined') return
+    if (!sessionId || typeof window === 'undefined' || restoredSessionRef.current === sessionId) return
+    restoredSessionRef.current = sessionId
     const parsed = readDraftAnswers(sessionId)
     if (!parsed) return
     const serverAnswers = new Map(activeData?.session.user_answers.map((answer) => [answer.question_index, answer]) ?? [])

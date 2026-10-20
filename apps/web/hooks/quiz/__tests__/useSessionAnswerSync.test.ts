@@ -39,6 +39,32 @@ describe('session answer acknowledgement', () => {
     expect(render().hasUnsavedAnswers()).toBe(false)
   })
 
+  it('keeps an in-flight answer intact when session data gets a new object each render', () => {
+    const stored = new Map<string, string>()
+    const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window')
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: {
+      sessionStorage: {
+        getItem: (key: string) => stored.get(key) ?? null,
+        setItem: (key: string, value: string) => stored.set(key, value),
+        removeItem: (key: string) => stored.delete(key),
+      },
+    } })
+    try {
+      const renderWithFreshData = () => renderHook(() => useSessionAnswerSync({
+        ...props,
+        activeData: { ...props.activeData },
+      })) as any
+      renderWithFreshData().handleSelectOption(1)
+      expect(renderWithFreshData().saveStatus).toBe('saving')
+      requests[0].callbacks.onSuccess({ nextQuestion: {} })
+      expect(renderWithFreshData().saveStatus).toBe('saved')
+      expect(renderWithFreshData().hasUnsavedAnswers()).toBe(false)
+    } finally {
+      if (originalWindow) Object.defineProperty(globalThis, 'window', originalWindow)
+      else delete (globalThis as typeof globalThis & { window?: Window }).window
+    }
+  })
+
   it('retains failed selections across navigation and ignores late feedback for another question', () => {
     props.activeData.session.mode = 'immediate'
     render().handleSelectOption(1)
