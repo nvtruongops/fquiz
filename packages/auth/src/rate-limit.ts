@@ -98,25 +98,21 @@ export function checkRateLimit(
   config: RateLimitConfig
 ): RateLimitStatus {
   const ip = getClientIp(request)
-  const cookieHeader = request.headers.get('cookie') || ''
-  const authTokenFromCookie = cookieHeader
-    .split('; ')
-    .find(row => row.startsWith('auth-token='))
-    ?.split('=')[1]
-  const authToken = authTokenFromCookie ?? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  const userIdentifier = authToken ? `user:${authToken.slice(-24)}` : `ip:${ip}`
-  const key = `${config.keyPrefix || 'rl'}:${userIdentifier}`
+  const key = `${config.keyPrefix || 'rl'}:ip:${ip}`
 
   return memoryStore.check(key, config.limit, config.windowMs)
 }
 
-export function createRateLimitErrorResponse(status: RateLimitStatus): NextResponse {
+export function createRateLimitErrorResponse(
+  status: RateLimitStatus,
+  message = 'Too many requests. Please try again shortly.'
+): NextResponse {
   const retryAfterSeconds = Math.ceil((status.reset - Date.now()) / 1000)
 
   return new NextResponse(
     JSON.stringify({
       error: 'Too Many Requests',
-      message: 'Too many requests. Please try again shortly.',
+      message,
       statusCode: 429,
       retryAfterSeconds: Math.max(1, retryAfterSeconds),
     }),

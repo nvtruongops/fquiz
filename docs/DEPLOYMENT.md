@@ -10,7 +10,7 @@ Deployment settings are split between the Web and Admin app directories. Check t
 | Admin app build and runtime | `apps/admin/package.json`, `apps/admin/next.config.js`, `apps/admin/vercel.json` |
 | Shared workspace tasks | Root `package.json` and `turbo.json` |
 | Local environment variable names | [`.env.example`](../.env.example) |
-| Database migrations and maintenance | [`scripts/`](../scripts/README.md) and the corresponding root scripts |
+| Database migrations and maintenance | [`scripts/`](../scripts/) and the corresponding root scripts |
 
 The apps are separate Next.js workspaces. Their local development ports and commands are defined in each app's `package.json`; Playwright server startup is defined in `playwright.config.ts`.
 
@@ -30,3 +30,16 @@ The start commands are separate long-running processes. Configure required secre
 Before running a migration, audit, cleanup, or performance command, inspect its implementation and options. Some root scripts load `.env.local` and may read or write a database. Prefer a documented dry-run option when available, and verify the target database before applying changes.
 
 For test commands and the limits of test evidence, see [`TESTING.md`](./TESTING.md). For environment variable names, use `.env.example` as the current repository list; provider-specific values belong in the provider configuration.
+
+## Vercel production deployment
+
+Production uses two separate Vercel projects: `fquiz-web` with project root `apps/web`, and `fquiz-admin` with project root `apps/admin`. Run the CLI from the monorepo root and pass the project name explicitly so Vercel applies each configured root directory:
+
+```bash
+vercel deploy --dry --json --project fquiz-web --cwd .
+vercel deploy --dry --json --project fquiz-admin --cwd .
+vercel deploy --prod --yes --project fquiz-web --cwd .
+vercel deploy --prod --yes --project fquiz-admin --cwd .
+```
+
+The root `.vercelignore` excludes documentation, end-to-end test artifacts, and agent tooling from upload. After deployment, inspect each returned deployment URL with `vercel inspect <url> --wait` and check the public app routes.

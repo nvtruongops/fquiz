@@ -15,6 +15,7 @@ import {
   User,
   GraduationCap,
   Users,
+  type LucideIcon,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useLogout } from '@/hooks/useLogout'
@@ -30,6 +31,64 @@ const MobileNavUserSheet = dynamic(
 
 interface MobileNavProps {
   user?: { name: string; role: string; avatarUrl?: string } | null
+}
+
+interface MobileNavTabProps {
+  label: string
+  icon: LucideIcon
+  active: boolean
+  onClick: () => void
+  href?: string
+  buttonLabel?: string
+  expanded?: boolean
+  triggerRef?: React.Ref<HTMLButtonElement>
+}
+
+function MobileNavTab({
+  label,
+  icon: Icon,
+  active,
+  onClick,
+  href,
+  buttonLabel,
+  expanded,
+  triggerRef,
+}: MobileNavTabProps) {
+  const content = (
+    <>
+      <div className="relative">
+        <Icon aria-hidden="true" className={cn('w-5 h-5 transition-transform', active && 'scale-110')} />
+        {active && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />}
+      </div>
+      <span>{label}</span>
+    </>
+  )
+  const className = cn(
+    'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
+    active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+  )
+
+  if (href) {
+    return (
+      <Link href={href} prefetch={false} onClick={onClick} aria-current={active ? 'page' : undefined} className={className}>
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-label={buttonLabel}
+      aria-expanded={expanded}
+      aria-haspopup="dialog"
+      onClick={onClick}
+      className={className}
+    >
+      {content}
+    </button>
+  )
 }
 
 export function MobileNav({ user }: MobileNavProps) {
@@ -131,6 +190,21 @@ export function MobileNav({ user }: MobileNavProps) {
   const isClassroomActive =
     pathname?.startsWith('/student/classrooms') || pathname?.startsWith('/teacher/classrooms')
   const isCommunityActive = pathname === '/community'
+  const navTabs: MobileNavTabProps[] = [
+    { label: 'Home', icon: Home, active: isHomeActive, href: '/', onClick: closeAllMenus },
+    {
+      label: 'Practice', icon: BookCheck, active: isExamActive || examMenuOpen,
+      buttonLabel: 'Open practice menu', expanded: examMenuOpen, triggerRef: examTriggerRef,
+      onClick: () => { setUserMenuOpen(false); setExamMenuOpen((prev) => !prev) },
+    },
+    { label: 'Classroom', icon: GraduationCap, active: isClassroomActive, href: classroomHref, onClick: closeAllMenus },
+    { label: 'Community', icon: Users, active: isCommunityActive, href: '/community', onClick: closeAllMenus },
+    {
+      label: 'Account', icon: User, active: isUserActive || userMenuOpen,
+      buttonLabel: 'Open account menu', expanded: userMenuOpen, triggerRef: userTriggerRef,
+      onClick: () => { setExamMenuOpen(false); setUserMenuOpen((prev) => !prev) },
+    },
+  ]
 
   return (
     <>
@@ -159,124 +233,10 @@ export function MobileNav({ user }: MobileNavProps) {
       {/* MAIN FIXED BOTTOM NAV BAR */}
       <nav
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur-xl border-t border-border/80 z-40 lg:hidden transition-all duration-300 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_24px_rgba(0,0,0,0.06)]"
+        className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur-xl border-t border-border/80 z-40 lg:hidden transition-all duration-300 pb-safe-area-bottom shadow-mobile-nav"
       >
         <div className="flex items-center justify-around h-16 px-1.5 max-w-md mx-auto">
-          {/* TAB 1: Home */}
-          <Link
-            href="/"
-            prefetch={false}
-            onClick={closeAllMenus}
-            className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
-              isHomeActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <div className="relative">
-              <Home aria-hidden="true" className={cn('w-5 h-5 transition-transform', isHomeActive && 'scale-110')} />
-              {isHomeActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </div>
-            <span>Home</span>
-          </Link>
-
-          {/* TAB 2: Practice (Drawer) */}
-          <button
-            ref={examTriggerRef}
-            type="button"
-            aria-label="Open practice menu"
-            aria-expanded={examMenuOpen}
-            aria-haspopup="dialog"
-            onClick={() => {
-              setUserMenuOpen(false)
-              setExamMenuOpen((prev) => !prev)
-            }}
-            className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
-              isExamActive || examMenuOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <div className="relative">
-              <BookCheck
-                aria-hidden="true"
-                className={cn('w-5 h-5 transition-transform', (isExamActive || examMenuOpen) && 'scale-110')}
-              />
-              {(isExamActive || examMenuOpen) && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </div>
-            <span>Practice</span>
-          </button>
-
-          {/* TAB 3: Classroom */}
-          <Link
-            href={classroomHref}
-            prefetch={false}
-            onClick={closeAllMenus}
-            className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
-              isClassroomActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <div className="relative">
-              <GraduationCap
-                aria-hidden="true"
-                className={cn('w-5 h-5 transition-transform', isClassroomActive && 'scale-110')}
-              />
-              {isClassroomActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </div>
-            <span>Classroom</span>
-          </Link>
-
-          {/* TAB 4: Community */}
-          <Link
-            href="/community"
-            prefetch={false}
-            onClick={closeAllMenus}
-            className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
-              isCommunityActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <div className="relative">
-              <Users aria-hidden="true" className={cn('w-5 h-5 transition-transform', isCommunityActive && 'scale-110')} />
-              {isCommunityActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </div>
-            <span>Community</span>
-          </Link>
-
-          {/* TAB 5: Account (Drawer) */}
-          <button
-            ref={userTriggerRef}
-            type="button"
-            aria-label="Open account menu"
-            aria-expanded={userMenuOpen}
-            aria-haspopup="dialog"
-            onClick={() => {
-              setExamMenuOpen(false)
-              setUserMenuOpen((prev) => !prev)
-            }}
-            className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[10px] font-extrabold transition-all relative select-none active:scale-95 cursor-pointer',
-              isUserActive || userMenuOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <div className="relative">
-              <User
-                aria-hidden="true"
-                className={cn('w-5 h-5 transition-transform', (isUserActive || userMenuOpen) && 'scale-110')}
-              />
-              {(isUserActive || userMenuOpen) && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </div>
-            <span>Account</span>
-          </button>
+          {navTabs.map((tab) => <MobileNavTab key={tab.label} {...tab} />)}
         </div>
       </nav>
     </>

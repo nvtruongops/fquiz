@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
-import { withAuth } from '@/lib/modules/auth/with-auth'
-import { JWTPayload } from '@/lib/modules/auth/auth'
+import { withQuizSessionRoute } from '@/lib/modules/quiz/session-route'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
-import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { secureShuffle } from '@/lib/core/utils/shuffle'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
@@ -16,17 +14,7 @@ import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
  * POST /api/sessions/[id]/retry-wrong
  * Creates a new quiz session containing only the questions answered incorrectly in a previous completed session.
  */
-export const POST = withAuth(async (
-  req: Request,
-  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
-) => {
-  try {
-    const { id } = await params
-    const validation = await validateQuizSessionRequest(id, payload, { checkExpired: false })
-    if (!validation.isValid) return validation.response
-
-    const parentSession = validation.session
-
+export const POST = withQuizSessionRoute(async (_req, _id, parentSession) => {
     if (parentSession.status !== 'completed') {
       return NextResponse.json(
         { error: 'Can only retry wrong questions from a completed session' },
@@ -125,8 +113,7 @@ export const POST = withAuth(async (
       },
       { status: 201 }
     )
-  } catch (err) {
-    console.error('POST /api/sessions/[id]/retry-wrong error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}, { roles: ['student'], allowGuest: true })
+}, { checkExpired: false }, (err) => {
+  console.error('POST /api/sessions/[id]/retry-wrong error:', err)
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+})

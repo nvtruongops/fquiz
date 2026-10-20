@@ -3,9 +3,11 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { z } from 'zod'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { getRequestMetadata } from '@/lib/core/security/request-metadata'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { isMailConfigured, enqueueMail } from '@/lib/core/mail/mail'
 import { generateVerificationCode, hashVerificationCode, isValidVerificationCode } from '@/lib/modules/auth/verification-code'
+import { incrementFailedResetTokenAttempts } from '@/lib/modules/auth/reset-token-attempts'
 
 const SendSchema = z.object({
   action: z.literal('send').optional(),
@@ -17,6 +19,8 @@ const VerifySchema = z.object({
   email: z.email(),
   code: z.string(),
 })
+
+const invalidVerificationMessage = 'Verification code is invalid or expired'
 
 async function handleVerify(body: unknown, ip: string) {
   const verifyParsed = VerifySchema.safeParse(body)
@@ -33,23 +37,23 @@ async function handleVerify(body: unknown, ip: string) {
   const code = verifyParsed.data.code.trim()
 
   if (!isValidVerificationCode(code)) {
-    return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
+    return NextResponse.json({ error: invalidVerificationMessage }, { status: 400 })
   }
 
   const user = await User.findOne({ email }).select('_id reset_token reset_token_expires reset_token_attempts').lean()
   const isExpired = !user?.reset_token_expires || new Date(user.reset_token_expires) <= new Date()
   if (!user?.reset_token || isExpired) {
-    return NextResponse.json({ error: 'Verification code expired or does not exist' }, { status: 400 })
+    return NextResponse.json({ error: invalidVerificationMessage }, { status: 400 })
   }
 
   if ((user.reset_token_attempts || 0) >= 5) {
-    return NextResponse.json({ error: 'Too many attempts. Please request a new code.' }, { status: 429 })
+    return NextResponse.json({ error: invalidVerificationMessage }, { status: 400 })
   }
 
   const codeHash = hashVerificationCode(code)
   if (user.reset_token !== codeHash) {
-    await User.updateOne({ _id: user._id }, { $inc: { reset_token_attempts: 1 } })
-    return NextResponse.json({ error: 'Incorrect verification code' }, { status: 400 })
+    await incrementFailedResetTokenAttempts(user._id, user.reset_token)
+    return NextResponse.json({ error: invalidVerificationMessage }, { status: 400 })
   }
 
   // On success, reset attempts
@@ -88,8 +92,7 @@ async function handleSend(
     : 0
 
   if (resendAvailableAt > now) {
-    const retryAfterSec = Math.ceil((resendAvailableAt - now) / 1000)
-    return NextResponse.json({ error: 'Please wait before requesting a new code', retryAfterSec }, { status: 429 })
+    return NextResponse.json({ message: genericMessage })
   }
 
   const code = generateVerificationCode()
@@ -122,9 +125,7 @@ async function handleSend(
         ip,
         err: mailErr instanceof Error ? mailErr.message : 'Unknown mail error',
       }, 'Failed to send verification email')
-      // Still return success message to avoid leaking whether email exists,
-      // but in reality email failed to send. Throw to catch block for 500 handling.
-      throw mailErr
+      return NextResponse.json({ message: genericMessage })
     }
   }
 
@@ -143,9 +144,7 @@ const ActionTypeSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const requestId = request.headers.get('x-request-id') || 'unknown'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
-  const route = '/api/auth/forgot-password'
+  const { requestId, ip, route } = getRequestMetadata(request, '/api/auth/forgot-password')
 
   try {
     let body: unknown

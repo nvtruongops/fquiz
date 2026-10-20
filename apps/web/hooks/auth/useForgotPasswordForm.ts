@@ -67,7 +67,9 @@ export function useForgotPasswordForm() {
 
         setCodeSent(true)
         setVerified(false)
-        toast.success('If the email exists, a verification code has been sent.')
+        toast.success(
+          'If an account exists for this email, a code may be sent. Check your inbox and spam; if it does not arrive, try again later.'
+        )
       } catch {
         toast.error('System is busy. Please try again later.')
       } finally {

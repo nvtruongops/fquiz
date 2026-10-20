@@ -140,7 +140,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   return (
     <div className="w-full max-w-3xl mx-auto px-4 space-y-4">
       {/* Perspective Container */}
-      <div className={cn("relative flex-1 min-h-0 w-full", enableAnimation && "[perspective:1000px]")}>
+      <div className={cn("relative flex-1 min-h-0 w-full", enableAnimation && "perspective-1000")}>
         {/* Drag Feedback Badges (Only shown when animation is enabled) */}
         {enableAnimation && (
           <>

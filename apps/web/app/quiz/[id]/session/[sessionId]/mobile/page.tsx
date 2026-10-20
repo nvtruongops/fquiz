@@ -16,88 +16,240 @@ import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
 import { shouldShowSessionSkeleton } from '@/hooks/quiz/session-rendering'
 
-export default function QuizSessionMobilePage() {
-  const ctrl = useMobileQuizSessionController()
-  const { data: authData } = useAuth()
-  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
-  const rawNoteMode = useQuizSessionStore((s) => s.isNoteMode)
-  const toggleNoteMode = useQuizSessionStore((s) => s.toggleNoteMode)
-  const isNoteMode = isDevOrAdmin ? rawNoteMode : false
+type MobileSessionController = ReturnType<typeof useMobileQuizSessionController>
+type MobileSessionData = NonNullable<MobileSessionController['activeData']>
+type MobileSession = MobileSessionData['session']
+type MobileQuestion = MobileSessionData['question']
 
-  if (ctrl.isPreloadError || ctrl.isInitialError) {
-    return (
-      <SessionQueryError
-        title="Exam Room Error"
-        message={ctrl.initialError?.message || ctrl.preloadError?.message || 'Please check your network connection and try again'}
-        backLabel="Back"
-        dashboardLabel="Back to Dashboard"
-        mobile
-        canRetry={(ctrl.isInitialError && ctrl.initialError?.status !== 404 && ctrl.initialError?.status !== 410) ||
-          (ctrl.isPreloadError && ctrl.preloadError?.status !== 404 && ctrl.preloadError?.status !== 410)}
-        onRetry={() => {
-          if (ctrl.isInitialError && ctrl.initialError?.status !== 404 && ctrl.initialError?.status !== 410) void ctrl.refetchInitial()
-          if (ctrl.isPreloadError && ctrl.preloadError?.status !== 404 && ctrl.preloadError?.status !== 410) void ctrl.refetchPreload()
-        }}
-        onBack={() => {
-          if (typeof window !== 'undefined' && window.history.length > 1) {
-            ctrl.router.back()
-          } else {
-            ctrl.router.push('/dashboard')
-          }
-        }}
-        onDashboard={() => ctrl.router.push('/dashboard')}
-      />
-    )
+const MOBILE_RETRY_BLOCKED_STATUSES = new Set([404, 410])
+
+function canRetryMobileSessionLoad(isError: boolean, error: { status?: number } | null | undefined) {
+  return isError && !MOBILE_RETRY_BLOCKED_STATUSES.has(error?.status ?? 0)
+}
+
+function getMobileSessionErrorMessage(ctrl: MobileSessionController) {
+  return [ctrl.initialError?.message, ctrl.preloadError?.message].find(Boolean)
+    || 'Please check your network connection and try again'
+}
+
+function hasRetryableMobileSessionError(ctrl: MobileSessionController) {
+  return [
+    canRetryMobileSessionLoad(ctrl.isInitialError, ctrl.initialError),
+    canRetryMobileSessionLoad(ctrl.isPreloadError, ctrl.preloadError),
+  ].some(Boolean)
+}
+
+function retryMobileSessionQueries(ctrl: MobileSessionController) {
+  const retryActions = [
+    { shouldRetry: canRetryMobileSessionLoad(ctrl.isInitialError, ctrl.initialError), refetch: ctrl.refetchInitial },
+    { shouldRetry: canRetryMobileSessionLoad(ctrl.isPreloadError, ctrl.preloadError), refetch: ctrl.refetchPreload },
+  ]
+  retryActions.filter((action) => action.shouldRetry).forEach((action) => void action.refetch())
+}
+
+function navigateBackFromMobileSession(router: MobileSessionController['router']) {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+    return
   }
+  router.push('/dashboard')
+}
 
-  if (ctrl.isStillLoading || !ctrl.activeData) {
-    if (shouldShowSessionSkeleton(ctrl.isStillLoading, ctrl.sessionLoader.isOpen, isQuizLoaderActive())) {
-      return <QuizSessionSkeleton />
-    }
-    return (
-      <QuizLoadingOverlay
-        isOpen={true}
-        progress={ctrl.sessionLoader.progress}
-        status={ctrl.sessionLoader.status || 'Loading questions...'}
-      />
-    )
+function MobileSessionErrorState({ ctrl }: { ctrl: MobileSessionController }) {
+  return (
+    <SessionQueryError
+      title="Exam Room Error"
+      message={getMobileSessionErrorMessage(ctrl)}
+      backLabel="Back"
+      dashboardLabel="Back to Dashboard"
+      mobile
+      canRetry={hasRetryableMobileSessionError(ctrl)}
+      onRetry={() => retryMobileSessionQueries(ctrl)}
+      onBack={() => navigateBackFromMobileSession(ctrl.router)}
+      onDashboard={() => ctrl.router.push('/dashboard')}
+    />
+  )
+}
+
+function MobileSessionLoadingState({ ctrl }: { ctrl: MobileSessionController }) {
+  if (shouldShowSessionSkeleton(ctrl.isStillLoading, ctrl.sessionLoader.isOpen, isQuizLoaderActive())) {
+    return <QuizSessionSkeleton />
   }
+  return (
+    <QuizLoadingOverlay
+      isOpen
+      progress={ctrl.sessionLoader.progress}
+      status={ctrl.sessionLoader.status || 'Loading questions...'}
+    />
+  )
+}
 
-  const { session, question } = ctrl.activeData
-  const effectiveTotal = session.totalQuestions || 0
-  const effectiveIndex = Math.min(ctrl.currentQuestionIndex, Math.max(effectiveTotal - 1, 0))
-  const answeredFromSession = new Set(
+function isValidAnsweredQuestionIndex(index: number, totalQuestions: number) {
+  return Number.isInteger(index) && index >= 0 && index < totalQuestions
+}
+
+function getMobileAnsweredQuestionSet(ctrl: MobileSessionController, session: MobileSession, effectiveTotal: number) {
+  const answeredQuestions = new Set(
     session.user_answers
       .map((answer) => answer.question_index)
-      .filter((index) => Number.isInteger(index) && index >= 0 && index < effectiveTotal)
+      .filter((index) => isValidAnsweredQuestionIndex(index, effectiveTotal)),
   )
-  ctrl.acknowledgedQuestions.forEach((index) => answeredFromSession.add(index))
-  const isMatchingSessionStore = ctrl.storeSessionId === ctrl.resolvedSessionId
-  if (isMatchingSessionStore) ctrl.answeredQuestions.forEach((index) => { if (index >= 0 && index < effectiveTotal) answeredFromSession.add(index) })
-  const answeredCount = Math.min(answeredFromSession.size, effectiveTotal)
-  const showImmediateFeedback = session.mode === 'immediate' && ctrl.submitted && ctrl.lastAnswerResult !== null
-  const requiredSelectionCount = Math.max(question.answer_selection_count ?? 1, 1)
-  const correctAnswerSet = showImmediateFeedback
-    ? ctrl.lastAnswerResult?.correctAnswers ?? [ctrl.lastAnswerResult?.correctAnswer ?? -1]
-    : []
-
-  const isQuestionPinned = ctrl.pinnedQuestions.some(
-    (p) => (p.question_id && p.question_id === question._id) || p.text === question.text
-  )
-
-  const handleTogglePin = () => {
-    ctrl.togglePinMutation.mutate({
-      question_id: question._id,
-      quiz_id: ctrl.resolvedQuizId,
-      quiz_title: session.title || session.courseCode,
-      course_code: session.courseCode || 'GENERAL',
-      text: question.text,
-      options: question.options,
-      correct_answer: (question as any).correct_answer || (ctrl.lastAnswerResult?.correctAnswers ? ctrl.lastAnswerResult.correctAnswers : []),
-      explanation: (question as any).explanation || '',
-      image_url: question.image_url || '',
+  ctrl.acknowledgedQuestions.forEach((index) => answeredQuestions.add(index))
+  if (ctrl.storeSessionId === ctrl.resolvedSessionId) {
+    ctrl.answeredQuestions.forEach((index) => {
+      if (isValidAnsweredQuestionIndex(index, effectiveTotal)) answeredQuestions.add(index)
     })
   }
+  return answeredQuestions
+}
+
+function shouldShowMobileImmediateFeedback(
+  sessionMode: MobileSession['mode'],
+  submitted: boolean,
+  lastAnswerResult: MobileSessionController['lastAnswerResult'],
+) {
+  return sessionMode === 'immediate' && submitted && lastAnswerResult !== null
+}
+
+function getMobileCorrectAnswerSet(
+  showImmediateFeedback: boolean,
+  lastAnswerResult: MobileSessionController['lastAnswerResult'],
+) {
+  if (!showImmediateFeedback) return []
+  return getMobileCorrectAnswers(lastAnswerResult)
+}
+
+function getMobileCorrectAnswers(lastAnswerResult: MobileSessionController['lastAnswerResult']) {
+  const answer = lastAnswerResult ?? ({} as NonNullable<MobileSessionController['lastAnswerResult']>)
+  return answer.correctAnswers ?? [answer.correctAnswer ?? -1]
+}
+
+function isMobileQuestionPinned(pinnedQuestions: MobileSessionController['pinnedQuestions'], question: MobileQuestion) {
+  return pinnedQuestions.some((pinned) => (pinned.question_id && pinned.question_id === question._id) || pinned.text === question.text)
+}
+
+function handleMobileQuestionPin(ctrl: MobileSessionController, session: MobileSession, question: MobileQuestion) {
+  ctrl.togglePinMutation.mutate({
+    question_id: question._id,
+    quiz_id: ctrl.resolvedQuizId,
+    quiz_title: getMobileQuizTitle(session),
+    course_code: getMobileCourseCode(session),
+    text: question.text,
+    options: question.options,
+    correct_answer: getMobileQuestionCorrectAnswer(question, ctrl.lastAnswerResult),
+    explanation: getOptionalQuestionText((question as any).explanation),
+    image_url: getOptionalQuestionText(question.image_url),
+  })
+}
+
+function getMobileQuizTitle(session: MobileSession) {
+  return session.title || session.courseCode
+}
+
+function getMobileCourseCode(session: MobileSession) {
+  return session.courseCode || 'GENERAL'
+}
+
+function getMobileQuestionCorrectAnswer(question: MobileQuestion, lastAnswerResult: MobileSessionController['lastAnswerResult']) {
+  const correctAnswer = (question as any).correct_answer
+  if (correctAnswer) return correctAnswer
+  return lastAnswerResult?.correctAnswers || []
+}
+
+function getOptionalQuestionText(value: string | null | undefined) {
+  return value || ''
+}
+
+function reviewMobileUnsavedDraft(questionIndex: number | null, onNavigate: (index: number) => void) {
+  if (questionIndex !== null) onNavigate(questionIndex)
+}
+
+function getMobileDraftQuestionNumber(questionIndex: number | null) {
+  return questionIndex === null ? null : questionIndex + 1
+}
+
+function areMobileSessionAnswersDisabled(isReadOnlyTab: boolean, isSubmitting: boolean, isFinalizing: boolean) {
+  return isReadOnlyTab || isSubmitting || isFinalizing
+}
+
+function getMobileReadyViewState(ctrl: MobileSessionController, activeData: MobileSessionData) {
+  const { session, question } = activeData
+  const effectiveTotal = session.totalQuestions || 0
+  const effectiveIndex = Math.min(ctrl.currentQuestionIndex, Math.max(effectiveTotal - 1, 0))
+  const answeredFromSession = getMobileAnsweredQuestionSet(ctrl, session, effectiveTotal)
+  const showImmediateFeedback = shouldShowMobileImmediateFeedback(session.mode, ctrl.submitted, ctrl.lastAnswerResult)
+  return {
+    effectiveTotal,
+    effectiveIndex,
+    answeredFromSession,
+    answeredCount: Math.min(answeredFromSession.size, effectiveTotal),
+    showImmediateFeedback,
+    requiredSelectionCount: Math.max(question.answer_selection_count ?? 1, 1),
+    correctAnswerSet: getMobileCorrectAnswerSet(showImmediateFeedback, ctrl.lastAnswerResult),
+    isQuestionPinned: isMobileQuestionPinned(ctrl.pinnedQuestions, question),
+  }
+}
+
+function MobileSessionReadOnlyNotice({ isReadOnlyTab, takeOverLease }: { isReadOnlyTab: boolean; takeOverLease: () => void }) {
+  if (!isReadOnlyTab) return null
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-xs text-warning-fg">
+      <span>Read-only: session open in another tab.</span>
+      <button type="button" onClick={takeOverLease} className="shrink-0 font-semibold underline">Continue here</button>
+    </div>
+  )
+}
+
+function MobileSessionFinalizationFailure({ isError }: { isError: boolean }) {
+  if (!isError) return null
+  return (
+    <p role="alert" className="mx-4 my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+      Submission did not finish. Your answers are saved. Select Submit to try again.
+    </p>
+  )
+}
+
+function MobileSessionAnswerStatus({ ctrl }: { ctrl: MobileSessionController }) {
+  return (
+    <>
+      <SessionSaveStatus
+        status={ctrl.saveStatus}
+        onRetry={ctrl.retryFailedAnswer}
+        onReviewDraft={() => reviewMobileUnsavedDraft(ctrl.unsavedQuestionIndex, ctrl.handleNavigate)}
+        onDiscardDraft={ctrl.discardUnsavedAnswer}
+        draftQuestionNumber={getMobileDraftQuestionNumber(ctrl.unsavedQuestionIndex)}
+        disabled={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.submitMutation.isPending, ctrl.finalizeMutation.isPending)}
+      />
+      <MobileSessionFinalizationFailure isError={ctrl.finalizeMutation.isError} />
+    </>
+  )
+}
+
+function MobileSessionReadyContent({
+  ctrl,
+  activeData,
+  isDevOrAdmin,
+  isNoteMode,
+  toggleNoteMode,
+}: {
+  ctrl: MobileSessionController
+  activeData: MobileSessionData
+  isDevOrAdmin: boolean
+  isNoteMode: boolean
+  toggleNoteMode: () => void
+}) {
+  const { session, question } = activeData
+  const {
+    effectiveTotal,
+    effectiveIndex,
+    answeredFromSession,
+    answeredCount,
+    showImmediateFeedback,
+    requiredSelectionCount,
+    correctAnswerSet,
+    isQuestionPinned,
+  } = getMobileReadyViewState(ctrl, activeData)
+  const handleTogglePin = () => handleMobileQuestionPin(ctrl, session, question)
 
   return (
     <div className="flex h-screen flex-col bg-page-bg text-card-foreground">
@@ -112,16 +264,8 @@ export default function QuizSessionMobilePage() {
         isPending={ctrl.submitMutation.isPending}
         showImmediateFeedback={showImmediateFeedback}
       />
-
-      {ctrl.isReadOnlyTab && (
-        <div className="flex items-center justify-between gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-xs text-warning-fg">
-          <span>Read-only: session open in another tab.</span>
-          <button type="button" onClick={ctrl.takeOverLease} className="shrink-0 font-semibold underline">Continue here</button>
-        </div>
-      )}
-      <SessionSaveStatus status={ctrl.saveStatus} onRetry={ctrl.retryFailedAnswer} onReviewDraft={() => { if (ctrl.unsavedQuestionIndex !== null) ctrl.handleNavigate(ctrl.unsavedQuestionIndex) }} onDiscardDraft={ctrl.discardUnsavedAnswer} draftQuestionNumber={ctrl.unsavedQuestionIndex === null ? null : ctrl.unsavedQuestionIndex + 1} disabled={ctrl.isReadOnlyTab || ctrl.submitMutation.isPending || ctrl.finalizeMutation.isPending} />
-
-      {/* Mobile Header */}
+      <MobileSessionReadOnlyNotice isReadOnlyTab={ctrl.isReadOnlyTab} takeOverLease={ctrl.takeOverLease} />
+      <MobileSessionAnswerStatus ctrl={ctrl} />
       <MobileSessionHeader
         categoryName={session.categoryName}
         courseCode={session.courseCode}
@@ -139,8 +283,6 @@ export default function QuizSessionMobilePage() {
         onOpenQuestionMap={() => ctrl.setQuestionMapOpen(true)}
         onOpenExitConfirm={() => ctrl.setExitConfirmOpen(true)}
       />
-
-      {/* Main Content */}
       <ScrollArea className="flex-1">
         <div
           key={question._id || effectiveIndex}
@@ -160,18 +302,17 @@ export default function QuizSessionMobilePage() {
             onTogglePin={handleTogglePin}
             isNoteMode={isNoteMode}
             showImmediateFeedback={showImmediateFeedback}
+            answerIsCorrect={ctrl.lastAnswerResult?.isCorrect ?? null}
             correctAnswerSet={correctAnswerSet}
             selectedOptions={ctrl.selectedOptions}
             submitted={ctrl.submitted}
-            isSubmitting={ctrl.isReadOnlyTab || ctrl.submitMutation.isPending || ctrl.finalizeMutation.isPending}
+            isSubmitting={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.submitMutation.isPending, ctrl.finalizeMutation.isPending)}
             onSelectOption={ctrl.handleSelectOption}
             mode={session.mode}
             currentCourseCode={session.courseCode}
           />
         </div>
       </ScrollArea>
-
-      {/* Navigation Footer */}
       <MobileSessionFooter
         isRightHanded={ctrl.isRightHanded}
         effectiveIndex={effectiveIndex}
@@ -181,8 +322,6 @@ export default function QuizSessionMobilePage() {
         submitDisabled={ctrl.submitDisabled}
         navigationDisabled={ctrl.navigationDisabled}
       />
-
-      {/* Dialogs */}
       <MobileSessionDialogs
         confirmOpen={ctrl.confirmOpen}
         setConfirmOpen={ctrl.setConfirmOpen}
@@ -202,5 +341,26 @@ export default function QuizSessionMobilePage() {
         submitDisabled={ctrl.submitDisabled}
       />
     </div>
+  )
+}
+
+export default function QuizSessionMobilePage() {
+  const ctrl = useMobileQuizSessionController()
+  const { data: authData } = useAuth()
+  const isDevOrAdmin = authData?.user?.role === 'dev' || authData?.user?.role === 'admin'
+  const rawNoteMode = useQuizSessionStore((state) => state.isNoteMode)
+  const toggleNoteMode = useQuizSessionStore((state) => state.toggleNoteMode)
+  const isNoteMode = isDevOrAdmin ? rawNoteMode : false
+
+  if (ctrl.isPreloadError || ctrl.isInitialError) return <MobileSessionErrorState ctrl={ctrl} />
+  if (ctrl.isStillLoading || !ctrl.activeData) return <MobileSessionLoadingState ctrl={ctrl} />
+  return (
+    <MobileSessionReadyContent
+      ctrl={ctrl}
+      activeData={ctrl.activeData}
+      isDevOrAdmin={isDevOrAdmin}
+      isNoteMode={isNoteMode}
+      toggleNoteMode={toggleNoteMode}
+    />
   )
 }

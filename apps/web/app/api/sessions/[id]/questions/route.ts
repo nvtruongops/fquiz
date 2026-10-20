@@ -3,7 +3,7 @@ import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuestionUsageService } from '@/lib/modules/quiz/services/question-usage.service'
-import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
+import { getSessionRequestErrorResponse, resolveEffectiveQuestionDeck, validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
 
@@ -17,15 +17,14 @@ import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selec
 async function getQuestionUsageMap(
   session: { status: string; mode: string },
   questionOrder: number[],
-  rawQuestions: any[],
+  rawQuestions: Array<any | null>,
   courseCode?: string
 ) {
   if (session.status === 'active' && session.mode !== 'flashcard') {
     return new Map<string, { count: number; quizzes: string[] }>()
   }
 
-  const questionQueries = questionOrder.map((i) => {
-    const q = rawQuestions[i]
+  const questionQueries = questionOrder.map((i) => rawQuestions[i]).filter(Boolean).map((q) => {
     return { question_id: q?.question_id, text: q?.text }
   })
   return QuestionUsageService.getBatchQuestionPublicUsage(questionQueries, courseCode)
@@ -67,23 +66,9 @@ export const GET = withAuth(async (
     const isImmediateMode = session.mode === 'immediate'
     const isFlashcardMode = session.mode === 'flashcard'
 
-    // Resolve raw questions list (cached in session, embedded in quiz, or referenced)
-    let rawQuestions: any[] = []
-    let isFromSessionCache = false
-    if (Array.isArray(session.questions_cache) && session.questions_cache.length > 0) {
-      rawQuestions = session.questions_cache
-      isFromSessionCache = true
-    } else if (Array.isArray(quiz.questions) && quiz.questions.length > 0) {
-      rawQuestions = quiz.questions
-    } else if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > 0) {
-      const QuestionModel = (await import('@/lib/modules/quiz/models/Question')).Question
-      const refDocs = await QuestionModel.find({ _id: { $in: quiz.question_refs } }).lean()
-      const refMap = new Map(refDocs.map((q: any) => [q._id.toString(), q]))
-      rawQuestions = quiz.question_refs.map((refId: any) => refMap.get(refId.toString())).filter(Boolean)
-    }
-
-    // Get question order (use existing or create sequential)
-    const questionOrder = session.question_order || Array.from({ length: rawQuestions.length }, (_, i) => i)
+    const isFromSessionCache = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
+    const isFromEmbeddedQuiz = !isFromSessionCache && (!Array.isArray(quiz.question_refs) || quiz.question_refs.length === 0)
+    const { questions: rawQuestions, questionOrder } = await resolveEffectiveQuestionDeck(session, quiz)
 
     // Ensure all questions have a question_id (generate if missing)
     let hasMissingId = false
@@ -94,7 +79,7 @@ export const GET = withAuth(async (
       }
     }
     // Auto-repair DB if any question is missing question_id (only when rawQuestions is from root Quiz)
-    if (hasMissingId && !isFromSessionCache && Array.isArray(quiz.questions) && quiz.questions.length === rawQuestions.length) {
+    if (hasMissingId && isFromEmbeddedQuiz && Array.isArray(quiz.questions) && quiz.questions.length === rawQuestions.length) {
       await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 
@@ -110,7 +95,7 @@ export const GET = withAuth(async (
     // For immediate mode (only already answered) or completed/flashcard sessions: include correct_answer and explanation
     // Otherwise: exclude correct_answer and explanation
     const questions = questionOrder.map((originalIndex: number, displayIndex: number) => {
-      const q = rawQuestions[originalIndex] ?? rawQuestions[0] ?? {}
+      const q: any = rawQuestions[originalIndex] ?? {}
 
       const baseQuestion = {
         _id: q._id,
@@ -157,9 +142,6 @@ export const GET = withAuth(async (
     )
   } catch (err) {
     console.error('GET /api/sessions/[id]/questions error:', err)
-    if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return getSessionRequestErrorResponse(err)
   }
 }, { roles: ['student'], allowGuest: true })

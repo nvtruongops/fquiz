@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server'
 import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { Question } from '@/lib/modules/quiz/models/Question'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { QuestionUsageService } from '@/lib/modules/quiz/services/question-usage.service'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
-import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
+import { getSessionRequestErrorResponse, resolveEffectiveQuestionAtIndex, resolveEffectiveQuestionOrder, validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 import { SessionQuestionQuerySchema } from '@/lib/core/schemas/common'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
@@ -23,31 +22,6 @@ async function resolveCategoryName(categoryId: any): Promise<string> {
 }
 
 /**
- * Resolve a single question by index, supporting both embedded (legacy) and question_refs (new).
- * Priority: question_refs → questions_cache → embedded questions.
- */
-async function resolveQuestion(
-  quiz: any,
-  index: number,
-): Promise<IQuestion | null> {
-  // New: resolve from question_refs
-  if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > index) {
-    const refId = quiz.question_refs[index]
-    const q = await Question.findById(refId)
-      .select('text options correct_answer explanation image_url')
-      .lean()
-    if (q) return q as unknown as IQuestion
-  }
-
-  // Legacy fallback: embedded questions
-  if (Array.isArray(quiz.questions) && quiz.questions.length > index) {
-    return quiz.questions[index] as IQuestion
-  }
-
-  return null
-}
-
-/**
  * GET /api/sessions/[id]
  * Returns the current question and submitted answers for a quiz session.
  * Requirements: 13.2, 13.3, 12.3
@@ -59,7 +33,7 @@ function formatSessionPayload(session: any, quiz: any, categoryName: string, tot
     status: session.status,
     current_question_index: session.current_question_index,
     totalQuestions,
-    user_answers: session.user_answers,
+    user_answers: getSessionAnswers(session),
     courseCode: quiz.course_code,
     categoryName,
     title: quiz.title,
@@ -68,8 +42,21 @@ function formatSessionPayload(session: any, quiz: any, categoryName: string, tot
     total_paused_duration_ms: session.total_paused_duration_ms,
     is_temp: Boolean(session.is_temp),
     quiz_id: session.quiz_id,
-    ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
+    ...getFlashcardStatsPayload(session),
   }
+}
+
+function getSessionAnswers(session: any) {
+  if (session.mode !== 'review' || session.status === 'completed') return session.user_answers
+  return (session.user_answers ?? []).map((answer: Record<string, unknown>) =>
+    Object.fromEntries(Object.entries(answer).filter(([key]) => key !== 'is_correct'))
+  )
+}
+
+function getFlashcardStatsPayload(session: any) {
+  return session.mode === 'flashcard' && session.flashcard_stats
+    ? { flashcard_stats: session.flashcard_stats }
+    : {}
 }
 
 function formatQuestionResponse(
@@ -94,18 +81,6 @@ function formatQuestionResponse(
     }
   }
   return base
-}
-
-function resolveQuestionOrderAndTotal(quiz: any, session: any) {
-  let questionOrder = session.question_order
-  let sessionTotalQuestions = questionOrder?.length || 0
-
-  if (!questionOrder || questionOrder.length === 0) {
-    const totalQ = (quiz.question_refs?.length) || (quiz.questions?.length) || 0
-    questionOrder = Array.from({ length: totalQ }, (_, i) => i)
-    sessionTotalQuestions = totalQ
-  }
-  return { questionOrder, sessionTotalQuestions }
 }
 
 /**
@@ -154,7 +129,9 @@ export const GET = withAuth(async (
       .select('course_code title category_id questions question_refs').lean() as any
     if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
-    const { questionOrder, sessionTotalQuestions } = resolveQuestionOrderAndTotal(quiz, session)
+    const categoryName = await resolveCategoryName(quiz.category_id)
+    const questionOrder = resolveEffectiveQuestionOrder(session, quiz)
+    const sessionTotalQuestions = questionOrder.length
 
     const requestUrl = new URL(req.url)
     const queryParsed = SessionQuestionQuerySchema.safeParse(
@@ -173,7 +150,6 @@ export const GET = withAuth(async (
 
     // If session is completed or currentIndex is out of bounds, return session info without question
     if (currentIndex < 0 || currentIndex >= sessionTotalQuestions) {
-      const categoryName = await resolveCategoryName(quiz.category_id)
       return NextResponse.json({
         session: formatSessionPayload(session, quiz, categoryName, sessionTotalQuestions),
         question: null,
@@ -181,18 +157,7 @@ export const GET = withAuth(async (
     }
 
     const actualQuestionIndex = questionOrder[currentIndex]
-
-    // Parallelize category resolution & question fetching (async-parallel)
-    let rawQuestion: IQuestion | null = null
-    if (session.questions_cache && session.questions_cache.length > 0 && session.questions_cache[actualQuestionIndex]) {
-      rawQuestion = session.questions_cache[actualQuestionIndex] as unknown as IQuestion
-    }
-
-    const [categoryName, fetchedQuestion] = await Promise.all([
-      resolveCategoryName(quiz.category_id),
-      rawQuestion ? Promise.resolve(rawQuestion) : resolveQuestion(quiz, actualQuestionIndex),
-    ])
-    rawQuestion = fetchedQuestion
+    const rawQuestion = await resolveEffectiveQuestionAtIndex(session, quiz, actualQuestionIndex)
 
     if (!rawQuestion) return NextResponse.json({ error: 'Question not found' }, { status: 404 })
 
@@ -228,10 +193,7 @@ export const GET = withAuth(async (
     }, { status: 200 })
   } catch (err) {
     console.error('GET /api/sessions/[id] error:', err)
-    if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return getSessionRequestErrorResponse(err)
   }
 }, { roles: ['student'], allowGuest: true })
 

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { isToday, isYesterday, format } from 'date-fns'
 import { useAuth } from '@/hooks/auth/useAuth'
+import { useDebounce } from '@/hooks/shared/useDebounce'
 
 const MAX_HISTORY_SEARCH_LENGTH = 100
 
@@ -76,20 +77,94 @@ async function fetchHistory(
   search: string,
   status: FilterStatus,
   mode: FilterMode,
+  signal?: AbortSignal,
 ): Promise<HistoryResponse> {
-  const params = new URLSearchParams({ page: String(page), limit: '20' })
-  if (search) params.set('search', search)
-  if (status !== 'all') params.set('status', status)
-  if (mode !== 'all') params.set('mode', mode)
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?${params.toString()}`)
+  const params = buildHistoryParams(page, search, status, mode)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/history?${params.toString()}`, { signal })
   if (!res.ok) throw new Error('Failed to fetch history')
   return res.json()
 }
 
+function getHistorySearchFromUrl(searchParams: { get(name: string): string | null }) {
+  return searchParams.get('search') || ''
+}
+
+function normalizeHistorySearch(search: string) {
+  return search.trim().slice(0, MAX_HISTORY_SEARCH_LENGTH)
+}
+
+function hasHistoryUser(authData: { user?: unknown } | null | undefined) {
+  return Boolean(authData?.user)
+}
+
+function getHistoryStats(stats: HistoryStats | undefined) {
+  return stats ?? EMPTY_STATS
+}
+
+function buildHistoryParams(page: number, search: string, status: FilterStatus, mode: FilterMode) {
+  const params = new URLSearchParams({ page: String(page), limit: '20' })
+  if (search) params.set('search', search)
+  if (status !== 'all') params.set('status', status)
+  if (mode !== 'all') params.set('mode', mode)
+  return params
+}
+
+function getHistoryDateTitle(date: Date) {
+  if (isToday(date)) return 'Today'
+  if (isYesterday(date)) return 'Yesterday'
+  return format(date, 'dd/MM/yyyy')
+}
+
+function getOrCreateDateQuizMap(groups: Map<string, Map<string, GroupedQuiz>>, title: string) {
+  const existing = groups.get(title)
+  if (existing) return existing
+  const quizzes = new Map<string, GroupedQuiz>()
+  groups.set(title, quizzes)
+  return quizzes
+}
+
+function getOrCreateQuizGroup(quizzes: Map<string, GroupedQuiz>, item: HistoryItem, key: string) {
+  const existing = quizzes.get(key)
+  if (existing) return existing
+  const group: GroupedQuiz = {
+    key,
+    quiz_id: item.quiz_id,
+    quiz_code: item.quiz_code,
+    quiz_title: item.quiz_title,
+    category_name: item.category_name,
+    source_label: item.source_label,
+    is_mix: item.is_mix,
+    bestScorePercentage: 0,
+    attempts: [],
+  }
+  quizzes.set(key, group)
+  return group
+}
+
+function addHistoryAttempt(group: GroupedQuiz, item: HistoryItem) {
+  group.attempts.push(item)
+  if (item.status === 'completed' && item.total_questions > 0) {
+    group.bestScorePercentage = Math.max(group.bestScorePercentage, (item.score / item.total_questions) * 100)
+  }
+}
+
+function groupHistoryByDate(history: HistoryItem[]): DateGroup[] {
+  const groupsMap = new Map<string, Map<string, GroupedQuiz>>()
+  history.forEach((item) => {
+    const title = getHistoryDateTitle(new Date(item.started_at))
+    const quizzes = getOrCreateDateQuizMap(groupsMap, title)
+    const key = item.quiz_id || `${item.quiz_code}_${item.category_name}`
+    addHistoryAttempt(getOrCreateQuizGroup(quizzes, item, key), item)
+  })
+  return Array.from(groupsMap.entries()).map(([title, quizzes]) => ({
+    title,
+    quizzes: Array.from(quizzes.values()),
+  }))
+}
+
 export function useStudentHistory() {
   const searchParams = useSearchParams()
-  const searchFromUrl = searchParams.get('search') || ''
+  const searchFromUrl = getHistorySearchFromUrl(searchParams)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState(searchFromUrl)
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
@@ -101,7 +176,8 @@ export function useStudentHistory() {
     setPage(1)
   }, [searchFromUrl])
 
-  const normalizedSearch = search.trim().slice(0, MAX_HISTORY_SEARCH_LENGTH)
+  const normalizedSearch = normalizeHistorySearch(search)
+  const debouncedSearch = useDebounce(normalizedSearch, 300)
   const updateSearch = (value: string) => {
     setSearch(value.slice(0, MAX_HISTORY_SEARCH_LENGTH))
     setPage(1)
@@ -115,55 +191,17 @@ export function useStudentHistory() {
     setPage(1)
   }
 
-  const { data, isLoading, isError } = useQuery<HistoryResponse>({
-    queryKey: ['history', page, normalizedSearch, statusFilter, modeFilter],
-    queryFn: () => fetchHistory(page, normalizedSearch, statusFilter, modeFilter),
-    enabled: Boolean(authData?.user),
+  const { data, isLoading, isError, refetch } = useQuery<HistoryResponse>({
+    queryKey: ['history', page, debouncedSearch, statusFilter, modeFilter],
+    queryFn: ({ signal }) => fetchHistory(page, debouncedSearch, statusFilter, modeFilter, signal),
+    enabled: hasHistoryUser(authData),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   })
 
-  const stats = data?.stats ?? EMPTY_STATS
+  const stats = getHistoryStats(data?.stats)
 
-  const dateGroups: DateGroup[] = useMemo(() => {
-    if (!data?.history) return []
-
-    const groupsMap = new Map<string, Map<string, GroupedQuiz>>()
-
-    data.history.forEach((item) => {
-      const date = new Date(item.started_at)
-      const dateTitle = isToday(date) ? 'Today' : isYesterday(date) ? 'Yesterday' : format(date, 'dd/MM/yyyy')
-      if (!groupsMap.has(dateTitle)) groupsMap.set(dateTitle, new Map())
-
-      const quizMap = groupsMap.get(dateTitle)!
-      const quizKey = item.quiz_id || `${item.quiz_code}_${item.category_name}`
-      if (!quizMap.has(quizKey)) {
-        quizMap.set(quizKey, {
-          key: quizKey,
-          quiz_id: item.quiz_id,
-          quiz_code: item.quiz_code,
-          quiz_title: item.quiz_title,
-          category_name: item.category_name,
-          source_label: item.source_label,
-          is_mix: item.is_mix,
-          bestScorePercentage: 0,
-          attempts: [],
-        })
-      }
-
-      const quizGroup = quizMap.get(quizKey)!
-      quizGroup.attempts.push(item)
-
-      if (item.status === 'completed' && item.total_questions > 0) {
-        quizGroup.bestScorePercentage = Math.max(quizGroup.bestScorePercentage, (item.score / item.total_questions) * 100)
-      }
-    })
-
-    return Array.from(groupsMap.entries()).map(([title, quizMap]) => ({
-      title,
-      quizzes: Array.from(quizMap.values()),
-    }))
-  }, [data?.history])
+  const dateGroups: DateGroup[] = useMemo(() => groupHistoryByDate(data?.history ?? []), [data?.history])
 
   return {
     page,
@@ -177,6 +215,7 @@ export function useStudentHistory() {
     data,
     isLoading,
     isError,
+    retry: () => { void refetch() },
     stats,
     dateGroups,
   }

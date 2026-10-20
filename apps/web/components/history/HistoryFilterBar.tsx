@@ -15,6 +15,34 @@ interface HistoryFilterBarProps {
   onModeFilterChange: (mode: FilterMode) => void
 }
 
+function HistoryFilterButton({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={cn(
+        'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
+        selected ? 'bg-card text-foreground shadow-2xs font-black' : 'text-muted-foreground hover:text-foreground'
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+function toggleFilter<T extends string>(current: T, value: T, all: T, onChange: (next: T) => void) {
+  onChange(current === value ? all : value)
+}
+
 export function HistoryFilterBar({
   search,
   onSearchChange,
@@ -29,6 +57,7 @@ export function HistoryFilterBar({
       <div className="relative flex-1 group">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input
+          aria-label="Search quiz history"
           placeholder="Search quiz code, title, or subject..."
           className="pl-10 h-10 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary text-xs transition-all shadow-none"
           value={search}
@@ -38,64 +67,36 @@ export function HistoryFilterBar({
 
       {/* Flat Segmented Filter Buttons */}
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl border border-border/60 shrink-0 overflow-x-auto scrollbar-none">
-        <button
-          type="button"
-          aria-pressed={statusFilter === 'all' && modeFilter === 'all'}
+        <HistoryFilterButton
+          selected={statusFilter === 'all' && modeFilter === 'all'}
           onClick={() => {
             onStatusFilterChange('all')
             onModeFilterChange('all')
           }}
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0',
-            statusFilter === 'all' && modeFilter === 'all'
-              ? 'bg-card text-foreground shadow-2xs font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
         >
           All
-        </button>
-        <button
-          type="button"
-          aria-pressed={statusFilter === 'completed'}
-          onClick={() => onStatusFilterChange(statusFilter === 'completed' ? 'all' : 'completed')}
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
-            statusFilter === 'completed'
-              ? 'bg-card text-foreground shadow-2xs font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
+        </HistoryFilterButton>
+        <HistoryFilterButton
+          selected={statusFilter === 'completed'}
+          onClick={() => toggleFilter(statusFilter, 'completed', 'all', onStatusFilterChange)}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-success" />
           <span>Completed</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={statusFilter === 'active'}
-          onClick={() => onStatusFilterChange(statusFilter === 'active' ? 'all' : 'active')}
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
-            statusFilter === 'active'
-              ? 'bg-card text-foreground shadow-2xs font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
+        </HistoryFilterButton>
+        <HistoryFilterButton
+          selected={statusFilter === 'active'}
+          onClick={() => toggleFilter(statusFilter, 'active', 'all', onStatusFilterChange)}
         >
           <AlertCircle className="w-3.5 h-3.5 text-warning-fg" />
           <span>In Progress</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={modeFilter === 'flashcard'}
-          onClick={() => onModeFilterChange(modeFilter === 'flashcard' ? 'all' : 'flashcard')}
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5',
-            modeFilter === 'flashcard'
-              ? 'bg-card text-foreground shadow-2xs font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
+        </HistoryFilterButton>
+        <HistoryFilterButton
+          selected={modeFilter === 'flashcard'}
+          onClick={() => toggleFilter(modeFilter, 'flashcard', 'all', onModeFilterChange)}
         >
           <GraduationCap className="w-3.5 h-3.5" />
           <span>Flashcard</span>
-        </button>
+        </HistoryFilterButton>
       </div>
     </div>
   )

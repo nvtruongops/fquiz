@@ -1,28 +1,15 @@
-import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 import { connectDB } from '@/lib/db/mongodb'
 import { User } from '@/lib/models/User'
-import { JWT_EXPIRY, AUTH_COOKIE_NAME } from '@/lib/constants'
+import { AUTH_COOKIE_NAME } from '@/lib/constants'
 
-import { decrypt, type JWTPayload as AuthJWTPayload } from '@fquiz/auth'
+import { decrypt, signTokenWithSecret, type JWTPayload as AuthJWTPayload } from '@fquiz/auth'
 
 export type JWTPayload = AuthJWTPayload
 export { decrypt }
 
 export async function verifyAdminToken(req?: Request): Promise<JWTPayload | null> {
-  // 1. Check if edge proxy already verified JWT and injected x-admin-id & x-admin-role
-  if (req) {
-    const headerUserId = req.headers.get('x-admin-id')
-    const headerRole = req.headers.get('x-admin-role')
-    if (headerUserId && headerRole && headerRole === 'admin') {
-      return {
-        userId: headerUserId,
-        role: headerRole,
-      }
-    }
-  }
-
-  // 2. Cookie or authorization header check
+  // Verify the request credential directly, even when the proxy added identity headers.
   let token: string | undefined
 
   if (req) {
@@ -64,15 +51,15 @@ export async function verifyAdminToken(req?: Request): Promise<JWTPayload | null
     const user = await User.findById(jwtPayload.userId).select('token_version status role').lean()
     
     if (!user) return null
-    if (user.status === 'banned') return null
+    if (user.status !== 'active') return null
     if (user.role !== 'admin') return null
-    if (jwtPayload.v !== undefined && user.token_version !== undefined && user.token_version !== jwtPayload.v) {
+    if (jwtPayload.v === undefined || user.token_version === undefined || user.token_version !== jwtPayload.v) {
       return null
     }
 
     return jwtPayload
   } catch {
-    return jwtPayload
+    return null
   }
 }
 
@@ -82,16 +69,7 @@ export async function signAdminToken(
   v: number = 1,
   meta?: { username?: string; avatarUrl?: string }
 ): Promise<string> {
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fquiz-admin-default-secret-key-32ch')
-  return new SignJWT({
-    userId,
-    role,
-    v,
-    username: meta?.username ?? '',
-    avatarUrl: meta?.avatarUrl ?? '',
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRY)
-    .sign(secret)
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) throw new Error('JWT_SECRET is required to sign admin tokens')
+  return signTokenWithSecret(jwtSecret, userId, role, v, meta)
 }
