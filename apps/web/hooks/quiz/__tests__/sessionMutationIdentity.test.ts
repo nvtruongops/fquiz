@@ -96,4 +96,23 @@ describe('installed query-core pending mutation session identity', () => {
       'navigate:/quiz/q1/result/s1',
     ])
   })
+
+  it('navigates after finalization without waiting for dashboard or history refetches', async () => {
+    const options = renderHook(() => useSessionFinalize({ sessionId: 's1', quizId: 'q1' })).finalizeMutation as any
+    const finishInvalidations: Array<() => void> = []
+    jest.spyOn(mockClient, 'invalidateQueries').mockImplementation(() => new Promise<void>((resolve) => {
+      finishInvalidations.push(resolve)
+    }))
+
+    const onSuccess = options.onSuccess(
+      { completed: true, score: 1, totalQuestions: 1 },
+      undefined,
+      { sessionId: 's1', quizId: 'q1' },
+    )
+    await Promise.resolve()
+
+    expect(mockEvents).toContain('navigate:/quiz/q1/result/s1')
+    finishInvalidations.forEach((finish) => finish())
+    await onSuccess
+  })
 })

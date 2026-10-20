@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
-import { useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
 const submissionTimeoutMs = 30_000
 
-async function submitSession(sessionId: string, onResultReady: () => void) {
+async function submitSession(sessionId: string) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), submissionTimeoutMs)
   try {
@@ -25,7 +24,6 @@ async function submitSession(sessionId: string, onResultReady: () => void) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.error ?? 'Failed to submit quiz')
     }
-    onResultReady()
     return await res.json()
   } catch (error) {
     if (controller.signal.aborted) throw new Error('Submission timed out. Please try again.')
@@ -53,7 +51,6 @@ export function useSessionFinalize({
 }: UseSessionFinalizeParams): UseSessionFinalizeResult {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const sessionLoader = useSessionLoader()
   const permissionRef = useRef({ sessionId, canFinalize })
   permissionRef.current = { sessionId, canFinalize }
 
@@ -62,25 +59,15 @@ export function useSessionFinalize({
     onMutate: () => ({ sessionId, quizId }),
     mutationFn: async () => {
       if (permissionRef.current.sessionId !== sessionId || !permissionRef.current.canFinalize()) throw new Error('Save all answers in the active tab before submitting.')
-      sessionLoader.open('Submitting exam and scoring...')
-      sessionLoader.advance(50, 'Analyzing results...')
-      return submitSession(sessionId, () => {
-        if (permissionRef.current.sessionId === sessionId) sessionLoader.advance(95, 'Preparing result summary...')
-      })
+      return submitSession(sessionId)
     },
-    onSuccess: async (_data, _variables, request) => {
+    onSuccess: (_data, _variables, request) => {
       if (!request || permissionRef.current.sessionId !== request.sessionId) return
-      await Promise.all([
+      void Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ['student', 'dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['history'] }),
       ])
-      sessionLoader.completeAndNavigate(() => {
-        router.push(`/quiz/${request.quizId}/result/${request.sessionId}`)
-      })
-    },
-    onError: (_error, _variables, request) => {
-      if (request && permissionRef.current.sessionId !== request.sessionId) return
-      sessionLoader.close()
+      router.push(`/quiz/${request.quizId}/result/${request.sessionId}`)
     },
   })
 

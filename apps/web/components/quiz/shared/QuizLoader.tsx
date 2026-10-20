@@ -97,7 +97,7 @@ export function useQuizLoader() {
 export function useSessionLoader(initiallyOpen = false) {
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
-  const [isOpen, setIsOpen] = useState(initiallyOpen)
+  const [isOpen, setIsOpen] = useState(initiallyOpen && !isQuizLoaderActive())
   const openedAtRef = useRef<number>(0)
   const isNavigatingRef = useRef(false) // Prevents auto-close during navigation
 
