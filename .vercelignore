@@ -80,4 +80,8 @@ e2e
 **/e2e
 docs
 **/docs
+.agents
+**/.agents
+.superpowers
+**/.superpowers
 

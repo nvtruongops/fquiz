@@ -103,7 +103,8 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
   const gradeLabel = percentage >= 80 ? 'EXCELLENT!' : percentage >= 50 ? 'GOOD JOB!' : 'KEEP PRACTICING!'
 
   return (
-    <div className="w-full max-w-full min-h-[calc(100vh-4rem)] md:h-full flex flex-col gap-3 overflow-hidden px-1 sm:px-0">
+    <div className="w-full max-w-full min-h-result-page md:h-full flex flex-col gap-3 overflow-hidden px-1 sm:px-0">
+      <h1 className="sr-only">Quiz results</h1>
       {/* Top Header Summary Card */}
       <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xs border border-border p-3.5 sm:px-5 sm:py-3.5 shrink-0 space-y-3">
         {/* Top Summary Row */}

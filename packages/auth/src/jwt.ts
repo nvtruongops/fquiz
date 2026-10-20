@@ -46,6 +46,21 @@ export async function verifyToken(req: Request): Promise<JWTPayload | null> {
   return decrypt(token)
 }
 
+export async function signTokenWithSecret(
+  secretStr: string,
+  userId: string,
+  role: string,
+  v: number = 1,
+  meta?: { username?: string; avatarUrl?: string }
+): Promise<string> {
+  const secret = new TextEncoder().encode(secretStr)
+  return new SignJWT({ userId, role, v, username: meta?.username ?? '', avatarUrl: meta?.avatarUrl ?? '' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(JWT_EXPIRY)
+    .sign(secret)
+}
+
 export async function signToken(
   userId: string,
   role: string,
@@ -53,12 +68,7 @@ export async function signToken(
   meta?: { username?: string; avatarUrl?: string }
 ): Promise<string> {
   const secretStr = process.env.JWT_SECRET || 'REMOVED_LEGACY_SECRET'
-  const secret = new TextEncoder().encode(secretStr)
-  return new SignJWT({ userId, role, v, username: meta?.username ?? '', avatarUrl: meta?.avatarUrl ?? '' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRY)
-    .sign(secret)
+  return signTokenWithSecret(secretStr, userId, role, v, meta)
 }
 
 export function checkRole(payload: JWTPayload, role: string): boolean {

@@ -22,178 +22,363 @@ interface DesktopFlashcardViewProps {
   sessionId: string
 }
 
-export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardViewProps) {
-  const router = useRouter()
-  const {
-    session,
-    question,
-    isLoading,
-    isPreloading,
-    error,
-    submitAnswer,
+const INTERACTIVE_SELECTOR = [
+  'input',
+  'textarea',
+  'select',
+  'button',
+  'a[href]',
+  '[role="switch"]',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="menuitem"]',
+  '[role="tab"]',
+  '[role="combobox"]',
+  '[role="listbox"]',
+  '[role="option"]',
+  '[role="slider"]',
+  '[role="spinbutton"]',
+  '[role="textbox"]',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
+type FlashcardKeyboardAction = 'flip' | 'review' | 'master'
+
+const FLASHCARD_KEYBOARD_ACTIONS: Record<string, FlashcardKeyboardAction> = {
+  ' ': 'flip',
+  '1': 'review',
+  ArrowLeft: 'review',
+  '2': 'master',
+  ArrowRight: 'master',
+}
+
+function isInteractiveElement(element: EventTarget | null) {
+  return element instanceof Element && element.closest(INTERACTIVE_SELECTOR) !== null
+}
+
+function shouldIgnoreFlashcardShortcut(
+  event: KeyboardEvent,
+  showGuideModal: boolean,
+  isSubmitting: boolean,
+  hasQuestion: boolean,
+) {
+  return [
+    event.defaultPrevented,
+    showGuideModal,
     isSubmitting,
-    setStats,
-    displayIndex,
-    setDisplayIndex,
-    enableAnimation,
-    setEnableAnimation,
-    actualIndex,
-    taggedStatus,
-    handleBack,
-    handleForward,
-  } = useFlashcardSessionState(sessionId, quizId)
+    !hasQuestion,
+    isInteractiveElement(event.target),
+    isInteractiveElement(document.activeElement),
+  ].some(Boolean)
+}
 
-  const [enableExplanation, setEnableExplanation] = useState(false)
-  const [showGuideModal, setShowGuideModal] = useState(false)
+function getFlashcardKeyboardAction(event: KeyboardEvent): FlashcardKeyboardAction | null {
+  if (event.code === 'Space') return 'flip'
+  return FLASHCARD_KEYBOARD_ACTIONS[event.key] ?? null
+}
 
-  const sessionLoader = useSessionLoader()
+function handleFlashcardKeyboardShortcut(
+  event: KeyboardEvent,
+  showGuideModal: boolean,
+  isSubmitting: boolean,
+  hasQuestion: boolean,
+  flipCard: () => void,
+  handleAnswer: (knows: boolean) => void,
+) {
+  if (shouldIgnoreFlashcardShortcut(event, showGuideModal, isSubmitting, hasQuestion)) return
+  const action = getFlashcardKeyboardAction(event)
+  if (!action) return
+  event.preventDefault()
+  if (action === 'flip') {
+    flipCard()
+    return
+  }
+  handleAnswer(action === 'master')
+}
+
+type FlashcardSessionState = ReturnType<typeof useFlashcardSessionState>
+
+type DesktopFlashcardRouteData = Pick<
+  FlashcardSessionState,
+  | 'session'
+  | 'question'
+  | 'isLoading'
+  | 'isPreloading'
+  | 'error'
+  | 'isSubmitting'
+  | 'answerError'
+  | 'failedAnswer'
+  | 'enableAnimation'
+  | 'setEnableAnimation'
+  | 'actualIndex'
+  | 'taggedStatus'
+>
+
+type ActiveDesktopFlashcardData = Omit<DesktopFlashcardRouteData, 'session' | 'question'> & {
+  session: NonNullable<FlashcardSessionState['session']>
+  question: NonNullable<FlashcardSessionState['question']>
+}
+
+type DesktopFlashcardPresentation = {
+  router: ReturnType<typeof useRouter>
+  sessionLoader: ReturnType<typeof useSessionLoader>
+  enableExplanation: boolean
+  setEnableExplanation: (enabled: boolean) => void
+  showGuideModal: boolean
+  setShowGuideModal: (open: boolean) => void
+}
+
+function getFlashcardSwipeDirection(diff: number, actualIndex: number, currentQuestionIndex: number) {
+  const shouldGoBack = diff > 100 && actualIndex > 0
+  const shouldGoForward = diff < -100 && actualIndex < currentQuestionIndex
+  const actionIndex = Number(shouldGoBack) + Number(shouldGoForward) * 2
+  return ([null, 'back', 'forward'] as const)[actionIndex] ?? null
+}
+
+function useDesktopFlashcardLoader({
+  isLoading,
+  isPreloading,
+  session,
+  sessionLoader,
+}: {
+  isLoading: boolean
+  isPreloading: boolean
+  session: FlashcardSessionState['session']
+  sessionLoader: ReturnType<typeof useSessionLoader>
+}) {
   const sessionLoaderStartedRef = useRef(false)
 
   useEffect(() => {
-    if (!sessionLoaderStartedRef.current) {
-      sessionLoaderStartedRef.current = true
-      sessionLoader.open('Preparing flashcards...')
-    }
+    if (sessionLoaderStartedRef.current) return
+    sessionLoaderStartedRef.current = true
+    sessionLoader.open('Preparing flashcards...')
   }, [sessionLoader])
 
   useEffect(() => {
-    if (!isLoading && !isPreloading && session) {
-      sessionLoader.complete()
-    }
+    const isReady = Boolean(session) && !isLoading && !isPreloading
+    if (isReady) sessionLoader.complete()
   }, [isLoading, isPreloading, session, sessionLoader])
+}
 
+function useDesktopFlashcardInteractions({
+  data,
+  sessionLoader,
+  router,
+  showGuideModal,
+}: {
+  data: Pick<FlashcardSessionState,
+    | 'session'
+    | 'question'
+    | 'submitAnswer'
+    | 'failedAnswer'
+    | 'isSubmitting'
+    | 'setStats'
+    | 'displayIndex'
+    | 'setDisplayIndex'
+    | 'actualIndex'
+    | 'handleBack'
+    | 'handleForward'
+  >
+  sessionLoader: ReturnType<typeof useSessionLoader>
+  router: ReturnType<typeof useRouter>
+  showGuideModal: boolean
+}) {
   const flashcardRef = useRef<FlashcardViewRef>(null)
   const submittedRef = useRef(false)
+  const [swipeState, setSwipeState] = useState({ startX: 0, isDragging: false })
+  const currentQuestionIndex = data.session ? data.session.current_question_index : 0
 
   useEffect(() => {
     submittedRef.current = false
-  }, [actualIndex])
+  }, [data.actualIndex])
 
   const handleAnswer = useCallback(
     (knows: boolean) => {
-      if (!session || !question || submittedRef.current) return
+      if (!data.session || !data.question || submittedRef.current) return
       submittedRef.current = true
 
-      submitAnswer(
-        { knows, questionIndex: actualIndex },
+      data.submitAnswer(
+        { knows, questionIndex: data.actualIndex },
         {
-          onSuccess: (data) => {
-            setStats(data.stats)
-            if (displayIndex !== null) {
-              setDisplayIndex(null)
-            }
+          onSuccess: (result) => {
+            data.setStats(result.stats)
+            if (data.displayIndex !== null) data.setDisplayIndex(null)
           },
           onError: () => {
             submittedRef.current = false
           },
-        }
+        },
       )
     },
-    [session, question, submitAnswer, actualIndex, displayIndex, setStats, setDisplayIndex]
+    [data],
   )
 
-  const handleExit = () => {
-    sessionLoader.open('Saving progress and exiting flashcards...')
-    sessionLoader.completeAndNavigate(() => {
-      router.push(`/dashboard`)
+  const handleRetryAnswer = () => {
+    if (!data.failedAnswer || data.isSubmitting) return
+    submittedRef.current = true
+    data.submitAnswer(data.failedAnswer, {
+      onSuccess: (result) => {
+        data.setStats(result.stats)
+        if (data.displayIndex !== null) data.setDisplayIndex(null)
+      },
+      onError: () => {
+        submittedRef.current = false
+      },
     })
   }
 
+  const handleExit = () => {
+    sessionLoader.open('Saving progress and exiting flashcards...')
+    sessionLoader.completeAndNavigate(() => router.push('/dashboard'))
+  }
+
   const handleBackgroundClick = () => {
-    if (flashcardRef.current && !isSubmitting) {
-      flashcardRef.current.flip()
-    }
+    if (flashcardRef.current && !data.isSubmitting) flashcardRef.current.flip()
   }
 
-  const [swipeState, setSwipeState] = useState({ startX: 0, isDragging: false })
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setSwipeState({ startX: e.clientX, isDragging: true })
+  const handleMouseDown = (event: React.MouseEvent) => {
+    setSwipeState({ startX: event.clientX, isDragging: true })
   }
 
-  const handleMouseUp = (e: React.MouseEvent) => {
+  const handleMouseUp = (event: React.MouseEvent) => {
     if (!swipeState.isDragging) return
-    const diff = e.clientX - swipeState.startX
-    if (diff > 100 && actualIndex > 0) {
-      handleBack()
-    } else if (diff < -100 && actualIndex < (session?.current_question_index ?? 0)) {
-      handleForward()
-    }
+    const direction = getFlashcardSwipeDirection(event.clientX - swipeState.startX, data.actualIndex, currentQuestionIndex)
+    if (direction === 'back') data.handleBack()
+    if (direction === 'forward') data.handleForward()
     setSwipeState({ startX: 0, isDragging: false })
   }
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        isSubmitting ||
-        !question
-      ) {
-        return
-      }
-
-      const isSpace = e.key === ' ' || e.code === 'Space'
-      const isLeft = e.key === '1' || e.key === 'ArrowLeft'
-      const isRight = e.key === '2' || e.key === 'ArrowRight'
-
-      if (!isSpace && !isLeft && !isRight) return
-
-      e.preventDefault()
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur()
-      }
-
-      if (isSpace) {
-        flashcardRef.current?.flip()
-      } else {
-        handleAnswer(isRight)
-      }
+    const handleKeyPress = (event: KeyboardEvent) => {
+      handleFlashcardKeyboardShortcut(
+        event,
+        showGuideModal,
+        data.isSubmitting,
+        Boolean(data.question),
+        () => flashcardRef.current?.flip(),
+        handleAnswer,
+      )
     }
 
     window.addEventListener('keydown', handleKeyPress)
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress)
-    }
-  }, [isSubmitting, question, handleAnswer])
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [data.isSubmitting, data.question, handleAnswer, showGuideModal])
 
-  if (isLoading && !session) {
+  return { flashcardRef, handleAnswer, handleRetryAnswer, handleExit, handleBackgroundClick, handleMouseDown, handleMouseUp }
+}
+
+function DesktopFlashcardGate({ data, interactions, presentation }: {
+  data: DesktopFlashcardRouteData
+  interactions: ReturnType<typeof useDesktopFlashcardInteractions>
+  presentation: DesktopFlashcardPresentation
+}) {
+  if (data.isLoading && !data.session) {
     return (
       <QuizLoadingOverlay
         isOpen={true}
-        progress={sessionLoader.progress}
-        status={sessionLoader.status || 'Preparing flashcards...'}
+        progress={presentation.sessionLoader.progress}
+        status={presentation.sessionLoader.status || 'Preparing flashcards...'}
       />
     )
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="p-6 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold mb-4">An error occurred</h2>
-          <p className="text-muted-foreground mb-6">{error.message || 'Unable to load session'}</p>
-          <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
-        </Card>
-      </div>
-    )
+  return <DesktopFlashcardRouteStatus data={data} interactions={interactions} presentation={presentation} />
+}
+
+function FlashcardSessionErrorState({ error, router }: {
+  error: NonNullable<FlashcardSessionState['error']>
+  router: ReturnType<typeof useRouter>
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="p-6 max-w-md w-full text-center">
+        <h2 className="text-xl font-semibold mb-4">An error occurred</h2>
+        <p className="text-muted-foreground mb-6">{error.message || 'Unable to load session'}</p>
+        <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
+      </Card>
+    </div>
+  )
+}
+
+function DesktopFlashcardRouteStatus({ data, interactions, presentation }: {
+  data: DesktopFlashcardRouteData
+  interactions: ReturnType<typeof useDesktopFlashcardInteractions>
+  presentation: DesktopFlashcardPresentation
+}) {
+  if (data.error) {
+    return <FlashcardSessionErrorState error={data.error} router={presentation.router} />
   }
 
+  const { session, question } = data
   if (!session || !question) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-6 max-w-md w-full text-center">
           <h2 className="text-xl font-semibold mb-4">No data found</h2>
           <p className="text-muted-foreground mb-6">Unable to load question details</p>
-          <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
+          <Button onClick={() => presentation.router.push('/dashboard')}>Return to Dashboard</Button>
         </Card>
       </div>
     )
   }
 
   return (
+    <DesktopFlashcardReadyView
+      data={{ ...data, session, question }}
+      interactions={interactions}
+      presentation={presentation}
+    />
+  )
+}
+
+function FlashcardAnswerRetryCard({ answerError, isSubmitting, onRetry }: {
+  answerError: NonNullable<FlashcardSessionState['answerError']>
+  isSubmitting: boolean
+  onRetry: () => void
+}) {
+  return (
+    <Card className="mt-4 flex w-full max-w-2xl items-center justify-between gap-4 p-4" role="alert">
+      <p className="text-sm text-destructive">{answerError.message || 'Unable to save answer.'}</p>
+      <Button onClick={onRetry} disabled={isSubmitting} size="sm">
+        {isSubmitting ? 'Retrying…' : 'Retry answer'}
+      </Button>
+    </Card>
+  )
+}
+
+function FlashcardAnswerError({ answerError, failedAnswer, isSubmitting, onRetry }: {
+  answerError: FlashcardSessionState['answerError']
+  failedAnswer: FlashcardSessionState['failedAnswer']
+  isSubmitting: boolean
+  onRetry: () => void
+}) {
+  if (!answerError || !failedAnswer) return null
+  return <FlashcardAnswerRetryCard answerError={answerError} isSubmitting={isSubmitting} onRetry={onRetry} />
+}
+
+function DesktopFlashcardReadyView({ data, interactions, presentation }: {
+  data: ActiveDesktopFlashcardData
+  interactions: ReturnType<typeof useDesktopFlashcardInteractions>
+  presentation: DesktopFlashcardPresentation
+}) {
+  const { session, question, isSubmitting, answerError, failedAnswer, enableAnimation, setEnableAnimation, actualIndex, taggedStatus } = data
+  const {
+    flashcardRef,
+    handleAnswer,
+    handleRetryAnswer,
+    handleExit,
+    handleBackgroundClick,
+    handleMouseDown,
+    handleMouseUp,
+  } = interactions
+  const { sessionLoader, enableExplanation, setEnableExplanation, showGuideModal, setShowGuideModal } = presentation
+
+  return (
     <div
-      className="min-h-[100dvh] flex flex-col bg-background font-sans select-none overflow-x-hidden"
+      className="min-h-dvh flex flex-col bg-background font-sans select-none overflow-x-hidden"
       onClick={handleBackgroundClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
@@ -207,7 +392,7 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
       {/* Top Navigation */}
       <header
         className="w-full max-w-5xl mx-auto px-4 py-4 sm:py-6 flex items-center justify-between z-20"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-3">
           <Button
@@ -267,6 +452,7 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
           <div className="flex items-center gap-2">
             <span>Effects</span>
             <Switch
+              aria-label="Effects"
               checked={enableAnimation}
               onCheckedChange={setEnableAnimation}
               className="data-[state=checked]:bg-primary"
@@ -275,6 +461,7 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
           <div className="flex items-center gap-2">
             <span>Explanation</span>
             <Switch
+              aria-label="Explanation"
               checked={enableExplanation}
               onCheckedChange={setEnableExplanation}
               className="data-[state=checked]:bg-primary"
@@ -286,7 +473,7 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
       {/* Main Flashcard Container */}
       <main
         className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full px-4 pb-8 z-10"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <FlashcardView
           ref={flashcardRef}
@@ -299,7 +486,50 @@ export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardView
           enableExplanation={enableExplanation}
           taggedStatus={taggedStatus}
         />
+        <FlashcardAnswerError
+          answerError={answerError}
+          failedAnswer={failedAnswer}
+          isSubmitting={isSubmitting}
+          onRetry={handleRetryAnswer}
+        />
       </main>
     </div>
+  )
+}
+
+export function DesktopFlashcardView({ quizId, sessionId }: DesktopFlashcardViewProps) {
+  const router = useRouter()
+  const data = useFlashcardSessionState(sessionId, quizId)
+  const [enableExplanation, setEnableExplanation] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
+  const sessionLoader = useSessionLoader()
+
+  useDesktopFlashcardLoader({
+    isLoading: data.isLoading,
+    isPreloading: data.isPreloading,
+    session: data.session,
+    sessionLoader,
+  })
+
+  const interactions = useDesktopFlashcardInteractions({
+    data,
+    sessionLoader,
+    router,
+    showGuideModal,
+  })
+
+  return (
+    <DesktopFlashcardGate
+      data={data}
+      interactions={interactions}
+      presentation={{
+        router,
+        sessionLoader,
+        enableExplanation,
+        setEnableExplanation,
+        showGuideModal,
+        setShowGuideModal,
+      }}
+    />
   )
 }

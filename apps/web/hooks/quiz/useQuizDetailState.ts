@@ -45,6 +45,36 @@ export interface ActiveSessionPayload {
 export type QuizDetailApiError = Error & { status?: number; code?: string; hint?: string }
 export type StartSessionError = Error & { status?: number; code?: string; activeSession?: ActiveSessionPayload }
 
+function firstDefined<T>(...values: Array<T | null | undefined>) {
+  return values.find((value) => value !== null && value !== undefined)
+}
+
+function studentQuizCategoryName(quiz: any) {
+  return firstDefined(quiz.category_id?.name, quiz.categoryName, 'General') ?? 'General'
+}
+
+function studentQuizQuestionCount(quiz: any) {
+  return firstDefined(quiz.num_questions, quiz.questionCount, quiz.questions?.length, 0) ?? 0
+}
+
+function studentQuizAttemptCount(quiz: any) {
+  return firstDefined(quiz.num_attempts, quiz.studentCount, 0) ?? 0
+}
+
+function toStudentQuizDetail(quiz: any): QuizDetail {
+  return {
+    _id: quiz._id,
+    title: quiz.title,
+    description: quiz.description || '',
+    category_id: { name: studentQuizCategoryName(quiz) },
+    course_code: quiz.course_code,
+    num_questions: studentQuizQuestionCount(quiz),
+    num_attempts: studentQuizAttemptCount(quiz),
+    created_at: quiz.created_at ?? quiz.createdAt,
+    is_temp: quiz.is_temp,
+  }
+}
+
 async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {
   const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.STUDENT.QUIZZES(id)}`)
 
@@ -54,41 +84,28 @@ async function fetchStudentQuizDetail(id: string): Promise<QuizDetail | null> {
     if (typeof q?._id !== 'string' || !q._id.trim() || typeof q.title !== 'string' || !q.title.trim()) {
       throw new Error('Invalid student quiz detail response: missing quiz id or title.')
     }
-    return {
-      _id: q._id,
-      title: q.title,
-      description: q.description || '',
-      category_id: { name: q.category_id?.name || q.categoryName || 'General' },
-      course_code: q.course_code,
-      num_questions: q.num_questions ?? q.questionCount ?? q.questions?.length ?? 0,
-      num_attempts: q.num_attempts ?? q.studentCount ?? 0,
-      created_at: q.created_at ?? q.createdAt,
-      is_temp: q.is_temp,
-    }
+    return toStudentQuizDetail(q)
   }
 
   if (studentRes.status === 401 || studentRes.status === 404) {
     return null
   }
 
-  const data = (await studentRes.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
-  const error = new Error(data.error || `You do not have permission to access this quiz (Error ${studentRes.status}).`) as QuizDetailApiError
-  error.status = studentRes.status
+  throw await createQuizDetailError(studentRes, `You do not have permission to access this quiz (Error ${studentRes.status}).`)
+}
+
+async function createQuizDetailError(res: Response, fallback: string): Promise<QuizDetailApiError> {
+  const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
+  const error = new Error(data.error || fallback) as QuizDetailApiError
+  error.status = res.status
   error.code = data.code
   error.hint = data.hint
-  throw error
+  return error
 }
 
 async function fetchPublicQuizDetail(id: string): Promise<QuizDetail> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}${API_ROUTES.PUBLIC.QUIZ_DETAIL(id)}`)
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string; hint?: string }
-    const error = new Error(data.error || 'Unable to load quiz details.') as QuizDetailApiError
-    error.status = res.status
-    error.code = data.code
-    error.hint = data.hint
-    throw error
-  }
+  if (!res.ok) throw await createQuizDetailError(res, 'Unable to load quiz details.')
 
   const response = await res.json()
   const publicQuiz = response.data
@@ -108,6 +125,42 @@ async function fetchPublicQuizDetail(id: string): Promise<QuizDetail> {
 function hasCookieToken(): boolean {
   if (typeof document === 'undefined') return false
   return /(?:^|;\s*)(?:auth-token|token)=/.test(document.cookie)
+}
+
+function storeSessionPreload(storageKey: string, value: unknown) {
+  try {
+    sessionStorage.setItem(storageKey, JSON.stringify(value))
+  } catch (_storageErr) {
+    // Ignore sessionStorage quota or access errors in private browsing
+  }
+}
+
+function cacheSessionPreloads(
+  queryClient: ReturnType<typeof useQueryClient>,
+  sessionId: string,
+  initialData?: unknown,
+  preloadData?: unknown,
+) {
+  if (initialData) {
+    queryClient.setQueryData(['sessions', sessionId, 'initial'], initialData)
+    storeSessionPreload(`session_initial_preload_${sessionId}`, initialData)
+  }
+  if (preloadData) {
+    queryClient.setQueryData(['sessions', sessionId, 'all-questions'], preloadData)
+    storeSessionPreload(`session_preload_${sessionId}`, preloadData)
+  }
+}
+
+function getSessionTargetUrl(mode: string, quizId: string | undefined, sessionId: string) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  if (mode !== 'flashcard') return `/quiz/${quizId}/session/${sessionId}`
+  return isMobile
+    ? `/quiz/${quizId}/session/${sessionId}/flashcard/mobile`
+    : `/quiz/${quizId}/session/${sessionId}/flashcard`
+}
+
+function getConflictingSession(activeSessionData: any, mode: string) {
+  return mode === 'flashcard' ? activeSessionData?.learningSession : activeSessionData?.assessmentSession
 }
 
 async function fetchQuizDetail(id: string, isAuth?: boolean): Promise<QuizDetail> {
@@ -222,24 +275,7 @@ export function useQuizDetailState() {
       }
       const sessionData = await res.json()
 
-      if (sessionData.sessionId) {
-        if (sessionData.initialData) {
-          queryClient.setQueryData(['sessions', sessionData.sessionId, 'initial'], sessionData.initialData)
-          try {
-            sessionStorage.setItem(`session_initial_preload_${sessionData.sessionId}`, JSON.stringify(sessionData.initialData))
-          } catch (_storageErr) {
-            // Ignore sessionStorage quota or access errors in private browsing
-          }
-        }
-        if (sessionData.preloadData) {
-          queryClient.setQueryData(['sessions', sessionData.sessionId, 'all-questions'], sessionData.preloadData)
-          try {
-            sessionStorage.setItem(`session_preload_${sessionData.sessionId}`, JSON.stringify(sessionData.preloadData))
-          } catch (_storageErr) {
-            // Ignore sessionStorage quota or access errors in private browsing
-          }
-        }
-      }
+      if (sessionData.sessionId) cacheSessionPreloads(queryClient, sessionData.sessionId, sessionData.initialData, sessionData.preloadData)
 
       return sessionData as CreateSessionResponse
     },
@@ -247,30 +283,8 @@ export function useQuizDetailState() {
       const nextSessionId = data.sessionId
       if (!nextSessionId) return
 
-      if (data.initialData) {
-        queryClient.setQueryData(['sessions', nextSessionId, 'initial'], data.initialData)
-        try {
-          sessionStorage.setItem(`session_initial_preload_${nextSessionId}`, JSON.stringify(data.initialData))
-        } catch (_storageErr) {
-          // Ignore sessionStorage quota or access errors in private browsing
-        }
-      }
-      if (data.preloadData) {
-        queryClient.setQueryData(['sessions', nextSessionId, 'all-questions'], data.preloadData)
-        try {
-          sessionStorage.setItem(`session_preload_${nextSessionId}`, JSON.stringify(data.preloadData))
-        } catch (_storageErr) {
-          // Ignore sessionStorage quota or access errors in private browsing
-        }
-      }
-
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-      const targetUrl =
-        data.mode === 'flashcard'
-          ? isMobile
-            ? `/quiz/${quizId}/session/${nextSessionId}/flashcard/mobile`
-            : `/quiz/${quizId}/session/${nextSessionId}/flashcard`
-          : `/quiz/${quizId}/session/${nextSessionId}`
+      cacheSessionPreloads(queryClient, nextSessionId, data.initialData, data.preloadData)
+      const targetUrl = getSessionTargetUrl(data.mode, quizId, nextSessionId)
 
       completeLoading()
       router.push(targetUrl)
@@ -293,7 +307,7 @@ export function useQuizDetailState() {
 
   const handleStart = useCallback(() => {
     const isLearning = selectedMode === 'flashcard'
-    const conflict = isLearning ? activeSessionData?.learningSession : activeSessionData?.assessmentSession
+    const conflict = getConflictingSession(activeSessionData, selectedMode)
 
     if (conflict) {
       setModeSelectOpen(false)
@@ -311,13 +325,7 @@ export function useQuizDetailState() {
       if (!sessionId) return
       const isLearning = activeSessionData?.learningSession?.sessionId === sessionId
       const activeMode = isLearning ? 'flashcard' : activeSessionData?.assessmentSession?.mode || 'immediate'
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-      const targetUrl =
-        activeMode === 'flashcard'
-          ? isMobile
-            ? `/quiz/${resolvedQuizId}/session/${sessionId}/flashcard/mobile`
-            : `/quiz/${resolvedQuizId}/session/${sessionId}/flashcard`
-          : `/quiz/${resolvedQuizId}/session/${sessionId}`
+      const targetUrl = getSessionTargetUrl(activeMode, resolvedQuizId, sessionId)
 
       startLoading('Resuming session...')
       completeLoading()

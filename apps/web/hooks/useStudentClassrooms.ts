@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, type Dispatch, type SetStateAction } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
@@ -39,23 +39,196 @@ export interface Assignment {
   }
 }
 
+interface ClassroomHookState {
+  classrooms: Classroom[]
+  selectedClassroom: Classroom | null
+  assignments: Assignment[]
+  assignmentsClassroomId: string | null
+  assignmentsLoading: boolean
+  loading: boolean
+  classroomsError: string
+  assignmentsError: string
+  joinModalOpen: boolean
+  joinCode: string
+  joinPassword: string
+  showJoinPassword: boolean
+  joining: boolean
+  errorMessage: string
+  successMessage: string
+  confirmLeaveId: string | null
+}
+
+interface ClassroomHookSetters {
+  setClassrooms: Dispatch<SetStateAction<Classroom[]>>
+  setSelectedClassroom: Dispatch<SetStateAction<Classroom | null>>
+  setAssignments: Dispatch<SetStateAction<Assignment[]>>
+  setAssignmentsClassroomId: Dispatch<SetStateAction<string | null>>
+  setAssignmentsLoading: Dispatch<SetStateAction<boolean>>
+  setLoading: Dispatch<SetStateAction<boolean>>
+  setClassroomsError: Dispatch<SetStateAction<string>>
+  setAssignmentsError: Dispatch<SetStateAction<string>>
+  setJoinModalOpen: Dispatch<SetStateAction<boolean>>
+  setJoinCode: Dispatch<SetStateAction<string>>
+  setJoinPassword: Dispatch<SetStateAction<string>>
+  setShowJoinPassword: Dispatch<SetStateAction<boolean>>
+  setJoining: Dispatch<SetStateAction<boolean>>
+  setErrorMessage: Dispatch<SetStateAction<string>>
+  setSuccessMessage: Dispatch<SetStateAction<string>>
+  setConfirmLeaveId: Dispatch<SetStateAction<string | null>>
+}
+
+const INITIAL_CLASSROOM_HOOK_STATE: ClassroomHookState = {
+  classrooms: [],
+  selectedClassroom: null,
+  assignments: [],
+  assignmentsClassroomId: null,
+  assignmentsLoading: false,
+  loading: true,
+  classroomsError: '',
+  assignmentsError: '',
+  joinModalOpen: false,
+  joinCode: '',
+  joinPassword: '',
+  showJoinPassword: false,
+  joining: false,
+  errorMessage: '',
+  successMessage: '',
+  confirmLeaveId: null,
+}
+
+function createClassroomFieldSetter<Key extends keyof ClassroomHookState>(
+  update: Dispatch<SetStateAction<ClassroomHookState>>,
+  key: Key,
+): Dispatch<SetStateAction<ClassroomHookState[Key]>> {
+  return (value) => update((state) => ({
+    ...state,
+    [key]: typeof value === 'function'
+      ? (value as (current: ClassroomHookState[Key]) => ClassroomHookState[Key])(state[key])
+      : value,
+  }))
+}
+
+function useClassroomState() {
+  const [state, setState] = useState(INITIAL_CLASSROOM_HOOK_STATE)
+  const setters = useMemo<ClassroomHookSetters>(() => ({
+    setClassrooms: createClassroomFieldSetter(setState, 'classrooms'),
+    setSelectedClassroom: createClassroomFieldSetter(setState, 'selectedClassroom'),
+    setAssignments: createClassroomFieldSetter(setState, 'assignments'),
+    setAssignmentsClassroomId: createClassroomFieldSetter(setState, 'assignmentsClassroomId'),
+    setAssignmentsLoading: createClassroomFieldSetter(setState, 'assignmentsLoading'),
+    setLoading: createClassroomFieldSetter(setState, 'loading'),
+    setClassroomsError: createClassroomFieldSetter(setState, 'classroomsError'),
+    setAssignmentsError: createClassroomFieldSetter(setState, 'assignmentsError'),
+    setJoinModalOpen: createClassroomFieldSetter(setState, 'joinModalOpen'),
+    setJoinCode: createClassroomFieldSetter(setState, 'joinCode'),
+    setJoinPassword: createClassroomFieldSetter(setState, 'joinPassword'),
+    setShowJoinPassword: createClassroomFieldSetter(setState, 'showJoinPassword'),
+    setJoining: createClassroomFieldSetter(setState, 'joining'),
+    setErrorMessage: createClassroomFieldSetter(setState, 'errorMessage'),
+    setSuccessMessage: createClassroomFieldSetter(setState, 'successMessage'),
+    setConfirmLeaveId: createClassroomFieldSetter(setState, 'confirmLeaveId'),
+  }), [setState])
+  return { ...state, ...setters }
+}
+
+async function fetchClassroomAssignments(classroomId: string): Promise<Assignment[]> {
+  const res = await fetch(`/api/student/classrooms/${classroomId}/assignments`)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to load assignments')
+  return data.assignments || []
+}
+
+function runIfLatest(requestId: number, latestRequest: { current: number }, update: () => void) {
+  if (requestId === latestRequest.current) update()
+}
+
+async function loadClassrooms(): Promise<Classroom[]> {
+  const res = await fetch('/api/student/classrooms')
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to load classrooms')
+  return data.classrooms || []
+}
+
+function normalizeJoinCode(value: string): string | null {
+  const code = value.trim()
+  return code.length === 6 ? code.toUpperCase() : null
+}
+
+async function requestClassroomJoin(code: string, password: string) {
+  const res = await fetch('/api/student/classrooms/join', {
+    method: 'POST',
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ code, password: password.trim() }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to join classroom')
+  return data
+}
+
+async function requestClassroomLeave(classroomId: string): Promise<string | null> {
+  const res = await fetch(`/api/student/classrooms/${classroomId}/leave`, {
+    method: 'POST',
+    headers: withCsrfHeaders(),
+  })
+  if (res.ok) return null
+  const data = await res.json()
+  return data.error || 'Failed to leave classroom'
+}
+
+function getVisibleClassroomAssignments(
+  classroom: Classroom | null,
+  assignmentsClassroomId: string | null,
+  assignments: Assignment[],
+) {
+  return classroom?._id === assignmentsClassroomId ? assignments : []
+}
+
+function isClassroomAssignmentsLoading(
+  classroom: Classroom | null,
+  assignmentsLoading: boolean,
+  assignmentsClassroomId: string | null,
+) {
+  return Boolean(classroom && (assignmentsLoading || assignmentsClassroomId !== classroom._id))
+}
+
 export function useStudentClassrooms() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [classrooms, setClassrooms] = useState<Classroom[]>([])
-  const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null)
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const [joinModalOpen, setJoinModalOpen] = useState(false)
-  const [joinCode, setJoinCode] = useState('')
-  const [joinPassword, setJoinPassword] = useState('')
-  const [showJoinPassword, setShowJoinPassword] = useState(false)
-  const [joining, setJoining] = useState(false)
-
-  const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
-  const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null)
+  const {
+    classrooms,
+    setClassrooms,
+    selectedClassroom,
+    setSelectedClassroom,
+    assignments,
+    setAssignments,
+    assignmentsClassroomId,
+    setAssignmentsClassroomId,
+    assignmentsLoading,
+    setAssignmentsLoading,
+    loading,
+    setLoading,
+    classroomsError,
+    setClassroomsError,
+    assignmentsError,
+    setAssignmentsError,
+    joinModalOpen,
+    setJoinModalOpen,
+    joinCode,
+    setJoinCode,
+    joinPassword,
+    setJoinPassword,
+    showJoinPassword,
+    setShowJoinPassword,
+    joining,
+    setJoining,
+    errorMessage,
+    setErrorMessage,
+    successMessage,
+    setSuccessMessage,
+    confirmLeaveId,
+    setConfirmLeaveId,
+  } = useClassroomState()
+  const assignmentsRequestId = useRef(0)
 
   useEffect(() => {
     const codeParam = searchParams?.get('joinCode')
@@ -66,32 +239,41 @@ export function useStudentClassrooms() {
   }, [searchParams])
 
   const fetchClassrooms = useCallback(async () => {
+    setClassroomsError('')
     try {
       setLoading(true)
-      const res = await fetch('/api/student/classrooms')
-      const data = await res.json()
-      if (res.ok) {
-        const list = data.classrooms || []
-        setClassrooms(list)
-        setSelectedClassroom(prev => prev || (list.length > 0 ? list[0] : null))
-      }
+      const list = await loadClassrooms()
+      setClassrooms(list)
+      setSelectedClassroom(prev => prev || (list.length > 0 ? list[0] : null))
     } catch (err) {
       console.error('Failed to load classrooms:', err)
+      setClassroomsError('Unable to load classrooms. Please try again.')
     } finally {
       setLoading(false)
     }
   }, [])
 
   const fetchAssignments = async (classroomId: string) => {
+    const requestId = ++assignmentsRequestId.current
+    setAssignmentsError('')
+    setAssignmentsClassroomId(classroomId)
+    setAssignmentsLoading(true)
+    setAssignments([])
     try {
-      const res = await fetch(`/api/student/classrooms/${classroomId}/assignments`)
-      const data = await res.json()
-      if (res.ok) {
-        setAssignments(data.assignments || [])
-      }
+      const assignments = await fetchClassroomAssignments(classroomId)
+      runIfLatest(requestId, assignmentsRequestId, () => setAssignments(assignments))
     } catch (err) {
-      console.error('Failed to load assignments:', err)
+      runIfLatest(requestId, assignmentsRequestId, () => {
+        console.error('Failed to load assignments:', err)
+        setAssignmentsError('Unable to load assignments. Please try again.')
+      })
+    } finally {
+      runIfLatest(requestId, assignmentsRequestId, () => setAssignmentsLoading(false))
     }
+  }
+
+  const retryAssignments = () => {
+    if (selectedClassroom) void fetchAssignments(selectedClassroom._id)
   }
 
   useEffect(() => {
@@ -106,7 +288,8 @@ export function useStudentClassrooms() {
 
   const handleJoinClass = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!joinCode.trim() || joinCode.length !== 6) {
+    const code = normalizeJoinCode(joinCode)
+    if (!code) {
       setErrorMessage('Classroom code must be exactly 6 characters')
       return
     }
@@ -114,19 +297,7 @@ export function useStudentClassrooms() {
     try {
       setJoining(true)
       setErrorMessage('')
-      const res = await fetch('/api/student/classrooms/join', {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          code: joinCode.trim().toUpperCase(),
-          password: joinPassword.trim(),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to join classroom')
-      }
-
+      const data = await requestClassroomJoin(code, joinPassword)
       setSuccessMessage(data.message || 'Joined classroom successfully')
       setJoinCode('')
       setJoinPassword('')
@@ -156,20 +327,14 @@ export function useStudentClassrooms() {
 
   const handleLeaveClass = async (classroomId: string) => {
     try {
-      const res = await fetch(`/api/student/classrooms/${classroomId}/leave`, {
-        method: 'POST',
-        headers: withCsrfHeaders(),
-      })
-      if (res.ok) {
-        setConfirmLeaveId(null)
-        if (selectedClassroom?._id === classroomId) {
-          setSelectedClassroom(null)
-        }
-        fetchClassrooms()
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to leave classroom')
+      const error = await requestClassroomLeave(classroomId)
+      if (error) {
+        toast.error(error)
+        return
       }
+      setConfirmLeaveId(null)
+      if (selectedClassroom?._id === classroomId) setSelectedClassroom(null)
+      fetchClassrooms()
     } catch (err) {
       console.error('Failed to leave classroom:', err)
     }
@@ -178,8 +343,13 @@ export function useStudentClassrooms() {
   return {
     classrooms,
     selectedClassroom, setSelectedClassroom,
-    assignments,
+    assignments: getVisibleClassroomAssignments(selectedClassroom, assignmentsClassroomId, assignments),
+    assignmentsLoading: isClassroomAssignmentsLoading(selectedClassroom, assignmentsLoading, assignmentsClassroomId),
     loading,
+    classroomsError,
+    assignmentsError,
+    retryClassrooms: fetchClassrooms,
+    retryAssignments,
     joinModalOpen, setJoinModalOpen,
     joinCode, setJoinCode,
     joinPassword, setJoinPassword,

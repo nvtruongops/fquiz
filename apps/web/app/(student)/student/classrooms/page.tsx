@@ -10,13 +10,109 @@ import { ClassroomSidebarList } from '@/components/student/classrooms/ClassroomS
 import { ClassroomAssignmentsList } from '@/components/student/classrooms/ClassroomAssignmentsList'
 import { StudentClassroomModals } from '@/components/student/classrooms/StudentClassroomModals'
 
+function ClassroomEmptyOrError({ classroomsError, retryClassrooms, onJoin }: { classroomsError: string; retryClassrooms: () => void; onJoin: () => void }) {
+  if (classroomsError) {
+    return (
+      <div role="alert" className="p-8 text-center bg-destructive/10 rounded-2xl border border-destructive/20 space-y-3">
+        <p className="text-sm font-bold text-destructive">{classroomsError}</p>
+        <Button onClick={retryClassrooms} variant="outline" size="sm" className="rounded-xl text-xs font-black">
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="py-16 text-center border-2 border-dashed border-border rounded-3xl bg-card backdrop-blur-md p-8 space-y-4 shadow-xs"
+    >
+      <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+        <Users className="w-7 h-7" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-lg font-black text-foreground">You haven&apos;t joined any classrooms yet</h3>
+        <p className="text-xs font-medium text-muted-foreground max-w-md mx-auto leading-relaxed">
+          Enter the 6-character class code provided by your instructor to view assignments and class materials.
+        </p>
+      </div>
+      <Button
+        onClick={onJoin}
+        className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider rounded-2xl px-6 h-11 cursor-pointer shadow-sm"
+      >
+        Enter Class Code Now
+      </Button>
+    </motion.div>
+  )
+}
+
+function ClassroomPageBody({
+  classrooms,
+  selectedClassroom,
+  assignments,
+  assignmentsLoading,
+  loading,
+  classroomsError,
+  assignmentsError,
+  retryClassrooms,
+  retryAssignments,
+  onSelectClassroom,
+  onTogglePin,
+  onJoin,
+  onConfirmLeave,
+}: {
+  classrooms: Parameters<typeof ClassroomSidebarList>[0]['classrooms']
+  selectedClassroom: Parameters<typeof ClassroomAssignmentsList>[0]['selectedClassroom']
+  assignments: Parameters<typeof ClassroomAssignmentsList>[0]['assignments']
+  assignmentsLoading: boolean
+  loading: boolean
+  classroomsError: string
+  assignmentsError: string
+  retryClassrooms: () => void
+  retryAssignments: () => void
+  onSelectClassroom: Parameters<typeof ClassroomSidebarList>[0]['onSelectClassroom']
+  onTogglePin: Parameters<typeof ClassroomSidebarList>[0]['onTogglePin']
+  onJoin: () => void
+  onConfirmLeave: Parameters<typeof ClassroomSidebarList>[0]['onConfirmLeave']
+}) {
+  if (loading) return <ClassroomsSkeleton />
+
+  if (classrooms.length === 0) {
+    return <ClassroomEmptyOrError classroomsError={classroomsError} retryClassrooms={retryClassrooms} onJoin={onJoin} />
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <ClassroomSidebarList
+        classrooms={classrooms}
+        selectedClassroom={selectedClassroom}
+        onSelectClassroom={onSelectClassroom}
+        onTogglePin={onTogglePin}
+        onConfirmLeave={onConfirmLeave}
+      />
+      <ClassroomAssignmentsList
+        assignments={assignments}
+        selectedClassroom={selectedClassroom}
+        loading={assignmentsLoading}
+        error={assignmentsError}
+        onRetry={retryAssignments}
+      />
+    </div>
+  )
+}
+
 export default function StudentClassroomsPage() {
   const {
     classrooms,
     selectedClassroom,
     setSelectedClassroom,
     assignments,
+    assignmentsLoading,
     loading,
+    classroomsError,
+    assignmentsError,
+    retryClassrooms,
+    retryAssignments,
     joinModalOpen,
     setJoinModalOpen,
     joinCode,
@@ -36,10 +132,10 @@ export default function StudentClassroomsPage() {
   } = useStudentClassrooms()
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-background relative overflow-hidden px-4 sm:px-6 md:px-10 pt-4 pb-12">
+    <div className="min-h-classroom-page bg-background relative overflow-hidden px-4 sm:px-6 md:px-10 pt-4 pb-12">
       {/* Background Mesh Ambient */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden -z-10 transform-gpu">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent blur-3xl opacity-50 transform-gpu" />
+        <div className="w-full h-full bg-classroom-ambient from-primary/15 via-primary/5 to-transparent blur-3xl opacity-50 transform-gpu" />
       </div>
 
       <div className="max-w-6xl mx-auto space-y-6 relative z-10">
@@ -65,7 +161,7 @@ export default function StudentClassroomsPage() {
 
           <Button
             onClick={() => setJoinModalOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider gap-2 rounded-2xl h-12 px-6 transition-all cursor-pointer shrink-0 active:scale-[0.98]"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider gap-2 rounded-2xl h-12 px-6 transition-all cursor-pointer shrink-0 active-press-scale"
           >
             <Plus className="w-4 h-4" /> Join New Classroom
           </Button>
@@ -82,46 +178,21 @@ export default function StudentClassroomsPage() {
           </motion.div>
         )}
 
-        {loading ? (
-          <ClassroomsSkeleton />
-        ) : classrooms.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-16 text-center border-2 border-dashed border-border rounded-3xl bg-card backdrop-blur-md p-8 space-y-4 shadow-xs"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-              <Users className="w-7 h-7" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-black text-foreground">You haven&apos;t joined any classrooms yet</h3>
-              <p className="text-xs font-medium text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Enter the 6-character class code provided by your instructor to view assignments and class materials.
-              </p>
-            </div>
-            <Button
-              onClick={() => setJoinModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider rounded-2xl px-6 h-11 cursor-pointer shadow-sm"
-            >
-              Enter Class Code Now
-            </Button>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <ClassroomSidebarList
-              classrooms={classrooms}
-              selectedClassroom={selectedClassroom}
-              onSelectClassroom={setSelectedClassroom}
-              onTogglePin={handleTogglePin}
-              onConfirmLeave={setConfirmLeaveId}
-            />
-
-            <ClassroomAssignmentsList
-              assignments={assignments}
-              selectedClassroom={selectedClassroom}
-            />
-          </div>
-        )}
+        <ClassroomPageBody
+          classrooms={classrooms}
+          selectedClassroom={selectedClassroom}
+          assignments={assignments}
+          assignmentsLoading={assignmentsLoading}
+          loading={loading}
+          classroomsError={classroomsError}
+          assignmentsError={assignmentsError}
+          retryClassrooms={retryClassrooms}
+          retryAssignments={retryAssignments}
+          onSelectClassroom={setSelectedClassroom}
+          onTogglePin={handleTogglePin}
+          onJoin={() => setJoinModalOpen(true)}
+          onConfirmLeave={setConfirmLeaveId}
+        />
       </div>
 
       <StudentClassroomModals

@@ -26,6 +26,7 @@ function HistoryContent() {
     data,
     isLoading,
     isError,
+    retry,
     stats,
     dateGroups,
   } = useStudentHistory()
@@ -90,6 +91,7 @@ function HistoryContent() {
         <HistoryGroupList
           isLoading={isLoading}
           isError={isError}
+          onRetry={retry}
           dateGroups={dateGroups}
           hasActiveFilters={hasActiveFilters}
         />

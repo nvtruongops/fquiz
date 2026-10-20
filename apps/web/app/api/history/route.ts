@@ -14,6 +14,7 @@ import {
   resolveSourceCreatorId,
 } from '@/lib/modules/quiz/quiz-source-utils'
 import { UserService } from '@/lib/modules/auth/services/UserService'
+import { getSessionRequestErrorResponse } from '@/lib/modules/quiz/session-utils'
 
 const MAX_HISTORY_SEARCH_LENGTH = 100
 
@@ -205,247 +206,312 @@ function calculateAnswerCounts(item: any) {
   return { answeredCount: 0, correctCount: 0 }
 }
 
+interface HistoryFilters {
+  page: number
+  limit: number
+  search: string
+  statusFilter: string
+  modeFilter: string
+}
+
+function parseHistoryPage(searchParams: URLSearchParams) {
+  const requested = Number.parseInt(searchParams.get('page') || '1', 10) || 1
+  return Math.max(1, requested)
+}
+
+function parseHistoryLimit(searchParams: URLSearchParams) {
+  const requested = Number.parseInt(searchParams.get('limit') || '20', 10) || 20
+  return Math.min(100, Math.max(1, requested))
+}
+
+function parseHistorySearch(searchParams: URLSearchParams) {
+  return (searchParams.get('search') || '').trim().slice(0, MAX_HISTORY_SEARCH_LENGTH)
+}
+
+function parseHistoryFilters(searchParams: URLSearchParams): { filters: HistoryFilters } | { response: NextResponse } {
+  const statusFilter = searchParams.get('status') || 'all'
+  const modeFilter = searchParams.get('mode') || 'all'
+  if (!['all', 'active', 'completed'].includes(statusFilter)) {
+    return { response: NextResponse.json({ error: 'Invalid status filter' }, { status: 400 }) }
+  }
+  if (!['all', 'immediate', 'review', 'flashcard'].includes(modeFilter)) {
+    return { response: NextResponse.json({ error: 'Invalid mode filter' }, { status: 400 }) }
+  }
+  return {
+    filters: {
+      page: parseHistoryPage(searchParams),
+      limit: parseHistoryLimit(searchParams),
+      search: parseHistorySearch(searchParams),
+      statusFilter,
+      modeFilter,
+    },
+  }
+}
+
+function buildHistoryMatchQuery(
+  userId: string | undefined,
+  quizIdParam: string | null,
+  filters: HistoryFilters,
+): Record<string, any> | null {
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) return null
+  const studentId = new mongoose.Types.ObjectId(userId)
+  const matchQuery: Record<string, any> = {
+    $or: [{ student_id: studentId }, { student_id: userId }],
+    status: { $in: ['active', 'completed'] },
+  }
+  if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
+    matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
+  }
+  if (filters.statusFilter !== 'all') matchQuery.status = filters.statusFilter
+  if (filters.modeFilter !== 'all') matchQuery.mode = filters.modeFilter
+  return matchQuery
+}
+
+interface HistoryStats {
+  totalQuizzes: number
+  totalAttempts: number
+  completedCount: number
+  perfectScores: number
+}
+
+async function loadHistoryStats(matchQuery: Record<string, any>, search: string): Promise<HistoryStats> {
+  const summaryRows = await QuizSession.aggregate([
+    ...(buildHistoryFilterPipeline(matchQuery, search) as mongoose.PipelineStage[]),
+    {
+      $group: {
+        _id: {
+          $ifNull: [
+            { $convert: { input: '$quiz_id', to: 'string', onError: null, onNull: null } },
+            { $cond: [{ $eq: ['$is_temp', true] }, 'MIX', '$historySearchCode'] },
+          ],
+        },
+        attempts: { $sum: 1 },
+        completedCount: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+        perfectScores: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$status', 'completed'] },
+                  { $gt: ['$historyTotalQuestions', 0] },
+                  { $gte: [{ $ifNull: ['$score', 0] }, '$historyTotalQuestions'] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalQuizzes: { $sum: 1 },
+        totalAttempts: { $sum: '$attempts' },
+        completedCount: { $sum: '$completedCount' },
+        perfectScores: { $sum: '$perfectScores' },
+      },
+    },
+  ])
+  const stats = summaryRows[0]
+  return stats
+    ? {
+        totalQuizzes: stats.totalQuizzes,
+        totalAttempts: stats.totalAttempts,
+        completedCount: stats.completedCount,
+        perfectScores: stats.perfectScores,
+      }
+    : { totalQuizzes: 0, totalAttempts: 0, completedCount: 0, perfectScores: 0 }
+}
+
+async function loadHistoryPageItems(
+  matchQuery: Record<string, any>,
+  search: string,
+  skip: number,
+  limit: number,
+) {
+  return await QuizSession.aggregate([
+    ...(buildHistoryFilterPipeline(matchQuery, search) as mongoose.PipelineStage[]),
+    { $sort: { started_at: -1, _id: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $addFields: {
+        duration_ms: {
+          $max: [
+            0,
+            {
+              $subtract: [
+                {
+                  $subtract: [
+                    { $ifNull: ['$completed_at', { $ifNull: ['$started_at', new Date()] }] },
+                    { $ifNull: ['$started_at', new Date()] },
+                  ],
+                },
+                { $ifNull: ['$total_paused_duration_ms', 0] },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        quiz_id: 1,
+        score: 1,
+        mode: 1,
+        status: 1,
+        completed_at: 1,
+        started_at: 1,
+        duration_minutes: { $round: [{ $divide: ['$duration_ms', 60000] }, 0] },
+        flashcard_stats: 1,
+        user_answers: 1,
+        is_temp: 1,
+        question_order: 1,
+        questions_cache: 1,
+        historyQuiz: 1,
+        historyCategory: 1,
+      },
+    },
+  ]) as Array<{
+    _id: mongoose.Types.ObjectId
+    quiz_id?: mongoose.Types.ObjectId | null
+    score: number
+    mode: 'immediate' | 'review' | 'flashcard'
+    status: 'active' | 'completed'
+    completed_at?: Date
+    started_at: Date
+    duration_minutes: number
+    flashcard_stats?: any
+    user_answers?: any[]
+    is_temp?: boolean
+    question_order?: number[]
+    questions_cache?: any[]
+    historyQuiz?: any
+    historyCategory?: { _id?: mongoose.Types.ObjectId; name?: string }
+  }>
+}
+
+type HistoryPageItems = Awaited<ReturnType<typeof loadHistoryPageItems>>
+
+function getUniqueHistoryQuizzes(pageItems: HistoryPageItems) {
+  return Array.from(
+    new Map(
+      pageItems
+        .filter((item) => item.historyQuiz?._id)
+        .map((item) => [item.historyQuiz._id.toString(), item.historyQuiz])
+    ).values()
+  )
+}
+
+function addHistoryCategoryName(categoryNameMap: Map<string, string>, item: HistoryPageItems[number]) {
+  const categoryId = item.historyQuiz?.category_id?.toString?.()
+  const categoryName = item.historyCategory?.name
+  if (categoryId && categoryName) categoryNameMap.set(categoryId, categoryName)
+}
+
+async function buildHistoryLookups(pageItems: HistoryPageItems) {
+  const quizzes = getUniqueHistoryQuizzes(pageItems)
+  const quizMap = new Map((quizzes as any[]).map((quiz) => [quiz._id.toString(), quiz]))
+  const originalCreatorMap = await buildOriginalCreatorMap(quizzes)
+  const categoryNameMap = new Map<string, string>()
+  pageItems.forEach((item) => addHistoryCategoryName(categoryNameMap, item))
+  const creatorNameMap = await buildCreatorNameMap(quizzes, originalCreatorMap, new UserService())
+  return { quizMap, originalCreatorMap, categoryNameMap, creatorNameMap }
+}
+
+function buildMixHistoryItem(item: any, quizIdStr: string, quiz: any) {
+  const { answeredCount, correctCount } = calculateAnswerCounts(item)
+  const sessionTotal = resolveSessionTotalQuestions(item, quiz) || answeredCount || 0
+  const quizTitle = quiz?.title ?? 'Mix Quiz'
+  const quizCode = quiz ? mixQuizDisplayCode(quizTitle) : 'MIX'
+  return {
+    _id: item._id.toString(), quiz_id: quizIdStr, quiz_title: quizTitle, quiz_code: quizCode,
+    category_name: 'Mix Quiz', source_type: 'mix_quiz', source_label: 'Mix Quiz', source_creator_name: null,
+    score: item.score, total_questions: sessionTotal, answered_count: answeredCount, correct_count: correctCount,
+    mode: item.mode, status: item.status, completed_at: item.completed_at, started_at: item.started_at,
+    duration_minutes: item.duration_minutes, flashcard_stats: item.flashcard_stats, is_mix: true,
+  }
+}
+
+function getHistoryCategoryName(quiz: any, categoryNameMap: Map<string, string>) {
+  const categoryId = quiz?.category_id?.toString?.()
+  return categoryId ? categoryNameMap.get(categoryId) ?? 'Uncategorized' : 'Uncategorized'
+}
+
+function getHistoryCreatorName(creatorId: string | null, creatorNameMap: Map<string, string>) {
+  return creatorId ? creatorNameMap.get(creatorId) ?? null : null
+}
+
+function buildQuizHistoryItem(
+  item: any,
+  quizIdStr: string,
+  quiz: any,
+  categoryNameMap: Map<string, string>,
+  originalCreatorMap: Map<string, string | null>,
+  creatorNameMap: Map<string, string>,
+  userId: string,
+) {
+  const sourceType = inferSourceType(quiz, userId)
+  const sourceCreatorId = resolveSourceCreatorId(quiz, originalCreatorMap)
+  const { answeredCount, correctCount } = calculateAnswerCounts(item)
+  return {
+    _id: item._id.toString(), quiz_id: quizIdStr, quiz_title: quiz?.title ?? 'Deleted Quiz',
+    quiz_code: quiz?.course_code ?? 'N/A', category_name: getHistoryCategoryName(quiz, categoryNameMap),
+    source_type: sourceType, source_label: sourceLabelFromType(sourceType),
+    source_creator_name: getHistoryCreatorName(sourceCreatorId, creatorNameMap),
+    score: item.score, total_questions: resolveSessionTotalQuestions(item, quiz),
+    answered_count: answeredCount, correct_count: correctCount, mode: item.mode, status: item.status,
+    completed_at: item.completed_at, started_at: item.started_at,
+    duration_minutes: item.duration_minutes, flashcard_stats: item.flashcard_stats,
+  }
+}
+
+function buildHistoryItem(item: any, context: Awaited<ReturnType<typeof buildHistoryLookups>>, userId: string) {
+  const quizIdStr = item.quiz_id?.toString?.() ?? ''
+  const quiz = quizIdStr ? context.quizMap.get(quizIdStr) : null
+  return item.is_temp === true
+    ? buildMixHistoryItem(item, quizIdStr, quiz)
+    : buildQuizHistoryItem(
+        item, quizIdStr, quiz, context.categoryNameMap, context.originalCreatorMap, context.creatorNameMap, userId,
+      )
+}
+
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const { searchParams } = new URL(req.url)
-    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1)
-    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get('limit') || '20', 10) || 20))
-    const search = (searchParams.get('search') || '').trim().slice(0, MAX_HISTORY_SEARCH_LENGTH)
-    const statusFilter = searchParams.get('status') || 'all'
-    const modeFilter = searchParams.get('mode') || 'all'
-
-    if (!['all', 'active', 'completed'].includes(statusFilter)) {
-      return NextResponse.json({ error: 'Invalid status filter' }, { status: 400 })
-    }
-    if (!['all', 'immediate', 'review', 'flashcard'].includes(modeFilter)) {
-      return NextResponse.json({ error: 'Invalid mode filter' }, { status: 400 })
-    }
+    const parsedFilters = parseHistoryFilters(searchParams)
+    if ('response' in parsedFilters) return parsedFilters.response
+    const { page, limit, search } = parsedFilters.filters
     try {
       await connectDB()
     } catch {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
     }
 
-    if (!payload?.userId || !mongoose.Types.ObjectId.isValid(payload.userId)) {
+    const matchQuery = buildHistoryMatchQuery(
+      payload?.userId,
+      searchParams.get('quiz_id'),
+      parsedFilters.filters,
+    )
+    if (!matchQuery) {
       return NextResponse.json({ error: 'Invalid student ID' }, { status: 400 })
     }
-
-    const studentId = new mongoose.Types.ObjectId(payload.userId)
-    const quizIdParam = searchParams.get('quiz_id')
-    const matchQuery: Record<string, any> = {
-      $or: [
-        { student_id: studentId },
-        { student_id: payload.userId },
-      ],
-      status: { $in: ['active', 'completed'] },
-    }
-    if (quizIdParam && mongoose.Types.ObjectId.isValid(quizIdParam)) {
-      matchQuery.quiz_id = new mongoose.Types.ObjectId(quizIdParam)
-    }
-    if (statusFilter !== 'all') matchQuery.status = statusFilter
-    if (modeFilter !== 'all') matchQuery.mode = modeFilter
-
-    const summaryRows = await QuizSession.aggregate([
-      ...(buildHistoryFilterPipeline(matchQuery, search) as mongoose.PipelineStage[]),
-      {
-        $group: {
-          _id: {
-            $ifNull: [
-              { $convert: { input: '$quiz_id', to: 'string', onError: null, onNull: null } },
-              { $cond: [{ $eq: ['$is_temp', true] }, 'MIX', '$historySearchCode'] },
-            ],
-          },
-          attempts: { $sum: 1 },
-          completedCount: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-          perfectScores: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$status', 'completed'] },
-                    { $gt: ['$historyTotalQuestions', 0] },
-                    { $gte: [{ $ifNull: ['$score', 0] }, '$historyTotalQuestions'] },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalQuizzes: { $sum: 1 },
-          totalAttempts: { $sum: '$attempts' },
-          completedCount: { $sum: '$completedCount' },
-          perfectScores: { $sum: '$perfectScores' },
-        },
-      },
-    ])
-    const stats = summaryRows[0]
-      ? {
-          totalQuizzes: summaryRows[0].totalQuizzes,
-          totalAttempts: summaryRows[0].totalAttempts,
-          completedCount: summaryRows[0].completedCount,
-          perfectScores: summaryRows[0].perfectScores,
-        }
-      : { totalQuizzes: 0, totalAttempts: 0, completedCount: 0, perfectScores: 0 }
+    const stats = await loadHistoryStats(matchQuery, search)
     const total = stats.totalAttempts
     const totalPages = Math.max(1, Math.ceil(total / limit))
     const safePage = Math.min(page, totalPages)
     const skip = (safePage - 1) * limit
-    const pageItems = await QuizSession.aggregate([
-      ...(buildHistoryFilterPipeline(matchQuery, search) as mongoose.PipelineStage[]),
-      { $sort: { started_at: -1, _id: -1 } },
-      { $skip: skip },
-      { $limit: limit },
-      {
-        $addFields: {
-          duration_ms: {
-            $max: [
-              0,
-              {
-                $subtract: [
-                  {
-                    $subtract: [
-                      { $ifNull: ['$completed_at', { $ifNull: ['$started_at', new Date()] }] },
-                      { $ifNull: ['$started_at', new Date()] },
-                    ],
-                  },
-                  { $ifNull: ['$total_paused_duration_ms', 0] },
-                ],
-              },
-            ],
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          quiz_id: 1,
-          score: 1,
-          mode: 1,
-          status: 1,
-          completed_at: 1,
-          started_at: 1,
-          duration_minutes: { $round: [{ $divide: ['$duration_ms', 60000] }, 0] },
-          flashcard_stats: 1,
-          user_answers: 1,
-          is_temp: 1,
-          question_order: 1,
-          questions_cache: 1,
-          historyQuiz: 1,
-          historyCategory: 1,
-        },
-      },
-    ]) as Array<{
-      _id: mongoose.Types.ObjectId
-      quiz_id?: mongoose.Types.ObjectId | null
-      score: number
-      mode: 'immediate' | 'review' | 'flashcard'
-      status: 'active' | 'completed'
-      completed_at?: Date
-      started_at: Date
-      duration_minutes: number
-      flashcard_stats?: any
-      user_answers?: any[]
-      is_temp?: boolean
-      question_order?: number[]
-      questions_cache?: any[]
-      historyQuiz?: any
-      historyCategory?: { _id?: mongoose.Types.ObjectId; name?: string }
-    }>
+    const pageItems = await loadHistoryPageItems(matchQuery, search, skip, limit)
 
-    const quizzes = Array.from(
-      new Map(
-        pageItems
-          .filter((item) => item.historyQuiz?._id)
-          .map((item) => [item.historyQuiz._id.toString(), item.historyQuiz])
-      ).values()
-    )
-
-    const quizMap = new Map((quizzes as any[]).map((q) => [q._id.toString(), q]))
-
-    const originalCreatorMap = await buildOriginalCreatorMap(quizzes)
-    const categoryNameMap = new Map<string, string>()
-    pageItems.forEach((item) => {
-      const categoryId = item.historyQuiz?.category_id?.toString?.()
-      if (categoryId && item.historyCategory?.name) categoryNameMap.set(categoryId, item.historyCategory.name)
-    })
-    const creatorNameMap = await buildCreatorNameMap(quizzes, originalCreatorMap, new UserService())
-
-    const history = pageItems.map((item) => {
-      const quizIdStr = item.quiz_id?.toString?.() ?? ''
-      const quiz = quizIdStr ? (quizMap.get(quizIdStr) as any) : null
-      const isMixQuiz = (item as any).is_temp === true
-
-      if (isMixQuiz) {
-        const { answeredCount, correctCount } = calculateAnswerCounts(item)
-        const sessionTotal = resolveSessionTotalQuestions(item, quiz) || answeredCount || 0
-        const quizTitle = quiz?.title ?? 'Mix Quiz'
-        const quizCode = quiz ? mixQuizDisplayCode(quizTitle) : 'MIX'
-
-        return {
-          _id: item._id.toString(),
-          quiz_id: quizIdStr,
-          quiz_title: quizTitle,
-          quiz_code: quizCode,
-          category_name: 'Mix Quiz',
-          source_type: 'mix_quiz',
-          source_label: 'Mix Quiz',
-          source_creator_name: null,
-          score: item.score,
-          total_questions: sessionTotal,
-          answered_count: answeredCount,
-          correct_count: correctCount,
-          mode: item.mode,
-          status: item.status,
-          completed_at: item.completed_at,
-          started_at: item.started_at,
-          duration_minutes: item.duration_minutes,
-          flashcard_stats: item.flashcard_stats,
-          is_mix: true,
-        }
-      }
-
-      const sourceType = inferSourceType(quiz, payload.userId)
-      const sourceCreatorId = resolveSourceCreatorId(quiz, originalCreatorMap)
-      const sessionTotal = resolveSessionTotalQuestions(item, quiz)
-      const { answeredCount, correctCount } = calculateAnswerCounts(item)
-
-      const categoryIdStr = quiz?.category_id?.toString?.()
-      const categoryName = categoryIdStr ? (categoryNameMap.get(categoryIdStr) ?? 'Uncategorized') : 'Uncategorized'
-
-      return {
-        _id: item._id.toString(),
-        quiz_id: quizIdStr,
-        quiz_title: quiz?.title ?? 'Deleted Quiz',
-        quiz_code: quiz?.course_code ?? 'N/A',
-        category_name: categoryName,
-        source_type: sourceType,
-        source_label: sourceLabelFromType(sourceType),
-        source_creator_name: sourceCreatorId ? (creatorNameMap.get(sourceCreatorId) ?? null) : null,
-        score: item.score,
-        total_questions: sessionTotal,
-        answered_count: answeredCount,
-        correct_count: correctCount,
-        mode: item.mode,
-        status: item.status,
-        completed_at: item.completed_at,
-        started_at: item.started_at,
-        duration_minutes: item.duration_minutes,
-        flashcard_stats: item.flashcard_stats,
-      }
-    })
+    const lookups = await buildHistoryLookups(pageItems)
+    const history = pageItems.map((item) => buildHistoryItem(item, lookups, payload.userId as string))
 
     return NextResponse.json({ history, inProgress: [], total, page: safePage, limit, totalPages, stats })
   } catch (err) {
     console.error('[API GET /api/history] Error:', err)
-    if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return getSessionRequestErrorResponse(err)
   }
 }, { roles: ['student'] })

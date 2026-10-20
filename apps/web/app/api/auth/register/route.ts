@@ -48,11 +48,6 @@ export async function POST(request: Request) {
     const { username, email, password } = result.data
     const normalizedEmail = email.toLowerCase().trim()
 
-    const existingEmail = await User.findOne({ email: normalizedEmail })
-    if (existingEmail) {
-      return NextResponse.json({ error: 'Email is already in use' }, { status: 409 })
-    }
-
     const codeRecord = await EmailVerification.findOne({
       email: normalizedEmail,
       purpose: 'register',
@@ -71,10 +66,24 @@ export async function POST(request: Request) {
     const expectedHash = hashVerificationCode(verificationCode)
     if (codeRecord.code_hash !== expectedHash) {
       await EmailVerification.updateOne(
-        { _id: codeRecord._id },
+        {
+          _id: codeRecord._id,
+          code_hash: codeRecord.code_hash,
+          used: false,
+          expires_at: { $gt: new Date() },
+          $or: [
+            { attempts: { $lt: 5 } },
+            { attempts: { $exists: false } },
+          ],
+        },
         { $inc: { attempts: 1 } }
       )
       return NextResponse.json({ error: 'Incorrect verification code' }, { status: 400 })
+    }
+
+    const existingEmail = await User.findOne({ email: normalizedEmail })
+    if (existingEmail) {
+      return NextResponse.json({ error: 'Unable to create an account with these details' }, { status: 400 })
     }
 
     // Case-insensitive username check

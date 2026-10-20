@@ -5,10 +5,15 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { normalizeIndexes, isExactArrayMatch } from '@/lib/core/utils/array-utils'
-import { activeSessionWriteFilter } from '@/lib/modules/quiz/session-utils'
+import {
+  activeSessionWriteFilter,
+  resolveEffectiveQuestionAtIndex,
+  resolveEffectiveQuestionOrder,
+} from '@/lib/modules/quiz/session-utils'
 
 export interface ImmediateAnswerResult {
   isCorrect: boolean
+  answerIndexes: number[]
   correctAnswer: number
   correctAnswers?: number[]
   explanation?: string
@@ -68,6 +73,12 @@ interface PersistAnswerOptions {
   nextIndex: number
   questionIndex: number
   isCorrect: boolean
+  insertOnly?: boolean
+}
+
+function isAnswerConflict(err: unknown): err is Error & { status: number; code: string } {
+  return err instanceof Error &&
+    (err as Error & { code?: string }).code === 'ANSWER_CONFLICT'
 }
 
 function calculateScoreDelta(isCorrect: boolean, previousAnswer: UserAnswer | undefined): number {
@@ -76,9 +87,51 @@ function calculateScoreDelta(isCorrect: boolean, previousAnswer: UserAnswer | un
   return 0
 }
 
+function getDuplicateInsertResult(currentSession: any, existingAnswer: UserAnswer | undefined, insertOnly: boolean) {
+  if (insertOnly && existingAnswer) {
+    return { success: true, score: currentSession.score ?? null, answer: existingAnswer }
+  }
+  return null
+}
+
+function buildUpdatedAnswers(currentSession: any, userAnswer: UserAnswer, insertOnly: boolean) {
+  return insertOnly
+    ? [...(currentSession.user_answers || []), userAnswer]
+    : upsertAnswer(currentSession.user_answers || [], userAnswer)
+}
+
+function getUpdatedScore(currentSession: any, options: PersistAnswerOptions, existingAnswer: UserAnswer | undefined) {
+  if (!options.updateScore) return null
+  const scoreDelta = calculateScoreDelta(options.isCorrect, existingAnswer)
+  return (currentSession.score || 0) + scoreDelta
+}
+
+function getTargetNextIndex(isLast: boolean, questionIndex: number, nextIndex: number) {
+  return isLast ? questionIndex : nextIndex
+}
+
+function buildAnswerPersistenceUpdate(
+  currentSession: any,
+  updatedAnswers: UserAnswer[],
+  options: PersistAnswerOptions,
+  score: number | null
+) {
+  const targetNextIndex = getTargetNextIndex(options.isLast, options.questionIndex, options.nextIndex)
+  return {
+    $set: {
+      user_answers: updatedAnswers,
+      current_question_index: Math.max(currentSession.current_question_index ?? 0, targetNextIndex),
+      ...(options.updateScore ? { score } : {}),
+      last_activity_at: new Date(),
+      paused_at: null,
+    },
+    $inc: { answer_version: 1 },
+  }
+}
+
 function getVersionFilter(cv: number | undefined) {
-  return cv == null
-    ? { $or: [{ answer_version: 1 }, { answer_version: { $exists: false } }] }
+  return cv === undefined
+    ? { answer_version: { $exists: false } }
     : { answer_version: cv }
 }
 
@@ -88,43 +141,31 @@ async function tryPersistAnswerIteration(
   options: PersistAnswerOptions,
   select: string,
   providedSession?: any
-): Promise<{ success: boolean; score: number | null }> {
-  const { updateScore, isLast, nextIndex, questionIndex, isCorrect } = options
+): Promise<{ success: boolean; score: number | null; answer: UserAnswer }> {
+  const { questionIndex } = options
+  const insertOnly = options.insertOnly ?? false
   const currentSession = providedSession || await QuizSession.findById(sessionId).select(select).lean()
   if (!currentSession) throw new Error('Session not found')
 
-  const updatedAnswers = upsertAnswer(currentSession.user_answers || [], userAnswer)
-  let score: number | null = null
+  const existingAnswer = (currentSession.user_answers || []).find(
+    (answer: UserAnswer) => answer.question_index === questionIndex
+  )
+  const duplicateResult = getDuplicateInsertResult(currentSession, existingAnswer, insertOnly)
+  if (duplicateResult) return duplicateResult
 
-  if (updateScore) {
-    const previousAnswer = (currentSession.user_answers || []).find(
-      (a: UserAnswer) => a.question_index === questionIndex
-    )
-    const scoreDelta = calculateScoreDelta(isCorrect, previousAnswer)
-    score = (currentSession.score || 0) + scoreDelta
-  }
-
+  const updatedAnswers = buildUpdatedAnswers(currentSession, userAnswer, insertOnly)
+  const score = getUpdatedScore(currentSession, options, existingAnswer)
   const versionFilter = getVersionFilter(currentSession.answer_version)
-  const targetNextIndex = isLast ? questionIndex : nextIndex
-  const updatedCurrentIndex = Math.max(currentSession.current_question_index ?? 0, targetNextIndex)
 
   const result = await QuizSession.updateOne(
     { $and: [{ _id: sessionId }, activeSessionWriteFilter(), versionFilter] },
-    {
-      $set: {
-        user_answers: updatedAnswers,
-        current_question_index: updatedCurrentIndex,
-        ...(updateScore ? { score } : {}),
-        last_activity_at: new Date(),
-        paused_at: null,
-      },
-      $inc: { answer_version: 1 },
-    }
+    buildAnswerPersistenceUpdate(currentSession, updatedAnswers, options, score)
   )
 
   return {
     success: result.modifiedCount === 1,
     score,
+    answer: userAnswer,
   }
 }
 
@@ -133,70 +174,81 @@ async function persistAnswerWithOCC(
   userAnswer: UserAnswer,
   options: PersistAnswerOptions,
   cachedSession?: any
-): Promise<{ score: number | null }> {
-  const select = options.updateScore ? 'answer_version user_answers score' : 'answer_version user_answers'
+): Promise<{ score: number | null; answer: UserAnswer }> {
+  const select = options.updateScore
+    ? 'answer_version user_answers score current_question_index'
+    : 'answer_version user_answers current_question_index'
   let retries = 3
   while (retries > 0) {
     const sessionToUse = retries === 3 && cachedSession?.answer_version !== undefined ? cachedSession : undefined
-    const { success, score } = await tryPersistAnswerIteration(sessionId, userAnswer, options, select, sessionToUse)
-    if (success) return { score }
+    const { success, score, answer } = await tryPersistAnswerIteration(
+      sessionId,
+      userAnswer,
+      options,
+      select,
+      sessionToUse
+    )
+    if (success) return { score, answer }
     retries--
     if (retries === 0) {
-      throw new Error('Failed to update answer after retries (concurrent modification)')
+      throw Object.assign(
+        new Error('Failed to update answer after retries (concurrent modification)'),
+        { status: 409, code: 'ANSWER_CONFLICT' }
+      )
     }
   }
-  return { score: null }
+  return { score: null, answer: userAnswer }
 }
 
 async function resolveQuestion(
   session: IQuizSession,
   questionIndex: number
 ): Promise<{ question: IQuestion; totalQuestions: number; questionOrder: number[] }> {
-  let questionOrder = session.question_order
-  if (!questionOrder || questionOrder.length === 0) {
-    const quizMeta = await Quiz.findById(session.quiz_id).select('questions._id question_refs').lean() as any
-    if (!quizMeta) throw new Error('Quiz not found')
-    const totalCount = (quizMeta.question_refs?.length) || (quizMeta.questions?.length) || 0
-    questionOrder = Array.from({ length: totalCount }, (_, i) => i)
-  }
+  const hasCachedQuestions = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
+  const quiz = hasCachedQuestions
+    ? null
+    : await Quiz.findById(session.quiz_id).select('questions question_refs').lean() as any
+  if (!hasCachedQuestions && !quiz) throw new Error('Quiz not found')
 
+  const questionOrder = resolveEffectiveQuestionOrder(session, quiz)
   const actualQuestionIndex = questionOrder[questionIndex]
-  let question: IQuestion | null = null
-  let totalQuestions = questionOrder.length
-
-  // Use questions_cache ONLY IF its length matches totalQuestions to prevent index-shift mismatches
-  if (
-    session.questions_cache &&
-    session.questions_cache.length === totalQuestions &&
-    session.questions_cache[actualQuestionIndex]
-  ) {
-    question = session.questions_cache[actualQuestionIndex] as IQuestion
-  }
-
-  // Fallback: Fetch directly from Quiz / Question model if cache is missing or out-of-sync
-  if (!question) {
-    const quiz = await Quiz.findById(session.quiz_id)
-      .select('questions question_refs')
-      .lean() as any
-    if (!quiz) throw new Error('Quiz not found')
-
-    if (Array.isArray(quiz.question_refs) && quiz.question_refs.length > actualQuestionIndex) {
-      const refId = quiz.question_refs[actualQuestionIndex]
-      const { Question } = await import('@/lib/modules/quiz/models/Question')
-      const qDoc = await Question.findById(refId).lean()
-      if (qDoc) question = qDoc as unknown as IQuestion
-    }
-
-    if (!question && Array.isArray(quiz.questions) && quiz.questions.length > actualQuestionIndex) {
-      question = quiz.questions[actualQuestionIndex] as IQuestion
-    }
-  }
+  const question = actualQuestionIndex === undefined
+    ? null
+    : await resolveEffectiveQuestionAtIndex(session, quiz, actualQuestionIndex)
 
   if (!question) {
     throw new Error(`Question at index ${questionIndex} (actual: ${actualQuestionIndex}) not found`)
   }
 
-  return { question, totalQuestions, questionOrder }
+  return { question, totalQuestions: questionOrder.length, questionOrder }
+}
+
+function prepareSubmittedAnswer(
+  question: IQuestion,
+  questionIndex: number,
+  submittedAnswerIndexes: number[],
+  totalQuestions: number
+) {
+  const correctAnswerIndexes = normalizeIndexes(
+    Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
+  )
+  const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
+  const isCorrect = isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
+  const nextIndex = questionIndex + 1
+
+  return {
+    correctAnswerIndexes,
+    submittedIndexes,
+    isCorrect,
+    nextIndex,
+    isLastQuestion: nextIndex >= totalQuestions,
+    userAnswer: {
+      question_index: questionIndex,
+      answer_index: submittedIndexes[0],
+      answer_indexes: submittedIndexes,
+      is_correct: isCorrect,
+    } satisfies UserAnswer,
+  }
 }
 
 /**
@@ -216,40 +268,29 @@ export async function processImmediateAnswer(
     
     const { question, totalQuestions } = await resolveQuestion(session, questionIndex)
 
-    const correctAnswerIndexes = normalizeIndexes(
-      Array.isArray(question.correct_answer)
-        ? question.correct_answer
-        : [question.correct_answer]
-    )
+    const { correctAnswerIndexes, isCorrect, userAnswer, submittedIndexes, nextIndex, isLastQuestion } =
+      prepareSubmittedAnswer(question, questionIndex, submittedAnswerIndexes, totalQuestions)
 
-    const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
-    const isCorrect = isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
-
-    const userAnswer: UserAnswer = {
-      question_index: questionIndex,
-      answer_index: submittedIndexes[0],
-      answer_indexes: submittedIndexes,
-      is_correct: isCorrect,
-    }
-
-    const nextIndex = questionIndex + 1
-    const isLastQuestion = nextIndex >= totalQuestions
-
-    await persistAnswerWithOCC(session._id, userAnswer, {
+    const persistedAnswer = await persistAnswerWithOCC(session._id, userAnswer, {
       updateScore: true,
       isLast: isLastQuestion,
       nextIndex,
       questionIndex,
       isCorrect,
+      insertOnly: true,
     }, session)
 
     return {
-      isCorrect,
+      isCorrect: persistedAnswer.answer.is_correct,
+      answerIndexes: persistedAnswer.answer.answer_indexes?.length
+        ? persistedAnswer.answer.answer_indexes
+        : typeof persistedAnswer.answer.answer_index === 'number' ? [persistedAnswer.answer.answer_index] : [],
       correctAnswer: correctAnswerIndexes[0],
       correctAnswers: correctAnswerIndexes,
       explanation: question.explanation,
     }
   } catch (err) {
+    if (isAnswerConflict(err)) throw err
     throw new Error(
       `processImmediateAnswer failed: ${(err as Error).message}`
     )
@@ -283,6 +324,7 @@ export async function getImmediateAnswerResult(
 
   return {
     isCorrect,
+    answerIndexes: submittedIndexes,
     correctAnswer: correctAnswerIndexes[0],
     correctAnswers: correctAnswerIndexes,
     explanation: question.explanation,
@@ -305,28 +347,14 @@ export async function processReviewAnswer(
     const questionIndex =
       typeof forcedQuestionIndex === 'number' ? forcedQuestionIndex : session.current_question_index
     
-    const { question, totalQuestions, questionOrder: resolvedOrder } = await resolveQuestion(session, questionIndex)
+    const { question, totalQuestions } = await resolveQuestion(session, questionIndex)
 
-    const correctAnswerIndexes = normalizeIndexes(
-      Array.isArray(question.correct_answer)
-        ? question.correct_answer
-        : [question.correct_answer]
-    )
-
-    const submittedIndexes = normalizeIndexes(submittedAnswerIndexes)
-    const isCorrect = isExactArrayMatch(submittedIndexes, correctAnswerIndexes)
-
-    const userAnswer: UserAnswer = {
-      question_index: questionIndex,
-      answer_index: submittedIndexes[0],
-      answer_indexes: submittedIndexes,
-      is_correct: isCorrect,
-    }
-
-    const nextIndex = questionIndex + 1
-    const isLastQuestion = nextIndex >= totalQuestions
+    const { isCorrect, userAnswer, nextIndex, isLastQuestion } =
+      prepareSubmittedAnswer(question, questionIndex, submittedAnswerIndexes, totalQuestions)
 
     if (!isLastQuestion) {
+      const { question: nextQuestion } = await resolveQuestion(session, nextIndex)
+
       // Persist answer and advance – do NOT reveal correctness with optimistic concurrency check
       await persistAnswerWithOCC(session._id, userAnswer, {
         updateScore: false,
@@ -337,16 +365,6 @@ export async function processReviewAnswer(
       }, session)
 
       // Return next question with correct_answer and explanation stripped (Req 12.1, 12.3)
-      const nextActualQuestionIndex = resolvedOrder[nextIndex]
-      
-      let nextQuestion: IQuestion
-      if (session.questions_cache && session.questions_cache.length > 0) {
-        nextQuestion = session.questions_cache[nextActualQuestionIndex] as IQuestion
-      } else {
-        const nextQuiz = await Quiz.findById(session.quiz_id, { questions: { $slice: [nextActualQuestionIndex, 1] } }).lean()
-        nextQuestion = nextQuiz!.questions[0] as IQuestion
-      }
-
       const safeQuestion = {
         _id: nextQuestion._id,
         text: nextQuestion.text,
@@ -369,6 +387,7 @@ export async function processReviewAnswer(
 
     return { completed: false, score: score ?? 0 }
   } catch (err) {
+    if (isAnswerConflict(err)) throw err
     throw new Error(`processReviewAnswer failed: ${(err as Error).message}`)
   }
 }
@@ -380,7 +399,7 @@ export async function processReviewAnswer(
  */
 export function calculateScore(
   userAnswers: UserAnswer[],
-  questions: IQuestion[],
+  questions: Array<IQuestion | null>,
   questionOrder?: number[]
 ): number {
   let score = 0

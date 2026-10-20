@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useFlashcardSessionState } from '@/hooks/quiz/useFlashcardSession'
@@ -13,76 +13,164 @@ import { MobileFlashcardModals } from '@/components/quiz/flashcard/MobileFlashca
 export default function MobileFlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
   const router = useRouter()
-  const rawQuizId = params?.id
-  const rawSessionId = params?.sessionId
-  const resolvedQuizId = Array.isArray(rawQuizId) ? rawQuizId[0] : rawQuizId ?? ''
-  const resolvedSessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId ?? ''
-
-  const {
-    session,
-    question,
-    isLoading,
-    error,
-    submitAnswer,
-    isSubmitting,
-    stats,
-    setStats,
-    displayIndex,
-    setDisplayIndex,
-    enableAnimation,
-    actualIndex,
-    taggedStatus,
-    handleBack,
-    handleForward,
-  } = useFlashcardSessionState(resolvedSessionId, resolvedQuizId)
+  const resolvedQuizId = resolveRouteId(params?.id)
+  const resolvedSessionId = resolveRouteId(params?.sessionId)
+  const sessionState = useFlashcardSessionState(resolvedSessionId, resolvedQuizId)
 
   const [questionMapOpen, setQuestionMapOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
+  const submissionInFlight = useRef(false)
 
-  const handleAnswer = (knows: boolean) => {
-    if (!session || !question) return
-    submitAnswer(
-      { knows, questionIndex: actualIndex },
-      {
-        onSuccess: (data) => {
-          setStats(data.stats)
-          if (displayIndex !== null) setDisplayIndex(null)
-        },
-      }
-    )
-  }
+  const submitFlashcardAnswer = (answer: { knows: boolean; questionIndex: number }) => submitMobileFlashcardAnswer(sessionState, submissionInFlight, answer)
+  const handleAnswer = (knows: boolean) => submitMobileFlashcardChoice(sessionState, submissionInFlight, knows)
+  const handleRetryAnswer = () => sessionState.failedAnswer && submitFlashcardAnswer(sessionState.failedAnswer)
 
-  if (isLoading) {
-    return (
-      <div className="h-[100dvh] flex items-center justify-center bg-background">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    )
-  }
+  return (
+    <MobileFlashcardRouteContent
+      state={sessionState}
+      router={router}
+      questionMapOpen={questionMapOpen}
+      setQuestionMapOpen={setQuestionMapOpen}
+      exitConfirmOpen={exitConfirmOpen}
+      setExitConfirmOpen={setExitConfirmOpen}
+      onAnswer={handleAnswer}
+      onRetryAnswer={handleRetryAnswer}
+    />
+  )
+}
 
-  if (error || !session || !question) {
-    return (
-      <div className="h-[100dvh] flex items-center justify-center bg-background p-8">
-        <Button
-          onClick={() => router.push('/dashboard')}
-          className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs"
-        >
-          Back to Home
+type MobileFlashcardSessionState = ReturnType<typeof useFlashcardSessionState>
+type LoadedMobileFlashcardState = MobileFlashcardSessionState & {
+  session: NonNullable<MobileFlashcardSessionState['session']>
+  question: NonNullable<MobileFlashcardSessionState['question']>
+}
+
+function resolveRouteId(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value ?? ''
+}
+
+function submitMobileFlashcardAnswer(state: MobileFlashcardSessionState, submissionInFlight: React.MutableRefObject<boolean>, answer: { knows: boolean; questionIndex: number }) {
+  if (state.isSubmitting || submissionInFlight.current) return
+  submissionInFlight.current = true
+  state.submitAnswer(answer, {
+    onSuccess: (data) => {
+      state.setStats(data.stats)
+      if (state.displayIndex !== null) state.setDisplayIndex(null)
+    },
+    onSettled: () => {
+      submissionInFlight.current = false
+    },
+  })
+}
+
+function submitMobileFlashcardChoice(state: MobileFlashcardSessionState, submissionInFlight: React.MutableRefObject<boolean>, knows: boolean) {
+  if (!state.session || !state.question) return
+  submitMobileFlashcardAnswer(state, submissionInFlight, { knows, questionIndex: state.actualIndex })
+}
+
+function MobileFlashcardRouteContent({ state, router, questionMapOpen, setQuestionMapOpen, exitConfirmOpen, setExitConfirmOpen, onAnswer, onRetryAnswer }: {
+  state: MobileFlashcardSessionState
+  router: ReturnType<typeof useRouter>
+  questionMapOpen: boolean
+  setQuestionMapOpen: (open: boolean) => void
+  exitConfirmOpen: boolean
+  setExitConfirmOpen: (open: boolean) => void
+  onAnswer: (knows: boolean) => void
+  onRetryAnswer: () => void
+}) {
+  if (state.isLoading) return <MobileFlashcardLoadingState />
+  if (!hasMobileFlashcardSession(state)) return <MobileFlashcardFailureState router={router} />
+  return (
+    <MobileFlashcardActiveSession
+      state={state}
+      session={state.session}
+      question={state.question}
+      questionMapOpen={questionMapOpen}
+      setQuestionMapOpen={setQuestionMapOpen}
+      exitConfirmOpen={exitConfirmOpen}
+      setExitConfirmOpen={setExitConfirmOpen}
+      onAnswer={onAnswer}
+      onRetryAnswer={onRetryAnswer}
+      router={router}
+    />
+  )
+}
+
+function hasMobileFlashcardSession(state: MobileFlashcardSessionState): state is LoadedMobileFlashcardState {
+  return Boolean(!state.error && state.session && state.question)
+}
+
+function MobileFlashcardLoadingState() {
+  return (
+    <div className="h-[100dvh] flex items-center justify-center bg-background">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+    </div>
+  )
+}
+
+function MobileFlashcardFailureState({ router }: { router: ReturnType<typeof useRouter> }) {
+  return (
+    <div className="h-[100dvh] flex items-center justify-center bg-background p-8">
+      <Button
+        onClick={() => router.push('/dashboard')}
+        className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs"
+      >
+        Back to Home
+      </Button>
+    </div>
+  )
+}
+
+function MobileFlashcardRetryNotice({ state, onRetryAnswer }: { state: MobileFlashcardSessionState; onRetryAnswer: () => void }) {
+  if (!state.answerError || !state.failedAnswer) return null
+  return (
+    <div role="alert" aria-live="assertive" className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+      <p className="min-w-0">Couldn’t save your answer: {state.answerError.message}</p>
+      <Button type="button" variant="outline" aria-label="Retry saving this answer" disabled={state.isSubmitting} onClick={onRetryAnswer} className="h-11 shrink-0 rounded-lg border-destructive/40 px-3 font-bold text-destructive">
+        Retry
+      </Button>
+    </div>
+  )
+}
+
+function MobileFlashcardNavigationFooter({ state, effectiveTotal }: { state: MobileFlashcardSessionState; effectiveTotal: number }) {
+  return (
+    <footer className="sticky bottom-0 z-20 border-t-2 border-border bg-card p-3 shadow-lg flex-none">
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="outline" disabled={state.actualIndex <= 0} onClick={state.handleBack} className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40">
+          <ChevronLeft className="mr-1 h-5 w-5 text-primary" />
+          <span>Previous</span>
+        </Button>
+        <Button type="button" variant="outline" disabled={state.actualIndex >= effectiveTotal - 1} onClick={state.handleForward} className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40">
+          <span>Next</span>
+          <ChevronRight className="ml-1 h-5 w-5 text-primary" />
         </Button>
       </div>
-    )
-  }
+    </footer>
+  )
+}
 
+function MobileFlashcardActiveSession({ state, session, question, questionMapOpen, setQuestionMapOpen, exitConfirmOpen, setExitConfirmOpen, onAnswer, onRetryAnswer, router }: {
+  state: MobileFlashcardSessionState
+  session: NonNullable<MobileFlashcardSessionState['session']>
+  question: NonNullable<MobileFlashcardSessionState['question']>
+  questionMapOpen: boolean
+  setQuestionMapOpen: (open: boolean) => void
+  exitConfirmOpen: boolean
+  setExitConfirmOpen: (open: boolean) => void
+  onAnswer: (knows: boolean) => void
+  onRetryAnswer: () => void
+  router: ReturnType<typeof useRouter>
+}) {
   const effectiveTotal = session.totalQuestions || 0
-
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden fixed inset-0 overscroll-none select-none">
       <MobileFlashcardHeader
         categoryName={session.categoryName}
         courseCode={session.courseCode}
         title={session.title}
-        stats={stats}
-        actualIndex={actualIndex}
+        stats={state.stats}
+        actualIndex={state.actualIndex}
         effectiveTotal={effectiveTotal}
         onOpenQuestionMap={() => setQuestionMapOpen(true)}
         onOpenExitConfirm={() => setExitConfirmOpen(true)}
@@ -91,42 +179,19 @@ export default function MobileFlashcardSessionPage() {
       <div className="flex-1 relative overflow-hidden">
         <MobileFlashcardView
           question={question}
-          questionNumber={actualIndex + 1}
+          questionNumber={state.actualIndex + 1}
           totalQuestions={effectiveTotal}
-          onAnswer={handleAnswer}
-          onBack={handleBack}
-          onForward={handleForward}
-          isLoading={isSubmitting}
-          enableAnimation={enableAnimation}
-          taggedStatus={taggedStatus}
+          onAnswer={onAnswer}
+          onBack={state.handleBack}
+          onForward={state.handleForward}
+          isLoading={state.isSubmitting}
+          enableAnimation={state.enableAnimation}
+          taggedStatus={state.taggedStatus}
         />
       </div>
 
-      <footer className="sticky bottom-0 z-20 border-t-2 border-border bg-card p-3 shadow-lg flex-none">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={actualIndex <= 0}
-            onClick={handleBack}
-            className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40"
-          >
-            <ChevronLeft className="mr-1 h-5 w-5 text-primary" />
-            <span>Previous</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            disabled={actualIndex >= effectiveTotal - 1}
-            onClick={handleForward}
-            className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40"
-          >
-            <span>Next</span>
-            <ChevronRight className="ml-1 h-5 w-5 text-primary" />
-          </Button>
-        </div>
-      </footer>
+      <MobileFlashcardRetryNotice state={state} onRetryAnswer={onRetryAnswer} />
+      <MobileFlashcardNavigationFooter state={state} effectiveTotal={effectiveTotal} />
 
       <MobileFlashcardModals
         questionMapOpen={questionMapOpen}
@@ -134,8 +199,8 @@ export default function MobileFlashcardSessionPage() {
         exitConfirmOpen={exitConfirmOpen}
         setExitConfirmOpen={setExitConfirmOpen}
         effectiveTotal={effectiveTotal}
-        actualIndex={actualIndex}
-        onSelectIndex={(i) => setDisplayIndex(i)}
+        actualIndex={state.actualIndex}
+        onSelectIndex={(i) => state.setDisplayIndex(i)}
         onConfirmExit={() => router.push('/dashboard')}
       />
     </div>

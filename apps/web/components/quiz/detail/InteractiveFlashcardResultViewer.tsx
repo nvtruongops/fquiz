@@ -68,6 +68,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
           <button
             type="button"
             onClick={() => setFilter('all')}
+            aria-pressed={filter === 'all'}
             className={cn(
               'py-1 rounded-lg transition-all text-center',
               filter === 'all'
@@ -80,6 +81,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
           <button
             type="button"
             onClick={() => setFilter('known')}
+            aria-pressed={filter === 'known'}
             className={cn(
               'py-1 rounded-lg transition-all text-center',
               filter === 'known'
@@ -92,6 +94,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
           <button
             type="button"
             onClick={() => setFilter('unknown')}
+            aria-pressed={filter === 'unknown'}
             className={cn(
               'py-1 rounded-lg transition-all text-center',
               filter === 'unknown'

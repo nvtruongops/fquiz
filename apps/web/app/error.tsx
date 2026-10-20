@@ -26,9 +26,7 @@ export default function RootError({
             Something went wrong
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            {error.message && !error.message.includes('An unexpected error')
-              ? error.message
-              : 'The page is temporarily unavailable due to a network or server issue.'}
+            The page is temporarily unavailable. Please try again or return to the home page.
           </p>
           {error.digest && (
             <p className="text-[10px] font-mono text-muted-foreground bg-muted/60 py-1 px-2.5 rounded-lg inline-block mt-1">

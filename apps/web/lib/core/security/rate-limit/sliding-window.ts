@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRateLimitErrorResponse as buildRateLimitErrorResponse } from '@fquiz/auth'
 import logger from '@/lib/core/utils/logger'
 
 export interface RateLimitConfig {
@@ -125,11 +126,7 @@ export function checkRateLimit(
   config: RateLimitConfig
 ): RateLimitStatus {
   const ip = getClientIp(request)
-  const authToken =
-    request.cookies.get('auth-token')?.value ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  const userIdentifier = authToken ? `user:${authToken.slice(-24)}` : `ip:${ip}`
-  const key = `${config.keyPrefix || 'rl'}:${userIdentifier}`
+  const key = `${config.keyPrefix || 'rl'}:ip:${ip}`
 
   return memoryStore.check(key, config.limit, config.windowMs)
 }
@@ -138,8 +135,6 @@ export function checkRateLimit(
  * Helper to construct 429 Too Many Requests response with standard headers
  */
 export function createRateLimitErrorResponse(status: RateLimitStatus): NextResponse {
-  const retryAfterSeconds = Math.ceil((status.reset - Date.now()) / 1000)
-
   logger.warn(
     {
       limit: status.limit,
@@ -149,22 +144,5 @@ export function createRateLimitErrorResponse(status: RateLimitStatus): NextRespo
     'Rate limit exceeded - blocking request'
   )
 
-  return new NextResponse(
-    JSON.stringify({
-      error: 'Too Many Requests',
-      message: 'Too many requests. Please try again later.',
-      statusCode: 429,
-      retryAfterSeconds: Math.max(1, retryAfterSeconds),
-    }),
-    {
-      status: 429,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': String(Math.max(1, retryAfterSeconds)),
-        'X-RateLimit-Limit': String(status.limit),
-        'X-RateLimit-Remaining': String(status.remaining),
-        'X-RateLimit-Reset': String(Math.ceil(status.reset / 1000)),
-      },
-    }
-  )
+  return buildRateLimitErrorResponse(status, 'Too many requests. Please try again later.')
 }

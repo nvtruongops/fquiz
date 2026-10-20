@@ -12,6 +12,20 @@ export const fquizTailwindPreset = {
       },
     },
     extend: {
+      width: {
+        'sidebar-expanded': '252px',
+        'sidebar-collapsed': '76px',
+        'mobile-drawer': '280px',
+      },
+      padding: {
+        'safe-area-bottom': 'env(safe-area-inset-bottom, 0px)',
+      },
+      boxShadow: {
+        'mobile-nav': '0 -4px 24px rgba(0, 0, 0, 0.06)',
+      },
+      transitionProperty: {
+        'sidebar-width': 'width',
+      },
       fontFamily: {
         sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans],
       },

@@ -11,7 +11,6 @@ env:
   JWT_SECRET_PREV: "test-jwt-secret-key-min-32-chars-long-prev"
   MONGODB_URI: "mongodb://localhost:27017/fquiz_test"
   CI: "true"
-  NODE_ENV: "test"
 
 jobs:
   ci:
@@ -34,6 +33,9 @@ jobs:
       - name: Run Rule Engine Verification (Strict Mode)
         run: node .agents/scripts/verify.js --strict
 
+      - name: Check Workspace Types
+        run: npm run check-types
+
       - name: Run ESLint
         run: npm run lint
 
@@ -41,12 +43,16 @@ jobs:
         run: mkdir -p test-results
 
       - name: Run Unit Tests
-        run: npm test -- --forceExit
+        run: npm test
+        env:
+          NODE_ENV: "test"
 
       - name: Cache Next.js Build Artifacts
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/.next/cache
+          path: |
+            apps/web/.next/cache
+            apps/admin/.next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { JWTPayload } from '@/lib/modules/auth/auth'
-import { getQuizSessionResult } from '@/lib/modules/quiz/session-utils'
+import { getQuizSessionResult, getSessionRequestErrorResponse } from '@/lib/modules/quiz/session-utils'
 
 /**
  * GET /api/sessions/[id]/result
@@ -21,9 +21,6 @@ export const GET = withAuth(async (
     return NextResponse.json(result, { status: 200 })
   } catch (err) {
     console.error('GET /api/sessions/[id]/result error:', err)
-    if (err instanceof Error && err.message.includes('MongoDB connection failed')) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return getSessionRequestErrorResponse(err)
   }
 }, { roles: ['student'], allowGuest: true })

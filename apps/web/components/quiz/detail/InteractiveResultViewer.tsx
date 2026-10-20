@@ -114,6 +114,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             <button
               type="button"
               onClick={() => handleFilterChange('all')}
+              aria-pressed={filter === 'all'}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'all'
@@ -126,6 +127,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             <button
               type="button"
               onClick={() => handleFilterChange('correct')}
+              aria-pressed={filter === 'correct'}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'correct'
@@ -138,6 +140,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             <button
               type="button"
               onClick={() => handleFilterChange('incorrect')}
+              aria-pressed={filter === 'incorrect'}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'incorrect'
@@ -150,6 +153,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
             <button
               type="button"
               onClick={() => handleFilterChange('unanswered')}
+              aria-pressed={filter === 'unanswered'}
               className={cn(
                 'py-1 rounded-lg transition-all text-center px-0.5 cursor-pointer',
                 filter === 'unanswered'
@@ -162,7 +166,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           </div>
 
           {/* Matrix Grid (Compact Buttons w-6 h-6 on mobile, 8-10 cols) */}
-          <div className="max-h-[160px] md:max-h-none flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar">
+          <div className="max-h-40 md:max-h-none flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar">
             <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1 sm:gap-1.5 p-0.5">
               {filteredIndices.map(idx => {
                 const q = questions[idx]
@@ -338,7 +342,7 @@ function QuestionDetailCard({
               circleBg = 'bg-primary text-primary-foreground border-primary'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-success-border bg-card text-success-fg flex items-center justify-center shrink-0">
-                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
+                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-result-icon" />
                 </div>
               )
             } else if (isCorrectAnswer) {
@@ -348,7 +352,7 @@ function QuestionDetailCard({
               circleBg = 'bg-primary text-primary-foreground border-primary'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-success-border bg-card text-success-fg flex items-center justify-center shrink-0">
-                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
+                  <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-result-icon" />
                 </div>
               )
             } else if (isSubmittedAnswer && !isCorrectAnswer) {
@@ -358,7 +362,7 @@ function QuestionDetailCard({
               circleBg = 'bg-destructive text-destructive-foreground border-destructive'
               indicator = (
                 <div className="w-6 h-6 rounded-full border border-incorrect-border bg-card text-incorrect-fg flex items-center justify-center shrink-0">
-                  <X aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
+                  <X aria-hidden="true" className="h-3.5 w-3.5 stroke-result-icon" />
                 </div>
               )
             }

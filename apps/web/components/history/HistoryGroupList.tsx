@@ -11,6 +11,7 @@ import type { DateGroup } from '@/hooks/useStudentHistory'
 interface HistoryGroupListProps {
   isLoading: boolean
   isError: boolean
+  onRetry: () => void
   dateGroups: DateGroup[]
   hasActiveFilters: boolean
 }
@@ -18,6 +19,7 @@ interface HistoryGroupListProps {
 export function HistoryGroupList({
   isLoading,
   isError,
+  onRetry,
   dateGroups,
   hasActiveFilters,
 }: HistoryGroupListProps) {
@@ -27,11 +29,11 @@ export function HistoryGroupList({
 
   if (isError) {
     return (
-      <div className="p-8 text-center bg-destructive/10 rounded-2xl border border-destructive/20 space-y-2">
+      <div role="alert" className="p-8 text-center bg-destructive/10 rounded-2xl border border-destructive/20 space-y-2">
         <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
         <p className="text-sm font-bold text-destructive">An error occurred while loading quiz history.</p>
         <Button
-          onClick={() => window.location.reload()}
+          onClick={onRetry}
           variant="outline"
           size="sm"
           className="rounded-xl text-xs font-black"

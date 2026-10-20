@@ -23,6 +23,7 @@ type Handler<P = any> = (
 interface WithAuthOptions {
   roles?: string[]
   allowGuest?: boolean
+  tokenVerifier?: (req: Request) => Promise<JWTPayload | null>
 }
 
 export function withAuth<P = any>(
@@ -31,7 +32,7 @@ export function withAuth<P = any>(
 ): (req: Request, context: { params: P }) => Promise<Response> {
   return async (req, context) => {
     const guestId = getGuestId(req)
-    const payload = await verifyToken(req)
+    const payload = await (options.tokenVerifier ?? verifyToken)(req)
     if (!payload) {
       if (options.allowGuest) {
         const guestPayload: JWTPayload = {

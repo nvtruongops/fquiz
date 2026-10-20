@@ -7,6 +7,34 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useSessionLoader } from '@/components/quiz/shared/QuizLoader'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
+const submissionTimeoutMs = 30_000
+
+async function submitSession(sessionId: string, onResultReady: () => void) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), submissionTimeoutMs)
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`,
+      { method: 'POST', headers: withCsrfHeaders(), signal: controller.signal },
+    )
+    if (!res.ok) {
+      if (res.status === 401) {
+        promptSessionReauth()
+        throw new Error('Session expired. Sign in again in the new tab, then submit again.')
+      }
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error ?? 'Failed to submit quiz')
+    }
+    onResultReady()
+    return await res.json()
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('Submission timed out. Please try again.')
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 interface UseSessionFinalizeParams {
   sessionId: string
   quizId: string
@@ -36,22 +64,9 @@ export function useSessionFinalize({
       if (permissionRef.current.sessionId !== sessionId || !permissionRef.current.canFinalize()) throw new Error('Save all answers in the active tab before submitting.')
       sessionLoader.open('Submitting exam and scoring...')
       sessionLoader.advance(50, 'Analyzing results...')
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/submit`,
-        { method: 'POST', headers: withCsrfHeaders() },
-      )
-      if (!res.ok) {
-        if (res.status === 401) {
-          promptSessionReauth()
-          throw new Error('Session expired. Sign in again in the new tab, then submit again.')
-        }
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error ?? 'Failed to submit quiz')
-      }
-
-      if (permissionRef.current.sessionId === sessionId) sessionLoader.advance(95, 'Preparing result summary...')
-      return res.json()
+      return submitSession(sessionId, () => {
+        if (permissionRef.current.sessionId === sessionId) sessionLoader.advance(95, 'Preparing result summary...')
+      })
     },
     onSuccess: async (_data, _variables, request) => {
       if (!request || permissionRef.current.sessionId !== request.sessionId) return

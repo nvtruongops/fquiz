@@ -894,21 +894,51 @@
 }
 
 @layer utilities {
-  .backface-hidden {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+  .min-h-result-page {
+    min-height: calc(100vh - 4rem);
+  }
+
+  .min-h-classroom-page {
+    min-height: calc(100vh - 80px);
+  }
+
+  .bg-classroom-ambient {
+    background-image: radial-gradient(ellipse at top right, var(--tw-gradient-stops));
+  }
+
+  .active-press-scale:active {
+    transform: scale(0.98);
   }
 
   .perspective-1000 {
     perspective: 1000px;
   }
 
-  .transform-style-3d {
-    transform-style: preserve-3d;
+  .question-option-font {
+    font-family: Arial, sans-serif;
   }
 
-  .rotate-y-180 {
-    transform: rotateY(180deg);
+  .max-h-question-image {
+    max-height: 420px;
+  }
+
+  .min-h-question-option {
+    min-height: 50px;
+  }
+
+  .stroke-result-icon {
+    stroke-width: 3px;
+  }
+
+  .register-code-button {
+    min-width: 76px;
+  }
+
+  @media (min-width: 640px) {
+    .register-code-button {
+      height: 52px;
+      min-width: 88px;
+    }
   }
 
   /* Custom Theme-Native Sleek Scrollbar */
@@ -978,31 +1008,25 @@
     transition: opacity 0.2s ease;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-    .glass-card, .glass-card-elevated {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      background-color: hsl(var(--card)) !important;
-    }
-  }
+}
 
-  .rail-glow-learning::before {
-    box-shadow: 0 0 10px hsl(var(--accent-learning) / 0.6);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
-  .rail-glow-discovery::before {
-    box-shadow: 0 0 10px hsl(var(--accent-discovery) / 0.6);
+  :root {
+    scroll-behavior: auto;
   }
-  .rail-glow-community::before {
-    box-shadow: 0 0 10px hsl(var(--accent-community) / 0.6);
-  }
-  .rail-glow-memory::before {
-    box-shadow: 0 0 10px hsl(var(--accent-memory) / 0.6);
+  html:root .glass-card,
+  html:root .glass-card-elevated {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: hsl(var(--card));
   }
 }
 

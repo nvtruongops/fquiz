@@ -4,16 +4,16 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { EmailVerification } from '@/lib/modules/auth/models/EmailVerification'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
+import { getRequestMetadata } from '@/lib/core/security/request-metadata'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { generateVerificationCode, hashVerificationCode } from '@/lib/modules/auth/verification-code'
 import { isMailConfigured, enqueueMail } from '@/lib/core/mail/mail'
 
 const Schema = z.object({ email: z.email().max(254) })
+const GENERIC_RESPONSE = { message: 'If this email can receive a verification code, one will be sent.' }
 
 export async function POST(request: Request) {
-  const requestId = request.headers.get('x-request-id') || 'unknown'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
-  const route = '/api/auth/register/send-code'
+  const { requestId, ip, route } = getRequestMetadata(request, '/api/auth/register/send-code')
 
   try {
     const ipLimit = await rateLimiter.check(`register_send_code_ip_${ip}`)
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     const existingUser = await User.findOne({ email }).select('_id').lean()
     if (existingUser) {
-      return NextResponse.json({ error: 'Email is already in use' }, { status: 409 })
+      return NextResponse.json(GENERIC_RESPONSE)
     }
 
     const now = new Date()
@@ -82,10 +82,10 @@ export async function POST(request: Request) {
 
     // In development without SMTP, return the code for local testing.
     if (!isMailConfigured() && process.env.NODE_ENV === 'development') {
-      return NextResponse.json({ message: 'Verification code generated (dev mode).', dev_code: code }, { status: 200 })
+      return NextResponse.json({ ...GENERIC_RESPONSE, dev_code: code }, { status: 200 })
     }
 
-    return NextResponse.json({ message: 'Verification code sent' }, { status: 200 })
+    return NextResponse.json(GENERIC_RESPONSE, { status: 200 })
   } catch (err) {
     logSecurityEvent('register_code_error', {
       request_id: requestId,

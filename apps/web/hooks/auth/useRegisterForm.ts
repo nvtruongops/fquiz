@@ -89,7 +89,9 @@ export function useRegisterForm() {
 
       setCodeSent(true)
       if (typeof data.dev_code === 'string') setDevCode(data.dev_code)
-      toast.success('Verification code has been sent to your email')
+      toast.success(
+        'If this email can receive a verification code, one will be sent. If you already have an account, sign in instead.'
+      )
     } catch {
       toast.error('System is busy. Please try again later.')
     } finally {

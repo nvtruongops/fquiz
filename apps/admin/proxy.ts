@@ -9,73 +9,103 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/logout',
   '/api/quizzes/check-code',
 ])
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+const TOKEN_COOKIE_NAMES = [AUTH_COOKIE_NAME, 'auth-token', 'token']
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Ignore static assets & Next internals
-  if (
-    pathname.startsWith('/_next') ||
+function isStaticPath(pathname: string) {
+  return pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/public') ||
-    pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|css|js)$/)
-  ) {
-    return NextResponse.next()
+    /\.(png|jpg|jpeg|gif|svg|webp|ico|css|js)$/.test(pathname)
+}
+
+function hasCookieToken(request: NextRequest) {
+  return TOKEN_COOKIE_NAMES.some((name) => Boolean(request.cookies.get(name)?.value))
+}
+
+function hasSameOriginSource(request: NextRequest) {
+  const source = request.headers.get('origin') || request.headers.get('referer')
+  if (!source) return false
+  try {
+    return new URL(source).origin === request.nextUrl.origin
+  } catch {
+    return false
   }
+}
 
-  // Allow public paths
-  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api/quizzes/check-code')) {
-    // If already logged in as admin and visiting /login, redirect to /
-    if (pathname === '/login') {
-      const token =
-        request.cookies.get(AUTH_COOKIE_NAME)?.value ||
-        request.cookies.get('auth-token')?.value ||
-        request.cookies.get('token')?.value
-      if (token) {
-        const payload = await decrypt(token)
-        if (payload && payload.role === 'admin') {
-          return NextResponse.redirect(new URL('/', request.url))
-        }
-      }
-    }
-    return NextResponse.next()
+function isSameOriginMutation(request: NextRequest) {
+  return SAFE_METHODS.has(request.method) || !hasCookieToken(request) || hasSameOriginSource(request)
+}
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api/quizzes/check-code')
+}
+
+function getCookieToken(request: NextRequest) {
+  for (const name of TOKEN_COOKIE_NAMES) {
+    const token = request.cookies.get(name)?.value
+    if (token) return token
   }
+  return undefined
+}
 
-  // Verify auth token
-  const token =
-    request.cookies.get(AUTH_COOKIE_NAME)?.value ||
-    request.cookies.get('auth-token')?.value ||
-    request.cookies.get('token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '')
+function getAuthToken(request: NextRequest) {
+  return getCookieToken(request) || request.headers.get('authorization')?.replace('Bearer ', '')
+}
 
-  if (!token) {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized: Admin authentication required' }, { status: 401 })
-    }
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
+async function redirectLoggedInAdmin(request: NextRequest) {
+  if (request.nextUrl.pathname !== '/login') return null
+  const token = getCookieToken(request)
+  if (!token) return null
   const payload = await decrypt(token)
-  if (!payload || payload.role !== 'admin') {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient privileges' }, { status: 403 })
-    }
-    const loginUrl = new URL('/login', request.url)
-    const res = NextResponse.redirect(loginUrl)
-    res.cookies.delete(AUTH_COOKIE_NAME)
-    return res
-  }
+  return getAdminLoginRedirect(request, payload?.role === 'admin')
+}
 
+function getAdminLoginRedirect(request: NextRequest, isAdmin: boolean) {
+  return isAdmin ? NextResponse.redirect(new URL('/', request.url)) : null
+}
+
+async function handlePublicPath(request: NextRequest) {
+  return await redirectLoggedInAdmin(request) || NextResponse.next()
+}
+
+function handleMissingToken(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Unauthorized: Admin authentication required' }, { status: 401 })
+  }
+  return NextResponse.redirect(new URL('/login', request.url))
+}
+
+function handleInvalidToken(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Forbidden: Insufficient privileges' }, { status: 403 })
+  }
+  const response = NextResponse.redirect(new URL('/login', request.url))
+  response.cookies.delete(AUTH_COOKIE_NAME)
+  return response
+}
+
+function forwardAdminIdentity(request: NextRequest, payload: { userId: string; role: string }) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-admin-id', payload.userId)
   requestHeaders.set('x-admin-role', payload.role)
+  return NextResponse.next({ request: { headers: requestHeaders } })
+}
 
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  if (isStaticPath(pathname)) return NextResponse.next()
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json({ error: 'Cross-origin request rejected' }, { status: 403 })
+  }
+  if (isPublicPath(pathname)) return handlePublicPath(request)
+
+  const token = getAuthToken(request)
+  if (!token) return handleMissingToken(request)
+
+  const payload = await decrypt(token)
+  if (!payload || payload.role !== 'admin') return handleInvalidToken(request)
+  return forwardAdminIdentity(request, payload)
 }
 
 export const config = {

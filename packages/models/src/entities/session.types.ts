@@ -8,6 +8,10 @@ export interface UserAnswer {
   is_correct: boolean
 }
 
+export type SessionDataUserAnswer = Omit<UserAnswer, 'is_correct'> & {
+  is_correct?: boolean
+}
+
 export interface FlashcardStats {
   total_cards: number
   cards_known: number
@@ -69,7 +73,7 @@ export interface SessionData {
     mode: 'immediate' | 'review' | 'flashcard'
     status: 'preparing' | 'active' | 'completed' | 'paused' | 'expired'
     current_question_index: number
-    user_answers: UserAnswer[]
+    user_answers: SessionDataUserAnswer[]
     score: number
     totalQuestions: number
     courseCode: string

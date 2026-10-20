@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
@@ -49,37 +49,179 @@ interface FlashcardAnswerResponse {
   updatedData?: FlashcardSessionData
 }
 
+type FlashcardAnswerError = Error & { status?: number }
+
+function readSessionCache<T>(storageKey: string, isValid: (value: any) => boolean): T | null {
+  try {
+    const cached = sessionStorage.getItem(storageKey)
+    if (!cached) return null
+    const parsed = JSON.parse(cached)
+    if (!isValid(parsed)) return null
+    sessionStorage.removeItem(storageKey)
+    return parsed as T
+  } catch {
+    return null
+  }
+}
+
+function readCachedFlashcardSession(sessionId: string): FlashcardSessionData | null {
+  return readSessionCache(`session_initial_preload_${sessionId}`, (value) => Boolean(value.session))
+}
+
+function readCachedFlashcardQuestions(sessionId: string): { questions: FlashcardQuestion[] } | null {
+  return readSessionCache(`session_preload_${sessionId}`, (value) => Boolean(value.questions?.length))
+}
+
+function getFlashcardSessionError(status: number): Error {
+  if (status === 401) promptSessionReauth()
+  return new Error(status === 401 ? 'Session expired' : 'Failed to load session')
+}
+
+async function fetchFlashcardSession(sessionId: string): Promise<FlashcardSessionData> {
+  const cached = readCachedFlashcardSession(sessionId)
+  if (cached) return cached
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`)
+  if (!res.ok) throw getFlashcardSessionError(res.status)
+  return res.json()
+}
+
+async function fetchFlashcardQuestions(sessionId: string): Promise<{ questions: FlashcardQuestion[] }> {
+  const cached = readCachedFlashcardQuestions(sessionId)
+  if (cached) return cached
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
+  if (!res.ok) throw new Error('Failed to preload questions')
+  return res.json()
+}
+
+function hasFlashcardAnswerError(payload: unknown): payload is { error: string } {
+  return typeof payload === 'object' && payload !== null &&
+    'error' in payload && typeof payload.error === 'string'
+}
+
+function getFlashcardAnswerErrorMessage(payload: unknown) {
+  return hasFlashcardAnswerError(payload) ? payload.error : 'Failed to submit answer'
+}
+
+function getFlashcardSessionContent(
+  data: FlashcardSessionData | undefined,
+  allQuestionsData: { questions: FlashcardQuestion[] } | undefined,
+) {
+  return {
+    session: data?.session,
+    question: getCurrentFlashcardQuestion(data, allQuestionsData),
+    allQuestions: allQuestionsData?.questions,
+  }
+}
+
+function getCurrentFlashcardQuestion(
+  data: FlashcardSessionData | undefined,
+  allQuestionsData: { questions: FlashcardQuestion[] } | undefined,
+) {
+  if (!data) return undefined
+  if (!allQuestionsData) return data.question
+  return allQuestionsData.questions[data.session.current_question_index] ?? data.question
+}
+
+function getFlashcardQueryState(
+  isLoading: boolean,
+  isPreloading: boolean,
+  isSubmitting: boolean,
+  isAnswerError: boolean,
+  answerVariables: { knows: boolean; questionIndex: number } | undefined,
+) {
+  return {
+    isLoading: isLoading || isPreloading,
+    isPreloading,
+    isSubmitting,
+    failedAnswer: isAnswerError ? answerVariables : undefined,
+  }
+}
+
+async function submitFlashcardAnswer(sessionId: string, knows: boolean, questionIndex: number) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/flashcard-answer`, {
+    method: 'POST',
+    headers: withCsrfHeaders(),
+    body: JSON.stringify({ knows, question_index: questionIndex }),
+  })
+  if (res.ok) return res.json()
+  const payload: unknown = await res.json().catch(() => null)
+  const error = new Error(getFlashcardAnswerErrorMessage(payload)) as FlashcardAnswerError
+  error.status = res.status
+  throw error
+}
+
+function getNextQuestionIndex(currentIndex: number, questionIndex: number) {
+  return questionIndex < currentIndex ? currentIndex : currentIndex + 1
+}
+
+function getOptimisticFlashcardStats(
+  stats: FlashcardSessionData['session']['flashcard_stats'],
+  knows: boolean,
+  isUpdatingPrevious: boolean,
+) {
+  if (!stats) return stats
+  if (isUpdatingPrevious) return stats
+  return {
+    ...stats,
+    cards_known: stats.cards_known + Number(knows),
+    cards_unknown: stats.cards_unknown + Number(!knows),
+  }
+}
+
+async function prepareFlashcardAnswer(
+  queryClient: QueryClient,
+  sessionId: string,
+  knows: boolean,
+  questionIndex: number,
+) {
+  const queryKey = ['flashcard-session', sessionId]
+  await queryClient.cancelQueries({ queryKey })
+  const previousData = queryClient.getQueryData<FlashcardSessionData>(queryKey)
+  if (previousData) {
+    const isUpdatingPrevious = questionIndex < previousData.session.current_question_index
+    queryClient.setQueryData<FlashcardSessionData>(queryKey, {
+      ...previousData,
+      session: {
+        ...previousData.session,
+        current_question_index: getNextQuestionIndex(previousData.session.current_question_index, questionIndex),
+        flashcard_stats: getOptimisticFlashcardStats(previousData.session.flashcard_stats, knows, isUpdatingPrevious),
+      },
+    })
+  }
+  return { previousData }
+}
+
+function handleFlashcardAnswerSuccess(
+  queryClient: QueryClient,
+  sessionId: string,
+  data: FlashcardAnswerResponse,
+) {
+  const queryKey = ['flashcard-session', sessionId]
+  if (data.updatedData) queryClient.setQueryData(queryKey, data.updatedData)
+  else void queryClient.invalidateQueries({ queryKey })
+}
+
+function handleFlashcardAnswerError(
+  queryClient: QueryClient,
+  sessionId: string,
+  error: FlashcardAnswerError,
+  context: { previousData: FlashcardSessionData | undefined } | undefined,
+) {
+  const queryKey = ['flashcard-session', sessionId]
+  if (error.status === 401) promptSessionReauth()
+  if (context?.previousData) queryClient.setQueryData(queryKey, context.previousData)
+  void queryClient.invalidateQueries({ queryKey })
+}
+
 export function useFlashcardSession(sessionId: string) {
   const queryClient = useQueryClient()
 
   // Fetch current session state
   const { data, isLoading, error, refetch } = useQuery<FlashcardSessionData>({
     queryKey: ['flashcard-session', sessionId],
-    queryFn: async () => {
-      try {
-        const cached = sessionStorage.getItem(`session_initial_preload_${sessionId}`)
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          if (parsed.session) {
-            sessionStorage.removeItem(`session_initial_preload_${sessionId}`)
-            return parsed as FlashcardSessionData
-          }
-        }
-      } catch (_cacheErr) {
-        /* ignore cache read error */
-      }
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`
-      )
-      if (!res.ok) {
-        if (res.status === 401) {
-          promptSessionReauth()
-          throw new Error('Session expired')
-        }
-        throw new Error('Failed to load session')
-      }
-      return res.json()
-    },
+    queryFn: () => fetchFlashcardSession(sessionId),
     enabled: !!sessionId,
     refetchOnWindowFocus: false,
   })
@@ -87,25 +229,7 @@ export function useFlashcardSession(sessionId: string) {
   // Preload all questions for immediate transitions
   const { data: allQuestionsData, isLoading: isAllQuestionsLoading } = useQuery<{ questions: FlashcardQuestion[] }>({
     queryKey: ['flashcard-session', sessionId, 'all-questions'],
-    queryFn: async () => {
-      try {
-        const cached = sessionStorage.getItem(`session_preload_${sessionId}`)
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          if (parsed.questions?.length > 0) {
-            sessionStorage.removeItem(`session_preload_${sessionId}`)
-            return parsed as { questions: FlashcardQuestion[] }
-          }
-        }
-      } catch (_cacheErr) {
-        /* ignore cache read error */
-      }
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`
-      )
-      if (!res.ok) throw new Error('Failed to preload questions')
-      return res.json()
-    },
+    queryFn: () => fetchFlashcardQuestions(sessionId),
     enabled: !!sessionId,
     staleTime: Infinity, // Preloaded once, stay in cache
   })
@@ -113,88 +237,35 @@ export function useFlashcardSession(sessionId: string) {
   // Submit flashcard answer
   const answerMutation = useMutation<
     FlashcardAnswerResponse,
-    Error,
+    FlashcardAnswerError,
     { knows: boolean; questionIndex: number },
     { previousData: FlashcardSessionData | undefined }
   >({
-    mutationFn: async ({ knows, questionIndex }) => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/flashcard-answer`,
-        {
-          method: 'POST',
-          headers: withCsrfHeaders(),
-          body: JSON.stringify({ knows, question_index: questionIndex }),
-        }
-      )
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Failed to submit answer' }))
-        throw new Error(err.error)
-      }
-      return res.json()
-    },
-    onMutate: async ({ knows, questionIndex }) => {
-      // Cancel outgoing refetches to avoid overwriting optimistic update
-      await queryClient.cancelQueries({ queryKey: ['flashcard-session', sessionId] })
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData<FlashcardSessionData>(['flashcard-session', sessionId])
-
-      // Optimistically update the session index and stats
-      if (previousData) {
-        const isUpdatingPrevious = questionIndex < previousData.session.current_question_index
-        
-        // We don't optimistically update stats for previous answers to keep it simple,
-        // but we do advance the index if it's a new answer.
-        queryClient.setQueryData(['flashcard-session', sessionId], {
-          ...previousData,
-          session: {
-            ...previousData.session,
-            current_question_index: isUpdatingPrevious ? previousData.session.current_question_index : previousData.session.current_question_index + 1,
-            flashcard_stats: previousData.session.flashcard_stats && !isUpdatingPrevious ? {
-              ...previousData.session.flashcard_stats,
-              cards_known: previousData.session.flashcard_stats.cards_known + (knows ? 1 : 0),
-              cards_unknown: previousData.session.flashcard_stats.cards_unknown + (knows ? 0 : 1),
-            } : previousData.session.flashcard_stats
-          }
-        })
-      }
-
-      return { previousData }
-    },
-    onSuccess: (data) => {
-      // If the API provided the next piece of data directly, we can update the cache
-      // optimistically without waiting for a whole GET request roundtrip!
-      if (data.updatedData) {
-        queryClient.setQueryData(['flashcard-session', sessionId], data.updatedData)
-      } else {
-        // Fallback
-        void queryClient.invalidateQueries({ queryKey: ['flashcard-session', sessionId] })
-      }
-    },
-    onError: (err, newAnswer, context) => {
-      // Rollback to previous data on error
-      if (context?.previousData) {
-        queryClient.setQueryData(['flashcard-session', sessionId], context.previousData)
-      }
-      // On error, refetch to get the real server state
-      void queryClient.invalidateQueries({ queryKey: ['flashcard-session', sessionId] })
-    },
+    mutationFn: ({ knows, questionIndex }) => submitFlashcardAnswer(sessionId, knows, questionIndex),
+    onMutate: ({ knows, questionIndex }) => prepareFlashcardAnswer(queryClient, sessionId, knows, questionIndex),
+    onSuccess: (data) => handleFlashcardAnswerSuccess(queryClient, sessionId, data),
+    onError: (err, _answer, context) => handleFlashcardAnswerError(queryClient, sessionId, err, context),
   })
 
-  // Get current question from preloaded pool if available, otherwise fallback to session-provided question
-  const currentQuestion = allQuestionsData?.questions?.[data?.session?.current_question_index ?? -1] ?? data?.question
+  const { session, question, allQuestions } = getFlashcardSessionContent(data, allQuestionsData)
+  const queryState = getFlashcardQueryState(
+    isLoading,
+    isAllQuestionsLoading,
+    answerMutation.isPending,
+    answerMutation.isError,
+    answerMutation.variables,
+  )
 
   // We expose a way to override the display index for local history navigation
   return {
-    session: data?.session,
-    question: currentQuestion,
-    allQuestions: allQuestionsData?.questions,
-    isLoading: isLoading || isAllQuestionsLoading,
-    isPreloading: isAllQuestionsLoading,
+    session,
+    question,
+    allQuestions,
+    ...queryState,
     error,
     refetch,
     submitAnswer: answerMutation.mutate,
-    isSubmitting: answerMutation.isPending,
+    answerError: answerMutation.error,
   }
 }
 
@@ -202,7 +273,7 @@ import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
 
 export function useFlashcardSessionState(sessionId: string, quizId: string) {
   const router = useRouter()
-  const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting } = useFlashcardSession(sessionId)
+  const { session, allQuestions, isLoading, isPreloading, error, submitAnswer, isSubmitting, answerError, failedAnswer } = useFlashcardSession(sessionId)
   const [stats, setStats] = useState({ known: 0, unknown: 0, total: 0 })
   const [displayIndex, setDisplayIndex] = useState<number | null>(null)
   const [enableAnimation, setEnableAnimation] = useAnimationPreference(true)
@@ -254,6 +325,8 @@ export function useFlashcardSessionState(sessionId: string, quizId: string) {
     error,
     submitAnswer,
     isSubmitting,
+    answerError,
+    failedAnswer,
     stats,
     setStats,
     displayIndex,

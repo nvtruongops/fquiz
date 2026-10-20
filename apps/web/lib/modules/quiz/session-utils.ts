@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
+import { Question } from '@/lib/modules/quiz/models/Question'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { JWTPayload } from '@/lib/modules/auth/auth'
+import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 
 export interface ValidateQuizSessionOptions {
   checkCompleted?: boolean
@@ -10,6 +13,13 @@ export interface ValidateQuizSessionOptions {
   lean?: boolean
   requireActive?: boolean
   select?: string
+}
+
+export function getSessionRequestErrorResponse(error: unknown): NextResponse {
+  const isDatabaseUnavailable = error instanceof Error && error.message.includes('MongoDB connection failed')
+  return isDatabaseUnavailable
+    ? NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+    : NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
 const SESSION_OWNERSHIP_FIELDS = ['student_id', 'is_guest', 'guest_id']
@@ -22,6 +32,105 @@ export function activeSessionWriteFilter(now = new Date()) {
       { expires_at: { $gt: now } },
     ],
   }
+}
+
+export function resolveEffectiveQuestionOrder(session: any, quiz?: any): number[] {
+  const cachedCount = Array.isArray(session?.questions_cache) ? session.questions_cache.length : 0
+  const quizCount = (Array.isArray(quiz?.questions) ? quiz.questions.length : 0) ||
+    (Array.isArray(quiz?.question_refs) ? quiz.question_refs.length : 0)
+  const questionCount = cachedCount || quizCount
+  const order = session?.question_order
+  const isPermutation = Array.isArray(order) &&
+    order.length === questionCount &&
+    questionCount > 0 &&
+    new Set(order).size === questionCount &&
+    order.every((index: number) => Number.isInteger(index) && index >= 0 && index < questionCount)
+
+  return isPermutation ? order : Array.from({ length: questionCount }, (_, index) => index)
+}
+
+function resolveQuestionAtSourceIndex(
+  session: any,
+  quiz: any,
+  sourceIndex: number,
+  referencedQuestion?: IQuestion | null
+): IQuestion | null {
+  if (Array.isArray(session?.questions_cache) && session.questions_cache.length > 0) {
+    return session.questions_cache[sourceIndex] ?? null
+  }
+
+  return referencedQuestion ?? (Array.isArray(quiz?.questions) ? quiz.questions[sourceIndex] : null) ?? null
+}
+
+export async function resolveEffectiveQuestionAtIndex(
+  session: any,
+  quiz: any,
+  sourceIndex: number
+): Promise<IQuestion | null> {
+  if (!Number.isInteger(sourceIndex) || sourceIndex < 0) return null
+
+  if (Array.isArray(session?.questions_cache) && session.questions_cache.length > 0) {
+    return resolveQuestionAtSourceIndex(session, quiz, sourceIndex)
+  }
+  if (Array.isArray(quiz?.questions) && quiz.questions.length > 0) {
+    return resolveQuestionAtSourceIndex(session, quiz, sourceIndex)
+  }
+
+  const ref = Array.isArray(quiz?.question_refs) ? quiz.question_refs[sourceIndex] : null
+  let referencedQuestion: IQuestion | null = null
+  if (ref && mongoose.Types.ObjectId.isValid(ref)) {
+    const question = await Question.findById(ref)
+      .select('question_id text options correct_answer explanation image_url')
+      .lean()
+    if (question) referencedQuestion = question as unknown as IQuestion
+  }
+
+  return resolveQuestionAtSourceIndex(session, quiz, sourceIndex, referencedQuestion)
+}
+
+export async function resolveEffectiveQuestionDeck(
+  session: any,
+  quiz: any
+): Promise<{ questions: Array<IQuestion | null>; questionOrder: number[] }> {
+  const questionOrder = resolveEffectiveQuestionOrder(session, quiz)
+  if (hasCachedQuestionDeck(session)) {
+    return { questions: session.questions_cache, questionOrder }
+  }
+  if (hasEmbeddedQuestionDeck(quiz)) {
+    return { questions: quiz.questions, questionOrder }
+  }
+
+  const refs = Array.isArray(quiz?.question_refs) ? quiz.question_refs : []
+  const questionsById = await loadReferencedQuestions(refs)
+
+  const questions = Array.from({ length: questionOrder.length }, (_, sourceIndex) => {
+    const referencedQuestion = getReferencedQuestion(refs[sourceIndex], questionsById)
+    return resolveQuestionAtSourceIndex(session, quiz, sourceIndex, referencedQuestion)
+  })
+
+  return { questions, questionOrder }
+}
+
+function hasCachedQuestionDeck(session: any): boolean {
+  return Array.isArray(session?.questions_cache) && session.questions_cache.length > 0
+}
+
+function hasEmbeddedQuestionDeck(quiz: any): boolean {
+  return Array.isArray(quiz?.questions) && quiz.questions.length > 0
+}
+
+async function loadReferencedQuestions(refs: any[]): Promise<Map<string, IQuestion>> {
+  const validRefs = refs.filter((ref: any) => mongoose.Types.ObjectId.isValid(ref))
+  if (validRefs.length === 0) return new Map()
+  const resolved = await Question.find({ _id: { $in: validRefs } })
+    .select('question_id text options correct_answer explanation image_url')
+    .lean() as any[]
+  return new Map(resolved.map((question) => [question._id.toString(), question as IQuestion]))
+}
+
+function getReferencedQuestion(ref: any, questionsById: Map<string, IQuestion>): IQuestion | null {
+  if (!ref || !mongoose.Types.ObjectId.isValid(ref)) return null
+  return questionsById.get(ref.toString()) ?? null
 }
 
 function getSessionStatusResponse(status: string, options: ValidateQuizSessionOptions): NextResponse | null {
@@ -37,6 +146,53 @@ function getSessionStatusResponse(status: string, options: ValidateQuizSessionOp
   }
 
   return null
+}
+
+function isSessionOwnedByPayload(session: any, payload: JWTPayload): boolean {
+  return session.is_guest
+    ? Boolean(payload.guestId && session.guest_id === payload.guestId)
+    : Boolean(payload.userId && session.student_id?.toString() === payload.userId)
+}
+
+function isExclusionOnlySelection(fields: string[]): boolean {
+  return fields.length > 0 && fields.every((field) => field.startsWith('-'))
+}
+
+function applySessionSelection(query: any, select: string | undefined): void {
+  if (!select) return
+  const fields = select.trim().split(/\s+/).filter(Boolean)
+  const selection = isExclusionOnlySelection(fields)
+    ? fields.filter((field) => !SESSION_OWNERSHIP_FIELDS.includes(field.slice(1))).join(' ')
+    : [...new Set([...fields, ...SESSION_OWNERSHIP_FIELDS])].join(' ')
+  if (selection) query.select(selection)
+}
+
+function getSessionExpiryResponse(session: any, checkExpired: boolean | undefined): NextResponse | null {
+  if (
+    checkExpired !== false &&
+    session.status === 'active' &&
+    session.expires_at &&
+    new Date(session.expires_at).getTime() <= Date.now()
+  ) {
+    return NextResponse.json(
+      { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
+      { status: 410 }
+    )
+  }
+  return null
+}
+
+function getSessionValidationResponse(
+  session: any,
+  payload: JWTPayload,
+  options: ValidateQuizSessionOptions
+): NextResponse | null {
+  if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+  if (!isSessionOwnedByPayload(session, payload)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const expiryResponse = getSessionExpiryResponse(session, options.checkExpired)
+  if (expiryResponse) return expiryResponse
+  return getSessionStatusResponse(session.status, options)
 }
 
 export async function validateQuizSessionRequest(
@@ -58,53 +214,10 @@ export async function validateQuizSessionRequest(
 
   const lean = options.lean !== false
   const query = QuizSession.findById(sessionId)
-  if (options.select) {
-    const selectedFields = options.select.trim().split(/\s+/).filter(Boolean)
-    const exclusionOnly = selectedFields.length > 0 && selectedFields.every(field => field.startsWith('-'))
-    const selection = exclusionOnly
-      ? selectedFields.filter(field => !SESSION_OWNERSHIP_FIELDS.includes(field.slice(1))).join(' ')
-      : [...new Set([...selectedFields, ...SESSION_OWNERSHIP_FIELDS])].join(' ')
-    if (selection) query.select(selection)
-  }
+  applySessionSelection(query, options.select)
   const session = await (lean ? query.lean() : query)
-
-  if (!session) {
-    return {
-      isValid: false,
-      response: NextResponse.json({ error: 'Session not found' }, { status: 404 }),
-    }
-  }
-
-  const isOwnedSession = session.is_guest
-    ? Boolean(payload.guestId && session.guest_id === payload.guestId)
-    : Boolean(payload.userId && session.student_id?.toString() === payload.userId)
-  if (!isOwnedSession) {
-    return {
-      isValid: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
-  }
-
-  // Check expired status
-  if (options.checkExpired !== false && session.status === 'active' && session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-    return {
-      isValid: false,
-      response: NextResponse.json(
-        { error: 'Session expired. Please start a new attempt.', code: 'SESSION_EXPIRED' },
-        { status: 410 }
-      ),
-    }
-  }
-
-  const statusResponse = getSessionStatusResponse(session.status, options)
-  if (statusResponse) {
-    return {
-      isValid: false,
-      response: statusResponse,
-    }
-  }
-
-  return { isValid: true, session }
+  const response = getSessionValidationResponse(session, payload, options)
+  return response ? { isValid: false, response } : { isValid: true, session }
 }
 
 export const MAX_COMPLETED_SESSIONS_PER_QUIZ = 20
@@ -149,8 +262,6 @@ export async function pruneCompletedSessions(
   }
 }
 
-import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
 
 export async function getQuizSessionResult(sessionId: string, userId?: string, guestId?: string) {
@@ -165,7 +276,7 @@ export async function getQuizSessionResult(sessionId: string, userId?: string, g
   if (!isOwnedSession) return null
   if (session.status !== 'completed') return null
 
-  const quizDoc = (await Quiz.findById(session.quiz_id).select('questions updatedAt').lean()) as any
+  const quizDoc = (await Quiz.findById(session.quiz_id).select('questions question_refs updatedAt').lean()) as any
   const hasCachedQuestions = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
   const quiz = hasCachedQuestions ? null : quizDoc
 
@@ -177,12 +288,11 @@ export async function getQuizSessionResult(sessionId: string, userId?: string, g
     new Date(quizDoc.updatedAt).getTime() > new Date(session.started_at).getTime()
   )
 
-  const allQuestions = (hasCachedQuestions ? session.questions_cache : (quiz?.questions ?? [])) as IQuestion[]
+  const { questions: allQuestions, questionOrder } = await resolveEffectiveQuestionDeck(session, quizDoc)
   const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
-  const questionOrder = session.question_order || Array.from({ length: allQuestions.length }, (_, i) => i)
 
   const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
-    const q = allQuestions[actualIndex] ?? allQuestions[0]
+    const q = allQuestions[actualIndex]
     const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
     const correctAnswer = q?.correct_answer
     const submittedAnswer = submitted
@@ -192,8 +302,8 @@ export async function getQuizSessionResult(sessionId: string, userId?: string, g
       : null
 
     return {
-      _id: q?._id?.toString() ?? String(displayIndex),
-      text: q?.text ?? '',
+      _id: q?._id?.toString() ?? `unavailable-${displayIndex}`,
+      text: q?.text ?? 'Question unavailable',
       options: q?.options ?? [],
       correct_answer: correctAnswer,
       explanation: q?.explanation,
