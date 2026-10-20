@@ -338,7 +338,7 @@ function MobileSessionReadyContent({
         onNavigate={ctrl.handleNavigate}
         navigationDisabled={ctrl.navigationDisabled}
         isFinalizePending={ctrl.finalizeMutation.isPending}
-        submitDisabled={ctrl.submitDisabled}
+        submitDisabled={ctrl.confirmSubmitDisabled}
       />
     </div>
   )

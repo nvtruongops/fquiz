@@ -18,6 +18,7 @@ import { useSessionFinalize } from '@/hooks/quiz/useSessionFinalize'
 import { useAnimationPreference } from '@/hooks/quiz/useAnimationPreference'
 import { useExamTabLease } from '@/hooks/quiz/useExamTabLease'
 import {
+  getSessionSubmitAvailability,
   isQuestionNavigationReady,
   isSessionQuestionReady,
   shouldShowSessionSkeleton,
@@ -306,6 +307,7 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
     isReadOnlyTab: boolean
     isSubmitting: boolean
     submitDisabled: boolean
+    confirmSubmitDisabled: boolean
     saveState: DesktopSessionAnswerState
     lastAnswerResult: DesktopLastAnswerResult
   }
@@ -338,6 +340,7 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
     isReadOnlyTab,
     isSubmitting,
     submitDisabled,
+    confirmSubmitDisabled,
     saveState,
     lastAnswerResult,
   } = data
@@ -412,7 +415,7 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
           confirmOpen={confirmOpen}
           setConfirmOpen={setConfirmOpen}
           finalizeMutation={finalizeMutation}
-          submitDisabled={submitDisabled}
+          submitDisabled={confirmSubmitDisabled}
           enableAnimation={enableAnimation}
           canFinalize={canFinalize}
           sessionLoader={sessionLoader}
@@ -517,7 +520,13 @@ export function DesktopSessionContent({
   } = answerSync
   const canFinalize = useCallback(() => canWrite() && !isSubmitting && !hasUnsavedAnswers(), [canWrite, isSubmitting, hasUnsavedAnswers])
   const { finalizeMutation } = useSessionFinalize({ sessionId, quizId, canFinalize })
-  const submitDisabled = isReadOnlyTab || isSubmitting || hasUnsavedAnswers() || finalizeMutation.isPending
+  const submitAvailability = getSessionSubmitAvailability({
+    isReadOnlyTab,
+    isAnswerSavePending: isSubmitting,
+    hasUnsavedAnswers: hasUnsavedAnswers(),
+    isFinalizing: finalizeMutation.isPending,
+  })
+  const submitDisabled = submitAvailability.submitActionDisabled
   const activity = useSessionActivityTracking({
     sessionId: resolvedSessionId,
     currentQuestionIndex,
@@ -526,8 +535,8 @@ export function DesktopSessionContent({
     canWrite,
   })
   const handleSubmit = useCallback(() => {
-    if (canFinalize()) setConfirmOpen(true)
-  }, [canFinalize])
+    if (canWrite() && !finalizeMutation.isPending) setConfirmOpen(true)
+  }, [canWrite, finalizeMutation.isPending])
   const handleExit = useCallback(() => activity.setExitConfirmOpen(true), [activity.setExitConfirmOpen])
   const sessionLoaderStartedRef = useRef(false)
 
@@ -604,6 +613,7 @@ export function DesktopSessionContent({
         isReadOnlyTab,
         isSubmitting,
         submitDisabled,
+        confirmSubmitDisabled: submitAvailability.confirmationDisabled,
         saveState: { selectedOptions, submitted, saveStatus, retryFailedAnswer, unsavedQuestionIndex, discardUnsavedAnswer },
         lastAnswerResult,
       }}

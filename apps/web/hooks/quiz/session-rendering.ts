@@ -24,3 +24,21 @@ export function shouldShowSessionSkeleton(
 ): boolean {
   return isLoading && !sessionLoaderOpen && !transitionLoaderActive
 }
+
+export function getSessionSubmitAvailability({
+  isReadOnlyTab,
+  isAnswerSavePending,
+  hasUnsavedAnswers,
+  isFinalizing,
+}: {
+  isReadOnlyTab: boolean
+  isAnswerSavePending: boolean
+  hasUnsavedAnswers: boolean
+  isFinalizing: boolean
+}) {
+  const submitActionDisabled = isReadOnlyTab || isFinalizing
+  return {
+    submitActionDisabled,
+    confirmationDisabled: submitActionDisabled || isAnswerSavePending || hasUnsavedAnswers,
+  }
+}
