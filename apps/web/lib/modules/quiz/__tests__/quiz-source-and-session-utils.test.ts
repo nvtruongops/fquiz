@@ -167,7 +167,7 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
         }),
       })
 
-      const res = await getQuizSessionResult(sessionId)
+      const res = await getQuizSessionResult(sessionId, studentId)
       expect(res).not.toBeNull()
       expect(res?.quiz_updated_after_start).toBe(true)
     })
@@ -206,7 +206,7 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
         }),
       })
 
-      const res = await getQuizSessionResult(sessionId)
+      const res = await getQuizSessionResult(sessionId, studentId)
       expect(res).not.toBeNull()
       expect(res?.quiz_updated_after_start).toBe(false)
     })

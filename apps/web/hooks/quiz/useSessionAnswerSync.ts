@@ -388,7 +388,7 @@ export function useSessionAnswerSync({
     const failed = Object.entries(draftsRef.current).find(([, answer]) => answer.status === 'error')
     if (!failed) return
     const questionIndex = Number(failed[0])
-    if (getRequiredSelectionCount(questionIndex) !== failed[1].answerIndexes.length) {
+    if ((getRequiredSelectionCount(questionIndex) ?? 1) !== failed[1].answerIndexes.length) {
       updateDraft(questionIndex, { ...failed[1], status: 'unsaved' })
       return
     }

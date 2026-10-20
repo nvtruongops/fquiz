@@ -81,7 +81,7 @@ describe('GET /api/student/dashboard', () => {
     mockCategoryFindLean.mockResolvedValue([])
     mockSessionFindLean.mockResolvedValue([])
     // Restore default implementations (clearAllMocks keeps prior mockImplementation overrides)
-    ;(QuizSession.aggregate as jest.Mock).mockResolvedValue([])
+    ;(QuizSession.aggregate as jest.Mock).mockReset().mockResolvedValue([])
     ;(QuizSession.find as jest.Mock).mockImplementation(() => ({
       sort: jest.fn().mockReturnValue({ lean: mockSessionFindLean }),
     }))
@@ -177,7 +177,6 @@ describe('GET /api/student/dashboard', () => {
     ;(QuizSession.aggregate as jest.Mock)
       .mockResolvedValueOnce([{ latestSessionId: session._id }])
       .mockResolvedValueOnce([]) // no active sessions
-      .mockResolvedValueOnce([{ _id: { quiz_id: session.quiz_id, mode_group: 'assessment' } }])
     ;(QuizSession.find as jest.Mock).mockImplementation(() => ({
       sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([session]) }),
     }))
@@ -249,9 +248,6 @@ describe('GET /api/student/dashboard', () => {
     ;(QuizSession.aggregate as jest.Mock)
       .mockResolvedValueOnce(completedSessions.map((s) => ({ latestSessionId: s._id }))) // completed latest ids
       .mockResolvedValueOnce([{ latestSessionId: activeSession._id }]) // active latest ids
-      .mockResolvedValueOnce(
-        completedSessions.map((s) => ({ _id: { quiz_id: s.quiz_id, mode_group: 'assessment' } }))
-      ) // all completed groups
 
     ;(QuizSession.find as jest.Mock).mockImplementation((query: any) => {
       const ids: any[] = query?._id?.$in ?? []
@@ -315,7 +311,6 @@ describe('GET /api/student/dashboard', () => {
     ;(QuizSession.aggregate as jest.Mock)
       .mockResolvedValueOnce(completedSessions.map((s) => ({ latestSessionId: s._id })))
       .mockResolvedValueOnce(activeSessions.map((s) => ({ latestSessionId: s._id })))
-      .mockResolvedValueOnce(completedSessions.map((s) => ({ _id: { quiz_id: s.quiz_id, mode_group: 'assessment' } })))
 
     ;(QuizSession.find as jest.Mock).mockImplementation((query: any) => {
       const ids: any[] = query?._id?.$in ?? []

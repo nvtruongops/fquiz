@@ -22,6 +22,7 @@ jest.mock('@/lib/modules/auth/with-auth', () => ({
 
 jest.mock('@/lib/modules/quiz/models/Quiz', () => ({
   Quiz: {
+    collection: { name: 'quizzes' },
     find: jest.fn().mockReturnValue({
       lean: jest.fn().mockResolvedValue([]),
     }),
@@ -30,6 +31,7 @@ jest.mock('@/lib/modules/quiz/models/Quiz', () => ({
 
 jest.mock('@/lib/modules/quiz/models/Category', () => ({
   Category: {
+    collection: { name: 'categories' },
     find: jest.fn().mockReturnValue({
       lean: jest.fn().mockResolvedValue([]),
     }),
