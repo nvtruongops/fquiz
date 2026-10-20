@@ -12,6 +12,7 @@ describe('PendingAnswerIndicator', () => {
     }))
 
     expect(markup).toContain('role="status"')
+    expect(markup).toContain('class="sr-only"')
     expect(markup).toContain('Checking answer')
     expect(markup).not.toContain('Correct')
     expect(markup).not.toContain('Incorrect')
@@ -25,6 +26,7 @@ describe('PendingAnswerIndicator', () => {
       showImmediateFeedback: true,
     }))
 
+    expect(markup).toContain('class="sr-only"')
     expect(markup).toContain('Saving answer')
   })
 
