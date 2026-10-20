@@ -4,8 +4,11 @@ import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 
 // Mock dependencies
 jest.mock('next/server', () => ({
-  NextResponse: {
-    json: jest.fn((body, init) => ({ body, status: init?.status ?? 200, headers: new Headers(init?.headers) })),
+  NextResponse: class MockNextResponse {
+    constructor(public body: any, public status: number, public headers: Headers) {}
+    static json(body: any, init?: { status?: number; headers?: HeadersInit }) {
+      return new MockNextResponse(body, init?.status ?? 200, new Headers(init?.headers))
+    }
   },
 }))
 
@@ -19,6 +22,7 @@ jest.mock('@/lib/modules/auth/with-auth', () => ({
 }))
 
 jest.mock('@/lib/modules/quiz/session-utils', () => ({
+  ...jest.requireActual('@/lib/modules/quiz/session-utils'),
   validateQuizSessionRequest: jest.fn(),
 }))
 

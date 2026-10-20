@@ -37,6 +37,22 @@ jest.mock('../models/QuizSession', () => ({
   },
 }))
 
+function answerWriteFilter(versionFilter: Record<string, unknown>) {
+  return expect.objectContaining({
+    $and: expect.arrayContaining([
+      { _id: 'session-123' },
+      expect.objectContaining({
+        status: 'active',
+        $or: expect.arrayContaining([
+          { expires_at: null },
+          { expires_at: { $gt: expect.any(Date) } },
+        ]),
+      }),
+      versionFilter,
+    ]),
+  })
+}
+
 describe('Quiz Engine', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -139,7 +155,7 @@ describe('Quiz Engine', () => {
       expect(result.explanation).toBe('Exp 1')
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        { _id: 'session-123', answer_version: 1 },
+        answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
@@ -157,7 +173,7 @@ describe('Quiz Engine', () => {
       expect(result.correctAnswer).toBe(0)
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        { _id: 'session-123', answer_version: 1 },
+        answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
@@ -179,10 +195,7 @@ describe('Quiz Engine', () => {
 
       expect(result.isCorrect).toBe(true)
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        {
-          _id: 'session-123',
-          $or: [{ answer_version: 1 }, { answer_version: { $exists: false } }],
-        },
+        answerWriteFilter({ answer_version: { $exists: false } }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
@@ -273,14 +286,14 @@ describe('Quiz Engine', () => {
       const advancedSession = {
         ...mockSession,
         current_question_index: 2,
-        user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+        user_answers: [{ question_index: 1, answer_index: 1, answer_indexes: [1], is_correct: true }],
       }
       mockSessionForFind = advancedSession
 
       await processImmediateAnswer(advancedSession, [0], 0)
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        { _id: 'session-123', answer_version: 1 },
+        answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 2, // Must remain 2, NOT rollback to 1
@@ -319,7 +332,7 @@ describe('Quiz Engine', () => {
       expect(result.nextQuestion?.text).toBe('Q2')
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        { _id: 'session-123', answer_version: 1 },
+        answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
@@ -342,7 +355,7 @@ describe('Quiz Engine', () => {
       expect(result.score).toBe(2)
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
-        { _id: 'session-123', answer_version: 1 },
+        answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,

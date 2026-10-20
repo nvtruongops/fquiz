@@ -15,6 +15,7 @@ function findLinks(node: any): Array<{ href: string; prefetch?: boolean }> {
   if (!node || typeof node !== 'object') return []
   if (Array.isArray(node)) return node.flatMap(findLinks)
   if (node.type === Link) return [node.props]
+  if (typeof node.type === 'function') return findLinks(node.type(node.props))
   return findLinks(node.props?.children)
 }
 

@@ -20,7 +20,10 @@ jest.mock('@/lib/modules/quiz/models/Quiz', () => ({
 jest.mock('@/lib/modules/quiz/services/question-usage.service', () => ({
   QuestionUsageService: { getBatchQuestionPublicUsage: jest.fn() },
 }))
-jest.mock('@/lib/modules/quiz/session-utils', () => ({ validateQuizSessionRequest: jest.fn() }))
+jest.mock('@/lib/modules/quiz/session-utils', () => ({
+  ...jest.requireActual('@/lib/modules/quiz/session-utils'),
+  validateQuizSessionRequest: jest.fn(),
+}))
 
 describe('GET /api/sessions/[id]/questions', () => {
   const question = {
