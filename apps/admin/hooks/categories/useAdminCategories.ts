@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Category {
   _id: string
@@ -35,7 +36,7 @@ export function useAdminCategories() {
     mutationFn: async (name: string) => {
       const res = await fetch('/api/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name }),
       })
       if (!res.ok) {
@@ -58,7 +59,7 @@ export function useAdminCategories() {
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const res = await fetch(`/api/categories/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name }),
       })
       if (!res.ok) {
@@ -79,7 +80,7 @@ export function useAdminCategories() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: withCsrfHeaders() })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Failed to delete category')

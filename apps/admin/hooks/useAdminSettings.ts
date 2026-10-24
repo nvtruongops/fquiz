@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface LLMProviderConfig {
   apiKey: string
@@ -46,7 +47,7 @@ async function saveSettings(updates: Partial<Settings>): Promise<{ settings: Set
   const res = await fetch(`/api/settings`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(updates),
   })
   if (!res.ok) {

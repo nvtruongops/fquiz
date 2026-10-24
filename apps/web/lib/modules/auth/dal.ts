@@ -16,7 +16,7 @@ import { User } from '@/lib/modules/auth/models/User'
 export interface SessionUser {
   userId: string
   username: string
-  role: 'student' | 'admin' | 'dev'
+  role: 'student' | 'teacher' | 'admin' | 'dev'
   status: 'active' | 'banned'
   avatarUrl?: string
 }
@@ -39,7 +39,7 @@ export const verifySession = cache(async (): Promise<SessionUser | null> => {
     const userId = payload.userId as string
     if (!userId) return null
 
-    // Check user in database (includes banned status)
+    // Check current user authorization claims in the database.
     await connectDB()
     const user = await User.findById(userId)
       .select('username role status avatar_url avatarUrl token_version')
@@ -47,12 +47,11 @@ export const verifySession = cache(async (): Promise<SessionUser | null> => {
     
     if (!user) return null
     
-    // Check if user is banned
-    if (user.status === 'banned') return null
-    
-    // Check token version (for logout all devices)
-    const tokenVersion = payload.v as number | undefined
-    if (tokenVersion !== undefined && (user.token_version || 1) !== tokenVersion) {
+    if (user.status !== 'active' || user.role !== payload.role) return null
+
+    // Treat tokens issued before versioning as version 1.
+    const tokenVersion = (payload.v as number | undefined) ?? 1
+    if ((user.token_version ?? 1) !== tokenVersion) {
       return null
     }
 
@@ -97,5 +96,4 @@ export async function requireAdmin(): Promise<SessionUser> {
   
   return user
 }
-
 

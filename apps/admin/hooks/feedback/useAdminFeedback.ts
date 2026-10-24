@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Feedback {
   _id: string
@@ -63,7 +64,7 @@ export function useAdminFeedback() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const res = await fetch(`/api/feedback/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ status }),
       })
       if (!res.ok) throw new Error('Failed to update status')
@@ -79,7 +80,7 @@ export function useAdminFeedback() {
     mutationFn: async ({ id, reply_message }: { id: string; reply_message: string }) => {
       const res = await fetch(`/api/feedback/${id}/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ reply_message }),
       })
       if (!res.ok) throw new Error('Failed to send reply')
@@ -98,7 +99,7 @@ export function useAdminFeedback() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE', headers: withCsrfHeaders() })
       if (!res.ok) throw new Error('Failed to delete feedback')
       return res.json()
     },

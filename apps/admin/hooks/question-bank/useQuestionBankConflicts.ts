@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Conflict {
   question_id: string
@@ -66,7 +67,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
     try {
       const response = await fetch('/api/question-bank/conflicts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           category_id: selectedCategory,

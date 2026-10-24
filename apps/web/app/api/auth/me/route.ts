@@ -1,16 +1,65 @@
 import { NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
-import { verifyToken, signToken } from '@/lib/modules/auth/auth'
+import { verifyToken, signToken, clearUserStatusCache } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 
 const REFRESH_THRESHOLD_SECONDS = 12 * 60 * 60 // Refresh if < 12h remaining
 
+function getAuthCookieToken(request: Request): string | undefined {
+  return request.headers.get('cookie')
+    ?.split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith('auth-token='))
+    ?.slice('auth-token='.length) || undefined
+}
+
+function createUnauthenticatedResponse(request: Request, status = 200): NextResponse {
+  const response = NextResponse.json({ user: null }, { status })
+  if (getAuthCookieToken(request)) response.cookies.delete('auth-token')
+  return response
+}
+
+function hasCurrentAuthorization(user: { role: string; token_version?: number }, payload: { role: string; v?: number }) {
+  return user.role === payload.role && (payload.v ?? 1) === (user.token_version ?? 1)
+}
+
+async function refreshAuthCookieIfNeeded(
+  request: Request,
+  response: NextResponse,
+  payload: { userId: string; role: string },
+  user: { username: string; avatar_url?: string | null; avatarUrl?: string | null; token_version?: number }
+): Promise<void> {
+  try {
+    const token = getAuthCookieToken(request)
+    if (!token) return
+
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+    const { payload: jwtData } = await jwtVerify(token, secret)
+    const remaining = (jwtData.exp ?? 0) - Math.floor(Date.now() / 1000)
+    if (remaining <= 0 || remaining >= REFRESH_THRESHOLD_SECONDS) return
+
+    const newToken = await signToken(payload.userId, payload.role, user.token_version ?? 1, {
+      username: user.username,
+      avatarUrl: user.avatar_url ?? user.avatarUrl ?? '',
+    })
+    const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
+    response.cookies.set('auth-token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+      ...(authCookieDomain ? { domain: authCookieDomain } : {}),
+    })
+  } catch {
+    // Ignore refresh errors - user still gets their data.
+  }
+}
+
 export async function GET(request: Request) {
   const payload = await verifyToken(request)
-  if (!payload) {
-    return NextResponse.json({ user: null }, { status: 200 })
-  }
+  if (!payload) return createUnauthenticatedResponse(request)
 
   try {
     await connectDB()
@@ -36,6 +85,11 @@ export async function GET(request: Request) {
       return response
     }
 
+    if (!hasCurrentAuthorization(user, payload)) {
+      clearUserStatusCache(payload.userId)
+      return createUnauthenticatedResponse(request, 401)
+    }
+
     const avatarUrl = user.avatar_url ?? user.avatarUrl ?? ''
     const themePreference = user.theme_preference ?? user.themePreference ?? 'light'
 
@@ -49,37 +103,8 @@ export async function GET(request: Request) {
       },
     })
 
-    // Sliding session: refresh cookie if token expires in < 12h
-    try {
-      const cookieHeader = request.headers.get('cookie') || ''
-      const token = cookieHeader.split('; ').find(r => r.startsWith('auth-token='))?.split('=')[1]
-      if (token) {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET)
-        const { payload: jwtData } = await jwtVerify(token, secret)
-        const exp = jwtData.exp ?? 0
-        const now = Math.floor(Date.now() / 1000)
-        const remaining = exp - now
-
-        if (remaining > 0 && remaining < REFRESH_THRESHOLD_SECONDS) {
-          const newToken = await signToken(payload.userId, payload.role, user.token_version ?? 1, {
-            username: user.username,
-            avatarUrl: user.avatar_url ?? user.avatarUrl ?? '',
-          })
-          const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
-          const cookieOpts = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict' as const,
-            maxAge: 60 * 60 * 24,
-            path: '/',
-            ...(authCookieDomain ? { domain: authCookieDomain } : {}),
-          }
-          response.cookies.set('auth-token', newToken, cookieOpts)
-        }
-      }
-    } catch {
-      // Ignore refresh errors - user still gets their data
-    }
+    // Sliding session: refresh cookie if token expires in < 12h.
+    await refreshAuthCookieIfNeeded(request, response, payload, user)
 
     return response
   } catch {

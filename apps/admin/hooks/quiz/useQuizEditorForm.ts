@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 import { useQuizDiagnostics } from './useQuizDiagnostics'
 import { useCourseCodeCheck } from './useCourseCodeCheck'
 import { useQuizQuestions } from './useQuizQuestions'
@@ -121,7 +122,7 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
       const method = quizId ? 'PUT' : 'POST'
       const res = await fetch(endpoint, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           title: courseCode.trim().toUpperCase(),

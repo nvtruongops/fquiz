@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sparkles, LogIn, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { useAuth } from '@/hooks/auth/useAuth'
@@ -22,7 +22,6 @@ export function GuestClaimBanner({
   totalQuestions,
 }: GuestClaimBannerProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { data: authData } = useAuth()
   const currentUser = authData?.user ?? null
   const { toast } = useToast()
@@ -30,17 +29,9 @@ export function GuestClaimBanner({
   const [isClaiming, setIsClaiming] = useState(false)
   const [isClaimed, setIsClaimed] = useState(false)
 
-  // Auto-claim if returning from login with ?claim=true
-  useEffect(() => {
-    if (searchParams.get('claim') === 'true' && currentUser && !isClaimed && !isClaiming) {
-      handleClaim()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, searchParams])
-
   const handleClaim = async () => {
     if (!currentUser) {
-      const safeCallback = encodeURIComponent(`/quiz/${quizId}/result/${sessionId}?claim=true`)
+      const safeCallback = encodeURIComponent(`/quiz/${quizId}/result/${sessionId}`)
       router.push(`/login?callbackUrl=${safeCallback}`)
       return
     }

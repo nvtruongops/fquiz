@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface User {
   _id: string
@@ -68,7 +69,7 @@ export function useAdminUsers() {
     mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
       const res = await fetch(`/api/users/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(updates),
       })
       if (!res.ok) {
@@ -88,7 +89,7 @@ export function useAdminUsers() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/users/${id}`, { method: 'DELETE', headers: withCsrfHeaders() })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Failed to delete user account')

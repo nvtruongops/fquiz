@@ -9,7 +9,7 @@ import { getQuizSessionResult, getSessionRequestErrorResponse } from '@/lib/modu
  * Requirements: 9.3, 12.2, 12.4
  */
 export const GET = withAuth(async (
-  req: Request,
+  _request: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
 ) => {
   try {

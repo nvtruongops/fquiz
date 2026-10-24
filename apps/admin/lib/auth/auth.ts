@@ -8,6 +8,24 @@ import { decrypt, signTokenWithSecret, type JWTPayload as AuthJWTPayload } from 
 export type JWTPayload = AuthJWTPayload
 export { decrypt }
 
+export async function isActiveAdminToken(payload: JWTPayload): Promise<boolean> {
+  if (!payload.userId || payload.role !== 'admin' || !isValidTokenVersion(payload.v)) return false
+
+  try {
+    await connectDB()
+    const user = await User.findById(payload.userId).select('token_version status role').lean()
+
+    return Boolean(
+      user &&
+      user.status === 'active' &&
+      user.role === 'admin' &&
+      user.token_version === payload.v
+    )
+  } catch {
+    return false
+  }
+}
+
 export async function verifyAdminToken(req?: Request): Promise<JWTPayload | null> {
   // Verify the request credential directly, even when the proxy added identity headers.
   let token: string | undefined
@@ -46,21 +64,12 @@ export async function verifyAdminToken(req?: Request): Promise<JWTPayload | null
     return null
   }
 
-  try {
-    await connectDB()
-    const user = await User.findById(jwtPayload.userId).select('token_version status role').lean()
-    
-    if (!user) return null
-    if (user.status !== 'active') return null
-    if (user.role !== 'admin') return null
-    if (jwtPayload.v === undefined || user.token_version === undefined || user.token_version !== jwtPayload.v) {
-      return null
-    }
+  if (!(await isActiveAdminToken(jwtPayload))) return null
+  return jwtPayload
+}
 
-    return jwtPayload
-  } catch {
-    return null
-  }
+function isValidTokenVersion(version: unknown): version is number {
+  return typeof version === 'number' && Number.isInteger(version) && version >= 1
 }
 
 export async function signAdminToken(

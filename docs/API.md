@@ -117,17 +117,17 @@ interface ErrorResponse {
 
 | Method | Endpoint (`apps/admin`) | Access Role | Description |
 |---|---|---|---|
-| `GET/POST` | `/api/users` | Admin / Dev | User management, RBAC role assignment, account bans |
-| `GET/PUT/DELETE`| `/api/users/[id]` | Admin / Dev | View user details, update attributes, or delete accounts |
-| `POST` | `/api/users/[id]/reset-password` | Admin / Dev | Force administrative password reset for a target user |
-| `GET/POST` | `/api/quizzes` | Admin / Dev | Author, inspect, and manage system-wide standardized quizzes |
-| `GET/PUT/DELETE`| `/api/quizzes/[id]` | Admin / Dev | Retrieve, modify, or delete specific quizzes |
-| `GET` | `/api/quizzes/check-code` | Admin / Dev | Verify uniqueness of quiz codes prior to publishing |
-| `GET/POST` | `/api/categories` | Admin / Dev | Manage system-wide categories and curriculum taxonomy |
-| `GET/PUT` | `/api/settings` | Admin / Dev | Configure global parameters (Maintenance mode, Rate limits, LLM keys) |
-| `GET/PUT` | `/api/feedback` | Admin / Dev | Intake, categorize, and manage user feedback submissions |
-| `POST` | `/api/feedback/[id]/reply` | Admin / Dev | Send email responses directly to feedback authors |
-| `GET/POST` | `/api/question-bank/*` | Admin / Dev | Manage migrations, inspect question conflicts, and synchronize banks |
+| `GET` | `/api/users` | Admin | List and search user accounts |
+| `PUT/DELETE` | `/api/users/[id]` | Admin | Update attributes or delete a user account |
+| `GET/POST` | `/api/quizzes` | Admin | Author, inspect, and manage system-wide standardized quizzes |
+| `GET/PUT/DELETE` | `/api/quizzes/[id]` | Admin | Retrieve, modify, or delete specific quizzes |
+| `GET` | `/api/quizzes/check-code` | Admin | Verify uniqueness of quiz codes prior to publishing |
+| `GET/POST` | `/api/categories` | Admin | Manage system-wide categories and curriculum taxonomy |
+| `GET/PUT` | `/api/settings` | Admin | Configure global parameters (Maintenance mode, Rate limits, LLM keys) |
+| `GET` | `/api/feedback` | Admin | Inspect user feedback submissions |
+| `PUT/DELETE` | `/api/feedback/[id]` | Admin | Update or delete a feedback item |
+| `POST` | `/api/feedback/[id]/reply` | Admin | Send an email response to a feedback author |
+| `GET/POST` | `/api/question-bank/*` | Admin | Manage migrations, inspect question conflicts, and synchronize banks |
 
 ---
 

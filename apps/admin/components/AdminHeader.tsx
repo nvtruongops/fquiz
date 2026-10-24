@@ -2,6 +2,7 @@
 
 import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 interface AdminHeaderProps {
   user?: {
@@ -16,7 +17,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST', headers: withCsrfHeaders() })
     } finally {
       router.push('/login')
       router.refresh()
