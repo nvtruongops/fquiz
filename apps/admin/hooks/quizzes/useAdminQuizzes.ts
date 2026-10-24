@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Quiz {
   _id: string
@@ -79,7 +80,7 @@ export function useAdminQuizzes() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const res = await fetch(`/api/quizzes/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ status }),
       })
       if (!res.ok) throw new Error('Failed to update status')
@@ -96,7 +97,7 @@ export function useAdminQuizzes() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/quizzes/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/quizzes/${id}`, { method: 'DELETE', headers: withCsrfHeaders() })
       if (!res.ok) throw new Error('Failed to delete quiz')
       return res.json()
     },

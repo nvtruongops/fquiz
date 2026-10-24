@@ -133,6 +133,62 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
   })
 
   describe('getQuizSessionResult', () => {
+    test('does not return a registered student result without matching ownership', async () => {
+      const sessionId = new Types.ObjectId().toString()
+      const studentId = new Types.ObjectId().toString()
+      const otherStudentId = new Types.ObjectId().toString()
+
+      ;(QuizSession.findById as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: new Types.ObjectId(sessionId),
+          student_id: new Types.ObjectId(studentId),
+          is_guest: false,
+          status: 'completed',
+        }),
+      })
+
+      await expect(getQuizSessionResult(sessionId)).resolves.toBeNull()
+      await expect(getQuizSessionResult(sessionId, otherStudentId)).resolves.toBeNull()
+    })
+
+    test('returns a guest result only to the matching guest identifier', async () => {
+      const sessionId = new Types.ObjectId().toString()
+      const quizId = new Types.ObjectId().toString()
+      const guestId = '123e4567-e89b-42d3-a456-426614174000'
+
+      ;(QuizSession.findById as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          _id: new Types.ObjectId(sessionId),
+          quiz_id: new Types.ObjectId(quizId),
+          student_id: null,
+          is_guest: true,
+          guest_id: guestId,
+          status: 'completed',
+          mode: 'immediate',
+          score: 1,
+          started_at: new Date('2026-01-01T10:00:00Z'),
+          questions_cache: [
+            { _id: new Types.ObjectId(), text: 'Q1', options: ['A', 'B'], correct_answer: 0 },
+          ],
+          user_answers: [{ question_index: 0, answer_index: 0, is_correct: true }],
+          question_order: [0],
+        }),
+      })
+
+      ;(Quiz.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: new Types.ObjectId(quizId),
+            updatedAt: new Date('2026-01-01T09:00:00Z'),
+          }),
+        }),
+      })
+
+      await expect(getQuizSessionResult(sessionId)).resolves.toBeNull()
+      await expect(getQuizSessionResult(sessionId, undefined, 'another-guest')).resolves.toBeNull()
+      await expect(getQuizSessionResult(sessionId, undefined, guestId)).resolves.toMatchObject({ is_guest: true })
+    })
+
     test('returns quiz_updated_after_start: true when quiz was updated after session started', async () => {
       const sessionId = new Types.ObjectId().toString()
       const quizId = new Types.ObjectId().toString()
@@ -212,4 +268,3 @@ describe('Quiz Source & Session Utilities Test Suite', () => {
     })
   })
 })
-

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 import type { QuestionItem, BankCheckResult, ParsedFilePreview } from './types'
 
 interface UseQuizBankSyncProps {
@@ -26,7 +27,7 @@ export function useQuizBankSync({
     try {
       const res = await fetch('/api/question-bank/check', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           category_id: categoryId,
@@ -98,7 +99,7 @@ export function useQuizBankSync({
             syncTasks.push(
               fetch('/api/question-bank/sync-update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
                 credentials: 'include',
                 body: JSON.stringify({
                   category_id: categoryId,

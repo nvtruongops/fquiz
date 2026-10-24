@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { decrypt } from '@/lib/auth/auth'
-import { AUTH_COOKIE_NAME } from '@/lib/constants'
+import { decrypt } from '@fquiz/auth'
+import { validateCsrfRequest } from '@/lib/security/csrf'
+import { AUTH_COOKIE_NAME, COOKIE_MAX_AGE, CSRF_COOKIE_NAME } from '@/lib/constants'
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 const PUBLIC_PATHS = new Set([
   '/login',
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/quizzes/check-code',
 ])
-const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 const TOKEN_COOKIE_NAMES = [AUTH_COOKIE_NAME, 'auth-token', 'token']
+
+const CSRF_REQUIRED_PUBLIC_PATHS = new Set(['/login', '/api/auth/login'])
 
 function isStaticPath(pathname: string) {
   return pathname.startsWith('/_next') ||
@@ -19,26 +22,29 @@ function isStaticPath(pathname: string) {
     /\.(png|jpg|jpeg|gif|svg|webp|ico|css|js)$/.test(pathname)
 }
 
-function hasCookieToken(request: NextRequest) {
-  return TOKEN_COOKIE_NAMES.some((name) => Boolean(request.cookies.get(name)?.value))
-}
-
-function hasSameOriginSource(request: NextRequest) {
-  const source = request.headers.get('origin') || request.headers.get('referer')
-  if (!source) return false
-  try {
-    return new URL(source).origin === request.nextUrl.origin
-  } catch {
-    return false
+function ensureCsrfCookie(request: NextRequest, response: NextResponse): NextResponse {
+  if (!request.cookies.has(CSRF_COOKIE_NAME)) {
+    response.cookies.set(CSRF_COOKIE_NAME, crypto.randomUUID(), {
+      path: '/',
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+      maxAge: COOKIE_MAX_AGE,
+    })
   }
+
+  return response
 }
 
-function isSameOriginMutation(request: NextRequest) {
-  return SAFE_METHODS.has(request.method) || !hasCookieToken(request) || hasSameOriginSource(request)
+function isBearerOnlyRequest(request: NextRequest, pathname: string): boolean {
+  const hasAuthCookie = TOKEN_COOKIE_NAMES.some((name) => Boolean(request.cookies.get(name)?.value))
+  const authorization = request.headers.get('authorization') || ''
+  const hasBearerToken = authorization.startsWith('Bearer ') && authorization.slice(7).trim().length > 0
+  return hasBearerToken && !hasAuthCookie && !CSRF_REQUIRED_PUBLIC_PATHS.has(pathname)
 }
 
 function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api/quizzes/check-code')
+  return PUBLIC_PATHS.has(pathname)
 }
 
 function getCookieToken(request: NextRequest) {
@@ -50,7 +56,8 @@ function getCookieToken(request: NextRequest) {
 }
 
 function getAuthToken(request: NextRequest) {
-  return getCookieToken(request) || request.headers.get('authorization')?.replace('Bearer ', '')
+  const authorization = request.headers.get('authorization') || ''
+  return getCookieToken(request) || (authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : undefined)
 }
 
 async function redirectLoggedInAdmin(request: NextRequest) {
@@ -66,7 +73,8 @@ function getAdminLoginRedirect(request: NextRequest, isAdmin: boolean) {
 }
 
 async function handlePublicPath(request: NextRequest) {
-  return await redirectLoggedInAdmin(request) || NextResponse.next()
+  const response = await redirectLoggedInAdmin(request) || NextResponse.next()
+  return ensureCsrfCookie(request, response)
 }
 
 function handleMissingToken(request: NextRequest) {
@@ -95,8 +103,10 @@ function forwardAdminIdentity(request: NextRequest, payload: { userId: string; r
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (isStaticPath(pathname)) return NextResponse.next()
-  if (!isSameOriginMutation(request)) {
-    return NextResponse.json({ error: 'Cross-origin request rejected' }, { status: 403 })
+  if (!SAFE_METHODS.has(request.method) && !isBearerOnlyRequest(request, pathname)) {
+    if (!validateCsrfRequest(request)) {
+      return NextResponse.json({ error: 'Invalid or missing CSRF token' }, { status: 403 })
+    }
   }
   if (isPublicPath(pathname)) return handlePublicPath(request)
 

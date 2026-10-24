@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
+import { withAuth } from '@/lib/auth/with-auth'
 import { connectDB } from '@/lib/db/mongodb'
 import { Quiz } from '@/lib/models/Quiz'
 
@@ -10,7 +11,7 @@ export const revalidate = 0
  * GET /api/quizzes/check-code?code=HCM202_SU25_B5_FE&excludeId=xxx
  * Checks whether quiz code (course_code or title) already exists in the system.
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url)
     const code = (searchParams.get('code') ?? '').trim()
@@ -73,4 +74,4 @@ export async function GET(req: Request) {
       { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     )
   }
-}
+})

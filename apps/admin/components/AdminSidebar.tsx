@@ -9,6 +9,7 @@ import {
   Database,
 } from 'lucide-react'
 import { cn } from '../lib/utils/cn'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 import { Dialog, DialogContent, DialogTitle } from './ui/dialog'
 
 const navItems = [
@@ -45,7 +46,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST', headers: withCsrfHeaders() })
     } finally {
       router.push('/login')
       router.refresh()

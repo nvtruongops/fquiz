@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from '@/hooks/useToast'
+import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface ScanResult {
   total_quizzes: number
@@ -33,7 +34,7 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
     try {
       const response = await fetch('/api/question-bank/migrate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           category_id: selectedCategory,
@@ -64,7 +65,7 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
     try {
       const response = await fetch('/api/question-bank/migrate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
           category_id: selectedCategory,

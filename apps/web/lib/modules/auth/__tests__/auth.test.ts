@@ -2,6 +2,7 @@ import { decrypt, verifyToken, signToken, checkRole, clearUserStatusCache } from
 import { User } from '../models/User'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { SignJWT } from 'jose'
 
 // Mock dependencies
 jest.mock('@/lib/core/db/mongodb', () => ({
@@ -22,6 +23,7 @@ jest.mock('@/lib/core/utils/logger', () => ({
 describe('Auth Module', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(connectDB as jest.Mock).mockResolvedValue(null)
   })
 
   describe('JWT signing and decryption', () => {
@@ -82,6 +84,7 @@ describe('Auth Module', () => {
       // Mock user lookup in db
       const mockUser = {
         _id: 'user-123',
+        role: 'student',
         status: 'active',
         token_version: 2,
       }
@@ -114,6 +117,7 @@ describe('Auth Module', () => {
       // Mock user lookup in db
       const mockUser = {
         _id: 'user-456',
+        role: 'admin',
         status: 'active',
         token_version: 1,
       }
@@ -143,6 +147,7 @@ describe('Auth Module', () => {
       // Mock user lookup in db
       const mockUser = {
         _id: 'user-banned',
+        role: 'student',
         status: 'banned',
         token_version: 1,
       }
@@ -158,7 +163,7 @@ describe('Auth Module', () => {
     })
 
     it('should fail verification if JWT version mismatches user token_version', async () => {
-      const payload = { userId: 'user-123', role: 'student', v: 1 } // v = 1
+      const payload = { userId: 'user-version-mismatch', role: 'student', v: 1 } // v = 1
       const token = await signToken(payload.userId, payload.role, payload.v)
 
       mockReq.headers.get.mockImplementation((name: string) => {
@@ -170,7 +175,8 @@ describe('Auth Module', () => {
 
       // Mock user lookup in db showing token_version has been incremented (revoked)
       const mockUser = {
-        _id: 'user-123',
+        _id: 'user-version-mismatch',
+        role: 'student',
         status: 'active',
         token_version: 2, // version in db is 2
       }
@@ -182,6 +188,123 @@ describe('Auth Module', () => {
 
       const verified = await verifyToken(mockReq)
       expect(verified).toBeNull()
+    })
+
+    it('should reject a token whose role no longer matches the user record', async () => {
+      const payload = { userId: 'demoted-user', role: 'teacher', v: 1 }
+      const token = await signToken(payload.userId, payload.role, payload.v)
+      mockReq.headers.get.mockImplementation((name: string) => (
+        name.toLowerCase() === 'authorization' ? `Bearer ${token}` : null
+      ))
+      ;(User.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: payload.userId,
+            role: 'student',
+            status: 'active',
+            token_version: 1,
+          }),
+        }),
+      })
+
+      await expect(verifyToken(mockReq)).resolves.toBeNull()
+    })
+
+    it('should reject a versionless legacy token after token_version has been incremented', async () => {
+      const payload = { userId: 'versionless-user', role: 'student' }
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(new TextEncoder().encode(process.env.JWT_SECRET))
+      mockReq.headers.get.mockImplementation((name: string) => (
+        name.toLowerCase() === 'authorization' ? `Bearer ${token}` : null
+      ))
+      ;(User.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: payload.userId,
+            role: 'student',
+            status: 'active',
+            token_version: 2,
+          }),
+        }),
+      })
+
+      await expect(verifyToken(mockReq)).resolves.toBeNull()
+    })
+
+    it('should fail closed in production even when CI and Playwright flags are set', async () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      const previousCi = process.env.CI
+      const previousPlaywrightTest = process.env.PLAYWRIGHT_TEST
+
+      try {
+        process.env.NODE_ENV = 'production'
+        process.env.CI = 'true'
+        process.env.PLAYWRIGHT_TEST = '1'
+
+        const payload = { userId: 'missing-prod-user', role: 'student', v: 1 }
+        const token = await signToken(payload.userId, payload.role, payload.v)
+        mockReq.headers.get.mockImplementation((name: string) => (
+          name.toLowerCase() === 'authorization' ? `Bearer ${token}` : null
+        ))
+
+        ;(User.findById as jest.Mock).mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue(null),
+          }),
+        })
+        await expect(verifyToken(mockReq)).resolves.toBeNull()
+
+        ;(connectDB as jest.Mock).mockRejectedValue(new Error('database unavailable'))
+        await expect(verifyToken(mockReq)).resolves.toBeNull()
+      } finally {
+        if (previousNodeEnv === undefined) delete process.env.NODE_ENV
+        else process.env.NODE_ENV = previousNodeEnv
+        if (previousCi === undefined) delete process.env.CI
+        else process.env.CI = previousCi
+        if (previousPlaywrightTest === undefined) delete process.env.PLAYWRIGHT_TEST
+        else process.env.PLAYWRIGHT_TEST = previousPlaywrightTest
+      }
+    })
+
+    it('should revalidate role and token version on every production request', async () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      const previousCi = process.env.CI
+      const previousPlaywrightTest = process.env.PLAYWRIGHT_TEST
+
+      try {
+        process.env.NODE_ENV = 'production'
+        delete process.env.CI
+        delete process.env.PLAYWRIGHT_TEST
+
+        const payload = { userId: 'production-role-change', role: 'teacher', v: 1 }
+        const token = await signToken(payload.userId, payload.role, payload.v)
+        mockReq.headers.get.mockImplementation((name: string) => (
+          name.toLowerCase() === 'authorization' ? `Bearer ${token}` : null
+        ))
+
+        const queryFor = (user: any) => ({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue(user),
+          }),
+        })
+        ;(User.findById as jest.Mock)
+          .mockReturnValueOnce(queryFor({ role: 'teacher', status: 'active', token_version: 1 }))
+          .mockReturnValueOnce(queryFor({ role: 'student', status: 'active', token_version: 2 }))
+
+        await expect(verifyToken(mockReq)).resolves.toMatchObject({ role: 'teacher' })
+        await expect(verifyToken(mockReq)).resolves.toBeNull()
+        expect(User.findById).toHaveBeenCalledTimes(2)
+      } finally {
+        if (previousNodeEnv === undefined) delete process.env.NODE_ENV
+        else process.env.NODE_ENV = previousNodeEnv
+        if (previousCi === undefined) delete process.env.CI
+        else process.env.CI = previousCi
+        if (previousPlaywrightTest === undefined) delete process.env.PLAYWRIGHT_TEST
+        else process.env.PLAYWRIGHT_TEST = previousPlaywrightTest
+      }
     })
 
     it('should utilize cache for checkUserSession status to avoid DB calls', async () => {
@@ -197,6 +320,7 @@ describe('Auth Module', () => {
 
       const mockUser = {
         _id: 'user-cached',
+        role: 'student',
         status: 'active',
         token_version: 1,
       }
