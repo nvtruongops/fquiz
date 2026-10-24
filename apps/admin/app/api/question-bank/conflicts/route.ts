@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/auth/with-auth'
 import { connectDB } from '@/lib/db/mongodb'
 import { Quiz } from '@/lib/models/Quiz'
 import { QuestionBank } from '@/lib/models/QuestionBank'
-import { getAnswerTexts } from '@/lib/utils/question-id'
+import { generateQuestionId, getAnswerTexts } from '@/lib/utils/question-id'
 import { z } from 'zod'
 
 const GetConflictsSchema = z.object({
@@ -54,65 +54,86 @@ export const GET = withAuth(async (req: Request) => {
       matchQuery.category_id = new mongoose.Types.ObjectId(category_id)
     }
 
-    const pipeline = [
-      { $match: matchQuery },
-      { $unwind: "$questions" },
-      {
-        $match: {
-          "questions.question_id": { $nin: [null, ""] }
-        }
-      },
-      {
-        $group: {
-          _id: "$questions.question_id",
-          text: { $first: "$questions.text" },
-          total_variants: { $sum: 1 },
-          variants: {
-            $push: {
-              quiz_id: "$_id",
-              course_code: "$course_code",
-              options: "$questions.options",
-              correct_answer: "$questions.correct_answer",
-              explanation: "$questions.explanation",
-              image_url: "$questions.image_url"
-            }
-          }
-        }
-      },
-      { $match: { total_variants: { $gt: 1 } } }
-    ]
+    const quizzes = await Quiz.find(matchQuery)
+      .select('_id course_code questions')
+      .lean()
+    const questionGroups = new Map<string, {
+      question_id: string
+      text: string
+      total_variants: number
+      variants: Array<{
+        quiz_id: unknown
+        course_code: string
+        question_index: number
+        options: string[]
+        correct_answer: number[]
+        explanation?: string
+        image_url?: string
+      }>
+    }>()
 
-    const results = await Quiz.aggregate(pipeline)
+    for (const quiz of quizzes as any[]) {
+      if (!Array.isArray(quiz.questions)) continue
 
-    const conflicts = results.map(group => {
-      const answerGroups = new Map<string, any>()
+      quiz.questions.forEach((question: any, question_index: number) => {
+        if (!question?.text || !Array.isArray(question.options) || question.options.length === 0) return
 
-      group.variants.forEach((v: any) => {
-        const answerKey = JSON.stringify(getAnswerTexts(v.options, v.correct_answer))
-        if (!answerGroups.has(answerKey)) {
-          answerGroups.set(answerKey, {
-            correct_answer: v.correct_answer,
-            answer_texts: JSON.parse(answerKey),
-            count: 0,
-            quizzes: [],
-            sample_variant: v
+        const questionId = question.question_id || generateQuestionId(question)
+        if (!questionGroups.has(questionId)) {
+          questionGroups.set(questionId, {
+            question_id: questionId,
+            text: question.text,
+            total_variants: 0,
+            variants: [],
           })
         }
-        const g = answerGroups.get(answerKey)
-        g.count++
-        g.quizzes.push(v.course_code)
-      })
 
-      if (answerGroups.size > 1) {
-        return {
-          question_id: group._id,
-          text: group.text,
-          total_variants: group.total_variants,
-          answer_groups: Array.from(answerGroups.values())
+        const group = questionGroups.get(questionId)!
+        group.total_variants++
+        group.variants.push({
+          quiz_id: quiz._id,
+          course_code: quiz.course_code || '',
+          question_index,
+          options: question.options,
+          correct_answer: question.correct_answer || [],
+          explanation: question.explanation,
+          image_url: question.image_url,
+        })
+      })
+    }
+
+    const conflicts = [...questionGroups.values()]
+      .filter(group => group.total_variants > 1)
+      .map(group => {
+        const answerGroups = new Map<string, any>()
+
+        group.variants.forEach((v: any) => {
+          const answerKey = JSON.stringify(getAnswerTexts(v.options, v.correct_answer))
+          if (!answerGroups.has(answerKey)) {
+            answerGroups.set(answerKey, {
+              correct_answer: v.correct_answer,
+              answer_texts: JSON.parse(answerKey),
+              count: 0,
+              quizzes: [],
+              sample_variant: v
+            })
+          }
+          const g = answerGroups.get(answerKey)
+          g.count++
+          g.quizzes.push(v.course_code)
+        })
+
+        if (answerGroups.size > 1) {
+          return {
+            question_id: group.question_id,
+            text: group.text,
+            total_variants: group.total_variants,
+            answer_groups: Array.from(answerGroups.values())
+          }
         }
-      }
-      return null
-    }).filter(Boolean)
+        return null
+      })
+      .filter(Boolean)
 
     conflicts.sort((a: any, b: any) => b.total_variants - a.total_variants)
 
