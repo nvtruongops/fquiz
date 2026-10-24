@@ -38,6 +38,15 @@ describe('getAnswerTexts', () => {
     expect(getAnswerTexts(['A', 'B', 'C'], [0, 2])).toEqual(['a', 'c'])
     expect(getAnswerTexts(['True', 'False'], 1)).toEqual(['false'])
   })
+  it('should treat typographic and straight quotes as the same answer', () => {
+    expect(getAnswerTexts(['“Đánh đổ đế quốc”'], 0)).toEqual(['"đánh đổ đế quốc"'])
+    expect(
+      areAnswersSame(
+        { options: ['“Đánh đổ đế quốc”'], correct_answer: [0] },
+        { options: ['"Đánh đổ đế quốc"'], correct_answer: [0] }
+      )
+    ).toBe(true)
+  })
   it('should handle empty/invalid indices', () => {
     expect(getAnswerTexts(['A'], [99])).toEqual([])
     expect(getAnswerTexts([], [0])).toEqual([])
