@@ -101,3 +101,11 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 - **GPU Performance First**: Animate transform aliases (`x`, `y`, `scale`, `rotation`, `autoAlpha`). Never animate layout properties (`width`, `height`, `top`, `left`).
 - **Accessibility (`prefers-reduced-motion`)**: Use `gsap.matchMedia()` with `(prefers-reduced-motion: reduce)` to disable non-essential motion.
 - **Text-Only Scope**: NO 3D WebGL scenes, NO particle canvases, NO audio/voice synchronization.
+
+## Terminal Execution & Anti-Hang Guidelines
+
+- **Headless & Non-Interactive Mandate**: Agent commands execute in headless, non-interactive shells. Never execute commands that prompt for interactive user input or open GUI modals.
+- **Git Operations Safety**: Set `$env:GIT_TERMINAL_PROMPT="0"` and `$env:GCM_INTERACTIVE="never"` before Git commands. Ensure GitHub credentials use GitHub CLI (`gh auth setup-git`) to prevent Windows Git Credential Manager GUI modal lockups.
+- **Command Timeouts**: Bound network operations (`curl --max-time 30`, `ssh -o ConnectTimeout=10 -o BatchMode=yes`, `git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30`). For PowerShell commands that might hang, use bounded timeouts via `Start-Job` and `Wait-Job -Timeout <seconds>`.
+- **Background Tasks & Supervision**: Configure `WaitMsBeforeAsync: 8000-10000` for synchronous builds/tests. Mark long-running daemons (`npm run dev`, tunnels) as `IsDaemon: true` (`WaitMsBeforeAsync: 500`). Actively inspect background tasks; if a task produces 0 bytes or exceeds expected duration, kill it with `manage_task(Action='kill')` and force-terminate lingering child processes.
+
