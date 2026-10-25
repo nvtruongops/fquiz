@@ -43,3 +43,16 @@ vercel deploy --prod --yes --project fquiz-admin --cwd .
 ```
 
 The root `.vercelignore` excludes documentation, end-to-end test artifacts, and agent tooling from upload. After deployment, inspect each returned deployment URL with `vercel inspect <url> --wait` and check the public app routes.
+
+## Self-Hosted Linux VPS Production Deployment (via SSH on `main`)
+
+For self-hosted deployments on a dedicated Linux VPS (Ubuntu 22.04/24.04 LTS) using PM2 cluster mode behind Caddy/Nginx reverse proxy with automated GitHub Actions SSH continuous deployment:
+- `ecosystem.config.js`: PM2 cluster process supervision for `@fquiz/web` (`:3000`) and `@fquiz/admin` (`:3001`).
+- `deploy/Caddyfile`: Reverse proxy with automatic SSL and HTTP/3.
+- `deploy/nginx.conf`: Nginx reverse proxy template with rate limiting and static caching.
+- `deploy/docker-compose.mongodb.yml` & `deploy/backup-mongodb.sh`: Isolated local MongoDB 7 service and automated daily backup rotation.
+- `deploy/deploy-vps.sh`: Atomic zero-downtime deployment script with healthcheck and rollback.
+- `deploy/vps-setup.sh`: Automated server bootstrap and hardening.
+- `.github/workflows/deploy-vps.yml`: GitHub Actions SSH deploy pipeline triggered on push to `main`.
+
+

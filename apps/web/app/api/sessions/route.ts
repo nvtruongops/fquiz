@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { GUEST_ID_COOKIE_NAME } from '@fquiz/auth'
+import { getClientIp, GUEST_ID_COOKIE_NAME } from '@fquiz/auth'
 import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
@@ -398,7 +398,7 @@ async function createSession(quizId: string, mode: string, difficulty: string, a
 }
 
 async function handleCreateSession(req: Request, payload: JWTPayload) {
-  const rateLimitKey = payload.userId || req.headers.get('x-forwarded-for') || 'guest_client'
+  const rateLimitKey = payload.userId || getClientIp(req)
   const rateLimitResult = await sessionLimiter.check(rateLimitKey)
   if (!rateLimitResult.success) {
     return NextResponse.json(

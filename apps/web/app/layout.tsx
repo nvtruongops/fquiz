@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import { QueryProvider } from '@/components/shared/providers/QueryProvider'
 import { ThemeProvider } from '@/components/shared/providers/ThemeProvider'
 import ToastProvider from '@/components/shared/ui/toast-provider'
 import { NetworkStatusNotification } from '@/components/shared/ui/network-status-notification'
+import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
 import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 import './globals.css'
 
@@ -14,6 +16,8 @@ const inter = Inter({
 })
 
 const APP_URL = resolveAppBaseUrl()
+const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || 'https://example.invalid/script.js'
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || '1eb4988f-f439-4ce3-bc9b-78d865a6d9a3'
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -54,10 +58,6 @@ export const viewport: Viewport = {
   interactiveWidget: 'resizes-visual',
 }
 
-import PageTransitionLoader from '@/components/shared/ui/page-transition-loader'
-import { Analytics } from '@vercel/analytics/next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
@@ -95,8 +95,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ToastProvider />
           </ThemeProvider>
         </QueryProvider>
-        <Analytics />
-        <SpeedInsights />
+        <Script
+          defer
+          src={UMAMI_SCRIPT_URL}
+          data-website-id={UMAMI_WEBSITE_ID}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )

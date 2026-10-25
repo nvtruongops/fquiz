@@ -14,7 +14,7 @@ build
 .vercel
 **/.vercel
 
-# Version Control, CodeQL, CodeGraph & Local Databases
+# Version Control, CodeQL, CodeGraph & Local Databases / Backups
 .git
 **/.git
 .codeql-db
@@ -29,6 +29,12 @@ coverage
 **/coverage
 data
 **/data
+data/cloud-backup
+**/data/cloud-backup
+backups
+**/backups
+deploy
+**/deploy
 *.db
 **/*.db
 *.sqlite
@@ -37,17 +43,24 @@ data
 **/*.sqlite3
 *.sarif
 **/*.sarif
+*.gz
+**/*.gz
+*.ejson
+**/*.ejson
+*.bson
+**/*.bson
 
 # Environment files & secrets
 .env
 .env.*
+.env*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 !.env.example
 
-# Temporary, Logs & Testing Artifacts
+# Temporary, Logs, Internal Docs & Testing Artifacts
 tmp
 **/tmp
 temp
@@ -80,8 +93,13 @@ e2e
 **/e2e
 docs
 **/docs
+task
+**/task
+tasks
+**/tasks
 .agents
 **/.agents
 .superpowers
 **/.superpowers
-
+superpowers
+**/superpowers

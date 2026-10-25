@@ -1,0 +1,46 @@
+{
+  email admin@example.invalid
+  servers {
+    protocols h1 h2 h3
+  }
+}
+
+example.invalid, example.invalid {
+  tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    -Server
+  }
+
+  reverse_proxy 127.0.0.1:3000 {
+    health_uri /api/health
+    health_interval 15s
+    health_timeout 5s
+  }
+}
+
+example.invalid {
+  tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    -Server
+  }
+
+  reverse_proxy 127.0.0.1:3001 {
+    health_uri /api/health
+    health_interval 15s
+    health_timeout 5s
+  }
+}

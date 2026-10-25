@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@fquiz/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
@@ -23,7 +24,7 @@ const SearchQueryParamsSchema = PaginationQuerySchema.extend({
 
 export const GET = withAuth(async (req: Request, { payload }) => {
   const requestId = req.headers.get('x-request-id') || 'unknown'
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const ip = getClientIp(req)
   const route = '/api/search'
 
   try {

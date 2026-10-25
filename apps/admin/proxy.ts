@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { decrypt } from '@fquiz/auth'
+import {
+  checkRateLimit,
+  createRateLimitErrorResponse,
+  decrypt,
+  RATE_LIMIT_TIERS,
+} from '@fquiz/auth'
 import { validateCsrfRequest } from '@/lib/security/csrf'
 import { AUTH_COOKIE_NAME, COOKIE_MAX_AGE, CSRF_COOKIE_NAME } from '@/lib/constants'
 
@@ -10,6 +15,7 @@ const PUBLIC_PATHS = new Set([
   '/login',
   '/api/auth/login',
   '/api/auth/logout',
+  '/api/health',
 ])
 const TOKEN_COOKIE_NAMES = [AUTH_COOKIE_NAME, 'auth-token', 'token']
 
@@ -100,6 +106,15 @@ function forwardAdminIdentity(request: NextRequest, payload: { userId: string; r
   return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
+function handleAdminRateLimit(request: NextRequest, pathname: string): NextResponse | null {
+  if (!pathname.startsWith('/api/') || pathname === '/api/health') return null
+  const tier = SAFE_METHODS.has(request.method)
+    ? RATE_LIMIT_TIERS.PUBLIC_READ_AUTH
+    : RATE_LIMIT_TIERS.MUTATION_STANDARD
+  const status = checkRateLimit(request, { ...tier, keyPrefix: `admin:${tier.keyPrefix}` })
+  return status.success ? null : createRateLimitErrorResponse(status)
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (isStaticPath(pathname)) return NextResponse.next()
@@ -108,6 +123,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing CSRF token' }, { status: 403 })
     }
   }
+  const rateLimitResponse = handleAdminRateLimit(request, pathname)
+  if (rateLimitResponse) return rateLimitResponse
+
   if (isPublicPath(pathname)) return handlePublicPath(request)
 
   const token = getAuthToken(request)

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { safeCompare } from '@fquiz/auth'
 import { purgeExpiredDeletedAccounts } from '@/lib/modules/auth/account-deletion'
 import logger from '@/lib/core/utils/logger'
 
@@ -17,7 +18,7 @@ function isAuthorized(req: Request): boolean {
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
   const token = bearerToken || cronHeader
 
-  return token === cronSecret
+  return safeCompare(token, cronSecret)
 }
 
 /**

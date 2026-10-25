@@ -33,8 +33,8 @@ export function resetMaintenanceCache() {
   clearSettingsCache()
 }
 
-const PUBLIC_PATHS = new Set(['/', '/explore', '/community', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report'])
-const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/cleanup-deleted-accounts', '/api/security/csp-report'])
+const PUBLIC_PATHS = new Set(['/', '/explore', '/community', '/login', '/register', '/forgot-password', '/reset-password', '/restore-account', '/terms', '/privacy', '/api/security/csp-report', '/api/health'])
+const PUBLIC_API_EXEMPT_CSRF = new Set(['/api/auth/login', '/api/auth/google', '/api/auth/register', '/api/auth/register/send-code', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/restore-account', '/api/auth/logout', '/api/jobs/cleanup-deleted-accounts', '/api/security/csp-report', '/api/health'])
 const STUDENT_PATHS = ['/dashboard', '/history', '/profile', '/settings', '/quiz']
 const TEACHER_PATHS = ['/teacher']
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
@@ -134,6 +134,7 @@ function isPublicRoute(pathname: string) {
 }
 
 function shouldSkipAuth(pathname: string, request?: NextRequest) {
+  if (pathname === '/api/health') return true
   const isPinnedGet = pathname === '/api/student/pinned-categories' && (!request || request.method === 'GET')
   const isCommunityGet = pathname.startsWith('/api/community/posts') && (!request || request.method === 'GET')
   return pathname.startsWith('/api/v1/public/') || 
@@ -304,9 +305,12 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
 function getRateLimitTier(request: NextRequest, pathname: string) {
   if (
     pathname.startsWith('/api/auth/login') ||
+    pathname.startsWith('/api/auth/google') ||
     pathname.startsWith('/api/auth/register') ||
     pathname.startsWith('/api/auth/forgot-password') ||
-    pathname.startsWith('/api/auth/reset-password')
+    pathname.startsWith('/api/auth/reset-password') ||
+    pathname.startsWith('/api/auth/restore-account') ||
+    pathname.startsWith('/api/jobs/')
   ) {
     return RATE_LIMIT_TIERS.AUTH_STRICT
   }
@@ -337,7 +341,7 @@ function getRateLimitTier(request: NextRequest, pathname: string) {
 }
 
 function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
-  if (!pathname.startsWith('/api/') || pathname.startsWith('/api/jobs/') || pathname.startsWith('/api/security/')) return null
+  if (!pathname.startsWith('/api/') || pathname === '/api/health') return null
   const tier = getRateLimitTier(request, pathname)
   const status = checkRateLimit(request, tier)
   return status.success ? null : createRateLimitErrorResponse(status)

@@ -1,0 +1,67 @@
+name: Deploy to Production VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-vps-deployment
+  cancel-in-progress: false
+
+jobs:
+  pre-flight-check:
+    name: Pre-Flight Verification Gates
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      NODE_ENV: "test"
+      JWT_SECRET: "test-jwt-secret-key-min-32-chars-long-security"
+      JWT_SECRET_PREV: "test-jwt-secret-key-min-32-chars-long-prev"
+      MONGODB_URI: "mongodb://localhost:27017/fquiz_test"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Workspace Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Rule Engine Strict Verification
+        run: node .agents/scripts/verify.js --strict
+
+      - name: Monorepo Type Check
+        run: npm run check-types
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Jest Unit Tests
+        run: npm test
+
+  deploy-vps:
+    name: Zero-Downtime VPS Deployment via SSH
+    needs: pre-flight-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Deployment via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            export APP_DIR="${{ secrets.DEPLOY_PATH || '/var/www/fquiz/app' }}"
+            cd "$APP_DIR"
+            bash deploy/deploy-vps.sh

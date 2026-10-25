@@ -12,7 +12,9 @@ build/
 coverage/
 .nyc_output/
 test-results/
+playwright-report/
 .codeql-db/
+.scannerwork/
 *.sarif
 
 # Runtime files and logs
@@ -23,29 +25,71 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment and secrets
+# Environment, credentials, and secrets
 .env
 .env.*
+.env*
+*.env
 .env.local
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
+.env*.local
+scripts/.env.local
 !.env.example
 !.env.*.example
 *.pem
 *.key
+*.pub
 *.p12
 *.pfx
 *.crt
 *.cer
+*.der
 *.jks
 *.keystore
+*.ovpn
+*.wg
+id_rsa*
+id_ed25519*
+id_ecdsa*
+*credentials*.json
+*service-account*.json
+*secret*.json
+.ssh/
+.aws/
+.gcp/
 
-# Local database / dump files
+# Exported Database Dumps, Cloud Backups & Archives
+data/
+data/**
+data/cloud-backup/
+**/data/cloud-backup/
+backups/
+backup/
+dumps/
+dump/
 *.sqlite
 *.sqlite3
 *.db
 *.dump
+*.rdb
+*.bson
+*.ejson
+*.archive
+*.sql
+*.bak
+*.backup
+*.gz
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+*.bz2
+*.xz
 
 # IDE and OS files
 .vscode/
@@ -61,42 +105,51 @@ temp/
 .cache/
 *.tmp
 tsconfig.tsbuildinfo
+*.tsbuildinfo
 
 # Uploads and generated user content
 uploads/
 public/uploads/
 
-# Misc local config
+# Misc local config & tooling
 .vercel/
 .vercel
-.env*.local
-
-# CodeGraph
 .codegraph/
 codegraph.mcp.json
-
-# Fallow
 .fallow/
 .fallow
-
-# Task documents & migration scripts (sensitive internal docs & exec scripts)
-task/
-/scripts/
-!scripts/README.md
-!docs/
-!docs/**
 .kilo/
 .playwright-mcp/
+.claude/
+.cursor/
+.windsurf/
+.gemini/
+.aider*
 
-# Scripts
-scripts/.env.local
+# Internal task documents, migration scripts & internal specs/plans
+task/
+tasks/
+plans/
+specs/
+notes/
+scratch/
+audits/
+.superpowers/
+superpowers/
+docs/superpowers/
+docs/internal/
+docs/private/
+docs/drafts/
+docs/DEPLOYMENT_VPS.md
+docs/*AUDIT*.md
+docs/*SCORE*.md
+/scripts/
+!scripts/README.md
 
 # Local Agents & MCP Config (tracked for governance)
 !.agents/
 !.agents/**
 
-# Exported Database Dumps
-data/
-
-.vercel
-.env*
+# Private VPS Deployment Skill (Never push to public Git)
+.agents/skills/fquiz-vps-deploy/
+.agents/skills/fquiz-vps-deploy/**

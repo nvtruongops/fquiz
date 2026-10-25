@@ -3,6 +3,7 @@
  * More lenient limits for guest users browsing/searching
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { decrypt, getClientIp } from '@fquiz/auth'
 import logger from '@/lib/core/utils/logger'
 import { connectDB } from '@/lib/core/db/mongodb'
 
@@ -15,25 +16,21 @@ export interface PublicRateLimitResult {
 
 /**
  * Get client identifier from request
- * Uses IP address for guests, user ID for authenticated users
+ * Uses verified userId for authenticated users, trustworthy IP address for guests
  */
-function getClientIdentifier(request: NextRequest): string {
-  // Check if user is authenticated (has auth token in cookie or header)
+async function getClientIdentifier(request: NextRequest): Promise<string> {
   const authToken =
     request.cookies.get('auth-token')?.value ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim()
+
   if (authToken) {
-    // For authenticated users, use a different (higher) limit with unique user token signature
-    return `auth:${authToken.slice(-24)}`
+    const payload = await decrypt(authToken)
+    if (payload?.userId) {
+      return `auth:${payload.userId}`
+    }
   }
 
-  // For guests, use IP address
-  const forwarded = request.headers.get('x-forwarded-for')
-  const ip = forwarded ? forwarded.split(',')[0].trim() : 
-             request.headers.get('x-real-ip') || 
-             'unknown'
-  
-  return `guest:${ip}`
+  return `guest:${getClientIp(request)}`
 }
 
 /**
@@ -47,8 +44,8 @@ class PublicApiRateLimiter {
   private readonly windowMs = 60 * 1000 // 1 minute
   private indexesReady = false
 
-  async check(request: NextRequest): Promise<PublicRateLimitResult> {
-    const identifier = getClientIdentifier(request)
+  async check(request: NextRequest, resolvedIdentifier?: string): Promise<PublicRateLimitResult> {
+    const identifier = resolvedIdentifier ?? (await getClientIdentifier(request))
     const isAuth = identifier.startsWith('auth:')
     const limit = isAuth ? this.authLimit : this.guestLimit
 
@@ -147,7 +144,8 @@ export async function checkPublicApiRateLimit(
   request: NextRequest
 ): Promise<NextResponse | null> {
   try {
-    const result = await limiter.check(request)
+    const identifier = await getClientIdentifier(request)
+    const result = await limiter.check(request, identifier)
 
     // Add rate limit headers
     const headers = {
@@ -161,7 +159,7 @@ export async function checkPublicApiRateLimit(
       
       logger.warn(
         { 
-          identifier: getClientIdentifier(request),
+          identifier,
           path: request.nextUrl.pathname,
           remaining: result.remaining,
           reset: new Date(result.reset).toISOString()

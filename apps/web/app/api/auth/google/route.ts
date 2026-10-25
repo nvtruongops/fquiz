@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@fquiz/auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { signToken } from '@/lib/modules/auth/auth'
 import { User } from '@/lib/modules/auth/models/User'
@@ -9,7 +10,7 @@ import { logSecurityEvent } from '@/lib/core/utils/logger'
 
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || 'unknown'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const ip = getClientIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
   const route = '/api/auth/google'
 
