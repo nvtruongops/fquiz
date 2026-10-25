@@ -1,3 +1,4 @@
+import { getClientIp } from '@fquiz/auth'
 import { providerFactory } from '../provider'
 
 describe('Rate Limit Provider Test Suite', () => {
@@ -33,5 +34,22 @@ describe('Rate Limit Provider Test Suite', () => {
     const provider = providerFactory.getMemoryProvider()
     expect(provider).toBeDefined()
     expect(typeof provider.check).toBe('function')
+  })
+
+  test('getClientIp prioritizes cf-connecting-ip over spoofed x-forwarded-for', () => {
+    const reqWithCf = new Request('https://fquiz.online/api/auth/login', {
+      headers: {
+        'x-forwarded-for': '1.2.3.4, 203.0.113.50',
+        'cf-connecting-ip': '203.0.113.50',
+      },
+    })
+    expect(getClientIp(reqWithCf)).toBe('203.0.113.50')
+
+    const reqWithXffOnly = new Request('https://fquiz.online/api/auth/login', {
+      headers: {
+        'x-forwarded-for': '1.2.3.4, 198.51.100.99',
+      },
+    })
+    expect(getClientIp(reqWithXffOnly)).toBe('198.51.100.99')
   })
 })

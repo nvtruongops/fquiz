@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@fquiz/auth'
 import bcrypt from 'bcryptjs'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
@@ -10,7 +11,7 @@ import { hashVerificationCode, isValidVerificationCode } from '@/lib/modules/aut
 
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || 'unknown'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const ip = getClientIp(request)
   const route = '/api/auth/register'
 
   try {

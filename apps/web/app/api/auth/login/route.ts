@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@fquiz/auth'
 import bcrypt from 'bcryptjs'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
@@ -11,7 +12,7 @@ import { logSecurityEvent } from '@/lib/core/utils/logger'
 
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || 'unknown'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const ip = getClientIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
   const route = '/api/auth/login'
 

@@ -20,7 +20,7 @@ export async function decrypt(token: string): Promise<JWTPayload | null> {
   for (const secretStr of secrets) {
     try {
       const secret = new TextEncoder().encode(secretStr)
-      const { payload } = await jwtVerify(token, secret)
+      const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] })
       return payload as unknown as JWTPayload
     } catch {
       continue
@@ -67,6 +67,9 @@ export async function signToken(
   v: number = 1,
   meta?: { username?: string; avatarUrl?: string }
 ): Promise<string> {
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is required in production')
+  }
   const secretStr = process.env.JWT_SECRET || 'fquiz-fallback-jwt-secret-for-development'
   return signTokenWithSecret(secretStr, userId, role, v, meta)
 }

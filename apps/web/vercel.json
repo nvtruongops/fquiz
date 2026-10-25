@@ -1,6 +1,19 @@
 {
   "framework": "nextjs",
   "regions": ["sin1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": ".*\\.vercel\\.app"
+        }
+      ],
+      "destination": "https://fquiz.online/:path*",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
       "path": "/api/jobs/cleanup-deleted-accounts",

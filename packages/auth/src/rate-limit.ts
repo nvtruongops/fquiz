@@ -15,6 +15,7 @@ export interface RateLimitStatus {
 
 class MemorySlidingWindowStore {
   private store = new Map<string, { currentCount: number; previousCount: number; windowStart: number }>()
+  private readonly maxEntries = 10000
 
   check(key: string, limit: number, windowMs: number): RateLimitStatus {
     const now = Date.now()
@@ -23,6 +24,13 @@ class MemorySlidingWindowStore {
     const entry = this.store.get(key)
 
     if (!entry || entry.windowStart < currentWindowStart - windowMs) {
+      if (!entry && this.store.size >= this.maxEntries) {
+        this.cleanup(windowMs)
+        if (this.store.size >= this.maxEntries) {
+          const oldestKey = this.store.keys().next().value
+          if (oldestKey !== undefined) this.store.delete(oldestKey)
+        }
+      }
       this.store.set(key, {
         currentCount: 1,
         previousCount: 0,
@@ -71,16 +79,18 @@ if (typeof setInterval !== 'undefined') {
 }
 
 export function getClientIp(request: Request | NextRequest): string {
+  const cfConnectingIp = request.headers.get('cf-connecting-ip')?.trim()
+  if (cfConnectingIp) return cfConnectingIp
+
+  const xRealIp = request.headers.get('x-real-ip')?.trim()
+  if (xRealIp) return xRealIp
+
   const xForwardedFor = request.headers.get('x-forwarded-for')
   if (xForwardedFor) {
-    const ips = xForwardedFor.split(',').map((ip) => ip.trim())
-    return ips[0] || '127.0.0.1'
+    const ips = xForwardedFor.split(',').map((ip) => ip.trim()).filter(Boolean)
+    return ips[ips.length - 1] || '127.0.0.1'
   }
-  return (
-    request.headers.get('x-real-ip') ||
-    request.headers.get('cf-connecting-ip') ||
-    '127.0.0.1'
-  )
+  return '127.0.0.1'
 }
 
 export const RATE_LIMIT_TIERS = {

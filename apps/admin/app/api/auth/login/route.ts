@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { checkRateLimit, createRateLimitErrorResponse, RATE_LIMIT_TIERS, verifyPassword } from '@fquiz/auth'
+import { checkRateLimit, createRateLimitErrorResponse, getClientIp, RATE_LIMIT_TIERS, verifyPassword } from '@fquiz/auth'
 import { connectDB } from '@/lib/db/mongodb'
 import { User } from '@/lib/models/User'
 import { LoginLog } from '@/lib/models/LoginLog'
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     const rateLimit = checkRateLimit(request, { ...RATE_LIMIT_TIERS.AUTH_STRICT, keyPrefix: 'rl:admin_login' })
     if (!rateLimit.success) return createRateLimitErrorResponse(rateLimit)
 
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+    const ip = getClientIp(request)
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     const body = await request.json().catch(() => ({}))

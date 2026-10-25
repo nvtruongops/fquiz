@@ -1,0 +1,21 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: fquiz-mongodb
+    user: "1000:1000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - 127.0.0.1:27017:27017
+    volumes:
+      - /var/lib/fquiz/mongodb:/data/db
+      - /mnt/data/app-data/fquiz-backups:/backups
+    command: mongod --bind_ip_all --wiredTigerCacheSizeGB 1.5
+    healthcheck:
+      test: mongosh --eval "db.adminCommand('ping')" --quiet
+      interval: 15s
+      timeout: 5s
+      retries: 5
