@@ -32,7 +32,7 @@ test.describe('Admin Portal — Authentication & Security Proxy', () => {
 
     await expect(page).toHaveURL(`${ADMIN_APP_URL}/`)
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-    await expect(page.getByText(/Categories/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Categories', exact: true })).toBeVisible()
   })
 
   test('should allow authenticated admin with cookie to access dashboard', async ({ context, page }) => {
@@ -40,7 +40,7 @@ test.describe('Admin Portal — Authentication & Security Proxy', () => {
     await page.goto(`${ADMIN_APP_URL}/`)
     await expect(page).toHaveURL(`${ADMIN_APP_URL}/`)
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-    await expect(page.getByText(/Categories/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Categories', exact: true })).toBeVisible()
   })
 
   test('should successfully logout and redirect to login page', async ({ context, page }) => {

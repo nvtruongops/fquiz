@@ -27,7 +27,7 @@ test.describe('Admin Portal — Question Bank Hub', () => {
 
     // Navigate to Conflicts tab
     await conflictsTab.click()
-    await expect(page.getByText(/Select course|Select subject/i)).toBeVisible()
+    await expect(page.getByText('Select Category')).toBeVisible()
 
     // Navigate to Migration tab
     await migrationTab.click()

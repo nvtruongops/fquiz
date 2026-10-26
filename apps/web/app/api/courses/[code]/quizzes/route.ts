@@ -8,6 +8,7 @@ import { User } from '@/lib/modules/auth/models/User'
 import { compareQuizBySemester } from '@/lib/core/utils/semester'
 import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
+import { mapCourseQuizRow } from '@/lib/modules/quiz/course-quiz-row'
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -61,7 +62,7 @@ export async function GET(
 
     const rawQuizzes = await Quiz.find(
       query,
-      { title: 1, questions: 1, course_code: 1, category_id: 1 }
+      { title: 1, questionCount: 1, course_code: 1, category_id: 1 }
     ).lean()
 
     // Deduplicate quizzes by string ID
@@ -92,17 +93,9 @@ export async function GET(
     let isCategoryPinned = false
 
     if (studentId) {
-      // Fetch user's pinned categories and pinned quizzes
-      const userDoc = (await User.findById(studentId).select('pinned_categories pinned_quizzes').lean()) as any
-      if (userDoc) {
-        pinnedQuizIds = userDoc.pinned_quizzes ?? []
-        const userPinnedCatSet = new Set(userDoc.pinned_categories ?? [])
-        isCategoryPinned = categoryIds.some((catId) => userPinnedCatSet.has(catId.toString()))
-      }
-
-      // Fetch best scores for all quizzes in one aggregation
-      const bestScores: { _id: mongoose.Types.ObjectId; bestScore: number }[] =
-        await QuizSession.aggregate([
+      const [userDoc, bestScores, savedShortcuts] = await Promise.all([
+        User.findById(studentId).select('pinned_categories pinned_quizzes').lean() as Promise<any>,
+        QuizSession.aggregate<{ _id: mongoose.Types.ObjectId; bestScore: number }>([
           {
             $match: {
               student_id: studentId,
@@ -117,30 +110,31 @@ export async function GET(
               bestScore: { $max: '$score' },
             },
           },
-        ])
-      scoreMap = new Map(bestScores.map((s) => [s._id.toString(), s.bestScore]))
+        ]),
+        Quiz.find(
+          {
+            created_by: studentId,
+            original_quiz_id: { $in: quizIds },
+            is_saved_from_explore: true,
+          },
+          { original_quiz_id: 1 }
+        ).lean(),
+      ])
 
-      // Fetch saved quiz shortcuts for this student
-      const savedShortcuts = await Quiz.find(
-        {
-          created_by: studentId,
-          original_quiz_id: { $in: quizIds },
-          is_saved_from_explore: true,
-        },
-        { original_quiz_id: 1 }
-      ).lean()
+      if (userDoc) {
+        pinnedQuizIds = userDoc.pinned_quizzes ?? []
+        const userPinnedCatSet = new Set(userDoc.pinned_categories ?? [])
+        isCategoryPinned = categoryIds.some((catId) => userPinnedCatSet.has(catId.toString()))
+      }
+
+      scoreMap = new Map(bestScores.map((s) => [s._id.toString(), s.bestScore]))
 
       savedQuizIds = savedShortcuts
         .map((s) => s.original_quiz_id?.toString())
         .filter((id): id is string => Boolean(id))
     }
 
-    const result = quizzes.map((q) => ({
-      _id: q._id,
-      title: q.title,
-      questionCount: q.questions?.length ?? 0,
-      bestScore: scoreMap.get(q._id.toString()) ?? null,
-    }))
+    const result = quizzes.map((quiz: any) => mapCourseQuizRow(quiz, scoreMap))
 
     // Sort: Chronological by semester key (newest year & season first, FE before RE)
     result.sort((a, b) => compareQuizBySemester(a.title, b.title))

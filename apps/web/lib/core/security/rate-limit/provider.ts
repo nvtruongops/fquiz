@@ -45,6 +45,8 @@ class MemoryRateLimitProvider implements RateLimitProvider {
   }
 }
 
+let rateLimitIndexesPromise: Promise<unknown> | null = null
+
 /**
  * MongoDB-backed limiter using fixed time buckets.
  * Bucket key pattern: `${identifier}:${windowStartMs}`
@@ -56,7 +58,6 @@ class MongoRateLimitProvider implements RateLimitProvider {
   private readonly fallback: RateLimitProvider
   private readonly limit: number
   private readonly windowMs: number
-  private indexesReady = false
 
   constructor(fallback: RateLimitProvider, limit = 5, windowMs = 60 * 1000) {
     this.fallback = fallback
@@ -74,15 +75,16 @@ class MongoRateLimitProvider implements RateLimitProvider {
       const mongoose = await connectDB()
       const collection = mongoose.connection.collection('rate_limits')
 
-      if (!this.indexesReady) {
-        await Promise.all([
-          collection.createIndex({ bucketKey: 1 }, { unique: true }),
-          collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-        ])
-        this.indexesReady = true
-      }
+      rateLimitIndexesPromise ??= Promise.all([
+        collection.createIndex({ bucketKey: 1 }, { unique: true }),
+        collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      ]).catch((err) => {
+        rateLimitIndexesPromise = null
+        throw err
+      })
+      await rateLimitIndexesPromise
 
-      await collection.updateOne(
+      const current = await collection.findOneAndUpdate(
         { bucketKey },
         {
           $inc: { count: 1 },
@@ -93,15 +95,11 @@ class MongoRateLimitProvider implements RateLimitProvider {
             expiresAt: new Date(bucketEnd + this.windowMs),
           },
         },
-        { upsert: true }
+        { upsert: true, returnDocument: 'after', projection: { count: 1 } }
       )
 
-      const current = await collection.findOne(
-        { bucketKey },
-        { projection: { count: 1 } }
-      )
-
-      const count = Number(current?.count ?? 1)
+      const doc = current && 'value' in current ? current.value : current
+      const count = Number(doc?.count ?? 1)
 
       return {
         success: count <= this.limit,

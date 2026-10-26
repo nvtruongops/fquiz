@@ -4,10 +4,10 @@ import type { IClassroom } from '../entities/classroom.types'
 const ClassroomSchema = new Schema<IClassroom>(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
-    code: { type: String, required: true, unique: true, uppercase: true, trim: true, index: true },
+    code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     password: { type: String, default: null, trim: true },
     description: { type: String, default: '', maxlength: 1000 },
-    teacher_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    teacher_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     cover_image: { type: String, default: null },
     status: { type: String, enum: ['active', 'archived'], default: 'active', index: true },
     student_count: { type: Number, default: 0 },

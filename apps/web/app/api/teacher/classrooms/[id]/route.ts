@@ -2,19 +2,22 @@ import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { ClassroomService } from '@/lib/modules/classroom/services/classroom-service'
+import { ClassroomReadError, validateClassroomResourceId } from '@/lib/modules/classroom/classroom-errors'
 
-export const GET = withAuth(
-  async (req, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = withAuth<Promise<{ id: string }>>(
+  async (req, { params, payload }) => {
     try {
-      await connectDB()
       const { id } = await params
-      const classroom = await ClassroomService.getClassroomDetail(id)
-      if (!classroom) {
-        return NextResponse.json({ error: 'Classroom not found' }, { status: 404 })
-      }
+      validateClassroomResourceId(id)
+      await connectDB()
+      const classroom = await ClassroomService.getClassroomDetail(id, payload)
       return NextResponse.json({ classroom })
-    } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+    } catch (err) {
+      if (err instanceof ClassroomReadError) {
+        return NextResponse.json({ error: err.message }, { status: err.status })
+      }
+      console.error('Failed to retrieve classroom', err)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

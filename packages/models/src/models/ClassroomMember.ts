@@ -3,8 +3,8 @@ import type { IClassroomMember } from '../entities/classroom.types'
 
 const ClassroomMemberSchema = new Schema<IClassroomMember>(
   {
-    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true, index: true },
-    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true },
+    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     joined_at: { type: Date, default: Date.now },
     status: { type: String, enum: ['active', 'blocked'], default: 'active' },
     is_pinned: { type: Boolean, default: false },

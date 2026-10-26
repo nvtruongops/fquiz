@@ -2,8 +2,8 @@ import mongoose, { Schema } from 'mongoose'
 import type { IAILearningLog } from '../entities/ai.types'
 
 const AILearningLogSchema = new Schema<IAILearningLog>({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  type: { type: String, required: true, index: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  type: { type: String, required: true },
   language: { type: String, required: true },
   topic: { type: String },
   cefrLevel: { type: String },

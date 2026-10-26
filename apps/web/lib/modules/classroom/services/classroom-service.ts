@@ -1,12 +1,33 @@
 import crypto from 'node:crypto'
 import { Types } from 'mongoose'
-import { Classroom } from '../models/Classroom'
-import { ClassroomMember } from '../models/ClassroomMember'
-import { QuizAssignment } from '../models/QuizAssignment'
-import { QuizAssignmentProgress } from '../models/QuizAssignmentProgress'
-import { User } from '@/lib/modules/auth/models/User' // ponytail: allow-cross-module
-import { Quiz } from '@/lib/modules/quiz/models/Quiz' // ponytail: allow-cross-module
+import { Classroom, ClassroomMember, QuizAssignment, QuizAssignmentProgress, User, Quiz } from '@fquiz/models'
+import type { JWTPayload } from '@fquiz/auth'
+import { ClassroomReadError, validateClassroomResourceId } from '../classroom-errors'
 import type { CreateClassroomInput, CreateQuizAssignmentInput } from '../schemas/classroom'
+
+export type ClassroomActor = Pick<JWTPayload, 'userId' | 'role'>
+
+async function requireClassroomAccess(classroomId: string, actor: ClassroomActor, allowStudent = false) {
+  validateClassroomResourceId(classroomId)
+  if (!actor || !Types.ObjectId.isValid(actor.userId)) {
+    throw new ClassroomReadError(404, 'Classroom not found')
+  }
+
+  const classroom = await Classroom.findById(classroomId).lean()
+  if (!classroom) throw new ClassroomReadError(404, 'Classroom not found')
+  if (actor.role === 'admin' || actor.role === 'dev') return classroom
+  if (actor.role === 'teacher' && classroom.teacher_id.toString() === actor.userId) return classroom
+
+  if (allowStudent && actor.role === 'student') {
+    const member = await ClassroomMember.findOne({
+      classroom_id: classroom._id,
+      student_id: new Types.ObjectId(actor.userId),
+      status: 'active',
+    }).lean()
+    if (member) return classroom
+  }
+  throw new ClassroomReadError(404, 'Classroom not found')
+}
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -159,9 +180,8 @@ export class ClassroomService {
   /**
    * Get classroom details
    */
-  static async getClassroomDetail(classroomId: string) {
-    const classroom = await Classroom.findById(classroomId).lean()
-    if (!classroom) return null
+  static async getClassroomDetail(classroomId: string, actor: ClassroomActor) {
+    const classroom = await requireClassroomAccess(classroomId, actor)
 
     const teacher = await User.findById(classroom.teacher_id, 'username avatar_url email profile_bio').lean()
     return {
@@ -173,7 +193,8 @@ export class ClassroomService {
   /**
    * Get list of classroom members
    */
-  static async getClassroomMembers(classroomId: string) {
+  static async getClassroomMembers(classroomId: string, actor: ClassroomActor) {
+    await requireClassroomAccess(classroomId, actor)
     const members = await ClassroomMember.find({ classroom_id: new Types.ObjectId(classroomId), status: 'active' })
       .sort({ is_starred: -1, joined_at: -1 })
       .lean()
@@ -267,7 +288,13 @@ export class ClassroomService {
   /**
    * Get list of assignments in classroom
    */
-  static async getClassroomAssignments(classroomId: string, studentId?: string) {
+  static async getClassroomAssignments(classroomId: string, actor: ClassroomActor, studentId?: string) {
+    validateClassroomResourceId(classroomId)
+    if (studentId !== undefined) validateClassroomResourceId(studentId)
+    if (actor?.role === 'student' && studentId !== undefined && studentId !== actor.userId) {
+      throw new ClassroomReadError(404, 'Classroom not found')
+    }
+    await requireClassroomAccess(classroomId, actor, true)
     const assignments = await QuizAssignment.find({
       classroom_id: new Types.ObjectId(classroomId),
       status: 'published',
@@ -348,9 +375,11 @@ export class ClassroomService {
   /**
    * Get assignment grade report for teacher
    */
-  static async getAssignmentReport(assignmentId: string) {
+  static async getAssignmentReport(assignmentId: string, actor: ClassroomActor) {
+    validateClassroomResourceId(assignmentId)
     const assignment = await QuizAssignment.findById(assignmentId).lean()
-    if (!assignment) return null
+    if (!assignment) throw new ClassroomReadError(404, 'Assignment not found')
+    await requireClassroomAccess(assignment.classroom_id.toString(), actor)
 
     const members = await ClassroomMember.find({ classroom_id: assignment.classroom_id, status: 'active' }).lean()
     const studentIds = members.map((m) => m.student_id)

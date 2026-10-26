@@ -93,6 +93,8 @@ QuizSchema.index({ is_public: 1, status: 1, studentCount: -1 })
 QuizSchema.index({ is_public: 1, status: 1, created_at: -1 })
 QuizSchema.index({ created_by: 1, is_temp: 1, created_at: -1 })
 QuizSchema.index({ created_by: 1, status: 1 })
+QuizSchema.index({ created_by: 1, original_quiz_id: 1, is_saved_from_explore: 1 })
+QuizSchema.index({ 'questions.question_id': 1 })
 
 QuizSchema.pre('validate', function () {
   if (typeof this.course_code === 'string') {

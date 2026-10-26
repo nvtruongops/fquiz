@@ -20,12 +20,12 @@ export const GET = withAuth(async (req) => {
 
   await connectDB()
 
-  // Fetch student & teacher IDs to strictly exclude all user-created quizzes
-  const nonAdminUsers = await User.find({ role: { $in: ['student', 'teacher'] } }).select('_id').lean()
+  // Fetch student/teacher IDs and admin/dev IDs in parallel
+  const [nonAdminUsers, adminUsers] = await Promise.all([
+    User.find({ role: { $in: ['student', 'teacher'] } }).select('_id').lean(),
+    User.find({ role: { $in: ['admin', 'dev'] } }).select('_id').lean(),
+  ])
   const nonAdminIds = nonAdminUsers.map((u: any) => u._id)
-
-  // Fetch admin & dev user IDs
-  const adminUsers = await User.find({ role: { $in: ['admin', 'dev'] } }).select('_id').lean()
   const adminIds = adminUsers.map((u: any) => u._id)
 
   const andConditions: any[] = [

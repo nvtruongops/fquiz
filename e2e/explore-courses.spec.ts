@@ -15,7 +15,7 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
     await page.goto('/explore')
 
     // Verify search input
-    const searchInput = page.getByPlaceholder(/Search courses/i)
+    const searchInput = page.getByPlaceholder(/Search study categories by name/i)
     await expect(searchInput).toBeVisible()
 
     // Verify category cards render
@@ -27,7 +27,7 @@ test.describe('Explore and Course Discovery (/explore & /courses/[code])', () =>
   test('should filter categories in real-time when user types in search bar', async ({ page }) => {
     await page.goto('/explore')
 
-    const searchInput = page.getByPlaceholder(/Search courses/i)
+    const searchInput = page.getByPlaceholder(/Search study categories by name/i)
     await searchInput.fill('PRN')
 
     // PRN211 should be visible, MLN111 should be hidden

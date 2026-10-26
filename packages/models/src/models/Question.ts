@@ -8,7 +8,6 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     text: {
       type: String,

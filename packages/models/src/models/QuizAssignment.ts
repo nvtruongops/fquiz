@@ -3,7 +3,7 @@ import type { IQuizAssignment } from '../entities/classroom.types'
 
 const QuizAssignmentSchema = new Schema<IQuizAssignment>(
   {
-    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true, index: true },
+    classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true },
     quiz_id: { type: Schema.Types.ObjectId, ref: 'Quiz', required: true, index: true },
     teacher_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true, trim: true },

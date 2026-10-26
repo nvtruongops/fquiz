@@ -5,7 +5,7 @@ const QuizAssignmentProgressSchema = new Schema<IQuizAssignmentProgress>(
   {
     assignment_id: { type: Schema.Types.ObjectId, ref: 'QuizAssignment', required: true },
     classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', required: true },
-    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    student_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     latest_session_id: { type: Schema.Types.ObjectId, ref: 'QuizSession', default: null },
     best_score: { type: Number, default: 0 },
     attempts_count: { type: Number, default: 0 },
@@ -25,6 +25,7 @@ const QuizAssignmentProgressSchema = new Schema<IQuizAssignmentProgress>(
 
 QuizAssignmentProgressSchema.index({ assignment_id: 1, student_id: 1 }, { unique: true })
 QuizAssignmentProgressSchema.index({ classroom_id: 1, student_id: 1 })
+QuizAssignmentProgressSchema.index({ student_id: 1, status: 1 })
 
 export const QuizAssignmentProgress =
   mongoose.models.QuizAssignmentProgress ??

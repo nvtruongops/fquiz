@@ -17,7 +17,7 @@ test.describe('Admin Portal — Categories & Quizzes Management', () => {
     await expect(addBtn).toBeVisible()
 
     // Check table
-    await expect(page.getByText(/Category List/i).first()).toBeVisible()
+    await expect(page.getByText('Categories List')).toBeVisible()
   })
 
   test('should render quizzes page with category and status filters', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Admin Portal — Categories & Quizzes Management', () => {
     await expect(page.getByRole('heading', { name: /Quiz Management|Quizzes/i })).toBeVisible()
 
     // Search and filters
-    await expect(page.getByPlaceholder(/Search by title or course code/i)).toBeVisible()
+    await expect(page.getByPlaceholder(/Search by title or category/i)).toBeVisible()
     await expect(page.getByRole('combobox').first()).toBeVisible()
   })
 })

@@ -13,25 +13,46 @@ export const GET = withAuth(async () => {
       .select('_id name')
       .lean()
 
-    const result = []
+    const categoryIds = categories.map((c: any) => c._id)
 
-    for (const category of categories) {
-      const categoryId = String(category._id)
-
-      const quizzes = await Quiz.find({
-        category_id: categoryId,
+    const [allQuizzes, allBankEntries] = await Promise.all([
+      Quiz.find({
+        category_id: { $in: categoryIds },
         status: 'published',
         is_public: true,
         is_saved_from_explore: { $ne: true },
       })
-        .select('_id course_code questions updatedAt')
-        .lean()
+        .select('_id category_id course_code')
+        .lean(),
+      QuestionBank.find({ category_id: { $in: categoryIds } })
+        .select('category_id used_in_quizzes used_in_quiz_ids')
+        .lean(),
+    ])
 
+    const quizzesByCategory = new Map<string, any[]>()
+    for (const q of allQuizzes as any[]) {
+      const catId = String(q.category_id)
+      const list = quizzesByCategory.get(catId) ?? []
+      list.push(q)
+      quizzesByCategory.set(catId, list)
+    }
+
+    const bankByCategory = new Map<string, any[]>()
+    for (const entry of allBankEntries as any[]) {
+      const catId = String(entry.category_id)
+      const list = bankByCategory.get(catId) ?? []
+      list.push(entry)
+      bankByCategory.set(catId, list)
+    }
+
+    const result = []
+
+    for (const category of categories) {
+      const categoryId = String(category._id)
+      const quizzes = quizzesByCategory.get(categoryId) ?? []
       if (quizzes.length === 0) continue
 
-      const bankEntries = await QuestionBank.find({ category_id: categoryId })
-        .select('used_in_quizzes used_in_quiz_ids')
-        .lean()
+      const bankEntries = bankByCategory.get(categoryId) ?? []
 
       const migratedCourseCodes = new Set<string>()
       const migratedQuizIds = new Set<string>()

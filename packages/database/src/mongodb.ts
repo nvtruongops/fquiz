@@ -46,7 +46,8 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   // Start a new connection promise if none in-flight
   if (!cached.promise) {
-    const maxPool = Number(process.env.MONGODB_MAX_POOL_SIZE || 2)
+    const defaultPoolSize = process.env.VERCEL ? 5 : 10
+    const maxPool = Number(process.env.MONGODB_MAX_POOL_SIZE || defaultPoolSize)
     const connectOptions = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
@@ -54,7 +55,9 @@ export async function connectDB(): Promise<typeof mongoose> {
       socketTimeoutMS: 45000,
       maxPoolSize: maxPool,
       minPoolSize: 0,
-      maxIdleTimeMS: 10000,
+      maxConnecting: 4,
+      maxIdleTimeMS: 30000,
+      autoIndex: process.env.NODE_ENV !== 'production',
     }
 
     cached.promise = mongoose

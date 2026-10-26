@@ -25,8 +25,7 @@ test.describe('Admin Portal — Users Management', () => {
   test('should filter users by search term', async ({ page }) => {
     await page.goto(`${ADMIN_APP_URL}/users`)
     const searchInput = page.getByPlaceholder(/Search by username or email/i)
-    await searchInput.fill('minh')
-    await page.waitForTimeout(400) // Debounce
-    await expect(page.locator('tbody tr').first()).toBeVisible()
+    await searchInput.fill('admin_tester')
+    await expect(page.locator('tbody tr').filter({ hasText: 'admin_tester' })).toBeVisible()
   })
 })

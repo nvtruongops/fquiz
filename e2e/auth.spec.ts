@@ -130,7 +130,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
       const sendCodeBtn = page.getByRole('button', { name: /Send Code/i })
       await sendCodeBtn.click()
 
-      await expect(page.getByText(/Please enter a valid email address before requesting a code/i)).toBeVisible()
+      await expect(page.getByText('Please enter a valid email before sending code')).toBeVisible()
     })
   })
 

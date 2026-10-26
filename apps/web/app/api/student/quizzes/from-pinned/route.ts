@@ -4,9 +4,86 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { PinnedQuestion } from '@/lib/modules/quiz/models/PinnedQuestion'
 import { Types } from 'mongoose'
-import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { convertPinnedQuestion } from '@/lib/modules/quiz/pinned-question-conversion'
 import { parseJsonBody } from '@/lib/core/api-helpers'
 import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
+
+async function getPinnedQuestions(courseCode: string, userId: Types.ObjectId) {
+  const targetCategory = await ensureCategoryForCourseCode(courseCode, userId)
+  const escapedCode = courseCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // eslint-disable-next-line security/detect-non-literal-regexp
+  const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
+  const categoryQuizIds: Types.ObjectId[] = []
+  let categoryCourseCodes: string[] = []
+
+  if (targetCategory?._id) {
+    const quizzes = await Quiz.find({ category_id: targetCategory._id })
+      .select('_id course_code')
+      .lean() as any[]
+    categoryQuizIds.push(...quizzes.map((quiz) => quiz._id))
+    categoryCourseCodes = quizzes.map((quiz) => quiz.course_code?.trim().toUpperCase()).filter(Boolean)
+  }
+
+  const pinnedDocs = await PinnedQuestion.find({
+    student_id: userId,
+    $or: [
+      { course_code: { $regex: codeRegex } },
+      ...(categoryQuizIds.length ? [{ quiz_id: { $in: categoryQuizIds } }] : []),
+      ...(categoryCourseCodes.length ? [{ course_code: { $in: categoryCourseCodes } }] : []),
+    ],
+  }).sort({ created_at: -1 }).lean()
+  return { targetCategory, pinnedDocs }
+}
+
+async function loadPinnedAnswerSources(pinnedDocs: any[]) {
+  const missing = pinnedDocs.filter((question) => !Array.isArray(question.correct_answer) || question.correct_answer.length === 0)
+  const sourceQuizMap = new Map<string, any>()
+  const standaloneQuestionMap = new Map<string, any>()
+  if (missing.length === 0) return { sourceQuizMap, standaloneQuestionMap }
+
+  const { Question } = await import('@/lib/modules/quiz/models/Question')
+  const quizIds = Array.from(new Set(missing
+    .map((question) => question.quiz_id && Types.ObjectId.isValid(question.quiz_id) ? String(question.quiz_id) : null)
+    .filter(Boolean) as string[])).map((id) => new Types.ObjectId(id))
+  const texts = Array.from(new Set(missing.map((question) => question.text?.trim()).filter(Boolean) as string[]))
+  const [sourceQuizzes, standaloneQuestions] = await Promise.all([
+    quizIds.length ? Quiz.find({ _id: { $in: quizIds } }).select('questions').lean() : Promise.resolve([]),
+    texts.length ? Question.find({ text: { $in: texts } }).select('text correct_answer').lean() : Promise.resolve([]),
+  ])
+  for (const quiz of sourceQuizzes as any[]) sourceQuizMap.set(String(quiz._id), quiz)
+  for (const question of standaloneQuestions as any[]) {
+    if (question.text) standaloneQuestionMap.set(question.text.trim(), question)
+  }
+  return { sourceQuizMap, standaloneQuestionMap }
+}
+
+async function savePinnedQuiz(userId: Types.ObjectId, courseCode: string, title: string, categoryId: Types.ObjectId, questions: any[]) {
+  const existing = await Quiz.findOne({
+    created_by: userId,
+    course_code: courseCode,
+    is_saved_from_explore: { $ne: true },
+    is_temp: { $ne: true },
+  })
+  const description = `Custom quiz created from ${questions.length} pinned questions of course ${courseCode}`
+  if (existing) {
+    existing.title = title
+    existing.questions = questions
+    existing.questionCount = questions.length
+    existing.description = description
+    existing.category_id = categoryId
+    await existing.save()
+    return existing
+  }
+
+  const quiz = { title, course_code: courseCode, description, category_id: categoryId, created_by: userId,
+    is_public: false, status: 'published', questions, questionCount: questions.length }
+  try {
+    return await Quiz.create(quiz)
+  } catch (error: any) {
+    if (error?.code !== 11000) throw error
+    return Quiz.create({ ...quiz, course_code: `${courseCode}_PINNED_${Date.now().toString().slice(-4)}` })
+  }
+}
 
 /**
  * POST /api/student/quizzes/from-pinned
@@ -45,34 +122,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 2. Resolve Category (Auto-create category if missing)
-    const targetCategory = await ensureCategoryForCourseCode(normalizedCourseCode, userObjectId)
-    const escapedCode = course_code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    // eslint-disable-next-line security/detect-non-literal-regexp
-    const codeRegex = new RegExp(`^${escapedCode}(_.*)?$`, 'i')
-
-    let categoryQuizIds: Types.ObjectId[] = []
-    let categoryCourseCodes: string[] = []
-
-    if (targetCategory?._id) {
-      const quizzes = await Quiz.find({ category_id: targetCategory._id })
-        .select('_id course_code')
-        .lean() as any[]
-      categoryQuizIds = quizzes.map((q) => q._id)
-      categoryCourseCodes = quizzes.map((q) => q.course_code?.trim().toUpperCase()).filter(Boolean)
-    }
-
-    // 3. Fetch pinned questions matching prefix or category
-    const pinnedFilter: any = {
-      student_id: userObjectId,
-      $or: [
-        { course_code: { $regex: codeRegex } },
-        ...(categoryQuizIds.length > 0 ? [{ quiz_id: { $in: categoryQuizIds } }] : []),
-        ...(categoryCourseCodes.length > 0 ? [{ course_code: { $in: categoryCourseCodes } }] : []),
-      ],
-    }
-
-    const pinnedDocs = await PinnedQuestion.find(pinnedFilter).sort({ created_at: -1 }).lean()
+    const { targetCategory, pinnedDocs } = await getPinnedQuestions(normalizedCourseCode, userObjectId)
 
     if (!pinnedDocs || pinnedDocs.length === 0) {
       return NextResponse.json(
@@ -81,123 +131,17 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       )
     }
 
-    // 4. Transform pinned questions to Quiz questions format (Auto-resolving correct answers & sanitizing)
-    const { Question } = await import('@/lib/modules/quiz/models/Question')
-    const quizQuestions = await Promise.all(pinnedDocs.map(async (pq: any) => {
-      let validCorrectAnswer: number[] | undefined = Array.isArray(pq.correct_answer) && pq.correct_answer.length > 0 
-        ? pq.correct_answer 
-        : undefined
-
-      // If correct_answer was missing or empty, attempt auto-resolve from Quiz or Question DB
-      if (!validCorrectAnswer) {
-        if (pq.quiz_id && Types.ObjectId.isValid(pq.quiz_id)) {
-          const sourceQuiz: any = await Quiz.findById(pq.quiz_id).select('questions').lean()
-          if (sourceQuiz?.questions) {
-            const matched = sourceQuiz.questions.find((q: any) => 
-              (pq.question_id && (q._id?.toString() === pq.question_id || q.question_id === pq.question_id)) ||
-              (q.text && q.text.trim() === pq.text?.trim())
-            )
-            if (matched && matched.correct_answer !== undefined && matched.correct_answer !== null) {
-              validCorrectAnswer = Array.isArray(matched.correct_answer) 
-                ? matched.correct_answer 
-                : typeof matched.correct_answer === 'number' 
-                  ? [matched.correct_answer] 
-                  : undefined
-            }
-          }
-        }
-
-        if (!validCorrectAnswer && pq.text) {
-          const standalone: any = await Question.findOne({ text: pq.text.trim() }).select('correct_answer').lean()
-          if (standalone && standalone.correct_answer !== undefined && standalone.correct_answer !== null) {
-            validCorrectAnswer = Array.isArray(standalone.correct_answer) 
-              ? standalone.correct_answer 
-              : typeof standalone.correct_answer === 'number' 
-                ? [standalone.correct_answer] 
-                : undefined
-          }
-        }
-      }
-
-      // Ensure options has at least 2 valid strings (required by QuestionSchema)
-      let rawOptions = Array.isArray(pq.options) ? pq.options.filter((o: any) => typeof o === 'string' && o.trim().length > 0) : []
-      if (rawOptions.length < 2) {
-        rawOptions = ['True', 'False']
-      }
-
-      // Ensure correct_answer indices are valid within [0, rawOptions.length - 1]
-      let finalCorrectAnswer = (validCorrectAnswer || [0])
-        .map((idx) => (typeof idx === 'number' ? idx : parseInt(String(idx), 10)))
-        .filter((idx) => !isNaN(idx) && idx >= 0 && idx < rawOptions.length)
-      if (finalCorrectAnswer.length === 0) {
-        finalCorrectAnswer = [0]
-      }
-
-      return {
-        text: pq.text || '',
-        options: rawOptions,
-        correct_answer: finalCorrectAnswer,
-        explanation: pq.explanation || '',
-        image_url: pq.image_url || '',
-        question_id: pq.question_id || generateQuestionId({ text: pq.text || '', options: rawOptions, correct_answer: finalCorrectAnswer }),
-      }
-    }))
+    const { sourceQuizMap, standaloneQuestionMap } = await loadPinnedAnswerSources(pinnedDocs)
+    const quizQuestions = pinnedDocs.map((question: any) =>
+      convertPinnedQuestion(question, sourceQuizMap, standaloneQuestionMap)
+    )
 
     // 5. Generate quiz title
     const customTitle = title && typeof title === 'string' && title.trim().length > 0
       ? title.trim()
       : `${normalizedCourseCode} - Pinned Quiz (${quizQuestions.length} QUESTIONS)`
 
-    // 6. Create or update pinned quiz for this course to avoid E11000 duplicate key conflict
-    const existingPinnedQuiz = await Quiz.findOne({
-      created_by: userObjectId,
-      course_code: normalizedCourseCode,
-      is_saved_from_explore: { $ne: true },
-      is_temp: { $ne: true },
-    })
-
-    let quiz: any
-    if (existingPinnedQuiz) {
-      existingPinnedQuiz.title = customTitle
-      existingPinnedQuiz.questions = quizQuestions
-      existingPinnedQuiz.questionCount = quizQuestions.length
-      existingPinnedQuiz.description = `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`
-      existingPinnedQuiz.category_id = targetCategory._id
-      await existingPinnedQuiz.save()
-      quiz = existingPinnedQuiz
-    } else {
-      try {
-        quiz = await Quiz.create({
-          title: customTitle,
-          course_code: normalizedCourseCode,
-          description: `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`,
-          category_id: targetCategory._id,
-          created_by: userObjectId,
-          is_public: false,
-          status: 'published',
-          questions: quizQuestions,
-          questionCount: quizQuestions.length,
-        })
-      } catch (createErr: any) {
-        if (createErr?.code === 11000) {
-          // Fallback with suffixed course code if collision with another custom quiz
-          const suffixedCode = `${normalizedCourseCode}_PINNED_${Date.now().toString().slice(-4)}`
-          quiz = await Quiz.create({
-            title: customTitle,
-            course_code: suffixedCode,
-            description: `Custom quiz created from ${quizQuestions.length} pinned questions of course ${normalizedCourseCode}`,
-            category_id: targetCategory._id,
-            created_by: userObjectId,
-            is_public: false,
-            status: 'published',
-            questions: quizQuestions,
-            questionCount: quizQuestions.length,
-          })
-        } else {
-          throw createErr
-        }
-      }
-    }
+    const quiz = await savePinnedQuiz(userObjectId, normalizedCourseCode, customTitle, targetCategory._id, quizQuestions)
 
     return NextResponse.json({
       quiz,

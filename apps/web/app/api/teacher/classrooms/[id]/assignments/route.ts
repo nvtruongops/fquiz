@@ -2,17 +2,23 @@ import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { ClassroomService } from '@/lib/modules/classroom/services/classroom-service'
+import { ClassroomReadError, validateClassroomResourceId } from '@/lib/modules/classroom/classroom-errors'
 import { createQuizAssignmentSchema } from '@/lib/modules/classroom/schemas/classroom'
 
-export const GET = withAuth(
-  async (req, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = withAuth<Promise<{ id: string }>>(
+  async (req, { params, payload }) => {
     try {
-      await connectDB()
       const { id } = await params
-      const assignments = await ClassroomService.getClassroomAssignments(id)
+      validateClassroomResourceId(id)
+      await connectDB()
+      const assignments = await ClassroomService.getClassroomAssignments(id, payload)
       return NextResponse.json({ assignments })
-    } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Failed to retrieve assignments' }, { status: 500 })
+    } catch (err) {
+      if (err instanceof ClassroomReadError) {
+        return NextResponse.json({ error: err.message }, { status: err.status })
+      }
+      console.error('Failed to retrieve classroom assignments', err)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

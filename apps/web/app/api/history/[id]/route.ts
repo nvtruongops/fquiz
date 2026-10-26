@@ -88,9 +88,13 @@ export const GET = withAuth(async (
     const { searchParams } = new URL(req.url)
     const selectedSessionId = searchParams.get('sessionId')
     const idObjectId = new mongoose.Types.ObjectId(id)
+    const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
 
-    const quiz = await Quiz.findById(idObjectId).lean() as any
-    const quizSessions = await QuizSession.find({ student_id: new mongoose.Types.ObjectId(payload.userId), quiz_id: idObjectId, status: 'completed' }).sort({ completed_at: -1 }).limit(25).lean() as any[]
+    const [quiz, quizSessions, activeList] = await Promise.all([
+      Quiz.findById(idObjectId).lean() as Promise<any>,
+      QuizSession.find({ student_id: studentObjectId, quiz_id: idObjectId, status: 'completed' }).sort({ completed_at: -1 }).limit(25).lean() as Promise<any[]>,
+      QuizSession.find({ student_id: studentObjectId, quiz_id: idObjectId, status: 'active' }).sort({ started_at: -1 }).limit(1).lean() as Promise<any[]>,
+    ])
 
     if (quizSessions.length > 0) {
       let session = quizSessions[0]
@@ -104,8 +108,6 @@ export const GET = withAuth(async (
       }
     }
 
-    // Try finding active session if no completed sessions or specific logic
-    const activeList = await QuizSession.find({ student_id: new mongoose.Types.ObjectId(payload.userId), quiz_id: idObjectId, status: 'active' }).sort({ started_at: -1 }).limit(1).lean() as any[]
     const activeSession = activeList[0]
 
     if (quizSessions.length === 0 && quiz) {

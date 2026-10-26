@@ -42,15 +42,11 @@ function buildHistoryFilterPipeline(matchQuery: Record<string, any>, search: str
               is_saved_from_explore: 1,
               original_quiz_id: 1,
               questionCount: {
-                $let: {
-                  vars: {
-                    declaredCount: { $ifNull: ['$questionCount', 0] },
-                    derivedCount: { $cond: [{ $isArray: '$questions' }, { $size: '$questions' }, 0] },
-                  },
-                  in: {
-                    $cond: [{ $gt: ['$$declaredCount', 0] }, '$$declaredCount', '$$derivedCount'],
-                  },
-                },
+                $cond: [
+                  { $gt: [{ $ifNull: ['$questionCount', 0] }, 0] },
+                  '$questionCount',
+                  { $cond: [{ $isArray: '$questions' }, { $size: '$questions' }, 0] },
+                ],
               },
             },
           },
@@ -499,12 +495,28 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     if (!matchQuery) {
       return NextResponse.json({ error: 'Invalid student ID' }, { status: 400 })
     }
-    const stats = await loadHistoryStats(matchQuery, search)
+
+    let stats: HistoryStats
+    let pageItems: HistoryPageItems
+    let safePage: number
+    let totalPages: number
+
+    if (page === 1) {
+      ;[stats, pageItems] = await Promise.all([
+        loadHistoryStats(matchQuery, search),
+        loadHistoryPageItems(matchQuery, search, 0, limit),
+      ])
+      totalPages = Math.max(1, Math.ceil(stats.totalAttempts / limit))
+      safePage = 1
+    } else {
+      stats = await loadHistoryStats(matchQuery, search)
+      totalPages = Math.max(1, Math.ceil(stats.totalAttempts / limit))
+      safePage = Math.min(page, totalPages)
+      const skip = (safePage - 1) * limit
+      pageItems = await loadHistoryPageItems(matchQuery, search, skip, limit)
+    }
+
     const total = stats.totalAttempts
-    const totalPages = Math.max(1, Math.ceil(total / limit))
-    const safePage = Math.min(page, totalPages)
-    const skip = (safePage - 1) * limit
-    const pageItems = await loadHistoryPageItems(matchQuery, search, skip, limit)
 
     const lookups = await buildHistoryLookups(pageItems)
     const history = pageItems.map((item) => buildHistoryItem(item, lookups, payload.userId as string))

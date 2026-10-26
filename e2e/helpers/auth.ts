@@ -53,6 +53,13 @@ export async function setTestAuthCookie(
       httpOnly: false,
       sameSite: 'Lax',
     },
+    {
+      name: 'csrf-token',
+      value: 'e2e-csrf-token',
+      url,
+      httpOnly: false,
+      sameSite: 'Lax',
+    },
   ])
 
   return token

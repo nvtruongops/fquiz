@@ -77,7 +77,9 @@ QuizSessionSchema.index(
     partialFilterExpression: { status: { $in: ['preparing', 'active', 'paused'] } }
   }
 )
-QuizSessionSchema.index({ student_id: 1, quiz_id: 1 })
+QuizSessionSchema.index({ student_id: 1, quiz_id: 1, status: 1, completed_at: -1 })
+QuizSessionSchema.index({ student_id: 1, status: 1, started_at: -1 })
+QuizSessionSchema.index({ quiz_id: 1, is_guest: 1, student_id: 1, guest_id: 1 })
 QuizSessionSchema.index({ student_id: 1, is_temp: 1, expires_at: 1 })
 QuizSessionSchema.index({ student_id: 1, status: 1, completed_at: -1 })
 QuizSessionSchema.index({ is_guest: 1, guest_id: 1 }, { sparse: true })

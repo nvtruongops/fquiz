@@ -63,7 +63,7 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     const modalTitle = page.getByText(/SAVE YOUR STUDY PROGRESS/i)
     await expect(modalTitle).toBeVisible()
 
-    const guestBadge = page.getByText(/Guest Mode/i)
+    const guestBadge = page.getByText('Guest Mode', { exact: true })
     await expect(guestBadge).toBeVisible()
 
     const loginButton = page.getByRole('button', { name: /Sign in to save progress/i })
@@ -84,14 +84,11 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     await continueGuestBtn.click()
 
     // Verify reminder modal closes and mode selection modal opens
-    const modeSelectTitle = page.getByText(/Practice Options/i)
-    await expect(modeSelectTitle).toBeVisible()
-
-    // Verify practice options
-    await expect(page.getByRole('button', { name: /Instant Feedback/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Mock Exam|Exam Simulation/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Flashcard/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Start Quiz|Start Practice/i })).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page.getByRole('heading', { name: 'Study Options' })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Instant Answers/i })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Exam Simulation/i })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Flashcard Study/i })).toBeVisible()
   })
 
   test('Guest creates session & takes quiz -> redirects to session runner', async ({ page }) => {
@@ -109,11 +106,7 @@ test.describe('Guest Quiz Mode (Anonymous Server Session)', () => {
     await page.getByRole('button', { name: /Start Now/i }).click()
     await page.getByRole('button', { name: /Continue as Guest/i }).click()
 
-    const startExamBtn = page.getByRole('button', { name: /Start Quiz|Start Practice/i })
-    await expect(startExamBtn).toBeVisible()
-    await startExamBtn.click()
-
-    // Verify URL transitions to session runner
+    // Continuing as a guest creates the session directly.
     await expect(page).toHaveURL(new RegExp(`/quiz/${mockQuizId}/session/${mockSessionId}`))
   })
 

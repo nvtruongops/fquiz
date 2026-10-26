@@ -43,6 +43,9 @@ const UserSchema = new Schema<IUser>(
   { timestamps: false }
 )
 
+UserSchema.index({ role: 1, status: 1 })
+UserSchema.index({ status: 1, deletion_scheduled_for: 1 })
+
 const existingUserModel = mongoose.models.User
 if (existingUserModel && (!existingUserModel.schema.path('token_version') || !existingUserModel.schema.path('pinned_categories') || !existingUserModel.schema.path('pinned_quizzes') || !existingUserModel.schema.path('deletion_token'))) {
   delete mongoose.models.User

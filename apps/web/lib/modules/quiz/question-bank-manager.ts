@@ -5,6 +5,7 @@ import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-
 import { normalizeTextAST, normalizeOptionAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 import { ensureArray } from '@/lib/core/utils/array-utils'
 import type { Types } from 'mongoose'
+import { buildQuestionBankOperations } from './question-bank-reconciliation'
 
 function hasOptionOverlap(opts1: string[], opts2: string[]): boolean {
   if (!opts1 || !opts2 || opts1.length === 0 || opts2.length === 0) return false
@@ -393,78 +394,13 @@ export async function rebuildQuestionBankUsage(): Promise<{ processedQuizzes: nu
   })
     .select('_id course_code category_id questions created_by')
     .lean()
+  const { bulkOps, syncedQuestionIds } = buildQuestionBankOperations(publicQuizzes)
 
-  const questionMap = new Map<string, {
-    categoryId: any
-    text: string
-    options: string[]
-    correct_answer: any
-    explanation?: string
-    image_url?: string
-    createdBy: any
-    courseCodes: Set<string>
-    quizIds: Set<string>
-  }>()
-
-  for (const quiz of publicQuizzes) {
-    const code = (quiz.course_code || '').trim().toUpperCase()
-    if (!code || code.startsWith('MIX_') || code.startsWith('TEMP_')) continue
-    const quizIdStr = String(quiz._id)
-
-    if (Array.isArray(quiz.questions)) {
-      for (const q of quiz.questions) {
-        const questionId = q.question_id || generateQuestionId(q)
-        if (!questionId) continue
-
-        let entry = questionMap.get(questionId)
-        if (!entry) {
-          entry = {
-            categoryId: quiz.category_id,
-            text: q.text,
-            options: q.options,
-            correct_answer: q.correct_answer,
-            explanation: q.explanation,
-            image_url: q.image_url,
-            createdBy: quiz.created_by,
-            courseCodes: new Set(),
-            quizIds: new Set(),
-          }
-          questionMap.set(questionId, entry)
-        }
-        entry.courseCodes.add(code)
-        entry.quizIds.add(quizIdStr)
-      }
-    }
-  }
-
-  for (const [questionId, data] of questionMap.entries()) {
-    const uniqueCodes = Array.from(data.courseCodes)
-    const quizIdList = Array.from(data.quizIds)
-
-    await QuestionBank.updateOne(
-      { question_id: questionId },
-      {
-        $set: {
-          category_id: data.categoryId,
-          text: data.text,
-          options: data.options,
-          correct_answer: data.correct_answer,
-          explanation: data.explanation,
-          image_url: data.image_url,
-          used_in_quizzes: uniqueCodes,
-          used_in_quiz_ids: quizIdList,
-          usage_count: uniqueCodes.length,
-        },
-        $setOnInsert: {
-          created_by: data.createdBy,
-        },
-      },
-      { upsert: true }
-    )
+  if (bulkOps.length > 0) {
+    await QuestionBank.bulkWrite(bulkOps, { ordered: false })
   }
 
   // WIPE STALE RECORDS: Any QuestionBank document whose question_id is not in any public quiz
-  const syncedQuestionIds = Array.from(questionMap.keys())
   await QuestionBank.updateMany(
     { question_id: { $nin: syncedQuestionIds } },
     { $set: { used_in_quizzes: [], used_in_quiz_ids: [], usage_count: 0 } }
@@ -472,7 +408,6 @@ export async function rebuildQuestionBankUsage(): Promise<{ processedQuizzes: nu
 
   return {
     processedQuizzes: publicQuizzes.length,
-    syncedQuestions: questionMap.size,
+    syncedQuestions: syncedQuestionIds.length,
   }
 }
-

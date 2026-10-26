@@ -4,14 +4,23 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { User } from '@/lib/modules/auth/models/User'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { checkPublicApiRateLimit } from '@/lib/core/security/rate-limit/public-api'
-
-import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
+import {
+  buildQuizListingQuery,
+  mapPublicQuizRows,
+  parseQuizListingParams,
+} from '@/lib/modules/quiz/public-quiz-listing-helpers'
 
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await checkPublicApiRateLimit(request)
   if (rateLimitResponse) return rateLimitResponse
 
   try {
+    const params = parseQuizListingParams(request.nextUrl.searchParams, 'recent')
+    if (!params) {
+      return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 })
+    }
+    const { limit, offset, search, category_id: categoryId, sort } = params
+
     try {
       await connectDB()
     } catch (dbError) {
@@ -19,34 +28,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Database connection failed',
-          message: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
         { status: 503 }
       )
     }
 
-    const { searchParams } = request.nextUrl
-    const sort = searchParams.get('sort') || 'recent'
-    const categoryId = searchParams.get('category_id')
-    const search = searchParams.get('search')
-    const limit = Number.parseInt(searchParams.get('limit') || '20', 10)
-    const offset = Number.parseInt(searchParams.get('offset') || '0', 10)
-
-    const query: Record<string, unknown> = {
-      ...getPublicQuizFilter(),
-    }
-
-    if (categoryId) {
-      query.category_id = categoryId
-    }
-
-    if (search) {
-      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      query.$or = [
-        { title: { $regex: escaped, $options: 'i' } },
-        { course_code: { $regex: escaped, $options: 'i' } }
-      ]
-    }
+    const query = buildQuizListingQuery(categoryId, search)
 
     let sortOption: Record<string, 1 | -1> = { created_at: -1 }
     if (sort === 'popular') {
@@ -73,33 +60,8 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([]),
     ])
 
-    const creatorMap = new Map(creators.map(c => [c._id.toString(), c]))
-    const categoryMap = new Map(categories.map(c => [c._id.toString(), c]))
-
     const response = NextResponse.json({
-      data: quizzes.map((quiz) => {
-        const creatorId = quiz.created_by?.toString() ?? ''
-        const catId = quiz.category_id?.toString() ?? ''
-        const creator = creatorMap.get(creatorId) as { username?: string } | undefined
-        const category = categoryMap.get(catId) as { name?: string } | undefined
-
-        return {
-          id: quiz._id.toString(),
-          title: quiz.title,
-          course_code: quiz.course_code,
-          source_type: 'explore_public' as const,
-          source_label: 'Public Library',
-          source_creator_name: creator?.username ?? null,
-          questionCount: quiz.questionCount,
-          studentCount: quiz.studentCount || 0,
-          categoryId: catId,
-          categoryName: category?.name ?? 'Uncategorized',
-          latestCorrectCount: null,
-          latestTotalCount: null,
-          latestScoreOnTen: null,
-          totalStudyMinutes: null,
-        }
-      }),
+      data: mapPublicQuizRows(quizzes, creators, categories),
     })
 
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
@@ -111,8 +73,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Failed to fetch quizzes',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        type: error instanceof Error ? error.constructor.name : typeof error
       },
       { status: 500 }
     )

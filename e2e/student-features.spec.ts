@@ -141,7 +141,7 @@ test.describe('Student Features & Profile Management', () => {
       await page.goto('/history')
 
       // Verify search input and filters are visible
-      await expect(page.getByPlaceholder(/Search course code/i)).toBeVisible()
+      await expect(page.getByPlaceholder(/Search quiz code, title, or subject/i)).toBeVisible()
       await expect(page.getByRole('button', { name: /Completed/i })).toBeVisible()
     })
   })

@@ -2,19 +2,22 @@ import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { ClassroomService } from '@/lib/modules/classroom/services/classroom-service'
+import { ClassroomReadError, validateClassroomResourceId } from '@/lib/modules/classroom/classroom-errors'
 
-export const GET = withAuth(
-  async (req, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = withAuth<Promise<{ id: string }>>(
+  async (req, { params, payload }) => {
     try {
-      await connectDB()
       const { id } = await params
-      const report = await ClassroomService.getAssignmentReport(id)
-      if (!report) {
-        return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
-      }
+      validateClassroomResourceId(id)
+      await connectDB()
+      const report = await ClassroomService.getAssignmentReport(id, payload)
       return NextResponse.json({ report })
-    } catch (err: any) {
-      return NextResponse.json({ error: err.message || 'Failed to generate report' }, { status: 500 })
+    } catch (err) {
+      if (err instanceof ClassroomReadError) {
+        return NextResponse.json({ error: err.status === 404 ? 'Assignment not found' : err.message }, { status: err.status })
+      }
+      console.error('Failed to generate classroom assignment report', err)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
   },
   { roles: ['teacher', 'admin', 'dev'] }

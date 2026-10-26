@@ -24,6 +24,16 @@ export const PublicQuizzesQuerySchema = PaginationQuerySchema.extend({
   sort: z.enum(['newest', 'oldest', 'popular']).default('newest'),
 }).strict()
 
+export const OffsetQuizzesQuerySchema = z.object({
+  limit: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
+  offset: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(0).max(100000)).default(0),
+  search: z.string().max(200).optional(),
+  category_id: z.preprocess(
+    value => value === '' ? undefined : value,
+    z.string().regex(/^[a-f0-9]{24}$/i, 'Invalid category ID').optional(),
+  ),
+})
+
 export const SessionQuestionQuerySchema = z.object({
   question_index: z.preprocess(
     (value) => (value === undefined || value === null || value === '' ? undefined : value),
