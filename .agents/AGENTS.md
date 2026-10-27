@@ -23,8 +23,8 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 ## Architecture
 
 - **Workspaces**:
-  - `apps/web`: Web Student/Teacher (`@fquiz/web` / Port 3000 / `example.invalid`). Route groups: `(auth)`, `(student)`, `(teacher)`, `quiz/`, `community/`, `explore/`.
-  - `apps/admin`: Standalone Admin Portal (`@fquiz/admin` / Port 3001 / `example.invalid`). Route structure: `app/(dashboard)/` (`categories`, `feedback`, `question-bank`, `quizzes`, `settings`, `users`), `app/api/`.
+  - `apps/web`: Web Student/Teacher (`@fquiz/web` / Port 3000). Route groups: `(auth)`, `(student)`, `(teacher)`, `quiz/`, `community/`, `explore/`.
+  - `apps/admin`: Standalone Admin Portal (`@fquiz/admin` / Port 3001). Route structure: `app/(dashboard)/` (`categories`, `feedback`, `question-bank`, `quizzes`, `settings`, `users`), `app/api/`.
   - `packages/database`: Singleton MongoDB Atlas connection, DNS SRV fallback, Model Registry.
   - `packages/models`: Single Source of Truth for Mongoose Schemas, Base Entity (`IBaseEntity`), Zod Schemas.
   - `packages/auth`: JWT Rotation (`jose`), Double-Submit CSRF, Sliding Rate Limiter, RBAC, `withAuth`.

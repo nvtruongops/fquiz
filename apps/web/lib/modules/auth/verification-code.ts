@@ -6,11 +6,9 @@ export function generateVerificationCode(): string {
 
 export function hashVerificationCode(code: string): string {
   const secret = process.env.JWT_SECRET
-  if (!secret && process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET is required to hash verification codes in production')
-  }
+  if (!secret) throw new Error('JWT_SECRET is required to hash verification codes')
   return crypto
-    .createHmac('sha256', secret || 'REMOVED_LEGACY_SECRET')
+    .createHmac('sha256', secret)
     .update(code)
     .digest('hex')
 }

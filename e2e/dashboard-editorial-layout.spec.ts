@@ -53,7 +53,7 @@ test('dashboard keeps the resume action unique and reflows at narrow widths', as
         user: {
           _id: '69d7441dff42ce4f938bd488',
           name: 'FQuiz Student',
-          email: 'student@example.invalid',
+          email: 'student@example.test',
           role: 'student',
         },
       }),

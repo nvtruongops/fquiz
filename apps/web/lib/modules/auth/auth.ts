@@ -98,5 +98,7 @@ export async function verifyToken(req: Request): Promise<JWTPayload | null> {
 }
 
 export async function signToken(userId: string, role: string, v: number = 1, meta?: { username?: string; avatarUrl?: string }): Promise<string> {
-  return signTokenWithSecret(process.env.JWT_SECRET ?? '', userId, role, v, meta)
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET is required to sign tokens')
+  return signTokenWithSecret(secret, userId, role, v, meta)
 }

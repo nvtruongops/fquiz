@@ -59,16 +59,24 @@ describe('Formatting & URL Utilities Test Suite', () => {
     })
 
     test('resolves from process.env.APP_URL', () => {
-      process.env.APP_URL = 'example.invalid'
-      expect(resolveAppBaseUrl()).toBe('https://example.invalid')
+      process.env.APP_URL = 'web.example.test'
+      expect(resolveAppBaseUrl()).toBe('https://web.example.test')
+    })
+
+    test('prefers NEXT_PUBLIC_APP_URL over the Vercel deployment URL', () => {
+      delete process.env.APP_URL
+      process.env.NEXT_PUBLIC_APP_URL = 'https://web.example.test'
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = 'https://project.example.test'
+
+      expect(resolveAppBaseUrl()).toBe('https://web.example.test')
     })
 
     test('resolves from Vercel URL when APP_URL is absent', () => {
       delete process.env.APP_URL
       delete process.env.NEXT_PUBLIC_APP_URL
-      process.env.VERCEL_PROJECT_PRODUCTION_URL = 'https://example.invalid'
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = 'https://project.example.test'
 
-      expect(resolveAppBaseUrl()).toBe('https://example.invalid')
+      expect(resolveAppBaseUrl()).toBe('https://project.example.test')
     })
 
     test('falls back to request headers or localhost', () => {

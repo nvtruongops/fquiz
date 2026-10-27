@@ -37,7 +37,7 @@ describe('Rate Limit Provider Test Suite', () => {
   })
 
   test('getClientIp prioritizes cf-connecting-ip over spoofed x-forwarded-for', () => {
-    const reqWithCf = new Request('https://example.invalid/api/auth/login', {
+    const reqWithCf = new Request('https://web.example.test/api/auth/login', {
       headers: {
         'x-forwarded-for': '1.2.3.4, 203.0.113.50',
         'cf-connecting-ip': '203.0.113.50',
@@ -45,7 +45,7 @@ describe('Rate Limit Provider Test Suite', () => {
     })
     expect(getClientIp(reqWithCf)).toBe('203.0.113.50')
 
-    const reqWithXffOnly = new Request('https://example.invalid/api/auth/login', {
+    const reqWithXffOnly = new Request('https://web.example.test/api/auth/login', {
       headers: {
         'x-forwarded-for': '1.2.3.4, 198.51.100.99',
       },

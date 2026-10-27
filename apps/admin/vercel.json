@@ -1,17 +1,4 @@
 {
   "framework": "nextjs",
-  "regions": ["sin1"],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": ".*\\.vercel\\.app"
-        }
-      ],
-      "destination": "https://example.invalid/:path*",
-      "permanent": true
-    }
-  ]
+  "regions": ["sin1"]
 }

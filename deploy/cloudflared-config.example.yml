@@ -1,12 +1,12 @@
 # Cloudflare Tunnel configuration for FQuiz on VPS (/etc/cloudflared/config.yml)
-tunnel: <TUNNEL_UUID>
-credentials-file: /etc/cloudflared/<TUNNEL_UUID>.json
+tunnel: ${CLOUDFLARE_TUNNEL_ID}
+credentials-file: /etc/cloudflared/${CLOUDFLARE_TUNNEL_ID}.json
 
 ingress:
-  - hostname: example.invalid
+  - hostname: ${FQUIZ_WEB_DOMAIN}
     service: http://127.0.0.1:3000
-  - hostname: example.invalid
+  - hostname: ${FQUIZ_WWW_DOMAIN}
     service: http://127.0.0.1:3000
-  - hostname: example.invalid
+  - hostname: ${FQUIZ_ADMIN_DOMAIN}
     service: http://127.0.0.1:3001
   - service: http_status:404

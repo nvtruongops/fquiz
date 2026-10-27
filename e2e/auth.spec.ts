@@ -68,7 +68,7 @@ test.describe('Authentication & Password Recovery Flows', () => {
       })
 
       await page.goto('/login')
-      await page.locator('#identifier').fill('wronguser@example.invalid')
+      await page.locator('#identifier').fill('wronguser@example.test')
       await page.locator('#password').fill('wrongpassword123')
 
       await page.locator('button[type="submit"]').click()

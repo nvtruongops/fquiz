@@ -18,7 +18,7 @@ function getRequestBaseUrl(req: Request): string | null {
 
 export function resolveAppBaseUrl(req?: Request): string {
   // 1. Production APP_URL or Vercel production domain
-  const prodUrl = process.env.APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_SITE_URL
+  const prodUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_SITE_URL
   if (prodUrl?.trim()) {
     return cleanUrl(prodUrl)
   }

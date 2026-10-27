@@ -57,7 +57,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.CORS_ALLOWED_ORIGINS) 
   console.warn('[CORS] CORS_ALLOWED_ORIGINS is not defined in production environment. Cross-origin API requests will be rejected by default.')
 }
 
-const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'https://example.invalid'
+const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000'
 const corsAllowedOrigins = new Set(
   (process.env.CORS_ALLOWED_ORIGINS || defaultCorsOrigins)
     .split(',')
@@ -79,6 +79,20 @@ function applyCors(request: NextRequest, response: NextResponse) {
   }
 
   return response
+}
+
+function redirectVercelAlias(request: NextRequest, canonicalUrl?: string) {
+  if (process.env.NODE_ENV !== 'production' || !canonicalUrl || !request.nextUrl.hostname.endsWith('.vercel.app')) return null
+  try {
+    const canonical = new URL(canonicalUrl)
+    const target = request.nextUrl.clone()
+    if (target.host === canonical.host) return null
+    target.protocol = canonical.protocol
+    target.host = canonical.host
+    return NextResponse.redirect(target, 308)
+  } catch {
+    return null
+  }
 }
 
 function generateId() {
@@ -355,9 +369,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  const canonicalRedirect = redirectVercelAlias(request, process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL)
+  if (canonicalRedirect) return canonicalRedirect
+
   // Standalone Admin Portal Routing: Redirect all /admin traffic to dedicated admin app
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const adminBase = process.env.NEXT_PUBLIC_ADMIN_URL || 'https://example.invalid'
+    const adminBase = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001'
     const adminPath = pathname.replace(/^\/admin/, '') || '/'
     return NextResponse.redirect(new URL(adminPath, adminBase))
   }

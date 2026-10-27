@@ -2,19 +2,17 @@ import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 
 function getPrimarySecret(): string {
-  return (
-    process.env.ENCRYPTION_KEY ||
-    process.env.JWT_SECRET ||
-    'REMOVED_LEGACY_SECRET'
-  )
+  const secret = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET
+  if (!secret) throw new Error('ENCRYPTION_KEY or JWT_SECRET is required to encrypt secrets')
+  return secret
 }
 
 function getCandidateSecrets(): string[] {
+  const previousSecrets = (process.env.ENCRYPTION_KEY_PREV || '').split(',').map((s) => s.trim())
   const candidates = [
     process.env.ENCRYPTION_KEY,
+    ...previousSecrets,
     process.env.JWT_SECRET,
-    'REMOVED_LEGACY_SECRET',
-    'REMOVED_LEGACY_SECRET',
   ].filter((s): s is string => Boolean(s && s.trim()))
   return Array.from(new Set(candidates))
 }

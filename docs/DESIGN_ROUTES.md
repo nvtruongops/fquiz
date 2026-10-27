@@ -4,7 +4,7 @@ The FQuiz platform is structured as a **Pure Symmetrical Turborepo Monorepo** co
 
 ---
 
-## 1. Student & Teacher Web Portal (`apps/web` — Port 3000 / `https://example.invalid`)
+## 1. Student & Teacher Web Portal (`apps/web` — Port 3000)
 
 | Route Group | Path | Audience | Description |
 |---|---|---|---|
@@ -18,7 +18,7 @@ The FQuiz platform is structured as a **Pure Symmetrical Turborepo Monorepo** co
 
 ---
 
-## 2. System Admin Portal (`apps/admin` — Port 3001 / `https://example.invalid`)
+## 2. System Admin Portal (`apps/admin` — Port 3001)
 
 | Subsystem | Path | Access | Description |
 |---|---|---|---|

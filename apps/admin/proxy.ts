@@ -118,6 +118,20 @@ function handleAdminRateLimit(request: NextRequest, pathname: string): NextRespo
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (isStaticPath(pathname)) return NextResponse.next()
+  const canonicalUrl = process.env.NEXT_PUBLIC_ADMIN_URL
+  if (process.env.NODE_ENV === 'production' && canonicalUrl && request.nextUrl.hostname.endsWith('.vercel.app')) {
+    try {
+      const canonical = new URL(canonicalUrl)
+      const target = request.nextUrl.clone()
+      if (target.host !== canonical.host) {
+        target.protocol = canonical.protocol
+        target.host = canonical.host
+        return NextResponse.redirect(target, 308)
+      }
+    } catch {
+      // Ignore invalid canonical URL configuration and continue normal routing.
+    }
+  }
   if (!SAFE_METHODS.has(request.method) && !isBearerOnlyRequest(request, pathname)) {
     if (!validateCsrfRequest(request)) {
       return NextResponse.json({ error: 'Invalid or missing CSRF token' }, { status: 403 })

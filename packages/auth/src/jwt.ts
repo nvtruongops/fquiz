@@ -67,10 +67,8 @@ export async function signToken(
   v: number = 1,
   meta?: { username?: string; avatarUrl?: string }
 ): Promise<string> {
-  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is required in production')
-  }
-  const secretStr = process.env.JWT_SECRET || 'REMOVED_LEGACY_SECRET'
+  const secretStr = process.env.JWT_SECRET
+  if (!secretStr) throw new Error('JWT_SECRET is required to sign tokens')
   return signTokenWithSecret(secretStr, userId, role, v, meta)
 }
 

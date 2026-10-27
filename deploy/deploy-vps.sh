@@ -2,8 +2,7 @@
 # ==============================================================================
 # FQuiz Production Zero-Downtime Deployment Script (VPS)
 # ==============================================================================
-# Domains: https://example.invalid & https://example.invalid
-# Invoked via SSH by GitHub Actions or manually by an administrator.
+# Invoked via SSH by an administrator.
 # Guarantees concurrency safety (flock), MongoDB container health,
 # zero-downtime PM2 reload, automated healthcheck validation, and rollback.
 # ==============================================================================
@@ -102,14 +101,14 @@ while true; do
 
     if [ "$web_healthy" = false ]; then
         if curl -s -f -m 3 "$WEB_HEALTH_URL" > /dev/null 2>&1; then
-            echo "  ✅ Web service (:3000 -> example.invalid) is healthy! (after ${elapsed}s)"
+            echo "  ✅ Web service (:3000) is healthy! (after ${elapsed}s)"
             web_healthy=true
         fi
     fi
 
     if [ "$admin_healthy" = false ]; then
         if curl -s -f -m 3 "$ADMIN_HEALTH_URL" > /dev/null 2>&1; then
-            echo "  ✅ Admin service (:3001 -> example.invalid) is healthy! (after ${elapsed}s)"
+            echo "  ✅ Admin service (:3001) is healthy! (after ${elapsed}s)"
             admin_healthy=true
         fi
     fi
@@ -129,6 +128,6 @@ done
 echo "=================================================================="
 echo "🎉 [$(date '+%Y-%m-%d %H:%M:%S')] FQuiz Production Deployed Successfully!"
 echo "   Commit: $TARGET_COMMIT"
-echo "   Web:    https://example.invalid (127.0.0.1:3000)"
-echo "   Admin:  https://example.invalid (127.0.0.1:3001)"
+echo "   Web:    127.0.0.1:3000"
+echo "   Admin:  127.0.0.1:3001"
 echo "=================================================================="

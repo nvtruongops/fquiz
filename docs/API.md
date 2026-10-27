@@ -113,7 +113,7 @@ interface ErrorResponse {
 
 ### 2.5. Standalone System Admin Portal (`apps/admin` — `/api/*`)
 
-*All administrative APIs execute exclusively in the `apps/admin` workspace (`https://example.invalid`), completely segregated from the Web Student application.*
+*All administrative APIs execute exclusively in the `apps/admin` workspace, completely segregated from the Web Student application.*
 
 | Method | Endpoint (`apps/admin`) | Access Role | Description |
 |---|---|---|---|

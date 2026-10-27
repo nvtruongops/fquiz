@@ -5,8 +5,8 @@ import './globals.css'
 import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
-const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || 'https://example.invalid/script.js'
-const UMAMI_ADMIN_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_ADMIN_WEBSITE_ID || '003664de-f392-4938-8250-de7824fcf25a'
+const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL
+const UMAMI_ADMIN_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_ADMIN_WEBSITE_ID
 
 export const metadata: Metadata = {
   title: 'FQuiz Admin Portal',
@@ -30,12 +30,9 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
-        <Script
-          defer
-          src={UMAMI_SCRIPT_URL}
-          data-website-id={UMAMI_ADMIN_WEBSITE_ID}
-          strategy="afterInteractive"
-        />
+        {UMAMI_SCRIPT_URL && UMAMI_ADMIN_WEBSITE_ID && (
+          <Script defer src={UMAMI_SCRIPT_URL} data-website-id={UMAMI_ADMIN_WEBSITE_ID} strategy="afterInteractive" />
+        )}
       </body>
     </html>
   )

@@ -1,16 +1,23 @@
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production'
+const analyticsOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL ? new URL(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL).origin : ''
+  } catch {
+    return ''
+  }
+})()
 
 const cspDirectives = [
   "default-src 'self'",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com",
   [
-    "script-src 'self' 'unsafe-inline' https://example.invalid",
+    `script-src 'self' 'unsafe-inline' ${analyticsOrigin}`,
     isProduction ? '' : "'unsafe-eval'",
   ].filter(Boolean).join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "connect-src 'self' https://example.invalid",
+  `connect-src 'self' ${analyticsOrigin}`,
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",

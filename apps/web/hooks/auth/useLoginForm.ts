@@ -114,7 +114,7 @@ export function useLoginForm() {
 
       setTimeout(() => {
         if (data.role === 'admin') {
-          const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'https://example.invalid/login'
+          const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || '/admin/login'
           window.location.href = adminUrl
           return
         }

@@ -23,10 +23,16 @@ jest.mock('@/lib/core/utils/logger', () => ({
 describe('Auth Module', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.JWT_SECRET = 'test-only-jwt-secret'
     ;(connectDB as jest.Mock).mockResolvedValue(null)
   })
 
   describe('JWT signing and decryption', () => {
+    it('requires a configured JWT secret', async () => {
+      delete process.env.JWT_SECRET
+      await expect(signToken('user-123', 'student')).rejects.toThrow('JWT_SECRET is required')
+    })
+
     it('should sign and successfully decrypt a token', async () => {
       const payload = { userId: 'user-123', role: 'student', v: 1 }
       const token = await signToken(payload.userId, payload.role, payload.v)

@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const allowedDomains = (process.env.ALLOWED_IMAGE_DOMAINS || '').split(',').filter(Boolean)
 const isProduction = process.env.NODE_ENV === 'production'
-const defaultApiOrigin = 'https://example.invalid'
-
 function toOrigin(value) {
   const input = String(value || '').trim()
   if (!input) return null
@@ -16,9 +14,9 @@ function toOrigin(value) {
   }
 }
 
+const analyticsOrigin = toOrigin(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || '') || ''
 const apiConnectOrigins = Array.from(
   new Set([
-    defaultApiOrigin,
     ...String(process.env.NEXT_PUBLIC_API_BASE_URL || '')
       .split(',')
       .map((item) => toOrigin(item))
@@ -32,12 +30,12 @@ const cspDirectives = [
   "default-src 'self'",
   `img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com ${imgSrcDomains}`,
   [
-    "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://example.invalid",
+    `script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client ${analyticsOrigin}`,
     isProduction ? '' : "'unsafe-eval'",
   ].filter(Boolean).join(' '),
   "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
   "font-src 'self' data:",
-  `connect-src 'self' https://accounts.google.com/gsi/ https://example.invalid ${apiConnectOrigins.join(' ')}`,
+  `connect-src 'self' https://accounts.google.com/gsi/ ${analyticsOrigin} ${apiConnectOrigins.join(' ')}`,
   "frame-src 'self' https://accounts.google.com/",
   "worker-src 'self' blob:",
   "object-src 'none'",

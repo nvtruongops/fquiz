@@ -34,7 +34,7 @@ export async function mockAuthUser(
   } | null = {
     _id: '507f1f77bcf86cd799439099',
     name: 'FQuiz Student',
-    email: 'student@example.invalid',
+    email: 'student@example.test',
     role: 'student',
   }
 ) {

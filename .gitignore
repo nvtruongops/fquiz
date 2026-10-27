@@ -31,6 +31,7 @@ pnpm-debug.log*
 .env*
 *.env
 .env.local
+.env.domains
 .env.development.local
 .env.test.local
 .env.production
@@ -143,6 +144,7 @@ docs/drafts/
 docs/DEPLOYMENT_VPS.md
 docs/*AUDIT*.md
 docs/*SCORE*.md
+/deploy/generated/
 /scripts/
 !scripts/README.md
 

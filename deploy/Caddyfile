@@ -1,11 +1,11 @@
 {
-  email admin@example.invalid
+  email ${FQUIZ_ACME_EMAIL}
   servers {
     protocols h1 h2 h3
   }
 }
 
-example.invalid, example.invalid {
+${FQUIZ_WEB_DOMAIN}, ${FQUIZ_WWW_DOMAIN} {
   tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
   encode zstd gzip
@@ -25,7 +25,7 @@ example.invalid, example.invalid {
   }
 }
 
-example.invalid {
+${FQUIZ_ADMIN_DOMAIN} {
   tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
   encode zstd gzip

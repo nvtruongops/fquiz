@@ -21,6 +21,7 @@ function encryptWithSecret(plainText: string, secret: string): string {
 
 describe('@fquiz/auth crypto unification', () => {
   const originalEncryptionKey = process.env.ENCRYPTION_KEY
+  const originalPreviousEncryptionKey = process.env.ENCRYPTION_KEY_PREV
   const originalJwtSecret = process.env.JWT_SECRET
 
   afterEach(() => {
@@ -28,6 +29,11 @@ describe('@fquiz/auth crypto unification', () => {
       delete process.env.ENCRYPTION_KEY
     } else {
       process.env.ENCRYPTION_KEY = originalEncryptionKey
+    }
+    if (originalPreviousEncryptionKey === undefined) {
+      delete process.env.ENCRYPTION_KEY_PREV
+    } else {
+      process.env.ENCRYPTION_KEY_PREV = originalPreviousEncryptionKey
     }
     if (originalJwtSecret === undefined) {
       delete process.env.JWT_SECRET
@@ -50,29 +56,24 @@ describe('@fquiz/auth crypto unification', () => {
 
   it('seamlessly decrypts secrets encrypted under JWT_SECRET even when ENCRYPTION_KEY is set', () => {
     process.env.ENCRYPTION_KEY = 'new-encryption-key-2026'
-    process.env.JWT_SECRET = 'REMOVED_LEGACY_SECRET'
+    process.env.JWT_SECRET = 'legacy-test-jwt-secret'
 
     const plain = 'AIzaSyLegacyWebEncryptedKey9988'
-    const legacyWebCipher = encryptWithSecret(plain, 'REMOVED_LEGACY_SECRET')
+    const legacyWebCipher = encryptWithSecret(plain, 'legacy-test-jwt-secret')
 
     expect(decryptSecret(legacyWebCipher)).toBe(plain)
   })
 
-  it('seamlessly decrypts secrets encrypted under legacy fallback keys', () => {
+  it('decrypts secrets encrypted with the previous configured encryption key', () => {
     process.env.ENCRYPTION_KEY = 'custom-prod-key'
+    const previousKey = 'previous-encryption-key-test'
+    const olderKey = 'older-encryption-key-test'
+    process.env.ENCRYPTION_KEY_PREV = `${previousKey},${olderKey}`
     process.env.JWT_SECRET = 'custom-jwt-key'
 
-    const webFallbackCipher = encryptWithSecret(
-      'AIzaSyWebFallbackKey1111',
-      'REMOVED_LEGACY_SECRET'
-    )
-    const adminFallbackCipher = encryptWithSecret(
-      'AIzaSyAdminFallbackKey2222',
-      'REMOVED_LEGACY_SECRET'
-    )
+    const previousCipher = encryptWithSecret('AIzaSyPreviousKey1234', olderKey)
 
-    expect(decryptSecret(webFallbackCipher)).toBe('AIzaSyWebFallbackKey1111')
-    expect(decryptSecret(adminFallbackCipher)).toBe('AIzaSyAdminFallbackKey2222')
+    expect(decryptSecret(previousCipher)).toBe('AIzaSyPreviousKey1234')
   })
 
   it('masks API keys accurately for both encrypted and plain inputs', () => {

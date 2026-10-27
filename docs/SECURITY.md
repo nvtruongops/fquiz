@@ -74,6 +74,6 @@ graph TD
 ---
 
 ### 2.5. Edge Proxies & Role-Based Access Control (RBAC)
-- `apps/web/proxy.ts`: Isolates administrative routes on the web client, redirecting `/admin` requests to `NEXT_PUBLIC_ADMIN_URL` (`example.invalid`), and returning `404 Not Found` for `/api/admin/*`.
+- `apps/web/proxy.ts`: Isolates administrative routes on the web client, redirecting `/admin` requests to `NEXT_PUBLIC_ADMIN_URL`, and returning `404 Not Found` for `/api/admin/*`.
 - `apps/admin/proxy.ts`: Zero-Trust RBAC Proxy rejecting non-admin/dev access with `403 Forbidden`.
 - `withAuth` Higher-Order Function: Shields API route handlers with hierarchical role checks (`student` < `teacher` < `admin` < `dev`).

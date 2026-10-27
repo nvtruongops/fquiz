@@ -12,6 +12,26 @@ describe('Admin proxy security gates', () => {
     jest.clearAllMocks()
   })
 
+  test('redirects Vercel aliases using the configured admin URL', async () => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const originalAdminUrl = process.env.NEXT_PUBLIC_ADMIN_URL
+    process.env.NODE_ENV = 'production'
+    process.env.NEXT_PUBLIC_ADMIN_URL = 'https://admin.example.test/login'
+
+    try {
+      const request = new NextRequest('https://preview.vercel.app/login?next=%2Fusers')
+      const response = await proxy(request)
+
+      expect(response.status).toBe(308)
+      expect(response.headers.get('location')).toBe('https://admin.example.test/login?next=%2Fusers')
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+      else process.env.NODE_ENV = originalNodeEnv
+      if (originalAdminUrl === undefined) delete process.env.NEXT_PUBLIC_ADMIN_URL
+      else process.env.NEXT_PUBLIC_ADMIN_URL = originalAdminUrl
+    }
+  })
+
   test('rejects unsafe requests from a different origin, including public login', async () => {
     const request = new NextRequest('https://admin.example.test/api/auth/login', {
       method: 'POST',

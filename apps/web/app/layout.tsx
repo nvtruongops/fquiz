@@ -16,8 +16,8 @@ const inter = Inter({
 })
 
 const APP_URL = resolveAppBaseUrl()
-const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || 'https://example.invalid/script.js'
-const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || '1eb4988f-f439-4ce3-bc9b-78d865a6d9a3'
+const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
     description:
       'Online quiz platform with 3 learning modes: Instant Quiz, Practice, and Flashcards.',
   },
-  verification: {
-    google: 'Ebe9Yn8_Zc1Z9DhhnuKIqcjqBlpD6WTdmlyRvepZp9Y',
-  },
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 }
 
 export const viewport: Viewport = {
@@ -95,12 +95,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ToastProvider />
           </ThemeProvider>
         </QueryProvider>
-        <Script
-          defer
-          src={UMAMI_SCRIPT_URL}
-          data-website-id={UMAMI_WEBSITE_ID}
-          strategy="afterInteractive"
-        />
+        {UMAMI_SCRIPT_URL && UMAMI_WEBSITE_ID && (
+          <Script defer src={UMAMI_SCRIPT_URL} data-website-id={UMAMI_WEBSITE_ID} strategy="afterInteractive" />
+        )}
       </body>
     </html>
   )

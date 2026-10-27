@@ -14,8 +14,6 @@ This folder contains system-level design and operating guidance. Use the reposit
 | [Security](./SECURITY.md) | Authentication, authorization, and request protection. |
 | [Testing](./TESTING.md) | Jest, Playwright, and repository verification commands. |
 | [Deployment](./DEPLOYMENT.md) | App deployment configuration and operational references. |
-| [Repository audit](./REPO_AUDIT_REPORT.md) | Dated static inventory and limits of the audit evidence. |
-| [Database and AI audit](./DATABASE_VECTOR_AI_AUDIT.md) | Database and AI implementation review; verify findings against current code before acting. |
 | [AI chatbot specification](./AI_CHATBOT_SPEC.md) | Product and implementation specification for AI features. |
 | [Agent guide](../.agents/AGENTS.md) | Repository-specific instructions for coding agents. |
 

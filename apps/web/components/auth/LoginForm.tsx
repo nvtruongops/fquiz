@@ -146,7 +146,7 @@ export function LoginForm() {
           </p>
 
           <a 
-            href={process.env.NEXT_PUBLIC_ADMIN_URL || 'https://example.invalid/login'}
+            href={process.env.NEXT_PUBLIC_ADMIN_URL || '/admin/login'}
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground/70 hover:text-muted-foreground transition-colors inline-flex items-center gap-1 font-medium"

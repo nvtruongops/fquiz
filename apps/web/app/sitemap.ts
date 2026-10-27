@@ -3,7 +3,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://example.invalid'
+  const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const currentDate = new Date()
 
   // Base static public routes
