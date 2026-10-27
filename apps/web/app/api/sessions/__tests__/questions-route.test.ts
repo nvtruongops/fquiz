@@ -34,7 +34,7 @@ describe('GET /api/sessions/[id]/questions', () => {
     correct_answer: 1,
   }
 
-  const request = () => new Request('http://localhost/api/sessions/session-1/questions')
+  const request = () => new Request('https://web.example.test/api/sessions/session-1/questions')
   const getQuestions = () => GET(request(), {
     params: Promise.resolve({ id: 'session-1' }),
   } as any)

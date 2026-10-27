@@ -37,7 +37,7 @@ export class DynamicAIProvider implements IAIProvider {
       if (activeProvider === 'custom') {
         const rawKey = llmConfig?.custom?.apiKey || process.env.OPENAI_API_KEY
         const apiKey = decryptSecret(rawKey || '') || rawKey
-        const baseUrl = llmConfig?.custom?.baseUrl || process.env.OPENAI_BASE_URL || 'http://localhost:20128/v1'
+        const baseUrl = llmConfig?.custom?.baseUrl || process.env.OPENAI_BASE_URL
         const model = llmConfig?.custom?.model || process.env.OPENAI_MODEL || 'antigravity/gemini-2.5-flash'
         return new OpenAIProvider(apiKey, baseUrl, model)
       }
@@ -51,7 +51,7 @@ export class DynamicAIProvider implements IAIProvider {
       if (process.env.OPENAI_BASE_URL || process.env.OPENAI_API_KEY) {
         return new OpenAIProvider(
           process.env.OPENAI_API_KEY,
-          process.env.OPENAI_BASE_URL || 'http://localhost:20128/v1',
+          process.env.OPENAI_BASE_URL,
           process.env.OPENAI_MODEL || 'antigravity/gemini-2.5-flash'
         )
       }

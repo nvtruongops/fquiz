@@ -72,7 +72,7 @@ describe('Auth Module', () => {
         headers: {
           get: jest.fn(),
         },
-        url: 'http://localhost/api/test',
+        url: 'https://web.example.test/api/test',
       }
     })
 

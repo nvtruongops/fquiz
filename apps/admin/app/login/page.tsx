@@ -10,6 +10,7 @@ import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const studentPortalUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -142,15 +143,17 @@ export default function AdminLoginPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-4 text-center">
-          <a
-            href={process.env.NEXT_PUBLIC_WEB_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000/login'}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg hover:bg-muted/50 border border-border/40"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-            Student &amp; Teacher Portal
-          </a>
-        </div>
+        {studentPortalUrl && (
+          <div className="mt-4 text-center">
+            <a
+              href={studentPortalUrl}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg hover:bg-muted/50 border border-border/40"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+              Student &amp; Teacher Portal
+            </a>
+          </div>
+        )}
 
         <div className="text-center mt-6 text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} FQuiz Platform • Zero Trust Isolation Architecture

@@ -173,7 +173,7 @@ const routes = [
   { name: 'student assignments', get: studentGET, id: classroomId, key: 'assignments' },
 ]
 function request(get: typeof detailGET, id: string) {
-  return get(new Request('http://localhost/api/test?role=admin&userId=' + teacherA), { params: Promise.resolve({ id }) })
+  return get(new Request('https://web.example.test/api/test?role=admin&userId=' + teacherA), { params: Promise.resolve({ id }) })
 }
 
 describe.each(routes)('classroom GET $name', ({ name, get, id, key }) => {

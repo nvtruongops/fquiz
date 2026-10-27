@@ -21,7 +21,7 @@ export const GET = withAuth(async (req, { payload }) => {
       return NextResponse.json({ assessmentSession: null, learningSession: null })
     }
 
-    const { searchParams } = new URL(req.url, 'http://localhost')
+    const { searchParams } = new URL(req.url)
     const quizId = searchParams.get('quiz_id')
     if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
       return NextResponse.json({ assessmentSession: null, learningSession: null })

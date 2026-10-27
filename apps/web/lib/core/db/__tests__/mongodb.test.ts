@@ -41,7 +41,7 @@ describe('connectDB', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     delete (global as any).mongooseCache
-    process.env.MONGODB_URI = 'mongodb://localhost:27017/test'
+    process.env.MONGODB_URI = 'mongodb://mongo.example.test:27017/test'
   })
 
   it('should export a function', () => {

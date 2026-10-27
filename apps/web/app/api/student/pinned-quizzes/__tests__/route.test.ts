@@ -45,7 +45,7 @@ describe('GET & POST /api/student/pinned-quizzes', () => {
 
   it('GET should return empty array if user has no pinned quizzes', async () => {
     mockUserSelectLean.mockResolvedValueOnce({ pinned_quizzes: [] })
-    const req = new Request('http://localhost:3000/api/student/pinned-quizzes')
+    const req = new Request('https://web.example.test/api/student/pinned-quizzes')
     const res = (await GET(req)) as any
 
     expect(res.status).toBe(200)
@@ -54,7 +54,7 @@ describe('GET & POST /api/student/pinned-quizzes', () => {
 
   it('POST should pin a quiz if not already pinned', async () => {
     mockUserSelectLean.mockResolvedValueOnce({ pinned_quizzes: [] })
-    const req = new Request('http://localhost:3000/api/student/pinned-quizzes', {
+    const req = new Request('https://web.example.test/api/student/pinned-quizzes', {
       method: 'POST',
       body: JSON.stringify({ quizId: 'quiz_123' }),
     })
@@ -70,7 +70,7 @@ describe('GET & POST /api/student/pinned-quizzes', () => {
 
   it('POST should unpin a quiz if already pinned', async () => {
     mockUserSelectLean.mockResolvedValueOnce({ pinned_quizzes: ['quiz_123'] })
-    const req = new Request('http://localhost:3000/api/student/pinned-quizzes', {
+    const req = new Request('https://web.example.test/api/student/pinned-quizzes', {
       method: 'POST',
       body: JSON.stringify({ quizId: 'quiz_123' }),
     })
@@ -85,7 +85,7 @@ describe('GET & POST /api/student/pinned-quizzes', () => {
   })
 
   it('POST should return 400 if quizId is missing', async () => {
-    const req = new Request('http://localhost:3000/api/student/pinned-quizzes', {
+    const req = new Request('https://web.example.test/api/student/pinned-quizzes', {
       method: 'POST',
       body: JSON.stringify({}),
     })

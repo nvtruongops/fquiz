@@ -82,7 +82,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
   })
 
   it('should return 400 if userQuery or sessionId is missing', async () => {
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant', {
       method: 'POST',
       body: JSON.stringify({ sessionId: '', questionIndex: 0, userQuery: '' }),
     })
@@ -97,7 +97,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
       lean: jest.fn().mockResolvedValue(null),
     })
 
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant', {
       method: 'POST',
       body: JSON.stringify({ sessionId: 'invalid-id', questionIndex: 0, userQuery: 'Test query' }),
     })
@@ -116,7 +116,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
       }),
     })
 
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant', {
       method: 'POST',
       body: JSON.stringify({ sessionId: 'session-123', questionIndex: 0, userQuery: 'Test query' }),
     })
@@ -161,7 +161,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
 
     ;(container.resolve as jest.Mock).mockReturnValue(mockAiContentService)
 
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant', {
       method: 'POST',
       body: JSON.stringify({
         sessionId: 'session-123',
@@ -207,7 +207,7 @@ describe('POST /api/v1/ai/quiz-assistant - Thin Controller & Orchestrator Integr
 
     ;(container.resolve as jest.Mock).mockReturnValue(mockAiContentService)
 
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant', {
       method: 'POST',
       body: JSON.stringify({
         sessionId: 'session-123',

@@ -92,7 +92,7 @@ describe('GET /api/student/dashboard', () => {
   })
 
   it('should return empty recentActivities and pinnedCategories for fresh user', async () => {
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -101,7 +101,7 @@ describe('GET /api/student/dashboard', () => {
   })
 
   it('should exclude expired active sessions from the active aggregation', async () => {
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     await (GET as any)(req, { params: {} })
 
     // 2nd aggregate call = active sessions lookup
@@ -125,7 +125,7 @@ describe('GET /api/student/dashboard', () => {
     const { Quiz } = jest.requireMock('@/lib/modules/quiz/models/Quiz')
     ;(Quiz.aggregate as jest.Mock).mockResolvedValue([{ _id: pinnedId, count: 7 }])
 
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -136,7 +136,7 @@ describe('GET /api/student/dashboard', () => {
     mockUserSelectLean.mockResolvedValue({ pinned_categories: ['507f1f77bcf86cd799439044'] })
     mockCategoryFindLean.mockResolvedValue([]) // category deleted
 
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -182,7 +182,7 @@ describe('GET /api/student/dashboard', () => {
     }))
     ;(Quiz.find as jest.Mock).mockReturnValue({ lean: jest.fn().mockResolvedValue([quiz]) })
 
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -256,7 +256,7 @@ describe('GET /api/student/dashboard', () => {
     })
     ;(Quiz.find as jest.Mock).mockReturnValue({ lean: jest.fn().mockResolvedValue(quizzes) })
 
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -319,7 +319,7 @@ describe('GET /api/student/dashboard', () => {
     })
     ;(Quiz.find as jest.Mock).mockReturnValue({ lean: jest.fn().mockResolvedValue(quizzes) })
 
-    const req = new Request('http://localhost/api/student/dashboard')
+    const req = new Request('https://web.example.test/api/student/dashboard')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)

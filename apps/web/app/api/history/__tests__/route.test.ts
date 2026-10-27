@@ -60,7 +60,7 @@ import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 
 describe('GET /api/history', () => {
   it('should handle sessions with null quiz_id without throwing 500 error', async () => {
-    const req = new Request('http://localhost/api/history?page=1&limit=20')
+    const req = new Request('https://web.example.test/api/history?page=1&limit=20')
     const res = await (GET as any)(req, { params: {} })
 
     expect(res.status).toBe(200)
@@ -70,7 +70,7 @@ describe('GET /api/history', () => {
   })
 
   it('should only query active and completed sessions (exclude stuck preparing sessions)', async () => {
-    const req = new Request('http://localhost/api/history?page=1&limit=20')
+    const req = new Request('https://web.example.test/api/history?page=1&limit=20')
     await (GET as any)(req, { params: {} })
 
     const pipeline = (QuizSession.aggregate as jest.Mock).mock.calls[0][0]

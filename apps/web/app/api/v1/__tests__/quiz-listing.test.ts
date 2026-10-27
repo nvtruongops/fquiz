@@ -34,7 +34,7 @@ function queryChain(rows: unknown[]) {
 }
 
 function request(params: Record<string, string> = {}) {
-  return new NextRequest(`http://localhost/api/v1/public/quizzes?${new URLSearchParams(params)}`)
+  return new NextRequest(`https://web.example.test/api/v1/public/quizzes?${new URLSearchParams(params)}`)
 }
 
 let quizzes: ReturnType<typeof queryChain>

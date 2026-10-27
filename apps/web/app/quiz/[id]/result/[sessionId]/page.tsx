@@ -8,6 +8,7 @@ import { InteractiveResultViewer } from '@/components/quiz/detail/InteractiveRes
 import { FlashcardResultView } from '@/components/quiz/detail/FlashcardResultView'
 import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
 import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
+import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
 
 interface ResultQuestion {
   _id: string
@@ -42,9 +43,8 @@ interface ResultData {
 
 async function getResult(sessionId: string): Promise<ResultData | null> {
   const headersList = await headers()
-  const host = headersList.get('host') ?? 'localhost:3000'
-  const protocol = host.includes('localhost') ? 'http' : 'https'
-  const res = await fetch(`${protocol}://${host}/api/sessions/${sessionId}/result`, {
+  const resultUrl = new URL(`/api/sessions/${sessionId}/result`, resolveAppBaseUrl())
+  const res = await fetch(resultUrl, {
     cache: 'no-store',
     headers: { cookie: headersList.get('cookie') ?? '' },
   })

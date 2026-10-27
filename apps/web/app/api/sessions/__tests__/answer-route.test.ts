@@ -61,7 +61,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
       session: mockSession,
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/answer', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/answer', {
       method: 'POST',
       body: JSON.stringify({ question_index: 99, answer_index: 0 }),
     })
@@ -97,7 +97,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
       explanation: 'Test explanation',
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/answer', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/answer', {
       method: 'POST',
       body: JSON.stringify({ question_index: 0, answer_index: 0 }),
     })
@@ -134,7 +134,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
       explanation: 'Explanation for Q3',
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/answer', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/answer', {
       method: 'POST',
       body: JSON.stringify({ question_index: 3, answer_index: 0 }),
     })
@@ -167,7 +167,7 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
       explanation: 'Correct',
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/answer', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/answer', {
       method: 'POST',
       body: JSON.stringify({ question_index: 1, answer_index: 1 }),
     })

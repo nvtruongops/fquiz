@@ -87,7 +87,7 @@ describe('POST /api/student/quizzes/from-pinned', () => {
   })
 
   it('should return 400 if course_code is missing', async () => {
-    const req = new Request('http://localhost:3000/api/student/quizzes/from-pinned', {
+    const req = new Request('https://web.example.test/api/student/quizzes/from-pinned', {
       method: 'POST',
       body: JSON.stringify({}),
     })
@@ -98,7 +98,7 @@ describe('POST /api/student/quizzes/from-pinned', () => {
 
   it('should return 409 if user exceeds total quota (>= 10)', async () => {
     mockQuizCountDocuments.mockResolvedValueOnce(10)
-    const req = new Request('http://localhost:3000/api/student/quizzes/from-pinned', {
+    const req = new Request('https://web.example.test/api/student/quizzes/from-pinned', {
       method: 'POST',
       body: JSON.stringify({ course_code: 'NWC303' }),
     })
@@ -115,7 +115,7 @@ describe('POST /api/student/quizzes/from-pinned', () => {
       }),
     })
 
-    const req = new Request('http://localhost:3000/api/student/quizzes/from-pinned', {
+    const req = new Request('https://web.example.test/api/student/quizzes/from-pinned', {
       method: 'POST',
       body: JSON.stringify({ course_code: 'NWC303' }),
     })
@@ -154,7 +154,7 @@ describe('POST /api/student/quizzes/from-pinned', () => {
     }
     mockQuizCreate.mockResolvedValueOnce(createdDoc)
 
-    const req = new Request('http://localhost:3000/api/student/quizzes/from-pinned', {
+    const req = new Request('https://web.example.test/api/student/quizzes/from-pinned', {
       method: 'POST',
       body: JSON.stringify({ course_code: 'NWC303' }),
     })
@@ -190,7 +190,7 @@ describe('POST /api/student/quizzes/from-pinned', () => {
     }
     mockQuizFindOne.mockResolvedValueOnce(existingDoc)
 
-    const req = new Request('http://localhost:3000/api/student/quizzes/from-pinned', {
+    const req = new Request('https://web.example.test/api/student/quizzes/from-pinned', {
       method: 'POST',
       body: JSON.stringify({ course_code: 'NWC303' }),
     })

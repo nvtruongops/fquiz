@@ -107,7 +107,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
         }),
       })
 
-      const req = new Request('http://localhost:3000/api/student/pinned-questions?course_code=PRN211')
+      const req = new Request('https://web.example.test/api/student/pinned-questions?course_code=PRN211')
       const res = (await GET(req, {} as any)) as any
 
       expect(res.status).toBe(200)
@@ -117,7 +117,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
 
   describe('POST', () => {
     it('should return 400 if text is missing', async () => {
-      const req = new Request('http://localhost:3000/api/student/pinned-questions', {
+      const req = new Request('https://web.example.test/api/student/pinned-questions', {
         method: 'POST',
         body: JSON.stringify({}),
       })
@@ -132,7 +132,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
       })
       mockPinnedDeleteOne.mockResolvedValueOnce({ deletedCount: 1 })
 
-      const req = new Request('http://localhost:3000/api/student/pinned-questions', {
+      const req = new Request('https://web.example.test/api/student/pinned-questions', {
         method: 'POST',
         body: JSON.stringify({ text: 'Question text', course_code: 'PRN211' }),
       })
@@ -151,7 +151,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
         course_code: 'PRN211',
       })
 
-      const req = new Request('http://localhost:3000/api/student/pinned-questions', {
+      const req = new Request('https://web.example.test/api/student/pinned-questions', {
         method: 'POST',
         body: JSON.stringify({ text: 'Question text', course_code: 'PRN211', options: ['A', 'B'] }),
       })
@@ -167,7 +167,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
     it('should delete all pinned questions matching filter', async () => {
       mockPinnedDeleteMany.mockResolvedValueOnce({ deletedCount: 5 })
 
-      const req = new Request('http://localhost:3000/api/student/pinned-questions?course_code=PRN211', {
+      const req = new Request('https://web.example.test/api/student/pinned-questions?course_code=PRN211', {
         method: 'DELETE',
       })
       const res = (await DELETE(req, {} as any)) as any

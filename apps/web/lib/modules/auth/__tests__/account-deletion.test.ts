@@ -37,7 +37,7 @@ describe('Account Deletion & Restoration Logic', () => {
     const params = {
       to: 'user@example.com',
       username: 'TestUser',
-      restoreUrl: 'http://localhost:3000/restore-account?token=xyz123',
+      restoreUrl: 'https://web.example.test/restore-account?token=xyz123',
       scheduledFor: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
     }
 

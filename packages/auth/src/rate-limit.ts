@@ -88,9 +88,9 @@ export function getClientIp(request: Request | NextRequest): string {
   const xForwardedFor = request.headers.get('x-forwarded-for')
   if (xForwardedFor) {
     const ips = xForwardedFor.split(',').map((ip) => ip.trim()).filter(Boolean)
-    return ips[ips.length - 1] || '127.0.0.1'
+    return ips[ips.length - 1] || 'unknown'
   }
-  return '127.0.0.1'
+  return 'unknown'
 }
 
 export const RATE_LIMIT_TIERS = {

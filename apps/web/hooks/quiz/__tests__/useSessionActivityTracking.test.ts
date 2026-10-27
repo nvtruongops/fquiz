@@ -66,7 +66,7 @@ describe('session activity tracking', () => {
       configurable: true,
     })
     Object.defineProperty(globalThis, 'location', {
-      value: { href: 'http://localhost/session' },
+      value: { href: 'https://web.example.test/session' },
       writable: true,
       configurable: true,
     })

@@ -57,9 +57,8 @@ if (process.env.NODE_ENV === 'production' && !process.env.CORS_ALLOWED_ORIGINS) 
   console.warn('[CORS] CORS_ALLOWED_ORIGINS is not defined in production environment. Cross-origin API requests will be rejected by default.')
 }
 
-const defaultCorsOrigins = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000'
 const corsAllowedOrigins = new Set(
-  (process.env.CORS_ALLOWED_ORIGINS || defaultCorsOrigins)
+  (process.env.CORS_ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || '')
     .split(',')
     .map((item) => toOrigin(item))
     .filter((item): item is string => Boolean(item))
@@ -374,7 +373,8 @@ export async function proxy(request: NextRequest) {
 
   // Standalone Admin Portal Routing: Redirect all /admin traffic to dedicated admin app
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const adminBase = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001'
+    const adminBase = process.env.NEXT_PUBLIC_ADMIN_URL
+    if (!adminBase) return new NextResponse('Admin portal URL is not configured', { status: 503 })
     const adminPath = pathname.replace(/^\/admin/, '') || '/'
     return NextResponse.redirect(new URL(adminPath, adminBase))
   }

@@ -12,7 +12,7 @@ describe('POST /api/v1/ai/quiz-assistant/feedback - Micro-Feedback Route', () =>
   })
 
   it('should record user helpful feedback successfully', async () => {
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant/feedback', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant/feedback', {
       method: 'POST',
       body: JSON.stringify({
         sessionId: 'session-123',
@@ -36,7 +36,7 @@ describe('POST /api/v1/ai/quiz-assistant/feedback - Micro-Feedback Route', () =>
   })
 
   it('should return 400 when required fields are missing', async () => {
-    const req = new Request('http://localhost/api/v1/ai/quiz-assistant/feedback', {
+    const req = new Request('https://web.example.test/api/v1/ai/quiz-assistant/feedback', {
       method: 'POST',
       body: JSON.stringify({
         // missing sessionId, questionIndex, helpful

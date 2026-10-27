@@ -46,7 +46,7 @@ describe('POST /api/sessions/[id]/activity - Activity Tracking & State Invariant
       session: mockSession,
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/activity', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/activity', {
       method: 'POST',
       body: JSON.stringify({ event: 'pause', current_question_index: 0 }),
     })
@@ -76,7 +76,7 @@ describe('POST /api/sessions/[id]/activity - Activity Tracking & State Invariant
       session: mockSession,
     })
 
-    const req = new Request('http://localhost/api/sessions/session-123/activity', {
+    const req = new Request('https://web.example.test/api/sessions/session-123/activity', {
       method: 'POST',
       body: JSON.stringify({ event: 'pause', current_question_index: 3 }),
     })

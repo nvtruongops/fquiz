@@ -26,23 +26,23 @@ describe('safeCompare', () => {
 
 describe('validateCsrfRequest', () => {
   it('should allow GET requests', () => {
-    const req = new Request('http://localhost/test', { method: 'GET' })
+    const req = new Request('https://web.example.test/test', { method: 'GET' })
     expect(validateCsrfRequest(req)).toBe(true)
   })
   it('should allow HEAD requests', () => {
-    const req = new Request('http://localhost/test', { method: 'HEAD' })
+    const req = new Request('https://web.example.test/test', { method: 'HEAD' })
     expect(validateCsrfRequest(req)).toBe(true)
   })
   it('should allow OPTIONS requests', () => {
-    const req = new Request('http://localhost/test', { method: 'OPTIONS' })
+    const req = new Request('https://web.example.test/test', { method: 'OPTIONS' })
     expect(validateCsrfRequest(req)).toBe(true)
   })
   it('should reject POST without CSRF tokens', () => {
-    const req = new Request('http://localhost/test', { method: 'POST' })
+    const req = new Request('https://web.example.test/test', { method: 'POST' })
     expect(validateCsrfRequest(req)).toBe(false)
   })
   it('should reject POST with mismatched CSRF tokens', () => {
-    const req = new Request('http://localhost/test', {
+    const req = new Request('https://web.example.test/test', {
       method: 'POST',
       headers: {
         'cookie': `${CSRF_COOKIE_NAME}=token1`,
@@ -52,48 +52,51 @@ describe('validateCsrfRequest', () => {
     expect(validateCsrfRequest(req)).toBe(false)
   })
   it('should accept POST with matching CSRF tokens', () => {
-    const req = new Request('http://localhost/test', {
+    const req = new Request('https://web.example.test/test', {
       method: 'POST',
       headers: {
         'cookie': `${CSRF_COOKIE_NAME}=valid-token`,
         [CSRF_HEADER_NAME]: 'valid-token',
-        'host': 'localhost',
+        'host': 'web.example.test',
       },
     })
     expect(validateCsrfRequest(req)).toBe(true)
   })
   it('should reject POST with invalid origin', () => {
-    const req = new Request('http://localhost/test', {
+    const req = new Request('https://web.example.test/test', {
       method: 'POST',
       headers: {
         'cookie': `${CSRF_COOKIE_NAME}=token`,
         [CSRF_HEADER_NAME]: 'token',
         'origin': 'https://evil.com',
-        'host': 'localhost',
+        'host': 'web.example.test',
+        'x-forwarded-proto': 'https',
       },
     })
     expect(validateCsrfRequest(req)).toBe(false)
   })
   it('should reject POST with invalid referer', () => {
-    const req = new Request('http://localhost/test', {
+    const req = new Request('https://web.example.test/test', {
       method: 'POST',
       headers: {
         'cookie': `${CSRF_COOKIE_NAME}=token`,
         [CSRF_HEADER_NAME]: 'token',
         'referer': 'https://evil.com',
-        'host': 'localhost',
+        'host': 'web.example.test',
+        'x-forwarded-proto': 'https',
       },
     })
     expect(validateCsrfRequest(req)).toBe(false)
   })
   it('should accept POST with valid origin', () => {
-    const req = new Request('http://localhost/test', {
+    const req = new Request('https://web.example.test/test', {
       method: 'POST',
       headers: {
         'cookie': `${CSRF_COOKIE_NAME}=token`,
         [CSRF_HEADER_NAME]: 'token',
-        'origin': 'http://localhost',
-        'host': 'localhost',
+        'origin': 'https://web.example.test',
+        'host': 'web.example.test',
+        'x-forwarded-proto': 'https',
       },
     })
     expect(validateCsrfRequest(req)).toBe(true)

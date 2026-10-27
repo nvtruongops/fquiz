@@ -62,7 +62,7 @@ describe('/api/community/posts API Handler', () => {
         { _id: 'math', name: 'Math', totalViews: 10, postCount: 2 },
       ])
 
-      const req = new Request('http://localhost/api/community/posts?page=1&limit=10')
+      const req = new Request('https://web.example.test/api/community/posts?page=1&limit=10')
       const res = await GET(req)
 
       expect(res.status).toBe(200)
@@ -74,7 +74,7 @@ describe('/api/community/posts API Handler', () => {
   describe('POST /api/community/posts', () => {
     it('returns 401 when user session is unauthorized', async () => {
       ;(verifySession as jest.Mock).mockResolvedValue(null)
-      const req = new Request('http://localhost/api/community/posts', {
+      const req = new Request('https://web.example.test/api/community/posts', {
         method: 'POST',
         body: JSON.stringify({ title: 'Title', content: 'Content' }),
       })
@@ -85,7 +85,7 @@ describe('/api/community/posts API Handler', () => {
 
     it('returns 400 when body validation fails', async () => {
       ;(verifySession as jest.Mock).mockResolvedValue({ userId: '507f1f77bcf86cd799439011', username: 'student' })
-      const req = new Request('http://localhost/api/community/posts', {
+      const req = new Request('https://web.example.test/api/community/posts', {
         method: 'POST',
         body: JSON.stringify({ title: '', content: '' }),
       })
@@ -107,7 +107,7 @@ describe('/api/community/posts API Handler', () => {
       }
       ;(Post.create as jest.Mock).mockResolvedValue(createdPost)
 
-      const req = new Request('http://localhost/api/community/posts', {
+      const req = new Request('https://web.example.test/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

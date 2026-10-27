@@ -79,19 +79,15 @@ describe('Formatting & URL Utilities Test Suite', () => {
       expect(resolveAppBaseUrl()).toBe('https://project.example.test')
     })
 
-    test('falls back to request headers or localhost', () => {
+    test('falls back to the request origin and requires configuration otherwise', () => {
       delete process.env.APP_URL
       delete process.env.NEXT_PUBLIC_APP_URL
       delete process.env.VERCEL_PROJECT_PRODUCTION_URL
       delete process.env.VERCEL_URL
 
-      const mockReq = {
-        headers: new Map([['host', 'localhost:3000']]),
-      } as unknown as Request
-      mockReq.headers.get = (key: string) => (key === 'host' ? 'localhost:3000' : null)
-
-      expect(resolveAppBaseUrl(mockReq)).toBe('http://localhost:3000')
-      expect(resolveAppBaseUrl()).toBe('http://localhost:3000')
+      const request = new Request('https://web.example.test/path')
+      expect(resolveAppBaseUrl(request)).toBe('https://web.example.test')
+      expect(() => resolveAppBaseUrl()).toThrow('APP_URL or a deployment URL is required')
     })
   })
 })
