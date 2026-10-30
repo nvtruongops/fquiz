@@ -13,6 +13,7 @@ import type {
   ImportRawQuizPayload,
   NormalizedQuiz,
 } from '@/lib/modules/quiz/quiz-import/types'
+import { getExplicitAnswerSelectionCount } from '@fquiz/models'
 
 const ALLOWED_TOP_KEYS = new Set(['quizMeta', 'questions'])
 const ALLOWED_META_KEYS = new Set(['course_code', 'category_id', 'title', 'description'])
@@ -154,11 +155,26 @@ function getCandidateQuestion(source: any): ImportRawQuestion {
   return source as ImportRawQuestion
 }
 
+function validateRequestedAnswerCount(question: any, index: number, diagnostics: ImportDiagnostic[]) {
+  const requestedCount = getExplicitAnswerSelectionCount(question.text)
+  const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
+  if (requestedCount === null || requestedCount === answers.length) return
+
+  diagnostics.push(diagnostic(
+    'error',
+    'CORRECT_ANSWER_COUNT_MISMATCH',
+    `Question text requests ${requestedCount} correct answers, but ${answers.length} are marked`,
+    { questionIndex: index, field: `questions[${index}].correct_answer` }
+  ))
+}
+
 function validateAnswers(question: any, index: number, diagnostics: ImportDiagnostic[]) {
   const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
   if (answers.length === 0) {
     diagnostics.push(diagnostic('error', 'MISSING_CORRECT_ANSWER', 'No correct answer selected', { questionIndex: index, field: `questions[${index}].correct_answer` }))
   }
+
+  validateRequestedAnswerCount(question, index, diagnostics)
 
   if (answers.some((answerIndex: number) => answerIndex >= question.options.length)) {
     diagnostics.push(diagnostic('error', 'CORRECT_ANSWER_OUT_OF_RANGE', 'Correct answer index exceeds the number of options', { questionIndex: index, field: `questions[${index}].correct_answer` }))

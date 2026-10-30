@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { stripHtml, MongoIdSchema } from './common'
+import { getExplicitAnswerSelectionCount } from '../utils/question-selection-helper'
 
 export const COURSE_CODE_MAX_LENGTH = 150
 export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Course code / Quiz code cannot exceed ${COURSE_CODE_MAX_LENGTH} characters`
@@ -72,6 +73,17 @@ export const QuestionSchema = z.object({
   },
   {
     message: 'Correct answer index exceeds the number of options',
+    path: ['correct_answer'],
+  }
+).refine(
+  (data) => {
+    const requestedCount = getExplicitAnswerSelectionCount(data.text)
+    if (requestedCount === null) return true
+    const answers = Array.isArray(data.correct_answer) ? data.correct_answer : [data.correct_answer]
+    return answers.length === requestedCount
+  },
+  {
+    message: 'Correct answer count must match the number requested in the question text',
     path: ['correct_answer'],
   }
 )
