@@ -37,7 +37,7 @@ function collectActualUsage(collections: Record<string, Row[]>, warnings: Eviden
     }).filter(Boolean)
     const courseCode = code(quiz.course_code)
     if (quiz.status !== 'published' || quiz.is_temp || quiz.is_saved_from_explore || !courseCode) continue
-    for (const q of (quiz.questions?.length ? quiz.questions : references).filter(contentExists)) {
+    for (const q of [...(quiz.questions ?? []), ...references].filter(contentExists)) {
       addVariant(usage, `${quiz.category_id}:${generateQuestionId(q)}`, courseCode)
     }
   }
