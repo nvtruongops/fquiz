@@ -15,3 +15,14 @@ export function resolveAppBaseUrl(req?: Request): string {
   throw new Error('APP_URL or a deployment URL is required')
 }
 
+/** Return an origin configured by the deployment environment, without trusting request headers. */
+export function resolveConfiguredAppBaseUrl(): string | null {
+  const configuredUrl =
+    process.env.APP_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL
+  return configuredUrl?.trim() ? cleanUrl(configuredUrl) : null
+}
+

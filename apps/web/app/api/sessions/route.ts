@@ -9,9 +9,10 @@ import { Category } from '@/lib/modules/quiz/models/Category'
 import mongoose from 'mongoose'
 import type { IQuestion } from '@/lib/modules/quiz/types/quiz'
 import { CreateSessionSchema } from '@/lib/modules/quiz/schemas/quiz'
-import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
-import { providerFactory } from '@/lib/core/security/rate-limit/provider'
+import { enqueueUniqueStudentCountSync } from '@/lib/modules/quiz/quiz-stats-queue'
+import { providerFactory, RateLimitStoreUnavailableError } from '@/lib/core/security/rate-limit/provider'
 import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle'
+import { createConcurrencyGate } from '@/lib/core/utils/concurrency-gate'
 import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
 import { countAnsweredQuestionIndexes } from '@/lib/modules/quiz/session-utils'
 
@@ -104,7 +105,8 @@ function handleSessionConflicts(session: any, questions: any[], action: string |
   return NextResponse.json({ error: `You have an unfinished ${group === 'learning' ? 'flashcard' : 'quiz'} session.`, code: 'ACTIVE_SESSION_EXISTS', activeSession: { sessionId: session._id, mode: session.mode, difficulty: session.difficulty, current_question_index: session.current_question_index, totalQuestions: questions.length, answeredCount: answered, started_at: session.started_at } }, { status: 409 })
 }
 
-const sessionLimiter = providerFactory.createProvider(10, 60 * 1000)
+const sessionLimiter = providerFactory.createProvider(10, 60 * 1000, { onStoreError: 'throw' })
+const sessionCreationGate = createConcurrencyGate(5)
 
 type PreparedSession = {
   quiz: any
@@ -241,6 +243,7 @@ function getFlashcardStats(questionCount: number) {
 async function createGuestSession(prepared: PreparedSession, payload: JWTPayload) {
   const { effective, mode, difficulty, now, questionOrder, questionsCache } = prepared
   const guestId = payload.guestId ?? crypto.randomUUID()
+  await enqueueUniqueStudentCountSync(effective.id, 120_000)
   const session = await QuizSession.create({
     student_id: null,
     is_guest: true,
@@ -261,7 +264,7 @@ async function createGuestSession(prepared: PreparedSession, payload: JWTPayload
     total_paused_duration_ms: 0,
   })
   await Quiz.updateOne({ _id: effective.id }, { $inc: { studentCount: 1 } })
-  syncUniqueStudentCount(effective.id).catch((err) => console.error('Failed to sync stats for guest session:', err))
+  enqueueUniqueStudentCountSync(effective.id).catch((err) => console.error('Failed to enqueue guest session stats sync:', err))
 
   const { initialData, preloadData } = await buildInitialAndPreloadPayloads(session, prepared)
   const response = NextResponse.json({
@@ -343,6 +346,7 @@ async function createStudentSession(prepared: PreparedSession, payload: JWTPaylo
   const studentId = new mongoose.Types.ObjectId(payload.userId)
   const incompleteFlashcard = await getIncompleteFlashcardResponse(studentId, prepared, action)
   if (incompleteFlashcard) return incompleteFlashcard
+  await enqueueUniqueStudentCountSync(prepared.effective.id, 120_000)
   const conflictResponse = await resolveActiveSessionConflict(studentId, prepared, action)
   if (conflictResponse) return conflictResponse
 
@@ -373,7 +377,7 @@ async function createStudentSession(prepared: PreparedSession, payload: JWTPaylo
     last_activity_at: now,
     total_paused_duration_ms: 0,
   })
-  syncUniqueStudentCount(effective.id).catch((err) => console.error('Failed to sync stats:', err))
+  enqueueUniqueStudentCountSync(effective.id).catch((err) => console.error('Failed to enqueue session stats sync:', err))
   const { initialData, preloadData } = await buildInitialAndPreloadPayloads(session, prepared)
   return NextResponse.json({
     sessionId: session._id,
@@ -419,11 +423,38 @@ async function handleCreateSession(req: Request, payload: JWTPayload) {
   return createSession(quiz_id, mode, difficulty, action, shuffle_options, payload)
 }
 
+function isMongoCapacityError(error: unknown): boolean {
+  let current = error
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    const typed = current as { name?: unknown; cause?: unknown } | null
+    if (typeof typed?.name === 'string' && /MongoWaitQueueTimeoutError|MongooseServerSelectionError|MongoNetwork(?:Timeout)?Error/.test(typed.name)) {
+      return true
+    }
+    current = typed?.cause
+  }
+  return false
+}
+
+function serviceUnavailableResponse() {
+  return NextResponse.json(
+    { error: 'Session service is busy. Please retry shortly.' },
+    { status: 503, headers: { 'Retry-After': '2' } }
+  )
+}
+
 export const POST = withAuth(async (req, { payload }) => {
+  const release = sessionCreationGate.tryAcquire()
+  if (!release) return serviceUnavailableResponse()
+
   try {
     return await handleCreateSession(req, payload)
   } catch (err) {
     console.error('POST /api/sessions error:', err)
+    if (err instanceof RateLimitStoreUnavailableError || isMongoCapacityError(err)) {
+      return serviceUnavailableResponse()
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    release()
   }
 }, { roles: ['student'], allowGuest: true })

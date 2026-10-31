@@ -9,6 +9,7 @@ import { compareQuizBySemester } from '@/lib/core/utils/semester'
 import logger from '@/lib/core/utils/logger'
 import mongoose from 'mongoose'
 import { mapCourseQuizRow } from '@/lib/modules/quiz/course-quiz-row'
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -54,9 +55,7 @@ export async function GET(
     }
 
     const query: any = {
-      status: 'published',
-      is_public: { $ne: false },
-      is_temp: { $ne: true },
+      ...getPublicQuizFilter(),
       $or: orConditions,
     }
 

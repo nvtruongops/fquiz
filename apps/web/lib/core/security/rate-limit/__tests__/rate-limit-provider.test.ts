@@ -1,5 +1,10 @@
 import { getClientIp } from '@fquiz/auth'
-import { providerFactory } from '../provider'
+import { connectDB } from '@/lib/core/db/mongodb'
+import { providerFactory, RateLimitStoreUnavailableError } from '../provider'
+
+jest.mock('@/lib/core/db/mongodb', () => ({
+  connectDB: jest.fn().mockRejectedValue(new Error('offline test database')),
+}))
 
 describe('Rate Limit Provider Test Suite', () => {
   const memoryLimiter = providerFactory.getMemoryProvider()
@@ -34,6 +39,24 @@ describe('Rate Limit Provider Test Suite', () => {
     const provider = providerFactory.getMemoryProvider()
     expect(provider).toBeDefined()
     expect(typeof provider.check).toBe('function')
+  })
+
+  test('custom provider keeps its configured limit when MongoDB is unavailable', async () => {
+    ;(connectDB as jest.Mock).mockRejectedValue(new Error('offline test database'))
+    const customLimiter = providerFactory.createProvider(2, 60_000)
+    const id = `custom-fallback-${Date.now()}`
+
+    expect(await customLimiter.check(id)).toMatchObject({ success: true, limit: 2, remaining: 1 })
+    expect(await customLimiter.check(id)).toMatchObject({ success: true, limit: 2, remaining: 0 })
+    expect(await customLimiter.check(id)).toMatchObject({ success: false, limit: 2, remaining: 0 })
+  })
+
+  test('session limiter can fail closed when its shared MongoDB store is unavailable', async () => {
+    ;(connectDB as jest.Mock).mockRejectedValue(new Error('offline test database'))
+    const limiter = providerFactory.createProvider(10, 60_000, { onStoreError: 'throw' })
+
+    await expect(limiter.check(`session-fail-closed-${Date.now()}`))
+      .rejects.toBeInstanceOf(RateLimitStoreUnavailableError)
   })
 
   test('getClientIp prioritizes cf-connecting-ip over spoofed x-forwarded-for', () => {

@@ -143,8 +143,8 @@
       "path": ".agents/skills/git-pr/SKILL.md",
       "priority": 80,
       "executionMode": "sequential",
-      "capabilities": ["git:pr-workflow", "git:rule-verification", "git:codeql"],
-      "description": "Pull Request creation and verification workflow for FQuiz."
+      "capabilities": ["git:pr-workflow", "git:rule-verification", "git:local-gates", "git:zero-cloud-ci"],
+      "description": "Pull Request creation and local verification workflow for FQuiz (Zero Cloud CI/CD)."
     },
     "vercel-deploy": {
       "type": "local",

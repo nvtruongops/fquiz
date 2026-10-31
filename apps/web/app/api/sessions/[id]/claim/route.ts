@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { JWTPayload } from '@/lib/modules/auth/auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
-import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
+import { enqueueUniqueStudentCountSync } from '@/lib/modules/quiz/quiz-stats-queue'
 
 /**
  * POST /api/sessions/[id]/claim
@@ -39,6 +39,10 @@ export const POST = withAuth(async (
     }
 
     const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
+    const wasGuest = session.is_guest
+    if (wasGuest && session.quiz_id) {
+      await enqueueUniqueStudentCountSync(session.quiz_id, 120_000)
+    }
 
     // Update session ownership
     session.student_id = studentObjectId
@@ -52,13 +56,15 @@ export const POST = withAuth(async (
 
     await session.save()
 
+    if (wasGuest && session.quiz_id) {
+      enqueueUniqueStudentCountSync(session.quiz_id)
+        .catch(err => console.error('Failed to enqueue student count sync during claim:', err))
+    }
+
     // Trigger housekeeping if completed
     if (session.status === 'completed' && session.quiz_id) {
       pruneCompletedSessions(studentObjectId, session.quiz_id, session.mode)
         .catch(err => console.error('Failed pruneCompletedSessions during claim:', err))
-
-      syncUniqueStudentCount(session.quiz_id)
-        .catch(err => console.error('Failed to sync student count during claim:', err))
     }
 
     return NextResponse.json({

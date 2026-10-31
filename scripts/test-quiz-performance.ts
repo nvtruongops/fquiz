@@ -17,7 +17,7 @@
 import mongoose from 'mongoose'
 
 const MONGODB_URI = process.env.MONGODB_URI!
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://example.invalid'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://fquiz-web.vercel.app'
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com'
 const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'Test123456'
 

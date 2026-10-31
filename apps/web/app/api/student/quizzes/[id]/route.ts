@@ -8,10 +8,11 @@ import { Types } from 'mongoose'
 import { authorizeResource } from '@/lib/modules/auth/authz'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { Category } from '@/lib/modules/quiz/models/Category'
-import { CreateStudentQuizSchema } from '@/lib/modules/quiz/schemas/quiz'
+import { QuizUpdateSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
 import { validationErrorResponse, parseJsonBody } from '@/lib/core/api-helpers'
 import { ensureCategoryForCourseCode } from '@/lib/modules/quiz/utils/category-helper'
+import { getUnexpiredQuizSessionFilter } from '@/lib/modules/quiz/utils/student-quiz-access'
 
 async function getAuthorizedQuiz(payload: any, id: string) {
   // 1. Fetch minimal quiz data
@@ -31,7 +32,8 @@ async function getAuthorizedQuiz(payload: any, id: string) {
   if (quiz.is_temp) {
     const hasSession = await QuizSession.exists({ 
       quiz_id: quiz._id, 
-      student_id: new Types.ObjectId(payload.userId) 
+      student_id: new Types.ObjectId(payload.userId),
+      ...getUnexpiredQuizSessionFilter(),
     })
     if (hasSession) return quiz
   }
@@ -104,7 +106,11 @@ export const GET = withAuth(async (
 
     // Extra safety layer for temp quizzes
     const isOwner = quiz.created_by?.toString() === payload.userId
-    const hasSession = quiz.is_temp ? await QuizSession.exists({ quiz_id: quiz._id, student_id: new Types.ObjectId(payload.userId) }) : false
+    const hasSession = quiz.is_temp ? await QuizSession.exists({
+      quiz_id: quiz._id,
+      student_id: new Types.ObjectId(payload.userId),
+      ...getUnexpiredQuizSessionFilter(),
+    }) : false
     
     if (quiz.is_temp && !isOwner && !hasSession) {
       return NextResponse.json({ error: 'This quiz does not exist or has been deleted.', code: 'QUIZ_NOT_FOUND' }, { status: 404 })
@@ -191,62 +197,6 @@ export const DELETE = withAuth(async (
 }
 }, { roles: ['student'] })
 
-export const PATCH = withAuth(async (
-  req: Request,
-  { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
-) => {
-  try {
-    await connectDB()
-    const { id } = await params
-    if (!id || !Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
-    }
-
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
-
-    const { category_id } = (body as { category_id?: string })
-    const quiz = await authorizeResource(payload, id, Quiz, 'quiz', 'created_by')
-
-    if (quiz.is_saved_from_explore) {
-      return NextResponse.json(
-        { error: 'Quizzes saved from Explore cannot change categories.' },
-        { status: 400 }
-      )
-    }
-
-    if (!category_id) {
-      return NextResponse.json({ error: 'Category is required.' }, { status: 400 })
-    }
-
-    if (!Types.ObjectId.isValid(category_id)) {
-      return NextResponse.json({ error: 'Invalid category ID format' }, { status: 400 })
-    }
-
-    const category = await Category.findOne({
-      _id: new Types.ObjectId(category_id),
-      owner_id: new Types.ObjectId(payload.userId),
-      type: 'private',
-    }).lean()
-
-    if (!category) {
-      return NextResponse.json({ error: 'Target category does not exist or does not belong to you.' }, { status: 404 })
-    }
-
-    quiz.category_id = new Types.ObjectId(category_id)
-    await (quiz as any).save()
-
-    return NextResponse.json({ message: 'Quiz category updated successfully' })
-  } catch (error) {
-    console.error('Error moving student quiz category:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}, { roles: ['student'] })
-
 export const PUT = withAuth(async (
   req: Request,
   { params, payload }: { params: Promise<{ id: string }>; payload: JWTPayload }
@@ -269,7 +219,7 @@ export const PUT = withAuth(async (
     const body = await parseJsonBody(req)
     if (body instanceof NextResponse) return body
 
-    const parsed = CreateStudentQuizSchema.safeParse(body)
+    const parsed = QuizUpdateSchema.safeParse(body)
     if (!parsed.success) {
       return validationErrorResponse(parsed.error)
     }
@@ -288,7 +238,7 @@ export const PUT = withAuth(async (
 
       if (duplicate) {
         return NextResponse.json(
-          { error: `Quiz code ${normalizedCourseCode} already exists in your created quizzes.` },
+          { error: `Quiz code ${normalizedCourseCode} already exists in your quizzes.` },
           { status: 409 }
         )
       }
@@ -322,10 +272,10 @@ export const PUT = withAuth(async (
 
     return NextResponse.json({ quiz, message: 'Quiz updated successfully' })
   } catch (error) {
-    console.error('Error updating student quiz:', error)
+    console.error('Error updating quiz:', error)
     if ((error as { code?: number }).code === 11000) {
       return NextResponse.json({ error: 'Quiz code already exists.' }, { status: 409 })
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['teacher'] })

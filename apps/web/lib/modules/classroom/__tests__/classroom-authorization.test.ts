@@ -1,10 +1,10 @@
 jest.mock('@fquiz/models', () => ({
-  Classroom: { findById: jest.fn(), findOne: jest.fn() },
+  Classroom: { find: jest.fn(), findById: jest.fn(), findOne: jest.fn() },
   ClassroomMember: { find: jest.fn(), findOne: jest.fn() },
-  QuizAssignment: { find: jest.fn(), findById: jest.fn() },
+  QuizAssignment: { find: jest.fn(), findById: jest.fn(), create: jest.fn() },
   QuizAssignmentProgress: { find: jest.fn() },
   User: { find: jest.fn(), findById: jest.fn() },
-  Quiz: { find: jest.fn() },
+  Quiz: { find: jest.fn(), findOne: jest.fn(), findById: jest.fn() },
 }))
 jest.mock('@/lib/core/db/mongodb', () => ({ connectDB: jest.fn().mockResolvedValue(undefined) }))
 jest.mock('@/lib/modules/auth/auth', () => ({ verifyToken: jest.fn() }))
@@ -40,7 +40,11 @@ let classroomExists: boolean
 let assignmentExists: boolean
 
 function query(value: unknown) {
-  return { lean: jest.fn().mockResolvedValue(value), sort: jest.fn().mockReturnThis() }
+  return {
+    lean: jest.fn().mockResolvedValue(value),
+    sort: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+  }
 }
 
 const methods = ['getClassroomDetail', 'getClassroomMembers', 'getClassroomAssignments', 'getAssignmentReport'] as const
@@ -83,10 +87,83 @@ beforeEach(() => {
   ;(User.find as jest.Mock).mockImplementation(() => query([student]))
   ;(User.findById as jest.Mock).mockImplementation(() => query(teacher))
   ;(Quiz.find as jest.Mock).mockImplementation(() => query([quiz]))
+  ;(Quiz.findOne as jest.Mock).mockResolvedValue(quiz)
+  ;(QuizAssignment.create as jest.Mock).mockResolvedValue({ _id: assignment._id })
   ;(verifyToken as jest.Mock).mockResolvedValue(owner)
 })
 
 describe('classroom service resource authorization', () => {
+  it('excludes the classroom password in the student enrollment database projection', async () => {
+    const studentClassroom = {
+      ...classroom,
+      password: 'class-secret',
+      created_at: new Date('2026-10-01T00:00:00.000Z'),
+    }
+    ;(ClassroomMember.find as jest.Mock).mockReturnValue(query([member]))
+    ;(Classroom.find as jest.Mock).mockReturnValue(query([studentClassroom]))
+    ;(User.find as jest.Mock).mockReturnValue(query([teacher]))
+
+    const results = await ClassroomService.getClassroomsByStudent(studentId)
+
+    expect(Classroom.find).toHaveBeenCalledWith({
+      _id: { $in: [classroom._id] },
+      status: 'active',
+    })
+    expect(Classroom.find.mock.results[0].value.select).toHaveBeenCalledWith('-password')
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({
+      _id: classroom._id,
+      is_pinned: false,
+      teacher,
+    })
+  })
+
+  it('allows a teacher to assign their own private quiz', async () => {
+    ;(Classroom.findById as jest.Mock).mockResolvedValue(classroom)
+    ;(Quiz.findOne as jest.Mock).mockResolvedValue({
+      _id: new Types.ObjectId(quizId),
+      created_by: new Types.ObjectId(teacherA),
+      is_public: false,
+      status: 'draft',
+    })
+
+    await ClassroomService.assignQuizToClassroom(teacherA, {
+      classroom_id: classroomId,
+      quiz_id: quizId,
+      title: 'Private work',
+      time_limit_minutes: 0,
+      max_attempts: 0,
+      pass_score_percent: 70,
+      show_answers_immediately: true,
+    })
+
+    expect(Quiz.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      _id: new Types.ObjectId(quizId),
+      $or: expect.arrayContaining([
+        { created_by: new Types.ObjectId(teacherA) },
+        expect.objectContaining({ is_public: true, status: 'published' }),
+      ]),
+    }))
+    expect(QuizAssignment.create).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects assigning another teacher private quiz before creating an assignment', async () => {
+    ;(Classroom.findById as jest.Mock).mockResolvedValue(classroom)
+    ;(Quiz.findOne as jest.Mock).mockResolvedValue(null)
+
+    await expect(ClassroomService.assignQuizToClassroom(teacherA, {
+      classroom_id: classroomId,
+      quiz_id: quizId,
+      title: 'Foreign private work',
+      time_limit_minutes: 0,
+      max_attempts: 0,
+      pass_score_percent: 70,
+      show_answers_immediately: true,
+    })).rejects.toThrow('Quiz not found')
+
+    expect(QuizAssignment.create).not.toHaveBeenCalled()
+  })
+
   it.each(methods)('%s denies teacher B access to teacher A resources before protected reads', async (method) => {
     await expect(read(method, { userId: teacherB, role: 'teacher' })).rejects.toMatchObject({ status: 404 })
     expectNoProtectedReads()

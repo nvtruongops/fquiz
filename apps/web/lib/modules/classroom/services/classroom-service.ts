@@ -4,6 +4,7 @@ import { Classroom, ClassroomMember, QuizAssignment, QuizAssignmentProgress, Use
 import type { JWTPayload } from '@fquiz/auth'
 import { ClassroomReadError, validateClassroomResourceId } from '../classroom-errors'
 import type { CreateClassroomInput, CreateQuizAssignmentInput } from '../schemas/classroom'
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 
 export type ClassroomActor = Pick<JWTPayload, 'userId' | 'role'>
 
@@ -127,6 +128,7 @@ export class ClassroomService {
     const memberMap = new Map(memberships.map((m) => [m.classroom_id.toString(), m]))
     const classroomIds = memberships.map((m) => m.classroom_id)
     const classrooms = await Classroom.find({ _id: { $in: classroomIds }, status: 'active' })
+      .select('-password')
       .sort({ created_at: -1 })
       .lean()
 
@@ -266,7 +268,14 @@ export class ClassroomService {
       throw new Error('You are not the teacher of this classroom')
     }
 
-    const quiz = await Quiz.findById(input.quiz_id)
+    const quiz = await Quiz.findOne({
+      _id: new Types.ObjectId(input.quiz_id),
+      status: { $ne: 'deleted' },
+      $or: [
+        { created_by: new Types.ObjectId(teacherId) },
+        getPublicQuizFilter(),
+      ],
+    })
     if (!quiz) throw new Error('Quiz not found')
 
     return QuizAssignment.create({

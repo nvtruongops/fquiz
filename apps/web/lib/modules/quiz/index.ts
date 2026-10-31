@@ -21,7 +21,7 @@ registerModel(() => {
 
 registerUserCleanupHandler('quiz', async (userId: string) => {
   await QuizComment.deleteMany({ user_id: userId })
-  await QuizSession.deleteMany({ user_id: userId })
+  await QuizSession.deleteMany({ student_id: userId })
   await Quiz.deleteMany({ user_id: userId, is_temp: true })
   await PinnedQuestion.deleteMany({ student_id: userId })
 })

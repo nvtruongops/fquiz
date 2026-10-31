@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/student/quizzes/check-code?code=MLN131_DE01&excludeId=xxx
  * Check whether course / quiz code (course_code) already exists in system.
  */
-export const GET = withAuth(async (req: Request) => {
+export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     const { searchParams } = new URL(req.url)
     const code = (searchParams.get('code') ?? '').trim()
@@ -27,6 +28,13 @@ export const GET = withAuth(async (req: Request) => {
       course_code: { $regex: `^${escaped}$`, $options: 'i' },
       is_temp: { $ne: true },
       status: { $ne: 'deleted' },
+    }
+
+    if (payload.role !== 'admin' && payload.role !== 'dev') {
+      query.$or = [
+        getPublicQuizFilter(),
+        { created_by: mongoose.Types.ObjectId.isValid(payload.userId) ? new mongoose.Types.ObjectId(payload.userId) : payload.userId },
+      ]
     }
 
     if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
@@ -55,4 +63,4 @@ export const GET = withAuth(async (req: Request) => {
     console.error('Error checking course_code:', error)
     return NextResponse.json({ exists: false, error: 'Failed to check code' }, { status: 500 })
   }
-}, { roles: ['student', 'teacher', 'admin', 'dev'] })
+}, { roles: ['teacher'] })

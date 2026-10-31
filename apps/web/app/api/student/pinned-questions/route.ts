@@ -3,21 +3,31 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { PinnedQuestion } from '@/lib/modules/quiz/models/PinnedQuestion'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
 import { parseJsonBody } from '@/lib/core/api-helpers'
 import { getQuestionIdentity } from '@fquiz/models'
+import { findStudentAccessibleQuiz, getStudentQuizVisibilityFilter, getUnexpiredQuizSessionFilter } from '@/lib/modules/quiz/utils/student-quiz-access'
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-/**
- * Build flexible MongoDB filter matching course_code prefix/regex or Category quizzes.
- */
+const PINNED_QUESTIONS_PAGE_SIZE = 50
+const CATEGORY_PIN_SCAN_BATCH_SIZE = 250
+const CATEGORY_PIN_MAX_SCAN_BATCHES = 5
+
+function parsePinnedQuestionsCursor(value: string | null) {
+  if (!value) return null
+  if (!Types.ObjectId.isValid(value)) return undefined
+  return new Types.ObjectId(value)
+}
+
+/** Resolve the bounded course-code filter and optional category join for pin pages. */
 async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeParam?: string | null) {
   const filter: any = { student_id: studentId }
-  if (!courseCodeParam || !courseCodeParam.trim()) return filter
+  if (!courseCodeParam || !courseCodeParam.trim()) return { filter }
 
   const cleanCode = courseCodeParam.trim()
   const escapedCode = escapeRegex(cleanCode)
@@ -30,38 +40,122 @@ async function buildPinnedQuestionsFilter(studentId: Types.ObjectId, courseCodeP
     name: { $regex: new RegExp(`^${escapedCode}$`, 'i') },
   }).select('_id').lean()
 
-  let categoryQuizIds: Types.ObjectId[] = []
-  let categoryCourseCodes: string[] = []
+  if (category) return { filter, codeRegex, categoryId: category._id }
 
-  if (category) {
-    const quizzes = await Quiz.find({ category_id: category._id })
-      .select('_id course_code')
-      .lean() as any[]
-    categoryQuizIds = quizzes.map((q) => q._id)
-    categoryCourseCodes = quizzes.map((q) => q.course_code?.trim().toUpperCase()).filter(Boolean)
+  filter.course_code = { $regex: codeRegex }
+  return { filter, codeRegex }
+}
+
+async function findCategoryPinnedQuestionPage(
+  studentId: Types.ObjectId,
+  categoryId: Types.ObjectId,
+  codeRegex: RegExp,
+  cursor: Types.ObjectId | null,
+  pageSize: number,
+) {
+  let scanCursor = cursor
+  let exhausted = false
+  let scanBatches = 0
+  const matchingPins: any[] = []
+
+  while (matchingPins.length <= pageSize && scanBatches < CATEGORY_PIN_MAX_SCAN_BATCHES) {
+    const candidates = await findPinnedQuestionCandidates(studentId, scanCursor)
+
+    if (candidates.length === 0) {
+      exhausted = true
+      break
+    }
+
+    scanCursor = candidates.at(-1)._id
+    const { categoryQuizIds, categoryCodeSet } = await loadCategoryPinMembership(categoryId, candidates)
+    for (const pin of candidates) {
+      if (isCategoryPinnedQuestion(pin, codeRegex, categoryQuizIds, categoryCodeSet)) matchingPins.push(pin)
+    }
+
+    scanBatches++
+    if (candidates.length < CATEGORY_PIN_SCAN_BATCH_SIZE) {
+      exhausted = true
+      break
+    }
   }
 
-  const orConditions: any[] = [
-    { course_code: { $regex: codeRegex } },
-    ...(categoryQuizIds.length > 0 ? [{ quiz_id: { $in: categoryQuizIds } }] : []),
-    ...(categoryCourseCodes.length > 0 ? [{ course_code: { $in: categoryCourseCodes } }] : []),
-  ]
+  const hasMoreMatches = matchingPins.length > pageSize
+  const pins = matchingPins.slice(0, pageSize)
+  const nextCursor = getCategoryPinsNextCursor(hasMoreMatches, exhausted, pins, scanCursor)
+  return { pins, nextCursor }
+}
 
-  filter.$or = orConditions
-  return filter
+async function findPinnedQuestionCandidates(studentId: Types.ObjectId, cursor: Types.ObjectId | null) {
+  const filter: Record<string, unknown> = { student_id: studentId }
+  if (cursor) filter._id = { $lt: cursor }
+  return await PinnedQuestion.find(filter)
+    .sort({ _id: -1 })
+    .limit(CATEGORY_PIN_SCAN_BATCH_SIZE)
+    .select('_id quiz_id course_code')
+    .lean() as any[]
+}
+
+async function loadCategoryPinMembership(categoryId: Types.ObjectId, candidates: any[]) {
+  const candidateQuizIds = Array.from(new Set(candidates.map((pin) => pin.quiz_id?.toString()).filter(Boolean)))
+    .map((id) => new Types.ObjectId(id))
+  const candidateCourseCodes = Array.from(new Set(candidates.map((pin) => pin.course_code).filter(Boolean)))
+  const [categoryQuizzes, categoryCourseCodes] = await Promise.all([
+    candidateQuizIds.length > 0
+      ? Quiz.find({ _id: { $in: candidateQuizIds }, category_id: categoryId })
+        .select('_id')
+        .limit(CATEGORY_PIN_SCAN_BATCH_SIZE)
+        .lean() as Promise<any[]>
+      : Promise.resolve([]),
+    candidateCourseCodes.length > 0
+      ? Quiz.distinct('course_code', { category_id: categoryId, course_code: { $in: candidateCourseCodes } })
+      : Promise.resolve([]),
+  ])
+  return {
+    categoryQuizIds: new Set(categoryQuizzes.map((quiz: any) => quiz._id.toString())),
+    categoryCodeSet: new Set(categoryCourseCodes.map((code: string) => code.trim().toUpperCase())),
+  }
+}
+
+function isCategoryPinnedQuestion(
+  pin: any,
+  codeRegex: RegExp,
+  categoryQuizIds: Set<string>,
+  categoryCodeSet: Set<string>,
+): boolean {
+  const courseCode = pin.course_code?.trim().toUpperCase()
+  return Boolean(
+    codeRegex.test(pin.course_code ?? '') ||
+    (pin.quiz_id && categoryQuizIds.has(pin.quiz_id.toString())) ||
+    (courseCode && categoryCodeSet.has(courseCode)),
+  )
+}
+
+function getCategoryPinsNextCursor(
+  hasMoreMatches: boolean,
+  exhausted: boolean,
+  pins: any[],
+  scanCursor: Types.ObjectId | null,
+) {
+  if (hasMoreMatches) return pins.at(-1)?._id ?? null
+  if (exhausted) return null
+  return scanCursor
 }
 
 /**
  * Resolve the real original (non-temp) quiz and course_code for a question.
  */
-async function findRealQuizForQuestion(quizId?: string, cleanCourse?: string, queryCriteria: any[] = []) {
+async function findRealQuizForQuestion(quizId: string | undefined, cleanCourse: string | undefined, queryCriteria: any[], studentId: string) {
   // Direct primary lookup by quiz_id if valid
   if (quizId && Types.ObjectId.isValid(quizId)) {
-    const directQuiz = await Quiz.findById(quizId).select('_id course_code title questions question_refs is_temp').lean()
+    const directQuiz = await findStudentAccessibleQuiz(quizId, studentId)
     if (directQuiz) return directQuiz
   }
 
-  const baseFilter = { is_temp: { $ne: true }, title: { $not: /^(Quiz Tr\u1ED9n|Mix Quiz)/i }, $or: queryCriteria }
+  const baseFilter = {
+    is_temp: { $ne: true },
+    title: { $not: /^(Quiz Tr\u1ED9n|Mix Quiz)/i },
+    $and: [getStudentQuizVisibilityFilter(studentId), { $or: queryCriteria }],
+  }
   if (cleanCourse && cleanCourse !== 'GENERAL' && !cleanCourse.startsWith('TEMP_')) {
     const matched = await Quiz.findOne({ ...baseFilter, course_code: cleanCourse }).select('_id course_code title questions question_refs').lean()
     if (matched) return matched
@@ -107,6 +201,7 @@ async function resolveOriginalQuizForQuestion(params: {
   text: string
   options: string[]
   question_id?: string
+  studentId: string
 }): Promise<{
   originalQuizId?: Types.ObjectId
   originalQuizTitle: string
@@ -125,7 +220,7 @@ async function resolveOriginalQuizForQuestion(params: {
     queryCriteria.push({ 'questions._id': new Types.ObjectId(question_id) })
   }
 
-  const realQuiz: any = await findRealQuizForQuestion(quiz_id, cleanCourse, queryCriteria)
+  const realQuiz: any = await findRealQuizForQuestion(quiz_id, cleanCourse, queryCriteria, params.studentId)
   const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText, options, question_id)
 
   const title = realQuiz?.title ||
@@ -147,22 +242,61 @@ async function resolveOriginalQuizForQuestion(params: {
 
 /**
  * GET /api/student/pinned-questions
- * Optional query: course_code=NWC303
+ * Optional query: course_code=NWC303&cursor=<last_pin_id>
  */
 export const GET = withAuth(async (req: Request, { payload }) => {
   try {
     await connectDB()
     const { searchParams } = new URL(req.url)
     const courseCodeParam = searchParams.get('course_code')
+    const cursor = parsePinnedQuestionsCursor(searchParams.get('cursor'))
+    if (cursor === undefined) return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 })
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
+    const { filter, codeRegex, categoryId } = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
+    const categoryPage = categoryId && codeRegex
+      ? await findCategoryPinnedQuestionPage(studentObjectId, categoryId, codeRegex, cursor, PINNED_QUESTIONS_PAGE_SIZE)
+      : null
+    const pinSources = categoryPage
+      ? categoryPage.pins
+      : await PinnedQuestion.find(cursor ? { $and: [filter, { _id: { $lt: cursor } }] } : filter)
+        .sort({ _id: -1 })
+        .limit(PINNED_QUESTIONS_PAGE_SIZE + 1)
+        .select('_id quiz_id')
+        .lean() as any[]
+    const hasMore = pinSources.length > PINNED_QUESTIONS_PAGE_SIZE
+    const pagePins = pinSources.slice(0, PINNED_QUESTIONS_PAGE_SIZE)
+    const nextPin = pagePins.at(-1)
+    const nextCursor = hasMore && nextPin
+      ? nextPin._id.toString()
+      : categoryPage?.nextCursor?.toString() ?? null
+    const quizIds = Array.from(new Set(pagePins.map((pin: any) => pin.quiz_id?.toString()).filter(Boolean)))
+    if (quizIds.length === 0) return NextResponse.json({ pinnedQuestions: [], nextCursor })
 
-    const pinnedQuestions = await PinnedQuestion.find(filter)
-      .sort({ created_at: -1 })
-      .lean()
+    const candidateIds = quizIds.map((id) => new Types.ObjectId(id))
+    const ownedSessions = await QuizSession.find({
+      student_id: studentObjectId,
+      is_temp: true,
+      quiz_id: { $in: candidateIds },
+      ...getUnexpiredQuizSessionFilter(),
+    })
+      .select('quiz_id')
+      .lean() as any[]
+    const temporaryQuizIds = ownedSessions.map((session: any) => session.quiz_id)
+    const visibleQuizzes = await Quiz.find({
+      _id: { $in: candidateIds },
+      ...getStudentQuizVisibilityFilter(payload.userId, temporaryQuizIds),
+    }).select('_id').lean() as any[]
+    const accessibleQuizIds = visibleQuizzes.map((quiz: any) => quiz._id)
+    if (accessibleQuizIds.length === 0) return NextResponse.json({ pinnedQuestions: [], nextCursor })
 
-    return NextResponse.json({ pinnedQuestions })
+    const visiblePins = await PinnedQuestion.find({
+      ...filter,
+      _id: { $in: pagePins.map((pin: any) => pin._id) },
+      quiz_id: { $in: accessibleQuizIds },
+    }).sort({ _id: -1 }).limit(PINNED_QUESTIONS_PAGE_SIZE).lean()
+
+    return NextResponse.json({ pinnedQuestions: visiblePins, nextCursor })
   } catch (error) {
     console.error('Error fetching pinned questions:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -211,6 +345,63 @@ async function createPinDocument(params: {
   })
 }
 
+function getPinnedQuestionValidationError(text: unknown, options: unknown): NextResponse | null {
+  if (!text || typeof text !== 'string') {
+    return NextResponse.json({ error: 'Question content is required.' }, { status: 400 })
+  }
+  if (!Array.isArray(options) || options.length < 2 || options.some(option => typeof option !== 'string' || !option.trim())) {
+    return NextResponse.json({ error: 'Complete question options are required to identify this question.' }, { status: 400 })
+  }
+  return null
+}
+
+async function toggleStudentPinnedQuestion(params: {
+  studentObjectId: Types.ObjectId
+  studentId: string
+  question_id?: string
+  quiz_id?: string
+  quiz_title?: string
+  course_code?: string
+  text: string
+  options: string[]
+  correct_answer?: any
+  explanation?: string
+  image_url?: string
+}): Promise<NextResponse> {
+  const { studentObjectId, studentId, question_id, quiz_id, quiz_title, course_code, text, options, correct_answer, explanation, image_url } = params
+  const { originalQuizId, originalQuizTitle, originalCourseCode, correctAnswer: resolvedCorrectAnswer, explanation: resolvedExplanation } = await resolveOriginalQuizForQuestion({
+    quiz_id,
+    clientCourseCode: course_code,
+    clientQuizTitle: quiz_title,
+    text,
+    options,
+    question_id,
+    studentId,
+  })
+
+  const existing = await findExistingPin(studentObjectId, question_id, text, options)
+  if (existing) {
+    await PinnedQuestion.deleteOne({ _id: existing._id })
+    return NextResponse.json({ pinned: false, message: 'Question unpinned successfully.' })
+  }
+
+  const newPin = await createPinDocument({
+    studentObjectId,
+    question_id,
+    originalQuizId: originalQuizId || (quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined),
+    originalQuizTitle,
+    originalCourseCode,
+    text,
+    options,
+    resolvedCorrectAnswer,
+    correct_answer,
+    resolvedExplanation,
+    explanation,
+    image_url,
+  })
+  return NextResponse.json({ pinned: true, item: newPin, message: 'Question pinned successfully.' }, { status: 201 })
+}
+
 /**
  * POST /api/student/pinned-questions
  * Body: { question_id, quiz_id, quiz_title, course_code, text, options, correct_answer, explanation, image_url }
@@ -234,51 +425,28 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       image_url,
     } = body as any
 
-    if (!text || typeof text !== 'string') {
-      return NextResponse.json({ error: 'Question content is required.' }, { status: 400 })
-    }
-    if (!Array.isArray(options) || options.length < 2 || options.some(option => typeof option !== 'string' || !option.trim())) {
-      return NextResponse.json({ error: 'Complete question options are required to identify this question.' }, { status: 400 })
-    }
+    const validationError = getPinnedQuestionValidationError(text, options)
+    if (validationError) return validationError
 
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    // Resolve authoritative non-temp original quiz, course_code, correct_answer & explanation
-    const { originalQuizId, originalQuizTitle, originalCourseCode, correctAnswer: resolvedCorrectAnswer, explanation: resolvedExplanation } = await resolveOriginalQuizForQuestion({
-      quiz_id,
-      clientCourseCode: course_code,
-      clientQuizTitle: quiz_title,
-      text,
-      options: Array.isArray(options) ? options : [],
-      question_id,
-    })
-
-    // Check if question is already pinned by this student
-    const existing = await findExistingPin(studentObjectId, question_id, text, Array.isArray(options) ? options : [])
-
-    if (existing) {
-      // Unpin
-      await PinnedQuestion.deleteOne({ _id: existing._id })
-      return NextResponse.json({ pinned: false, message: 'Question unpinned successfully.' })
+    if (quiz_id && !await findStudentAccessibleQuiz(String(quiz_id), payload.userId)) {
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
-    // Pin
-    const newPin = await createPinDocument({
+    return await toggleStudentPinnedQuestion({
       studentObjectId,
+      studentId: payload.userId,
       question_id,
-      originalQuizId: originalQuizId || (quiz_id && Types.ObjectId.isValid(quiz_id) ? new Types.ObjectId(quiz_id) : undefined),
-      originalQuizTitle,
-      originalCourseCode,
+      quiz_id,
+      quiz_title,
+      course_code,
       text,
       options,
-      resolvedCorrectAnswer,
       correct_answer,
-      resolvedExplanation,
       explanation,
       image_url,
     })
-
-    return NextResponse.json({ pinned: true, item: newPin, message: 'Question pinned successfully.' }, { status: 201 })
   } catch (error: any) {
     if (error?.code === 11000) {
       return NextResponse.json({ error: 'This legacy pin conflicts with an existing question variant. Refresh your pinned questions before retrying.', code: 'PIN_IDENTITY_CONFLICT' }, { status: 409 })
@@ -299,10 +467,25 @@ export const DELETE = withAuth(async (req: Request, { payload }) => {
     const courseCodeParam = searchParams.get('course_code')
     const studentObjectId = new Types.ObjectId(payload.userId)
 
-    const filter = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
+    const { filter, codeRegex, categoryId } = await buildPinnedQuestionsFilter(studentObjectId, courseCodeParam)
+    if (!categoryId || !codeRegex) {
+      const result = await PinnedQuestion.deleteMany(filter)
+      return NextResponse.json({ success: true, deletedCount: result.deletedCount })
+    }
 
-    const result = await PinnedQuestion.deleteMany(filter)
-    return NextResponse.json({ success: true, deletedCount: result.deletedCount })
+    let deletedCount = 0
+    let cursor: Types.ObjectId | null = null
+    while (true) {
+      const page = await findCategoryPinnedQuestionPage(studentObjectId, categoryId, codeRegex, cursor, CATEGORY_PIN_SCAN_BATCH_SIZE)
+      if (page.pins.length > 0) {
+        const ids = page.pins.map((pin) => pin._id)
+        const result = await PinnedQuestion.deleteMany({ student_id: studentObjectId, _id: { $in: ids } })
+        deletedCount += result.deletedCount ?? 0
+      }
+      if (!page.nextCursor) break
+      cursor = page.nextCursor
+    }
+    return NextResponse.json({ success: true, deletedCount })
   } catch (error) {
     console.error('Error clearing pinned questions:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

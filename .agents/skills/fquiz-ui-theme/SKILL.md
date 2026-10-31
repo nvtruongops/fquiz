@@ -57,7 +57,7 @@ This skill enforces **Theme as Code** governance, **4 Official Themes** (`light`
 5. **Accessibility Standards**:
    - Always combine Color + Icon + Visual Text Label + ARIA (`sr-only`) state. Never rely exclusively on color to convey meaning.
 
-6. **3-Tier Quality Gate CI Verification**:
+6. **3-Tier Quality Gate Local Verification**:
    - Run `npm run verify:theme` (Tier 1 Theme Governance) and `npx tsc --noEmit` (Tier 2 Type Safety) before committing any changes.
 
 7. **Navigation & Sidebar Theme Consolidation**:

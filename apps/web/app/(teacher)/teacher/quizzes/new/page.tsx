@@ -33,7 +33,6 @@ export default function TeacherCreateQuizPage() {
   return (
     <div className="space-y-6">
       <QuizEditor
-        mode="admin"
         categories={categories.map((c) => ({ _id: c._id, name: c.name }))}
         allowDraft={false}
         enableAutosave={false}

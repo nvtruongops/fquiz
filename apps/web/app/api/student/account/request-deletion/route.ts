@@ -7,7 +7,7 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { User } from '@/lib/modules/auth/models/User'
 import { clearUserStatusCache } from '@/lib/modules/auth/auth'
 import { enqueueMail } from '@/lib/core/mail/mail'
-import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
+import { resolveConfiguredAppBaseUrl } from '@/lib/core/utils/url-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +16,11 @@ const RequestDeletionSchema = z.object({
 })
 
 export const POST = withAuth(async (req: Request, { payload }) => {
+  const baseUrl = resolveConfiguredAppBaseUrl() ?? (process.env.NODE_ENV === 'production' ? null : 'http://localhost:3000')
+  if (!baseUrl) {
+    return NextResponse.json({ error: 'Account recovery is not configured' }, { status: 500 })
+  }
+
   try {
     let body: unknown
     try {
@@ -61,7 +66,6 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     clearUserStatusCache(payload.userId)
 
-    const baseUrl = resolveAppBaseUrl(req)
     const restoreUrl = `${baseUrl}/restore-account?token=${deletionToken}`
 
     await enqueueMail('account-deletion-notice', {

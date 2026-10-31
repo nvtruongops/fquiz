@@ -4,7 +4,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { activeSessionWriteFilter, resolveEffectiveQuestionDeck, pruneCompletedSessions } from '@/lib/modules/quiz/session-utils'
 import type { UserAnswer } from '@/lib/modules/quiz/types/session'
-import { calculateScore, syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
+import { calculateScore } from '@/lib/modules/quiz/quiz-engine'
 
 function getSubmissionStateResponse(session: any): NextResponse | null {
   return session.status === 'completed'
@@ -52,8 +52,6 @@ function scheduleSessionCleanup(session: any) {
   if (!session.student_id) return
   pruneCompletedSessions(session.student_id, session.quiz_id, session.mode)
     .catch(err => console.error('Failed inline pruneCompletedSessions:', err))
-  syncUniqueStudentCount(session.quiz_id)
-    .catch(err => console.error('Failed to sync student count on submit:', err))
 }
 
 async function completeSession(id: string, session: any): Promise<NextResponse> {

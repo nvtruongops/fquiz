@@ -4,8 +4,10 @@ import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
+import { BodyTooLargeError, readBoundedBody } from '@/lib/core/api-helpers'
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024
+const MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 const ALLOWED_EXTENSIONS = ['.json', '.txt']
 
 function hasAllowedExtension(filename: string): boolean {
@@ -15,9 +17,25 @@ function hasAllowedExtension(filename: string): boolean {
 
 async function parseRequestPayload(req: Request): Promise<unknown> {
   const contentType = req.headers.get('content-type')?.toLowerCase() ?? ''
+  const isMultipart = contentType.includes('multipart/form-data')
+  let bytes: Uint8Array
+  try {
+    bytes = await readBoundedBody(
+      req,
+      MAX_IMPORT_FILE_SIZE + (isMultipart ? MAX_MULTIPART_OVERHEAD_BYTES : 0),
+    )
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) throw new Error('FILE_TOO_LARGE')
+    throw error
+  }
 
-  if (contentType.includes('multipart/form-data')) {
-    const formData = await req.formData()
+  if (isMultipart) {
+    const boundedRequest = new Request(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+    })
+    const formData = await boundedRequest.formData()
     const file = formData.get('file')
     if (!(file instanceof File)) {
       throw new Error('MISSING_FILE')
@@ -30,20 +48,12 @@ async function parseRequestPayload(req: Request): Promise<unknown> {
       throw new Error('FILE_TOO_LARGE')
     }
 
-    const content = await file.text()
-    if (content.length > MAX_IMPORT_FILE_SIZE) {
-      throw new Error('FILE_TOO_LARGE')
-    }
-
-    return content
+    return new TextDecoder().decode(await file.arrayBuffer())
   }
 
-  const textBody = await req.text()
+  const textBody = new TextDecoder().decode(bytes)
   if (!textBody.trim()) {
     throw new Error('EMPTY_BODY')
-  }
-  if (textBody.length > MAX_IMPORT_FILE_SIZE) {
-    throw new Error('FILE_TOO_LARGE')
   }
 
   return textBody
@@ -117,7 +127,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     console.error('Quiz import preview error:', err)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['admin', 'student'] })
+}, { roles: ['teacher'] })
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

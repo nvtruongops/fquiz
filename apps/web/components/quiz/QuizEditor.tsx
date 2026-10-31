@@ -27,14 +27,12 @@ import { QuestionEditorCard } from '@/components/quiz/editor/QuestionEditorCard'
 import { EditorProgressHub } from '@/components/quiz/editor/EditorProgressHub'
 import { EditorControlPanel } from '@/components/quiz/editor/EditorControlPanel'
 import { useQuizEditor } from '@/hooks/useQuizEditor'
-import { cn } from '@/lib/core/utils/cn'
 
 interface Props {
   initialData?: Partial<QuizFormData>
   quizId?: string
   categories: Category[]
-  mode?: 'admin' | 'student'
-  createEndpoint?: string
+  createEndpoint: string
   updateEndpointBuilder?: (id: string) => string
   redirectOnPublish?: string
   cancelPath?: string
@@ -54,7 +52,6 @@ export function QuizEditor(props: Props) {
     initialData,
     quizId,
     categories,
-    mode = 'admin',
     createEndpoint,
     updateEndpointBuilder,
     redirectOnPublish,
@@ -89,7 +86,6 @@ export function QuizEditor(props: Props) {
     error,
     isSubmitBlocked,
     canSaveDraft,
-    isStudentMode,
     importEnabled,
     showImportPanel, setShowImportPanel,
     handleApplyImportedQuiz,
@@ -110,7 +106,6 @@ export function QuizEditor(props: Props) {
     initialData,
     quizId,
     categories,
-    mode,
     createEndpoint,
     updateEndpointBuilder,
     redirectOnPublish,
@@ -140,27 +135,24 @@ export function QuizEditor(props: Props) {
   }, [form.category_id, form.questions])
 
   return (
-    <div className={cn(isStudentMode ? "w-full" : "p-4 sm:p-8 bg-background min-h-screen")}>
+    <div className="p-4 sm:p-8 bg-background min-h-screen">
       <div className="w-full mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 w-full space-y-6">
-            {!isStudentMode && (
-              <div className="flex items-center justify-between gap-3">
-                <h1 className="text-2xl font-bold text-primary">
-                  {quizId ? 'Edit Quiz' : 'Create New Quiz'}
-                </h1>
-              </div>
-            )}
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-2xl font-bold text-primary">
+                {quizId ? 'Edit Quiz' : 'Create New Quiz'}
+              </h1>
+            </div>
 
             <EditorMetadataForm
               form={form}
               setForm={setForm}
               categories={categories}
-              isStudentMode={isStudentMode}
               quizId={activeQuizId || quizId}
             />
 
-            {!isStudentMode && !form.category_id && (
+            {!form.category_id && (
               <Card className="bg-card border-border">
                 <CardContent className="pt-6 text-center">
                   <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -171,7 +163,7 @@ export function QuizEditor(props: Props) {
               </Card>
             )}
 
-            {(isStudentMode || form.category_id) && (
+            {form.category_id && (
               <>
                 {importEnabled && (
                   <div className="flex justify-end">
@@ -203,7 +195,6 @@ export function QuizEditor(props: Props) {
                     categoryId={form.category_id}
                     courseCode={form.course_code}
                     description={form.description}
-                    mode={mode}
                   />
                 )}
 
@@ -275,7 +266,6 @@ export function QuizEditor(props: Props) {
               saving={saving}
               isSubmitBlocked={isSubmitBlocked}
               canSaveDraft={canSaveDraft}
-              isStudentMode={isStudentMode}
               hasCategory={!!form.category_id}
             />
 

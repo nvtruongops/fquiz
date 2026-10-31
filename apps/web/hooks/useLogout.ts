@@ -18,9 +18,10 @@ export function useLogout() {
       await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/logout`, {
         method: 'POST',
       })
-      clearAllUserCache(queryClient)
     } catch (e) {
       console.error('Logout error', e)
+    } finally {
+      clearAllUserCache(queryClient)
     }
 
     const elapsed = Date.now() - startTime

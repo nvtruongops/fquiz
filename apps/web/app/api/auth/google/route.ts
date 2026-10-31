@@ -7,6 +7,7 @@ import { User } from '@/lib/modules/auth/models/User'
 import { LoginLog } from '@/lib/modules/auth/models/LoginLog'
 import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
+import { resolveConfiguredAppBaseUrl } from '@/lib/core/utils/url-utils'
 
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || 'unknown'
@@ -18,18 +19,27 @@ export async function POST(request: Request) {
   const isFormSubmit = contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')
 
   const url = new URL(request.url)
+  const appBaseUrl = resolveConfiguredAppBaseUrl() ?? (process.env.NODE_ENV === 'production' ? null : 'http://localhost:3000')
+  if (!appBaseUrl) {
+    return NextResponse.json({ error: 'Google authentication is not configured' }, { status: 500 })
+  }
   const rawCallbackUrl = url.searchParams.get('callbackUrl')
   let callbackUrl: string | null = null
-  if (rawCallbackUrl && rawCallbackUrl.startsWith('/') && !rawCallbackUrl.startsWith('//')) {
-    const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(rawCallbackUrl)
-    if (!isAuthOrRoot) {
-      callbackUrl = rawCallbackUrl
+  if (rawCallbackUrl?.startsWith('/')) {
+    try {
+      const parsedCallback = new URL(rawCallbackUrl, appBaseUrl)
+      const isAuthOrRoot = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(parsedCallback.pathname)
+      if (parsedCallback.origin === new URL(appBaseUrl).origin && !isAuthOrRoot) {
+        callbackUrl = `${parsedCallback.pathname}${parsedCallback.search}${parsedCallback.hash}`
+      }
+    } catch {
+      // Invalid callback values fall back to the normal post-login destination.
     }
   }
 
   const handleError = (errorMsg: string, status: number) => {
     if (isFormSubmit) {
-      const loginRedirect = new URL('/login', request.url)
+      const loginRedirect = new URL('/login', appBaseUrl)
       loginRedirect.searchParams.set('reason', 'google_auth_failed')
       loginRedirect.searchParams.set('error', errorMsg)
       if (callbackUrl) loginRedirect.searchParams.set('callbackUrl', callbackUrl)
@@ -70,6 +80,16 @@ export async function POST(request: Request) {
     }
 
     const payload = await googleRes.json()
+
+    const configuredClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    if (!configuredClientId) {
+      logSecurityEvent('google_auth_failed', { request_id: requestId, route, outcome: 'failure', ip }, 'Google OAuth client ID is not configured')
+      return handleError('Google authentication is not configured', 500)
+    }
+    if (payload.aud !== configuredClientId) {
+      logSecurityEvent('google_auth_failed', { request_id: requestId, route, outcome: 'failure', ip }, 'Google token audience mismatch')
+      return handleError('Google authentication failed', 401)
+    }
 
     // Validate email verification and Google Issuer
     const isValidIssuer = payload.iss === 'accounts.google.com' || payload.iss === 'https://accounts.google.com'
@@ -193,7 +213,7 @@ export async function POST(request: Request) {
 
     let response: NextResponse
     if (isFormSubmit) {
-      response = NextResponse.redirect(new URL(targetUrl, request.url), 303)
+      response = NextResponse.redirect(new URL(targetUrl, appBaseUrl), 303)
     } else {
       response = NextResponse.json(
         {

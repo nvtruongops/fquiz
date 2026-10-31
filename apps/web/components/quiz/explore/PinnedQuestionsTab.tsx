@@ -1,34 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { usePinnedQuestions, PinnedQuestionItem } from '@/hooks/quiz/usePinnedQuestions'
-import { Bookmark, Trash2, PlusCircle, AlertCircle, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bookmark, Trash2, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useToast } from '@/store/shared/toast-store'
 
 interface PinnedQuestionsTabProps {
   courseCode: string
 }
 
 export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabProps) {
-  const router = useRouter()
-  const { toast } = useToast()
   const normalizedCode = courseCode.toUpperCase()
 
   const {
     pinnedQuestions,
     isLoading,
+    hasMore,
+    loadMore,
+    isLoadingMore,
     deletePinMutation,
     clearAllPinsMutation,
-    createQuizFromPinnedMutation,
   } = usePinnedQuestions(normalizedCode)
 
   const [confirmClearOpen, setConfirmClearOpen] = useState(false)
-  const [quotaModalOpen, setQuotaModalOpen] = useState(false)
-  const [quotaMessage, setQuotaMessage] = useState('')
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
 
   const toggleExpand = (id: string) => {
@@ -47,32 +43,6 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
       })
       setExpandedIds(allMap)
     }
-  }
-
-  const handleCreateQuiz = () => {
-    if (pinnedQuestions.length === 0) {
-      toast.info('You have not pinned any questions in this course.')
-      return
-    }
-
-    createQuizFromPinnedMutation.mutate(
-      { course_code: normalizedCode },
-      {
-        onSuccess: (data) => {
-          if (data.quiz?._id) {
-            router.push(`/quiz/${data.quiz._id}`)
-          }
-        },
-        onError: (err: any) => {
-          if (err.quotaExceeded) {
-            setQuotaMessage(err.message || 'You have reached the maximum limit of 10 custom/mixed quizzes.')
-            setQuotaModalOpen(true)
-          } else {
-            toast.error(err.message || 'Failed to create quiz from pinned questions.')
-          }
-        },
-      }
-    )
   }
 
   const handleConfirmClear = () => {
@@ -103,9 +73,9 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-black text-foreground uppercase tracking-tight">
-                Pinned Questions ({pinnedQuestions.length})
+                Pinned Questions ({pinnedQuestions.length}{hasMore ? '+' : ''})
               </h2>
-              <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+              <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
                 {normalizedCode}
               </span>
             </div>
@@ -149,20 +119,6 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               Clear all
             </Button>
 
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleCreateQuiz}
-              disabled={createQuizFromPinnedMutation.isPending}
-              className="h-10 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-            >
-              {createQuizFromPinnedMutation.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <PlusCircle className="w-4 h-4" />
-              )}
-              Create quiz ({pinnedQuestions.length} questions)
-            </Button>
           </div>
         )}
       </div>
@@ -203,13 +159,13 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                   {/* Top metadata header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-primary/10 text-primary">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-primary/10 text-primary">
                         Question {index + 1}
                       </span>
 
                       {/* Display source quiz title / code */}
                       {item.quiz_title && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border">
                           <FileText className="w-3 h-3 text-muted-foreground" />
                           <span>Quiz: <strong>{item.quiz_title}</strong></span>
                         </span>
@@ -222,6 +178,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       onClick={() => deletePinMutation.mutate(item._id)}
                       disabled={deletePinMutation.isPending}
                       className="p-1.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label={`Remove pinned question ${index + 1}`}
                       title="Remove pinned question"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -230,14 +187,17 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
                   {/* Question Text (Clickable to toggle expand) */}
                   <div className="space-y-2">
-                    <div
+                    <button
+                      type="button"
                       onClick={() => toggleExpand(item._id)}
-                      className="cursor-pointer group/title"
+                      aria-expanded={isExpanded}
+                      aria-controls={isExpanded ? `pinned-question-answers-${item._id}` : undefined}
+                      className="group/title w-full cursor-pointer text-left"
                     >
                       <p className="text-sm sm:text-base font-bold text-foreground whitespace-pre-wrap leading-relaxed group-hover/title:text-primary transition-colors">
                         {item.text}
                       </p>
-                    </div>
+                    </button>
 
                     {item.image_url && (
                       <div className="mt-2 max-w-sm rounded-xl border border-border p-2 bg-muted/50">
@@ -255,6 +215,8 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                     <button
                       type="button"
                       onClick={() => toggleExpand(item._id)}
+                      aria-expanded={isExpanded}
+                      aria-controls={isExpanded ? `pinned-question-answers-${item._id}` : undefined}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-primary font-bold text-xs transition-colors"
                     >
                       {isExpanded ? (
@@ -281,6 +243,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
+                        id={`pinned-question-answers-${item._id}`}
                         className="space-y-3 pt-3 border-t border-border overflow-hidden"
                       >
                         {/* Options List */}
@@ -297,7 +260,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                                 }`}
                               >
                                 <span
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] flex-none mt-0.5 ${
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs flex-none mt-0.5 ${
                                     isCorrect
                                       ? 'bg-success-fg text-primary-foreground'
                                       : 'bg-muted text-muted-foreground'
@@ -316,8 +279,8 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
 
                         {/* Explanation if exists */}
                         {item.explanation && (
-                          <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-2">
-                            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
+                          <div className="p-3.5 rounded-xl bg-warning-bg/40 border border-warning-border text-xs text-warning-fg flex items-start gap-2 mt-2">
+                            <Info className="w-4 h-4 text-warning-fg flex-none mt-0.5" />
                             <div>
                               <strong className="font-bold">Explanation: </strong>
                               <span>{item.explanation}</span>
@@ -331,6 +294,20 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               )
             })}
           </AnimatePresence>
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadMore()}
+            disabled={isLoadingMore}
+            className="min-h-11 rounded-xl border-border px-5 text-foreground"
+          >
+            {isLoadingMore ? 'Loading more…' : 'Load more pinned questions'}
+          </Button>
         </div>
       )}
 
@@ -369,42 +346,6 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
         </DialogContent>
       </Dialog>
 
-      {/* Quota Exceeded Modal */}
-      <Dialog open={quotaModalOpen} onOpenChange={setQuotaModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl text-card-foreground">
-          <DialogHeader className="text-center sm:text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-warning-bg text-warning-fg">
-              <AlertCircle className="h-7 w-7" />
-            </div>
-            <DialogTitle className="text-center text-lg font-black text-card-foreground">
-              Quiz Quota Limit Reached
-            </DialogTitle>
-            <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
-              {quotaMessage || 'You have reached the maximum limit of 10 custom and mixed quizzes. Please delete an older quiz to continue.'}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setQuotaModalOpen(false)}
-              className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setQuotaModalOpen(false)
-                router.push('/explore')
-              }}
-              className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer"
-            >
-              Explore Quizzes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -51,5 +51,8 @@ describe('connectDB', () => {
   it('should connect to MongoDB', async () => {
     const conn = await connectDB()
     expect(conn).toBeDefined()
+    expect((require('mongoose').connect as jest.Mock).mock.calls[0][1]).toMatchObject({
+      waitQueueTimeoutMS: 2000,
+    })
   })
 })

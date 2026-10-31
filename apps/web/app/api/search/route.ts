@@ -9,6 +9,7 @@ import { rateLimiter } from '@/lib/core/security/rate-limit/provider'
 import { logSecurityEvent } from '@/lib/core/utils/logger'
 import { PaginationQuerySchema } from '@/lib/core/schemas/common'
 import { COURSE_CODE_MAX_LENGTH } from '@/lib/modules/quiz/schemas/quiz'
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 import { z } from 'zod'
 
 // Escape special regex characters to prevent ReDoS / injection
@@ -42,12 +43,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     const { searchParams } = new URL(req.url)
     
     // Validate query params
-    const queryValidation = SearchQueryParamsSchema.safeParse({
-      category: searchParams.get('category'),
-      course_code: searchParams.get('course_code'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-    })
+    const queryValidation = SearchQueryParamsSchema.safeParse(Object.fromEntries(searchParams.entries()))
 
     if (!queryValidation.success) {
       return NextResponse.json({ 
@@ -61,7 +57,7 @@ export const GET = withAuth(async (req: Request, { payload }) => {
     await connectDB()
 
     // Build query filter
-    const filter: Record<string, unknown> = {}
+    const filter: Record<string, unknown> = getPublicQuizFilter()
 
     if (category) {
       const cat = await Category.findOne({ 

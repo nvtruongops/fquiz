@@ -1,7 +1,7 @@
 ---
 name: fquiz-development-workflow
-description: Mandatory development workflow and architectural standards for FQuiz. Enforces Pure Symmetrical Monorepo boundaries, text-only learning product scope, dependency inversion, database patterns, and strict verification protocols.
-version: 2.2
+description: Mandatory development workflow and architectural standards for FQuiz. Enforces Pure Symmetrical Monorepo boundaries, text-only learning product scope, dependency inversion, database patterns, local-only validation before git push, and strict zero-cloud-CI/CD verification protocols.
+version: 2.3
 priority: high
 ---
 
@@ -19,16 +19,17 @@ priority: high
 5. **Server-Authoritative Quiz Processing**: Scoring and state changes for Quiz sessions MUST happen on the server using `findOneAndUpdate` with `{ status: { $ne: 'completed' } }`.
 6. **AI Generation Dedup**: Check `AIAsset` collection via `requestHash` + `responseHash` before invoking Gemini LLM API.
 7. **3-Tier Design Tokens & WCAG 2.2 AA**: All UI styling must use semantic tokens from `@fquiz/ui` and `@gsap/react` GPU transform animations.
+8. **Local-Only Validation & Zero Cloud CI/CD**: All code validation (linting, TypeScript checks, Jest unit tests, rule engine governance) is executed strictly **LOCALLY** before any `git push`. GitHub Actions workflows are completely removed from this repository; never initialize, configure, or expect cloud CI/CD pipelines via Git.
 
 ---
 
-## Mandatory Verification Sequence
+## Mandatory Local Verification Sequence (Pre-Push Gate)
 
-Before declaring any development task complete, execute the full pipeline:
+Before declaring any development task complete or pushing changes to Git remote, execute the full local verification pipeline:
 ```bash
 npm run lint
 npm run check-types
 npm test
 node .agents/scripts/verify.js --strict
 ```
-If any command fails, fix the underlying root cause before concluding.
+If any command fails, fix the underlying root cause locally before concluding or pushing.

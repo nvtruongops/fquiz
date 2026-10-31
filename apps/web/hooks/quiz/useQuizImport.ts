@@ -102,7 +102,6 @@ export interface UseQuizImportOptions {
   categoryId?: string
   courseCode?: string
   description?: string
-  mode?: 'admin' | 'student'
 }
 
 function getSampleUrl(type: 'json' | 'txt'): string {
@@ -178,7 +177,6 @@ export function useQuizImport({
   categoryId,
   courseCode,
   description,
-  mode = 'admin',
 }: UseQuizImportOptions) {
   const [file, setFile] = React.useState<File | null>(null)
   const [fileSnapshot, setFileSnapshot] = React.useState<File | null>(null)
@@ -302,7 +300,7 @@ export function useQuizImport({
   }
 
   const performBankCheck = React.useCallback(async (targetPreview: ImportPreviewResponse, catId?: string) => {
-    if (mode !== 'admin' || !targetPreview.isValid || targetPreview.normalizedQuiz.questions.length === 0) {
+    if (!targetPreview.isValid || targetPreview.normalizedQuiz.questions.length === 0) {
       return
     }
 
@@ -339,7 +337,7 @@ export function useQuizImport({
     } finally {
       setCheckingBank(false)
     }
-  }, [mode])
+  }, [])
 
   React.useEffect(() => {
     if (preview) {

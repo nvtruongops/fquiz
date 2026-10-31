@@ -90,7 +90,11 @@ Pure Symmetrical Turborepo Monorepo Next.js 16 App Router project (`apps/web` fo
 
 - **Environment**: Node (not jsdom).
 - **Pattern**: Jest discovers `.test.ts` and `.test.tsx` files according to `jest.config.ts`; Playwright specs live in `e2e/**/*.spec.ts` according to `playwright.config.ts`.
-- **Routine Verification (Default after every task)**:
+- **Local-Only Gate & Zero Cloud CI/CD Mandate**:
+  - **Remote CI/CD Removed**: All GitHub Actions workflows (`.github/workflows/`) have been completely removed from this repository.
+  - **Pre-Push Local Gate**: All validation (linting, TypeScript checks, unit tests, and rule engine governance) MUST pass 100% locally BEFORE pushing to Git.
+  - **No Cloud CI Initialization**: Agents and developers must NEVER initialize, create, configure, or expect cloud CI/CD pipelines (e.g., GitHub Actions) via Git.
+- **Routine Verification (Default after every task & before git push)**:
   `npm run lint` → `npm run check-types` → `npm test` → `node .agents/scripts/verify.js --strict`
 - **E2E Playwright Tests (`npx playwright test`)**:
   Executed on-demand only (Release testing), NOT run by default after routine development tasks to optimize response latency.

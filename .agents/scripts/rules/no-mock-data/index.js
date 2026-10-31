@@ -23,7 +23,7 @@ module.exports = {
           if (!['node_modules', '.git', '.next', '.turbo', '.vercel', 'dist', 'build', '__tests__'].includes(entry.name)) {
             scanDir(fullPath);
           }
-        } else if (entry.isFile() && /\.(tsx|jsx|ts|js)$/.test(entry.name)) {
+        } else if (entry.isFile() && /\.(tsx|jsx|ts|js)$/.test(entry.name) && !/\.(test|spec)\.[cm]?[jt]sx?$/.test(entry.name)) {
           const content = ctx.fs.readFileSync(fullPath, 'utf8');
           const lines = content.split('\n');
           const relPath = path.relative(ctx.workspaceRoot, fullPath);

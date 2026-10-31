@@ -3,6 +3,8 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
+import { useAuth } from '@/hooks/auth/useAuth'
+import { getSessionPreloadStorageKey } from '@/lib/core/utils/cache-invalidation'
 
 interface FlashcardQuestion {
   _id: string
@@ -64,12 +66,14 @@ function readSessionCache<T>(storageKey: string, isValid: (value: any) => boolea
   }
 }
 
-function readCachedFlashcardSession(sessionId: string): FlashcardSessionData | null {
-  return readSessionCache(`session_initial_preload_${sessionId}`, (value) => Boolean(value.session))
+function readCachedFlashcardSession(sessionId: string, ownerId?: string): FlashcardSessionData | null {
+  const key = getSessionPreloadStorageKey('initial', sessionId, ownerId)
+  return key ? readSessionCache(key, (value) => Boolean(value.session)) : null
 }
 
-function readCachedFlashcardQuestions(sessionId: string): { questions: FlashcardQuestion[] } | null {
-  return readSessionCache(`session_preload_${sessionId}`, (value) => Boolean(value.questions?.length))
+function readCachedFlashcardQuestions(sessionId: string, ownerId?: string): { questions: FlashcardQuestion[] } | null {
+  const key = getSessionPreloadStorageKey('questions', sessionId, ownerId)
+  return key ? readSessionCache(key, (value) => Boolean(value.questions?.length)) : null
 }
 
 function getFlashcardSessionError(status: number): Error {
@@ -77,8 +81,8 @@ function getFlashcardSessionError(status: number): Error {
   return new Error(status === 401 ? 'Session expired' : 'Failed to load session')
 }
 
-async function fetchFlashcardSession(sessionId: string): Promise<FlashcardSessionData> {
-  const cached = readCachedFlashcardSession(sessionId)
+async function fetchFlashcardSession(sessionId: string, ownerId?: string): Promise<FlashcardSessionData> {
+  const cached = readCachedFlashcardSession(sessionId, ownerId)
   if (cached) return cached
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}`)
@@ -86,8 +90,8 @@ async function fetchFlashcardSession(sessionId: string): Promise<FlashcardSessio
   return res.json()
 }
 
-async function fetchFlashcardQuestions(sessionId: string): Promise<{ questions: FlashcardQuestion[] }> {
-  const cached = readCachedFlashcardQuestions(sessionId)
+async function fetchFlashcardQuestions(sessionId: string, ownerId?: string): Promise<{ questions: FlashcardQuestion[] }> {
+  const cached = readCachedFlashcardQuestions(sessionId, ownerId)
   if (cached) return cached
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/sessions/${sessionId}/questions`)
@@ -217,11 +221,13 @@ function handleFlashcardAnswerError(
 
 export function useFlashcardSession(sessionId: string) {
   const queryClient = useQueryClient()
+  const { data: authData } = useAuth()
+  const ownerId = authData?.user?._id
 
   // Fetch current session state
   const { data, isLoading, error, refetch } = useQuery<FlashcardSessionData>({
     queryKey: ['flashcard-session', sessionId],
-    queryFn: () => fetchFlashcardSession(sessionId),
+    queryFn: () => fetchFlashcardSession(sessionId, ownerId),
     enabled: !!sessionId,
     refetchOnWindowFocus: false,
   })
@@ -229,7 +235,7 @@ export function useFlashcardSession(sessionId: string) {
   // Preload all questions for immediate transitions
   const { data: allQuestionsData, isLoading: isAllQuestionsLoading } = useQuery<{ questions: FlashcardQuestion[] }>({
     queryKey: ['flashcard-session', sessionId, 'all-questions'],
-    queryFn: () => fetchFlashcardQuestions(sessionId),
+    queryFn: () => fetchFlashcardQuestions(sessionId, ownerId),
     enabled: !!sessionId,
     staleTime: Infinity, // Preloaded once, stay in cache
   })

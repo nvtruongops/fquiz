@@ -48,12 +48,17 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const defaultPoolSize = process.env.VERCEL ? 5 : 10
     const maxPool = Number(process.env.MONGODB_MAX_POOL_SIZE || defaultPoolSize)
+    const configuredWaitQueueTimeout = Number(process.env.MONGODB_WAIT_QUEUE_TIMEOUT_MS)
+    const waitQueueTimeoutMS = Number.isFinite(configuredWaitQueueTimeout) && configuredWaitQueueTimeout > 0
+      ? Math.min(Math.floor(configuredWaitQueueTimeout), 30_000)
+      : 2_000
     const connectOptions = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       maxPoolSize: maxPool,
+      waitQueueTimeoutMS,
       minPoolSize: 0,
       maxConnecting: 4,
       maxIdleTimeMS: 30000,

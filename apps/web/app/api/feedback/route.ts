@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/core/db/mongodb'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Feedback } from '@/lib/modules/auth/models/Feedback'
 import { User } from '@/lib/modules/auth/models/User'
+import { BodyTooLargeError, readBoundedBody } from '@/lib/core/api-helpers'
+import { consumeFeedbackQuota } from '@/lib/core/security/rate-limit/feedback-quota'
 
 // Whitelist: retain safe characters only, remove all HTML tags and control characters
 function sanitizeText(v: string): string {
@@ -25,18 +27,19 @@ const CreateFeedbackSchema = z.object({
 }).strict()
 
 // Rate limit: max 3 feedbacks per user per hour (DB-based)
-const RATE_LIMIT = 3
-const RATE_WINDOW_MS = 60 * 60 * 1000
-
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const contentLength = Number(req.headers.get('content-length') || '0')
-    if (contentLength > 5000) {
-      return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+    let bytes: Uint8Array
+    try {
+      bytes = await readBoundedBody(req, 5000)
+    } catch (error) {
+      if (error instanceof BodyTooLargeError) {
+        return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+      }
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
-
     let body: unknown
-    try { body = await req.json() } catch {
+    try { body = JSON.parse(new TextDecoder().decode(bytes)) } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
 
@@ -47,13 +50,8 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
-    // Rate limit check
-    const since = new Date(Date.now() - RATE_WINDOW_MS)
-    const recentCount = await Feedback.countDocuments({
-      user_id: payload.userId,
-      created_at: { $gt: since },
-    })
-    if (recentCount >= RATE_LIMIT) {
+    // Atomically consume the shared rolling-hour quota before creating the record.
+    if (!await consumeFeedbackQuota(payload.userId)) {
       return NextResponse.json(
         { error: 'You have submitted too much feedback. Please try again in 1 hour.' },
         { status: 429 }

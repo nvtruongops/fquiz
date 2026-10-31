@@ -83,7 +83,7 @@ interface ErrorResponse {
 | Method | Endpoint | Access Role | Description |
 |---|---|---|---|
 | `GET` | `/api/student/dashboard` | Student | Fetch student summary metrics: progress, completed tests, streak |
-| `GET` | `/api/student/quizzes` | Student | List quizzes authored by the student |
+| `GET` | `/api/student/quizzes` | Student | List quizzes in the student's study collection |
 | `POST` | `/api/student/save-quiz` | Student | Save a public quiz into the student's personal study collection |
 | `GET` | `/api/student/categories` | Student | Retrieve personalized category listings |
 | `GET/POST` | `/api/student/pinned-categories` | Student | Manage prioritized categories pinned to the studio header |
@@ -94,6 +94,8 @@ interface ErrorResponse {
 | `GET` | `/api/student/classrooms` | Student | List virtual classrooms in which the student is enrolled |
 | `POST` | `/api/student/classrooms/join` | Student | Enroll in a new classroom using an invitation code (Classroom Code) |
 | `DELETE` | `/api/student/account` | Student | Schedule account for permanent deletion (30-day grace period queue) |
+
+Students can save and study public quizzes, but cannot author or publish quizzes or request new categories. Quiz authoring and import preview are restricted to teacher/admin roles. The student category-request and create-from-pinned endpoints have been removed.
 
 ---
 

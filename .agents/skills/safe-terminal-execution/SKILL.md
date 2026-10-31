@@ -39,6 +39,10 @@ Interactive credential prompts (especially Windows `git-credential-manager.exe`)
    ```bash
    git -c credential.interactive=never -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 push origin <branch>
    ```
+4. **Mandatory Local Verification Before Push (Zero Cloud CI/CD):**
+   - Always execute and pass full local verification gates (`npm run lint`, `npm run check-types`, `npm test`, `node .agents/scripts/verify.js --strict`) locally before `git push`.
+   - All GitHub Actions workflows and remote CI/CD are completely removed from this repository.
+   - Strictly prohibit creating, configuring, or expecting cloud CI/CD pipelines via Git. All validation authority is 100% local.
 
 ### Monorepo Tooling & Package Management
 - **npm**:

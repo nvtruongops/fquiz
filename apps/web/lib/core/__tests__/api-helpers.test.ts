@@ -1,4 +1,4 @@
-import { validationErrorResponse, parseJsonBody, invalidIdResponse } from '../api-helpers'
+import { BodyTooLargeError, readBoundedBody, validationErrorResponse, parseJsonBody, invalidIdResponse } from '../api-helpers'
 import { NextResponse } from 'next/server'
 
 // Mock NextResponse
@@ -49,6 +49,51 @@ describe('parseJsonBody', () => {
     const result = await parseJsonBody(req)
     expect((result as NextResponse).status).toBe(400)
     expect((result as any).body).toEqual({ error: 'Invalid JSON body' })
+  })
+})
+
+describe('readBoundedBody', () => {
+  const requestWithBody = (body: BodyInit, headers?: HeadersInit) => new Request('https://example.test', {
+    method: 'POST',
+    body,
+    headers,
+    duplex: 'half',
+  } as RequestInit & { duplex: 'half' })
+
+  it('accepts a body whose UTF-8 byte length is exactly at the limit', async () => {
+    const response = new Response('é')
+    const bytes = await readBoundedBody(requestWithBody(response.body!), 2)
+    expect(new TextDecoder().decode(bytes)).toBe('é')
+  })
+
+  it('rejects an oversized chunked body with no Content-Length', async () => {
+    const request = requestWithBody(new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(4))
+        },
+      }))
+
+    await expect(readBoundedBody(request, 3)).rejects.toBeInstanceOf(BodyTooLargeError)
+  })
+
+  it('cancels a stream when a falsely small Content-Length exceeds the byte limit', async () => {
+    let chunksRead = 0
+    let wasCancelled = false
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        chunksRead += 1
+        if (chunksRead <= 2) controller.enqueue(new Uint8Array(2))
+        else controller.enqueue(new Uint8Array(1))
+      },
+      cancel() {
+        wasCancelled = true
+      },
+    }, { highWaterMark: 0 })
+    const request = requestWithBody(stream, { 'content-length': '1' })
+
+    await expect(readBoundedBody(request, 3)).rejects.toBeInstanceOf(BodyTooLargeError)
+    expect(wasCancelled).toBe(true)
+    expect(chunksRead).toBe(2)
   })
 })
 

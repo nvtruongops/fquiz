@@ -298,12 +298,20 @@ function handleLegacyHistoryRedirect(request: NextRequest, pathname: string) {
   return null
 }
 
-async function handleAuthAndRole(request: NextRequest, pathname: string, requestId: string, response: NextResponse) {
+async function handleAuthAndRole(
+  request: NextRequest,
+  pathname: string,
+  requestId: string,
+  response: NextResponse,
+  previouslyVerifiedPayload?: Awaited<ReturnType<typeof verifyToken>>
+) {
   if (isPublicRoute(pathname) || shouldSkipAuth(pathname, request)) {
     return response
   }
 
-  const payload = await verifyToken(request)
+  const payload = previouslyVerifiedPayload === undefined
+    ? await verifyToken(request)
+    : previouslyVerifiedPayload
   if (!payload) {
     return applyCors(request, getUnauthorizedOrRedirect(pathname, request, requestId))
   }
@@ -315,7 +323,7 @@ async function handleAuthAndRole(request: NextRequest, pathname: string, request
   return applyCors(request, response)
 }
 
-function getRateLimitTier(request: NextRequest, pathname: string) {
+function getRateLimitTier(request: NextRequest, pathname: string, isAuthenticated = false) {
   if (
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/api/auth/google') ||
@@ -346,18 +354,28 @@ function getRateLimitTier(request: NextRequest, pathname: string) {
   if (MUTATION_METHODS.has(request.method)) {
     return RATE_LIMIT_TIERS.MUTATION_STANDARD
   }
-  const isAuthenticated = Boolean(
-    request.cookies.get(AUTH_COOKIE_NAME)?.value ??
-    request.headers.get('authorization')
-  )
   return isAuthenticated ? RATE_LIMIT_TIERS.PUBLIC_READ_AUTH : RATE_LIMIT_TIERS.PUBLIC_READ_GUEST
 }
 
-function handleGlobalRateLimit(request: NextRequest, pathname: string): NextResponse | null {
-  if (!pathname.startsWith('/api/') || pathname === '/api/health') return null
-  const tier = getRateLimitTier(request, pathname)
+async function handleGlobalRateLimit(request: NextRequest, pathname: string) {
+  if (!pathname.startsWith('/api/') || pathname === '/api/health') {
+    return { response: null, verifiedPayload: undefined }
+  }
+
+  let verifiedPayload: Awaited<ReturnType<typeof verifyToken>> | undefined
+  const hasAuthCookie = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value)
+  const hasBearerToken = request.headers.get('authorization')?.startsWith('Bearer ') ?? false
+  const isRead = request.method === 'GET' || request.method === 'HEAD'
+  if (isRead && (hasAuthCookie || hasBearerToken)) {
+    verifiedPayload = await verifyToken(request).catch(() => null)
+  }
+
+  const tier = getRateLimitTier(request, pathname, Boolean(verifiedPayload))
   const status = checkRateLimit(request, tier)
-  return status.success ? null : createRateLimitErrorResponse(status)
+  return {
+    response: status.success ? null : createRateLimitErrorResponse(status),
+    verifiedPayload,
+  }
 }
 
 export async function proxy(request: NextRequest) {
@@ -397,7 +415,7 @@ export async function proxy(request: NextRequest) {
   if (maintenanceResponse) return maintenanceResponse
 
   // API Rate Limiting Evaluation (Layer 1 Defense against DoS & Flooding)
-  const rateLimitResponse = handleGlobalRateLimit(request, pathname)
+  const { response: rateLimitResponse, verifiedPayload } = await handleGlobalRateLimit(request, pathname)
   if (rateLimitResponse) return applyCors(request, rateLimitResponse)
 
   const deployTarget = process.env.DEPLOY_TARGET
@@ -417,7 +435,7 @@ export async function proxy(request: NextRequest) {
 
   ensureCsrfCookie(request, response)
 
-  return handleAuthAndRole(request, pathname, requestId, response)
+  return handleAuthAndRole(request, pathname, requestId, response, verifiedPayload)
 }
 
 export const config = {

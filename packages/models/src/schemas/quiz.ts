@@ -166,7 +166,7 @@ export const SubmitAnswerSchema = z
     path: ['answer_indexes'],
   })
 
-export const CreateStudentQuizSchema = z.object({
+export const QuizUpdateSchema = z.object({
   course_code: z.string().trim().min(1, 'Course code cannot be empty').max(COURSE_CODE_MAX_LENGTH, COURSE_CODE_MAX_LENGTH_MESSAGE)
     .regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
   category_id: MongoIdSchema,

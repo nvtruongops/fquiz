@@ -77,3 +77,18 @@ graph TD
 - `apps/web/proxy.ts`: Isolates administrative routes on the web client, redirecting `/admin` requests to `NEXT_PUBLIC_ADMIN_URL`, and returning `404 Not Found` for `/api/admin/*`.
 - `apps/admin/proxy.ts`: Zero-Trust RBAC Proxy rejecting non-admin/dev access with `403 Forbidden`.
 - `withAuth` Higher-Order Function: Shields API route handlers with hierarchical role checks (`student` < `teacher` < `admin` < `dev`).
+
+### 2.6. OAuth, secrets, and account lifecycle
+- Google sign-in accepts an ID token only when its `aud` exactly matches `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Callback destinations are resolved against the configured application origin and cross-origin destinations are rejected.
+- Account recovery links use the configured application origin; Google sign-in and account deletion fail closed in production when no canonical URL is configured. Request `Host` and `X-Forwarded-Host` values do not choose these security-sensitive link origins.
+- JWT signing requires `JWT_SECRET`; there is no source-code fallback. `JWT_SECRET_PREV` is accepted for verification during rotation. Verification-code HMACs use `JWT_SECRET` and fail closed when it is absent.
+- Secret encryption uses `ENCRYPTION_KEY`, falling back to `JWT_SECRET` only when explicitly configured. Decryption can try `ENCRYPTION_KEY_PREV`, `ENCRYPTION_KEY_PREV_2`, and the current/previous JWT secrets to support key rotation. Operators must retain the key that encrypted existing values until those values are re-encrypted.
+- Logout clears the current browser's authentication cookie. It does not revoke bearer tokens or log out other devices.
+- Account deletion retains classroom memberships and grade/progress rows under a keyed pseudonymous student ID. Teacher-owned classrooms and assignments are archived and scrubbed of personal metadata. This cleanup requires a persistent `ANONYMIZATION_KEY` with at least 32 characters; deletion fails before cleanup if it is missing or too short. Configure the same key across instances before enabling account deletion with this retention policy.
+
+### 2.7. Private content and bounded request handling
+- Private or draft quiz content, comments, answer variants, and duplicate-code metadata are visible only to the quiz owner. Classroom assignments accept the owner's quiz or a public, published quiz. Student classroom responses omit the classroom password.
+- Students can save and study public quizzes but cannot author or publish quizzes or request new categories. Quiz authoring and import preview require teacher/admin access; student category-request and create-from-pinned endpoints are removed.
+- Student pinned-question listings use keyset pagination with a maximum of 50 visible items per response, backed by the `{ student_id, _id }` index; callers can request subsequent pages with the returned cursor. Category lookups scan pins and matching quiz codes in bounded batches.
+- CSP reports are limited to 8192 request bytes, feedback to 5000 bytes, and quiz-import files to 2 MiB. These routes count streamed bytes before parsing; the import request also allows bounded multipart framing overhead.
+- Feedback is limited to three accepted submissions per authenticated user in a rolling hour using a MongoDB-backed atomic quota. If the quota store cannot be used, the route fails closed. Personalized explore responses use `Cache-Control: private, no-store`.

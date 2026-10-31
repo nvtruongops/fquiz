@@ -13,8 +13,7 @@ export interface QuizEditorOptions {
   initialData?: Partial<QuizFormData>
   quizId?: string
   categories: Category[]
-  mode?: 'admin' | 'student'
-  createEndpoint?: string
+  createEndpoint: string
   updateEndpointBuilder?: (id: string) => string
   redirectOnPublish?: string
   cancelPath?: string
@@ -33,7 +32,6 @@ export function useQuizEditor(options: QuizEditorOptions) {
     initialData,
     quizId,
     categories,
-    mode = 'admin',
     createEndpoint,
     updateEndpointBuilder,
     redirectOnPublish,
@@ -45,9 +43,8 @@ export function useQuizEditor(options: QuizEditorOptions) {
     onConflictsResolved,
   } = options
 
-  const isStudentMode = mode === 'student'
-  const canSaveDraft = allowDraft ?? !isStudentMode
-  const autosaveEnabled = enableAutosave ?? !isStudentMode
+  const canSaveDraft = allowDraft ?? true
+  const autosaveEnabled = enableAutosave ?? true
 
   const [form, setForm] = useState<QuizFormData>(() => ({
     description: (initialData as any)?.description ?? '',
@@ -65,7 +62,6 @@ export function useQuizEditor(options: QuizEditorOptions) {
     form,
     setForm,
     categories,
-    isStudentMode,
     onConflictsResolved,
   })
 
@@ -80,7 +76,7 @@ export function useQuizEditor(options: QuizEditorOptions) {
       explanation: q.explanation,
       image_url: q.image_url,
     })),
-    enabled: !isStudentMode && !!form.category_id,
+    enabled: !!form.category_id,
     autoCheck: false,
     debounceMs: 2000,
   })
@@ -115,7 +111,6 @@ export function useQuizEditor(options: QuizEditorOptions) {
   const saveApi = useQuizSave({
     quizId,
     initialUpdatedAt: (initialData as any)?.updatedAt ?? null,
-    isStudentMode,
     canSaveDraft,
     createEndpoint,
     updateEndpointBuilder,
@@ -193,7 +188,6 @@ export function useQuizEditor(options: QuizEditorOptions) {
     error: saveApi.error,
     isSubmitBlocked: saveApi.isSubmitBlocked,
     canSaveDraft,
-    isStudentMode,
     importEnabled,
     showImportPanel: questionsApi.showImportPanel,
     setShowImportPanel: questionsApi.setShowImportPanel,

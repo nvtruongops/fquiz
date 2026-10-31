@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { SessionData, PreloadedQuestions, SessionQuestion } from '@/lib/modules/quiz/types/session'
 import { fetchSession, fetchAllQuestions, SessionApiError } from '@/lib/modules/quiz/session-api'
+import { useAuth } from '@/hooks/auth/useAuth'
+import { getSessionPreloadStorageKey } from '@/lib/core/utils/cache-invalidation'
 
 interface UseQuizSessionQueriesResult {
   initialData: SessionData | undefined
@@ -23,14 +25,27 @@ interface UseQuizSessionQueriesResult {
   setPreloadedQuestions: (questions: SessionQuestion[] | null) => void
 }
 
+function getSessionOwnerId(authData: ReturnType<typeof useAuth>['data']): string | undefined {
+  return authData?.user?._id
+}
+
+function shouldLoadAllQuestions(sessionId: string, initialData: SessionData | undefined): boolean {
+  return sessionId.length > 0 &&
+    sessionId !== 'undefined' &&
+    (initialData ? initialData.session.status !== 'preparing' : true)
+}
+
 export function useQuizSessionQueries(
   resolvedSessionId: string,
   currentQuestionIndex: number,
 ): UseQuizSessionQueriesResult {
+  const { data: authData } = useAuth()
+  const ownerId = getSessionOwnerId(authData)
   const [preloadedQuestions, setPreloadedQuestions] = useState<SessionQuestion[] | null>(() => {
     try {
       if (typeof window !== 'undefined') {
-        const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
+        const key = getSessionPreloadStorageKey('questions', resolvedSessionId, ownerId)
+        const cached = key ? sessionStorage.getItem(key) : null
         if (cached) {
           const parsed = JSON.parse(cached)
           if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
@@ -55,11 +70,12 @@ export function useQuizSessionQueries(
     queryKey: ['sessions', resolvedSessionId, 'initial'],
     queryFn: async () => {
       try {
-        const cached = sessionStorage.getItem(`session_initial_preload_${resolvedSessionId}`)
+        const key = getSessionPreloadStorageKey('initial', resolvedSessionId, ownerId)
+        const cached = key ? sessionStorage.getItem(key) : null
         if (cached) {
           const parsed = JSON.parse(cached)
           if (parsed.session) {
-            sessionStorage.removeItem(`session_initial_preload_${resolvedSessionId}`)
+            sessionStorage.removeItem(key!)
             return parsed as SessionData
           }
         }
@@ -95,11 +111,12 @@ export function useQuizSessionQueries(
     queryKey: ['sessions', resolvedSessionId, 'all-questions'],
     queryFn: async () => {
       try {
-        const cached = sessionStorage.getItem(`session_preload_${resolvedSessionId}`)
+        const key = getSessionPreloadStorageKey('questions', resolvedSessionId, ownerId)
+        const cached = key ? sessionStorage.getItem(key) : null
         if (cached) {
           const parsed = JSON.parse(cached)
           if (parsed.questions?.length > 0) {
-            sessionStorage.removeItem(`session_preload_${resolvedSessionId}`)
+            sessionStorage.removeItem(key!)
             return parsed as PreloadedQuestions
           }
         }
@@ -108,9 +125,7 @@ export function useQuizSessionQueries(
       }
       return fetchAllQuestions(resolvedSessionId)
     },
-    enabled: resolvedSessionId.length > 0 &&
-             resolvedSessionId !== 'undefined' &&
-             (initialData ? initialData.session.status !== 'preparing' : true),
+    enabled: shouldLoadAllQuestions(resolvedSessionId, initialData),
     staleTime: Infinity,
     retry: (failureCount, error) => {
       const err = error as SessionApiError

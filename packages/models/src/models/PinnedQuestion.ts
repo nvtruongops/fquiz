@@ -35,6 +35,7 @@ const PinnedQuestionSchema = new Schema<IPinnedQuestion>(
 )
 
 PinnedQuestionSchema.index({ student_id: 1, course_code: 1 })
+PinnedQuestionSchema.index({ student_id: 1, _id: -1 })
 PinnedQuestionSchema.index({ student_id: 1, question_id: 1 })
 PinnedQuestionSchema.index({ student_id: 1, text: 1, course_code: 1 }, { unique: true })
 

@@ -3,6 +3,55 @@ import { DEFAULT_TEST_EMAIL } from './helpers/auth'
 
 test.describe('Authentication & Password Recovery Flows', () => {
   test.describe('Login Page (/login)', () => {
+    test('should submit Google sign-in through the redirect endpoint without an inline loading overlay', async ({ page }) => {
+      await page.route('https://accounts.google.com/gsi/client', (route) => route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.google = { accounts: { id: {
+          initialize(config) { window.googleConfig = config },
+          renderButton(parent) {
+            const button = document.createElement('button')
+            button.textContent = 'Google Sign In'
+            button.addEventListener('click', () => {
+              const form = document.createElement('form')
+              form.method = 'POST'
+              form.action = window.googleConfig.login_uri
+              const input = document.createElement('input')
+              input.name = 'credential'
+              input.value = 'test-credential'
+              form.append(input)
+              document.body.append(form)
+              form.submit()
+            })
+            parent.append(button)
+          }
+        } } }`,
+      }))
+      await page.route('**/api/auth/google*', async (route) => {
+        expect(route.request().method()).toBe('POST')
+        expect(route.request().postData()).toContain('credential=test-credential')
+        await route.fulfill({ status: 303, headers: { location: '/explore' } })
+      })
+
+      await page.goto('/login?callbackUrl=%2Fexplore')
+      await page.waitForFunction(() => Boolean((window as any).googleConfig))
+      const config = await page.evaluate(() => ({
+        uxMode: (window as any).googleConfig.ux_mode,
+        loginUri: (window as any).googleConfig.login_uri,
+        hasCallback: Boolean((window as any).googleConfig.callback),
+      }))
+      expect(config).toEqual({
+        uxMode: 'redirect',
+        loginUri: expect.stringContaining('/api/auth/google?callbackUrl=%2Fexplore'),
+        hasCallback: false,
+      })
+
+      const googleButton = page.getByRole('button', { name: 'Google Sign In' })
+      await expect(googleButton).toBeVisible()
+      await googleButton.click()
+      await expect(page).toHaveURL(/\/explore$/)
+      await expect(page.getByText('Authenticating Google...')).toHaveCount(0)
+    })
+
     test('should display login form elements properly', async ({ page }) => {
       await page.goto('/login')
 

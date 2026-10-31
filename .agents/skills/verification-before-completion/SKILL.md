@@ -69,6 +69,7 @@ Skip any step = lying, not verifying
 | "Agent said success" | Verify independently |
 | "I'm tired" | Exhaustion ≠ excuse |
 | "Partial check is enough" | Partial proves nothing |
+| "Cloud CI will catch it" | Remote CI is removed. Local gate is 100% authoritative |
 | "Different words so rule doesn't apply" | Spirit over letter |
 
 ## Key Patterns

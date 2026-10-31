@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "eslint app components lib hooks store",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "worker:quiz-stats": "tsx --tsconfig tsconfig.json scripts/quiz-stats-worker.ts"
   },
   "dependencies": {
     "@fquiz/auth": "*",

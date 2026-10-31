@@ -39,7 +39,6 @@ interface Props {
   categoryId?: string
   courseCode?: string
   description?: string
-  mode?: 'admin' | 'student'
 }
 
 export function QuizImportPanel({
@@ -50,7 +49,6 @@ export function QuizImportPanel({
   categoryId,
   courseCode,
   description,
-  mode = 'admin',
 }: Readonly<Props>) {
   const {
     file,
@@ -85,7 +83,6 @@ export function QuizImportPanel({
     categoryId,
     courseCode,
     description,
-    mode,
   })
 
   return (

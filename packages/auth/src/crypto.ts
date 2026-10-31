@@ -3,12 +3,18 @@ import bcrypt from 'bcryptjs'
 
 function getPrimarySecret(): string {
   const secret = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET
-  if (!secret) throw new Error('ENCRYPTION_KEY or JWT_SECRET is required to encrypt secrets')
+  if (!secret?.trim()) {
+    throw new Error('ENCRYPTION_KEY or JWT_SECRET is required to encrypt secrets')
+  }
   return secret
 }
 
 function getCandidateSecrets(): string[] {
-  const previousSecrets = (process.env.ENCRYPTION_KEY_PREV || '').split(',').map((s) => s.trim())
+  const previousSecrets = [
+    process.env.ENCRYPTION_KEY_PREV,
+    process.env.ENCRYPTION_KEY_PREV_2,
+    process.env.JWT_SECRET_PREV,
+  ].flatMap((secret) => (secret || '').split(',').map((s) => s.trim()))
   const candidates = [
     process.env.ENCRYPTION_KEY,
     ...previousSecrets,

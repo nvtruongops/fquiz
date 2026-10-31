@@ -7,6 +7,7 @@ import { LoginSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
 import { startGlobalPageLoader } from '@/components/shared/ui/page-transition-loader'
+import { clearAllUserCache } from '@/lib/core/utils/cache-invalidation'
 
 export function useLoginForm() {
   const router = useRouter()
@@ -106,6 +107,7 @@ export function useLoginForm() {
       setIsRedirecting(true)
       
       if (data.user) {
+        clearAllUserCache(queryClient)
         queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
       } else {
         await queryClient.invalidateQueries({ queryKey: ['auth-user'] })

@@ -99,10 +99,21 @@ async function handleSend(
   const hashedCode = hashVerificationCode(code)
   const expires = new Date(now + 10 * 60 * 1000)
 
-  await User.updateOne(
-    { _id: user._id },
-    { reset_token: hashedCode, reset_token_expires: expires, reset_token_attempts: 0 }
+  const resendWindowClosesAt = new Date(now + 9 * 60 * 1000)
+  const update = await User.updateOne(
+    {
+      _id: user._id,
+      $or: [
+        { reset_token_expires: { $exists: false } },
+        { reset_token_expires: null },
+        { reset_token_expires: { $lte: resendWindowClosesAt } },
+      ],
+    },
+    { $set: { reset_token: hashedCode, reset_token_expires: expires, reset_token_attempts: 0 } }
   )
+  if (update.matchedCount === 0) {
+    return NextResponse.json({ message: genericMessage })
+  }
 
   logSecurityEvent('password_reset_requested', {
     request_id: requestId,

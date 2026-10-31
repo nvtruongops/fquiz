@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuizComment } from '@/lib/modules/quiz/models/QuizComment'
 import { User } from '@/lib/modules/auth/models/User'
-import { verifyToken, JWTPayload } from '@/lib/modules/auth/auth'
+import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { Types } from 'mongoose'
+import { findStudentAccessibleQuiz } from '@/lib/modules/quiz/utils/student-quiz-access'
 
 export const GET = withAuth(async (
   req: Request,
@@ -17,6 +18,9 @@ export const GET = withAuth(async (
     if (!id || !Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
     }
+
+    const quiz = await findStudentAccessibleQuiz(id, payload.userId)
+    if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     const comments = await QuizComment.find({ quiz_id: new Types.ObjectId(id) })
       .sort({ created_at: -1 })
@@ -38,7 +42,7 @@ export const GET = withAuth(async (
     console.error('Error fetching comments:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student', 'teacher'] })
 
 export const POST = withAuth(async (
   req: Request,
@@ -52,6 +56,9 @@ export const POST = withAuth(async (
     if (!id || !Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
     }
+
+    const quiz = await findStudentAccessibleQuiz(id, payload.userId)
+    if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
 
     const body = await req.json()
     let { content } = body
@@ -121,12 +128,14 @@ export const DELETE = withAuth(async (
 ) => {
   try {
     await connectDB()
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
+    const { id } = await params
+    if (!id || !Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 })
+    }
+    const quiz = await findStudentAccessibleQuiz(id, payload.userId)
+    if (!quiz) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
+
     const commentId = searchParams.get('commentId')
 
     if (!commentId || !Types.ObjectId.isValid(commentId)) {
@@ -150,4 +159,4 @@ export const DELETE = withAuth(async (
     console.error('Error deleting comment:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-}, { roles: ['student'] })
+}, { roles: ['student', 'teacher'] })

@@ -5,13 +5,13 @@
 <!-- Bullet points detailing primary implementation, refactors, or security fixes -->
 - 
 
-## Verification & Checkpoints
-<!-- Verify that all local checks have executed and passed cleanly before submission -->
+## Verification & Checkpoints (Local-Only Gates)
+<!-- Remote GitHub CI/CD is removed. All checks MUST be executed and verified LOCALLY prior to opening PR or merging -->
 - [ ] Rule Engine: `node .agents/scripts/verify.js --strict` (0 errors)
-- [ ] TypeScript Type-Check: `npm run check-types`
+- [ ] TypeScript Type-Check: `npm run check-types` (0 errors)
 - [ ] Linter & Security: `npm run lint` (0 errors)
-- [ ] Unit & Integration Tests: `npm test`
-- [ ] Production Build: `npm run build`
+- [ ] Unit & Integration Tests: `npm test` (All passed)
+- [ ] Production Build: `npm run build` (Clean build)
 - [ ] CodeGraph Sync: `npm run codegraph:sync` (if AST symbols were modified)
 
 ## Related Issues

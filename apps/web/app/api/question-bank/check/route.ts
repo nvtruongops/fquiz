@@ -7,6 +7,7 @@ import { checkQuestionsInBank } from '@/lib/modules/quiz/question-bank-manager'
 import { generateQuestionId, getAnswerTexts } from '@/lib/modules/quiz/question-id-generator'
 import { CheckQuestionsSchema } from '@/lib/modules/quiz/schemas/quiz'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 
 
 /**
@@ -27,18 +28,35 @@ export const POST = withAuth(async (req: Request, { payload }) => {
 
     await connectDB()
 
-    // Check all questions
-    const conflicts = await checkQuestionsInBank(category_id, questions)
+    const accessibleQuizFilter: Record<string, unknown> = {
+      category_id: new mongoose.Types.ObjectId(category_id),
+      is_temp: { $ne: true },
+      status: { $ne: 'deleted' },
+    }
+    if (payload.role !== 'admin' && payload.role !== 'dev') {
+      accessibleQuizFilter.$or = [
+        getPublicQuizFilter(),
+        { created_by: new mongoose.Types.ObjectId(payload.userId) },
+      ]
+    }
+    const accessibleQuizzes = await Quiz.find(accessibleQuizFilter)
+      .select('_id course_code questions')
+      .lean() as any[]
+    const accessibleQuizIds = accessibleQuizzes.map((quiz) => quiz._id)
+
+    // Restrict both bank records and answer variants to quizzes visible to this user.
+    const conflicts = await checkQuestionsInBank(category_id, questions, accessibleQuizIds)
 
     // Classify conflicts and group variants for each conflict
     const categoryObjectId = new mongoose.Types.ObjectId(category_id)
     const conflictQuestionIds = new Map<number, string>()
 
     conflicts.forEach((_conflict, index) => {
-      conflictQuestionIds.set(index, generateQuestionId(questions[index]))
+      const question = questions.at(index)
+      if (question) conflictQuestionIds.set(index, generateQuestionId(question))
     })
 
-    const answerVariantsByQuestionId = await buildAnswerVariants(categoryObjectId, conflictQuestionIds, questions)
+    const answerVariantsByQuestionId = buildAnswerVariants(accessibleQuizzes, conflictQuestionIds, questions)
     const { sameAnswerConflicts, differentAnswerConflicts } = classifyConflicts(conflicts, questions, conflictQuestionIds, answerVariantsByQuestionId)
 
     return NextResponse.json({
@@ -62,19 +80,11 @@ export const POST = withAuth(async (req: Request, { payload }) => {
   }
 }, { roles: ['admin', 'student'] })
 
-async function buildAnswerVariants(
-  categoryObjectId: mongoose.Types.ObjectId,
+function buildAnswerVariants(
+  quizzes: any[],
   conflictQuestionIds: Map<number, string>,
   questions: any[]
 ) {
-  const quizzes = await Quiz.find({
-    category_id: categoryObjectId,
-    is_temp: { $ne: true },
-    is_saved_from_explore: { $ne: true },
-  })
-    .select('course_code questions')
-    .lean()
-
   const answerVariantsByQuestionId = new Map<string, Array<{
     correct_answer: number[]
     answer_texts: string[]
@@ -145,13 +155,43 @@ function classifyConflicts(
   const differentAnswerConflicts: any[] = []
 
   conflicts.forEach((conflict, index) => {
+    const inputQuestion = questions.at(index)
+    if (!inputQuestion) return
     const qid = conflictQuestionIds.get(index) || ''
     const answerVariants = answerVariantsByQuestionId.get(qid) || []
+    if (answerVariants.length === 0) return
+
+    const inputAnswerTexts = getAnswerTexts(inputQuestion.options, inputQuestion.correct_answer || [])
+      .map((text) => text.trim().toLowerCase())
+      .sort()
+    const hasSameVisibleAnswer = answerVariants.some((variant) =>
+      JSON.stringify([...variant.answer_texts].map((text) => text.trim().toLowerCase()).sort()) === JSON.stringify(inputAnswerTexts)
+    )
+    const visibleCodes = Array.from(new Set(answerVariants.flatMap((variant) => variant.quizzes)))
+    const visibleConflict = {
+      ...conflict,
+      conflictType: hasSameVisibleAnswer ? 'same_answer' : 'different_answer',
+      message: hasSameVisibleAnswer
+        ? `Question ${index + 1}: Already exists in a quiz you can access.`
+        : `Question ${index + 1}: Answer differs from a quiz you can access.`,
+      existingQuestion: {
+        ...conflict.existingQuestion,
+        _id: undefined,
+        question_id: qid,
+        text: inputQuestion.text,
+        correct_answer: answerVariants[0].correct_answer,
+        explanation: undefined,
+        options: answerVariants[0].options,
+        used_in_quizzes: visibleCodes,
+        used_in_quiz_ids: [],
+        usage_count: answerVariants.reduce((sum, variant) => sum + variant.count, 0),
+      },
+    }
 
     const conflictData = {
       questionIndex: index,
-      question: questions[index],
-      ...conflict,
+      question: inputQuestion,
+      ...visibleConflict,
       answerVariants: answerVariants.length > 0 ? answerVariants : undefined,
     }
 

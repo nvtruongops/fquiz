@@ -26,6 +26,51 @@ export async function parseJsonBody(req: Request): Promise<unknown | NextRespons
   }
 }
 
+export class BodyTooLargeError extends Error {
+  constructor() {
+    super('Request body exceeds the configured byte limit')
+    this.name = 'BodyTooLargeError'
+  }
+}
+
+/** Read at most maxBytes from a request stream, cancelling it on overflow. */
+export async function readBoundedBody(req: Request, maxBytes: number): Promise<Uint8Array> {
+  const contentLength = Number(req.headers.get('content-length'))
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    await req.body?.cancel()
+    throw new BodyTooLargeError()
+  }
+
+  if (!req.body) return new Uint8Array()
+
+  const reader = req.body.getReader()
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await reader.cancel()
+        throw new BodyTooLargeError()
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  const body = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    body.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return body
+}
+
+
 /**
  * Validate a MongoDB ObjectId, returning a 400 response if invalid.
  * Usage:

@@ -13,9 +13,8 @@ import type { QuizFormData, QuestionForm } from '@/lib/modules/quiz/types/quiz'
 export interface UseQuizSaveOptions {
   quizId?: string
   initialUpdatedAt?: string | null
-  isStudentMode: boolean
   canSaveDraft: boolean
-  createEndpoint?: string
+  createEndpoint: string
   updateEndpointBuilder?: (id: string) => string
   redirectOnPublish?: string
   onBeforeSubmit?: (data: any) => boolean | undefined
@@ -40,7 +39,6 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   const {
     quizId,
     initialUpdatedAt,
-    isStudentMode,
     canSaveDraft,
     createEndpoint,
     updateEndpointBuilder,
@@ -67,11 +65,6 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   const [, setLastUpdatedAt] = useState<string | null>(initialUpdatedAt ?? null)
   const lastUpdatedAtRef = useRef<string | null>(initialUpdatedAt ?? null)
 
-  const effectiveCreateEndpoint = useMemo(
-    () => createEndpoint ?? `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes`,
-    [createEndpoint]
-  )
-
   const effectiveUpdateEndpointBuilder = useMemo(
     () =>
       updateEndpointBuilder ??
@@ -83,15 +76,15 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   )
 
   const effectiveRedirectOnPublish = useMemo(
-    () => redirectOnPublish ?? (isStudentMode ? '/my-quizzes' : '/teacher/quizzes'),
-    [redirectOnPublish, isStudentMode]
+    () => redirectOnPublish ?? '/teacher/quizzes',
+    [redirectOnPublish]
   )
 
   const { toast } = useToast()
 
   const syncToQuestionBank = useCallback(
     async (qId: string, status: string) => {
-      if (isStudentMode || !form.category_id || status !== 'published') return
+      if (!form.category_id || status !== 'published') return
       try {
         await fetch('/api/question-bank/auto-sync', {
           method: 'POST',
@@ -114,21 +107,21 @@ export function useQuizSave(options: UseQuizSaveOptions) {
         console.error('Auto-sync failed:', e)
       }
     },
-    [isStudentMode, form.category_id, form.course_code, form.questions]
+    [form.category_id, form.course_code, form.questions]
   )
 
   const handlePostSaveRedirect = useCallback(
     (status: string) => {
       if (status === 'published') {
         sessionStorage.removeItem(DRAFT_KEY)
-        toast.success(isStudentMode ? 'Quiz created successfully!' : 'Quiz published successfully!')
+        toast.success('Quiz published successfully!')
         router.push(effectiveRedirectOnPublish)
         router.refresh()
       } else {
         toast.success('Draft saved successfully')
       }
     },
-    [effectiveRedirectOnPublish, isStudentMode, router, toast]
+    [effectiveRedirectOnPublish, router, toast]
   )
 
   const handleSaveSuccess = useCallback(
@@ -175,7 +168,7 @@ export function useQuizSave(options: UseQuizSaveOptions) {
 
   const buildSavePayload = useCallback(
     (overrideStatus?: 'published' | 'draft') => {
-      const status = isStudentMode ? 'published' : (overrideStatus ?? form.status)
+      const status = overrideStatus ?? form.status
       return {
         status,
         description: form.description.trim(),
@@ -194,13 +187,13 @@ export function useQuizSave(options: UseQuizSaveOptions) {
         }),
       }
     },
-    [form, isStudentMode]
+    [form]
   )
 
   const executeSaveFetch = useCallback(
     async (payload: any) => {
-      const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : effectiveCreateEndpoint
-      const method = activeQuizId ? (isStudentMode ? 'PATCH' : 'PUT') : 'POST'
+      const url = activeQuizId ? effectiveUpdateEndpointBuilder(activeQuizId) : createEndpoint
+      const method = activeQuizId ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
         credentials: 'include',
@@ -210,7 +203,7 @@ export function useQuizSave(options: UseQuizSaveOptions) {
       const data = await res.json()
       return { res, data }
     },
-    [activeQuizId, effectiveCreateEndpoint, effectiveUpdateEndpointBuilder, isStudentMode]
+    [activeQuizId, createEndpoint, effectiveUpdateEndpointBuilder]
   )
 
   const handleSaveResponse = useCallback(

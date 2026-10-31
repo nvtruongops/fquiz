@@ -52,7 +52,7 @@ For self-hosted deployments on a dedicated Linux VPS (Ubuntu 22.04/24.04 LTS) us
 - `deploy/Caddyfile`: Caddy template with automatic SSL and HTTP/3.
 - `deploy/nginx.conf`: Nginx template with rate limiting and static caching.
 - `deploy/docker-compose.mongodb.yml` & `deploy/backup-mongodb.sh`: Isolated local MongoDB 7 service and automated daily backup rotation.
-- `deploy/deploy-vps.sh`: Atomic zero-downtime deployment script with healthcheck and rollback.
+- `deploy/deploy-vps.sh`: Atomic zero-downtime deployment script with healthcheck and rollback (invoked via `ssh main "cd /var/www/fquiz/app && bash deploy/deploy-vps.sh"`).
 - `deploy/vps-setup.sh`: Automated server bootstrap and hardening.
 
 Copy `.env.domains.example` to `.env.domains`, set the hostnames, ACME email, and Cloudflare tunnel UUID, then render configs with `node --env-file=.env.domains deploy/render-vps-configs.mjs`. Install the generated files from `deploy/generated/` into the corresponding Caddy, Nginx, and Cloudflare Tunnel config paths. The generated directory and `.env.domains` are ignored by Git.

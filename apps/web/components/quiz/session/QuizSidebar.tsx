@@ -40,30 +40,6 @@ const QuizSidebar = React.memo(function QuizSidebar({
     )}>
       <div className="quiz-scroll flex h-full flex-col overflow-y-auto p-4 space-y-5">
         
-        {/* Navigation Buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onNavigate(currentIndex - 1)}
-            disabled={navigationDisabled || currentIndex === 0}
-            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
-            title="Previous question (←)"
-          >
-            <ChevronLeft aria-hidden="true" className="mr-1 h-4 w-4 text-primary" /> Prev
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onNavigate(currentIndex + 1)}
-            disabled={navigationDisabled || currentIndex === totalQuestions - 1}
-            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
-            title="Next question (→)"
-          >
-            Next <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4 text-primary" />
-          </Button>
-        </div>
-
         {/* Question Grid Matrix (Interactive Navigator) */}
         <div className="flex-1 min-h-0 bg-muted/50 p-3 rounded-2xl border border-border flex flex-col">
           <div className="flex items-center justify-between mb-2">
@@ -103,6 +79,30 @@ const QuizSidebar = React.memo(function QuizSidebar({
               })}
             </div>
           </div>
+        </div>
+
+        {/* Keep sequential navigation beside the submit controls, after the question palette. */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onNavigate(currentIndex - 1)}
+            disabled={navigationDisabled || currentIndex === 0}
+            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
+            title="Previous question (←)"
+          >
+            <ChevronLeft aria-hidden="true" className="mr-1 h-4 w-4 text-primary" /> Prev
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onNavigate(currentIndex + 1)}
+            disabled={navigationDisabled || currentIndex === totalQuestions - 1}
+            className="h-10 rounded-xl border-border bg-card text-xs font-bold shadow-2xs hover:bg-muted transition-all text-foreground"
+            title="Next question (→)"
+          >
+            Next <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4 text-primary" />
+          </Button>
         </div>
 
         {/* Action Panel */}

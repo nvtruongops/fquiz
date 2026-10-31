@@ -58,13 +58,23 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   // Start a new connection promise if none in-flight
   if (!cached.promise) {
+    const defaultPoolSize = process.env.VERCEL ? 5 : 10
+    const configuredPoolSize = Number(process.env.MONGODB_MAX_POOL_SIZE || defaultPoolSize)
+    const maxPoolSize = Number.isFinite(configuredPoolSize) && configuredPoolSize > 0
+      ? Math.min(Math.floor(configuredPoolSize), 100)
+      : defaultPoolSize
+    const configuredWaitQueueTimeout = Number(process.env.MONGODB_WAIT_QUEUE_TIMEOUT_MS)
+    const waitQueueTimeoutMS = Number.isFinite(configuredWaitQueueTimeout) && configuredWaitQueueTimeout > 0
+      ? Math.min(Math.floor(configuredWaitQueueTimeout), 30_000)
+      : 2_000
     const connectOptions = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
+      maxPoolSize,
+      waitQueueTimeoutMS,
+      minPoolSize: 0,
     }
 
     cached.promise = mongoose
@@ -110,7 +120,9 @@ export async function connectDB(): Promise<typeof mongoose> {
   try {
     cached.conn = await cached.promise
   } catch (err) {
-    throw new Error(`MongoDB connection failed: ${(err as Error).message}`)
+    const connectionError = new Error(`MongoDB connection failed: ${(err as Error).message}`)
+    ;(connectionError as Error & { cause?: unknown }).cause = err
+    throw connectionError
   }
 
   return cached.conn

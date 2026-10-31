@@ -16,6 +16,17 @@ export interface RateLimitProvider {
   check(identifier: string): Promise<RateLimitResult>
 }
 
+export class RateLimitStoreUnavailableError extends Error {
+  constructor() {
+    super('Shared rate limit store is unavailable')
+    this.name = 'RateLimitStoreUnavailableError'
+  }
+}
+
+interface MongoRateLimitProviderOptions {
+  onStoreError?: 'fallback' | 'throw'
+}
+
 class MemoryRateLimitProvider implements RateLimitProvider {
   private readonly store = new Map<string, { count: number; expires: number }>()
   private readonly interval: number
@@ -58,11 +69,18 @@ class MongoRateLimitProvider implements RateLimitProvider {
   private readonly fallback: RateLimitProvider
   private readonly limit: number
   private readonly windowMs: number
+  private readonly onStoreError: 'fallback' | 'throw'
 
-  constructor(fallback: RateLimitProvider, limit = 5, windowMs = 60 * 1000) {
+  constructor(
+    fallback: RateLimitProvider,
+    limit = 5,
+    windowMs = 60 * 1000,
+    options: MongoRateLimitProviderOptions = {}
+  ) {
     this.fallback = fallback
     this.limit = limit
     this.windowMs = windowMs
+    this.onStoreError = options.onStoreError ?? 'fallback'
   }
 
   async check(identifier: string): Promise<RateLimitResult> {
@@ -110,8 +128,11 @@ class MongoRateLimitProvider implements RateLimitProvider {
     } catch (err) {
       logger.error(
         { err, identifier },
-        'MongoDB rate limiter degraded mode: falling back to in-memory limiter'
+        this.onStoreError === 'throw'
+          ? 'MongoDB rate limiter unavailable; rejecting request'
+          : 'MongoDB rate limiter degraded mode: falling back to in-memory limiter'
       )
+      if (this.onStoreError === 'throw') throw new RateLimitStoreUnavailableError()
       return this.fallback.check(identifier)
     }
   }
@@ -134,8 +155,12 @@ class ProviderFactory {
    * @param limit - max requests per window
    * @param windowMs - window size in milliseconds
    */
-  createProvider(limit: number, windowMs: number): RateLimitProvider {
-    return new MongoRateLimitProvider(this.getMemoryProvider(), limit, windowMs)
+  createProvider(
+    limit: number,
+    windowMs: number,
+    options: MongoRateLimitProviderOptions = {}
+  ): RateLimitProvider {
+    return new MongoRateLimitProvider(new MemoryRateLimitProvider(limit, windowMs), limit, windowMs, options)
   }
 }
 

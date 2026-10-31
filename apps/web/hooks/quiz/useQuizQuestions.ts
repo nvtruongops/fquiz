@@ -24,7 +24,6 @@ interface UseQuizQuestionsOptions {
   form: QuizFormData
   setForm: React.Dispatch<React.SetStateAction<QuizFormData>>
   categories: Category[]
-  isStudentMode: boolean
   onConflictsResolved?: () => void
 }
 
@@ -32,7 +31,6 @@ export function useQuizQuestions({
   form,
   setForm,
   categories,
-  isStudentMode,
   onConflictsResolved,
 }: UseQuizQuestionsOptions) {
   const { toast } = useToast()
@@ -73,8 +71,7 @@ export function useQuizQuestions({
   }, [pendingQuestionUpdate, form.questions])
 
   function applyTargetCount(raw: string) {
-    const maxCount = isStudentMode ? 150 : 9999
-    const n = Math.max(1, Math.min(maxCount, Number.parseInt(raw, 10) || 1))
+    const n = Math.max(1, Math.min(9999, Number.parseInt(raw, 10) || 1))
     setTargetCount(n)
     setTargetInput(String(n))
     setForm((prev) => {
@@ -140,7 +137,7 @@ export function useQuizQuestions({
     })
 
   const updateQuestion = async (qi: number, field: 'text' | 'explanation' | 'image_url', value: string) => {
-    const isImportantChange = field === 'text' && !isStudentMode
+    const isImportantChange = field === 'text'
 
     if (isImportantChange && form.category_id) {
       const currentQuestion = form.questions[qi]

@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { resetHooks, renderHook } from '../../../../../test/hookHarness'
 import { useQuizSessionQueries } from '../useQuizSessionQueries'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 jest.mock('react', () => require('../../../../../test/hookHarness').reactHooks)
 jest.mock('@tanstack/react-query', () => ({ useQuery: jest.fn() }))
+jest.mock('@/hooks/auth/useAuth', () => ({ useAuth: jest.fn() }))
 
 const mockedUseQuery = useQuery as jest.Mock
 
@@ -23,6 +25,7 @@ describe('useQuizSessionQueries recovery', () => {
   beforeEach(() => {
     resetHooks()
     mockedUseQuery.mockReset()
+    ;(useAuth as jest.Mock).mockReturnValue({ data: { user: { _id: 'owner-a' } } })
   })
 
   afterEach(resetHooks)

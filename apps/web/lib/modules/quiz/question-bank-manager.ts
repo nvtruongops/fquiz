@@ -133,13 +133,17 @@ export async function checkQuestionInBank(
  */
 export async function checkQuestionsInBank(
   categoryId: Types.ObjectId | string,
-  questions: QuestionInput[]
+  questions: QuestionInput[],
+  accessibleQuizIds?: Array<Types.ObjectId | string>
 ): Promise<Map<number, ConflictInfo>> {
   const conflicts = new Map<number, ConflictInfo>()
+
+  if (accessibleQuizIds && accessibleQuizIds.length === 0) return conflicts
 
   // Fetch all existing questions in the bank for this category (single query)
   const existingQuestions = await QuestionBank.find({
     category_id: categoryId,
+    ...(accessibleQuizIds ? { used_in_quiz_ids: { $in: accessibleQuizIds } } : {}),
   }).lean()
 
   // Create 2 lookup maps: by question_id and by normalizeTextAST(text)

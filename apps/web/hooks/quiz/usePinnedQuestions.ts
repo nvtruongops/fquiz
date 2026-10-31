@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
 
@@ -23,6 +23,11 @@ export interface UsePinnedQuestionsOptions {
   enabled?: boolean
 }
 
+interface PinnedQuestionsPage {
+  pinnedQuestions: PinnedQuestionItem[]
+  nextCursor: string | null
+}
+
 export function usePinnedQuestions(
   courseCode?: string,
   options?: UsePinnedQuestionsOptions
@@ -34,22 +39,31 @@ export function usePinnedQuestions(
 
   // Query pinned questions
   const {
-    data: pinnedQuestions = [],
+    data,
     isLoading,
     isError,
     refetch,
-  } = useQuery<PinnedQuestionItem[]>({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<PinnedQuestionsPage>({
     queryKey: ['student', 'pinned-questions', normalizedCode || 'all'],
-    queryFn: async () => {
-      const param = normalizedCode ? `?course_code=${encodeURIComponent(normalizedCode)}` : ''
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-questions${param}`)
-      if (!res.ok) return []
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }) => {
+      const params = new URLSearchParams()
+      if (normalizedCode) params.set('course_code', normalizedCode)
+      if (typeof pageParam === 'string') params.set('cursor', pageParam)
+      const query = params.size ? `?${params.toString()}` : ''
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/pinned-questions${query}`)
+      if (!res.ok) return { pinnedQuestions: [], nextCursor: null }
       const data = await res.json()
-      return data.pinnedQuestions ?? []
+      return { pinnedQuestions: data.pinnedQuestions ?? [], nextCursor: data.nextCursor ?? null }
     },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: options?.enabled ?? true,
     staleTime: 30_000,
   })
+  const pinnedQuestions = data?.pages.flatMap((page) => page.pinnedQuestions) ?? []
 
   // Toggle pin question mutation
   const togglePinMutation = useMutation({
@@ -143,37 +157,6 @@ export function usePinnedQuestions(
     },
   })
 
-  // Create quiz from pinned questions mutation
-  const createQuizFromPinnedMutation = useMutation({
-    mutationFn: async (params: { course_code: string; title?: string }) => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/student/quizzes/from-pinned`, {
-        method: 'POST',
-        headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(params),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw {
-            message: 'Please sign in to create a quiz from pinned questions.',
-            quotaExceeded: false,
-            status: 401,
-          }
-        }
-        throw {
-          message: data.error || 'Failed to create quiz from pinned questions.',
-          quotaExceeded: Boolean(data.quotaExceeded),
-          status: res.status,
-        }
-      }
-      return data
-    },
-    onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
-      toast.success(data.message || 'Quiz created from pinned questions successfully!')
-    },
-  })
-
   const isQuestionPinned = (questionId?: string, text?: string) => {
     return pinnedQuestions.some(
       (p) => (questionId && p.question_id === questionId) || (text && p.text === text)
@@ -186,9 +169,11 @@ export function usePinnedQuestions(
     isLoading,
     isError,
     refetch,
+    loadMore: () => fetchNextPage(),
+    hasMore: Boolean(hasNextPage),
+    isLoadingMore: isFetchingNextPage,
     togglePinMutation,
     deletePinMutation,
     clearAllPinsMutation,
-    createQuizFromPinnedMutation,
   }
 }

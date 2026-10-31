@@ -1,6 +1,6 @@
 # FQuiz
 
-FQuiz is a quiz and learning platform organized as an npm workspace monorepo. It contains a student and teacher web app, a separate admin app, and shared TypeScript packages.
+FQuiz is a modern, secure, and scalable online quiz and learning platform for students and administrators, organized as an npm workspace monorepo. It contains a student and teacher web app, a separate admin app, and shared TypeScript packages. Production is live at [fquiz.online](https://fquiz.online).
 
 ## Workspace map
 

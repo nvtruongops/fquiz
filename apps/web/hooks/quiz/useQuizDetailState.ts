@@ -8,6 +8,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuizLoader } from '@/components/quiz/shared/QuizLoader'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { API_ROUTES } from '@/lib/core/constants/api-routes'
+import { getSessionPreloadStorageKey } from '@/lib/core/utils/cache-invalidation'
 
 export interface QuizDetail {
   _id: string
@@ -140,15 +141,28 @@ function cacheSessionPreloads(
   sessionId: string,
   initialData?: unknown,
   preloadData?: unknown,
+  ownerId?: string,
 ) {
   if (initialData) {
     queryClient.setQueryData(['sessions', sessionId, 'initial'], initialData)
-    storeSessionPreload(`session_initial_preload_${sessionId}`, initialData)
+    const key = getSessionPreloadStorageKey('initial', sessionId, ownerId)
+    if (key) storeSessionPreload(key, initialData)
   }
   if (preloadData) {
     queryClient.setQueryData(['sessions', sessionId, 'all-questions'], preloadData)
-    storeSessionPreload(`session_preload_${sessionId}`, preloadData)
+    const key = getSessionPreloadStorageKey('questions', sessionId, ownerId)
+    if (key) storeSessionPreload(key, preloadData)
   }
+}
+
+function storeSessionPreloadForSession(
+  kind: 'initial' | 'questions',
+  sessionId: string,
+  ownerId: string | undefined,
+  data: unknown,
+) {
+  const key = getSessionPreloadStorageKey(kind, sessionId, ownerId)
+  if (key) sessionStorage.setItem(key, JSON.stringify(data))
 }
 
 function getSessionTargetUrl(mode: string, quizId: string | undefined, sessionId: string) {
@@ -275,7 +289,7 @@ export function useQuizDetailState() {
       }
       const sessionData = await res.json()
 
-      if (sessionData.sessionId) cacheSessionPreloads(queryClient, sessionData.sessionId, sessionData.initialData, sessionData.preloadData)
+      if (sessionData.sessionId) cacheSessionPreloads(queryClient, sessionData.sessionId, sessionData.initialData, sessionData.preloadData, currentUser?._id)
 
       return sessionData as CreateSessionResponse
     },
@@ -283,7 +297,7 @@ export function useQuizDetailState() {
       const nextSessionId = data.sessionId
       if (!nextSessionId) return
 
-      cacheSessionPreloads(queryClient, nextSessionId, data.initialData, data.preloadData)
+      cacheSessionPreloads(queryClient, nextSessionId, data.initialData, data.preloadData, currentUser?._id)
       const targetUrl = getSessionTargetUrl(data.mode, quizId, nextSessionId)
 
       completeLoading()
@@ -359,11 +373,11 @@ export function useQuizDetailState() {
 
               if (qRes.ok) {
                 const qData = await qRes.json()
-                sessionStorage.setItem(`session_preload_${data.sessionId}`, JSON.stringify(qData))
+                storeSessionPreloadForSession('questions', data.sessionId, currentUser?._id, qData)
               }
               if (sRes.ok) {
                 const sData = await sRes.json()
-                sessionStorage.setItem(`session_initial_preload_${data.sessionId}`, JSON.stringify(sData))
+                storeSessionPreloadForSession('initial', data.sessionId, currentUser?._id, sData)
               }
             } catch (e) {
               console.warn('Pre-load failed', e)
@@ -398,11 +412,11 @@ export function useQuizDetailState() {
         .then(async ([qRes, sRes]) => {
           if (qRes.ok) {
             const qData = await qRes.json()
-            sessionStorage.setItem(`session_preload_${resumeSessionId}`, JSON.stringify(qData))
+            storeSessionPreloadForSession('questions', resumeSessionId, currentUser?._id, qData)
           }
           if (sRes.ok) {
             const sData = await sRes.json()
-            sessionStorage.setItem(`session_initial_preload_${resumeSessionId}`, JSON.stringify(sData))
+            storeSessionPreloadForSession('initial', resumeSessionId, currentUser?._id, sData)
           }
         })
         .catch((e) => console.warn('Pre-load failed', e))
@@ -420,6 +434,7 @@ export function useQuizDetailState() {
     }
   }, [
     activeSessionInfo,
+    currentUser?._id,
     selectedMode,
     startLoading,
     quizId,

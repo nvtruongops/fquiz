@@ -15,7 +15,6 @@ interface EditorMetadataFormProps {
   form: QuizFormData
   setForm: React.Dispatch<React.SetStateAction<QuizFormData>>
   categories: Category[]
-  isStudentMode?: boolean
   quizId?: string
 }
 
@@ -23,7 +22,6 @@ export function EditorMetadataForm({
   form, 
   setForm, 
   categories, 
-  isStudentMode = false,
   quizId
 }: EditorMetadataFormProps) {
   const [checkingCode, setCheckingCode] = React.useState(false)
@@ -140,7 +138,7 @@ export function EditorMetadataForm({
         </CardContent>
       </Card>
 
-      {(isStudentMode || form.category_id) && (
+      {form.category_id && (
         <Card className="bg-card border border-border shadow-xs rounded-[32px] overflow-hidden">
           <CardContent className="pt-8 px-6 sm:px-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

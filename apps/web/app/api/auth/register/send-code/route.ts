@@ -12,6 +12,50 @@ import { isMailConfigured, enqueueMail } from '@/lib/core/mail/mail'
 const Schema = z.object({ email: z.email().max(254) })
 const GENERIC_RESPONSE = { message: 'If this email can receive a verification code, one will be sent.' }
 
+function isDuplicateKeyError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
+}
+
+function resendTooSoonResponse() {
+  return NextResponse.json({ error: 'Please wait before requesting a new code', retryAfterSec: 60 }, { status: 429 })
+}
+
+async function saveRegistrationCode(input: {
+  email: string
+  codeHash: string
+  expiresAt: Date
+  resendAvailableAt: Date
+  now: Date
+}): Promise<boolean> {
+  try {
+    const savedCode = await EmailVerification.findOneAndUpdate(
+      {
+        email: input.email,
+        purpose: 'register',
+        $or: [
+          { resend_available_at: { $exists: false } },
+          { resend_available_at: null },
+          { resend_available_at: { $lte: input.now } },
+        ],
+      },
+      {
+        $set: {
+          code_hash: input.codeHash,
+          expires_at: input.expiresAt,
+          resend_available_at: input.resendAvailableAt,
+          attempts: 0,
+          used: false,
+        },
+      },
+      { upsert: true, new: true },
+    )
+    return Boolean(savedCode)
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return false
+    throw error
+  }
+}
+
 export async function POST(request: Request) {
   const { requestId, ip, route } = getRequestMetadata(request, '/api/auth/register/send-code')
 
@@ -54,19 +98,8 @@ export async function POST(request: Request) {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
     const resendAvailableAt = new Date(Date.now() + 60 * 1000)
 
-    await EmailVerification.findOneAndUpdate(
-      { email, purpose: 'register' },
-      {
-        $set: {
-          code_hash: codeHash,
-          expires_at: expiresAt,
-          resend_available_at: resendAvailableAt,
-          attempts: 0,
-          used: false,
-        },
-      },
-      { upsert: true, new: true }
-    )
+    const codeSaved = await saveRegistrationCode({ email, codeHash, expiresAt, resendAvailableAt, now })
+    if (!codeSaved) return resendTooSoonResponse()
 
     if (isMailConfigured()) {
       await enqueueMail('verification-code', { to: email, code, purpose: 'register' })

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const sessions = await loadExploreSessionMap(quizzes, payload?.role === 'student' ? payload.userId : undefined)
     const data = mapExploreQuizRows(quizzes, creators, categories, sessions)
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     console.error('Error fetching explore quizzes:', error)
     return NextResponse.json({ error: 'Failed to fetch quizzes' }, { status: 500 })

@@ -16,7 +16,6 @@ interface EditorControlPanelProps {
   saving: boolean
   isSubmitBlocked: boolean
   canSaveDraft: boolean
-  isStudentMode: boolean
   hasCategory: boolean
 }
 
@@ -30,10 +29,9 @@ export function EditorControlPanel({
   saving,
   isSubmitBlocked,
   canSaveDraft,
-  isStudentMode,
   hasCategory
 }: EditorControlPanelProps) {
-  if (!isStudentMode && !hasCategory) return null
+  if (!hasCategory) return null
 
   return (
     <Card className="bg-card border border-border shadow-xs rounded-[24px] overflow-hidden">
@@ -90,7 +88,7 @@ export function EditorControlPanel({
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                {isStudentMode ? 'Create Quiz' : 'Publish Now'}
+                Publish Now
               </>
             )}
           </Button>

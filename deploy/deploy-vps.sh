@@ -45,9 +45,12 @@ rollback() {
     if [ -n "$PREV_COMMIT" ]; then
         echo "⏪ Checking out previous stable commit: $PREV_COMMIT"
         git reset --hard "$PREV_COMMIT"
+        if ! grep -q "name: 'fquiz-quiz-stats-worker'" ecosystem.config.js; then
+            pm2 delete fquiz-quiz-stats-worker > /dev/null 2>&1 || true
+        fi
         npm ci --legacy-peer-deps
         npm run build
-        pm2 reload ecosystem.config.js --update-env
+        pm2 startOrReload ecosystem.config.js --update-env
         echo "✅ Rollback completed. Previous version restored."
     else
         echo "❌ No previous commit available to roll back to."
@@ -82,11 +85,7 @@ npm run build
 
 # 8. Zero-Downtime Rolling Reload via PM2
 echo "🔄 Executing PM2 rolling reload..."
-if pm2 describe fquiz-web > /dev/null 2>&1; then
-    pm2 reload ecosystem.config.js --update-env
-else
-    pm2 start ecosystem.config.js
-fi
+pm2 startOrReload ecosystem.config.js --update-env
 pm2 save
 
 # 9. Automated Healthcheck Verification

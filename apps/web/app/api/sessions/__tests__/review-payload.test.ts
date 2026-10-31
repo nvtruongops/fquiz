@@ -11,7 +11,11 @@ jest.mock('@/lib/modules/quiz/models/Quiz', () => ({ Quiz: { findById: jest.fn()
 jest.mock('@/lib/modules/quiz/models/QuizSession', () => ({ QuizSession: { find: jest.fn(), create: jest.fn(), deleteMany: jest.fn().mockResolvedValue({}) } }))
 jest.mock('@/lib/modules/quiz/models/Category', () => ({ Category: {} }))
 jest.mock('@/lib/modules/quiz/quiz-engine', () => ({ syncUniqueStudentCount: jest.fn().mockResolvedValue(undefined) }))
-jest.mock('@/lib/core/security/rate-limit/provider', () => ({ providerFactory: { createProvider: () => ({ check: async () => ({ success: true }) }) } }))
+jest.mock('@/lib/modules/quiz/quiz-stats-queue', () => ({ enqueueUniqueStudentCountSync: jest.fn().mockResolvedValue(undefined) }))
+jest.mock('@/lib/core/security/rate-limit/provider', () => ({
+  RateLimitStoreUnavailableError: class RateLimitStoreUnavailableError extends Error {},
+  providerFactory: { createProvider: () => ({ check: async () => ({ success: true }) }) },
+}))
 
 const quizId = '507f1f77bcf86cd799439012'
 const active = { _id: 'session-1', quiz_id: quizId, mode: 'review', status: 'active', score: 1,

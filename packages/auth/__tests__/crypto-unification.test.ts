@@ -22,7 +22,9 @@ function encryptWithSecret(plainText: string, secret: string): string {
 describe('@fquiz/auth crypto unification', () => {
   const originalEncryptionKey = process.env.ENCRYPTION_KEY
   const originalPreviousEncryptionKey = process.env.ENCRYPTION_KEY_PREV
+  const originalPreviousEncryptionKey2 = process.env.ENCRYPTION_KEY_PREV_2
   const originalJwtSecret = process.env.JWT_SECRET
+  const originalPreviousJwtSecret = process.env.JWT_SECRET_PREV
 
   afterEach(() => {
     if (originalEncryptionKey === undefined) {
@@ -35,10 +37,20 @@ describe('@fquiz/auth crypto unification', () => {
     } else {
       process.env.ENCRYPTION_KEY_PREV = originalPreviousEncryptionKey
     }
+    if (originalPreviousEncryptionKey2 === undefined) {
+      delete process.env.ENCRYPTION_KEY_PREV_2
+    } else {
+      process.env.ENCRYPTION_KEY_PREV_2 = originalPreviousEncryptionKey2
+    }
     if (originalJwtSecret === undefined) {
       delete process.env.JWT_SECRET
     } else {
       process.env.JWT_SECRET = originalJwtSecret
+    }
+    if (originalPreviousJwtSecret === undefined) {
+      delete process.env.JWT_SECRET_PREV
+    } else {
+      process.env.JWT_SECRET_PREV = originalPreviousJwtSecret
     }
   })
 
@@ -64,16 +76,36 @@ describe('@fquiz/auth crypto unification', () => {
     expect(decryptSecret(legacyWebCipher)).toBe(plain)
   })
 
-  it('decrypts secrets encrypted with the previous configured encryption key', () => {
+  it('decrypts secrets encrypted with configured previous encryption keys', () => {
     process.env.ENCRYPTION_KEY = 'custom-prod-key'
-    const previousKey = 'previous-encryption-key-test'
-    const olderKey = 'older-encryption-key-test'
-    process.env.ENCRYPTION_KEY_PREV = `${previousKey},${olderKey}`
     process.env.JWT_SECRET = 'custom-jwt-key'
+    process.env.ENCRYPTION_KEY_PREV = 'previous-web-encryption-key,older-encryption-key-test'
+    process.env.ENCRYPTION_KEY_PREV_2 = 'previous-admin-encryption-key'
 
-    const previousCipher = encryptWithSecret('AIzaSyPreviousKey1234', olderKey)
+    const webCipher = encryptWithSecret('AIzaSyWebPreviousKey1111', 'previous-web-encryption-key')
+    const olderCipher = encryptWithSecret('AIzaSyOlderKey3333', 'older-encryption-key-test')
+    const adminCipher = encryptWithSecret('AIzaSyAdminPreviousKey2222', 'previous-admin-encryption-key')
 
-    expect(decryptSecret(previousCipher)).toBe('AIzaSyPreviousKey1234')
+    expect(decryptSecret(webCipher)).toBe('AIzaSyWebPreviousKey1111')
+    expect(decryptSecret(olderCipher)).toBe('AIzaSyOlderKey3333')
+    expect(decryptSecret(adminCipher)).toBe('AIzaSyAdminPreviousKey2222')
+  })
+
+  it('decrypts values encrypted with the previous JWT secret during rotation', () => {
+    process.env.ENCRYPTION_KEY = 'new-encryption-key-2026'
+    process.env.JWT_SECRET = 'current-jwt-secret'
+    process.env.JWT_SECRET_PREV = 'previous-jwt-secret'
+
+    const plain = 'AIzaSyPreviousJwtEncryptedKey'
+    const legacyCipher = encryptWithSecret(plain, 'previous-jwt-secret')
+
+    expect(decryptSecret(legacyCipher)).toBe(plain)
+  })
+
+  it('fails closed when no encryption secret is configured', () => {
+    delete process.env.ENCRYPTION_KEY
+    delete process.env.JWT_SECRET
+    expect(() => encryptSecret('sensitive value')).toThrow('ENCRYPTION_KEY or JWT_SECRET is required')
   })
 
   it('masks API keys accurately for both encrypted and plain inputs', () => {
