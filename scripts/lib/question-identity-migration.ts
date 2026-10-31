@@ -63,6 +63,34 @@ function duplicateCanonicalIds(collections: Record<string, Row[]>) {
   return duplicateIds
 }
 
+function namespaceCollisionIds(collections: Record<string, Row[]>) {
+  const owners = new Map<string, Set<string>>()
+  for (const [collection, field] of locations) {
+    for (const row of collections[collection] ?? []) {
+      const questions: Row[] = field ? row[field] ?? [] : [row]
+      for (const question of questions) {
+        if (!validContent(question)) continue
+        const canonicalId = getQuestionIdentity(question as any).question_id
+        const identities = owners.get(canonicalId) ?? new Set<string>()
+        identities.add(canonicalId)
+        owners.set(canonicalId, identities)
+        for (const existingId of [question.question_id, ...(question.question_id_aliases ?? [])]) {
+          if (typeof existingId !== 'string' || !existingId) continue
+          const existingOwners = owners.get(existingId) ?? new Set<string>()
+          existingOwners.add(canonicalId)
+          owners.set(existingId, existingOwners)
+        }
+      }
+    }
+  }
+  const collisions = new Set<string>()
+  for (const identities of owners.values()) {
+    if (identities.size < 2) continue
+    for (const id of identities) collisions.add(id)
+  }
+  return collisions
+}
+
 function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
   const identity = getQuestionIdentity(question as any)
   for (const [field, value] of Object.entries(identity)) {
@@ -82,7 +110,8 @@ function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
 export function buildIdentityPlan(collections: Record<string, Row[]>, blockedIds: Iterable<string> = []) {
   const changes: IdentityChange[] = []
   const conflicts: IdentityConflict[] = []
-  const blockedCanonicalIds = new Set([...blockedIds, ...duplicateCanonicalIds(collections)])
+  const namespaceCollisions = namespaceCollisionIds(collections)
+  const blockedCanonicalIds = new Set([...blockedIds, ...duplicateCanonicalIds(collections), ...namespaceCollisions])
   let scanned = 0
   for (const [collection, field] of locations) {
     const rows = collections[collection] ?? []
@@ -102,6 +131,10 @@ export function buildIdentityPlan(collections: Record<string, Row[]>, blockedIds
         const occupied = [...(owners.get(association) ?? [])].some(id => id !== String(row._id))
         if ((duplicates.get(association) ?? 0) > 1 || occupied) {
           conflicts.push({ collection, id: row._id, reason: 'duplicate-canonical-association', canonicalId: identity })
+          return
+        }
+        if (namespaceCollisions.has(identity)) {
+          conflicts.push({ collection, id: question._id ?? row._id, reason: 'legacy-id-namespace-collision', canonicalId: identity })
           return
         }
         if (blockedCanonicalIds.has(identity)) {

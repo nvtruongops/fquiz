@@ -42,6 +42,16 @@ test('blocks externally audited answer-key and legacy-alias conflicts', () => {
   expect(plan.changes).toHaveLength(0)
   expect(plan.conflicts).toContainEqual(expect.objectContaining({ reason: 'ambiguous-canonical-identity', canonicalId: expect.any(String) }))
 })
+test('blocks a canonical ID that would collide with another question legacy ID', () => {
+  const canonicalId = getQuestionIdentity(question).question_id
+  const legacyOwner = { ...question, _id: 'legacy-owner', text: 'Different prompt', question_id: canonicalId }
+  const plan = buildIdentityPlan({
+    questions: [legacyOwner],
+    quizsessions: [{ _id: 'session', questions_cache: [{ ...question, question_id: undefined }] }],
+  })
+  expect(plan.changes.map(change => change.collection)).not.toContain('quizsessions')
+  expect(plan.conflicts).toContainEqual(expect.objectContaining({ reason: 'legacy-id-namespace-collision', canonicalId }))
+})
 test('apply and rollback use field-level preconditions and report concurrent edits', async () => {
   const change = buildIdentityPlan({ quizzes: [{ _id: 'quiz', questions: [question] }] }).changes[0]
   const updateOne = jest.fn().mockResolvedValue({ matchedCount: 0 })
