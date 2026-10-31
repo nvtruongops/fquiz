@@ -9,7 +9,7 @@ export interface IdentityChange {
   before: Array<{ path: string; exists: boolean; value?: unknown }>
   previousMarker?: string
 }
-export interface IdentityConflict { collection: string; id: unknown; reason: string }
+export interface IdentityConflict { collection: string; id: unknown; reason: string; canonicalId?: string }
 const locations = new Map([
   ['quizzes', 'questions'], ['quizsessions', 'questions_cache'],
   ['questions', ''], ['questionbanks', ''], ['pinnedquestions', ''],
@@ -45,6 +45,24 @@ function currentIdentityOwners(collection: string, rows: Row[]) {
   return owners
 }
 
+function duplicateCanonicalIds(collections: Record<string, Row[]>) {
+  const duplicateIds = new Set<string>()
+  for (const collection of ['questions', 'questionbanks']) {
+    const counts = new Map<string, number>()
+    for (const row of collections[collection] ?? []) {
+      if (!validContent(row)) continue
+      const id = getQuestionIdentity(row as any).question_id
+      const association = collection === 'questionbanks' ? `${row.category_id}:${id}` : id
+      counts.set(association, (counts.get(association) ?? 0) + 1)
+    }
+    for (const [association, count] of counts) {
+      if (count < 2) continue
+      duplicateIds.add(collection === 'questionbanks' ? association.slice(association.indexOf(':') + 1) : association)
+    }
+  }
+  return duplicateIds
+}
+
 function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
   const identity = getQuestionIdentity(question as any)
   for (const [field, value] of Object.entries(identity)) {
@@ -61,9 +79,10 @@ function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
   if (question._id !== undefined) change.filter[`${prefix}_id`] = question._id
 }
 
-export function buildIdentityPlan(collections: Record<string, Row[]>) {
+export function buildIdentityPlan(collections: Record<string, Row[]>, blockedIds: Iterable<string> = []) {
   const changes: IdentityChange[] = []
   const conflicts: IdentityConflict[] = []
+  const blockedCanonicalIds = new Set([...blockedIds, ...duplicateCanonicalIds(collections)])
   let scanned = 0
   for (const [collection, field] of locations) {
     const rows = collections[collection] ?? []
@@ -82,7 +101,11 @@ export function buildIdentityPlan(collections: Record<string, Row[]>) {
         const association = collection === 'questionbanks' ? `${row.category_id}:${identity}` : identity
         const occupied = [...(owners.get(association) ?? [])].some(id => id !== String(row._id))
         if ((duplicates.get(association) ?? 0) > 1 || occupied) {
-          conflicts.push({ collection, id: row._id, reason: 'duplicate-canonical-association' })
+          conflicts.push({ collection, id: row._id, reason: 'duplicate-canonical-association', canonicalId: identity })
+          return
+        }
+        if (blockedCanonicalIds.has(identity)) {
+          conflicts.push({ collection, id: question._id ?? row._id, reason: 'ambiguous-canonical-identity', canonicalId: identity })
           return
         }
         attachMetadata(change, question, field ? `${field}.${index}.` : '')
@@ -90,7 +113,7 @@ export function buildIdentityPlan(collections: Record<string, Row[]>) {
       if (Object.keys(change.set).length) changes.push(change)
     }
   }
-  return { scanned, changes, conflicts }
+  return { scanned, changes, conflicts, blockedCanonicalIds: [...blockedCanonicalIds].sort() }
 }
 
 interface MigrationDatabase { collection(name: string): {

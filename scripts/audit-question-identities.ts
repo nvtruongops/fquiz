@@ -40,9 +40,15 @@ async function main() {
       const projection = name === 'quizsessions' ? { _id: 1, questions_cache: 1, _question_identity_migration: 1 } : name === 'quizzes' ? { _id: 1, questions: 1, question_refs: 1, category_id: 1, course_code: 1, status: 1, is_temp: 1, is_saved_from_explore: 1, _question_identity_migration: 1 } : { _id: 1, question_id: 1, question_id_aliases: 1, text: 1, options: 1, correct_answer: 1, category_id: 1, created_by: 1, student_id: 1, used_in_quizzes: 1, usage_count: 1, _question_identity_migration: 1 }
       collections[name] = await db.collection(name).find({}, { projection }).toArray()
     }
-    const plan = buildIdentityPlan(collections)
     const warnings = auditQuestionEvidence(collections)
+    const blockedIds = warnings.flatMap(warning => {
+      if (warning.reason === 'answer-key-variants') return [warning.id]
+      if (warning.reason === 'legacy-id-has-multiple-content-revisions') return warning.variants ?? []
+      return []
+    })
+    const plan = buildIdentityPlan(collections, blockedIds)
     const summary = { at: new Date().toISOString(), database: db.databaseName, migrationId: randomUUID(), mode: 'dry-run', scanned: plan.scanned, plannedDocuments: plan.changes.length,
+      blockedCanonicalIds: plan.blockedCanonicalIds.length,
       conflictCount: plan.conflicts.length, conflictsByReason: plan.conflicts.reduce<Record<string, number>>((out, c) => { out[c.reason] = (out[c.reason] ?? 0) + 1; return out }, {}),
       warningsByReason: warnings.reduce<Record<string, number>>((out, w) => { out[w.reason] = (out[w.reason] ?? 0) + 1; return out }, {}) }
     // Before-images are durably saved before the first mutation; never overwrite a prior journal.

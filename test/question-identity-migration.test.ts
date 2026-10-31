@@ -1,4 +1,5 @@
 import { buildIdentityPlan, applyIdentityChanges, restoreIdentityChanges } from '../scripts/lib/question-identity-migration'
+import { getQuestionIdentity } from '../packages/models/src/utils/question-identity'
 
 const question = { _id: 'occurrence', text: 'Choose 2 answers', options: ['Apple', 'Berry', 'Cherry'], correct_answer: [0, 1] }
 test('plans metadata only, preserves session results, and is idempotent', () => {
@@ -18,6 +19,28 @@ test('does not collide with unique bank association or standalone indexes', () =
   const plan = buildIdentityPlan({ questionbanks: [a, b] })
   expect(plan.changes).toHaveLength(0)
   expect(plan.conflicts).toEqual(expect.arrayContaining([expect.objectContaining({ reason: 'duplicate-canonical-association' })]))
+})
+test('blocks all snapshots for duplicate canonical source associations', () => {
+  const duplicateA = { ...question, _id: 'one', question_id: 'old-one' }
+  const duplicateB = { ...question, _id: 'two', question_id: 'old-two' }
+  const plan = buildIdentityPlan({
+    questions: [duplicateA, duplicateB],
+    quizzes: [{ _id: 'quiz', questions: [{ ...question, question_id: 'old-one' }] }],
+    quizsessions: [{ _id: 'session', questions_cache: [{ ...question, question_id: 'old-one' }] }],
+    pinnedquestions: [{ _id: 'pin', ...question, question_id: 'old-one' }],
+  })
+  expect(plan.changes.map(change => change.collection)).not.toContain('quizzes')
+  expect(plan.changes.map(change => change.collection)).not.toContain('quizsessions')
+  expect(plan.changes.map(change => change.collection)).not.toContain('pinnedquestions')
+  expect(plan.conflicts.filter(conflict => conflict.reason === 'ambiguous-canonical-identity')).toHaveLength(3)
+})
+test('blocks externally audited answer-key and legacy-alias conflicts', () => {
+  const canonicalId = getQuestionIdentity(question).question_id
+  const plan = buildIdentityPlan({
+    quizzes: [{ _id: 'quiz', questions: [{ ...question }] }],
+  }, [canonicalId])
+  expect(plan.changes).toHaveLength(0)
+  expect(plan.conflicts).toContainEqual(expect.objectContaining({ reason: 'ambiguous-canonical-identity', canonicalId: expect.any(String) }))
 })
 test('apply and rollback use field-level preconditions and report concurrent edits', async () => {
   const change = buildIdentityPlan({ quizzes: [{ _id: 'quiz', questions: [question] }] }).changes[0]
