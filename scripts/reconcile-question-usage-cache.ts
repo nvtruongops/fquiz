@@ -13,8 +13,10 @@ async function main() {
   const restore = process.argv.includes('--restore')
   const journalPath = argument('--journal')
   const identityJournalPath = argument('--identity-journal')
+  const backupRef = argument('--backup-ref')
   if ((apply || restore) && !journalPath) throw new Error('--journal is required for apply or restore')
   if (apply && restore) throw new Error('Apply and restore are mutually exclusive')
+  if ((apply || restore) && !backupRef) throw new Error('--backup-ref is required for every usage-cache write')
   if (!apply && !restore && (!journalPath || !identityJournalPath)) throw new Error('--journal and --identity-journal are required for dry-run')
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required')
   const databaseIndex = process.argv.indexOf('--database')
@@ -26,16 +28,18 @@ async function main() {
     if (restore || apply) {
       const saved = EJSON.parse(fs.readFileSync(journalPath!, 'utf8'))
       if (saved.database !== db.databaseName) throw new Error('Journal database does not match target')
+      const backup = fs.statSync(backupRef!)
+      if (!backup.isFile() || backup.size === 0) throw new Error('Backup archive is missing or empty')
       const fd = fs.openSync(`${journalPath}.progress.jsonl`, 'a', 0o600)
       try {
         const onResult = (index: number, state: string) => {
-          fs.writeSync(fd, JSON.stringify({ index, state, at: new Date().toISOString() }) + '\n')
+          fs.writeSync(fd, JSON.stringify({ index, state, backupRef, at: new Date().toISOString() }) + '\n')
           fs.fsyncSync(fd)
         }
         const result = restore
           ? await restoreQuestionUsageCacheChanges(db as any, saved.changes, saved.migrationId)
           : await applyQuestionUsageCacheChanges(db as any, saved.changes, saved.migrationId, onResult)
-        console.log(JSON.stringify({ database: db.databaseName, mode: restore ? 'restore' : 'apply', migrationId: saved.migrationId, ...result }))
+        console.log(JSON.stringify({ database: db.databaseName, mode: restore ? 'restore' : 'apply', migrationId: saved.migrationId, backupVerified: true, backupBytes: backup.size, ...result }))
       } finally { fs.closeSync(fd) }
       return
     }

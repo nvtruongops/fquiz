@@ -11,6 +11,9 @@ async function main() {
   const journal = journalIndex < 0 ? undefined : process.argv[journalIndex + 1]
   if ((apply || restore) && !journal) throw new Error('--journal is required for apply or restore')
   if (apply && restore) throw new Error('Apply and restore are mutually exclusive')
+  const backupIndex = process.argv.indexOf('--backup-ref')
+  const backupRef = backupIndex < 0 ? undefined : process.argv[backupIndex + 1]
+  if ((apply || restore) && !backupRef) throw new Error('--backup-ref is required for every identity migration write')
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required')
   const databaseIndex = process.argv.indexOf('--database')
   const dbName = databaseIndex < 0 ? undefined : process.argv[databaseIndex + 1]
@@ -22,16 +25,18 @@ async function main() {
       const saved = EJSON.parse(fs.readFileSync(journal!, 'utf8'))
       if (saved.database !== db.databaseName) throw new Error('Journal database does not match target')
       if (!saved.migrationId) throw new Error('Journal must have an owned migrationId; regenerate the dry-run with the current tool')
+      const backup = fs.statSync(backupRef!)
+      if (!backup.isFile() || backup.size === 0) throw new Error('Backup archive is missing or empty')
       const fd = fs.openSync(`${journal}.progress.jsonl`, 'a', 0o600)
       try {
         const onResult = (index: number, state: string) => {
-          fs.writeSync(fd, JSON.stringify({ index, state, at: new Date().toISOString() }) + '\n')
+          fs.writeSync(fd, JSON.stringify({ index, state, backupRef, at: new Date().toISOString() }) + '\n')
           fs.fsyncSync(fd)
         }
         const result = restore
           ? await restoreIdentityChanges(db as any, saved.changes, saved.migrationId)
           : await applyIdentityChanges(db as any, saved.changes, saved.migrationId, onResult)
-        console.log(JSON.stringify({ database: db.databaseName, mode: restore ? 'restore' : 'apply', migrationId: saved.migrationId, ...result }))
+        console.log(JSON.stringify({ database: db.databaseName, mode: restore ? 'restore' : 'apply', migrationId: saved.migrationId, backupVerified: true, backupBytes: backup.size, ...result }))
       } finally { fs.closeSync(fd) }
       return
     }

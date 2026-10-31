@@ -1,6 +1,7 @@
 import { generateQuestionId } from '../../packages/models/src/utils/question-id-generator'
 import { generateCanonicalQuestionHash } from '../../packages/models/src/utils/ast-normalizer'
 import { getPublishedAnswerError } from '../../packages/models/src/utils/published-answer'
+import { normalizeQuestionUsageCodes } from '../../packages/models/src/utils/question-bank-reconciliation'
 
 type Row = Record<string, any>
 export interface EvidenceWarning { reason: string; id: string; collection?: string; variants?: string[] }
@@ -10,7 +11,7 @@ function addVariant(index: Map<string, Set<string>>, key: string, value: string)
   values.add(value)
   index.set(key, values)
 }
-function code(value: unknown) { return typeof value === 'string' ? value.trim().toUpperCase() : '' }
+function code(value: unknown) { return normalizeQuestionUsageCodes([value])[0] ?? '' }
 function inspectSnapshots(collections: Record<string, Row[]>, warnings: EvidenceWarning[]) {
   const legacy = new Map<string, Set<string>>(), keys = new Map<string, Set<string>>()
   for (const [collection, rows] of Object.entries(collections)) {

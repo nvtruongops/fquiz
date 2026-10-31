@@ -27,7 +27,7 @@ test('blocks all snapshots for duplicate canonical source associations', () => {
     questions: [duplicateA, duplicateB],
     quizzes: [{ _id: 'quiz', questions: [{ ...question, question_id: 'old-one' }] }],
     quizsessions: [{ _id: 'session', questions_cache: [{ ...question, question_id: 'old-one' }] }],
-    pinnedquestions: [{ _id: 'pin', ...question, question_id: 'old-one' }],
+    pinnedquestions: [{ ...question, _id: 'pin', question_id: 'old-one' }],
   })
   expect(plan.changes.map(change => change.collection)).not.toContain('quizzes')
   expect(plan.changes.map(change => change.collection)).not.toContain('quizsessions')
@@ -42,15 +42,20 @@ test('blocks externally audited answer-key and legacy-alias conflicts', () => {
   expect(plan.changes).toHaveLength(0)
   expect(plan.conflicts).toContainEqual(expect.objectContaining({ reason: 'ambiguous-canonical-identity', canonicalId: expect.any(String) }))
 })
-test('blocks a canonical ID that would collide with another question legacy ID', () => {
+test('canonicalizes content identities and drops a legacy alias that belongs to different content', () => {
   const canonicalId = getQuestionIdentity(question).question_id
   const legacyOwner = { ...question, _id: 'legacy-owner', text: 'Different prompt', question_id: canonicalId }
   const plan = buildIdentityPlan({
     questions: [legacyOwner],
     quizsessions: [{ _id: 'session', questions_cache: [{ ...question, question_id: undefined }] }],
   })
-  expect(plan.changes.map(change => change.collection)).not.toContain('quizsessions')
-  expect(plan.conflicts).toContainEqual(expect.objectContaining({ reason: 'legacy-id-namespace-collision', canonicalId }))
+  const sessionChange = plan.changes.find(change => change.collection === 'quizsessions')!
+  const sourceChange = plan.changes.find(change => change.collection === 'questions')!
+  expect(sessionChange.set['questions_cache.0.question_id']).toBe(canonicalId)
+  expect(sessionChange.set['questions_cache.0.question_id_aliases']).not.toContain(canonicalId)
+  expect(sourceChange.set.question_id).not.toBe(canonicalId)
+  expect(sourceChange.set.question_id_aliases).not.toContain(canonicalId)
+  expect(plan.conflicts).not.toContainEqual(expect.objectContaining({ reason: 'legacy-id-namespace-collision' }))
 })
 test('apply and rollback use field-level preconditions and report concurrent edits', async () => {
   const change = buildIdentityPlan({ quizzes: [{ _id: 'quiz', questions: [question] }] }).changes[0]

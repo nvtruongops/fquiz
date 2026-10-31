@@ -131,7 +131,8 @@ export function buildQuestionUsageCachePlan(
     const storedCodes = normalizeQuestionUsageCodes(bank.used_in_quizzes ?? [])
     const storedQuizIds = [...new Set((bank.used_in_quiz_ids ?? []).map((value: unknown) => String(value)))].sort()
     const expectedQuizIds = quizIds.map(value => String(value)).sort()
-    if (bank.usage_count === courseCodes.length && sameArray(bank.used_in_quizzes, storedCodes) &&
+    if (bank.usage_count === courseCodes.length && JSON.stringify(storedCodes) === JSON.stringify(courseCodes) &&
+      sameArray(bank.used_in_quizzes, storedCodes) &&
       JSON.stringify(storedQuizIds) === JSON.stringify(expectedQuizIds)) continue
 
     const fields = ['used_in_quizzes', 'usage_count', 'used_in_quiz_ids', '_question_usage_reconciliation']

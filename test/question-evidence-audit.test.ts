@@ -12,7 +12,19 @@ test('counts mixed embedded and referenced quiz questions in the bank usage audi
   const report = auditQuestionEvidence({
     quizzes: [{ _id: 'quiz', category_id: 'category', course_code: 'BIO101', status: 'published', questions: [q], question_refs: ['reference'] }],
     questions: [referenced],
-    questionbanks: [{ _id: 'bank', ...referenced, category_id: 'category', question_id: generateQuestionId(referenced), created_by: 'creator', used_in_quizzes: ['BIO101'], usage_count: 1 }],
+    questionbanks: [{ ...referenced, _id: 'bank', category_id: 'category', question_id: generateQuestionId(referenced), created_by: 'creator', used_in_quizzes: ['BIO101'], usage_count: 1 }],
+  })
+  expect(report.filter(item => item.reason === 'bank-usage-cache-mismatch')).toHaveLength(0)
+})
+
+test('uses the same usage-code rules as cache reconciliation for internal quiz codes', () => {
+  const report = auditQuestionEvidence({
+    quizzes: [
+      { _id: 'temp-quiz', category_id: 'category', course_code: 'TEMP_preview', status: 'published', questions: [q] },
+      { _id: 'mix-quiz', category_id: 'category', course_code: 'MIX_2', status: 'published', questions: [q] },
+    ],
+    questions: [],
+    questionbanks: [{ _id: 'bank', ...q, category_id: 'category', question_id: generateQuestionId(q), created_by: 'creator', used_in_quizzes: [], usage_count: 0 }],
   })
   expect(report.filter(item => item.reason === 'bank-usage-cache-mismatch')).toHaveLength(0)
 })

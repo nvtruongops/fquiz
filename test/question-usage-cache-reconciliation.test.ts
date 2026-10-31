@@ -5,7 +5,7 @@ const question = { text: 'Question', options: ['A', 'B'], correct_answer: [1] }
 const reference = { _id: 'ref-1', text: 'Referenced', options: ['C', 'D'], correct_answer: [0] }
 const bankRow = (q: typeof question, categoryId = 'category') => ({
   ...q, _id: `bank-${q.text}`, category_id: categoryId, question_id: getQuestionIdentity(q).question_id,
-  created_by: 'creator', used_in_quizzes: [], usage_count: 0, used_in_quiz_ids: [],
+  created_by: 'creator', used_in_quizzes: [] as string[], usage_count: 0, used_in_quiz_ids: [] as string[],
 })
 
 test('counts distinct normalized course codes across embedded and referenced quiz questions', () => {
@@ -22,6 +22,21 @@ test('counts distinct normalized course codes across embedded and referenced qui
   const referenceChange = plan.changes.find(change => change.id === 'bank-Referenced')!
   expect(questionChange.set).toMatchObject({ used_in_quizzes: ['BIO101'], usage_count: 1, used_in_quiz_ids: ['quiz-1', 'quiz-2'] })
   expect(referenceChange.set).toMatchObject({ used_in_quizzes: ['BIO101', 'CHEM101'], usage_count: 2, used_in_quiz_ids: ['quiz-1', 'quiz-3'] })
+})
+
+test('repairs stale usage codes even when the old cache is normalized and has the right count', () => {
+  const bank = bankRow(question)
+  bank.used_in_quizzes = ['OLD_CODE']
+  bank.usage_count = 1
+  bank.used_in_quiz_ids = ['quiz-1']
+  const plan = buildQuestionUsageCachePlan({
+    quizzes: [{ _id: 'quiz-1', category_id: 'category', course_code: 'BIO101', status: 'published', questions: [question] }],
+    questions: [],
+    questionbanks: [bank],
+  })
+
+  expect(plan.changes).toHaveLength(1)
+  expect(plan.changes[0].set).toMatchObject({ used_in_quizzes: ['BIO101'], usage_count: 1, used_in_quiz_ids: ['quiz-1'] })
 })
 
 test('does not plan cache writes for blocked keys, answer conflicts, or duplicate associations', () => {

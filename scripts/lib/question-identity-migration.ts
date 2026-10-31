@@ -63,7 +63,7 @@ function duplicateCanonicalIds(collections: Record<string, Row[]>) {
   return duplicateIds
 }
 
-function namespaceCollisionIds(collections: Record<string, Row[]>) {
+function ambiguousAliasIds(collections: Record<string, Row[]>) {
   const owners = new Map<string, Set<string>>()
   for (const [collection, field] of locations) {
     for (const row of collections[collection] ?? []) {
@@ -74,7 +74,8 @@ function namespaceCollisionIds(collections: Record<string, Row[]>) {
         const identities = owners.get(canonicalId) ?? new Set<string>()
         identities.add(canonicalId)
         owners.set(canonicalId, identities)
-        for (const existingId of [question.question_id, ...(question.question_id_aliases ?? [])]) {
+        const aliases = Array.isArray(question.question_id_aliases) ? question.question_id_aliases : []
+        for (const existingId of [question.question_id, ...aliases, question._id?.toString()]) {
           if (typeof existingId !== 'string' || !existingId) continue
           const existingOwners = owners.get(existingId) ?? new Set<string>()
           existingOwners.add(canonicalId)
@@ -83,16 +84,10 @@ function namespaceCollisionIds(collections: Record<string, Row[]>) {
       }
     }
   }
-  const collisions = new Set<string>()
-  for (const identities of owners.values()) {
-    if (identities.size < 2) continue
-    for (const id of identities) collisions.add(id)
-  }
-  return collisions
+  return new Set([...owners].filter(([, identities]) => identities.size > 1).map(([id]) => id))
 }
 
-function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
-  const identity = getQuestionIdentity(question as any)
+function attachMetadata(change: IdentityChange, question: Row, prefix: string, identity = getQuestionIdentity(question as any)) {
   for (const [field, value] of Object.entries(identity)) {
     if (JSON.stringify(question[field]) === JSON.stringify(value)) continue
     const key = `${prefix}${field}`
@@ -110,8 +105,8 @@ function attachMetadata(change: IdentityChange, question: Row, prefix: string) {
 export function buildIdentityPlan(collections: Record<string, Row[]>, blockedIds: Iterable<string> = []) {
   const changes: IdentityChange[] = []
   const conflicts: IdentityConflict[] = []
-  const namespaceCollisions = namespaceCollisionIds(collections)
-  const blockedCanonicalIds = new Set([...blockedIds, ...duplicateCanonicalIds(collections), ...namespaceCollisions])
+  const ambiguousAliases = ambiguousAliasIds(collections)
+  const blockedCanonicalIds = new Set([...blockedIds, ...duplicateCanonicalIds(collections)])
   let scanned = 0
   for (const [collection, field] of locations) {
     const rows = collections[collection] ?? []
@@ -126,22 +121,19 @@ export function buildIdentityPlan(collections: Record<string, Row[]>, blockedIds
           conflicts.push({ collection, id: question._id ?? row._id, reason: 'missing-content-evidence' })
           return
         }
-        const identity = getQuestionIdentity(question as any).question_id
-        const association = collection === 'questionbanks' ? `${row.category_id}:${identity}` : identity
+        const identity = getQuestionIdentity(question as any)
+        identity.question_id_aliases = identity.question_id_aliases.filter(alias => !ambiguousAliases.has(alias))
+        const association = collection === 'questionbanks' ? `${row.category_id}:${identity.question_id}` : identity.question_id
         const occupied = [...(owners.get(association) ?? [])].some(id => id !== String(row._id))
         if ((duplicates.get(association) ?? 0) > 1 || occupied) {
-          conflicts.push({ collection, id: row._id, reason: 'duplicate-canonical-association', canonicalId: identity })
+          conflicts.push({ collection, id: row._id, reason: 'duplicate-canonical-association', canonicalId: identity.question_id })
           return
         }
-        if (namespaceCollisions.has(identity)) {
-          conflicts.push({ collection, id: question._id ?? row._id, reason: 'legacy-id-namespace-collision', canonicalId: identity })
+        if (blockedCanonicalIds.has(identity.question_id)) {
+          conflicts.push({ collection, id: question._id ?? row._id, reason: 'ambiguous-canonical-identity', canonicalId: identity.question_id })
           return
         }
-        if (blockedCanonicalIds.has(identity)) {
-          conflicts.push({ collection, id: question._id ?? row._id, reason: 'ambiguous-canonical-identity', canonicalId: identity })
-          return
-        }
-        attachMetadata(change, question, field ? `${field}.${index}.` : '')
+        attachMetadata(change, question, field ? `${field}.${index}.` : '', identity)
       })
       if (Object.keys(change.set).length) changes.push(change)
     }
