@@ -1,5 +1,6 @@
 import { getPublishedAnswerError } from '../../packages/models/src/utils/published-answer'
 import { getQuestionIdentity } from '../../packages/models/src/utils/question-identity'
+import { normalizeOptionAST } from '../../packages/models/src/utils/ast-normalizer'
 import { normalizeQuestionUsageCodes } from '../../packages/models/src/utils/question-bank-reconciliation'
 
 type Row = Record<string, any>
@@ -25,7 +26,9 @@ function answerSignature(question: Row) {
   const answer = Array.isArray(question.correct_answer)
     ? question.correct_answer
     : Number.isSafeInteger(question.correct_answer) ? [question.correct_answer] : []
-  return JSON.stringify([...answer].sort((a, b) => a - b))
+  return JSON.stringify(answer
+    .map((index: number) => normalizeOptionAST(question.options[index] ?? ''))
+    .sort((left: string, right: string) => left.localeCompare(right)))
 }
 
 function sameArray(left: unknown, right: unknown) {

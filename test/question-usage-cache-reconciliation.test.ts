@@ -36,6 +36,21 @@ test('does not plan cache writes for blocked keys, answer conflicts, or duplicat
   expect(plan.conflicts.map(conflict => conflict.reason)).toEqual(expect.arrayContaining(['answer-key-variants', 'duplicate-canonical-association']))
 })
 
+test('treats reordered options with the same correct answer text as equivalent evidence', () => {
+  const reordered = { text: question.text, options: ['B', 'A'], correct_answer: [0] }
+  const plan = buildQuestionUsageCachePlan({
+    quizzes: [
+      { _id: 'quiz-1', category_id: 'category', course_code: 'BIO101', status: 'published', questions: [question] },
+      { _id: 'quiz-2', category_id: 'category', course_code: 'CHEM101', status: 'published', questions: [reordered] },
+    ],
+    questions: [],
+    questionbanks: [bankRow(question)],
+  })
+
+  expect(plan.conflicts).not.toContainEqual(expect.objectContaining({ reason: 'answer-key-variants', id: getQuestionIdentity(question).question_id }))
+  expect(plan.changes[0].set).toMatchObject({ used_in_quizzes: ['BIO101', 'CHEM101'], usage_count: 2 })
+})
+
 test('keeps all counters in a category unchanged when a published reference is dangling', () => {
   const plan = buildQuestionUsageCachePlan({
     quizzes: [{ _id: 'quiz', category_id: 'category', course_code: 'BIO101', status: 'published', questions: [question], question_refs: ['missing'] }],
