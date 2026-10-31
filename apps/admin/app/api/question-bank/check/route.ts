@@ -4,6 +4,8 @@ import { withAuth } from '@/lib/auth/with-auth'
 import { connectDB } from '@/lib/db/mongodb'
 import { Quiz } from '@/lib/models/Quiz'
 import { QuestionBank } from '@/lib/models/QuestionBank'
+import { QuestionBankVariantSchema } from '@fquiz/models'
+import { z } from 'zod'
 import {
   generateQuestionId,
   getAnswerTexts,
@@ -11,19 +13,10 @@ import {
   normalizeTextAST,
   hasOptionOverlap,
 } from '@/lib/utils/question-id'
-import { z } from 'zod'
 
 const CheckQuestionsSchema = z.object({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  questions: z.array(
-    z.object({
-      text: z.string(),
-      options: z.array(z.string()),
-      correct_answer: z.union([z.number(), z.array(z.number())]),
-      explanation: z.string().optional(),
-      image_url: z.string().optional(),
-    })
-  ),
+  questions: z.array(QuestionBankVariantSchema),
 })
 
 export const POST = withAuth(async (req: Request) => {

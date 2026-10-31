@@ -11,7 +11,9 @@ jest.mock('@/store/quiz/quiz-session.store', () => {
     markAnswered: () => mockEvents.push(`mark:${mockSessionId}`),
     setLastAnswerResult: () => mockEvents.push(`feedback:${mockSessionId}`),
   })
-  useQuizSessionStore.getState = () => ({ sessionId: mockSessionId, currentQuestionIndex: 0 })
+  useQuizSessionStore.getState = () => ({ sessionId: mockSessionId, currentQuestionIndex: 0, answeredQuestions: mockAnswered,
+    markAnswered: (index: number) => mockAnswered.add(index), restoreAnswers: (indexes: Set<number>) => { mockAnswered = indexes },
+    setLastAnswerResult: () => mockEvents.push(`feedback:${mockSessionId}`) })
   return { useQuizSessionStore }
 })
 jest.mock('@/store/shared/toast-store', () => ({ useToast: () => ({ toast: { error() {} } }) }))
@@ -21,13 +23,14 @@ jest.mock('@/components/quiz/shared/QuizLoader', () => ({ useSessionLoader: () =
   open() {}, advance() {}, close() {}, completeAndNavigate: (navigate: () => void) => navigate(),
 }) }))
 
+let mockAnswered: Set<number>
 let mockSessionId: string
 let mockEvents: string[]
 let mockClient: QueryClient
 
 describe('installed query-core pending mutation session identity', () => {
   beforeEach(() => {
-    resetHooks(); mockEvents = []; mockSessionId = 's1'
+    resetHooks(); mockEvents = []; mockSessionId = 's1'; mockAnswered = new Set([0])
     mockClient = new QueryClient({ defaultOptions: { mutations: { retry: false, gcTime: Infinity } } })
   })
   afterEach(() => { resetHooks(); mockClient.clear() })
@@ -51,6 +54,38 @@ describe('installed query-core pending mutation session identity', () => {
     await pending
     expect(mockEvents).toEqual(['request:s1'])
     expect(mockClient.getQueryData(['sessions', 's2', 'all-questions'])).toBeUndefined()
+  })
+
+  it('removes a cleared answer from cache and answered badges without reviving its scalar', async () => {
+    mockClient.setQueryData(['sessions', 's1', 'initial'], { session: { user_answers: [
+      { question_index: 0, answer_index: 1, answer_indexes: [0, 1] },
+      { question_index: 1, answer_index: 1, answer_indexes: [1] },
+    ] } })
+    global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ answerIndexes: [], completed: false }) })) as any
+    const observer = new MutationObserver(mockClient, renderHook(() => useSubmitAnswer('s1')) as any)
+    await observer.mutate({ questionIndex: 0, answerIndexes: [] })
+    expect((mockClient.getQueryData(['sessions', 's1', 'initial']) as any).session.user_answers)
+      .toEqual([{ question_index: 1, answer_index: 1, answer_indexes: [1] }])
+    expect(mockAnswered.has(0)).toBe(false)
+    expect(JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)).toEqual({ question_index: 0, answer_indexes: [] })
+  })
+
+  it('does not count an acknowledged partial review answer as complete', async () => {
+    mockClient.setQueryData(['sessions', 's1', 'all-questions'], { questions: [{ answer_selection_count: 3 }] })
+    global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ answerIndexes: [0], completed: false }) })) as any
+    const observer = new MutationObserver(mockClient, renderHook(() => useSubmitAnswer('s1')) as any)
+    await observer.mutate({ questionIndex: 0, answerIndexes: [0] })
+    expect(mockAnswered.has(0)).toBe(false)
+  })
+
+  it('sends the persisted revision and ignores a late ACK older than a cached clear', async () => {
+    mockClient.setQueryData(['sessions', 's1', 'initial'], { session: { user_answers: [], answer_revisions: { 0: 2 } } })
+    global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ answerIndexes: [0], answerRevision: 1 }) })) as any
+    const observer = new MutationObserver(mockClient, renderHook(() => useSubmitAnswer('s1')) as any)
+    await observer.mutate({ questionIndex: 0, answerIndexes: [0], answerRevision: 1 })
+    expect(JSON.parse((fetch as jest.Mock).mock.calls[0][1].body).answer_revision).toBe(1)
+    expect((mockClient.getQueryData(['sessions', 's1', 'initial']) as any).session.user_answers).toEqual([])
+    expect((mockClient.getQueryData(['sessions', 's1', 'initial']) as any).session.answer_revisions).toEqual({ 0: 2 })
   })
 
   it('does not navigate to s2 results for an s1 finalization response', async () => {

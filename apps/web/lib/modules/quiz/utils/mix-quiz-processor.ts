@@ -1,3 +1,4 @@
+import { QuestionInputSchema } from '@fquiz/models'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
@@ -43,7 +44,7 @@ function deduplicateQuizzesPools(validQuizzes: any[]): IQuestion[][] {
     const pool: IQuestion[] = []
     for (const q of quiz.questions as IQuestion[]) {
       if (!q.question_id) {
-        q.question_id = q._id ? q._id.toString() : generateQuestionId(q)
+        q.question_id = generateQuestionId(q)
       }
       const key = q.question_id
       if (key && !seenKeys.has(key)) {
@@ -90,24 +91,7 @@ function sampleProportionally(deduplicatedQuizzes: IQuestion[][], targetCount: n
   }
 
   const rawSampled = secureShuffle(sampled)
-  return rawSampled.map((q: any) => {
-    const opts = q.options || []
-    const ca = Array.isArray(q.correct_answer)
-      ? q.correct_answer
-      : (q.correct_answer !== undefined && q.correct_answer !== null ? [q.correct_answer] : [])
-
-    let validCa = ca
-      .map((i: any) => (typeof i === 'number' ? i : parseInt(String(i), 10)))
-      .filter((i: number) => !isNaN(i) && i >= 0 && i < opts.length)
-
-    if (validCa.length === 0 && opts.length > 0) {
-      validCa = [0]
-    }
-    return {
-      ...q,
-      correct_answer: validCa,
-    }
-  })
+  return rawSampled.map((question: any) => ({ ...question, ...QuestionInputSchema.parse(question) }))
 }
 
 async function createTempQuizWithRetry({

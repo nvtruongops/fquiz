@@ -39,6 +39,4 @@ export const createQuizAssignmentSchema = z.object({
 })
 
 export type CreateClassroomInput = z.infer<typeof createClassroomSchema>
-export type UpdateClassroomInput = z.infer<typeof updateClassroomSchema>
-export type JoinClassroomInput = z.infer<typeof joinClassroomSchema>
 export type CreateQuizAssignmentInput = z.infer<typeof createQuizAssignmentSchema>

@@ -77,6 +77,15 @@ describe('GET /api/sessions/[id]/questions', () => {
     expect(response.body.questions[0]).toMatchObject({ usage_count: 0, used_in_quizzes: [] })
   })
 
+  it('generates missing identity for a response without replacing the source quiz questions during GET', async () => {
+    ;(Quiz.findById as jest.Mock).mockReturnValue({ select: () => ({ lean: async () => ({ questions: [{ ...question, question_id: undefined }], question_refs: [] }) }) })
+    ;(validateQuizSessionRequest as jest.Mock).mockResolvedValue({ isValid: true, session: {
+      _id: 'session-1', quiz_id: 'quiz-1', mode: 'review', status: 'active', question_order: [0], user_answers: [],
+    } })
+    expect((await getQuestions()).status).toBe(200)
+    expect(Quiz.updateOne).not.toHaveBeenCalled()
+  })
+
   it.each([
     ['immediate', 'completed'],
     ['flashcard', 'active'],

@@ -1,3 +1,4 @@
+import { planAndPrepareQuestionSynchronization, prepareQuestionSyncRequest, saveSynchronizedQuizzes } from '@fquiz/models'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { withAuth } from '@/lib/auth/with-auth'
@@ -5,46 +6,16 @@ import { connectDB } from '@/lib/db/mongodb'
 import { Quiz } from '@/lib/models/Quiz'
 import { QuestionBank } from '@/lib/models/QuestionBank'
 import { generateQuestionId } from '@/lib/utils/question-id'
-import { z } from 'zod'
 
-const SyncUpdateSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  old_question_id: z.string(),
-  new_question: z.object({
-    text: z.string(),
-    options: z.array(z.string()),
-    correct_answer: z.array(z.number()),
-    explanation: z.string().optional(),
-    image_url: z.string().optional(),
-  }),
-})
 
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const body = await req.json()
-    const parsed = SyncUpdateSchema.safeParse(body)
+    const prepared = await prepareQuestionSyncRequest(await req.json(), connectDB, generateQuestionId, QuestionBank)
+    if (!prepared.success) return NextResponse.json({ error: 'Validation failed', details: prepared.issues }, { status: 400 })
+    const { category_id, effectiveOldId, newQuestion: new_question, oldQuestion, revision, conflict } = prepared
+    if (conflict) return NextResponse.json({ error: 'Question identity conflict; no changes were written' }, { status: 409 })
 
-    if (!parsed.success) {
-      return NextResponse.json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      }, { status: 400 })
-    }
-
-    const { category_id, old_question_id, new_question } = parsed.data
-    await connectDB()
-
-    const effectiveOldId = old_question_id || generateQuestionId(new_question)
-    const newQuestionId = generateQuestionId(new_question)
-
-    const isObjectId = mongoose.Types.ObjectId.isValid(effectiveOldId)
-    const oldQuestion = await QuestionBank.findOne({
-      category_id,
-      $or: [
-        { question_id: effectiveOldId },
-        ...(isObjectId ? [{ _id: effectiveOldId }] : []),
-      ],
-    })
+    if (!oldQuestion && !mongoose.Types.ObjectId.isValid(payload.userId || '')) return NextResponse.json({ error: 'A valid creator is required before synchronization' }, { status: 400 })
 
     const categoryObjectId = new mongoose.Types.ObjectId(category_id)
     const quizzes = await Quiz.find({
@@ -53,78 +24,45 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       is_temp: { $ne: true },
     })
 
+    const synchronization = await planAndPrepareQuestionSynchronization(
+      quizzes, new_question, [effectiveOldId, oldQuestion?.question_id].filter(Boolean), oldQuestion || new_question,
+    )
+    if (!synchronization.success) return NextResponse.json({ error: 'Question options conflict; no changes were written', quiz_id: synchronization.conflictQuizId }, { status: 409 })
+    const { plans } = synchronization
     let updatedQuizCount = 0
-    function normalizeStr(s?: string) {
-      return (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
-    }
-
-    for (const quiz of quizzes) {
-      if (!Array.isArray(quiz.questions)) continue
-      let hasChanges = false
-
-      quiz.questions.forEach((q: any) => {
-        if (!q.text || !Array.isArray(q.options)) return
-
-        const qId = q.question_id || generateQuestionId(q)
-        const isMatch =
-          qId === effectiveOldId ||
-          (oldQuestion && qId === oldQuestion.question_id) ||
-          normalizeStr(q.text) === normalizeStr(new_question.text)
-
-        if (isMatch) {
-          const selectedAnswerTexts = new_question.correct_answer
-            .map((idx: number) => normalizeStr(new_question.options[idx]))
-            .filter(Boolean)
-
-          const newCorrectAnswer = q.options
-            .map((opt: string, idx: number) => (selectedAnswerTexts.includes(normalizeStr(opt)) ? idx : -1))
-            .filter((idx: number) => idx !== -1)
-
-          if (newCorrectAnswer.length > 0) {
-            q.correct_answer = newCorrectAnswer
-          } else {
-            q.options = new_question.options
-            q.correct_answer = new_question.correct_answer
+    const updatedQuizIds: string[] = []
+    try {
+      await saveSynchronizedQuizzes(plans, id => { updatedQuizCount++; updatedQuizIds.push(id) })
+      if (oldQuestion) {
+        await QuestionBank.updateOne(
+          { _id: oldQuestion._id },
+          {
+            $set: {
+              ...revision,
+              text: new_question.text,
+              options: new_question.options,
+              correct_answer: new_question.correct_answer,
+              explanation: new_question.explanation || oldQuestion.explanation,
+              image_url: new_question.image_url || oldQuestion.image_url,
+              has_conflicts: false,
+            },
           }
-
-          if (new_question.explanation) q.explanation = new_question.explanation
-          if (new_question.image_url) q.image_url = new_question.image_url
-          hasChanges = true
-        }
-      })
-
-      if (hasChanges) {
-        quiz.markModified('questions')
-        await quiz.save()
-        updatedQuizCount++
+        )
+      } else {
+        await QuestionBank.create({
+          category_id: categoryObjectId,
+          ...revision,
+          text: new_question.text,
+          options: new_question.options,
+          correct_answer: new_question.correct_answer,
+          explanation: new_question.explanation || '',
+          image_url: new_question.image_url || '',
+          has_conflicts: false,
+          created_by: payload.userId,
+        })
       }
-    }
-
-    if (oldQuestion) {
-      await QuestionBank.updateOne(
-        { _id: oldQuestion._id },
-        {
-          $set: {
-            text: new_question.text,
-            options: new_question.options,
-            correct_answer: new_question.correct_answer,
-            explanation: new_question.explanation || oldQuestion.explanation,
-            image_url: new_question.image_url || oldQuestion.image_url,
-            has_conflicts: false,
-          },
-        }
-      )
-    } else {
-      await QuestionBank.create({
-        category_id: categoryObjectId,
-        question_id: newQuestionId,
-        text: new_question.text,
-        options: new_question.options,
-        correct_answer: new_question.correct_answer,
-        explanation: new_question.explanation || '',
-        image_url: new_question.image_url || '',
-        has_conflicts: false,
-      })
+    } catch (error) {
+      return NextResponse.json({ error: 'Synchronization failed; retry the same request to finish', updated_quiz_ids: updatedQuizIds, bank_write_confirmed: false, retry_required: true }, { status: 500 })
     }
 
     return NextResponse.json({

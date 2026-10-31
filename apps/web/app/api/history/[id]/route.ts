@@ -5,6 +5,8 @@ import type { JWTPayload } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { countAnsweredQuestionIndexes, resolveEffectiveQuestionDeck } from '@/lib/modules/quiz/session-utils'
+import { formatSessionResultQuestions, publicSessionAnswers, historicalResultEvidence, historicalResultQuestionOrder } from '@/lib/modules/quiz/session-result-mapping'
 
 function calculateStudyMinutes(attempts: any[]): number {
   const totalMs = attempts.reduce((sum, a) => {
@@ -14,27 +16,6 @@ function calculateStudyMinutes(attempts: any[]): number {
     return sum + Math.max(0, completed - started - pausedDuration)
   }, 0)
   return Math.round(totalMs / 60000)
-}
-
-function formatQuestions(quizQuestions: any[], session: any) {
-  return quizQuestions.map((q: any, idx: number) => {
-    const submitted = (session.user_answers ?? []).find((a: any) => a.question_index === idx)
-    const correctAnswerIndex = Array.isArray(q.correct_answer) ? q.correct_answer[0] : q.correct_answer
-    const isCorrect = session.mode === 'flashcard' 
-      ? (submitted?.is_correct ?? false)
-      : (submitted?.answer_index === correctAnswerIndex)
-
-    return {
-      _id: q._id,
-      text: q.text,
-      options: q.options,
-      correct_answer: correctAnswerIndex,
-      explanation: q.explanation ?? null,
-      ...(q.image_url ? { image_url: q.image_url } : {}),
-      submitted_answer: submitted?.answer_index ?? null,
-      is_correct: isCorrect,
-    }
-  })
 }
 
 function getSourceInfo(quiz: any, userId: string) {
@@ -47,9 +28,9 @@ function getSourceInfo(quiz: any, userId: string) {
 
 async function handleActivePath(quiz: any, activeSession: any, payload: any) {
   const isMix = Boolean(quiz.is_temp)
-  const questionSource = (isMix && activeSession.questions_cache?.length) ? activeSession.questions_cache : (quiz.questions ?? [])
+  const { questions: questionSource, questionOrder } = await resolveEffectiveQuestionDeck(activeSession, quiz)
   const source = getSourceInfo(quiz, payload.userId)
-  const answeredCount = new Set((activeSession.user_answers ?? []).map((a: any) => a.question_index).filter((idx: any) => Number.isInteger(idx) && idx >= 0)).size
+  const answeredCount = countAnsweredQuestionIndexes(activeSession.user_answers)
 
   return NextResponse.json({
     _id: activeSession._id,
@@ -59,19 +40,19 @@ async function handleActivePath(quiz: any, activeSession: any, payload: any) {
     source_label: source.label,
     is_mix: isMix,
     mode: activeSession.mode ?? 'immediate',
-    score: activeSession.score ?? 0,
-    total_questions: questionSource.length,
+    score: activeSession.mode === 'review' ? 0 : activeSession.score ?? 0,
+    total_questions: questionOrder.length,
     completed_at: null,
     started_at: activeSession.started_at,
     total_study_minutes: 0,
     attempts: [],
-    user_answers: activeSession.user_answers ?? [],
-    questions: formatQuestions(questionSource, activeSession),
+    user_answers: publicSessionAnswers(activeSession),
+    questions: formatSessionResultQuestions(activeSession, questionSource, questionOrder),
     status: 'active',
     has_active_session: true,
     active_session_id: activeSession._id,
     active_answered_count: answeredCount,
-    active_total_count: questionSource.length,
+    active_total_count: questionOrder.length,
     active_started_at: activeSession.started_at,
   })
 }
@@ -96,18 +77,6 @@ export const GET = withAuth(async (
       QuizSession.find({ student_id: studentObjectId, quiz_id: idObjectId, status: 'active' }).sort({ started_at: -1 }).limit(1).lean() as Promise<any[]>,
     ])
 
-    if (quizSessions.length > 0) {
-      let session = quizSessions[0]
-      if (selectedSessionId && mongoose.Types.ObjectId.isValid(selectedSessionId)) {
-        session = quizSessions.find((s) => s._id.toString() === selectedSessionId) ?? quizSessions[0]
-      }
-
-      if (!quiz) {
-        const attempts = quizSessions.map(s => ({ session_id: s._id, score: s.score, mode: s.mode, completed_at: s.completed_at, started_at: s.started_at, total_paused_duration_ms: s.total_paused_duration_ms }))
-        return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Deleted Quiz', quiz_deleted: true, source_type: 'deleted', source_label: 'Deleted Quiz', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts, user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
-      }
-    }
-
     const activeSession = activeList[0]
 
     if (quizSessions.length === 0 && quiz) {
@@ -128,18 +97,20 @@ export const GET = withAuth(async (
     }
 
     // Treat [id] as session id (backward compatibility)
-    let session: any = quizSessions.length > 0 ? quizSessions[0] : null
+    let session: any = quizSessions.find(s => s._id.toString() === selectedSessionId) ?? quizSessions[0] ?? null
     if (!session) {
       session = await QuizSession.findById(id).lean() as any
       if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-      if (session.student_id.toString() !== payload.userId || session.status !== 'completed') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (session.student_id?.toString() !== payload.userId || session.status !== 'completed') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const currentQuiz = quiz || await Quiz.findById(session.quiz_id).lean() as any
-    if (!currentQuiz) {
-      return NextResponse.json({ _id: session._id, quiz_id: session.quiz_id, quiz_title: 'Deleted Quiz', quiz_deleted: true, source_type: 'deleted', source_label: 'Deleted Quiz', mode: session.mode, score: session.score, total_questions: session.user_answers?.length || 0, completed_at: session.completed_at, started_at: session.started_at, total_study_minutes: 0, attempts: [{ session_id: session._id, score: session.score, mode: session.mode, completed_at: session.completed_at, started_at: session.started_at, total_paused_duration_ms: session.total_paused_duration_ms }], user_answers: session.user_answers || [], questions: [], has_active_session: false, active_session_id: null, active_answered_count: 0, active_total_count: 0, active_started_at: null })
-    }
-
+    const sourceQuiz = quiz || await Quiz.findById(session.quiz_id).lean() as any
+    const currentQuiz = sourceQuiz ?? { _id: session.quiz_id, title: 'Deleted Quiz', questions: [], is_temp: session.is_temp }
+    const { questions: effectiveQuestions, questionOrder: resolvedOrder } = await resolveEffectiveQuestionDeck(session, sourceQuiz)
+    const evidence = historicalResultEvidence(session, sourceQuiz)
+    const questionOrder = evidence.snapshot_unavailable
+      ? historicalResultQuestionOrder(session, resolvedOrder)
+      : resolvedOrder
     const source = getSourceInfo(currentQuiz, payload.userId)
     const resolveSingleSessionTotal = (s: any) => {
       if (Array.isArray(s.question_order) && s.question_order.length > 0) return s.question_order.length
@@ -189,17 +160,19 @@ export const GET = withAuth(async (
       is_mix: Boolean(currentQuiz.is_temp),
       mode: session.mode,
       score: session.score,
-      total_questions: resolveSingleSessionTotal(session),
+      total_questions: questionOrder.length,
+      ...(sourceQuiz ? {} : { quiz_deleted: true }),
+      ...evidence,
       completed_at: session.completed_at,
       started_at: session.started_at,
       total_study_minutes: calculateStudyMinutes(attempts),
       ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
       attempts,
       user_answers: session.user_answers,
-      questions: formatQuestions(currentQuiz.questions ?? [], session),
+      questions: formatSessionResultQuestions(session, evidence.snapshot_unavailable ? [] : effectiveQuestions, questionOrder),
       has_active_session: Boolean(activeSession),
       active_session_id: activeSession?._id ?? null,
-      active_answered_count: activeSession ? new Set((activeSession.user_answers ?? []).map((a: any) => a.question_index).filter((idx: any) => Number.isInteger(idx) && idx >= 0)).size : 0,
+      active_answered_count: countAnsweredQuestionIndexes(activeSession?.user_answers),
       active_total_count: activeSession ? resolveSingleSessionTotal(activeSession) : (currentQuiz.questions?.length ?? 0),
       active_started_at: activeSession?.started_at ?? null,
     })

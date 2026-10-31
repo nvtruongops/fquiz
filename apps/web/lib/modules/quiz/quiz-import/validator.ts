@@ -169,6 +169,9 @@ function validateRequestedAnswerCount(question: any, index: number, diagnostics:
 }
 
 function validateAnswers(question: any, index: number, diagnostics: ImportDiagnostic[]) {
+  if (question.answer_parse_errors?.length) {
+    diagnostics.push(diagnostic('error', 'INVALID_CORRECT_ANSWER_TOKEN', 'Correct answer contains invalid or ambiguous tokens; no partial key was accepted', { questionIndex: index, field: `questions[${index}].correct_answer` }))
+  }
   const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer]
   if (answers.length === 0) {
     diagnostics.push(diagnostic('error', 'MISSING_CORRECT_ANSWER', 'No correct answer selected', { questionIndex: index, field: `questions[${index}].correct_answer` }))

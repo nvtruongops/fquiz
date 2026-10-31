@@ -75,8 +75,6 @@ export function useMobileQuizSessionController() {
     saveStatus,
     retryFailedAnswer,
     hasUnsavedAnswers,
-    discardUnsavedAnswer,
-    unsavedQuestionIndex,
     acknowledgedQuestions,
   } = useSessionAnswerSync({
     activeData,
@@ -327,8 +325,6 @@ export function useMobileQuizSessionController() {
     saveStatus,
     retryFailedAnswer,
     acknowledgedQuestions,
-    discardUnsavedAnswer,
-    unsavedQuestionIndex,
     exitConfirmOpen,
     setExitConfirmOpen,
     inactivityPauseOpen,

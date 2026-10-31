@@ -41,13 +41,9 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
   const unknownCount = totalCards - knownCount
 
   const currentQuestion = questions[selectedIndex] || questions[0]
-  const currentCorrectIdx = Array.isArray(currentQuestion.correct_answer)
-    ? currentQuestion.correct_answer[0]
-    : currentQuestion.correct_answer
-  const correctAnswerLetter = typeof currentCorrectIdx === 'number' && currentCorrectIdx >= 0
-    ? String.fromCharCode(65 + currentCorrectIdx)
-    : ''
-  const correctAnswerText = currentQuestion.options?.[currentCorrectIdx] || currentQuestion.options?.[0] || ''
+  const correctIndexes = Array.isArray(currentQuestion.correct_answer)
+    ? currentQuestion.correct_answer
+    : [currentQuestion.correct_answer]
 
   return (
     <div className="w-full max-w-full h-full flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch overflow-hidden">
@@ -263,14 +259,14 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                     <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
                       Correct Answer:
                     </span>
-                    <div className="flex items-center gap-2 text-sm font-black text-success-fg">
-                      {correctAnswerLetter && (
+                    {correctIndexes.filter(index => Number.isInteger(index) && index >= 0 && index < currentQuestion.options.length).map(index => (
+                    <div key={index} className="flex items-center gap-2 text-sm font-black text-success-fg">
                         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-md text-xs">
-                          {correctAnswerLetter}
+                          {String.fromCharCode(65 + index)}
                         </span>
-                      )}
-                      <span>{correctAnswerText}</span>
+                      <span>{currentQuestion.options[index]}</span>
                     </div>
+                    ))}
                   </div>
 
                   {/* Explanation / Notes */}

@@ -23,6 +23,7 @@ export interface ImportSummary {
 }
 
 export interface NormalizedQuestion {
+  answer_parse_errors?: string[]
   question_id?: string      // Content-based unique ID for deduplication
   text: string
   options: string[]

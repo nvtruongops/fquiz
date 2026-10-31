@@ -13,77 +13,60 @@ import { syncUniqueStudentCount } from '@/lib/modules/quiz/quiz-engine'
 import { providerFactory } from '@/lib/core/security/rate-limit/provider'
 import { secureShuffle, shuffleQuestionOptions } from '@/lib/core/utils/shuffle'
 import { getAnswerSelectionCount } from '@/lib/modules/quiz/utils/question-selection-helper'
+import { countAnsweredQuestionIndexes } from '@/lib/modules/quiz/session-utils'
 
+
+const EMPTY_ACTIVE_SESSIONS = { assessmentSession: null, learningSession: null }
+
+function getValidQuizId(request: Request): string | null {
+  const quizId = new URL(request.url).searchParams.get('quiz_id')
+  return quizId && mongoose.Types.ObjectId.isValid(quizId) ? quizId : null
+}
+
+function formatActiveSessionSummary(session: any, quizQuestionCount: number) {
+  if (!session) return null
+  return {
+    sessionId: session._id,
+    mode: session.mode,
+    difficulty: session.difficulty,
+    current_question_index: session.current_question_index,
+    totalQuestions: session.questions_cache?.length || quizQuestionCount,
+    answeredCount: countAnsweredQuestionIndexes(session.user_answers),
+    started_at: session.started_at,
+  }
+}
+
+async function getActiveSessionSummaries(quizId: string, studentId: string) {
+  await connectDB()
+  const now = new Date()
+  const activeSessions = await QuizSession.find({
+    student_id: new mongoose.Types.ObjectId(studentId),
+    quiz_id: new mongoose.Types.ObjectId(quizId),
+    status: 'active',
+    $or: [{ expires_at: { $gt: now } }, { expires_at: { $exists: false } }],
+  }).sort({ started_at: -1 }).lean() as any[]
+  if (activeSessions.length === 0) return null
+
+  const quiz = await Quiz.findById(quizId).select('questions question_refs').lean()
+  const quizQuestionCount = quiz?.questions?.length || quiz?.question_refs?.length || 0
+  const assessmentSession = activeSessions.find((session) => ['immediate', 'review'].includes(session.mode))
+  const learningSession = activeSessions.find((session) => session.mode === 'flashcard')
+  return {
+    assessmentSession: formatActiveSessionSummary(assessmentSession, quizQuestionCount),
+    learningSession: formatActiveSessionSummary(learningSession, quizQuestionCount),
+  }
+}
 
 export const GET = withAuth(async (req, { payload }) => {
   try {
-    if (!payload.userId) {
-      return NextResponse.json({ assessmentSession: null, learningSession: null })
-    }
-
-    const { searchParams } = new URL(req.url)
-    const quizId = searchParams.get('quiz_id')
-    if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
-      return NextResponse.json({ assessmentSession: null, learningSession: null })
-    }
-
-    await connectDB()
-    const nowDate = new Date()
-    const studentObjectId = new mongoose.Types.ObjectId(payload.userId)
-
-    // Find all active sessions for this quiz (max 2: 1 assessment + 1 learning)
-    const activeSessions = await QuizSession.find({
-      student_id: studentObjectId,
-      quiz_id: new mongoose.Types.ObjectId(quizId),
-      status: 'active',
-      $or: [
-        { expires_at: { $gt: nowDate } },
-        { expires_at: { $exists: false } }, // flashcard sessions have no expiry
-      ],
-    })
-      .sort({ started_at: -1 })
-      .lean() as any[]
-
-    if (!activeSessions || activeSessions.length === 0) {
-      return NextResponse.json({ assessmentSession: null, learningSession: null })
-    }
-
-    // Get quiz to retrieve totalQuestions
-    const quiz = await Quiz.findById(quizId).select('questions question_refs').lean()
-    const quizQuestionCount = quiz?.questions?.length || quiz?.question_refs?.length || 0
-
-    // Separate sessions by group
-    const ASSESSMENT_MODES = ['immediate', 'review']
-    const LEARNING_MODES = ['flashcard']
-
-    const assessmentSession = activeSessions.find(s => ASSESSMENT_MODES.includes(s.mode))
-    const learningSession = activeSessions.find(s => LEARNING_MODES.includes(s.mode))
-
-    const formatSession = (session: any) => {
-      if (!session) return null
-      const uniqueAnswered = new Set(
-        (session.user_answers ?? [])
-          .map((a: any) => a.question_index)
-          .filter((idx: unknown): idx is number => Number.isInteger(idx) && (idx as number) >= 0)
-      )
-      return {
-        sessionId: session._id,
-        mode: session.mode,
-        difficulty: session.difficulty,
-        current_question_index: session.current_question_index,
-        totalQuestions: session.questions_cache?.length || quizQuestionCount,
-        answeredCount: uniqueAnswered.size,
-        started_at: session.started_at,
-      }
-    }
-
-    return NextResponse.json({
-      assessmentSession: formatSession(assessmentSession),
-      learningSession: formatSession(learningSession),
-    })
+    if (!payload.userId) return NextResponse.json(EMPTY_ACTIVE_SESSIONS)
+    const quizId = getValidQuizId(req)
+    if (!quizId) return NextResponse.json(EMPTY_ACTIVE_SESSIONS)
+    const summaries = await getActiveSessionSummaries(quizId, payload.userId)
+    return NextResponse.json(summaries ?? EMPTY_ACTIVE_SESSIONS)
   } catch (err) {
     console.error('GET /api/sessions error:', err)
-    return NextResponse.json({ assessmentSession: null, learningSession: null })
+    return NextResponse.json(EMPTY_ACTIVE_SESSIONS)
   }
 }, { roles: ['student'], allowGuest: true })
 
@@ -117,7 +100,7 @@ function handleSessionConflicts(session: any, questions: any[], action: string |
   }
   if (action === 'restart') return null // Signal to delete and restart
 
-  const answered = new Set((session.user_answers ?? []).map((a: any) => a.question_index).filter((idx: any) => Number.isInteger(idx) && idx >= 0)).size
+  const answered = countAnsweredQuestionIndexes(session.user_answers)
   return NextResponse.json({ error: `You have an unfinished ${group === 'learning' ? 'flashcard' : 'quiz'} session.`, code: 'ACTIVE_SESSION_EXISTS', activeSession: { sessionId: session._id, mode: session.mode, difficulty: session.difficulty, current_question_index: session.current_question_index, totalQuestions: questions.length, answeredCount: answered, started_at: session.started_at } }, { status: 409 })
 }
 
@@ -182,60 +165,73 @@ async function prepareSession(quizId: string, mode: string, difficulty: string, 
   return { quiz, effective, now, questionOrder, questionsCache, mode, difficulty }
 }
 
-async function buildInitialAndPreloadPayloads(session: any, prepared: PreparedSession) {
-  const { quiz, effective, questionOrder, questionsCache } = prepared
-  let categoryName = 'General'
-  if (quiz.category_id) {
-    const category = await Category.findById(quiz.category_id).select('name').lean() as any
-    if (category?.name) categoryName = category.name
-  }
+async function getCategoryDisplayName(categoryId: unknown): Promise<string> {
+  if (!categoryId) return 'General'
+  const category = await Category.findById(categoryId).select('name').lean() as any
+  return category?.name || 'General'
+}
 
-  const formattedQuestions = questionOrder.map((originalIndex) => {
-    const question = questionsCache[originalIndex] ?? questionsCache[0] ?? {}
-    const baseQuestion = {
-      _id: question._id ? question._id.toString() : undefined,
-      text: question.text,
-      options: question.options,
-      answer_selection_count: getAnswerSelectionCount(question),
-      usage_count: 1,
-      used_in_quizzes: [],
-      ...(question.image_url ? { image_url: question.image_url } : {}),
-    }
-    return session.mode === 'flashcard'
-      ? { ...baseQuestion, correct_answer: question.correct_answer, explanation: question.explanation }
-      : baseQuestion
+function formatCachedQuestion(sessionMode: string, question: any) {
+  const baseQuestion = {
+    _id: question._id ? question._id.toString() : undefined,
+    text: question.text,
+    options: question.options,
+    answer_selection_count: getAnswerSelectionCount(question),
+    usage_count: 1,
+    used_in_quizzes: [],
+    ...(question.image_url ? { image_url: question.image_url } : {}),
+  }
+  return sessionMode === 'flashcard'
+    ? { ...baseQuestion, correct_answer: question.correct_answer, explanation: question.explanation }
+    : baseQuestion
+}
+
+function formatSessionQuestionCache(session: any, prepared: PreparedSession) {
+  return prepared.questionOrder.map((sourceIndex) => {
+    const question = prepared.questionsCache[sourceIndex] ?? prepared.questionsCache[0] ?? {}
+    return formatCachedQuestion(session.mode, question)
   })
+}
 
-  const initialData = {
-    session: {
-      _id: session._id.toString(),
-      mode: session.mode,
-      status: session.status,
-      current_question_index: 0,
-      user_answers: [],
-      score: session.score ?? 0,
-      totalQuestions: effective.questions.length,
-      courseCode: quiz.course_code || '',
-      categoryName,
-      title: quiz.title || '',
-      started_at: session.started_at ? session.started_at.toISOString() : new Date().toISOString(),
-      paused_at: null,
-      total_paused_duration_ms: 0,
-      is_temp: Boolean(session.is_temp),
-      quiz_id: session.quiz_id.toString(),
-      ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
-    },
-    question: formattedQuestions[0] || null,
-  }
-  const preloadData = {
-    sessionId: session._id.toString(),
+function buildInitialSessionRecord(session: any, prepared: PreparedSession, categoryName: string) {
+  const { quiz, effective } = prepared
+  return {
+    _id: session._id.toString(),
     mode: session.mode,
-    difficulty: session.difficulty,
     status: session.status,
+    current_question_index: 0,
+    user_answers: [],
+    ...(session.mode === 'review' ? {} : { score: session.score ?? 0 }),
     totalQuestions: effective.questions.length,
-    questions: formattedQuestions,
+    courseCode: quiz.course_code || '',
+    categoryName,
+    title: quiz.title || '',
+    started_at: session.started_at ? session.started_at.toISOString() : new Date().toISOString(),
+    paused_at: null,
+    total_paused_duration_ms: 0,
+    is_temp: Boolean(session.is_temp),
+    quiz_id: session.quiz_id.toString(),
+    ...(session.mode === 'flashcard' && session.flashcard_stats ? { flashcard_stats: session.flashcard_stats } : {}),
   }
-  return { initialData, preloadData }
+}
+
+async function buildInitialAndPreloadPayloads(session: any, prepared: PreparedSession) {
+  const categoryName = await getCategoryDisplayName(prepared.quiz.category_id)
+  const questions = formatSessionQuestionCache(session, prepared)
+  return {
+    initialData: {
+      session: buildInitialSessionRecord(session, prepared, categoryName),
+      question: questions[0] || null,
+    },
+    preloadData: {
+      sessionId: session._id.toString(),
+      mode: session.mode,
+      difficulty: session.difficulty,
+      status: session.status,
+      totalQuestions: prepared.effective.questions.length,
+      questions,
+    },
+  }
 }
 
 function getFlashcardStats(questionCount: number) {

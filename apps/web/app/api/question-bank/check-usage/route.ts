@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
+import { resolveQuestionBankQuestions } from '@fquiz/models'
 import { z } from 'zod'
 
 const CheckUsageSchema = z.object({
@@ -19,17 +20,8 @@ const CheckUsageSchema = z.object({
  * POST /api/question-bank/check-usage
  * Check if question exists in Question Bank and where it is currently used
  */
-export const POST = withAuth(async (req: Request, { payload }) => {
+export const POST = withAuth(async (req: Request) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (payload.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await req.json()
     const parsed = CheckUsageSchema.safeParse(body)
 
@@ -64,11 +56,12 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       })
     }
 
+    const [questionWithUsage] = await resolveQuestionBankQuestions([existingQuestion], Quiz)
     return NextResponse.json({
       exists: true,
       question_id: questionId,
-      usage_count: existingQuestion.usage_count,
-      used_in_quizzes: existingQuestion.used_in_quizzes,
+      usage_count: questionWithUsage.usage_count,
+      used_in_quizzes: questionWithUsage.used_in_quizzes,
       bank_answer: existingQuestion.correct_answer,
     })
   } catch (error: any) {

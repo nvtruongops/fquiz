@@ -4,6 +4,7 @@ export interface IPinnedQuestion {
   _id?: mongoose.Types.ObjectId
   student_id: mongoose.Types.ObjectId
   question_id?: string
+  question_id_aliases?: string[]
   quiz_id?: mongoose.Types.ObjectId
   quiz_title?: string
   course_code: string
@@ -19,6 +20,7 @@ const PinnedQuestionSchema = new Schema<IPinnedQuestion>(
   {
     student_id: { type: Schema.Types.ObjectId, required: true },
     question_id: { type: String, default: '' },
+    question_id_aliases: { type: [String], default: undefined },
     quiz_id: { type: Schema.Types.ObjectId },
     quiz_title: { type: String, default: '' },
     course_code: { type: String, required: true },

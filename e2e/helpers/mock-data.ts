@@ -1,4 +1,58 @@
-import { Page } from '@playwright/test'
+import { Page, Route } from '@playwright/test'
+
+type MockAnswerRequest = { question_index?: number; answer_indexes?: number[]; answer_index?: number; answer_revision?: number }
+
+function getSubmittedAnswerIndexes(body: MockAnswerRequest): number[] {
+  if (Array.isArray(body.answer_indexes)) return body.answer_indexes
+  return typeof body.answer_index === 'number' ? [body.answer_index] : []
+}
+
+function areSubmittedAnswersCorrect(question: MockQuestionItem, submitted: number[]): boolean {
+  const correct = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer ?? 0]
+  if (Array.isArray(question.correct_answer)) {
+    return JSON.stringify([...submitted].sort()) === JSON.stringify([...correct].sort())
+  }
+  return (question.correct_answer ?? 0) === submitted[0]
+}
+
+async function fulfillReviewAnswer(
+  route: Route,
+  body: MockAnswerRequest,
+  questionIndex: number,
+  submittedIndexes: number[],
+  onAnswerSaved: ((body: MockAnswerRequest & { question_index: number; answer_indexes: number[] }) => void) | undefined,
+  saveAnswer: (answer: { question_index: number; answer_index: number; answer_indexes: number[] } | null) => void,
+) {
+  const normalizedBody = { ...body, question_index: questionIndex, answer_indexes: submittedIndexes }
+  onAnswerSaved?.(normalizedBody)
+  saveAnswer(submittedIndexes.length > 0
+    ? { question_index: questionIndex, answer_index: submittedIndexes[0], answer_indexes: submittedIndexes }
+    : null)
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ answerIndexes: submittedIndexes, answerRevision: body.answer_revision }),
+  })
+}
+
+async function fulfillImmediateAnswer(route: Route, question: MockQuestionItem, submittedIndexes: number[], questionIndex: number, totalQuestions: number) {
+  const correctAnswers = Array.isArray(question.correct_answer) ? question.correct_answer : [question.correct_answer ?? 0]
+  const isCorrect = areSubmittedAnswersCorrect(question, submittedIndexes)
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      isCorrect,
+      answerIndexes: submittedIndexes,
+      correctAnswer: correctAnswers[0],
+      correctAnswers,
+      explanation: question.explanation || 'Detailed explanation for sample question.',
+      score: isCorrect ? 1 : 0,
+      answeredCount: questionIndex + 1,
+      totalQuestions,
+    }),
+  })
+}
 
 export interface MockQuizData {
   id: string
@@ -17,6 +71,7 @@ export interface MockQuestionItem {
   text: string
   options: string[]
   correct_answer?: number | number[]
+  answer_selection_count?: number
   explanation?: string
 }
 
@@ -155,6 +210,7 @@ export async function mockQuizSession(
     questionsDelayMs?: number
     answerDelayMs?: number
     onQuestionsFulfilled?: () => void
+    onAnswerSaved?: (body: MockAnswerRequest & { question_index: number; answer_indexes: number[] }) => void
   }
 ) {
   const {
@@ -166,7 +222,9 @@ export async function mockQuizSession(
     questionsDelayMs = 0,
     answerDelayMs = 0,
     onQuestionsFulfilled,
+    onAnswerSaved,
   } = options
+  let savedAnswer: { question_index: number; answer_index: number; answer_indexes: number[] } | null = null
 
   // Mock session list/check
   await page.route('**/api/sessions?**', async (route) => {
@@ -212,6 +270,7 @@ export async function mockQuizSession(
           question_id: q.question_id || q._id,
           text: q.text,
           options: q.options,
+          answer_selection_count: q.answer_selection_count,
         })),
       }),
     })
@@ -231,7 +290,7 @@ export async function mockQuizSession(
             status: 'active',
             current_question_index: 0,
             totalQuestions: questions.length,
-            user_answers: [],
+            user_answers: savedAnswer ? [savedAnswer] : [],
             is_guest: isGuest,
           },
           question: {
@@ -239,6 +298,7 @@ export async function mockQuizSession(
             text: questions[0].text,
             options: questions[0].options,
             correct_answer: questions[0].correct_answer ?? 0,
+            answer_selection_count: questions[0].answer_selection_count,
             explanation: questions[0].explanation,
           },
         }),
@@ -250,37 +310,21 @@ export async function mockQuizSession(
 
   // Mock answer submit POST
   await page.route(`**/api/sessions/${sessionId}/answer`, async (route) => {
-    if (route.request().method() === 'POST') {
-      const body = JSON.parse(route.request().postData() || '{}')
-      const questionIndex = body.question_index ?? 0
-      const targetQuestion = questions[questionIndex] || questions[0]
-      const submittedIndexes: number[] = body.answer_indexes?.length
-        ? body.answer_indexes
-        : typeof body.answer_index === 'number' ? [body.answer_index] : []
-      const correctAnswers = Array.isArray(targetQuestion.correct_answer)
-        ? targetQuestion.correct_answer
-        : [targetQuestion.correct_answer ?? 0]
-      const isCorrect = Array.isArray(targetQuestion.correct_answer)
-        ? JSON.stringify([...submittedIndexes].sort()) === JSON.stringify([...correctAnswers].sort())
-        : (targetQuestion.correct_answer ?? 0) === submittedIndexes[0]
-
-      if (answerDelayMs > 0) await page.waitForTimeout(answerDelayMs)
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          isCorrect,
-          correctAnswer: correctAnswers[0],
-          correctAnswers,
-          explanation: targetQuestion.explanation || 'Detailed explanation for sample question.',
-          score: isCorrect ? 1 : 0,
-          answeredCount: questionIndex + 1,
-          totalQuestions: questions.length,
-        }),
-      })
-    } else {
+    if (route.request().method() !== 'POST') {
       await route.fallback()
+      return
     }
+
+    const body = JSON.parse(route.request().postData() || '{}') as MockAnswerRequest
+    const questionIndex = body.question_index ?? 0
+    const targetQuestion = questions[questionIndex] || questions[0]
+    const submittedIndexes = getSubmittedAnswerIndexes(body)
+    if (answerDelayMs > 0) await page.waitForTimeout(answerDelayMs)
+
+    if (mode === 'review') {
+      await fulfillReviewAnswer(route, body, questionIndex, submittedIndexes, onAnswerSaved, (answer) => { savedAnswer = answer })
+      return
+    }
+    await fulfillImmediateAnswer(route, targetQuestion, submittedIndexes, questionIndex, questions.length)
   })
 }

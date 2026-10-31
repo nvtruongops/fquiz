@@ -20,15 +20,11 @@ export interface ImmediateAnswerResult {
 }
 
 export interface ReviewAnswerResult {
+  answerIndexes?: number[]
+  answerRevision?: number
   nextQuestion?: Omit<IQuestion, 'correct_answer' | 'explanation'>
   completed?: boolean
-  score?: number
-  results?: Array<{
-    question: IQuestion
-    userAnswer: number
-    userAnswers?: number[]
-    isCorrect: boolean
-  }>
+
 }
 
 export async function syncUniqueStudentCount(quizId: any): Promise<void> {
@@ -74,6 +70,7 @@ interface PersistAnswerOptions {
   questionIndex: number
   isCorrect: boolean
   insertOnly?: boolean
+  answerRevision?: number
 }
 
 function isAnswerConflict(err: unknown): err is Error & { status: number; code: string } {
@@ -95,6 +92,9 @@ function getDuplicateInsertResult(currentSession: any, existingAnswer: UserAnswe
 }
 
 function buildUpdatedAnswers(currentSession: any, userAnswer: UserAnswer, insertOnly: boolean) {
+  if (!insertOnly && userAnswer.answer_indexes?.length === 0) {
+    return (currentSession.user_answers || []).filter((answer: UserAnswer) => answer.question_index !== userAnswer.question_index)
+  }
   return insertOnly
     ? [...(currentSession.user_answers || []), userAnswer]
     : upsertAnswer(currentSession.user_answers || [], userAnswer)
@@ -120,6 +120,7 @@ function buildAnswerPersistenceUpdate(
   return {
     $set: {
       user_answers: updatedAnswers,
+      ...(options.answerRevision !== undefined ? { [`answer_revisions.${options.questionIndex}`]: options.answerRevision } : {}),
       current_question_index: Math.max(currentSession.current_question_index ?? 0, targetNextIndex),
       ...(options.updateScore ? { score } : {}),
       last_activity_at: new Date(),
@@ -133,6 +134,36 @@ function getVersionFilter(cv: number | undefined) {
   return cv === undefined
     ? { answer_version: { $exists: false } }
     : { answer_version: cv }
+}
+
+function answerIntentConflict() {
+  return Object.assign(new Error('A newer answer intent is already saved. Select the answer again to make a new change.'),
+    { status: 409, code: 'ANSWER_CONFLICT' })
+}
+
+function getPersistedAnswerRevision(revisions: any, questionIndex: number): number | undefined {
+  return revisions instanceof Map ? revisions.get(String(questionIndex)) : revisions?.[questionIndex]
+}
+
+function getAnswerIndexes(answer: UserAnswer | undefined): number[] {
+  return answer ? answer.answer_indexes ?? [answer.answer_index] : []
+}
+
+function getRevisionAcknowledgement(currentSession: any, options: PersistAnswerOptions, incoming: UserAnswer, existing: UserAnswer | undefined) {
+  const revision = getPersistedAnswerRevision(currentSession.answer_revisions, options.questionIndex)
+  if (revision === undefined) return null
+  if (options.answerRevision === revision && isExactArrayMatch(getAnswerIndexes(incoming), getAnswerIndexes(existing))) {
+    return { success: true, score: currentSession.score ?? null, answer: existing ?? incoming }
+  }
+  if (options.answerRevision === undefined || options.answerRevision <= revision) throw answerIntentConflict()
+  return null
+}
+
+function getRevisionWriteFilter(options: PersistAnswerOptions) {
+  const path = `answer_revisions.${options.questionIndex}`
+  return options.answerRevision === undefined
+    ? { [path]: { $exists: false } }
+    : { $or: [{ [path]: { $exists: false } }, { [path]: { $lt: options.answerRevision } }] }
 }
 
 async function tryPersistAnswerIteration(
@@ -150,6 +181,8 @@ async function tryPersistAnswerIteration(
   const existingAnswer = (currentSession.user_answers || []).find(
     (answer: UserAnswer) => answer.question_index === questionIndex
   )
+  const revisionAcknowledgement = !insertOnly ? getRevisionAcknowledgement(currentSession, options, userAnswer, existingAnswer) : null
+  if (revisionAcknowledgement) return revisionAcknowledgement
   const duplicateResult = getDuplicateInsertResult(currentSession, existingAnswer, insertOnly)
   if (duplicateResult) return duplicateResult
 
@@ -158,7 +191,7 @@ async function tryPersistAnswerIteration(
   const versionFilter = getVersionFilter(currentSession.answer_version)
 
   const result = await QuizSession.updateOne(
-    { $and: [{ _id: sessionId }, activeSessionWriteFilter(), versionFilter] },
+    { $and: [{ _id: sessionId }, activeSessionWriteFilter(), versionFilter, ...(!insertOnly ? [getRevisionWriteFilter(options)] : [])] },
     buildAnswerPersistenceUpdate(currentSession, updatedAnswers, options, score)
   )
 
@@ -176,11 +209,11 @@ async function persistAnswerWithOCC(
   cachedSession?: any
 ): Promise<{ score: number | null; answer: UserAnswer }> {
   const select = options.updateScore
-    ? 'answer_version user_answers score current_question_index'
-    : 'answer_version user_answers current_question_index'
+    ? 'answer_version answer_revisions user_answers score current_question_index'
+    : 'answer_version answer_revisions user_answers current_question_index'
   let retries = 3
   while (retries > 0) {
-    const sessionToUse = retries === 3 && cachedSession?.answer_version !== undefined ? cachedSession : undefined
+    const sessionToUse = retries === 3 && cachedSession?.answer_version !== undefined && options.answerRevision === undefined ? cachedSession : undefined
     const { success, score, answer } = await tryPersistAnswerIteration(
       sessionId,
       userAnswer,
@@ -282,7 +315,7 @@ export async function processImmediateAnswer(
 
     return {
       isCorrect: persistedAnswer.answer.is_correct,
-      answerIndexes: persistedAnswer.answer.answer_indexes?.length
+      answerIndexes: Array.isArray(persistedAnswer.answer.answer_indexes)
         ? persistedAnswer.answer.answer_indexes
         : typeof persistedAnswer.answer.answer_index === 'number' ? [persistedAnswer.answer.answer_index] : [],
       correctAnswer: correctAnswerIndexes[0],
@@ -314,7 +347,7 @@ export async function getImmediateAnswerResult(
   )
 
   const existingAnswer = session.user_answers?.find((a) => a.question_index === questionIndex)
-  const submittedIndexes = existingAnswer?.answer_indexes && existingAnswer.answer_indexes.length > 0
+  const submittedIndexes = Array.isArray(existingAnswer?.answer_indexes)
     ? existingAnswer.answer_indexes
     : typeof existingAnswer?.answer_index === 'number'
     ? [existingAnswer.answer_index]
@@ -333,13 +366,14 @@ export async function getImmediateAnswerResult(
 
 /**
  * Review mode: persist answer, return next question (without correct_answer/explanation)
- * or full results if it's the last question.
+ * or an acknowledgement for the last question. Grading is revealed only after submission.
  * Requirements: 8.1, 8.2, 8.3, 8.4, 12.1, 12.3, 13.1
  */
 export async function processReviewAnswer(
   session: IQuizSession,
   submittedAnswerIndexes: number[],
-  forcedQuestionIndex?: number
+  forcedQuestionIndex?: number,
+  answerRevision?: number
 ): Promise<ReviewAnswerResult> {
   try {
     await connectDB()
@@ -358,6 +392,7 @@ export async function processReviewAnswer(
       // Persist answer and advance – do NOT reveal correctness with optimistic concurrency check
       await persistAnswerWithOCC(session._id, userAnswer, {
         updateScore: false,
+        answerRevision,
         isLast: false,
         nextIndex,
         questionIndex,
@@ -372,20 +407,21 @@ export async function processReviewAnswer(
         image_url: nextQuestion.image_url,
       }
 
-      return { nextQuestion: safeQuestion as Omit<IQuestion, 'correct_answer' | 'explanation'> }
+      return { answerIndexes: userAnswer.answer_indexes, answerRevision, nextQuestion: safeQuestion as Omit<IQuestion, 'correct_answer' | 'explanation'> }
     }
 
-    // Last question – persist answer and running score with optimistic concurrency check.
+    // Last question – persist the editable selection with optimistic concurrency check.
     // In review mode, session completion only happens via explicit submit confirmation.
-    const { score } = await persistAnswerWithOCC(session._id, userAnswer, {
-      updateScore: true,
+    await persistAnswerWithOCC(session._id, userAnswer, {
+      updateScore: false,
+      answerRevision,
       isLast: true,
       nextIndex,
       questionIndex,
       isCorrect,
     }, session)
 
-    return { completed: false, score: score ?? 0 }
+    return { answerIndexes: userAnswer.answer_indexes, answerRevision, completed: false }
   } catch (err) {
     if (isAnswerConflict(err)) throw err
     throw new Error(`processReviewAnswer failed: ${(err as Error).message}`)
@@ -418,7 +454,7 @@ export function calculateScore(
         : [question.correct_answer]
     )
     const submittedIndexes = normalizeIndexes(
-      answer.answer_indexes && answer.answer_indexes.length > 0
+      Array.isArray(answer.answer_indexes)
         ? answer.answer_indexes
         : [answer.answer_index]
     )
@@ -428,6 +464,30 @@ export function calculateScore(
     }
   }
   return score
+}
+
+async function resolveCompletionQuestions(session: any): Promise<IQuestion[]> {
+  const questions = session.questions_cache?.length > 0
+    ? session.questions_cache as IQuestion[]
+    : await resolveQuestionsFromQuiz(session.quiz_id, session.question_order)
+  if (!questions || questions.length === 0) {
+    throw new Error('No questions available to finalize session score')
+  }
+  return questions
+}
+
+function recordCompletedAssignmentResult(result: any, totalQuestions: number) {
+  if (!result || !result.assignment_id || !result.classroom_id) return
+  const scorePercent = totalQuestions > 0 ? Math.round(((result.score || 0) / totalQuestions) * 100) : 0
+  import('@/lib/modules/classroom/services/classroom-service').then(({ ClassroomService }) => {
+    ClassroomService.recordAssignmentResult({
+      assignmentId: result.assignment_id.toString(),
+      classroomId: result.classroom_id.toString(),
+      studentId: result.student_id.toString(),
+      sessionId: result._id.toString(),
+      scorePercent,
+    }).catch(() => {})
+  })
 }
 
 /**
@@ -446,67 +506,48 @@ export async function atomicCompleteSession(sessionId: string): Promise<boolean>
   try {
     await connectDB()
 
-    const session = await QuizSession.findById(sessionId).lean()
-    if (!session) {
-      return false
-    }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const session = await QuizSession.findById(sessionId).lean()
+      if (!session) {
+        return false
+      }
 
-    if (session.status === 'completed') {
-      return false
-    }
+      if (session.status === 'completed') {
+        return false
+      }
 
-    // Resolve authoritative question set: prefer cached copy, fallback to quiz document.
-    const questions = (session.questions_cache && session.questions_cache.length > 0)
-      ? (session.questions_cache as IQuestion[])
-      : await resolveQuestionsFromQuiz(
-          session.quiz_id as unknown as import('mongoose').Types.ObjectId,
-          session.question_order
-        )
+      const questions = await resolveCompletionQuestions(session)
 
-    if (!questions || questions.length === 0) {
-      throw new Error('No questions available to finalize session score')
-    }
+      const userAnswers = (session.user_answers ?? []) as UserAnswer[]
+      const score = calculateScore(userAnswers, questions, session.question_order)
+      const currentQuestionIndex = questions.length
 
-    const userAnswers = (session.user_answers ?? []) as UserAnswer[]
-    const score = calculateScore(userAnswers, questions, session.question_order)
-    const currentQuestionIndex = questions.length
-
-    const result = await QuizSession.findOneAndUpdate(
-      {
-        _id: sessionId,
-        status: { $ne: 'completed' },
-      },
-      {
-        $set: {
-          status: 'completed',
-          score,
-          current_question_index: currentQuestionIndex,
-          completed_at: new Date(),
+      const result = await QuizSession.findOneAndUpdate(
+        {
+          _id: sessionId,
+          status: { $ne: 'completed' },
+          ...getVersionFilter(session.answer_version),
         },
-        // Keep completed results permanently; TTL should apply to active sessions only.
-        $unset: {
-          expires_at: 1,
+        {
+          $set: {
+            status: 'completed',
+            score,
+            current_question_index: currentQuestionIndex,
+            completed_at: new Date(),
+          },
+          // Keep completed results permanently; TTL should apply to active sessions only.
+          $unset: {
+            expires_at: 1,
+          },
         },
-      },
-      { new: true }
-    )
+        { new: true }
+      )
 
-    // If result is null, the session was already completed by a concurrent request
-    if (result && result.assignment_id && result.classroom_id) {
-      const totalQuestions = questions.length
-      const scorePercent = totalQuestions > 0 ? Math.round(((result.score || 0) / totalQuestions) * 100) : 0
-      import('@/lib/modules/classroom/services/classroom-service').then(({ ClassroomService }) => {
-        ClassroomService.recordAssignmentResult({
-          assignmentId: result.assignment_id!.toString(),
-          classroomId: result.classroom_id!.toString(),
-          studentId: result.student_id.toString(),
-          sessionId: result._id.toString(),
-          scorePercent,
-        }).catch(() => {})
-      })
+      recordCompletedAssignmentResult(result, questions.length)
+
+      if (result) return true
     }
-
-    return result !== null
+    throw new Error('Answers changed while submitting. Please retry.')
   } catch (err) {
     throw new Error(
       `atomicCompleteSession failed: ${(err as Error).message}`

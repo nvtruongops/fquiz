@@ -57,3 +57,9 @@ describe('AI Module Prompt Registry & Schemas Test Suite', () => {
     expect(promptText).toContain('C1')
   })
 })
+
+import { GeneratedQuizSchema } from '../prompts/quiz-generation'
+test.each([[], [0], [0,1,2]])('AI output follows published key cardinality %j', (...answers) => {
+ const options = ['a','b','c','d'].map((text,index)=>({text,isCorrect:answers.includes(index)}))
+ expect(GeneratedQuizSchema.safeParse({title:'T',questions:[{text:'Choose 3 answers',options}]}).success).toBe(answers.length===3)
+})

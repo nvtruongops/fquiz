@@ -32,11 +32,6 @@ export const UpdateStudentSettingsSchema = z.object({
   privacy_share_activity: z.boolean().optional(),
 })
 
-export const BulkUserActionSchema = z.object({
-  user_ids: z.array(z.string().regex(/^[a-f0-9]{24}$/)),
-  action: z.enum(['ban', 'unban', 'set_student', 'set_teacher', 'set_admin', 'set_dev', 'delete']),
-  reason: z.string().max(200).optional(),
-})
 
 export const UpdateSiteSettingsSchema = z.object({
   app_name: z.string().max(100).optional(),
@@ -66,10 +61,5 @@ export const UpdateSiteSettingsSchema = z.object({
   }).optional(),
 })
 
-export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
-export type UpdateStudentSettingsInput = z.infer<typeof UpdateStudentSettingsSchema>
-export type BulkUserActionInput = z.infer<typeof BulkUserActionSchema>
-export type UpdateSiteSettingsInput = z.infer<typeof UpdateSiteSettingsSchema>
 
 export const UpdateProfileSchema = UpdateUserSchema
-export type UpdateProfileInput = UpdateUserInput

@@ -31,8 +31,6 @@ export const CategoryRequestSchema = z.object({
   reason: z.string().min(1, 'Request reason cannot be empty').max(1000),
 })
 
-export type CategoryInput = z.infer<typeof CategorySchema>
-export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>
 export type CategoryRequestInput = z.infer<typeof CategoryRequestSchema>
 
 export const CreateCategoryRequestSchema = CategoryRequestSchema

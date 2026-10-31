@@ -14,7 +14,7 @@ function answerResponse(result: unknown, requestStart: number, sessionDuration: 
   })
 }
 
-type AnswerSubmission = { answerIndexes: number[]; questionIndex?: number }
+type AnswerSubmission = { answerIndexes: number[]; questionIndex?: number; answerRevision?: number }
 
 async function parseAnswerSubmission(req: Request): Promise<{ data: AnswerSubmission } | { response: NextResponse }> {
   let body: unknown
@@ -27,12 +27,9 @@ async function parseAnswerSubmission(req: Request): Promise<{ data: AnswerSubmis
   if (!parsed.success) {
     return { response: NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 }) }
   }
-  const { answer_index, answer_indexes, question_index } = parsed.data
-  const answerIndexes = (answer_indexes && answer_indexes.length > 0 ? answer_indexes : undefined) ??
-    (typeof answer_index === 'number' ? [answer_index] : [])
-  return answerIndexes.length > 0
-    ? { data: { answerIndexes, questionIndex: question_index } }
-    : { response: NextResponse.json({ error: 'No answers submitted' }, { status: 400 }) }
+  const { answer_index, answer_indexes, question_index, answer_revision } = parsed.data
+  const answerIndexes = answer_indexes ?? (typeof answer_index === 'number' ? [answer_index] : [])
+  return { data: { answerIndexes, questionIndex: question_index, answerRevision: answer_revision } }
 }
 
 function getAnswerSessionResponse(session: any): NextResponse | null {
@@ -96,12 +93,13 @@ async function processSelectedAnswer(
   answerIndexes: number[],
   targetIndex: number,
   requestStart: number,
-  sessionDuration: number
+  sessionDuration: number,
+  answerRevision?: number
 ) {
   const answerStart = performance.now()
   const result = session.mode === 'immediate'
     ? await processImmediateAnswer(session, answerIndexes, targetIndex)
-    : await processReviewAnswer(session, answerIndexes, targetIndex)
+    : await (answerRevision === undefined ? processReviewAnswer(session, answerIndexes, targetIndex) : processReviewAnswer(session, answerIndexes, targetIndex, answerRevision))
   return answerResponse(result, requestStart, sessionDuration, answerStart)
 }
 
@@ -113,18 +111,21 @@ async function processValidatedAnswer(
 ) {
   const parsed = await parseAnswerSubmission(req)
   if ('response' in parsed) return parsed.response
+  if (session.mode === 'immediate' && parsed.data.answerIndexes.length === 0) {
+    return NextResponse.json({ error: 'Immediate answers cannot be cleared' }, { status: 400 })
+  }
   const targetIndex = getAnswerTarget(session, parsed.data.questionIndex)
   if (targetIndex instanceof NextResponse) return targetIndex
   const cachedResponse = await getCachedImmediateAnswer(session, targetIndex, requestStart, sessionDuration)
   if (cachedResponse) return cachedResponse
-  return processSelectedAnswer(session, parsed.data.answerIndexes, targetIndex, requestStart, sessionDuration)
+  return processSelectedAnswer(session, parsed.data.answerIndexes, targetIndex, requestStart, sessionDuration, parsed.data.answerRevision)
 }
 
 async function processAnswerRequest(req: Request, id: string, payload: JWTPayload, requestStart: number) {
   const sessionStart = performance.now()
   const validation = await validateQuizSessionRequest(id, payload, {
     requireActive: true,
-    select: '_id student_id is_guest guest_id status expires_at mode current_question_index user_answers score questions_cache question_order answer_version quiz_id'
+    select: '_id student_id is_guest guest_id status expires_at mode current_question_index user_answers score questions_cache question_order answer_version answer_revisions quiz_id'
   })
   if (!validation.isValid) return validation.response
   const sessionDuration = performance.now() - sessionStart

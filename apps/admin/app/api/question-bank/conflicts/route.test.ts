@@ -3,10 +3,10 @@ jest.mock('@/lib/auth/with-auth', () => ({
 }))
 jest.mock('@/lib/db/mongodb', () => ({ connectDB: jest.fn() }))
 jest.mock('@/lib/models/Quiz', () => ({ Quiz: { find: jest.fn(), aggregate: jest.fn() } }))
-jest.mock('@/lib/models/QuestionBank', () => ({ QuestionBank: { findOneAndUpdate: jest.fn() } }))
+jest.mock('@/lib/models/QuestionBank', () => ({ QuestionBank: { findOneAndUpdate: jest.fn(), findOne: jest.fn().mockResolvedValue(null) } }))
 
 import { Quiz } from '@/lib/models/Quiz'
-import { GET } from './route'
+import { GET, POST } from './route'
 
 describe('GET /api/question-bank/conflicts', () => {
   beforeEach(() => {
@@ -49,4 +49,17 @@ describe('GET /api/question-bank/conflicts', () => {
       ],
     })
   })
+})
+
+import { QuestionBank } from '@/lib/models/QuestionBank'
+const source = {options:['a','b','c','d'],correct_answer:[0,1,2],quiz_id:'quiz',course_code:'TEST'}
+const resolve = () => POST(new Request('http://test/conflicts',{method:'POST',body:JSON.stringify({category_id:'123456789012345678901234',question_id:'qid',question_text:'Choose 3 answers',selected_variant:source,update_quizzes:true})}),{payload:{userId:'123456789012345678901234'}} as any)
+test.each([['a','x','y','z'],['a','b','y','z'],['a',' A ','c','d']])('conflict resolution preflights all quizzes before writing %j',async(...options)=>{
+ const good={questions:[{question_id:'qid',text:'Choose 3 answers',options:source.options,correct_answer:[0,1,2]}],save:jest.fn(),markModified:jest.fn()}
+ const bad={questions:[{question_id:'qid',text:'Choose 3 answers',options,correct_answer:[0,1,2]}],save:jest.fn(),markModified:jest.fn()}
+ ;(Quiz.find as jest.Mock).mockResolvedValue([good,bad])
+ expect((await resolve()).status).toBe(409)
+ expect(QuestionBank.findOneAndUpdate).not.toHaveBeenCalled()
+ expect(good.save).not.toHaveBeenCalled()
+ expect(bad.save).not.toHaveBeenCalled()
 })

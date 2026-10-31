@@ -6,6 +6,7 @@ import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { Category } from '@/lib/modules/quiz/models/Category'
 import { Types } from 'mongoose'
 import { parseJsonBody } from '@/lib/core/api-helpers'
+import { getQuestionIdentity } from '@fquiz/models'
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -68,18 +69,13 @@ async function findRealQuizForQuestion(quizId?: string, cleanCourse?: string, qu
   return Quiz.findOne(baseFilter).select('_id course_code title questions question_refs').lean()
 }
 
-async function findAnswerAndExplanation(realQuiz: any, cleanText: string, question_id?: string) {
+async function findAnswerAndExplanation(realQuiz: any, cleanText: string, options: string[], question_id?: string) {
+  const { findQuestionSnapshot, remapPublishedAnswer } = await import('@fquiz/models')
+  const target = { text: cleanText, options, question_id }
   if (realQuiz?.questions && Array.isArray(realQuiz.questions)) {
-    const qDoc = realQuiz.questions.find((q: any) => 
-      (question_id && q._id?.toString() === question_id) ||
-      (q.text && q.text.trim() === cleanText)
-    )
+    const qDoc: any = findQuestionSnapshot(realQuiz.questions, target)
     if (qDoc && (qDoc.correct_answer !== undefined && qDoc.correct_answer !== null)) {
-      const correctAnswer = Array.isArray(qDoc.correct_answer) 
-        ? qDoc.correct_answer 
-        : typeof qDoc.correct_answer === 'number' 
-          ? [qDoc.correct_answer] 
-          : undefined
+      const correctAnswer = remapPublishedAnswer(qDoc, options) ?? undefined
       return { correctAnswer, explanation: qDoc.explanation }
     }
   }
@@ -90,14 +86,11 @@ async function findAnswerAndExplanation(realQuiz: any, cleanText: string, questi
       ...(question_id && Types.ObjectId.isValid(question_id) ? [{ _id: new Types.ObjectId(question_id) }] : []),
       { text: cleanText }
     ]
-  }).select('correct_answer explanation').lean() as any
+  }).select('text options question_id question_id_aliases correct_answer explanation').lean() as any
 
   if (standalone && (standalone.correct_answer !== undefined && standalone.correct_answer !== null)) {
-    const correctAnswer = Array.isArray(standalone.correct_answer)
-      ? standalone.correct_answer
-      : typeof standalone.correct_answer === 'number'
-        ? [standalone.correct_answer]
-        : undefined
+    const matching = findQuestionSnapshot([standalone], target)
+    const correctAnswer = matching ? remapPublishedAnswer(standalone, options) ?? undefined : undefined
     return { correctAnswer, explanation: standalone.explanation }
   }
 
@@ -112,6 +105,7 @@ async function resolveOriginalQuizForQuestion(params: {
   clientCourseCode?: string
   clientQuizTitle?: string
   text: string
+  options: string[]
   question_id?: string
 }): Promise<{
   originalQuizId?: Types.ObjectId
@@ -120,18 +114,19 @@ async function resolveOriginalQuizForQuestion(params: {
   correctAnswer?: number[]
   explanation?: string
 }> {
-  const { quiz_id, clientCourseCode, clientQuizTitle, text, question_id } = params
+  const { quiz_id, clientCourseCode, clientQuizTitle, text, options, question_id } = params
   const cleanText = text.trim()
   const cleanCourse = clientCourseCode?.trim().toUpperCase()
 
   const queryCriteria: any[] = [{ 'questions.text': cleanText }]
+  if (question_id) queryCriteria.unshift({ 'questions.question_id': question_id }, { 'questions.question_id_aliases': question_id })
   if (question_id && Types.ObjectId.isValid(question_id)) {
     queryCriteria.push({ question_refs: new Types.ObjectId(question_id) })
     queryCriteria.push({ 'questions._id': new Types.ObjectId(question_id) })
   }
 
   const realQuiz: any = await findRealQuizForQuestion(quiz_id, cleanCourse, queryCriteria)
-  const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText, question_id)
+  const { correctAnswer, explanation } = await findAnswerAndExplanation(realQuiz, cleanText, options, question_id)
 
   const title = realQuiz?.title ||
     ((clientQuizTitle && !clientQuizTitle.startsWith('Quiz Tr\u1ED9n') && !clientQuizTitle.startsWith('Mix Quiz'))
@@ -174,12 +169,10 @@ export const GET = withAuth(async (req: Request, { payload }) => {
   }
 }, { roles: ['student'] })
 
-async function findExistingPin(studentObjectId: Types.ObjectId, question_id?: string, text?: string) {
+async function findExistingPin(studentObjectId: Types.ObjectId, question_id?: string, text?: string, options: string[] = []) {
   const cleanText = text?.trim() || ''
-  const orConditions: any[] = [{ text: cleanText }]
-  if (question_id) {
-    orConditions.push({ question_id })
-  }
+  const identity = getQuestionIdentity({ text: cleanText, options, question_id })
+  const orConditions: any[] = [{ question_id: identity.question_id }, { text: cleanText, options }]
   return PinnedQuestion.findOne({
     student_id: studentObjectId,
     $or: orConditions,
@@ -206,7 +199,7 @@ async function createPinDocument(params: {
 
   return PinnedQuestion.create({
     student_id: params.studentObjectId,
-    question_id: params.question_id || '',
+    ...getQuestionIdentity({ text: params.text, options: params.options, question_id: params.question_id }),
     quiz_id: params.originalQuizId,
     quiz_title: params.originalQuizTitle,
     course_code: params.originalCourseCode,
@@ -244,6 +237,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Question content is required.' }, { status: 400 })
     }
+    if (!Array.isArray(options) || options.length < 2 || options.some(option => typeof option !== 'string' || !option.trim())) {
+      return NextResponse.json({ error: 'Complete question options are required to identify this question.' }, { status: 400 })
+    }
 
     const studentObjectId = new Types.ObjectId(payload.userId)
 
@@ -253,11 +249,12 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       clientCourseCode: course_code,
       clientQuizTitle: quiz_title,
       text,
+      options: Array.isArray(options) ? options : [],
       question_id,
     })
 
     // Check if question is already pinned by this student
-    const existing = await findExistingPin(studentObjectId, question_id, text)
+    const existing = await findExistingPin(studentObjectId, question_id, text, Array.isArray(options) ? options : [])
 
     if (existing) {
       // Unpin
@@ -284,7 +281,7 @@ export const POST = withAuth(async (req: Request, { payload }) => {
     return NextResponse.json({ pinned: true, item: newPin, message: 'Question pinned successfully.' }, { status: 201 })
   } catch (error: any) {
     if (error?.code === 11000) {
-      return NextResponse.json({ pinned: true, message: 'Question has already been pinned.' }, { status: 200 })
+      return NextResponse.json({ error: 'This legacy pin conflicts with an existing question variant. Refresh your pinned questions before retrying.', code: 'PIN_IDENTITY_CONFLICT' }, { status: 409 })
     }
     console.error('Error toggling pinned question:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

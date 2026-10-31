@@ -1,3 +1,4 @@
+import { formatSessionResultQuestions, historicalResultEvidence, historicalResultQuestionOrder } from './session-result-mapping'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/core/db/mongodb'
@@ -47,6 +48,14 @@ export function resolveEffectiveQuestionOrder(session: any, quiz?: any): number[
     order.every((index: number) => Number.isInteger(index) && index >= 0 && index < questionCount)
 
   return isPermutation ? order : Array.from({ length: questionCount }, (_, index) => index)
+}
+
+export function countAnsweredQuestionIndexes(answers: unknown): number {
+  if (!Array.isArray(answers)) return 0
+  const indices = answers
+    .map((answer: any) => answer?.question_index)
+    .filter((index: unknown) => Number.isInteger(index) && (index as number) >= 0)
+  return new Set(indices).size
 }
 
 function resolveQuestionAtSourceIndex(
@@ -280,38 +289,20 @@ export async function getQuizSessionResult(sessionId: string, userId?: string, g
   const hasCachedQuestions = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
   const quiz = hasCachedQuestions ? null : quizDoc
 
-  if (!hasCachedQuestions && !quiz) return null
-
   const quizUpdatedAfterStart = Boolean(
     quizDoc?.updatedAt &&
     session.started_at &&
     new Date(quizDoc.updatedAt).getTime() > new Date(session.started_at).getTime()
   )
 
-  const { questions: allQuestions, questionOrder } = await resolveEffectiveQuestionDeck(session, quizDoc)
+  const { questions: allQuestions, questionOrder: resolvedOrder } = await resolveEffectiveQuestionDeck(session, quizDoc)
   const sessionAnswers = (session.user_answers ?? []) as UserAnswer[]
 
-  const questions = questionOrder.map((actualIndex: number, displayIndex: number) => {
-    const q = allQuestions[actualIndex]
-    const submitted = sessionAnswers.find((a: UserAnswer) => a.question_index === displayIndex)
-    const correctAnswer = q?.correct_answer
-    const submittedAnswer = submitted
-      ? (submitted.answer_indexes && submitted.answer_indexes.length > 0
-          ? submitted.answer_indexes
-          : submitted.answer_index)
-      : null
-
-    return {
-      _id: q?._id?.toString() ?? `unavailable-${displayIndex}`,
-      text: q?.text ?? 'Question unavailable',
-      options: q?.options ?? [],
-      correct_answer: correctAnswer,
-      explanation: q?.explanation,
-      ...(q?.image_url ? { image_url: q.image_url } : {}),
-      submitted_answer: submittedAnswer,
-      is_correct: submitted?.is_correct ?? false,
-    }
-  })
+  const evidence = historicalResultEvidence(session, quizDoc)
+  const questionOrder = evidence.snapshot_unavailable
+    ? historicalResultQuestionOrder(session, resolvedOrder)
+    : resolvedOrder
+  const questions = formatSessionResultQuestions(session, evidence.snapshot_unavailable ? [] : allQuestions, questionOrder)
 
   return {
     sessionId: session._id.toString(),
@@ -325,6 +316,8 @@ export async function getQuizSessionResult(sessionId: string, userId?: string, g
     is_temp: session.is_temp ?? false,
     is_guest: Boolean(session.is_guest),
     quiz_updated_after_start: quizUpdatedAfterStart,
+    snapshot_unavailable: evidence.snapshot_unavailable,
+    snapshot_source: evidence.snapshot_source,
     flashcard_stats: session.mode === 'flashcard' ? session.flashcard_stats : undefined,
   }
 }

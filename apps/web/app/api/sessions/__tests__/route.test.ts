@@ -37,8 +37,8 @@ describe('GET /api/sessions', () => {
 
   it('should return assessmentSession/learningSession null without quiz_id', async () => {
     const req = new Request('https://web.example.test/api/sessions')
-    const result = await GET({ request: req, params: {} })
-    expect(result).toBeDefined()
+    const result = await GET(req)
+    expect(result.body).toEqual({ assessmentSession: null, learningSession: null })
   })
 })
 

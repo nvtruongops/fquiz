@@ -48,11 +48,14 @@ async function loadPinnedAnswerSources(pinnedDocs: any[]) {
   const texts = Array.from(new Set(missing.map((question) => question.text?.trim()).filter(Boolean) as string[]))
   const [sourceQuizzes, standaloneQuestions] = await Promise.all([
     quizIds.length ? Quiz.find({ _id: { $in: quizIds } }).select('questions').lean() : Promise.resolve([]),
-    texts.length ? Question.find({ text: { $in: texts } }).select('text correct_answer').lean() : Promise.resolve([]),
+    texts.length ? Question.find({ text: { $in: texts } }).select('text options question_id correct_answer').lean() : Promise.resolve([]),
   ])
   for (const quiz of sourceQuizzes as any[]) sourceQuizMap.set(String(quiz._id), quiz)
   for (const question of standaloneQuestions as any[]) {
-    if (question.text) standaloneQuestionMap.set(question.text.trim(), question)
+    if (question.text) {
+      const key = question.text.trim()
+      standaloneQuestionMap.set(key, [...(standaloneQuestionMap.get(key) ?? []), question])
+    }
   }
   return { sourceQuizMap, standaloneQuestionMap }
 }
@@ -148,6 +151,9 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       message: `Successfully created pinned quiz (${quizQuestions.length} questions)!`,
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Pinned question has missing or invalid')) {
+      return NextResponse.json({ error: error.message, code: 'PINNED_ANSWER_CONFLICT' }, { status: 409 })
+    }
     console.error('Error creating quiz from pinned questions:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }

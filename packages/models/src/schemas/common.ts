@@ -82,6 +82,3 @@ export const ImageUploadSchema = z.object({
     }, 'Only JPEG, PNG, GIF, WEBP allowed')
     .optional()
 })
-
-export type PaginationQuery = z.infer<typeof PaginationQuerySchema>
-export type SearchQuery = z.infer<typeof SearchQuerySchema>

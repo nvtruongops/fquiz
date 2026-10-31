@@ -1,29 +1,12 @@
+import { buildQuestionUsageCacheUpdate, normalizeQuestionUsageCodes, SyncQuizSchema } from '@fquiz/models'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { verifyToken } from '@/lib/modules/auth/auth'
 import { withAuth } from '@/lib/modules/auth/with-auth'
 import { connectDB } from '@/lib/core/db/mongodb'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
 import { generateQuestionId } from '@/lib/modules/quiz/question-id-generator'
-import {
-  COURSE_CODE_ALLOWED_MESSAGE,
-  COURSE_CODE_MAX_LENGTH,
-  COURSE_CODE_PATTERN,
-} from '@/lib/modules/quiz/schemas/quiz'
-import { z } from 'zod'
-
-const AutoSyncSchema = z.object({
-  category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
-  course_code: z.string().trim().min(1).max(COURSE_CODE_MAX_LENGTH).regex(COURSE_CODE_PATTERN, COURSE_CODE_ALLOWED_MESSAGE),
-  quiz_id: z.string().optional(),
-  questions: z.array(z.object({
-    text: z.string(),
-    options: z.array(z.string()),
-    correct_answer: z.array(z.number()),
-    explanation: z.string().optional(),
-    image_url: z.string().optional(),
-  })),
-})
+const AutoSyncSchema = SyncQuizSchema
 
 /**
  * POST /api/question-bank/auto-sync
@@ -33,15 +16,6 @@ const AutoSyncSchema = z.object({
  */
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const payload = await verifyToken(req)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (payload.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await req.json()
     const parsed = AutoSyncSchema.safeParse(body)
 
@@ -52,7 +26,11 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       }, { status: 400 })
     }
 
-    const { category_id, course_code, quiz_id, questions } = parsed.data
+    const { category_id, quiz_id, questions } = parsed.data
+    const [course_code] = normalizeQuestionUsageCodes([parsed.data.course_code])
+    if (!course_code) {
+      return NextResponse.json({ error: 'A published quiz code is required for usage tracking' }, { status: 400 })
+    }
 
     await connectDB()
 
@@ -62,9 +40,10 @@ export const POST = withAuth(async (req: Request, { payload }) => {
       : null
 
     // 1. Get all questions currently in this quiz from Question Bank
+    const escapedCourseCode = course_code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const existingBankQuestions = await QuestionBank.find({
       category_id,
-      used_in_quizzes: course_code,
+      used_in_quizzes: { $regex: `^${escapedCourseCode}$`, $options: 'i' },
     }).lean()
 
     // 2. Generate IDs for new questions
@@ -100,30 +79,32 @@ async function syncRemovedQuestions(
   quizObjectId: mongoose.Types.ObjectId | null,
   questionsToRemove: any[]
 ) {
+  const currentQuizId = quizObjectId ? String(quizObjectId) : ''
+  const otherQuizIds = [...new Set(questionsToRemove.flatMap((question) =>
+    (question.used_in_quiz_ids || []).map((id: any) => String(id)).filter((id: string) => id !== currentQuizId))) ]
+  const linkedQuizzes = otherQuizIds.length > 0
+    ? await Quiz.find({
+        _id: { $in: otherQuizIds },
+        status: 'published',
+        is_temp: { $ne: true },
+        is_saved_from_explore: { $ne: true },
+      }).select('_id course_code').lean() as any[]
+    : []
+  const linkedCodesById = new Map(linkedQuizzes.map((quiz) => [String(quiz._id), quiz.course_code]))
+
   for (const oldQuestion of questionsToRemove) {
     const oldQuizIds = (oldQuestion.used_in_quiz_ids || []).map((id: any) => String(id))
-
-    if (oldQuestion.used_in_quizzes.length <= 1 && oldQuizIds.length <= 1) {
-      await QuestionBank.deleteOne({
-        category_id: categoryId,
-        question_id: oldQuestion.question_id,
-      })
-    } else {
-      const updateData: any = {
-        used_in_quizzes: oldQuestion.used_in_quizzes.filter((code: string) => code !== courseCode),
-      }
-      if (quizObjectId) {
-        updateData.used_in_quiz_ids = oldQuizIds.filter((id: string) => id !== String(quizObjectId))
-      }
-      updateData.usage_count = quizObjectId
-        ? updateData.used_in_quiz_ids.length
-        : updateData.used_in_quizzes.length
-
-      await QuestionBank.updateOne(
-        { category_id: categoryId, question_id: oldQuestion.question_id },
-        { $set: updateData }
-      )
-    }
+    const remainingQuizIds = oldQuizIds.filter((id: string) => id !== currentQuizId && linkedCodesById.has(id))
+    const cachedCodes = remainingQuizIds.length > 0
+      ? remainingQuizIds.map((id: string) => linkedCodesById.get(id))
+      : oldQuizIds.length === 0
+        ? normalizeQuestionUsageCodes(oldQuestion.used_in_quizzes || []).filter(code => code !== courseCode)
+        : []
+    const usedInQuizzes = normalizeQuestionUsageCodes(cachedCodes)
+    await QuestionBank.updateOne(
+      { category_id: categoryId, question_id: oldQuestion.question_id },
+      { $set: { used_in_quizzes: usedInQuizzes, used_in_quiz_ids: remainingQuizIds, usage_count: usedInQuizzes.length } },
+    )
   }
 }
 
@@ -159,7 +140,7 @@ async function syncUpsertQuestions(
         image_url: question.image_url,
         created_by: userId,
         usage_count: 1,
-        used_in_quizzes: [courseCode],
+        used_in_quizzes: [normalizeQuestionUsageCodes([courseCode])[0]],
         used_in_quiz_ids: quizObjectId ? [quizObjectId] : [],
         has_conflicts: false,
       })
@@ -174,13 +155,15 @@ async function updateExistingBankQuestion(
   quizObjectId: mongoose.Types.ObjectId | null,
   existing: any
 ) {
+  const [normalizedCourseCode] = normalizeQuestionUsageCodes([courseCode])
+  if (!normalizedCourseCode) return
   const alreadyTrackedById = quizObjectId
     ? (existing.used_in_quiz_ids || []).some((id: any) => String(id) === String(quizObjectId))
-    : existing.used_in_quizzes.includes(courseCode)
+    : normalizeQuestionUsageCodes(existing.used_in_quizzes || []).includes(normalizedCourseCode)
 
   if (!alreadyTrackedById) {
     const updateData: any = {
-      $addToSet: { used_in_quizzes: courseCode },
+      $addToSet: { used_in_quizzes: normalizedCourseCode },
     }
     if (quizObjectId) {
       updateData.$addToSet.used_in_quiz_ids = quizObjectId
@@ -197,13 +180,11 @@ async function updateExistingBankQuestion(
     question_id: questionId,
   })
   if (updated) {
-    const newCount = updated.used_in_quiz_ids && updated.used_in_quiz_ids.length > 0
-      ? updated.used_in_quiz_ids.length
-      : updated.used_in_quizzes.length
-    if (updated.usage_count !== newCount) {
+    const cacheUpdate = buildQuestionUsageCacheUpdate(updated)
+    if (cacheUpdate) {
       await QuestionBank.updateOne(
         { category_id: categoryId, question_id: questionId },
-        { $set: { usage_count: newCount } }
+        { $set: cacheUpdate }
       )
     }
   }

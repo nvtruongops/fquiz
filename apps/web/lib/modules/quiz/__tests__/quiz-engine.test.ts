@@ -56,6 +56,7 @@ function answerWriteFilter(versionFilter: Record<string, unknown>) {
 describe('Quiz Engine', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(QuizSession.findById as jest.Mock).mockImplementation(() => ({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockImplementation(() => Promise.resolve(mockSessionForFind)) }))
     ;(QuizSession.updateOne as jest.Mock).mockResolvedValue({ modifiedCount: 1 })
   })
 
@@ -77,6 +78,109 @@ describe('Quiz Engine', () => {
       expect(result.correctAnswer).toBe(0)
       expect(result.explanation).toBe('Exp 1')
       expect(QuizSession.updateOne).not.toHaveBeenCalled()
+    })
+  })
+
+  it('atomically clears a review answer under answer_version and active guards', async () => {
+    const session = {
+      _id: 'session-123', mode: 'review', status: 'active', answer_version: 4,
+      question_order: [0], current_question_index: 0, score: 1,
+      user_answers: [{ question_index: 0, answer_index: 0, answer_indexes: [0, 1], is_correct: true }],
+      questions_cache: [{ _id: 'q1', text: 'Choose 2', options: ['A', 'B'], correct_answer: [0, 1] }],
+    }
+    const result = await processReviewAnswer(session as any, [], 0)
+    expect(QuizSession.updateOne).toHaveBeenCalledWith(answerWriteFilter({ answer_version: 4 }), expect.objectContaining({
+      $set: expect.objectContaining({ user_answers: [] }), $inc: { answer_version: 1 },
+    }))
+    expect(result).toEqual(expect.objectContaining({ answerIndexes: [] }))
+  })
+
+  it('recomputes final score if an answer clears between the finalization read and write', async () => {
+    const first = { _id: 'session-123', status: 'active', answer_version: 1, question_order: [0],
+      questions_cache: [{ _id: 'q1', text: 'Q', options: ['A', 'B'], correct_answer: [0, 1] }],
+      user_answers: [{ question_index: 0, answer_index: 0, answer_indexes: [0, 1] }] }
+    ;(QuizSession.findById as jest.Mock)
+      .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue(first) })
+      .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ ...first, answer_version: 2, user_answers: [] }) })
+    ;(QuizSession.findOneAndUpdate as jest.Mock)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ _id: 'session-123', status: 'completed', score: 0 })
+    await expect(atomicCompleteSession('session-123')).resolves.toBe(true)
+    expect(QuizSession.findOneAndUpdate).toHaveBeenNthCalledWith(2,
+      { _id: 'session-123', status: { $ne: 'completed' }, answer_version: 2 },
+      expect.objectContaining({ $set: expect.objectContaining({ score: 0 }) }), { new: true })
+  })
+
+  describe('review answer intent revisions', () => {
+    let state: any
+    let snapshot: any
+    const review = processReviewAnswer as any
+    beforeEach(() => {
+      state = { _id: 'session-123', mode: 'review', status: 'active', answer_version: 1,
+        question_order: [0], current_question_index: 0, user_answers: [], score: 0,
+        questions_cache: [{ _id: 'q1', text: 'Choose 2', options: ['A', 'B'], correct_answer: [0, 1] }] }
+      snapshot = { ...state }
+      ;(QuizSession.findById as jest.Mock).mockImplementation(() => ({ select: jest.fn().mockReturnThis(), lean: async () => state }))
+      ;(QuizSession.updateOne as jest.Mock).mockImplementation(async (filter, update) => {
+        const version = filter.$and.find((part: any) => 'answer_version' in part)?.answer_version
+        if (version !== state.answer_version || state.status === 'completed') return { modifiedCount: 0 }
+        const next = { ...state, answer_version: state.answer_version + 1, ...update.$set }
+        for (const [path, value] of Object.entries(update.$set)) {
+          if (path.startsWith('answer_revisions.')) next.answer_revisions = { ...state.answer_revisions, [path.split('.')[1]]: value }
+        }
+        state = next
+        return { modifiedCount: 1 }
+      })
+    })
+
+    it('keeps an acknowledged clear when an in-flight older request retries after reload', async () => {
+      let releaseOld!: () => void
+      let oldStarted!: () => void
+      const started = new Promise<void>((resolve) => { oldStarted = resolve })
+      const gate = new Promise<void>((resolve) => { releaseOld = resolve })
+      const persist = (QuizSession.updateOne as jest.Mock).getMockImplementation()!
+      ;(QuizSession.updateOne as jest.Mock).mockImplementationOnce(async (filter, update) => {
+        oldStarted()
+        await gate
+        return persist(filter, update)
+      })
+      const oldRequest = review(snapshot, [0, 1], 0, 1)
+      await started
+      await review(snapshot, [], 0, 2)
+      releaseOld()
+      await expect(oldRequest).rejects.toMatchObject({ code: 'ANSWER_CONFLICT' })
+      expect(state.user_answers).toEqual([])
+      expect(state.answer_revisions).toEqual({ 0: 2 })
+      expect(state.answer_version).toBe(2)
+      expect(QuizSession.updateOne).toHaveBeenCalledWith(expect.objectContaining({ $and: expect.arrayContaining([
+        { $or: [{ 'answer_revisions.0': { $exists: false } }, { 'answer_revisions.0': { $lt: 2 } }] },
+      ]) }), expect.objectContaining({ $set: expect.objectContaining({ 'answer_revisions.0': 2, user_answers: [] }) }))
+    })
+
+    it('acknowledges an identical revision retry without another write, including clear tombstones', async () => {
+      await review(snapshot, [], 0, 2)
+      const writes = (QuizSession.updateOne as jest.Mock).mock.calls.length
+      expect(await review(state, [], 0, 2)).toMatchObject({ answerIndexes: [], answerRevision: 2 })
+      expect(QuizSession.updateOne).toHaveBeenCalledTimes(writes)
+      await expect(review(state, [0], 0, 2)).rejects.toMatchObject({ code: 'ANSWER_CONFLICT' })
+      expect(state.user_answers).toEqual([])
+    })
+
+    it('blocks revisionless legacy requests once a revision tombstone exists', async () => {
+      await review(snapshot, [], 0, 2)
+      await expect(review(state, [0], 0)).rejects.toMatchObject({ code: 'ANSWER_CONFLICT' })
+      expect(state.user_answers).toEqual([])
+    })
+
+    it('never exposes review correctness or score before completion even on the last question', async () => {
+      const correct = await review(snapshot, [0, 1], 0, 1)
+      const wrong = await review(state, [0], 0, 2)
+      for (const response of [correct, wrong]) {
+        expect(response).not.toHaveProperty('score')
+        expect(response).not.toHaveProperty('isCorrect')
+        expect(response).not.toHaveProperty('correctAnswer')
+        expect(response).not.toHaveProperty('correctAnswers')
+      }
     })
   })
 
@@ -102,6 +206,10 @@ describe('Quiz Engine', () => {
       { _id: 'q2', text: 'Q2', options: ['C', 'D'], correct_answer: [1] },
       { _id: 'q3', text: 'Q3', options: ['E', 'F'], correct_answer: [0, 1] },
     ] as any[]
+
+    it('does not score a stale scalar when an explicit empty set is present', () => {
+      expect(calculateScore([{ question_index: 0, answer_index: 0, answer_indexes: [] }] as any, questions)).toBe(0)
+    })
 
     it('should calculate score correctly for sequential questions', () => {
       const userAnswers = [
@@ -342,7 +450,7 @@ describe('Quiz Engine', () => {
       )
     })
 
-    it('should handle last question by returning completed: false and final score, without advancing index', async () => {
+    it('keeps the last review answer editable without revealing its score', async () => {
       mockSession.current_question_index = 1
       mockSession.user_answers = [
         { question_index: 0, answer_index: 0, answer_indexes: [0], is_correct: true },
@@ -352,14 +460,13 @@ describe('Quiz Engine', () => {
       const result = await processReviewAnswer(mockSession, [1]) // Correct for Q2
 
       expect(result.completed).toBe(false)
-      expect(result.score).toBe(2)
+      expect(result).not.toHaveProperty('score')
 
       expect(QuizSession.updateOne).toHaveBeenCalledWith(
         answerWriteFilter({ answer_version: 1 }),
         expect.objectContaining({
           $set: expect.objectContaining({
             current_question_index: 1,
-            score: 2,
           }),
           $inc: { answer_version: 1 },
         })
@@ -393,7 +500,7 @@ describe('Quiz Engine', () => {
 
       expect(completed).toBe(true)
       expect(QuizSession.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: 'session-123', status: { $ne: 'completed' } },
+        { _id: 'session-123', status: { $ne: 'completed' }, answer_version: { $exists: false } },
         {
           $set: expect.objectContaining({
             status: 'completed',

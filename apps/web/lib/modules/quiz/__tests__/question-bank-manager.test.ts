@@ -3,8 +3,6 @@ import {
   checkQuestionsInBank,
   addOrUpdateQuestionInBank,
   syncQuizToQuestionBank,
-  renameQuizCodeInBank,
-  removeQuizFromBank,
 } from '../question-bank-manager'
 import { QuestionBank } from '../models/QuestionBank'
 import { generateQuestionId } from '../question-id-generator'
@@ -33,7 +31,6 @@ jest.mock('../models/QuestionBank', () => {
       find: jest.fn(),
       updateOne: jest.fn(),
       create: jest.fn(),
-      deleteOne: jest.fn(),
       updateMany: jest.fn(),
       findById: jest.fn(),
       mockDoc, // reference to mock doc for easy tests
@@ -174,7 +171,7 @@ describe('Question Bank Manager', () => {
 
       const mockUpdated = {
         _id: 'doc-123',
-        used_in_quizzes: ['COURSE1', 'COURSE2'],
+        used_in_quizzes: ['course1', 'COURSE1', 'COURSE2'],
         used_in_quiz_ids: ['quiz-123', 'quiz-456'],
         usage_count: 1,
         save: jest.fn().mockResolvedValue(true),
@@ -201,6 +198,7 @@ describe('Question Bank Manager', () => {
         })
       )
       expect(mockUpdated.usage_count).toBe(2)
+      expect(mockUpdated.used_in_quizzes).toEqual(['COURSE1', 'COURSE2'])
       expect(mockUpdated.save).toHaveBeenCalled()
     })
 
@@ -223,7 +221,7 @@ describe('Question Bank Manager', () => {
         expect.objectContaining({
           text: 'Test Question',
           options: ['A', 'B'],
-          correct_answer: 0,
+          correct_answer: [0],
           created_by: 'user-123',
           usage_count: 1,
         })
@@ -273,67 +271,13 @@ describe('Question Bank Manager', () => {
     })
   })
 
-  describe('renameQuizCodeInBank', () => {
-    it('should call updateMany to rename codes in used_in_quizzes array', async () => {
-      await renameQuizCodeInBank('cat-123', 'OLDCODE', 'NEWCODE')
+})
 
-      expect(QuestionBank.updateMany).toHaveBeenNthCalledWith(
-        1,
-        {
-          category_id: 'cat-123',
-          used_in_quizzes: { $all: ['OLDCODE', 'NEWCODE'] },
-        },
-        { $pull: { used_in_quizzes: 'OLDCODE' } }
-      )
-
-      expect(QuestionBank.updateMany).toHaveBeenNthCalledWith(
-        2,
-        {
-          category_id: 'cat-123',
-          used_in_quizzes: 'OLDCODE',
-        },
-        { $set: { 'used_in_quizzes.$': 'NEWCODE' } }
-      )
-    })
-  })
-
-  describe('removeQuizFromBank', () => {
-    it('should decrease usage_count and update if other quizzes still use it', async () => {
-      const mockDoc = {
-        _id: 'doc-123',
-        used_in_quizzes: ['COURSE1', 'COURSE2'],
-        used_in_quiz_ids: ['quiz-123', 'quiz-456'],
-        usage_count: 2,
-        save: jest.fn().mockResolvedValue(true),
-      }
-      ;(QuestionBank.find as jest.Mock).mockResolvedValue([mockDoc])
-      ;(QuestionBank.deleteOne as jest.Mock).mockResolvedValue({ deletedCount: 1 })
-
-      await removeQuizFromBank('cat-123', 'COURSE1', 'quiz-123')
-
-      expect(mockDoc.used_in_quizzes).toEqual(['COURSE2'])
-      expect(mockDoc.used_in_quiz_ids).toEqual(['quiz-456'])
-      expect(mockDoc.usage_count).toBe(1)
-      expect(mockDoc.save).toHaveBeenCalled()
-      expect(QuestionBank.deleteOne).not.toHaveBeenCalled()
-    })
-
-    it('should delete the question if it is no longer used in any quiz', async () => {
-      const mockDoc = {
-        _id: 'doc-123',
-        used_in_quizzes: ['COURSE1'],
-        used_in_quiz_ids: ['quiz-123'],
-        usage_count: 1,
-        save: jest.fn().mockResolvedValue(true),
-      }
-      ;(QuestionBank.find as jest.Mock).mockResolvedValue([mockDoc])
-      ;(QuestionBank.deleteOne as jest.Mock).mockResolvedValue({ deletedCount: 1 })
-
-      await removeQuizFromBank('cat-123', 'COURSE1', 'quiz-123')
-
-      expect(mockDoc.used_in_quizzes).toEqual([])
-      expect(mockDoc.used_in_quiz_ids).toEqual([])
-      expect(QuestionBank.deleteOne).toHaveBeenCalledWith({ _id: 'doc-123' })
-    })
-  })
+test('preflights every incoming bank question before the first write', async () => {
+  jest.clearAllMocks()
+  const valid = { text:'Choose 3 answers',options:['a','b','c','d'],correct_answer:[0,1,2] }
+  ;(QuestionBank.findOne as jest.Mock).mockReturnValue(Object.assign(Promise.resolve(null), {lean: async () => null}))
+  ;(QuestionBank.create as jest.Mock).mockResolvedValue({_id:'created'})
+  await expect(syncQuizToQuestionBank('cat','CODE',[valid,{...valid,correct_answer:[0]}],'user')).rejects.toThrow()
+  expect(QuestionBank.create).not.toHaveBeenCalled()
 })

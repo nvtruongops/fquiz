@@ -1,25 +1,16 @@
 import React from 'react'
 import { SessionSaveStatus } from '../SessionSaveStatus'
 
-it('keeps ordinary background saving out of the visible layout', () => {
-  expect(SessionSaveStatus({
-    status: 'saving', onRetry: jest.fn(), onReviewDraft: jest.fn(),
-    onDiscardDraft: jest.fn(), draftQuestionNumber: 2, disabled: false,
-  })).toBeNull()
+it.each(['idle', 'saving', 'saved', 'unsaved'] as const)('hides normal %s save state', (status) => {
+  expect(SessionSaveStatus({ status, onRetry: jest.fn(), disabled: false })).toBeNull()
 })
 
-it('offers navigation and discard actions for an incomplete draft', () => {
-  const review = jest.fn()
-  const discard = jest.fn()
-  const strip = SessionSaveStatus({
-    status: 'unsaved', onRetry: jest.fn(), onReviewDraft: review,
-    onDiscardDraft: discard, draftQuestionNumber: 2, disabled: false,
-  })!
+it('shows only save failure and retry for real errors', () => {
+  const retry = jest.fn()
+  const strip = SessionSaveStatus({ status: 'error', onRetry: retry, disabled: false })!
   const children = React.Children.toArray(strip.props.children) as React.ReactElement[]
-  expect(children[0].props.children).toContain('2')
-  const actions = React.Children.toArray(children[1].props.children) as React.ReactElement[]
-  actions.find((child) => child.props.children === 'Review draft')!.props.onClick()
-  actions.find((child) => child.props.children === 'Discard draft')!.props.onClick()
-  expect(review).toHaveBeenCalledTimes(1)
-  expect(discard).toHaveBeenCalledTimes(1)
+  expect(children[0].props.children).toBe('Failed to save')
+  expect(children[1].props.children).toBe('Retry')
+  children[1].props.onClick()
+  expect(retry).toHaveBeenCalledTimes(1)
 })

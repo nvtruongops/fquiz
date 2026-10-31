@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { stripHtml, MongoIdSchema } from './common'
-import { getExplicitAnswerSelectionCount } from '../utils/question-selection-helper'
+import { getPublishedAnswerError } from '../utils/published-answer'
 
 export const COURSE_CODE_MAX_LENGTH = 150
 export const COURSE_CODE_MAX_LENGTH_MESSAGE = `Course code / Quiz code cannot exceed ${COURSE_CODE_MAX_LENGTH} characters`
@@ -9,13 +9,13 @@ export const COURSE_CODE_PATTERN = /^[a-zA-Z0-9_ :ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚ
 
 export const QuestionSchema = z.object({
   question_id: z.string().optional(),
+  question_id_aliases: z.array(z.string()).optional(),
   text: z
     .string()
     .min(1, 'Question text cannot be empty')
     .max(10000, 'Question text cannot exceed 10000 characters')
     .transform(stripHtml)
-    .optional()
-    .default(''),
+    .refine(text => text.trim().length > 0, 'Question text cannot be empty'),
   options: z
     .array(
       z.string()
@@ -63,33 +63,14 @@ export const QuestionSchema = z.object({
       'Image URL must use HTTPS'
     )
     .optional(),
-}).refine(
-  (data) => {
-    if (data.correct_answer && data.options) {
-      const answers = Array.isArray(data.correct_answer) ? data.correct_answer : [data.correct_answer]
-      return answers.every((idx: number) => idx < data.options!.length)
-    }
-    return true
-  },
-  {
-    message: 'Correct answer index exceeds the number of options',
-    path: ['correct_answer'],
-  }
-).refine(
-  (data) => {
-    const requestedCount = getExplicitAnswerSelectionCount(data.text)
-    if (requestedCount === null) return true
-    const answers = Array.isArray(data.correct_answer) ? data.correct_answer : [data.correct_answer]
-    return answers.length === requestedCount
-  },
-  {
-    message: 'Correct answer count must match the number requested in the question text',
-    path: ['correct_answer'],
-  }
-)
+ }).superRefine((data, ctx) => {
+  const message = getPublishedAnswerError(data)
+  if (message) ctx.addIssue({ code: 'custom', message, path: ['correct_answer'] })
+}).transform(data => ({ ...data, correct_answer: Array.isArray(data.correct_answer) ? data.correct_answer : [data.correct_answer] }))
 
 export const DraftQuestionSchema = z.object({
   question_id: z.string().optional(),
+  question_id_aliases: z.array(z.string()).optional(),
   text: z.string().max(10000).optional().default(''),
   options: z
     .array(z.string().max(500))
@@ -174,13 +155,13 @@ export const AdminSaveDraftQuizSchema = z.object({
 export const SubmitAnswerSchema = z
   .object({
     answer_index: z.number().int().min(0, 'answer_index must be a non-negative integer').optional(),
+    answer_revision: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     answer_indexes: z
       .array(z.number().int().min(0, 'answer_indexes must contain non-negative integers'))
-      .min(1, 'answer_indexes must contain at least one value')
       .optional(),
     question_index: z.number().int().min(0, 'question_index must be a non-negative integer').optional(),
   })
-  .refine((data) => typeof data.answer_index === 'number' || (data.answer_indexes?.length ?? 0) > 0, {
+  .refine((data) => typeof data.answer_index === 'number' || data.answer_indexes !== undefined, {
     message: 'Either answer_index or answer_indexes is required',
     path: ['answer_indexes'],
   })
@@ -217,18 +198,23 @@ export type SaveDraftQuizInput = z.infer<typeof SaveDraftQuizSchema>
 export type AdminCreateQuizInput = z.infer<typeof AdminCreateQuizSchema>
 export type AdminSaveDraftQuizInput = z.infer<typeof AdminSaveDraftQuizSchema>
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>
-export type CreateStudentQuizInput = z.infer<typeof CreateStudentQuizSchema>
-export type CreateSessionInput = z.infer<typeof CreateSessionSchema>
 
-export const QuestionInputSchema = z.object({
-  text: z.string().min(1),
-  options: z.array(z.string()).min(2),
-  correct_answer: z.array(z.number().int().min(0)),
+export const QuestionInputSchema = QuestionSchema
+
+export const QuestionBankVariantSchema = z.object({
+  text: z.string(),
+  options: z.array(z.string()),
+  correct_answer: z.union([z.number(), z.array(z.number())]),
   explanation: z.string().optional(),
   image_url: z.string().optional(),
 })
 
-export type QuestionBankInput = z.infer<typeof QuestionInputSchema>
+export const SyncQuestionUpdateSchema = z.object({
+  category_id: MongoIdSchema,
+  old_question_id: z.string(),
+  new_question: QuestionInputSchema,
+})
+
 
 export const SyncQuizSchema = z.object({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),

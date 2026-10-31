@@ -1,23 +1,25 @@
+import { getPublishedAnswerError } from '../utils/published-answer'
 import mongoose, { Schema } from 'mongoose'
 import type { IQuiz, IQuestion } from '../entities/quiz.types'
-import { generateQuestionId } from '../utils/question-id-generator'
 import { ensureExplanation } from '../utils/explanation-generator'
+import { getQuestionIdentity } from '../utils/question-identity'
 
 const QuestionSchema = new Schema<IQuestion>(
   {
     question_id: { type: String, required: false },
+    question_id_aliases: { type: [String], default: undefined },
     text: { 
       type: String, 
-      required: true,
-      minlength: [1, 'Question text cannot be empty'],
+      required: function(this: any) { return this.ownerDocument().status !== 'draft' },
+      validate: { validator: function(this: any, v: string) { return this.ownerDocument().status === 'draft' || Boolean(v?.length) }, message: 'Question text cannot be empty' },
       maxlength: [10000, 'Question text cannot exceed 10000 characters']
     },
     options: { 
       type: [String], 
       required: true,
       validate: {
-        validator: function(v: string[]) {
-          return v.length >= 2;
+        validator: function(this: any, v: string[]) {
+          return this.ownerDocument().status === 'draft' || v.length >= 2;
         },
         message: 'At least 2 options are required'
       }
@@ -26,11 +28,9 @@ const QuestionSchema = new Schema<IQuestion>(
       type: [Number], 
       required: true,
       validate: {
-        validator: function(v: number[]) {
-          if (v.length < 1) return false
-          // @ts-ignore - this refers to question subdoc
-          const optionsLength = this.options?.length ?? 0
-          return v.every(i => i >= 0 && i < optionsLength)
+        validator: function(this: any, v: number[]) {
+          if (typeof this.ownerDocument === 'function' && this.ownerDocument().status === 'draft') return true
+          return getPublishedAnswerError({ text: this.text, options: this.options, correct_answer: v }) === null
         },
         message: 'correct_answer indices must be within options range'
       }
@@ -95,6 +95,7 @@ QuizSchema.index({ created_by: 1, is_temp: 1, created_at: -1 })
 QuizSchema.index({ created_by: 1, status: 1 })
 QuizSchema.index({ created_by: 1, original_quiz_id: 1, is_saved_from_explore: 1 })
 QuizSchema.index({ 'questions.question_id': 1 })
+QuizSchema.index({ 'questions.question_id_aliases': 1 })
 
 QuizSchema.pre('validate', function () {
   if (typeof this.course_code === 'string') {
@@ -106,13 +107,7 @@ QuizSchema.pre('save', function () {
   if (this.questions && this.questions.length > 0) {
     this.questionCount = this.questions.length
     this.questions.forEach((q: any) => {
-      if (!q.question_id && q.text && q.options) {
-        q.question_id = generateQuestionId({
-          text: q.text,
-          options: q.options,
-          correct_answer: q.correct_answer || []
-        })
-      }
+      if (q.text && q.options?.length >= 2) Object.assign(q, getQuestionIdentity(q))
       if (!q.explanation || q.explanation.trim() === '') {
         q.explanation = ensureExplanation({
           text: q.text,

@@ -33,14 +33,14 @@ function parseAnswerToken(value: unknown): number {
 
 function splitAnswerTokens(value: string): string[] {
   const tokens = value
-    .split(/[,\s;|/\\+&\-]+|\b(?:and|và)\b/i)
+    .split(/[,\s;|/\\+&]+|\b(?:and|và)\b/i)
     .map((item) => item.trim())
     .filter(Boolean)
 
   const expanded: string[] = []
   for (const token of tokens) {
     const cleanToken = token.replace(/^\[|\]$/g, '').trim()
-    if (/^[A-Za-z]{2,6}$/.test(cleanToken)) {
+    if (/^[A-Ja-j]{2,10}$/.test(cleanToken)) {
       for (const char of cleanToken) {
         expanded.push(char)
       }
@@ -51,21 +51,14 @@ function splitAnswerTokens(value: string): string[] {
   return expanded
 }
 
-function normalizeCorrectAnswers(question: ImportRawQuestion): number[] {
-  const source = Array.isArray(question.correct_answer)
-    ? question.correct_answer
-    : Array.isArray(question.correct_answers)
-      ? question.correct_answers
-      : typeof question.correct_answer === 'string'
-        ? splitAnswerTokens(question.correct_answer)
-      : typeof question.correct_answer === 'number'
-        ? [question.correct_answer]
-      : typeof question.correct_answers === 'number'
-        ? [question.correct_answers]
-      : []
-  return source
-    .map((value) => parseAnswerToken(value))
-    .filter((value) => Number.isInteger(value) && value >= 0)
+function normalizeCorrectAnswers(question: ImportRawQuestion): { answers: number[]; errors: string[] } {
+  const raw = question.correct_answer ?? question.correct_answers
+  const values = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw]
+  const tokens = values.flatMap(value => typeof value === 'string' ? splitAnswerTokens(value) : [value])
+  const parsed = tokens.map(parseAnswerToken)
+  const errors = tokens.filter((_, index) => !Number.isInteger(parsed[index]) || parsed[index] < 0).map(String)
+  // Invalid source data must not become a smaller, apparently valid answer key.
+  return { answers: errors.length ? [] : parsed, errors }
 }
 
 function normalizeQuestionText(question: ImportRawQuestion): string {
@@ -97,10 +90,12 @@ function unwrapQuestionShape(question: ImportRawQuestion): { source: ImportRawQu
 
 function normalizeQuestion(question: ImportRawQuestion): NormalizedQuestion {
   const { source, questionNo } = unwrapQuestionShape(question)
+  const parsedAnswers = normalizeCorrectAnswers(source)
   const normalized: NormalizedQuestion = {
     text: normalizeQuestionText(source),
     options: normalizeOptions(source.options),
-    correct_answer: normalizeCorrectAnswers(source),
+    correct_answer: parsedAnswers.answers,
+    ...(parsedAnswers.errors.length ? { answer_parse_errors: parsedAnswers.errors } : {}),
     ...(questionNo ? { question_no: questionNo } : {}),
   }
 

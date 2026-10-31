@@ -1,11 +1,10 @@
+import { buildQuestionUsageCacheUpdate, normalizeQuestionUsageCodes, QuestionInputSchema, Question, rebuildQuestionBankUsageFromModels } from '@fquiz/models'
 import { QuestionBank } from '@/lib/modules/quiz/models/QuestionBank'
 import { Quiz } from '@/lib/modules/quiz/models/Quiz'
-import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 import { generateQuestionId, areAnswersSame } from '@/lib/modules/quiz/question-id-generator'
 import { normalizeTextAST, normalizeOptionAST } from '@/lib/modules/quiz/utils/ast-normalizer'
 import { ensureArray } from '@/lib/core/utils/array-utils'
 import type { Types } from 'mongoose'
-import { buildQuestionBankOperations } from './question-bank-reconciliation'
 
 function hasOptionOverlap(opts1: string[], opts2: string[]): boolean {
   if (!opts1 || !opts2 || opts1.length === 0 || opts2.length === 0) return false
@@ -43,6 +42,21 @@ export interface ConflictInfo {
   existingQuestion?: ExistingQuestionInfo
   conflictType?: 'same_answer' | 'different_answer'
   message?: string
+}
+
+function toExistingQuestionInfo(existing: any): ExistingQuestionInfo {
+  const usedInQuizzes = normalizeQuestionUsageCodes(existing.used_in_quizzes || [])
+  return {
+    _id: String(existing._id),
+    question_id: existing.question_id,
+    text: existing.text,
+    options: existing.options,
+    correct_answer: existing.correct_answer,
+    explanation: existing.explanation,
+    used_in_quizzes: usedInQuizzes,
+    used_in_quiz_ids: (existing.used_in_quiz_ids || []).map((id: any) => String(id)),
+    usage_count: usedInQuizzes.length,
+  }
 }
 
 function formatUsedInQuizzes(existing: {
@@ -84,17 +98,7 @@ export async function checkQuestionInBank(
     return { hasConflict: false }
   }
 
-  const existingInfo: ExistingQuestionInfo = {
-    _id: String(existing._id),
-    question_id: existing.question_id,
-    text: existing.text,
-    options: existing.options,
-    correct_answer: existing.correct_answer,
-    explanation: existing.explanation,
-    used_in_quizzes: existing.used_in_quizzes || [],
-    used_in_quiz_ids: (existing.used_in_quiz_ids || []).map((id: any) => String(id)),
-    usage_count: existing.usage_count
-  }
+  const existingInfo = toExistingQuestionInfo(existing)
   
   // Layer 2: Compare answers by TEXT (not index)
   const sameAnswer = areAnswersSame(
@@ -170,17 +174,7 @@ export async function checkQuestionsInBank(
       { options: existing.options, correct_answer: existing.correct_answer }
     )
 
-    const existingInfo: ExistingQuestionInfo = {
-      _id: String(existing._id),
-      question_id: existing.question_id,
-      text: existing.text,
-      options: existing.options,
-      correct_answer: existing.correct_answer,
-      explanation: existing.explanation,
-      used_in_quizzes: existing.used_in_quizzes || [],
-      used_in_quiz_ids: (existing.used_in_quiz_ids || []).map((id: any) => String(id)),
-      usage_count: existing.usage_count || 1,
-    }
+    const existingInfo = toExistingQuestionInfo(existing)
 
     conflicts.set(index, {
       hasConflict: true,
@@ -195,6 +189,31 @@ export async function checkQuestionsInBank(
   return conflicts
 }
 
+async function updateExistingQuestionUsage(
+  existing: { _id: unknown },
+  courseCode: string,
+  quizId?: Types.ObjectId | string,
+) {
+  const [normalizedCourseCode] = normalizeQuestionUsageCodes([courseCode])
+  if (normalizedCourseCode) {
+    await QuestionBank.updateOne(
+      { _id: existing._id },
+      { $addToSet: {
+        used_in_quizzes: normalizedCourseCode,
+        ...(quizId ? { used_in_quiz_ids: quizId } : {}),
+      } }
+    )
+  }
+
+  const updated = await QuestionBank.findById(existing._id)
+  if (!updated) return
+  const cacheUpdate = buildQuestionUsageCacheUpdate(updated)
+  if (!cacheUpdate) return
+  updated.used_in_quizzes = cacheUpdate.used_in_quizzes
+  updated.usage_count = cacheUpdate.usage_count
+  await updated.save()
+}
+
 /**
  * Adds or updates a question in the bank
  */
@@ -205,6 +224,7 @@ export async function addOrUpdateQuestionInBank(
   userId: Types.ObjectId | string,
   quizId?: Types.ObjectId | string
 ): Promise<{ _id: string; isNew: boolean }> {
+  question = QuestionInputSchema.parse(question)
   const questionId = generateQuestionId(question)
 
   const existing = await QuestionBank.findOne({
@@ -213,28 +233,11 @@ export async function addOrUpdateQuestionInBank(
   })
 
   if (existing) {
-    await QuestionBank.updateOne(
-      { _id: existing._id },
-      {
-        $addToSet: {
-          used_in_quizzes: courseCode,
-          ...(quizId ? { used_in_quiz_ids: quizId } : {}),
-        },
-      }
-    )
-
-    const updated = await QuestionBank.findById(existing._id)
-    if (updated) {
-      const newCount = (updated.used_in_quizzes || []).length
-      if (updated.usage_count !== newCount) {
-        updated.usage_count = newCount
-        await updated.save()
-      }
-    }
-
+    await updateExistingQuestionUsage(existing, courseCode, quizId)
     return { _id: String(existing._id), isNew: false }
   }
 
+  const usageCodes = normalizeQuestionUsageCodes([courseCode])
   const newQuestion = await QuestionBank.create({
     category_id: categoryId,
     question_id: questionId,
@@ -244,9 +247,9 @@ export async function addOrUpdateQuestionInBank(
     explanation: question.explanation,
     image_url: question.image_url,
     created_by: userId,
-    usage_count: 1,
-    used_in_quizzes: [courseCode],
-    used_in_quiz_ids: quizId ? [quizId] : [],
+    usage_count: usageCodes.length,
+    used_in_quizzes: usageCodes,
+    used_in_quiz_ids: usageCodes.length > 0 && quizId ? [quizId] : [],
   })
 
   return { _id: String(newQuestion._id), isNew: true }
@@ -267,6 +270,7 @@ export async function syncQuizToQuestionBank(
   existing: number
   conflicts: ConflictInfo[]
 }> {
+  questions = QuestionInputSchema.array().parse(questions)
   let newCount = 0
   let existingCount = 0
   const conflicts: ConflictInfo[] = []
@@ -316,98 +320,8 @@ export async function getPopularQuestions(
 }
 
 /**
- * Renames course_code in bank tracking (when quiz code changes).
- * In-place rename to preserve usage_count, used_in_quiz_ids
- * (prevents obsolete codes remaining in used_in_quizzes).
- */
-export async function renameQuizCodeInBank(
-  categoryId: Types.ObjectId | string,
-  oldCode: string,
-  newCode: string
-) {
-  const normalizedOld = oldCode.trim().toUpperCase()
-  const normalizedNew = newCode.trim().toUpperCase()
-  if (!normalizedOld || normalizedOld === normalizedNew) return
-
-  // Docs already containing the new code: just drop the old code (avoid dupes).
-  await QuestionBank.updateMany(
-    {
-      category_id: categoryId,
-      used_in_quizzes: { $all: [normalizedOld, normalizedNew] },
-    },
-    { $pull: { used_in_quizzes: normalizedOld } }
-  )
-
-  // Docs with only the old code: rename it in-place via the positional operator.
-  await QuestionBank.updateMany(
-    {
-      category_id: categoryId,
-      used_in_quizzes: normalizedOld,
-    },
-    { $set: { 'used_in_quizzes.$': normalizedNew } }
-  )
-}
-
-/**
- * Removes a quiz from usage tracking
- */
-export async function removeQuizFromBank(
-  categoryId: Types.ObjectId | string,
-  courseCode: string,
-  quizId?: Types.ObjectId | string
-) {
-  // Get affected docs BEFORE updating
-  const affectedDocs = await QuestionBank.find({
-    category_id: categoryId,
-    $or: [
-      { used_in_quizzes: courseCode },
-      ...(quizId ? [{ used_in_quiz_ids: quizId }] : []),
-    ],
-  })
-
-  for (const doc of affectedDocs) {
-    const oldQuizIds = (doc.used_in_quiz_ids || []).map((id: any) => String(id))
-    const oldCodes = doc.used_in_quizzes || []
-
-    doc.used_in_quizzes = Array.from(new Set(oldCodes.filter((c: string) => c !== courseCode)))
-    doc.used_in_quiz_ids = oldQuizIds
-      .filter((id: string) => !quizId || id !== String(quizId))
-      .map((id: string) => id as any)
-
-    const newCount = doc.used_in_quizzes.length
-
-    if (newCount === 0) {
-      await QuestionBank.deleteOne({ _id: doc._id })
-    } else {
-      doc.usage_count = newCount
-      await doc.save()
-    }
-  }
-}
-
-/**
  * Rebuild / Reconcile QuestionBank cache directly from Quiz collection (Single Source of Truth)
  */
 export async function rebuildQuestionBankUsage(): Promise<{ processedQuizzes: number; syncedQuestions: number }> {
-  const publicQuizzes = await Quiz.find({
-    ...getPublicQuizFilter(),
-  })
-    .select('_id course_code category_id questions created_by')
-    .lean()
-  const { bulkOps, syncedQuestionIds } = buildQuestionBankOperations(publicQuizzes)
-
-  if (bulkOps.length > 0) {
-    await QuestionBank.bulkWrite(bulkOps, { ordered: false })
-  }
-
-  // WIPE STALE RECORDS: Any QuestionBank document whose question_id is not in any public quiz
-  await QuestionBank.updateMany(
-    { question_id: { $nin: syncedQuestionIds } },
-    { $set: { used_in_quizzes: [], used_in_quiz_ids: [], usage_count: 0 } }
-  )
-
-  return {
-    processedQuizzes: publicQuizzes.length,
-    syncedQuestions: syncedQuestionIds.length,
-  }
+  return rebuildQuestionBankUsageFromModels(Quiz, Question, QuestionBank)
 }

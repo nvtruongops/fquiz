@@ -59,6 +59,13 @@ import { GET } from '../route'
 import { QuizSession } from '@/lib/modules/quiz/models/QuizSession'
 
 describe('GET /api/history', () => {
+  it('does not expose a running review score or correct count through history', async () => {
+    ;(QuizSession.aggregate as jest.Mock)
+      .mockResolvedValueOnce([{ totalQuizzes: 1, totalAttempts: 1, completedCount: 0, perfectScores: 0 }])
+      .mockResolvedValueOnce([{ _id: '507f1f77bcf86cd799439022', quiz_id: null, score: 1, mode: 'review', status: 'active', user_answers: [{ question_index: 0, is_correct: true }] }])
+    const response = await GET(new Request('https://web.example.test/api/history'), { params: {} } as any) as any
+    expect(response.body.history[0]).toMatchObject({ score: 0, correct_count: 0 })
+  })
   it('should handle sessions with null quiz_id without throwing 500 error', async () => {
     const req = new Request('https://web.example.test/api/history?page=1&limit=20')
     const res = await (GET as any)(req, { params: {} })

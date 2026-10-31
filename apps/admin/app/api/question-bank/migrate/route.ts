@@ -1,3 +1,4 @@
+import { QuestionInputSchema, hasSameQuestionContent, normalizeQuestionUsageCodes, remapPublishedAnswer } from '@fquiz/models'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { withAuth } from '@/lib/auth/with-auth'
@@ -171,7 +172,7 @@ function processMigrateEntry(
     }
 
     const existingQuizIds = (existing.used_in_quiz_ids || []).map((id: any) => String(id))
-    const existingCodes = new Set<string>(existing.used_in_quizzes || [])
+    const existingCodes = new Set(normalizeQuestionUsageCodes(existing.used_in_quizzes || []))
     const updatedQuizIds = [...(existing.used_in_quiz_ids || [])]
 
     for (const quiz of associatedQuizzes) {
@@ -179,20 +180,22 @@ function processMigrateEntry(
       if (!existingQuizIds.includes(qidStr)) {
         existingQuizIds.push(qidStr)
         updatedQuizIds.push(quiz._id)
-        existingCodes.add(quiz.course_code)
+        normalizeQuestionUsageCodes([quiz.course_code]).forEach(code => existingCodes.add(code))
       }
     }
 
     const updateData: any = {
       used_in_quizzes: Array.from(existingCodes),
       used_in_quiz_ids: updatedQuizIds,
-      usage_count: updatedQuizIds.length,
+      usage_count: existingCodes.size,
     }
 
-    if (!sameAnswer && resolve_conflicts === 'keep_most_used' && associatedQuizzes.length > (existing.usage_count || 0)) {
+    if (!sameAnswer && resolve_conflicts === 'keep_most_used' && existingCodes.size > (existing.usage_count || 0)) {
+      updateData.text = q.text
       updateData.correct_answer = q.correct_answer || []
       updateData.options = q.options
-      if (q.explanation) updateData.explanation = q.explanation
+      updateData.explanation = q.explanation
+      updateData.image_url = q.image_url
     }
 
     return {
@@ -206,7 +209,7 @@ function processMigrateEntry(
     }
   }
 
-  const courseCodes = Array.from(new Set(associatedQuizzes.map(q => q.course_code)))
+  const courseCodes = normalizeQuestionUsageCodes(associatedQuizzes.map(q => q.course_code))
   const quizIds = associatedQuizzes.map(q => q._id)
 
   return {
@@ -221,7 +224,7 @@ function processMigrateEntry(
           explanation: q.explanation,
           image_url: q.image_url,
           created_by: createdBy,
-          usage_count: quizIds.length,
+          usage_count: courseCodes.length,
           used_in_quizzes: courseCodes,
           used_in_quiz_ids: quizIds,
           has_conflicts: false,
@@ -230,6 +233,41 @@ function processMigrateEntry(
     },
     isNew: true,
   }
+}
+
+function hasConflictingSourceAnswer(question: z.infer<typeof QuestionInputSchema>, previous: z.infer<typeof QuestionInputSchema>) {
+  const remapped = remapPublishedAnswer(question, previous.options)
+  return !hasSameQuestionContent(question, previous) || !remapped ||
+    JSON.stringify([...remapped].sort()) !== JSON.stringify([...previous.correct_answer].sort())
+}
+
+function preflightSourceQuestions(quizzes: any[]) {
+  const sourceById = new Map<string, any>()
+  const invalidQuestions: Array<{ quiz_id: string, question_index: number, issues: unknown }> = []
+  for (const quiz of quizzes) {
+    for (const [question_index, question] of (quiz.questions || []).entries()) {
+      const parsedQuestion = QuestionInputSchema.safeParse(question)
+      if (!parsedQuestion.success) invalidQuestions.push({ quiz_id: String(quiz._id), question_index, issues: parsedQuestion.error.issues })
+      else {
+        const id = getQuestionId(question)
+        const previous = sourceById.get(id)
+        if (previous && hasConflictingSourceAnswer(parsedQuestion.data, previous)) {
+          invalidQuestions.push({ quiz_id: String(quiz._id), question_index, issues: `Conflicting source content or answer key for ${id}` })
+        }
+        sourceById.set(id, parsedQuestion.data)
+        quiz.questions.splice(question_index, 1, { ...question, ...parsedQuestion.data })
+      }
+    }
+  }
+  return invalidQuestions
+}
+
+function validateFinalBankQuestion(result: ReturnType<typeof processMigrateEntry>, existing: any) {
+  // Query updates bypass document validators: validate the actual merged stored snapshot.
+  const finalQuestion = result.isExisting
+    ? { ...existing, ...result.op!.updateOne!.update.$set }
+    : result.op!.insertOne!.document
+  return QuestionInputSchema.safeParse(finalQuestion)
 }
 
 async function handleMigrate(body: Record<string, unknown>, userId: string) {
@@ -241,6 +279,8 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
   const { category_id, resolve_conflicts } = parsed.data
   const categoryObjectId = new mongoose.Types.ObjectId(category_id)
   const quizzes = await loadQuizzes(categoryObjectId)
+  const invalidQuestions = preflightSourceQuestions(quizzes)
+  if (invalidQuestions.length) return NextResponse.json({ error: 'Invalid source questions; migration was not written', conflicts: invalidQuestions }, { status: 409 })
   const createdBy = new mongoose.Types.ObjectId(userId)
 
   const existingBankDocs = await QuestionBank.find({ category_id: categoryObjectId }).lean()
@@ -262,7 +302,13 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
 
     if (result.skipped) {
       skippedConflicts++
-    } else if (result.isExisting) {
+      continue
+    }
+    const validatedFinal = validateFinalBankQuestion(result, existing)
+    if (!validatedFinal.success) {
+      return NextResponse.json({ error: 'Invalid final bank question; migration was not written', question_id: qid, details: validatedFinal.error.issues }, { status: 409 })
+    }
+    if (result.isExisting) {
       bulkOps.push(result.op)
       existingQuestions++
     } else if (result.isNew) {
@@ -272,7 +318,11 @@ async function handleMigrate(body: Record<string, unknown>, userId: string) {
   }
 
   if (bulkOps.length > 0) {
-    await QuestionBank.bulkWrite(bulkOps)
+    try {
+      await QuestionBank.bulkWrite(bulkOps)
+    } catch (error: any) {
+      return NextResponse.json({ error: 'Migration write failed; some items may have been written. Retry the same request after resolving the database error.', retry_required: true, partial_write_possible: true, planned_question_ids: Array.from(incomingMap.keys()), write_errors: error.writeErrors?.map((item: any) => ({ index: item.index, code: item.code })) }, { status: 500 })
+    }
   }
 
   const conflictSuffix = skippedConflicts > 0 ? `, skipped ${skippedConflicts} conflicts` : ''

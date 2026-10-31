@@ -8,8 +8,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "mongoose": "^9.11.2",
-    "pino": "^10.4.0"
+    "mongoose": "^9.11.2"
   },
   "devDependencies": {
     "@fquiz/config-typescript": "*",

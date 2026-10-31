@@ -1,11 +1,18 @@
 import { getPublicQuizFilter } from '@/lib/modules/quiz/utils/public-quiz-filter'
 import { QuestionUsageService } from '@/lib/modules/quiz/services/question-usage.service'
+import { Quiz } from '@/lib/modules/quiz/models/Quiz'
+import { Question } from '@/lib/modules/quiz/models/Question'
+jest.mock('@/lib/modules/quiz/models/Question', () => ({ Question: { find: jest.fn().mockReturnValue({ select: () => ({ lean: async () => [] }) }) } }))
 
 jest.mock('@/lib/modules/quiz/models/QuestionBank', () => ({
   QuestionBank: {
     find: jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
         lean: jest.fn().mockResolvedValue([
+          { course_code: 'IT001', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'it001', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'IT002', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'ENG101', questions: [{ question_id: 'q_test3', text: 'Question text 3' }] },
           {
             question_id: 'q_test1',
             text: 'Question text 1',
@@ -32,6 +39,10 @@ jest.mock('@/lib/modules/quiz/models/Quiz', () => ({
     find: jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
         lean: jest.fn().mockResolvedValue([
+          { course_code: 'IT001', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'it001', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'IT002', questions: [{ question_id: 'q_test1', text: 'Question text 1' }] },
+          { course_code: 'ENG101', questions: [{ question_id: 'q_test3', text: 'Question text 3' }] },
           {
             course_code: 'IT003',
             questions: [{ question_id: 'q_test2', text: 'Question text 2' }],
@@ -98,12 +109,12 @@ describe('QuestionUsageService & PublicQuizFilter', () => {
     expect(usage1).toBeDefined()
     expect(usage1?.quizzes).toContain('IT001')
     expect(usage1?.quizzes).toContain('IT002')
-    expect(usage1?.quizzes).toContain('CURRENT_01')
+    expect(usage1?.quizzes).not.toContain('CURRENT_01')
 
     const usageText = result.get('Text only question')
     expect(usageText).toBeDefined()
     expect(usageText?.quizzes).toContain('IT004')
-    expect(usageText?.quizzes).toContain('CURRENT_01')
+    expect(usageText?.quizzes).not.toContain('CURRENT_01')
   })
 
   it('should handle single question usage lookup via getQuestionPublicUsage', async () => {
@@ -118,5 +129,34 @@ describe('QuestionUsageService & PublicQuizFilter', () => {
 
     const singleUsage = await QuestionUsageService.getQuestionPublicUsage('')
     expect(singleUsage).toEqual({ count: 0, quizzes: [] })
+  })
+
+  it('does not count stale bank-only codes or fall back to prompt when an ID is supplied', async () => {
+    const result = await QuestionUsageService.getQuestionPublicUsage({ question_id: 'unknown-id', text: 'Text only question' }, 'PRIVATE_CODE')
+    expect(result).toEqual({ count: 0, quizzes: [] })
+  })
+
+  it('reflects a quiz deletion immediately instead of returning a process-local cached count', async () => {
+    const find = jest.mocked(Quiz.find)
+    find.mockReturnValueOnce({ select: () => ({ lean: async () => [] }) } as any)
+    expect(await QuestionUsageService.getQuestionPublicUsage('q_test1')).toEqual({ count: 0, quizzes: [] })
+    expect(find).toHaveBeenLastCalledWith(expect.objectContaining(getPublicQuizFilter()))
+  })
+
+  it('counts actual referenced-only quizzes using the standalone canonical identity', async () => {
+    ;(Question.find as jest.Mock).mockReturnValueOnce({ select: () => ({ lean: async () => [{ _id: 'ref-1', question_id: 'q_ref', text: 'Reference' }] }) })
+    ;(Quiz.find as jest.Mock).mockReturnValueOnce({ select: () => ({ lean: async () => [{ course_code: 'REF101', questions: [], question_refs: ['ref-1'] }] }) })
+    expect(await QuestionUsageService.getQuestionPublicUsage('q_ref')).toEqual({ count: 1, quizzes: ['REF101'] })
+  })
+  it('resolves an unchanged snapshot through legacy identity aliases after a metadata save', async () => {
+    ;(Quiz.find as jest.Mock).mockReturnValueOnce({ select: () => ({ lean: async () => [{ course_code: 'LEGACY', questions: [{ question_id: 'q_new', question_id_aliases: ['old-id'], text: 'Old snapshot', options: ['Apple', 'Berry'] }] }] }) })
+    expect(await QuestionUsageService.getQuestionPublicUsage({ question_id: 'old-id', text: 'Old snapshot', options: ['Apple', 'Berry'] })).toEqual({ count: 1, quizzes: ['LEGACY'] })
+  })
+  it('does not group different content variants merely because a legacy alias is reused', async () => {
+    ;(Quiz.find as jest.Mock).mockReturnValueOnce({ select: () => ({ lean: async () => [
+      { course_code: 'ONE', questions: [{ question_id: 'q_one', question_id_aliases: ['collision'], text: 'Same prompt', options: ['Apple', 'Berry'] }] },
+      { course_code: 'TWO', questions: [{ question_id: 'q_two', question_id_aliases: ['collision'], text: 'Same prompt', options: ['Apple', 'Cherry'] }] },
+    ] }) })
+    expect(await QuestionUsageService.getQuestionPublicUsage({ question_id: 'collision', text: 'Same prompt', options: ['Apple', 'Berry'] })).toEqual({ count: 1, quizzes: ['ONE'] })
   })
 })

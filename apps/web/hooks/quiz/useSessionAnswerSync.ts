@@ -10,8 +10,8 @@ interface AnswerDraft {
   answerIndexes: number[]
   status: SaveStatus
   feedback?: QuestionFeedback | null
-  acknowledged?: boolean
-  lastSaved?: { answerIndexes: number[]; feedback?: QuestionFeedback | null }
+  revision?: number
+  locked?: boolean
 }
 
 interface UseSessionAnswerSyncParams {
@@ -19,9 +19,24 @@ interface UseSessionAnswerSyncParams {
   currentQuestionIndex: number
   currentQuestion: SessionQuestion | undefined
   preloadedQuestions: SessionQuestion[] | null
-  submitAnswer: (vars: { questionIndex: number; answerIndexes: number[] }, opts?: any) => void
+  submitAnswer: (vars: { questionIndex: number; answerIndexes: number[]; answerRevision?: number }, opts?: any) => void
   isSubmitting: boolean
   canWrite?: () => boolean
+}
+
+const revisionCounters = new Map<string, number>()
+
+function nextAnswerRevision(sessionId: string, minimum = 0) {
+  const key = `fquiz:answer-revision:${sessionId}`
+  let previous = Math.max(revisionCounters.get(sessionId) ?? 0, minimum)
+  try {
+    const stored = Number(window.sessionStorage.getItem(key))
+    if (Number.isSafeInteger(stored)) previous = Math.max(previous, stored)
+  } catch { /* Storage may be unavailable; retain the in-memory monotonic counter. */ }
+  const revision = Math.max(previous + 1, Date.now() * 1000)
+  revisionCounters.set(sessionId, revision)
+  try { window.sessionStorage.setItem(key, String(revision)) } catch { /* Best-effort reload recovery. */ }
+  return revision
 }
 
 function persistPendingDrafts(sessionId: string, answers: Record<number, AnswerDraft>) {
@@ -56,8 +71,9 @@ function restoreDraftAnswer(
   if (!hasValidDraftIndex(index) || !hasValidAnswerIndexes(answer)) return null
   if (immediate && serverAnswers.has(index)) return null
   const required = getRequiredSelectionCount(index)
-  const status: SaveStatus = required !== null && answer.answerIndexes.length === required ? 'error' : 'unsaved'
-  return [index, { answerIndexes: answer.answerIndexes, status }]
+  const locked = immediate && (Boolean(answer.locked) || (required !== null && answer.answerIndexes.length === required))
+  const status: SaveStatus = answer.status === 'error' ? 'error' : 'unsaved'
+  return [index, { answerIndexes: answer.answerIndexes, revision: answer.revision, status, locked }]
 }
 
 function restoreDraftAnswers(
@@ -132,7 +148,7 @@ function getQuestionSelectionCount(
 ) {
   const question = preloadedQuestions?.[index] ??
     (index === currentQuestionIndex ? activeData?.question : undefined)
-  return getPositiveSelectionCount(question?.answer_selection_count)
+  return question ? getPositiveSelectionCount(question.answer_selection_count) ?? 1 : null
 }
 
 function readDraftAnswers(sessionId: string): Record<string, AnswerDraft> | null {
@@ -149,29 +165,6 @@ function readDraftAnswers(sessionId: string): Record<string, AnswerDraft> | null
   }
 }
 
-function isUnacknowledgedEmptyDraft(
-  next: number[],
-  existing: SessionData['session']['user_answers'][number] | undefined,
-  draft: AnswerDraft | undefined,
-) {
-  return next.length === 0 && !existing && draft?.status === 'unsaved' && !draft.acknowledged
-}
-
-function getSelectionChange(
-  selectedOptions: number[],
-  index: number,
-  required: number,
-  isImmediate: boolean,
-  existing: SessionData['session']['user_answers'][number] | undefined,
-  draft: AnswerDraft | undefined,
-  canSelect: boolean,
-) {
-  if (!canSelect) return null
-  const next = getNextSelection(selectedOptions, index, required, isImmediate)
-  if (JSON.stringify(next) === JSON.stringify(selectedOptions)) return null
-  return { next, discard: isUnacknowledgedEmptyDraft(next, existing, draft) }
-}
-
 function resolveSavedAnswerFeedback(data: any, pending: AnswerDraft): QuestionFeedback | null | undefined {
   return 'isCorrect' in data ? {
     isCorrect: data.isCorrect,
@@ -179,45 +172,6 @@ function resolveSavedAnswerFeedback(data: any, pending: AnswerDraft): QuestionFe
     correctAnswers: data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : []),
     explanation: data.explanation,
   } : pending.feedback
-}
-
-function saveAnswerDraft(
-  sessionId: string | undefined,
-  questionIndex: number,
-  answerIndexes: number[],
-  canWrite: () => boolean,
-  sessionRef: { current: string | undefined },
-  draftsRef: { current: Record<number, AnswerDraft> },
-  isImmediate: boolean | undefined,
-  preloadedQuestions: SessionQuestion[] | null,
-  updateDraft: (index: number, draft: AnswerDraft) => void,
-  submitAnswer: UseSessionAnswerSyncParams['submitAnswer'],
-) {
-  if (!sessionId || !canWrite() || draftsRef.current[questionIndex]?.status === 'saving') return
-  const question = preloadedQuestions?.[questionIndex]
-  const pending: AnswerDraft = {
-    answerIndexes,
-    status: 'saving',
-    feedback: isImmediate
-      ? computeQuestionFeedback(question?.correct_answer, answerIndexes, question?.explanation)
-      : null,
-  }
-  updateDraft(questionIndex, pending)
-  submitAnswer({ questionIndex, answerIndexes }, {
-    onSuccess: (data: any) => {
-      if (sessionRef.current !== sessionId) return
-      const persistedAnswerIndexes = Array.isArray(data?.answerIndexes) ? data.answerIndexes : pending.answerIndexes
-      updateDraft(questionIndex, {
-        ...pending,
-        answerIndexes: persistedAnswerIndexes,
-        status: 'saved',
-        feedback: resolveSavedAnswerFeedback(data, pending),
-      })
-    },
-    onError: () => {
-      if (sessionRef.current === sessionId) updateDraft(questionIndex, { ...pending, status: 'error' })
-    },
-  })
 }
 
 function useAnswerDraftState(
@@ -254,31 +208,17 @@ function useAnswerDraftState(
   }, [sessionId, activeData?.session.mode, activeData?.session.user_answers, getRequiredSelectionCount])
 
   const updateDraft = useCallback((index: number, draft: AnswerDraft) => {
-    const answers = { ...draftsRef.current, [index]: {
-      ...draft,
-      acknowledged: draft.status === 'saved' || draftsRef.current[index]?.acknowledged,
-      lastSaved: draft.status === 'saved'
-        ? { answerIndexes: draft.answerIndexes, feedback: draft.feedback }
-        : draftsRef.current[index]?.lastSaved,
-    } }
+    const answers = { ...draftsRef.current, [index]: draft }
     draftsRef.current = answers
     setDraftState({ sessionId, answers })
     if (sessionId) persistPendingDrafts(sessionId, answers)
   }, [sessionId])
 
-  const removeDraft = useCallback((index: number) => {
-    const answers = { ...draftsRef.current }
-    delete answers[index]
-    draftsRef.current = answers
-    setDraftState({ sessionId, answers })
-    if (sessionId) persistPendingDrafts(sessionId, answers)
-  }, [sessionId])
-
-  return { drafts, draftsRef, sessionRef, permissionRef, updateDraft, removeDraft }
+  return { drafts, draftsRef, sessionRef, permissionRef, updateDraft }
 }
 
 function getSelectedAnswerOptions(draft: AnswerDraft | undefined, existing: SessionData['session']['user_answers'][number] | undefined) {
-  return draft?.answerIndexes ?? (existing?.answer_indexes?.length ? existing.answer_indexes : existing ? [existing.answer_index] : [])
+  return draft?.answerIndexes ?? (Array.isArray(existing?.answer_indexes) ? existing.answer_indexes : existing ? [existing.answer_index] : [])
 }
 
 function isAnswerSubmitted(
@@ -286,7 +226,7 @@ function isAnswerSubmitted(
   draft: AnswerDraft | undefined,
   existing: SessionData['session']['user_answers'][number] | undefined,
 ) {
-  return Boolean(isImmediate && (draft ? draft.status === 'saving' || draft.status === 'saved' : existing))
+  return Boolean(isImmediate && (draft ? draft.locked || draft.status === 'saving' || draft.status === 'saved' || draft.status === 'error' : existing))
 }
 
 function getAnswerSaveStatus(
@@ -299,17 +239,37 @@ function getAnswerSaveStatus(
   return status ?? draft?.status ?? (existing ? 'saved' : 'idle')
 }
 
-function getUnsavedQuestionIndex(drafts: Record<number, AnswerDraft>) {
-  return Object.entries(drafts).find(([, answer]) => answer.status === 'unsaved')?.[0]
+function getQueuedAnswer(drafts: Record<number, AnswerDraft>, immediate: boolean) {
+  return Object.entries(drafts).find(([, answer]) =>
+    answer.status === 'unsaved' && (!immediate || answer.locked))
 }
 
-function getAcknowledgedQuestionIndexes(drafts: Record<number, AnswerDraft>) {
-  return new Set(Object.entries(drafts).filter(([, answer]) => answer.acknowledged).map(([index]) => Number(index)))
+function getRevisionFloor(revisions: SessionData['session']['answer_revisions'], drafts: Record<number, AnswerDraft> = {}) {
+  return Math.max(...Object.values(revisions ?? {}),
+    ...Object.values(drafts).map((answer) => answer.revision ?? 0), 0)
+}
+
+function getAcknowledgedDraft(latest: AnswerDraft, pending: AnswerDraft, data: any): AnswerDraft {
+  if (latest.revision !== pending.revision) return { ...latest, status: 'unsaved' }
+  return {
+    ...latest,
+    status: 'saved',
+    answerIndexes: Array.isArray(data?.answerIndexes) ? data.answerIndexes : pending.answerIndexes,
+    feedback: resolveSavedAnswerFeedback(data, pending),
+  }
+}
+
+function getPendingFeedback(immediate: boolean, question: SessionQuestion | undefined, answer: AnswerDraft) {
+  return immediate ? computeQuestionFeedback(question?.correct_answer, answer.answerIndexes, question?.explanation) : null
+}
+
+function getRequiredSelectionCountForDraft(currentQuestion: SessionQuestion | undefined, activeData: SessionData) {
+  return Math.max(currentQuestion?.answer_selection_count ?? activeData.question.answer_selection_count ?? 1, 1)
 }
 
 export function useSessionAnswerSync({
   activeData, currentQuestionIndex, currentQuestion, preloadedQuestions,
-  submitAnswer, isSubmitting, canWrite = () => true,
+  submitAnswer, canWrite = () => true,
 }: UseSessionAnswerSyncParams) {
   const { setLastAnswerResult } = useQuizSessionStore()
   const sessionId = activeData?.session._id
@@ -317,7 +277,7 @@ export function useSessionAnswerSync({
     (index: number) => getQuestionSelectionCount(activeData, currentQuestionIndex, preloadedQuestions, index),
     [activeData, currentQuestionIndex, preloadedQuestions],
   )
-  const { drafts, draftsRef, sessionRef, permissionRef, updateDraft, removeDraft } = useAnswerDraftState(
+  const { drafts, draftsRef, sessionRef, permissionRef, updateDraft } = useAnswerDraftState(
     sessionId,
     activeData,
     getRequiredSelectionCount,
@@ -339,67 +299,86 @@ export function useSessionAnswerSync({
     // Feedback belongs to the visible question; late callbacks only update its draft.
   }, [sessionId, currentQuestionIndex, feedback, setLastAnswerResult])
 
-  const hasUnsavedAnswers = useCallback(() =>
-    Object.values(draftsRef.current).some((answer) => answer.status !== 'saved'), [])
+  // Serialize all mutations so per-mutation React Query callbacks always run. Each
+  // question retains its latest intent while the preceding request is in flight.
+  const inFlight = useRef<{ sessionId: string; questionIndex: number; answer: AnswerDraft } | null>(null)
+  if (inFlight.current?.sessionId !== sessionId) inFlight.current = null
+  const pumpRef = useRef<() => void>(() => {})
+  const pump = useCallback(() => {
+    if (!sessionId || sessionRef.current !== sessionId || inFlight.current || !permissionRef.current()) return
+    const entry = getQueuedAnswer(draftsRef.current, Boolean(isImmediate))
+    if (!entry) return
+    const questionIndex = Number(entry[0])
+    const question = preloadedQuestions?.[questionIndex] ?? (questionIndex === currentQuestionIndex ? currentQuestion : undefined)
+    const pending: AnswerDraft = {
+      ...entry[1],
+      revision: entry[1].revision ?? nextAnswerRevision(sessionId, getRevisionFloor(activeData?.session.answer_revisions)),
+      status: 'saving',
+      feedback: getPendingFeedback(Boolean(isImmediate), question, entry[1]),
+    }
+    const request = { sessionId, questionIndex, answer: pending }
+    inFlight.current = request
+    updateDraft(questionIndex, pending)
+    submitAnswer({ questionIndex, answerIndexes: pending.answerIndexes, answerRevision: pending.revision }, {
+      onSuccess: (data: any) => {
+        if (sessionRef.current !== sessionId || inFlight.current !== request) return
+        inFlight.current = null
+        const latest = draftsRef.current[questionIndex]
+        if (latest === undefined) return
+        updateDraft(questionIndex, getAcknowledgedDraft(latest, pending, data))
+        pumpRef.current()
+      },
+      onError: () => {
+        if (sessionRef.current !== sessionId || inFlight.current !== request) return
+        inFlight.current = null
+        const latest = draftsRef.current[questionIndex]
+        if (latest) updateDraft(questionIndex, { ...latest, status: 'error' })
+        pumpRef.current()
+      },
+    })
+  }, [sessionId, activeData?.session.answer_revisions, isImmediate, preloadedQuestions, currentQuestionIndex, currentQuestion, updateDraft, submitAnswer, draftsRef, permissionRef, sessionRef])
+  pumpRef.current = pump
+  const writable = canWrite()
+  useEffect(() => { pump() }, [pump, drafts, writable])
+  useEffect(() => () => { inFlight.current = null }, [sessionId])
 
-  const saveAnswer = useCallback((questionIndex: number, answerIndexes: number[]) => {
-    saveAnswerDraft(
-      sessionId,
-      questionIndex,
-      answerIndexes,
-      permissionRef.current,
-      sessionRef,
-      draftsRef,
-      isImmediate,
-      preloadedQuestions,
-      updateDraft,
-      submitAnswer,
-    )
-  }, [sessionId, isImmediate, preloadedQuestions, updateDraft, submitAnswer])
+  const hasUnsavedAnswers = useCallback(() => Object.values(draftsRef.current).some((answer) =>
+    answer.status !== 'saved' && !(isImmediate && answer.status === 'unsaved' && !answer.locked)), [isImmediate, draftsRef])
 
   const handleSelectOption = useCallback((index: number) => {
-    const required = Math.max(activeData?.question.answer_selection_count ?? 1, 1)
-    const selection = getSelectionChange(
-      selectedOptions,
-      index,
-      required,
-      isImmediate,
-      existing,
-      draftsRef.current[currentQuestionIndex],
-      Boolean(activeData?.session && permissionRef.current() && !submitted && draftsRef.current[currentQuestionIndex]?.status !== 'saving'),
-    )
-    if (!selection) return
-    if (selection.discard) {
-      removeDraft(currentQuestionIndex)
-      return
-    }
-    updateDraft(currentQuestionIndex, { answerIndexes: selection.next, status: 'unsaved' })
-    if (selection.next.length === required) saveAnswer(currentQuestionIndex, selection.next)
-  }, [activeData, submitted, isSubmitting, isImmediate, selectedOptions, currentQuestionIndex, existing, removeDraft, updateDraft, saveAnswer])
-
-  const discardUnsavedAnswer = useCallback(() => {
-    if (!permissionRef.current()) return
-    const entry = Object.entries(draftsRef.current).find(([, answer]) => answer.status === 'unsaved')
-    if (!entry) return
-    const [index, answer] = entry
-    if (answer.lastSaved) updateDraft(Number(index), { ...answer.lastSaved, status: 'saved' })
-    else removeDraft(Number(index))
-  }, [removeDraft, updateDraft])
+    if (!activeData?.session || !permissionRef.current()) return
+    const latest = draftsRef.current[currentQuestionIndex]
+    if (isAnswerSubmitted(Boolean(isImmediate), latest, existing)) return
+    const selected = getSelectedAnswerOptions(latest, existing)
+    const required = getRequiredSelectionCountForDraft(currentQuestion, activeData)
+    const next = getNextSelection(selected, index, required, Boolean(isImmediate))
+    if (JSON.stringify(next) === JSON.stringify(selected)) return
+    const revisionFloor = getRevisionFloor(activeData.session.answer_revisions, draftsRef.current)
+    updateDraft(currentQuestionIndex, { answerIndexes: next, revision: nextAnswerRevision(sessionId!, revisionFloor),
+      status: 'unsaved', locked: isImmediate && next.length === required })
+    pump()
+  }, [sessionId, activeData, currentQuestion, isImmediate, currentQuestionIndex, existing, updateDraft, pump, draftsRef, permissionRef])
 
   const retryFailedAnswer = useCallback(() => {
-    const failed = Object.entries(draftsRef.current).find(([, answer]) => answer.status === 'error')
-    if (!failed) return
-    const questionIndex = Number(failed[0])
-    if ((getRequiredSelectionCount(questionIndex) ?? 1) !== failed[1].answerIndexes.length) {
-      updateDraft(questionIndex, { ...failed[1], status: 'unsaved' })
-      return
+    if (!permissionRef.current()) return
+    Object.entries(draftsRef.current).forEach(([index, answer]) => {
+      if (answer.status === 'error') updateDraft(Number(index), { ...answer, status: 'unsaved' })
+    })
+    pump()
+  }, [updateDraft, pump, draftsRef, permissionRef])
+
+  const acknowledgedQuestions = new Set<number>()
+  activeData?.session.user_answers.forEach((answer) => {
+    const required = getRequiredSelectionCount(answer.question_index) ?? 1
+    if (getSelectedAnswerOptions(undefined, answer).length === required) acknowledgedQuestions.add(answer.question_index)
+  })
+  Object.entries(drafts).forEach(([index, answer]) => {
+    const questionIndex = Number(index)
+    acknowledgedQuestions.delete(questionIndex)
+    if (answer.status === 'saved' && answer.answerIndexes.length === (getRequiredSelectionCount(questionIndex) ?? 1)) {
+      acknowledgedQuestions.add(questionIndex)
     }
-    saveAnswer(questionIndex, failed[1].answerIndexes)
-  }, [getRequiredSelectionCount, saveAnswer, updateDraft])
-
+  })
   const saveStatus = getAnswerSaveStatus(drafts, draft, existing)
-  const unsavedQuestionIndex = getUnsavedQuestionIndex(drafts)
-  const acknowledgedQuestions = getAcknowledgedQuestionIndexes(drafts)
-
-  return { selectedOptions, submitted, handleSelectOption, saveStatus, retryFailedAnswer, hasUnsavedAnswers, discardUnsavedAnswer, unsavedQuestionIndex: unsavedQuestionIndex === undefined ? null : Number(unsavedQuestionIndex), acknowledgedQuestions }
+  return { selectedOptions, submitted, handleSelectOption, saveStatus, retryFailedAnswer, hasUnsavedAnswers, acknowledgedQuestions }
 }

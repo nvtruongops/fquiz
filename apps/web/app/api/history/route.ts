@@ -196,7 +196,7 @@ function calculateAnswerCounts(item: any) {
         .map((a: any) => a.question_index)
         .filter((idx: any) => Number.isInteger(idx) && idx >= 0)
     ).size
-    const correctCount = item.user_answers.filter((a: any) => a.is_correct).length
+    const correctCount = item.mode === 'review' && item.status !== 'completed' ? 0 : item.user_answers.filter((a: any) => a.is_correct).length
     return { answeredCount, correctCount }
   }
   return { answeredCount: 0, correctCount: 0 }
@@ -418,6 +418,10 @@ async function buildHistoryLookups(pageItems: HistoryPageItems) {
   return { quizMap, originalCreatorMap, categoryNameMap, creatorNameMap }
 }
 
+function getVisibleSessionScore(item: any) {
+  return item.mode === 'review' && item.status !== 'completed' ? 0 : item.score
+}
+
 function buildMixHistoryItem(item: any, quizIdStr: string, quiz: any) {
   const { answeredCount, correctCount } = calculateAnswerCounts(item)
   const sessionTotal = resolveSessionTotalQuestions(item, quiz) || answeredCount || 0
@@ -426,7 +430,7 @@ function buildMixHistoryItem(item: any, quizIdStr: string, quiz: any) {
   return {
     _id: item._id.toString(), quiz_id: quizIdStr, quiz_title: quizTitle, quiz_code: quizCode,
     category_name: 'Mix Quiz', source_type: 'mix_quiz', source_label: 'Mix Quiz', source_creator_name: null,
-    score: item.score, total_questions: sessionTotal, answered_count: answeredCount, correct_count: correctCount,
+    score: getVisibleSessionScore(item), total_questions: sessionTotal, answered_count: answeredCount, correct_count: correctCount,
     mode: item.mode, status: item.status, completed_at: item.completed_at, started_at: item.started_at,
     duration_minutes: item.duration_minutes, flashcard_stats: item.flashcard_stats, is_mix: true,
   }
@@ -458,7 +462,7 @@ function buildQuizHistoryItem(
     quiz_code: quiz?.course_code ?? 'N/A', category_name: getHistoryCategoryName(quiz, categoryNameMap),
     source_type: sourceType, source_label: sourceLabelFromType(sourceType),
     source_creator_name: getHistoryCreatorName(sourceCreatorId, creatorNameMap),
-    score: item.score, total_questions: resolveSessionTotalQuestions(item, quiz),
+    score: getVisibleSessionScore(item), total_questions: resolveSessionTotalQuestions(item, quiz),
     answered_count: answeredCount, correct_count: correctCount, mode: item.mode, status: item.status,
     completed_at: item.completed_at, started_at: item.started_at,
     duration_minutes: item.duration_minutes, flashcard_stats: item.flashcard_stats,

@@ -25,7 +25,7 @@ async function getQuestionUsageMap(
   }
 
   const questionQueries = questionOrder.map((i) => rawQuestions[i]).filter(Boolean).map((q) => {
-    return { question_id: q?.question_id, text: q?.text }
+    return { question_id: q?.question_id, text: q?.text, options: q?.options }
   })
   return QuestionUsageService.getBatchQuestionPublicUsage(questionQueries, courseCode)
 }
@@ -66,21 +66,13 @@ export const GET = withAuth(async (
     const isImmediateMode = session.mode === 'immediate'
     const isFlashcardMode = session.mode === 'flashcard'
 
-    const isFromSessionCache = Array.isArray(session.questions_cache) && session.questions_cache.length > 0
-    const isFromEmbeddedQuiz = !isFromSessionCache && (!Array.isArray(quiz.question_refs) || quiz.question_refs.length === 0)
     const { questions: rawQuestions, questionOrder } = await resolveEffectiveQuestionDeck(session, quiz)
 
     // Ensure all questions have a question_id (generate if missing)
-    let hasMissingId = false
     for (const q of rawQuestions) {
       if (q && !q.question_id) {
         q.question_id = generateQuestionId(q)
-        hasMissingId = true
       }
-    }
-    // Auto-repair DB if any question is missing question_id (only when rawQuestions is from root Quiz)
-    if (hasMissingId && isFromEmbeddedQuiz && Array.isArray(quiz.questions) && quiz.questions.length === rawQuestions.length) {
-      await Quiz.updateOne({ _id: session.quiz_id }, { $set: { questions: rawQuestions } })
     }
 
     // Active multiple-choice sessions don't need the optional usage badge metadata.

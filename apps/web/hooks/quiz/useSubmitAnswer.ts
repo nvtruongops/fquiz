@@ -21,6 +21,7 @@ class ApiError extends Error {
 interface SubmitAnswerVariables {
   questionIndex: number
   answerIndexes: number[]
+  answerRevision?: number
 }
 
 interface ImmediateAnswerResponse {
@@ -31,24 +32,29 @@ interface ImmediateAnswerResponse {
   explanation?: string
 }
 
-interface ReviewNextQuestionResponse {
-  nextQuestion: object
+interface ReviewAnswerResponse {
+  answerIndexes: number[]
+  answerRevision?: number
+  nextQuestion?: object
+  completed?: boolean
 }
 
-interface ReviewCompletedResponse {
-  completed: true
-  score: number
-}
-
-type SubmitAnswerResponse =
-  | ImmediateAnswerResponse
-  | ReviewNextQuestionResponse
-  | ReviewCompletedResponse
+type SubmitAnswerResponse = ImmediateAnswerResponse | ReviewAnswerResponse
 
 type QuizSessionState = ReturnType<typeof useQuizSessionStore.getState>
 
 function getPersistedAnswerIndexes(data: SubmitAnswerResponse, requestedIndexes: number[]) {
   return 'answerIndexes' in data && Array.isArray(data.answerIndexes) ? data.answerIndexes : requestedIndexes
+}
+
+function applyQuestionFeedback(old: any, questionIndex: number, correctAnswers: number[], explanation?: string) {
+  if (!old || !Array.isArray(old.questions)) return old
+  const questions = old.questions.map((question: any, index: number) => index === questionIndex ? {
+    ...question,
+    correct_answer: correctAnswers,
+    explanation: explanation || question.explanation,
+  } : question)
+  return { ...old, questions }
 }
 
 function updateQuestionFeedbackCache(
@@ -58,18 +64,8 @@ function updateQuestionFeedbackCache(
   correctAnswers: number[],
   explanation?: string,
 ) {
-  queryClient.setQueryData<any>(['sessions', sessionId, 'all-questions'], (old: any) => {
-    if (!old || !Array.isArray(old.questions)) return old
-    const questions = [...old.questions]
-    if (questions[questionIndex]) {
-      questions[questionIndex] = {
-        ...questions[questionIndex],
-        correct_answer: correctAnswers,
-        explanation: explanation || questions[questionIndex].explanation,
-      }
-    }
-    return { ...old, questions }
-  })
+  queryClient.setQueryData<any>(['sessions', sessionId, 'all-questions'], (old: any) =>
+    applyQuestionFeedback(old, questionIndex, correctAnswers, explanation))
 }
 
 function updateSessionAnswersCache(
@@ -82,6 +78,9 @@ function updateSessionAnswersCache(
   queryClient.setQueryData<any>(['sessions', sessionId, 'initial'], (old: any) => {
     if (!old?.session) return old
     const existingAnswers = Array.isArray(old.session.user_answers) ? old.session.user_answers : []
+    if (answerIndexes.length === 0) {
+      return { ...old, session: { ...old.session, user_answers: existingAnswers.filter((answer: any) => answer.question_index !== questionIndex) } }
+    }
     const existingIndex = existingAnswers.findIndex((answer: any) => answer.question_index === questionIndex)
     const updatedAnswer = {
       question_index: questionIndex,
@@ -101,15 +100,45 @@ function updateAnswerStore(
   sessionId: string,
   questionIndex: number,
   store: QuizSessionState,
+  complete: boolean,
 ) {
-  if (store.sessionId === sessionId) store.markAnswered(questionIndex)
+  if (store.sessionId === sessionId) {
+    const answered = new Set(store.answeredQuestions)
+    if (complete) answered.add(questionIndex)
+    else answered.delete(questionIndex)
+    store.restoreAnswers(answered)
+  }
   if (!('isCorrect' in data) || store.sessionId !== sessionId || store.currentQuestionIndex !== questionIndex) return
   store.setLastAnswerResult({
     isCorrect: data.isCorrect,
     correctAnswer: data.correctAnswer,
-    correctAnswers: data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : []),
+    correctAnswers: getCorrectAnswerIndexes(data),
     explanation: data.explanation,
   })
+}
+
+function hasNewerPersistedRevision(queryClient: QueryClient, sessionId: string, questionIndex: number, revision?: number) {
+  const persisted = queryClient.getQueryData<any>(['sessions', sessionId, 'initial'])?.session?.answer_revisions?.[questionIndex]
+  return revision !== undefined && persisted > revision
+}
+
+function getCachedSelectionCount(queryClient: QueryClient, sessionId: string, questionIndex: number): number {
+  const questions = queryClient.getQueryData<any>(['sessions', sessionId, 'all-questions'])?.questions
+  const initial = queryClient.getQueryData<any>(['sessions', sessionId, 'initial'])
+  const question = questions?.[questionIndex] ?? (initial?.session?.current_question_index === questionIndex ? initial.question : undefined)
+  return question?.answer_selection_count ?? 1
+}
+
+function updateCachedAnswerRevision(queryClient: QueryClient, sessionId: string, questionIndex: number, revision?: number) {
+  if (revision === undefined) return
+  queryClient.setQueryData<any>(['sessions', sessionId, 'initial'], (old: any) => old?.session ? {
+    ...old,
+    session: { ...old.session, answer_revisions: { ...old.session.answer_revisions, [questionIndex]: revision } },
+  } : old)
+}
+
+function getCorrectAnswerIndexes(data: ImmediateAnswerResponse) {
+  return data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : [])
 }
 
 function handleSubmitAnswerSuccess(
@@ -120,22 +149,26 @@ function handleSubmitAnswerSuccess(
   queryClient: QueryClient,
 ) {
   if (!context || currentSessionId !== context.sessionId) return
+  if (hasNewerPersistedRevision(queryClient, context.sessionId, context.questionIndex, variables.answerRevision)) return
   const store = useQuizSessionStore.getState()
   const requestSessionId = context.sessionId
   const answerIndexes = getPersistedAnswerIndexes(data, variables.answerIndexes)
-  updateAnswerStore(data, requestSessionId, context.questionIndex, store)
+  const required = getCachedSelectionCount(queryClient, requestSessionId, context.questionIndex)
+  updateAnswerStore(data, requestSessionId, context.questionIndex, store, answerIndexes.length === required)
 
   if ('isCorrect' in data) {
-    const correctAnswers = data.correctAnswers ?? (data.correctAnswer !== undefined ? [data.correctAnswer] : [])
+    const correctAnswers = getCorrectAnswerIndexes(data)
     updateQuestionFeedbackCache(queryClient, requestSessionId, context.questionIndex, correctAnswers, data.explanation)
   }
   updateSessionAnswersCache(queryClient, requestSessionId, context.questionIndex, answerIndexes, 'isCorrect' in data ? data.isCorrect : false)
+  updateCachedAnswerRevision(queryClient, requestSessionId, context.questionIndex, variables.answerRevision)
 }
 
 async function submitAnswer(
   sessionId: string,
   questionIndex: number,
-  answerIndexes: number[]
+  answerIndexes: number[],
+  answerRevision?: number
 ): Promise<SubmitAnswerResponse> {
   const normalizedAnswerIndexes = [...new Set(answerIndexes)].sort((a, b) => a - b)
   const controller = new AbortController()
@@ -152,6 +185,7 @@ async function submitAnswer(
         answer_index: normalizedAnswerIndexes[0],
         answer_indexes: normalizedAnswerIndexes,
         question_index: questionIndex,
+        answer_revision: answerRevision,
       }),
       signal: controller.signal,
     })
@@ -189,9 +223,9 @@ export function useSubmitAnswer(sessionId: string, canWrite: () => boolean = () 
 
   return useMutation<SubmitAnswerResponse, Error, SubmitAnswerVariables, { sessionId: string; questionIndex: number }>({
     mutationKey: ['sessions', sessionId, 'answer'],
-    mutationFn: async ({ questionIndex, answerIndexes }) => {
+    mutationFn: async ({ questionIndex, answerIndexes, answerRevision }) => {
       if (permissionRef.current.sessionId !== sessionId || !permissionRef.current.canWrite()) throw new Error('This tab is read-only. Continue in this tab to save answers.')
-      return submitAnswer(sessionId, questionIndex, answerIndexes)
+      return submitAnswer(sessionId, questionIndex, answerIndexes, answerRevision)
     },
 
     onMutate: async ({ questionIndex }) => {

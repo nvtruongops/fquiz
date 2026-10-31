@@ -221,12 +221,12 @@ function StandardAnswerOptions({ question, selectedOptions, focusedOption, isSin
   )
 }
 
-function StandardAnswerPanel({ question, selectedOptions, focusedOption, showImmediateFeedback, sessionMode, submitted, isSingleAnswer, currentIndex, totalQuestions, navigationDisabled, onNavigate, onSelectOption, leftWidth }: {
+function StandardAnswerPanel({ question, selectedOptions, focusedOption, showImmediateFeedback, isPending, submitted, isSingleAnswer, currentIndex, totalQuestions, navigationDisabled, onNavigate, onSelectOption, leftWidth }: {
   question: SessionQuestion
   selectedOptions: number[]
   focusedOption?: number | null
   showImmediateFeedback: boolean
-  sessionMode: QuestionDisplayProps['sessionMode']
+  isPending: boolean
   submitted: boolean
   isSingleAnswer: boolean
   currentIndex: number
@@ -236,7 +236,7 @@ function StandardAnswerPanel({ question, selectedOptions, focusedOption, showImm
   onSelectOption: (index: number) => void
   leftWidth: number
 }) {
-  const isDisabled = showImmediateFeedback || (sessionMode === 'review' && submitted)
+  const isDisabled = showImmediateFeedback || submitted || isPending
   return (
     <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full flex flex-col p-3 border-r border-border bg-muted/20 overflow-y-auto">
       <h3 className="text-sm font-bold text-center text-blue-800 dark:text-blue-400 mb-3">Answer</h3>
@@ -393,7 +393,7 @@ function StandardQuestionView(props: QuestionDisplayProps) {
   return (
     <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden bg-background text-foreground question-option-font">
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-        <StandardAnswerPanel question={props.question} selectedOptions={props.selectedOptions} focusedOption={props.focusedOption} showImmediateFeedback={props.showImmediateFeedback} sessionMode={props.sessionMode} submitted={props.submitted} isSingleAnswer={state.isSingleAnswer} currentIndex={props.currentIndex} totalQuestions={props.totalQuestions} navigationDisabled={props.navigationDisabled} onNavigate={props.onNavigate} onSelectOption={props.onSelectOption} leftWidth={leftWidth} />
+        <StandardAnswerPanel question={props.question} selectedOptions={props.selectedOptions} focusedOption={props.focusedOption} showImmediateFeedback={props.showImmediateFeedback} isPending={props.isPending} submitted={props.submitted} isSingleAnswer={state.isSingleAnswer} currentIndex={props.currentIndex} totalQuestions={props.totalQuestions} navigationDisabled={props.navigationDisabled} onNavigate={props.onNavigate} onSelectOption={props.onSelectOption} leftWidth={leftWidth} />
         <div onMouseDown={handleMouseDown} className="w-1.5 shrink-0 h-full bg-red-600 hover:bg-red-500 cursor-col-resize select-none transition-colors" title="Drag to resize columns" />
         <StandardQuestionPane props={props} requiredSelectionCount={state.requiredSelectionCount} safeDisplayIndex={state.safeDisplayIndex} isPinned={state.isPinned} togglePinMutation={state.togglePinMutation} handleTogglePin={state.handleTogglePin} isSingleAnswer={state.isSingleAnswer} correctAnswerSet={state.correctAnswerSet} />
       </div>
@@ -427,11 +427,11 @@ function getAnimatedOptionAnswerState(index: number, props: Pick<QuestionDisplay
   }
 }
 
-function getAnimatedOptionState(index: number, props: Pick<QuestionDisplayProps, 'selectedOptions' | 'showImmediateFeedback' | 'focusedOption' | 'sessionMode' | 'submitted' | 'isNoteMode'> & { correctAnswerSet: number[] }): AnimatedOptionState {
+function getAnimatedOptionState(index: number, props: Pick<QuestionDisplayProps, 'selectedOptions' | 'showImmediateFeedback' | 'focusedOption' | 'isPending' | 'submitted' | 'isNoteMode'> & { correctAnswerSet: number[] }): AnimatedOptionState {
   return {
     ...getAnimatedOptionAnswerState(index, props),
     isFocused: props.focusedOption === index,
-    isAnswerDisabled: props.showImmediateFeedback || (props.sessionMode === 'review' && props.submitted),
+    isAnswerDisabled: props.showImmediateFeedback || props.submitted || props.isPending,
     isNoteActive: Boolean(props.isNoteMode),
   }
 }
@@ -491,8 +491,8 @@ function AnimatedOptionFeedback({ isCorrect, isWrongSelected }: Pick<AnimatedOpt
   return null
 }
 
-function AnimatedQuestionOption({ question, option, index, selectedOptions, isSingleAnswer, showImmediateFeedback, correctAnswerSet, focusedOption, sessionMode, submitted, isNoteMode, onSelectOption }: Pick<QuestionDisplayProps, 'question' | 'selectedOptions' | 'showImmediateFeedback' | 'focusedOption' | 'sessionMode' | 'submitted' | 'isNoteMode' | 'onSelectOption'> & { option: string; index: number; isSingleAnswer: boolean; correctAnswerSet: number[] }) {
-  const state = getAnimatedOptionState(index, { selectedOptions, showImmediateFeedback, correctAnswerSet, focusedOption, sessionMode, submitted, isNoteMode })
+function AnimatedQuestionOption({ question, option, index, selectedOptions, isSingleAnswer, showImmediateFeedback, correctAnswerSet, focusedOption, isPending, submitted, isNoteMode, onSelectOption }: Pick<QuestionDisplayProps, 'question' | 'selectedOptions' | 'showImmediateFeedback' | 'focusedOption' | 'isPending' | 'submitted' | 'isNoteMode' | 'onSelectOption'> & { option: string; index: number; isSingleAnswer: boolean; correctAnswerSet: number[] }) {
+  const state = getAnimatedOptionState(index, { selectedOptions, showImmediateFeedback, correctAnswerSet, focusedOption, isPending, submitted, isNoteMode })
   const letter = String.fromCodePoint(65 + index)
   const handleClick = () => handleStandardOptionClick(state.isAnswerDisabled, state.isNoteActive, index, onSelectOption)
   return (
@@ -534,7 +534,6 @@ function AnimatedQuestionView({
   quizId,
   focusedOption,
   isNoteMode,
-  sessionMode,
 }: QuestionDisplayProps) {
   const { requiredSelectionCount, isSingleAnswer, correctAnswerSet, safeDisplayIndex, isPinned, togglePinMutation, handleTogglePin } = useQuestionDisplayState({
     question, currentIndex, totalQuestions, showImmediateFeedback, lastAnswerResult, courseCode, quizTitle, quizId,
@@ -618,7 +617,7 @@ function AnimatedQuestionView({
               showImmediateFeedback={showImmediateFeedback}
               correctAnswerSet={correctAnswerSet}
               focusedOption={focusedOption}
-              sessionMode={sessionMode}
+              isPending={isPending}
               submitted={submitted}
               isNoteMode={isNoteMode}
               onSelectOption={onSelectOption}

@@ -89,17 +89,8 @@ function isValidAnsweredQuestionIndex(index: number, totalQuestions: number) {
 }
 
 function getMobileAnsweredQuestionSet(ctrl: MobileSessionController, session: MobileSession, effectiveTotal: number) {
-  const answeredQuestions = new Set(
-    session.user_answers
-      .map((answer) => answer.question_index)
-      .filter((index) => isValidAnsweredQuestionIndex(index, effectiveTotal)),
-  )
-  ctrl.acknowledgedQuestions.forEach((index) => answeredQuestions.add(index))
-  if (ctrl.storeSessionId === ctrl.resolvedSessionId) {
-    ctrl.answeredQuestions.forEach((index) => {
-      if (isValidAnsweredQuestionIndex(index, effectiveTotal)) answeredQuestions.add(index)
-    })
-  }
+  const answeredQuestions = new Set([...ctrl.acknowledgedQuestions].filter((index) =>
+    isValidAnsweredQuestionIndex(index, effectiveTotal)))
   return answeredQuestions
 }
 
@@ -160,16 +151,8 @@ function getOptionalQuestionText(value: string | null | undefined) {
   return value || ''
 }
 
-function reviewMobileUnsavedDraft(questionIndex: number | null, onNavigate: (index: number) => void) {
-  if (questionIndex !== null) onNavigate(questionIndex)
-}
-
-function getMobileDraftQuestionNumber(questionIndex: number | null) {
-  return questionIndex === null ? null : questionIndex + 1
-}
-
-function areMobileSessionAnswersDisabled(isReadOnlyTab: boolean, isSubmitting: boolean, isFinalizing: boolean) {
-  return isReadOnlyTab || isSubmitting || isFinalizing
+function areMobileSessionAnswersDisabled(isReadOnlyTab: boolean, isFinalizing: boolean) {
+  return isReadOnlyTab || isFinalizing
 }
 
 function getMobileReadyViewState(ctrl: MobileSessionController, activeData: MobileSessionData) {
@@ -215,10 +198,7 @@ function MobileSessionAnswerStatus({ ctrl }: { ctrl: MobileSessionController }) 
       <SessionSaveStatus
         status={ctrl.saveStatus}
         onRetry={ctrl.retryFailedAnswer}
-        onReviewDraft={() => reviewMobileUnsavedDraft(ctrl.unsavedQuestionIndex, ctrl.handleNavigate)}
-        onDiscardDraft={ctrl.discardUnsavedAnswer}
-        draftQuestionNumber={getMobileDraftQuestionNumber(ctrl.unsavedQuestionIndex)}
-        disabled={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.submitMutation.isPending, ctrl.finalizeMutation.isPending)}
+        disabled={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.finalizeMutation.isPending)}
       />
       <MobileSessionFinalizationFailure isError={ctrl.finalizeMutation.isError} />
     </>
@@ -306,7 +286,7 @@ function MobileSessionReadyContent({
             correctAnswerSet={correctAnswerSet}
             selectedOptions={ctrl.selectedOptions}
             submitted={ctrl.submitted}
-            isSubmitting={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.submitMutation.isPending, ctrl.finalizeMutation.isPending)}
+            isSubmitting={areMobileSessionAnswersDisabled(ctrl.isReadOnlyTab, ctrl.finalizeMutation.isPending)}
             onSelectOption={ctrl.handleSelectOption}
             mode={session.mode}
             currentCourseCode={session.courseCode}

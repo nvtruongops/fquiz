@@ -541,4 +541,3 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
 }
 
 // Alias export for backward compatibility
-export { QuizAIAssistantDrawer as QuizAIChatbotDrawer }

@@ -116,6 +116,14 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
   })
 
   describe('POST', () => {
+    it('does not unpin another option variant based on prompt text alone', async () => {
+      mockPinnedFindOne.mockResolvedValueOnce(null)
+      mockPinnedCreate.mockResolvedValueOnce({ _id: 'new-pin' })
+      await POST(new Request('http://example.test/api/student/pinned-questions', { method: 'POST', body: JSON.stringify({ text: 'Same prompt', options: ['Apple', 'Berry'] }) }), {} as any)
+      const filter = mockPinnedFindOne.mock.calls[0][0]
+      expect(filter.$or).not.toContainEqual({ text: 'Same prompt' })
+      expect(mockPinnedCreate.mock.calls[0][0].question_id).toMatch(/^q_[a-f0-9]{16}$/)
+    })
     it('should return 400 if text is missing', async () => {
       const req = new Request('https://web.example.test/api/student/pinned-questions', {
         method: 'POST',
@@ -134,7 +142,7 @@ describe('GET, POST, DELETE /api/student/pinned-questions', () => {
 
       const req = new Request('https://web.example.test/api/student/pinned-questions', {
         method: 'POST',
-        body: JSON.stringify({ text: 'Question text', course_code: 'PRN211' }),
+        body: JSON.stringify({ text: 'Question text', course_code: 'PRN211', options: ['A', 'B'] }),
       })
       const res = (await POST(req, {} as any)) as any
 

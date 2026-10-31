@@ -13,7 +13,7 @@ it('passes the Finish Exam handler to QuestionDisplay', () => {
     } as any,
     currentQuestionIndex: 0,
     isReadOnlyTab: false,
-    isSubmitting: false,
+    isSubmitting: true,
     submitDisabled: false,
     enableAnimation: false,
     handleSelectOption: jest.fn(),
@@ -23,8 +23,6 @@ it('passes the Finish Exam handler to QuestionDisplay', () => {
       submitted: false,
       saveStatus: 'idle',
       retryFailedAnswer: jest.fn(),
-      unsavedQuestionIndex: null,
-      discardUnsavedAnswer: jest.fn(),
     },
     lastAnswerResult: null,
     showImmediateFeedback: false,
@@ -38,4 +36,5 @@ it('passes the Finish Exam handler to QuestionDisplay', () => {
   ) as React.ReactElement<{ onSubmit?: () => void }> | undefined
 
   expect(question?.props.onSubmit).toBe(onSubmit)
+  expect((question?.props as any).isPending).toBe(false)
 })

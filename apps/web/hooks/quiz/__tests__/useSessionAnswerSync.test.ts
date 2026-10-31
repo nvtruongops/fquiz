@@ -32,7 +32,7 @@ describe('session answer acknowledgement', () => {
     expect(render().hasUnsavedAnswers()).toBe(true)
     render().retryFailedAnswer()
     expect(requests.map((request) => request.payload)).toEqual([
-      { questionIndex: 0, answerIndexes: [1] }, { questionIndex: 0, answerIndexes: [1] },
+      { questionIndex: 0, answerIndexes: [1], answerRevision: requests[0].payload.answerRevision }, { questionIndex: 0, answerIndexes: [1], answerRevision: requests[0].payload.answerRevision },
     ])
     requests[1].callbacks.onSuccess({ nextQuestion: {} })
     expect(render().saveStatus).toBe('saved')
@@ -105,51 +105,175 @@ describe('session answer acknowledgement', () => {
     expect(render().selectedOptions).toEqual([])
   })
 
-  it('blocks finalization when an acknowledged multi-select answer is edited to an incomplete draft', () => {
-    props.activeData.question.answer_selection_count = 2
-    props.activeData.session.user_answers = [{ question_index: 0, answer_indexes: [0, 1], is_correct: true }]
-    render().handleSelectOption(1)
-    expect(render().selectedOptions).toEqual([0])
-    expect(render().hasUnsavedAnswers()).toBe(true)
-    expect(render().saveStatus).toBe('unsaved')
-    expect(requests).toHaveLength(0)
+  it('persists partial, complete, reduced and empty review sets in order', () => {
+    props.activeData.question.answer_selection_count = 3
+    props.activeData.question.options = ['A', 'B', 'C']
+    const expected = [[0], [0, 1], [0, 1, 2], [0, 2], [2], []]
+    ;[0, 1, 2, 1, 0, 2].forEach((option, step) => {
+      render().handleSelectOption(option)
+      expect(requests[step]?.payload).toEqual({ questionIndex: 0, answerIndexes: expected[step], answerRevision: expect.any(Number) })
+      requests[step].callbacks.onSuccess({ answerIndexes: expected[step] })
+      expect(render().selectedOptions).toEqual(expected[step])
+      expect(render().hasUnsavedAnswers()).toBe(false)
+      expect([...render().acknowledgedQuestions]).toEqual(step === 2 ? [0] : [])
+    })
   })
 
-  it('allows a never-saved multi-select question to be skipped after clearing its partial draft', () => {
-    props.activeData.question.answer_selection_count = 2
-    render().handleSelectOption(0)
-    expect(render().hasUnsavedAnswers()).toBe(true)
-    render().handleSelectOption(0)
-    props.currentQuestionIndex = 1
-    expect(render().hasUnsavedAnswers()).toBe(false)
-    expect(render().saveStatus).toBe('idle')
-    expect(requests).toHaveLength(0)
-  })
-
-  it('locates and discards an incomplete edit without losing its acknowledged answer', () => {
-    props.activeData.question.answer_selection_count = 2
-    render().handleSelectOption(0)
-    render().handleSelectOption(1)
-    requests[0].callbacks.onSuccess({ nextQuestion: {} })
-    render().handleSelectOption(1)
-    props.currentQuestionIndex = 1
-    expect(render().unsavedQuestionIndex).toBe(0)
-    expect(render().hasUnsavedAnswers()).toBe(true)
-    render().discardUnsavedAnswer()
-    props.currentQuestionIndex = 0
+  it('keeps rapid latest intent while a save is delayed, including clear', () => {
+    props.activeData.question.answer_selection_count = 3
+    const view = render()
+    view.handleSelectOption(0)
+    view.handleSelectOption(1)
     expect(render().selectedOptions).toEqual([0, 1])
-    expect(render().hasUnsavedAnswers()).toBe(false)
-    expect([...render().acknowledgedQuestions]).toEqual([0])
     expect(requests).toHaveLength(1)
+    requests[0].callbacks.onSuccess({ answerIndexes: [0] })
+    expect(render().selectedOptions).toEqual([0, 1])
+    expect(requests[1].payload.answerIndexes).toEqual([0, 1])
+    render().handleSelectOption(0)
+    render().handleSelectOption(1)
+    requests[1].callbacks.onSuccess({ answerIndexes: [0, 1] })
+    expect(render().selectedOptions).toEqual([])
+    expect(requests[2].payload.answerIndexes).toEqual([])
+    requests[2].callbacks.onSuccess({ answerIndexes: [] })
+    expect(render().hasUnsavedAnswers()).toBe(false)
+    expect([...render().acknowledgedQuestions]).toEqual([])
   })
 
-  it('keeps acknowledgement when a later edit fails', () => {
-    render().handleSelectOption(1)
-    requests[0].callbacks.onSuccess({ nextQuestion: {} })
+  it('retries latest clear after an older request fails without resurrecting scalar answer', () => {
+    props.activeData.question.answer_selection_count = 2
+    props.activeData.session.user_answers = [{ question_index: 0, answer_index: 1, answer_indexes: [] }]
+    expect(render().selectedOptions).toEqual([])
     render().handleSelectOption(0)
-    requests[1].callbacks.onError(new Error('offline'))
-    expect(render().selectedOptions).toEqual([0])
+    render().handleSelectOption(0)
+    requests[0].callbacks.onError(new Error('offline'))
+    expect(render().selectedOptions).toEqual([])
     expect(render().saveStatus).toBe('error')
-    expect([...render().acknowledgedQuestions]).toEqual([0])
+    render().retryFailedAnswer()
+    expect(requests[1].payload.answerIndexes).toEqual([])
+    requests[1].callbacks.onSuccess({ answerIndexes: [] })
+    expect(render().selectedOptions).toEqual([])
+    expect(render().hasUnsavedAnswers()).toBe(false)
   })
+
+  it('allows immediate partial finalization and locks as soon as N is selected', () => {
+    props.activeData.session.mode = 'immediate'
+    props.activeData.question.answer_selection_count = 2
+    render().handleSelectOption(0)
+    expect(render().hasUnsavedAnswers()).toBe(false)
+    expect(render().submitted).toBe(false)
+    render().handleSelectOption(0)
+    expect(render().selectedOptions).toEqual([])
+    render().handleSelectOption(0)
+    render().handleSelectOption(1)
+    expect(requests).toHaveLength(1)
+    expect(render().submitted).toBe(true)
+    render().handleSelectOption(0)
+    expect(render().selectedOptions).toEqual([0, 1])
+  })
+  it('locks and blocks finalization for an immediate full answer queued behind another question', () => {
+    props.activeData.session.mode = 'immediate'
+    props.activeData.question.answer_selection_count = 2
+    render().handleSelectOption(0)
+    render().handleSelectOption(1)
+    props.currentQuestionIndex = 1
+    render().handleSelectOption(0)
+    render().handleSelectOption(1)
+    expect(render().submitted).toBe(true)
+    expect(render().hasUnsavedAnswers()).toBe(true)
+    render().handleSelectOption(1)
+    expect(render().selectedOptions).toEqual([0, 1])
+    requests[0].callbacks.onSuccess({ answerIndexes: [0, 1], isCorrect: true })
+    expect(requests[1].payload).toEqual({ questionIndex: 1, answerIndexes: [0, 1], answerRevision: expect.any(Number) })
+  })
+
+  it('restores a pending clear after reload and retries it instead of the old server scalar', () => {
+    const stored = new Map<string, string>()
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: { sessionStorage: {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => stored.set(key, value),
+      removeItem: (key: string) => stored.delete(key),
+    } } })
+    try {
+      props.activeData.question.answer_selection_count = 2
+      props.activeData.session.user_answers = [{ question_index: 0, answer_index: 1, answer_indexes: [0, 1] }]
+      render().handleSelectOption(0)
+      render().handleSelectOption(1)
+      expect(render().selectedOptions).toEqual([])
+      resetHooks()
+      expect(render().selectedOptions).toEqual([])
+      expect(render().saveStatus).toBe('saving')
+      expect(requests[1].payload.answerIndexes).toEqual([])
+      requests[0].callbacks.onSuccess({ answerIndexes: [1] })
+      expect(render().selectedOptions).toEqual([])
+      requests[1].callbacks.onSuccess({ answerIndexes: [] })
+      expect(render().hasUnsavedAnswers()).toBe(false)
+      expect(stored.has('fquiz:answer-drafts:s1')).toBe(false)
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'window', descriptor)
+      else delete (globalThis as any).window
+    }
+  })
+
+  it('resumes the latest queued intent when the tab regains its lease', () => {
+    let writable = true
+    props.canWrite = () => writable
+    props.activeData.question.answer_selection_count = 2
+    render().handleSelectOption(0)
+    render().handleSelectOption(1)
+    writable = false
+    render()
+    requests[0].callbacks.onSuccess({ answerIndexes: [0] })
+    render()
+    expect(requests).toHaveLength(1)
+    writable = true
+    render()
+    expect(requests[1]?.payload.answerIndexes).toEqual([0, 1])
+  })
+
+  it('persists monotonic intent revisions across reload and retries the same revision', () => {
+    const stored = new Map<string, string>()
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(1000)
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: { sessionStorage: {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => stored.set(key, value),
+      removeItem: (key: string) => stored.delete(key),
+    } } })
+    try {
+      props.activeData.question.answer_selection_count = 2
+      render().handleSelectOption(0)
+      const first = requests[0].payload.answerRevision
+      expect(Number.isSafeInteger(first)).toBe(true)
+      render().handleSelectOption(1)
+      resetHooks()
+      render()
+      const restored = requests[1].payload.answerRevision
+      expect(restored).toBeGreaterThan(first)
+      requests[1].callbacks.onError(new Error('offline'))
+      render().retryFailedAnswer()
+      expect(requests[2].payload.answerRevision).toBe(restored)
+      requests[2].callbacks.onSuccess({ answerIndexes: [0, 1], answerRevision: restored })
+      resetHooks()
+      render().handleSelectOption(0)
+      expect(requests[3].payload.answerRevision).toBeGreaterThan(restored)
+    } finally {
+      clock.mockRestore()
+      if (descriptor) Object.defineProperty(globalThis, 'window', descriptor)
+      else delete (globalThis as any).window
+    }
+  })
+
+  it('saves a newer revision even when rapid edits return to the in-flight selection', () => {
+    props.activeData.question.answer_selection_count = 2
+    render().handleSelectOption(0)
+    const revision = requests[0].payload.answerRevision
+    render().handleSelectOption(1)
+    render().handleSelectOption(1)
+    requests[0].callbacks.onSuccess({ answerIndexes: [0], answerRevision: revision })
+    expect(requests).toHaveLength(2)
+    expect(requests[1].payload.answerIndexes).toEqual([0])
+    expect(requests[1].payload.answerRevision).toBeGreaterThan(revision)
+  })
+
 })

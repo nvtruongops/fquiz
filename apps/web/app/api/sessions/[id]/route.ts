@@ -34,6 +34,7 @@ function formatSessionPayload(session: any, quiz: any, categoryName: string, tot
     current_question_index: session.current_question_index,
     totalQuestions,
     user_answers: getSessionAnswers(session),
+    answer_revisions: session.answer_revisions instanceof Map ? Object.fromEntries(session.answer_revisions) : session.answer_revisions,
     courseCode: quiz.course_code,
     categoryName,
     title: quiz.title,
@@ -169,6 +170,7 @@ export const GET = withAuth(async (
         {
           question_id: questionId,
           text: rawQuestion.text,
+          options: rawQuestion.options,
         },
         quiz?.course_code
       )

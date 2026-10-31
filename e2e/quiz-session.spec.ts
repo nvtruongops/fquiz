@@ -115,4 +115,84 @@ test.describe('Quiz Session Runner Interactive Experience', () => {
     await expect(page.getByText('Correct answer', { exact: true })).toBeVisible({ timeout: 3000 })
     await expect(pendingStatus).toBeHidden()
   })
+
+  test('review multi-answer selections toggle, survive reload, and clear without draft controls', async ({ page }) => {
+    const savedSelections: number[][] = []
+    await mockQuizSession(page, {
+      quizId: mockQuizId,
+      sessionId: mockSessionId,
+      mode: 'review',
+      isGuest: true,
+      questions: [{
+        _id: 'multi-review',
+        text: 'Choose 3 answers. Select the three primary colors.',
+        options: ['Red', 'Green', 'Blue', 'Yellow'],
+        correct_answer: [0, 1, 2],
+        answer_selection_count: 3,
+      }],
+      onAnswerSaved: (body) => savedSelections.push(body.answer_indexes),
+    })
+    await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}`)
+
+    const red = page.getByRole('checkbox', { name: 'Option A: Red' })
+    const green = page.getByRole('checkbox', { name: 'Option B: Green' })
+    await expect(page.getByText(/Review draft|Discard draft/i)).toHaveCount(0)
+    await red.click()
+    await expect.poll(() => savedSelections.length).toBe(1)
+    await green.click()
+    await expect.poll(() => savedSelections.length).toBe(2)
+    await expect(red).toHaveAttribute('aria-checked', 'true')
+    await expect(green).toHaveAttribute('aria-checked', 'true')
+
+    await page.reload()
+    await expect(red).toHaveAttribute('aria-checked', 'true')
+    await expect(green).toHaveAttribute('aria-checked', 'true')
+
+    await red.click()
+    await expect.poll(() => savedSelections.length).toBe(3)
+    await expect(savedSelections[2]).toEqual([1])
+    await green.click()
+    await expect.poll(() => savedSelections.length).toBe(4)
+    await expect(savedSelections[3]).toEqual([])
+    await expect(red).toHaveAttribute('aria-checked', 'false')
+    await expect(green).toHaveAttribute('aria-checked', 'false')
+    await page.reload()
+    await expect(red).toHaveAttribute('aria-checked', 'false')
+    await expect(green).toHaveAttribute('aria-checked', 'false')
+  })
+
+  test('mobile immediate multi-answer toggles before grading and locks after the required count', async ({ page }) => {
+    const multiQuestion = {
+      _id: 'multi-mobile',
+      text: 'Choose 3 answers. Select three primary colors.',
+      options: ['Red', 'Green', 'Blue', 'Yellow'],
+      correct_answer: [0, 1, 2],
+      answer_selection_count: 3,
+    }
+    await mockQuizSession(page, {
+      quizId: mockQuizId,
+      sessionId: mockSessionId,
+      mode: 'immediate',
+      isGuest: true,
+      questions: [multiQuestion],
+    })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/quiz/${mockQuizId}/session/${mockSessionId}/mobile`)
+
+    const red = page.getByRole('checkbox', { name: 'A Red' })
+    const green = page.getByRole('checkbox', { name: 'B Green' })
+    const blue = page.getByRole('checkbox', { name: 'C Blue' })
+    await red.click()
+    await expect(red).toHaveAttribute('aria-checked', 'true')
+    await red.click()
+    await expect(red).toHaveAttribute('aria-checked', 'false')
+    await red.click()
+    await green.click()
+    await blue.click()
+
+    await expect(page.getByText('Correct', { exact: true })).toHaveCount(3)
+    await expect(red).toBeDisabled()
+    await expect(green).toBeDisabled()
+    await expect(blue).toBeDisabled()
+  })
 })

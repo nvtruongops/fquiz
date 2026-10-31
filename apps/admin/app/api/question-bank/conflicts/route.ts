@@ -1,3 +1,4 @@
+import { QuestionBankVariantSchema, QuestionInputSchema, planQuestionSynchronization, prepareQuestionSynchronization, saveSynchronizedQuizzes, resolveQuestionBankRevision } from '@fquiz/models'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { withAuth } from '@/lib/auth/with-auth'
@@ -15,21 +16,13 @@ const ResolveConflictSchema = z.object({
   category_id: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid category ID'),
   question_id: z.string(),
   question_text: z.string(),
-  selected_variant: z.object({
+  selected_variant: QuestionBankVariantSchema.omit({ text: true }).extend({
     quiz_id: z.string(),
     course_code: z.string(),
-    question_index: z.number().optional(),
-    options: z.array(z.string()),
-    correct_answer: z.array(z.number()),
-    explanation: z.string().optional(),
-    image_url: z.string().optional(),
+    question_index: z.number().int().min(0).optional(),
   }),
   update_quizzes: z.boolean().default(false),
 })
-
-function normalizeStr(s?: string): string {
-  return (s || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,;!?]+$/g, '')
-}
 
 export const GET = withAuth(async (req: Request) => {
   try {
@@ -147,100 +140,116 @@ export const GET = withAuth(async (req: Request) => {
   }
 })
 
+type ConflictResolutionPlan = {
+  categoryId: string
+  questionId: string
+  source: any
+  selectedVariant: any
+  updateQuizzes: boolean
+  bank: any
+  revision: any
+  quizzes: any[]
+  plans: any[]
+  courseCodes: string[]
+}
+
+function validateConflictSource(selectedVariant: any, questionText: string, userId?: string) {
+  const source = QuestionInputSchema.safeParse({ ...selectedVariant, text: questionText })
+  if (!source.success) {
+    return { success: false as const, error: NextResponse.json({ error: 'Validation failed', details: source.error.issues }, { status: 400 }) }
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId || '')) {
+    return { success: false as const, error: NextResponse.json({ error: 'A valid creator is required before synchronization' }, { status: 400 }) }
+  }
+  return { success: true as const, source: source.data }
+}
+
+async function prepareConflictResolution(data: any, userId?: string): Promise<{ plan?: ConflictResolutionPlan; error?: Response }> {
+  const { category_id, question_id, question_text, selected_variant, update_quizzes } = data
+  const validated = validateConflictSource(selected_variant, question_text, userId)
+  if (!validated.success) return { error: validated.error }
+
+  await connectDB()
+  const { previous: bank, identity: revision, conflict } = await resolveQuestionBankRevision(
+    QuestionBank, category_id, question_id, validated.source,
+  )
+  if (conflict) return { error: NextResponse.json({ error: 'Question identity conflict; no changes were written' }, { status: 409 }) }
+
+  const quizzes = update_quizzes ? await Quiz.find({ category_id, status: 'published', is_public: true }) : []
+  const synchronization = planQuestionSynchronization(quizzes, validated.source, [question_id])
+  if (synchronization.conflictQuizId) {
+    return { error: NextResponse.json({ error: 'Question options conflict; no changes were written', quiz_id: synchronization.conflictQuizId }, { status: 409 }) }
+  }
+  await prepareQuestionSynchronization(synchronization.plans, validated.source)
+
+  const courseCodes = [...new Set([
+    ...(bank?.used_in_quizzes ?? []),
+    ...quizzes.map((quiz: any) => quiz.course_code),
+    selected_variant.course_code,
+  ].filter(Boolean))]
+  return {
+    plan: {
+      categoryId: category_id,
+      questionId: question_id,
+      source: validated.source,
+      selectedVariant: selected_variant,
+      updateQuizzes: update_quizzes,
+      bank,
+      revision,
+      quizzes,
+      plans: synchronization.plans,
+      courseCodes,
+    },
+  }
+}
+
+function buildConflictBankUpdate(plan: ConflictResolutionPlan, userId: string, updatedQuizIds: string[]) {
+  return {
+    category_id: plan.categoryId,
+    ...plan.revision,
+    text: plan.source.text,
+    options: plan.source.options,
+    correct_answer: plan.source.correct_answer,
+    explanation: plan.selectedVariant.explanation,
+    image_url: plan.selectedVariant.image_url,
+    usage_count: plan.courseCodes.length,
+    used_in_quizzes: plan.courseCodes,
+    used_in_quiz_ids: [...new Set([...(plan.bank?.used_in_quiz_ids ?? []).map(String), ...updatedQuizIds])],
+    has_conflicts: false,
+    conflict_notes: `Resolved by admin at ${new Date().toISOString()}`,
+    created_by: plan.bank?.created_by || userId,
+  }
+}
+
+async function saveConflictResolution(plan: ConflictResolutionPlan, userId: string) {
+  let updatedQuizzes = 0
+  const updatedQuizIds: string[] = []
+  try {
+    await saveSynchronizedQuizzes(plan.plans, id => { updatedQuizzes++; updatedQuizIds.push(id) })
+    await QuestionBank.findOneAndUpdate(
+      plan.bank ? { _id: plan.bank._id } : { category_id: plan.categoryId, question_id: plan.revision.question_id },
+      { $set: buildConflictBankUpdate(plan, userId, updatedQuizIds) },
+      { upsert: true },
+    )
+  } catch {
+    return NextResponse.json({ error: 'Synchronization failed; retry the same request to finish', updated_quiz_ids: updatedQuizIds, bank_write_confirmed: false, retry_required: true }, { status: 500 })
+  }
+
+  const message = plan.updateQuizzes
+    ? `Conflict resolved and ${updatedQuizzes} quizzes updated`
+    : 'Conflict resolved and saved to Question Bank'
+  return NextResponse.json({ success: true, message, updated_quizzes: updatedQuizzes })
+}
+
 export const POST = withAuth(async (req: Request, { payload }) => {
   try {
-    const body = await req.json()
-    const parsed = ResolveConflictSchema.safeParse(body)
-
+    const parsed = ResolveConflictSchema.safeParse(await req.json())
     if (!parsed.success) {
       return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
     }
-
-    const { category_id, question_id, question_text, selected_variant, update_quizzes } = parsed.data
-    await connectDB()
-
-    await QuestionBank.findOneAndUpdate(
-      { category_id, question_id },
-      {
-        $set: {
-          category_id,
-          question_id,
-          text: question_text,
-          options: selected_variant.options,
-          correct_answer: selected_variant.correct_answer,
-          explanation: selected_variant.explanation,
-          image_url: selected_variant.image_url,
-          usage_count: 1,
-          used_in_quizzes: [selected_variant.course_code],
-          has_conflicts: false,
-          conflict_notes: `Resolved by admin at ${new Date().toISOString()}`,
-          created_by: payload.userId,
-        },
-      },
-      { upsert: true }
-    )
-
-    let updatedQuizzes = 0
-    if (update_quizzes) {
-      const quizzes = await Quiz.find({
-        category_id,
-        status: 'published',
-        is_public: true,
-      })
-
-      const normalizedText = normalizeStr(question_text)
-
-      for (const quiz of quizzes) {
-        if (!Array.isArray(quiz.questions)) continue
-        let hasChanges = false
-
-        quiz.questions.forEach((q: any) => {
-          if (!q.text || !Array.isArray(q.options)) return
-
-          const qText = normalizeStr(q.text)
-          if (qText !== normalizedText) return
-
-          const selectedAnswerTexts = selected_variant.correct_answer
-            .map((idx: number) => normalizeStr(selected_variant.options[idx]))
-            .filter(Boolean)
-
-          const newCorrectAnswer = q.options
-            .map((opt: string, idx: number) => {
-              const optNorm = normalizeStr(opt)
-              return selectedAnswerTexts.includes(optNorm) ? idx : -1
-            })
-            .filter((idx: number) => idx !== -1)
-
-          if (newCorrectAnswer.length > 0) {
-            q.correct_answer = newCorrectAnswer
-            if (selected_variant.explanation) {
-              q.explanation = selected_variant.explanation
-            }
-            hasChanges = true
-          } else {
-            q.options = selected_variant.options
-            q.correct_answer = selected_variant.correct_answer
-            if (selected_variant.explanation) {
-              q.explanation = selected_variant.explanation
-            }
-            hasChanges = true
-          }
-        })
-
-        if (hasChanges) {
-          await quiz.save()
-          updatedQuizzes++
-        }
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: update_quizzes
-        ? `Conflict resolved and ${updatedQuizzes} quizzes updated`
-        : 'Conflict resolved and saved to Question Bank',
-      updated_quizzes: updatedQuizzes,
-    })
+    const prepared = await prepareConflictResolution(parsed.data, payload.userId)
+    if (prepared.error) return prepared.error
+    return saveConflictResolution(prepared.plan!, payload.userId)
   } catch (error: any) {
     console.error('Error resolving conflict:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -1,6 +1,8 @@
+import { getPublishedAnswerError } from '../utils/published-answer'
 import mongoose, { Schema } from 'mongoose'
 import type { IQuestionStandalone } from '../entities/quiz.types'
 import { ensureExplanation } from '../utils/explanation-generator'
+import { getQuestionIdentity } from '../utils/question-identity'
 
 const QuestionSchema = new Schema<IQuestionStandalone>(
   {
@@ -9,6 +11,7 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
       required: true,
       unique: true,
     },
+    question_id_aliases: { type: [String], default: undefined },
     text: {
       type: String,
       required: true,
@@ -29,11 +32,8 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
       type: [Number],
       required: true,
       validate: {
-        validator: function (v: number[]) {
-          if (v.length < 1) return false
-          // @ts-ignore - this refers to the Question document context
-          const optionsLength = this.options?.length ?? 0
-          return v.every((i) => i >= 0 && i < optionsLength)
+        validator: function (this: any, v: number[]) {
+          return getPublishedAnswerError({ text: this.text, options: this.options, correct_answer: v }) === null
         },
         message: 'correct_answer indices must be within options range',
       },
@@ -59,6 +59,10 @@ const QuestionSchema = new Schema<IQuestionStandalone>(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 )
 
+QuestionSchema.pre('validate', function () {
+  if ((this.isNew || !this.question_id || this.isModified('text') || this.isModified('options')) && this.text && this.options?.length >= 2) Object.assign(this, getQuestionIdentity(this))
+})
+
 QuestionSchema.pre('save', function () {
   if (!this.explanation || this.explanation.trim() === '') {
     this.explanation = ensureExplanation({
@@ -73,6 +77,7 @@ QuestionSchema.pre('save', function () {
 QuestionSchema.index({ text: 'text' })
 QuestionSchema.index({ usage_count: -1 })
 QuestionSchema.index({ quiz_ids: 1 })
+QuestionSchema.index({ question_id_aliases: 1 })
 
 export const Question =
   mongoose.models.Question ??

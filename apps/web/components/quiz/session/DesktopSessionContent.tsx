@@ -47,7 +47,7 @@ type DesktopSessionActivity = ReturnType<typeof useSessionActivityTracking>
 type DesktopSessionFinalizeMutation = ReturnType<typeof useSessionFinalize>['finalizeMutation']
 type DesktopSessionAnswerSync = ReturnType<typeof useSessionAnswerSync>
 type DesktopSessionAnswerState = Pick<DesktopSessionAnswerSync,
-  'selectedOptions' | 'submitted' | 'saveStatus' | 'retryFailedAnswer' | 'unsavedQuestionIndex' | 'discardUnsavedAnswer'
+  'selectedOptions' | 'submitted' | 'saveStatus' | 'retryFailedAnswer'
 >
 type DesktopLastAnswerResult = ReturnType<typeof useQuizSessionStore.getState>['lastAnswerResult']
 
@@ -120,10 +120,6 @@ function submitFinalizedSession(canFinalize: () => boolean, finalizeMutation: De
   handleSessionSubmit(canFinalize, finalizeMutation.isPending, setConfirmOpen, finalizeMutation.mutate)
 }
 
-function handleReviewUnsavedDraft(questionIndex: number | null, onNavigate: (index: number) => void) {
-  if (questionIndex !== null) onNavigate(questionIndex)
-}
-
 function shouldShowImmediateFeedback(
   sessionMode: DesktopActiveSessionData['session']['mode'],
   submitted: boolean,
@@ -132,12 +128,17 @@ function shouldShowImmediateFeedback(
   return sessionMode === 'immediate' && submitted && lastAnswerResult !== null
 }
 
-function areSessionAnswersDisabled(isReadOnlyTab: boolean, isSubmitting: boolean, isFinalizing: boolean) {
-  return isReadOnlyTab || isSubmitting || isFinalizing
+function areSessionAnswersDisabled(isReadOnlyTab: boolean, isFinalizing: boolean) {
+  return isReadOnlyTab || isFinalizing
 }
 
-function getDraftQuestionNumber(questionIndex: number | null) {
-  return questionIndex === null ? null : questionIndex + 1
+function replacePlaceholderQuizRoute(realQuizId: string | undefined, quizId: string, sessionId: string) {
+  if (!realQuizId || (quizId !== 'undefined' && quizId !== 'mix') || typeof window === 'undefined') return
+  window.history.replaceState(null, '', '/quiz/' + realQuizId + '/session/' + sessionId)
+}
+
+function isQuestionIndexNavigable(index: number, totalQuestions: number, isReady: boolean) {
+  return isReady && index >= 0 && index < totalQuestions
 }
 
 function getSessionQuestionQuizId(session: DesktopActiveSessionData['session'], resolvedQuizId: string) {
@@ -187,15 +188,12 @@ export function DesktopSessionQuestionBody({
   hasFinalizationError: boolean
 }) {
   const { session, question } = activeData
-  const answersDisabled = areSessionAnswersDisabled(isReadOnlyTab, isSubmitting, isFinalizing)
+  const answersDisabled = areSessionAnswersDisabled(isReadOnlyTab, isFinalizing)
   return (
     <>
       <SessionSaveStatus
         status={saveState.saveStatus}
         onRetry={saveState.retryFailedAnswer}
-        onReviewDraft={() => handleReviewUnsavedDraft(saveState.unsavedQuestionIndex, handleNavigate)}
-        onDiscardDraft={saveState.discardUnsavedAnswer}
-        draftQuestionNumber={getDraftQuestionNumber(saveState.unsavedQuestionIndex)}
         disabled={answersDisabled}
       />
       <SessionFinalizationFailure isError={hasFinalizationError} />
@@ -372,7 +370,7 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
         answeredCount={answeredCount}
         submitted={saveState.submitted}
         isPending={finalizeMutation.isPending}
-        answersDisabled={areSessionAnswersDisabled(isReadOnlyTab, isSubmitting, finalizeMutation.isPending)}
+        answersDisabled={areSessionAnswersDisabled(isReadOnlyTab, finalizeMutation.isPending)}
         submitDisabled={submitDisabled}
         isReadOnlyTab={isReadOnlyTab}
         takeOverLease={takeOverLease}
@@ -431,27 +429,6 @@ function DesktopSessionReadyContent({ data, controls, finalization }: {
   )
 }
 
-function getAnsweredQuestionSet(
-  session: DesktopActiveSessionData['session'],
-  acknowledgedQuestions: Set<number>,
-  storeSessionId: string | null,
-  resolvedSessionId: string,
-  answeredQuestions: Set<number>,
-) {
-  const answeredSet = new Set(
-    session.user_answers
-      .map((answer) => answer.question_index)
-      .filter((index) => Number.isInteger(index) && index >= 0 && index < session.totalQuestions),
-  )
-  acknowledgedQuestions.forEach((index) => answeredSet.add(index))
-  if (storeSessionId === resolvedSessionId) {
-    answeredQuestions.forEach((index) => {
-      if (index >= 0 && index < session.totalQuestions) answeredSet.add(index)
-    })
-  }
-  return answeredSet
-}
-
 export function DesktopSessionContent({
   quizId,
   sessionId,
@@ -462,9 +439,7 @@ export function DesktopSessionContent({
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [enableAnimation, setEnableAnimation] = useAnimationPreference(false)
-  const storeSessionId = useQuizSessionStore((state) => state.sessionId)
   const currentQuestionIndex = useQuizSessionStore((state) => state.currentQuestionIndex)
-  const answeredQuestions = useQuizSessionStore((state) => state.answeredQuestions)
   const lastAnswerResult = useQuizSessionStore((state) => state.lastAnswerResult)
   const navigateToQuestion = useQuizSessionStore((state) => state.navigateToQuestion)
   const sessionLoader = useSessionLoader(true)
@@ -518,8 +493,6 @@ export function DesktopSessionContent({
     saveStatus,
     retryFailedAnswer,
     hasUnsavedAnswers,
-    discardUnsavedAnswer,
-    unsavedQuestionIndex,
     acknowledgedQuestions,
   } = answerSync
   const canFinalize = useCallback(() => canWrite() && !isSubmitting && !hasUnsavedAnswers(), [canWrite, isSubmitting, hasUnsavedAnswers])
@@ -552,9 +525,7 @@ export function DesktopSessionContent({
 
   useEffect(() => {
     const realQuizId = (activeData?.session as any)?.quiz_id
-    if (realQuizId && (quizId === 'undefined' || quizId === 'mix') && typeof window !== 'undefined') {
-      window.history.replaceState(null, '', '/quiz/' + realQuizId + '/session/' + sessionId)
-    }
+    replacePlaceholderQuizRoute(realQuizId, quizId, sessionId)
   }, [activeData?.session, quizId, sessionId])
 
   const isStillLoading = !isSessionQuestionReady({
@@ -577,8 +548,7 @@ export function DesktopSessionContent({
   )
   const handleNavigate = useCallback((index: number) => {
     const totalQuestions = activeData?.session.totalQuestions ?? 0
-    if (!canNavigateQuestions || index < 0 || index >= totalQuestions) return
-    navigateToQuestion(index)
+    if (isQuestionIndexNavigable(index, totalQuestions, canNavigateQuestions)) navigateToQuestion(index)
   }, [activeData?.session.totalQuestions, canNavigateQuestions, navigateToQuestion])
 
   if (isPreloadError || isInitialError) {
@@ -599,13 +569,8 @@ export function DesktopSessionContent({
     return <DesktopSessionLoadingState isStillLoading={isStillLoading} sessionLoader={sessionLoader} />
   }
 
-  const answeredSet = getAnsweredQuestionSet(
-    activeData.session,
-    acknowledgedQuestions,
-    storeSessionId,
-    resolvedSessionId,
-    answeredQuestions,
-  )
+  const answeredSet = new Set([...acknowledgedQuestions].filter((index) =>
+    index >= 0 && index < activeData.session.totalQuestions))
 
   return (
     <DesktopSessionReadyContent
@@ -618,7 +583,7 @@ export function DesktopSessionContent({
         isSubmitting,
         submitDisabled,
         confirmSubmitDisabled: submitAvailability.confirmationDisabled,
-        saveState: { selectedOptions, submitted, saveStatus, retryFailedAnswer, unsavedQuestionIndex, discardUnsavedAnswer },
+        saveState: { selectedOptions, submitted, saveStatus, retryFailedAnswer },
         lastAnswerResult,
       }}
       controls={{

@@ -5,7 +5,6 @@ export const ROLE_ACCESS_HIERARCHY: Record<string, string[]> = {
   dev: ['dev'],
 }
 
-export const ROLE_HIERARCHY = ROLE_ACCESS_HIERARCHY
 
 export function expandAllowedRoles(requiredRoles?: string[]): string[] | undefined {
   if (!requiredRoles || requiredRoles.length === 0) return undefined
@@ -17,9 +16,4 @@ export function expandAllowedRoles(requiredRoles?: string[]): string[] | undefin
     }
   }
   return Array.from(allowedIdentities)
-}
-
-export function hasRole(userRole: string, requiredRole: string): boolean {
-  const allowed = ROLE_ACCESS_HIERARCHY[requiredRole] ?? [requiredRole]
-  return allowed.includes(userRole)
 }

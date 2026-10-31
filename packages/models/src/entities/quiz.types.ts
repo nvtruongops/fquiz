@@ -3,6 +3,7 @@ import { Types } from 'mongoose'
 export interface IQuestion {
   _id?: Types.ObjectId
   question_id?: string
+  question_id_aliases?: string[]
   text: string
   options: string[]
   correct_answer: number | number[]
@@ -13,6 +14,7 @@ export interface IQuestion {
 export interface IQuestionStandalone {
   _id: Types.ObjectId
   question_id: string
+  question_id_aliases?: string[]
   text: string
   options: string[]
   correct_answer: number[]
@@ -78,6 +80,7 @@ export interface IQuestionBank {
   _id: Types.ObjectId
   category_id: Types.ObjectId
   question_id: string
+  question_id_aliases?: string[]
   text: string
   options: string[]
   correct_answer: number[]

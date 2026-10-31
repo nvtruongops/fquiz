@@ -1,3 +1,4 @@
+import { AdminCreateQuizSchema, AdminSaveDraftQuizSchema } from '@fquiz/models'
 import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/with-auth'
 import { connectDB } from '@/lib/db/mongodb'
@@ -6,6 +7,7 @@ import { User } from '@/lib/models/User'
 import { Category } from '@/lib/models/Category'
 import { QuizListQuerySchema } from '@/lib/schemas/common'
 import mongoose from 'mongoose'
+import { refreshQuestionBankUsageCache } from '@/lib/question-bank/usage-cache'
 
 export const GET = withAuth(async (req) => {
   const url = new URL(req.url)
@@ -92,14 +94,13 @@ export const GET = withAuth(async (req) => {
 
 export const POST = withAuth(async (req, { payload }) => {
   try {
-    await connectDB()
     const body = await req.json().catch(() => ({}))
 
-    const { title, course_code, category_id, description, questions, status = 'published' } = body
-
-    if (!course_code || !category_id) {
-      return NextResponse.json({ error: 'Quiz code and category are required' }, { status: 400 })
-    }
+    const parsed = (body.status === 'draft' ? AdminSaveDraftQuizSchema : AdminCreateQuizSchema).safeParse(body)
+    if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+    const { course_code, category_id, description, questions, status } = parsed.data
+    const { title } = body
+    await connectDB()
 
     const normalizedCode = String(course_code).trim().toUpperCase()
 
@@ -109,13 +110,7 @@ export const POST = withAuth(async (req, { payload }) => {
       return NextResponse.json({ error: 'Category does not exist' }, { status: 400 })
     }
 
-    const processedQuestions = (Array.isArray(questions) ? questions : []).map((q: any) => ({
-      text: q.text || '',
-      options: Array.isArray(q.options) ? q.options : [],
-      correct_answer: Array.isArray(q.correct_answer) ? q.correct_answer : [0],
-      explanation: q.explanation || '',
-      image_url: q.image_url || '',
-    }))
+    const processedQuestions = questions
 
     const adminUserId = new mongoose.Types.ObjectId(payload.userId)
 
@@ -135,7 +130,9 @@ export const POST = withAuth(async (req, { payload }) => {
       visibility: 'public',
     })
 
-    return NextResponse.json({ quiz }, { status: 201 })
+    const questionBankUsageRefreshed = await refreshQuestionBankUsageCache()
+
+    return NextResponse.json({ quiz, question_bank_usage_refreshed: questionBankUsageRefreshed }, { status: 201 })
   } catch (err: any) {
     console.error('Create quiz error:', err)
     if (err.code === 11000) {

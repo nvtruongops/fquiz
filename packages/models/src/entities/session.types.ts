@@ -43,6 +43,7 @@ export interface IQuizSession {
   paused_at?: Date
   total_paused_duration_ms?: number
   is_temp?: boolean
+  answer_revisions?: Record<string, number>
   answer_version?: number
   assignment_id?: Types.ObjectId
   classroom_id?: Types.ObjectId
@@ -74,6 +75,7 @@ export interface SessionData {
     status: 'preparing' | 'active' | 'completed' | 'paused' | 'expired'
     current_question_index: number
     user_answers: SessionDataUserAnswer[]
+    answer_revisions?: Record<string, number>
     score: number
     totalQuestions: number
     courseCode: string

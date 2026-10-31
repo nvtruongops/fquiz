@@ -43,18 +43,3 @@ export interface IAILearningLog {
   metadata?: Record<string, unknown>
   createdAt?: Date
 }
-
-export type AIGenerationType =
-  | 'vocabulary'
-  | 'sentence'
-  | 'paragraph'
-  | 'grammar'
-  | 'quiz'
-  | 'flashcard'
-  | 'translation'
-  | 'dialogue'
-  | 'story'
-  | 'example_sentences'
-  | 'writing'
-  | 'writing_eval'
-  | 'quiz_assistant'

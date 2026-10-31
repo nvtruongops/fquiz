@@ -26,6 +26,8 @@ const FlashcardStatsSchema = new Schema<FlashcardStats>(
 const QuestionCacheSchema = new Schema<IQuestion>(
   {
     _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+    question_id: { type: String },
+    question_id_aliases: { type: [String], default: undefined },
     text: { type: String, required: true },
     options: { type: [String], required: true },
     correct_answer: { type: [Number], required: true },
@@ -63,6 +65,7 @@ const QuizSessionSchema = new Schema<IQuizSession>(
     total_paused_duration_ms: { type: Number, default: 0 },
     is_temp: { type: Boolean, default: false },
     answer_version: { type: Number, default: 1 },
+    answer_revisions: { type: Map, of: Number, default: undefined },
     assignment_id: { type: Schema.Types.ObjectId, ref: 'QuizAssignment', default: null },
     classroom_id: { type: Schema.Types.ObjectId, ref: 'Classroom', default: null },
   },

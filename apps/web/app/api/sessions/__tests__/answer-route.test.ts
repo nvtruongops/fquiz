@@ -1,5 +1,5 @@
 import { POST } from '../[id]/answer/route'
-import { processImmediateAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
+import { processImmediateAnswer, processReviewAnswer, getImmediateAnswerResult } from '@/lib/modules/quiz/quiz-engine'
 import { validateQuizSessionRequest } from '@/lib/modules/quiz/session-utils'
 
 // Mock dependencies
@@ -43,6 +43,45 @@ describe('POST /api/sessions/[id]/answer - State Machine & Security Tests', () =
 
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  it('accepts explicit empty review array over stale scalar and rejects missing answers', async () => {
+    const session = { _id: 'session-123', status: 'active', mode: 'review', question_count: 1, current_question_index: 0 }
+    ;(validateQuizSessionRequest as jest.Mock).mockResolvedValue({ isValid: true, session })
+    ;(processReviewAnswer as jest.Mock).mockResolvedValue({ answerIndexes: [] })
+    const request = (body: any) => new Request('https://web.example.test/api/sessions/session-123/answer', {
+      method: 'POST', body: JSON.stringify(body),
+    })
+    expect((await POST(request({ answer_indexes: [], answer_index: 1 }), { params: mockParams })).status).toBe(200)
+    expect(processReviewAnswer).toHaveBeenCalledWith(session, [], 0)
+    expect((await POST(request({}), { params: mockParams })).status).toBe(400)
+  })
+
+  it('passes safe intent revisions through and rejects unsafe revisions before persistence', async () => {
+    const session = { _id: 'session-123', status: 'active', mode: 'review', question_count: 1, current_question_index: 0 }
+    ;(validateQuizSessionRequest as jest.Mock).mockResolvedValue({ isValid: true, session })
+    ;(processReviewAnswer as jest.Mock).mockResolvedValue({ answerIndexes: [], answerRevision: 2 })
+    const request = (revision: number) => new Request('https://web.example.test/api/sessions/session-123/answer', {
+      method: 'POST', body: JSON.stringify({ answer_indexes: [], answer_revision: revision }),
+    })
+    expect((await POST(request(2), { params: mockParams })).status).toBe(200)
+    expect(processReviewAnswer).toHaveBeenCalledWith(session, [], 0, 2)
+    ;(processReviewAnswer as jest.Mock).mockClear()
+    for (const revision of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect((await POST(request(revision), { params: mockParams })).status).toBe(400)
+    }
+    expect(processReviewAnswer).not.toHaveBeenCalled()
+  })
+
+  it('rejects empty immediate submissions without grading or clearing', async () => {
+    ;(validateQuizSessionRequest as jest.Mock).mockResolvedValue({ isValid: true, session: {
+      _id: 'session-123', status: 'active', mode: 'immediate', question_count: 1, current_question_index: 0,
+    } })
+    const req = new Request('https://web.example.test/api/sessions/session-123/answer', {
+      method: 'POST', body: JSON.stringify({ answer_indexes: [] }),
+    })
+    expect((await POST(req, { params: mockParams })).status).toBe(400)
+    expect(processImmediateAnswer).not.toHaveBeenCalled()
   })
 
   it('should return 400 if question_index is out of bounds (greater than question count)', async () => {
