@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../lib/utils'
 
 export const SUPPORTED_LOCALES = ['vi', 'en'] as const
@@ -4048,8 +4049,10 @@ export function LocaleSwitcher({
   const { locale, setLocale } = useLocale()
   const t = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const localeNames: Record<Locale, string> = {
     vi: t('common.vietnamese'),
     en: t('common.english'),
@@ -4058,9 +4061,25 @@ export function LocaleSwitcher({
   useEffect(() => {
     if (!isOpen) return
 
-    rootRef.current?.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')?.focus()
+    const updateMenuPosition = () => {
+      const trigger = triggerRef.current
+      if (!trigger) return
+      const rect = trigger.getBoundingClientRect()
+      const width = fullWidth ? rect.width : 68
+      const height = 78
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const left = Math.max(8, Math.min(fullWidth ? rect.left : rect.right - width, viewportWidth - width - 8))
+      const top = fullWidth
+        ? rect.bottom + height + 8 <= viewportHeight ? rect.bottom + 4 : rect.top - height - 4
+        : rect.top >= height + 8 ? rect.top - height - 6 : Math.min(viewportHeight - height - 8, rect.bottom + 6)
+
+      setMenuStyle({ position: 'fixed', left, top: Math.max(8, top), width, zIndex: 100 })
+    }
+
+    updateMenuPosition()
     const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setIsOpen(false)
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) setIsOpen(false)
     }
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
@@ -4071,11 +4090,19 @@ export function LocaleSwitcher({
 
     document.addEventListener('pointerdown', closeOnOutsidePointer)
     document.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('resize', updateMenuPosition)
+    window.addEventListener('scroll', updateMenuPosition, true)
     return () => {
       document.removeEventListener('pointerdown', closeOnOutsidePointer)
       document.removeEventListener('keydown', closeOnEscape)
+      window.removeEventListener('resize', updateMenuPosition)
+      window.removeEventListener('scroll', updateMenuPosition, true)
     }
-  }, [isOpen])
+  }, [fullWidth, isOpen])
+
+  useEffect(() => {
+    if (isOpen) menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')?.focus()
+  }, [isOpen, menuStyle])
 
   const selectLocale = (nextLocale: Locale) => {
     setLocale(nextLocale)
@@ -4113,13 +4140,13 @@ export function LocaleSwitcher({
           <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      {isOpen && (
+      {isOpen && menuStyle && typeof document !== 'undefined' && createPortal(
         <div
+          ref={menuRef}
           role="menu"
           aria-label={t('common.language')}
-          className={fullWidth
-            ? 'absolute left-0 top-full z-[60] mt-1 flex w-full flex-col gap-0.5 rounded-xl border border-border bg-popover p-1 shadow-lg'
-            : 'absolute right-0 bottom-full z-[60] mb-1 flex w-[4.25rem] flex-col gap-0.5 rounded-xl border border-border bg-popover p-1 shadow-lg'}
+          style={menuStyle}
+          className="fixed flex flex-col gap-0.5 rounded-xl border border-border bg-popover p-1 shadow-xl"
         >
         {SUPPORTED_LOCALES.map((supportedLocale) => (
           <button
@@ -4151,7 +4178,7 @@ export function LocaleSwitcher({
           </button>
         ))}
         </div>
-      )}
+      , document.body)}
     </div>
   )
 }

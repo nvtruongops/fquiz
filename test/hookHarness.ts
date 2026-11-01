@@ -6,6 +6,7 @@ let cleanups: (() => void)[] = []
 let dirty = false
 
 export const reactHooks = {
+  ...jest.requireActual<typeof import('react')>('react'),
   createContext(defaultValue: any) {
     return { _currentValue: defaultValue, Provider: ({ children }: any) => children }
   },
