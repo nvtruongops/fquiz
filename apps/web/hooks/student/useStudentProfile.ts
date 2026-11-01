@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ProfileData {
   username: string
@@ -18,6 +19,9 @@ interface ProfileResponse {
 
 export function useStudentProfile() {
   const { toast } = useToast()
+  const t = useTranslations()
+  const tRef = useRef(t)
+  tRef.current = t
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -35,10 +39,10 @@ export function useStudentProfile() {
         )
         if (!res.ok) {
           if (res.status === 404 || res.status === 501) {
-            toast.info('Profile page is under development. Coming soon.')
+            toast.info(tRef.current('profile.loadUnavailable'))
             return
           }
-          toast.error('Failed to load user profile')
+          toast.error(tRef.current('profile.loadFailed'))
           return
         }
 
@@ -49,7 +53,7 @@ export function useStudentProfile() {
           bio: data.profile.bio,
         })
       } catch {
-        toast.error('System is busy, please try again')
+        toast.error(tRef.current('profile.systemBusy'))
       } finally {
         setLoading(false)
       }
@@ -77,11 +81,11 @@ export function useStudentProfile() {
 
       if (!res.ok) {
         if (res.status === 404 || res.status === 501) {
-          toast.info('Profile update feature is under development. Coming soon.')
+          toast.info(t('profile.updateUnavailable'))
           return
         }
         const data = await res.json().catch(() => ({}))
-        toast.error(data?.error ?? 'Failed to update profile')
+        toast.error(t('profile.updateFailed'))
         return
       }
 
@@ -97,9 +101,9 @@ export function useStudentProfile() {
         bio: data.profile.bio,
         createdAt: data.profile.createdAt,
       }))
-      toast.success('Profile updated successfully')
+      toast.success(t('profile.updated'))
     } catch {
-      toast.error('Unable to update profile at this time')
+      toast.error(t('profile.systemBusy'))
     } finally {
       setSaving(false)
     }
@@ -107,7 +111,7 @@ export function useStudentProfile() {
 
   async function handleRequestDeletion() {
     if (!deletePassword) {
-      toast.error('Please enter confirmation password')
+      toast.error(t('profile.confirmPassword'))
       return
     }
 
@@ -126,14 +130,11 @@ export function useStudentProfile() {
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        toast.error(data?.error ?? 'Account deletion failed')
+        toast.error(t('profile.deleteFailed'))
         return
       }
 
-      toast.success(
-        data?.message ??
-          'Account deletion request submitted successfully! Please check your email.'
-      )
+      toast.success(t('profile.deleteSubmitted'))
       setDeleteDialogOpen(false)
       setDeletePassword('')
 
@@ -141,7 +142,7 @@ export function useStudentProfile() {
         window.location.href = '/login?message=deletion_requested'
       }, 1200)
     } catch {
-      toast.error('Unable to connect to server')
+      toast.error(t('profile.connectionFailed'))
     } finally {
       setDeleting(false)
     }

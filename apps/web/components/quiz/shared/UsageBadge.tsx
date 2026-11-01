@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Info, X } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { Badge } from '@/components/shared/ui/badge'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface UsageBadgeProps {
   count?: number
@@ -21,6 +22,7 @@ export function UsageBadge({
   className,
   align = 'right',
 }: UsageBadgeProps) {
+  const t = useTranslations()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -73,14 +75,14 @@ export function UsageBadge({
         )}
       >
         <span className="truncate max-w-[200px] sm:max-w-none">
-          Used in {displayCount} quizzes
+          {t('usageBadge.usedInQuizzes', { count: displayCount })}
         </span>
         <button
           type="button"
           onClick={toggleDropdown}
           className="inline-flex items-center justify-center p-0.5 rounded-full hover:bg-primary/20 transition-colors text-primary cursor-pointer focus:outline-none shrink-0"
-          title="View quiz list"
-          aria-label="View quiz list"
+          title={t('usageBadge.viewQuizList')}
+          aria-label={t('usageBadge.viewQuizList')}
         >
           <Info className={cn('shrink-0', size === 'sm' ? 'w-3 h-3' : 'w-4 h-4')} />
         </button>
@@ -90,7 +92,7 @@ export function UsageBadge({
       {open && (
         <div
           role="dialog"
-          aria-label="Related quizzes"
+          aria-label={t('usageBadge.relatedQuizzes')}
           className={cn(
             'usage-badge-dropdown absolute top-full mt-1.5 z-50 w-64 max-w-[85vw] p-3 rounded-2xl bg-popover text-popover-foreground border-2 border-border shadow-xl animate-in fade-in slide-in-from-top-2 duration-200',
             align === 'center' ? 'left-1/2 -translate-x-1/2' : align === 'left' ? 'left-0' : 'right-0'
@@ -101,7 +103,7 @@ export function UsageBadge({
         >
           <div className="flex items-center justify-between border-b border-border pb-1.5 mb-2">
             <span className="text-[11px] font-bold text-foreground">
-              Quizzes containing this question ({displayCount}):
+              {t('usageBadge.quizzesContainingQuestion', { count: displayCount })}
             </span>
             <button
               type="button"
@@ -126,7 +128,7 @@ export function UsageBadge({
                       : 'bg-primary/10 text-primary border border-primary/20'
                   )}
                 >
-                  {code} {isCurrent && <span className="ml-1 text-[9.5px] opacity-90">(This quiz)</span>}
+                  {code} {isCurrent && <span className="ml-1 text-[9.5px] opacity-90">({t('usageBadge.thisQuiz')})</span>}
                 </Badge>
               )
             })}

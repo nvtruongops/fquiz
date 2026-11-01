@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/ui/button'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface GuestClaimBannerProps {
   sessionId: string
@@ -25,6 +26,7 @@ export function GuestClaimBanner({
   const { data: authData } = useAuth()
   const currentUser = authData?.user ?? null
   const { toast } = useToast()
+  const t = useTranslations()
 
   const [isClaiming, setIsClaiming] = useState(false)
   const [isClaimed, setIsClaimed] = useState(false)
@@ -49,10 +51,10 @@ export function GuestClaimBanner({
       }
 
       setIsClaimed(true)
-      toast.success('Quiz results saved to your study profile!')
+      toast.success(t('quiz.guestResultsSaved'))
       router.refresh()
-    } catch (err: any) {
-      toast.error(err.message || 'Error saving quiz results')
+    } catch {
+      toast.error(t('quiz.saveGuestResultsFailed'))
     } finally {
       setIsClaiming(false)
     }
@@ -64,7 +66,7 @@ export function GuestClaimBanner({
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className="w-5 h-5 shrink-0 text-success-fg" />
           <p className="text-xs font-bold">
-            This quiz result has been successfully saved to your study profile!
+            {t('guestClaim.savedMessage')}
           </p>
         </div>
         <Button
@@ -72,7 +74,7 @@ export function GuestClaimBanner({
           onClick={() => router.push('/history')}
           className="h-8 px-3 rounded-xl bg-success-fg text-success-bg hover:opacity-90 font-black text-[11px] shrink-0 cursor-pointer"
         >
-          View History
+          {t('guestClaim.viewHistory')}
         </Button>
       </div>
     )
@@ -86,10 +88,10 @@ export function GuestClaimBanner({
         </div>
         <div>
           <p className="text-xs font-black text-foreground">
-            Save this quiz to your profile?
+            {t('guestClaim.prompt')}
           </p>
           <p className="text-[11px] font-medium text-muted-foreground">
-            You are viewing as a guest. Sign in to save your score ({score}/{totalQuestions} correct) and analyze mistakes.
+            {t('guestClaim.guestScore', { score, total: totalQuestions })}
           </p>
         </div>
       </div>
@@ -103,12 +105,12 @@ export function GuestClaimBanner({
         {isClaiming ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Saving...</span>
+            <span>{t('guestClaim.saving')}</span>
           </>
         ) : (
           <>
             <LogIn className="w-3.5 h-3.5" />
-            <span>{currentUser ? 'Save to my account' : 'Sign in to save results'}</span>
+            <span>{currentUser ? t('guestClaim.saveToAccount') : t('guestClaim.signInSave')}</span>
           </>
         )}
       </Button>

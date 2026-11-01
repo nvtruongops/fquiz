@@ -5,9 +5,11 @@ import { useToast } from '@/store/shared/toast-store'
 import { useRegisterForm } from '@/hooks/auth/useRegisterForm'
 import { RegisterSuccessView } from '@/components/auth/RegisterSuccessView'
 import { RegisterFormFields } from '@/components/auth/RegisterFormFields'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function RegisterPage() {
   const { toast } = useToast()
+  const t = useTranslations()
   const cardRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -33,9 +35,9 @@ export default function RegisterPage() {
     const params = new URLSearchParams(window.location.search)
     const error = params.get('error')
     if (error) {
-      toast.error(decodeURIComponent(error))
+      toast.error(t('auth.registrationFailed'))
     }
-  }, [toast])
+  }, [toast, t])
 
   if (success) {
     return <RegisterSuccessView />

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Globe, Save, Loader2, Wrench } from 'lucide-react'
 import { Settings } from '@/hooks/useAdminSettings'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface GeneralSettingsCardProps {
   formState: Partial<Settings>
@@ -21,18 +22,19 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
   onSave,
   isSaving,
 }: GeneralSettingsCardProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
       <Card className="border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground text-base font-bold flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" /> Project Information
+            <Globe className="w-4 h-4 text-primary" /> {t('adminSettings.projectInformation')}
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">Configure public information displayed across the platform</CardDescription>
+          <CardDescription className="text-muted-foreground text-xs">{t('adminSettings.projectInfoDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="app_name" className="text-xs font-semibold text-foreground uppercase tracking-wider">Application Name</label>
+            <label htmlFor="app_name" className="text-xs font-semibold text-foreground uppercase tracking-wider">{t('adminSettings.applicationName')}</label>
             <Input
               id="app_name"
               value={formState.app_name ?? ''}
@@ -41,7 +43,7 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="app_description" className="text-xs font-semibold text-foreground uppercase tracking-wider">Short Description (SEO)</label>
+            <label htmlFor="app_description" className="text-xs font-semibold text-foreground uppercase tracking-wider">{t('adminSettings.shortDescription')}</label>
             <textarea
               id="app_description"
               rows={3}
@@ -56,20 +58,20 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
       <Card className="border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground text-base font-bold flex items-center gap-2">
-            <Wrench className="w-4 h-4 text-primary" /> System Status
+            <Wrench className="w-4 h-4 text-primary" /> {t('adminSettings.systemStatus')}
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">Manage maintenance mode and access restrictions</CardDescription>
+          <CardDescription className="text-muted-foreground text-xs">{t('adminSettings.systemStatusDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-muted/40 border border-border rounded-xl">
             <div className="space-y-1 pr-4">
-              <h4 className="font-semibold text-foreground text-sm">System Maintenance Mode</h4>
-              <p className="text-xs text-muted-foreground">Disables features and displays an Under Maintenance notice to users.</p>
+              <h4 className="font-semibold text-foreground text-sm">{t('adminSettings.maintenanceMode')}</h4>
+              <p className="text-xs text-muted-foreground">{t('adminSettings.maintenanceDescription')}</p>
             </div>
             <Switch
               checked={Boolean(formState.maintenance_mode)}
               onCheckedChange={(checked) => setFormState((s) => ({ ...s, maintenance_mode: checked }))}
-              aria-label="Toggle maintenance mode"
+              aria-label={t('adminSettings.toggleMaintenance')}
             />
           </div>
         </CardContent>
@@ -82,7 +84,7 @@ export const GeneralSettingsCard = React.memo(function GeneralSettingsCard({
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm px-6 rounded-xl cursor-pointer"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Save Display Settings
+          {t('adminSettings.saveDisplay')}
         </Button>
       </div>
     </div>

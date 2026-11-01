@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/ui/button'
 import { HistorySkeleton } from '@/components/history/HistorySkeleton'
 import { GroupedQuizTimelineCard } from '@/components/history/HistoryItemCard'
 import type { DateGroup } from '@/hooks/useStudentHistory'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface HistoryGroupListProps {
   isLoading: boolean
@@ -23,6 +24,7 @@ export function HistoryGroupList({
   dateGroups,
   hasActiveFilters,
 }: HistoryGroupListProps) {
+  const t = useTranslations()
   if (isLoading) {
     return <HistorySkeleton />
   }
@@ -31,14 +33,14 @@ export function HistoryGroupList({
     return (
       <div role="alert" className="p-8 text-center bg-destructive/10 rounded-2xl border border-destructive/20 space-y-2">
         <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
-        <p className="text-sm font-bold text-destructive">An error occurred while loading quiz history.</p>
+        <p className="text-sm font-bold text-destructive">{t('history.loadError')}</p>
         <Button
           onClick={onRetry}
           variant="outline"
           size="sm"
           className="rounded-xl text-xs font-black"
         >
-          Try Again
+          {t('common.tryAgain')}
         </Button>
       </div>
     )
@@ -51,11 +53,11 @@ export function HistoryGroupList({
           <Calendar className="w-7 h-7" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-base sm:text-lg font-black text-foreground">No matching history found</h3>
+          <h3 className="text-base sm:text-lg font-black text-foreground">{t('history.noMatchingHistory')}</h3>
           <p className="text-xs font-medium text-muted-foreground max-w-sm mx-auto">
             {hasActiveFilters
-              ? 'No results match your current filters. Try changing your search query.'
-              : 'You have not taken any quizzes or flashcards yet. Explore quizzes to get started!'}
+              ? t('history.noFilterResults')
+              : t('history.noHistoryDescription')}
           </p>
         </div>
         <Button
@@ -64,7 +66,7 @@ export function HistoryGroupList({
         >
           <Link href="/explore" prefetch={false}>
             <Sparkles className="w-4 h-4 mr-1.5" />
-            Explore Quizzes Now
+            {t('history.exploreNow')}
           </Link>
         </Button>
       </div>

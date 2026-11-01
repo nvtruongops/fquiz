@@ -170,6 +170,7 @@ export function useSessionLoader(initiallyOpen = false) {
 
 import { useTheme } from 'next-themes'
 import { getLoaderThemeColors } from '@/components/shared/ui/page-transition-loader'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 // ── Unified High-End Quiz Loading Overlay Component ────────────────────────
 
@@ -182,6 +183,7 @@ export function QuizLoadingOverlay({
   progress: number
   status: string
 }) {
+  const t = useTranslations()
   const { theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -207,11 +209,11 @@ export function QuizLoadingOverlay({
         {/* Top Header Section */}
         <div className="relative z-10 text-center space-y-1.5 pt-2">
           <h1 className={`text-2xl sm:text-3xl font-black tracking-widest ${colors.headerText} uppercase`}>
-            {status || 'INITIALIZING QUIZ...'}
+            {status || t('quizLoader.initializing')}
           </h1>
           <div className={`flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider ${colors.subText} uppercase`}>
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
-            <span>Please wait a moment • Loading Quiz Session</span>
+            <span>{t('quizLoader.loadingSession')}</span>
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dotColor}`} />
           </div>
         </div>
@@ -321,28 +323,28 @@ export function QuizLoadingOverlay({
               pct >= 25 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">SECURE</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('quizLoader.secure')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 50 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Cpu className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">PROCESSING</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('quizLoader.processing')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 75 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <Database className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">LOAD QUESTIONS</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('quizLoader.loadQuestions')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border ${
               pct >= 95 ? colors.badgeActiveBg : colors.badgeInactiveBg
             }`}>
               <CheckCircle2 className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">READY TO START</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('quizLoader.ready')}</span>
             </div>
           </div>
         </div>

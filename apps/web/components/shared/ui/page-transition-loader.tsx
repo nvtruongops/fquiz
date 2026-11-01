@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useIsFetching } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { ShieldCheck, Cpu, Database, CheckCircle2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function isQuizLoaderActive(): boolean {
   if (typeof window === 'undefined') return false
@@ -75,6 +76,7 @@ export function getLoaderThemeColors(_theme?: string) {
 }
 
 function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTransitionLoaderProps) {
+  const t = useTranslations()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isFetching = useIsFetching()
@@ -232,11 +234,11 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
 
         <div className="relative z-10 text-center space-y-1.5 pt-2">
           <h1 className={`text-3xl sm:text-4xl font-black tracking-widest ${loaderColors.headerText} uppercase`}>
-            {customTitle || 'LOADING...'}
+            {customTitle || t('pageLoader.title')}
           </h1>
           <div className={`flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black tracking-wider ${loaderColors.subText} uppercase`}>
             <span className={`w-1.5 h-1.5 rounded-full ${loaderColors.dotColor}`} />
-            <span>{customSubtitle || 'Please wait a moment'}</span>
+            <span>{customSubtitle || t('pageLoader.wait')}</span>
             <span className={`w-1.5 h-1.5 rounded-full ${loaderColors.dotColor}`} />
           </div>
         </div>
@@ -313,13 +315,13 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
           </div>
 
           <div className="absolute left-[-60px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-end space-y-1 text-right">
-            <span className={`text-[10px] font-black uppercase ${loaderColors.statsTitle} tracking-wider`}>LOADING</span>
+            <span className={`text-[10px] font-black uppercase ${loaderColors.statsTitle} tracking-wider`}>{t('pageLoader.loading')}</span>
             <span className={`text-2xl font-black ${loaderColors.statsTitle} font-mono`}>{progress}%</span>
           </div>
 
           <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 hidden md:flex flex-col items-start space-y-1 text-left">
-            <span className={`text-[10px] font-black uppercase ${loaderColors.statsTitle} tracking-wider`}>OPTIMIZING...</span>
-            <span className={`text-[11px] font-bold ${loaderColors.subText} max-w-[100px] leading-tight`}>DATA PROCESSING PLEASE WAIT</span>
+            <span className={`text-[10px] font-black uppercase ${loaderColors.statsTitle} tracking-wider`}>{t('pageLoader.optimizing')}</span>
+            <span className={`text-[11px] font-bold ${loaderColors.subText} max-w-[100px] leading-tight`}>{t('pageLoader.processingData')}</span>
           </div>
         </div>
 
@@ -341,28 +343,28 @@ function PageTransitionLoaderContent({ forcedLoading, initialProgress }: PageTra
               progress >= 25 ? loaderColors.badgeActiveBg : loaderColors.badgeInactiveBg
             }`}>
               <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">SECURE</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('pageLoader.secure')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
               progress >= 50 ? loaderColors.badgeActiveBg : loaderColors.badgeInactiveBg
             }`}>
               <Cpu className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">PROCESSING</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('pageLoader.processing')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
               progress >= 75 ? loaderColors.badgeActiveBg : loaderColors.badgeInactiveBg
             }`}>
               <Database className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">LOADING DATA</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('pageLoader.loadingData')}</span>
             </div>
 
             <div className={`flex flex-col items-center space-y-1.5 p-2 rounded-xl border transition-all ${
               progress >= 95 ? loaderColors.badgeActiveBg : loaderColors.badgeInactiveBg
             }`}>
               <CheckCircle2 className="w-4 h-4" />
-              <span className="text-[10px] font-black tracking-wider uppercase">ALMOST DONE</span>
+              <span className="text-[10px] font-black tracking-wider uppercase">{t('pageLoader.almostDone')}</span>
             </div>
           </div>
         </div>

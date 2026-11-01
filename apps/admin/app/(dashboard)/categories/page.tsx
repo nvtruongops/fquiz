@@ -4,8 +4,10 @@ import React from 'react'
 import { useAdminCategories } from '@/hooks/categories/useAdminCategories'
 import { CategoryList } from '@/components/categories/CategoryList'
 import { CategoryDeleteDialog } from '@/components/categories/CategoryDeleteDialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function AdminCategoriesPage() {
+  const t = useTranslations()
   const {
     search,
     setSearch,
@@ -27,9 +29,9 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Category & Subject Management</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.categoryManagementTitle')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure public quiz categories and subjects across the platform
+          {t('admin.categoryManagementDescription')}
         </p>
       </div>
 

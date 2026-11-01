@@ -1,7 +1,10 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Save, Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorStickyActionBarProps {
   isSubmitting: boolean
@@ -18,11 +21,12 @@ export function QuizEditorStickyActionBar({
   isFormValid,
   onSubmit,
 }: QuizEditorStickyActionBarProps) {
+  const t = useTranslations()
   return (
     <div className="flex items-center justify-between pt-4 border-t border-border sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border">
       <Link href="/quizzes">
         <Button type="button" variant="outline" className="cursor-pointer">
-          Cancel
+          {t('common.cancel')}
         </Button>
       </Link>
 
@@ -37,7 +41,7 @@ export function QuizEditorStickyActionBar({
           {isSubmitting && submitAction === 'draft' ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : null}
-          Save as Draft
+          {t('quizEditor.saveDraft')}
         </Button>
 
         <Button
@@ -51,7 +55,7 @@ export function QuizEditorStickyActionBar({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          Publish Quiz
+          {t('quizEditor.publishQuiz')}
         </Button>
       </div>
     </div>

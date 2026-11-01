@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import type { QuestionItem, QuizDiagnostics } from '@/hooks/quiz/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorDiagnosticsHubProps {
   diagnostics: QuizDiagnostics
@@ -30,6 +31,18 @@ export function QuizEditorDiagnosticsHub({
   bankStatus,
   onScrollToQuestion,
 }: QuizEditorDiagnosticsHubProps) {
+  const t = useTranslations()
+  const getDiagnosticText = (error: QuizDiagnostics['errors'][number]) => {
+    switch (error.code) {
+      case 'MISSING_CATEGORY': return t('diagnostic.adminCategoryRequired')
+      case 'MISSING_CODE': return t('diagnostic.adminQuizCodeRequired')
+      case 'DUPLICATE_CODE': return t('diagnostic.adminDuplicateQuizCode', { code: error.message.match(/Quiz Code (.+) already exists/)?.[1] ?? '' })
+      case 'MISSING_QUESTION': return t('diagnostic.adminQuestionRequired')
+      case 'MISSING_OPTIONS': return t('diagnostic.adminOptionsRequired')
+      case 'MISSING_ANSWER': return t('diagnostic.adminAnswerRequired')
+      case 'DUPLICATE_QUESTION': return t('diagnostic.adminDuplicateQuestion', { number: Number(error.message.match(/Question (\d+)/)?.[1] ?? 1) })
+    }
+  }
   return (
     <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-6 z-20">
       <Card className="border-border bg-card shadow-md">
@@ -37,7 +50,7 @@ export function QuizEditorDiagnosticsHub({
           <div className="flex items-center gap-2">
             <LayoutDashboard className="w-4 h-4 text-primary" />
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Completion Progress
+              {t('adminQuizDiagnostics.completion')}
             </CardTitle>
           </div>
           <Badge
@@ -52,9 +65,9 @@ export function QuizEditorDiagnosticsHub({
           {/* Progress Bar */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground font-medium">Validity</span>
+              <span className="text-muted-foreground font-medium">{t('adminQuizDiagnostics.validity')}</span>
               <span className="font-bold text-foreground">
-                {diagnostics.completed} / {diagnostics.total} {diagnostics.total === 1 ? 'question' : 'questions'}
+                {diagnostics.completed} / {diagnostics.total} {diagnostics.total === 1 ? t('adminQuizDiagnostics.questionCountOne') : t('adminQuizDiagnostics.questionCount', { count: '' }).trim()}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
@@ -72,35 +85,35 @@ export function QuizEditorDiagnosticsHub({
             <div className="flex items-center justify-between text-[11px] font-semibold">
               <span className="flex items-center gap-1.5 text-foreground">
                 <Database className="w-3.5 h-3.5 text-primary" />
-                Question Bank
+                {t('adminQuizDiagnostics.bank')}
               </span>
               {isCheckingBank ? (
                 <Loader2 className="w-3 h-3 animate-spin text-primary" />
               ) : bankStatus.hasConflicts ? (
-                <span className="text-destructive font-bold">Conflicts</span>
+                <span className="text-destructive font-bold">{t('adminQuizDiagnostics.conflicts')}</span>
               ) : (
-                <span className="text-success-fg font-bold">Checked</span>
+                <span className="text-success-fg font-bold">{t('adminQuizDiagnostics.checked')}</span>
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
               {isCheckingBank
-                ? 'Checking for duplicates...'
+                ? t('adminQuizDiagnostics.checking')
                 : bankStatus.hasConflicts
-                ? `${bankStatus.conflicts.length} question(s) have answer conflicts with the bank.`
-                : 'All questions ready for synchronization.'}
+                ? t('adminQuizDiagnostics.conflictCount', { count: bankStatus.conflicts.length })
+                : t('adminQuizDiagnostics.ready')}
             </p>
           </div>
 
           {/* Issue List / Warnings */}
           <div className="space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Diagnostics &amp; Issues ({diagnostics.errors.length})
+              {t('adminQuizDiagnostics.issues', { count: diagnostics.errors.length })}
             </span>
 
             {diagnostics.errors.length === 0 ? (
               <div className="p-3 bg-success-bg/40 border border-success-border/60 rounded-xl flex items-center gap-2 text-success-fg text-xs font-medium">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Quiz is 100% complete and valid!</span>
+                <span>{t('adminQuizDiagnostics.complete')}</span>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -115,19 +128,19 @@ export function QuizEditorDiagnosticsHub({
                     <div className="flex-1 min-w-0">
                       <div className="font-bold flex items-center justify-between">
                         <span>
-                          {typeof err.questionIndex === 'number' ? `Question ${err.questionIndex + 1}` : 'General'}
+                          {typeof err.questionIndex === 'number' ? t('editor.questionNumber', { number: err.questionIndex + 1 }) : t('adminQuizDiagnostics.general')}
                         </span>
                         {typeof err.questionIndex === 'number' && (
                           <ChevronRight className="w-3 h-3 opacity-60 group-hover:opacity-100" />
                         )}
                       </div>
-                      <p className="text-[11px] font-medium leading-tight opacity-90">{err.message}</p>
+                      <p className="text-[11px] font-medium leading-tight opacity-90">{getDiagnosticText(err)}</p>
                     </div>
                   </button>
                 ))}
                 {diagnostics.errors.length > 8 && (
                   <p className="text-[10px] text-muted-foreground text-center pt-1 font-medium">
-                    and {diagnostics.errors.length - 8} more issues...
+                    {t('adminQuizDiagnostics.moreIssues', { count: diagnostics.errors.length - 8 })}
                   </p>
                 )}
               </div>
@@ -137,7 +150,7 @@ export function QuizEditorDiagnosticsHub({
           {/* Quick Question Number Navigator */}
           <div className="space-y-1.5 pt-2 border-t border-border">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Quick Navigation ({questions.length} {questions.length === 1 ? 'question' : 'questions'})
+              {t('adminQuizDiagnostics.quickNavigation', { count: questions.length, unit: questions.length === 1 ? t('adminQuizDiagnostics.questionCountOne') : t('adminQuizDiagnostics.questionCount', { count: '' }).trim() })}
             </span>
             <div className="max-h-56 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="grid grid-cols-5 gap-1.5">
@@ -153,7 +166,7 @@ export function QuizEditorDiagnosticsHub({
                           ? 'bg-muted/40 hover:bg-muted text-foreground border-border'
                           : 'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20'
                       }`}
-                      title={`Jump to question ${idx + 1}`}
+                      title={t('adminQuizDiagnostics.jumpToQuestion', { number: idx + 1 })}
                     >
                       {idx + 1}
                     </button>

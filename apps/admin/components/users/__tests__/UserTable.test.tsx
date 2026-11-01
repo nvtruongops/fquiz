@@ -3,6 +3,14 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { UserTable } from '../UserTable'
 import type { UsersResponse } from '../../../hooks/users/useAdminUsers'
 
+jest.mock('@fquiz/ui/i18n', () => ({
+  useLocale: () => ({ locale: 'en' }),
+  useTranslations: () => (key: string) => ({
+    'admin.retry': 'Retry',
+    'admin.noMatchingAccounts': 'No matching accounts found',
+  }[key] ?? key),
+}))
+
 jest.mock('@/components/ui/card', () => ({ Card: ({ children }: any) => <section>{children}</section>, CardContent: ({ children }: any) => <div>{children}</div> }), { virtual: true })
 jest.mock('@/components/ui/button', () => ({ Button: ({ children, onClick, ...props }: any) => <button onClick={onClick} {...props}>{children}</button> }), { virtual: true })
 jest.mock('@/components/ui/badge', () => ({ Badge: ({ children }: any) => <span>{children}</span> }), { virtual: true })

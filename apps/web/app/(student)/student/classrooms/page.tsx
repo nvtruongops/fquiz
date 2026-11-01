@@ -9,14 +9,16 @@ import { ClassroomsSkeleton } from '@/components/student/classrooms/ClassroomsSk
 import { ClassroomSidebarList } from '@/components/student/classrooms/ClassroomSidebarList'
 import { ClassroomAssignmentsList } from '@/components/student/classrooms/ClassroomAssignmentsList'
 import { StudentClassroomModals } from '@/components/student/classrooms/StudentClassroomModals'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function ClassroomEmptyOrError({ classroomsError, retryClassrooms, onJoin }: { classroomsError: string; retryClassrooms: () => void; onJoin: () => void }) {
+  const t = useTranslations()
   if (classroomsError) {
     return (
       <div role="alert" className="p-8 text-center bg-destructive/10 rounded-2xl border border-destructive/20 space-y-3">
         <p className="text-sm font-bold text-destructive">{classroomsError}</p>
         <Button onClick={retryClassrooms} variant="outline" size="sm" className="rounded-xl text-xs font-black">
-          Try Again
+          {t('common.tryAgain')}
         </Button>
       </div>
     )
@@ -31,16 +33,16 @@ function ClassroomEmptyOrError({ classroomsError, retryClassrooms, onJoin }: { c
         <Users className="w-7 h-7" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-lg font-black text-foreground">You haven&apos;t joined any classrooms yet</h3>
+        <h3 className="text-lg font-black text-foreground">{t('studentClassrooms.empty')}</h3>
         <p className="text-xs font-medium text-muted-foreground max-w-md mx-auto leading-relaxed">
-          Enter the 6-character class code provided by your instructor to view assignments and class materials.
+          {t('studentClassrooms.emptyDescription')}
         </p>
       </div>
       <Button
         onClick={onJoin}
         className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider rounded-2xl px-6 h-11 cursor-pointer shadow-sm"
       >
-        Enter Class Code Now
+        {t('studentClassrooms.enterCode')}
       </Button>
     </motion.div>
   )
@@ -102,6 +104,7 @@ function ClassroomPageBody({
 }
 
 export default function StudentClassroomsPage() {
+  const t = useTranslations()
   const {
     classrooms,
     selectedClassroom,
@@ -148,14 +151,14 @@ export default function StudentClassroomsPage() {
         >
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider border border-primary/20">
-              <Sparkles className="w-3.5 h-3.5" /> Classrooms
+              <Sparkles className="w-3.5 h-3.5" /> {t('studentClassrooms.label')}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
               <GraduationCap className="w-7 h-7 text-primary" />
-              My Classrooms
+              {t('studentClassrooms.title')}
             </h1>
             <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-xl">
-              Manage enrolled classrooms, track assignment deadlines, and practice materials directly from your instructors.
+              {t('studentClassrooms.description')}
             </p>
           </div>
 
@@ -163,7 +166,7 @@ export default function StudentClassroomsPage() {
             onClick={() => setJoinModalOpen(true)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider gap-2 rounded-2xl h-12 px-6 transition-all cursor-pointer shrink-0 active-press-scale"
           >
-            <Plus className="w-4 h-4" /> Join New Classroom
+            <Plus className="w-4 h-4" /> {t('studentClassrooms.joinNew')}
           </Button>
         </motion.div>
 

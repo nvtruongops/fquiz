@@ -8,12 +8,15 @@ import { useToast } from '@/store/shared/toast-store'
 import type { AuthResponse, AuthUser } from '@/hooks/auth/useAuth'
 import { startGlobalPageLoader } from '@/components/shared/ui/page-transition-loader'
 import { clearAllUserCache } from '@/lib/core/utils/cache-invalidation'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 export function useLoginForm() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const t = useTranslations()
+  const { locale, setLocale } = useLocale()
   const cardRef = useRef<HTMLDivElement>(null)
 
   const [identifier, setIdentifier] = useState('')
@@ -30,13 +33,13 @@ export function useLoginForm() {
     const message = searchParams.get('message')
 
     if (error) {
-      toast.error(decodeURIComponent(error))
+      toast.error(t('auth.invalidCredentials'))
     } else if (reason === 'account_banned') {
-      toast.error('Your account has been suspended by an administrator. Please contact support.')
+      toast.error(t('auth.accountSuspended'))
     } else if (reason === 'session_expired') {
-      toast.error('Your session has expired. Please sign in again.')
+      toast.error(t('auth.sessionExpired'))
     } else if (message === 'deletion_requested') {
-      toast.info('Account deletion requested. Please check your email to recover your account if desired.')
+      toast.info(t('auth.accountDeletionRequested'))
     }
 
     const raw = searchParams.get('callbackUrl') || searchParams.get('redirect')
@@ -52,7 +55,7 @@ export function useLoginForm() {
         }
       }
     }
-  }, [searchParams, toast])
+  }, [searchParams, t, toast])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -77,36 +80,37 @@ export function useLoginForm() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, language: locale }),
       })
 
       const data = (await res.json().catch(() => ({}))) as { error?: string; role?: string; user?: AuthUser }
 
       if (!res.ok) {
         if (res.status === 403) {
-          toast.error(data.error || 'Your account has been suspended by an administrator.')
+          toast.error(t('auth.accountSuspended'))
           return
         }
 
         if (res.status === 429) {
-          toast.error(data.error || 'Too many attempts. Please try again later.')
+          toast.error(t('auth.tooManyAttempts'))
           return
         }
 
         if (res.status >= 500) {
-          toast.error('System is temporarily unavailable. Please try again later.')
+          toast.error(t('auth.systemUnavailable'))
           return
         }
 
-        toast.error(data.error || 'Invalid credentials. Please verify your information.')
+        toast.error(t('auth.invalidCredentials'))
         return
       }
 
-      toast.success('Sign in successful!')
+      toast.success(t('auth.signInSuccess'))
       startGlobalPageLoader('SUCCESS!', 'Redirecting...')
       setIsRedirecting(true)
       
       if (data.user) {
+        if (data.user.language) setLocale(data.user.language)
         clearAllUserCache(queryClient)
         queryClient.setQueryData<AuthResponse>(['auth-user'], { user: data.user })
       } else {
@@ -125,7 +129,7 @@ export function useLoginForm() {
         router.refresh()
       }, 100)
     } catch {
-      toast.error('System is busy. Please try again later.')
+      toast.error(t('auth.systemBusy'))
     } finally {
       setLoading(false)
     }

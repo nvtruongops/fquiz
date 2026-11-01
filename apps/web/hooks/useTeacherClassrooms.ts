@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface Classroom {
   _id: string
@@ -16,6 +17,7 @@ export interface Classroom {
 
 export function useTeacherClassrooms() {
   const { toast } = useToast()
+  const t = useTranslations()
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [totalQuizzes, setTotalQuizzes] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -65,7 +67,7 @@ export function useTeacherClassrooms() {
   const handleCreateClassroom = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setErrorMessage('Please enter classroom name')
+      setErrorMessage(t('teacher.classroomNameRequired'))
       return
     }
 
@@ -87,8 +89,8 @@ export function useTeacherClassrooms() {
       setPassword('')
       setCreateModalOpen(false)
       fetchClassrooms()
-    } catch (err: any) {
-      setErrorMessage(err.message || 'System error')
+    } catch {
+      setErrorMessage(t('teacher.createClassroomFailed'))
     } finally {
       setCreating(false)
     }
@@ -118,13 +120,13 @@ export function useTeacherClassrooms() {
         throw new Error(data.error || 'Failed to update password')
       }
 
-      setPassMessage('Classroom password updated successfully!')
+      setPassMessage(t('teacher.passwordUpdated'))
       setTimeout(() => {
         setPasswordModalOpen(false)
         fetchClassrooms()
       }, 1200)
-    } catch (err: any) {
-      setPassMessage(err.message || 'Error updating password')
+    } catch {
+      setPassMessage(t('teacher.updatePasswordFailed'))
     } finally {
       setUpdatingPass(false)
     }
@@ -159,7 +161,7 @@ export function useTeacherClassrooms() {
         fetchClassrooms()
       } else {
         const data = await res.json()
-        toast.error(data.error || 'Failed to delete classroom')
+        toast.error(t('teacher.deleteClassroomFailed'))
       }
     } catch (err) {
       console.error('Failed to delete classroom:', err)

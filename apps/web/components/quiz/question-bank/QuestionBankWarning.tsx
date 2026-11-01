@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/shared/ui/alert'
 import { Loader2 } from 'lucide-react'
 import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuestionBankWarningProps {
   open: boolean
@@ -48,6 +49,7 @@ export function QuestionBankWarning({
   onUpdateThisOnly,
 }: QuestionBankWarningProps) {
   const { toast } = useToast()
+  const t = useTranslations()
   const [updating, setUpdating] = useState(false)
 
   const handleUpdateAll = async () => {
@@ -79,7 +81,7 @@ export function QuestionBankWarning({
       onOpenChange(false)
     } catch (error) {
       console.error('Error syncing update:', error)
-      toast.error('An error occurred during update. Please try again.')
+      toast.error(t('questionBank.updateFailed'))
     } finally {
       setUpdating(false)
     }
@@ -100,10 +102,9 @@ export function QuestionBankWarning({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Question Used in Multiple Quizzes</DialogTitle>
+          <DialogTitle>{t('questionBank.usedMultipleQuizzes')}</DialogTitle>
           <DialogDescription>
-            This question is currently used in {usageInfo?.usage_count || 0} other quizzes.
-            How would you like to update it?
+            {t('questionBank.inUseNotice', { count: usageInfo?.usage_count || 0 })}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,7 +114,7 @@ export function QuestionBankWarning({
             <AlertDescription>
               <div className="space-y-2">
                 <p className="font-medium">
-                  Used in {usageInfo?.usage_count || 0} quizzes:
+                  {t('questionBank.usedInCount', { count: usageInfo?.usage_count || 0 })}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {usageInfo?.used_in_quizzes?.slice(0, 10).map((code) => (
@@ -123,7 +124,7 @@ export function QuestionBankWarning({
                   ))}
                   {usageInfo?.used_in_quizzes && usageInfo.used_in_quizzes.length > 10 && (
                     <Badge variant="secondary">
-                      +{usageInfo.used_in_quizzes.length - 10} other quizzes
+                      {t('questionBank.otherQuizzes', { count: usageInfo.used_in_quizzes.length - 10 })}
                     </Badge>
                   )}
                 </div>
@@ -135,10 +136,9 @@ export function QuestionBankWarning({
           {answerChanged && (
             <Alert variant="destructive">
               <AlertDescription>
-                <p className="font-bold">Answer has changed!</p>
+                <p className="font-bold">{t('questionBank.answerChanged')}</p>
                 <p className="text-sm mt-1">
-                  Updating all quizzes will change the answer across {usageInfo?.usage_count || 0} quizzes.
-                  This may affect existing student results.
+                  {t('questionBank.updateAllWarning', { count: usageInfo?.usage_count || 0 })}
                 </p>
               </AlertDescription>
             </Alert>
@@ -146,7 +146,7 @@ export function QuestionBankWarning({
 
           {/* Question Preview */}
           <div className="border border-border rounded-lg p-4 bg-muted">
-            <p className="font-medium mb-2">Question content:</p>
+            <p className="font-medium mb-2">{t('questionBank.questionContent')}</p>
             <p className="text-sm text-card-foreground">{newQuestion.text}</p>
           </div>
         </div>
@@ -158,7 +158,7 @@ export function QuestionBankWarning({
             disabled={updating}
             className="w-full sm:w-auto"
           >
-            Update this quiz only
+            {t('questionBank.updateThisOnly')}
           </Button>
           <Button
             onClick={handleUpdateAll}
@@ -168,10 +168,10 @@ export function QuestionBankWarning({
             {updating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
+                {t('questionBank.updating')}
               </>
             ) : (
-              `Update all ${usageInfo?.usage_count || 0} quizzes`
+              t('questionBank.updateAllCount', { count: usageInfo?.usage_count || 0 })
             )}
           </Button>
         </DialogFooter>

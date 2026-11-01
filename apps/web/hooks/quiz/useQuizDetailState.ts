@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQuizLoader } from '@/components/quiz/shared/QuizLoader'
 import { useAuth } from '@/hooks/auth/useAuth'
@@ -196,6 +197,7 @@ export function useQuizDetailState() {
   const quizId = Array.isArray(params?.id) ? params?.id[0] : params?.id
   const resolvedQuizId = quizId ?? ''
   const { toast } = useToast()
+  const t = useTranslations()
 
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
   const [modeSelectOpen, setModeSelectOpen] = useState(() => searchParams.get('selectMode') === 'true')
@@ -213,11 +215,11 @@ export function useQuizDetailState() {
     if (reason && shownReasonRef.current !== reason) {
       shownReasonRef.current = reason
       if (reason === 'session_expired') {
-        toast.error('Your exam session has expired. Please start a new session.')
+        toast.error(t('quiz.sessionExpired'))
       } else if (reason === 'idle_timeout') {
-        toast.error('Exam session was automatically ended due to inactivity or leaving for over 5 minutes.')
+        toast.error(t('quiz.sessionEndedIdle'))
       } else if (reason === 'session_not_found') {
-        toast.error('Exam session does not exist or has been deleted. Please start a new session.')
+        toast.error(t('quiz.sessionNotFound'))
       }
     }
     if (searchParams.get('selectMode') === 'true') {
@@ -226,7 +228,7 @@ export function useQuizDetailState() {
     if (searchParams.get('mode') === 'flashcard') {
       setSelectedMode('flashcard')
     }
-  }, [searchParams, toast])
+  }, [searchParams, t, toast])
 
   const { data: authData } = useAuth()
   const currentUser = authData?.user ?? null
@@ -306,7 +308,7 @@ export function useQuizDetailState() {
     onError: (err: StartSessionError) => {
       stopLoading()
       if (err.status === 401) {
-        toast.error('You must sign in to attempt this quiz')
+        toast.error(t('quiz.signInToAttempt'))
         setTimeout(() => router.push(`/login?redirect=/quiz/${quizId}`), 1500)
         return
       }
@@ -315,7 +317,7 @@ export function useQuizDetailState() {
         setResumeDialogOpen(true)
         return
       }
-      toast.error(err.message)
+      toast.error(t('quiz.startSessionFailed'))
     },
   })
 
@@ -393,7 +395,7 @@ export function useQuizDetailState() {
         })
         .catch((err) => {
           stopLoading()
-          toast.error(err.message || 'Error resuming review session')
+          toast.error(t('quiz.resumeReviewFailed'))
         })
     } else if (resumeSessionId) {
       startLoading('Reconnecting to study session...')

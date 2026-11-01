@@ -7,8 +7,10 @@ import { Button } from '@/components/shared/ui/button'
 import { Card } from '@/components/shared/ui/card'
 import MobileFlashcardSessionPage from '@/app/quiz/[id]/session/[sessionId]/flashcard/mobile/page'
 import { DesktopFlashcardView } from '@/components/quiz/flashcard/DesktopFlashcardView'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function FlashcardSessionPage() {
+  const t = useTranslations()
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
 
   const rawQuizId = params?.id
@@ -34,9 +36,9 @@ export default function FlashcardSessionPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-6 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold mb-4">Invalid URL</h2>
-          <p className="text-muted-foreground mb-6">Session ID not found in URL</p>
-          <Button onClick={() => (window.location.href = '/dashboard')}>Back to Dashboard</Button>
+          <h2 className="text-xl font-semibold mb-4">{t('session.invalidUrl')}</h2>
+          <p className="text-muted-foreground mb-6">{t('session.sessionIdMissing')}</p>
+          <Button onClick={() => (window.location.href = '/dashboard')}>{t('dashboard.title')}</Button>
         </Card>
       </div>
     )

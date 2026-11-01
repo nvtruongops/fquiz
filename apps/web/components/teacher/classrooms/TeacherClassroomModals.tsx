@@ -13,6 +13,7 @@ import {
 } from '@/components/shared/ui/dialog'
 import { AlertCircle, Eye, EyeOff, Check, Copy } from 'lucide-react'
 import type { Classroom } from '@/hooks/useTeacherClassrooms'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherClassroomModalsProps {
   createModalOpen: boolean
@@ -89,15 +90,16 @@ export function TeacherClassroomModals({
   onSetConfirmDeleteId,
   onDeleteClassroom,
 }: TeacherClassroomModalsProps) {
+  const t = useTranslations()
   return (
     <>
       {/* Modal 1: Create Classroom */}
       <Dialog open={createModalOpen} onOpenChange={onSetCreateModalOpen}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-card-foreground">Create New Classroom</DialogTitle>
+            <DialogTitle className="text-lg font-black text-card-foreground">{t('teacher.createClassroomTitle')}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Enter the classroom name and configure join password (if desired).
+              {t('teacher.createClassroomDescription')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onCreateClassroom} className="space-y-4 py-2">
@@ -108,9 +110,9 @@ export function TeacherClassroomModals({
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-card-foreground">Classroom Name (*)</label>
+              <label className="text-sm font-semibold text-card-foreground">{t('teacher.classroomName')}</label>
               <Input
-                placeholder="e.g. English B1 - Section 4"
+                placeholder={t('teacher.classroomNameExample')}
                 value={name}
                 onChange={(e) => onSetName(e.target.value)}
                 required
@@ -118,9 +120,9 @@ export function TeacherClassroomModals({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-card-foreground">Classroom Description</label>
+              <label className="text-sm font-semibold text-card-foreground">{t('teacher.classroomDescription')}</label>
               <Input
-                placeholder="Brief description of the classroom"
+                placeholder={t('teacher.classroomDescriptionPlaceholder')}
                 value={description}
                 onChange={(e) => onSetDescription(e.target.value)}
                 className="rounded-xl border-border bg-card text-card-foreground"
@@ -128,12 +130,12 @@ export function TeacherClassroomModals({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-card-foreground">
-                Join Password (Optional)
+                {t('teacher.joinPasswordOptional')}
               </label>
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password (leave blank for open access)"
+                  placeholder={t('teacher.openAccessPasswordHint')}
                   value={password}
                   onChange={(e) => onSetPassword(e.target.value)}
                   className="rounded-xl pr-10 border-border bg-card text-card-foreground"
@@ -154,14 +156,14 @@ export function TeacherClassroomModals({
                 onClick={() => onSetCreateModalOpen(false)}
                 className="rounded-xl border-border"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={creating}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl cursor-pointer"
               >
-                {creating ? 'Creating...' : 'Create Class'}
+                {creating ? t('teacher.creating') : t('teacher.createClass')}
               </Button>
             </DialogFooter>
           </form>
@@ -172,10 +174,10 @@ export function TeacherClassroomModals({
       <Dialog open={passwordModalOpen} onOpenChange={onSetPasswordModalOpen}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-card-foreground">Configure Classroom Password</DialogTitle>
+            <DialogTitle className="text-lg font-black text-card-foreground">{t('teacher.configureClassPassword')}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {selectedClassroomForPass &&
-                `Class: ${selectedClassroomForPass.name} (Code: ${selectedClassroomForPass.code})`}
+                t('teacher.classAndCode', { class: selectedClassroomForPass.name, code: selectedClassroomForPass.code })}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onUpdatePassword} className="space-y-4 py-2">
@@ -187,12 +189,12 @@ export function TeacherClassroomModals({
             )}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-card-foreground">
-                New Password (leave blank to remove)
+                {t('teacher.newPasswordRemoveHint')}
               </label>
               <div className="relative">
                 <Input
                   type={showNewPassword ? 'text' : 'password'}
-                  placeholder="Enter new password..."
+                  placeholder={t('teacher.enterNewPassword')}
                   value={newPassword}
                   onChange={(e) => onSetNewPassword(e.target.value)}
                   className="rounded-xl pr-10 border-border bg-card text-card-foreground"
@@ -213,14 +215,14 @@ export function TeacherClassroomModals({
                 onClick={() => onSetPasswordModalOpen(false)}
                 className="rounded-xl border-border"
               >
-                Close
+                {t('common.closeNotification')}
               </Button>
               <Button
                 type="submit"
                 disabled={updatingPass}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl cursor-pointer"
               >
-                {updatingPass ? 'Saving...' : 'Save Changes'}
+                {updatingPass ? t('teacher.saving') : t('teacher.saveChanges')}
               </Button>
             </DialogFooter>
           </form>
@@ -231,20 +233,20 @@ export function TeacherClassroomModals({
       <Dialog open={shareModalOpen} onOpenChange={onSetShareModalOpen}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-card-foreground">Share Classroom</DialogTitle>
+            <DialogTitle className="text-lg font-black text-card-foreground">{t('teacher.shareClassroom')}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Send the direct link or class code for students to quickly join.
+              {t('teacher.shareClassroomHint')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-card-foreground">Class Code</label>
+              <label className="text-sm font-semibold text-card-foreground">{t('teacher.classCode')}</label>
               <div className="p-3 bg-muted rounded-xl font-mono font-black text-center text-lg text-primary border border-border">
                 {selectedClassroomForShare?.code}
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-card-foreground">Quick Join Link</label>
+              <label className="text-sm font-semibold text-card-foreground">{t('teacher.quickJoinLink')}</label>
               <div className="flex items-center gap-2">
                 <Input
                   readOnly
@@ -268,7 +270,7 @@ export function TeacherClassroomModals({
               onClick={() => onSetShareModalOpen(false)}
               className="rounded-xl border-border"
             >
-              Close
+              {t('common.closeNotification')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -278,9 +280,9 @@ export function TeacherClassroomModals({
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && onSetConfirmDeleteId(null)}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-card-foreground">Confirm Delete Classroom?</DialogTitle>
+            <DialogTitle className="text-lg font-black text-card-foreground">{t('teacher.confirmDeleteClassroom')}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              This action will permanently delete the classroom, all assigned quizzes, and enrolled student data.
+              {t('teacher.deleteClassroomWarning')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -290,14 +292,14 @@ export function TeacherClassroomModals({
               onClick={() => onSetConfirmDeleteId(null)}
               className="rounded-xl border-border"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
               onClick={() => confirmDeleteId && onDeleteClassroom(confirmDeleteId)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold rounded-xl cursor-pointer"
             >
-              Confirm Delete
+              {t('admin.confirmDelete')}
             </Button>
           </DialogFooter>
         </DialogContent>

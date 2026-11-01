@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardFooter } from '@/components/shared/ui/
 import { Button } from '@/components/shared/ui/button'
 import { Send, Edit3, Trash2 } from 'lucide-react'
 import { QuizItem } from '@/hooks/useTeacherQuizzes'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherQuizGridCardProps {
   quiz: QuizItem
@@ -22,6 +23,7 @@ export function TeacherQuizGridCard({
   onConfirmDelete,
   onDelete,
 }: TeacherQuizGridCardProps) {
+  const t = useTranslations()
   return (
     <Card className="border border-border shadow-xs hover:shadow-md transition-all flex flex-col justify-between rounded-2xl bg-card overflow-hidden">
       <CardHeader className="p-5 pb-3">
@@ -29,7 +31,7 @@ export function TeacherQuizGridCard({
           <span className="text-[10px] font-black uppercase text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
             {quiz.course_code}
           </span>
-          <span className="text-xs font-bold text-muted-foreground">{quiz.questionCount} questions</span>
+          <span className="text-xs font-bold text-muted-foreground">{t('teacherQuiz.questionCount', { count: quiz.questionCount })}</span>
         </div>
         <CardTitle className="text-base font-black text-card-foreground line-clamp-2 mt-2">
           {quiz.title}
@@ -41,7 +43,7 @@ export function TeacherQuizGridCard({
           size="sm"
           className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl gap-1.5 cursor-pointer"
         >
-          <Send className="w-3.5 h-3.5" /> Assign
+          <Send className="w-3.5 h-3.5" /> {t('teacherQuiz.assign')}
         </Button>
         <div className="flex items-center gap-1">
           <Link href={`/admin/quizzes/${quiz._id}/edit`}>
@@ -55,7 +57,7 @@ export function TeacherQuizGridCard({
               onClick={() => onDelete(quiz._id)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-bold rounded-lg cursor-pointer"
             >
-              Confirm
+              {t('common.confirm')}
             </Button>
           ) : (
             <Button size="sm" variant="ghost" onClick={() => onConfirmDelete(quiz._id)}>

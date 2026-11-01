@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 import { useQuizDiagnostics } from './useQuizDiagnostics'
 import { useCourseCodeCheck } from './useCourseCodeCheck'
@@ -14,6 +15,7 @@ interface UseQuizEditorFormProps {
 }
 
 export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProps) {
+  const t = useTranslations()
   const router = useRouter()
   const queryClient = useQueryClient()
   const [categoryId, setCategoryId] = useState(initialData?.category_id || '')
@@ -96,19 +98,19 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
     setSubmitAction(targetStatus)
 
     if (targetStatus === 'published' && !diagnostics.isValid) {
-      toast({ title: 'Cannot publish yet', description: diagnostics.errors[0]?.message || 'Please resolve all question errors before publishing', type: 'error' })
+      toast({ title: t('admin.publishBlocked'), description: t('admin.questionErrorsRemain'), type: 'error' })
       return
     }
     if (!categoryId) {
-      toast({ title: 'Error', description: 'Please select a subject/category first', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.selectCategoryFirst'), type: 'error' })
       return
     }
     if (!courseCode.trim()) {
-      toast({ title: 'Error', description: 'Please enter Quiz Code', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.enterQuizCode'), type: 'error' })
       return
     }
     if (codeDuplicateInfo?.exists) {
-      toast({ title: 'Quiz Code already exists', description: `Quiz code ${courseCode.toUpperCase()} is already used by another quiz.`, type: 'error' })
+      toast({ title: t('admin.quizCodeExists'), description: t('admin.duplicateQuizCode', { code: courseCode.toUpperCase() }), type: 'error' })
       return
     }
     if (!forced && bankStatus.hasConflicts && targetStatus === 'published') {
@@ -138,14 +140,14 @@ export function useQuizEditorForm({ initialData, quizId }: UseQuizEditorFormProp
       if (!res.ok) throw new Error(data.error || 'Failed to save quiz')
 
       toast({
-        title: 'Success',
-        description: targetStatus === 'published' ? 'Quiz published successfully' : 'Draft saved successfully',
+        title: t('toast.success'),
+        description: targetStatus === 'published' ? t('admin.quizPublished') : t('admin.draftSaved'),
         type: 'success',
       })
       await queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
       router.push('/quizzes')
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    } catch {
+      toast({ title: t('toast.error'), description: t('admin.quizSaveFailed'), type: 'error' })
     } finally {
       setIsSubmitting(false)
     }

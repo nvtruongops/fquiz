@@ -21,28 +21,28 @@ export function useQuizDiagnostics({
     const errors: QuizDiagnosticError[] = []
 
     if (!categoryId) {
-      errors.push({ message: 'Please select a subject/category first' })
+      errors.push({ code: 'MISSING_CATEGORY', message: 'Please select a subject/category first' })
     }
     if (!courseCode.trim()) {
-      errors.push({ message: 'Quiz Code is required' })
+      errors.push({ code: 'MISSING_CODE', message: 'Quiz Code is required' })
     } else if (codeDuplicateInfo?.exists) {
-      errors.push({ message: `Quiz Code ${courseCode.toUpperCase()} already exists in the system` })
+      errors.push({ code: 'DUPLICATE_CODE', message: `Quiz Code ${courseCode.toUpperCase()} already exists in the system` })
     }
 
     const seenQuestionMap = new Map<string, number>()
     questions.forEach((q, i) => {
       let isQValid = true
       if (!q.text.trim()) {
-        errors.push({ message: 'Question content is required', questionIndex: i })
+        errors.push({ code: 'MISSING_QUESTION', message: 'Question content is required', questionIndex: i })
         isQValid = false
       }
       const nonEmptyOptions = q.options.filter((o) => o.trim())
       if (nonEmptyOptions.length < 2) {
-        errors.push({ message: 'At least 2 options are required', questionIndex: i })
+        errors.push({ code: 'MISSING_OPTIONS', message: 'At least 2 options are required', questionIndex: i })
         isQValid = false
       }
       if (!q.correct_answer || q.correct_answer.length === 0) {
-        errors.push({ message: 'Correct answer must be selected', questionIndex: i })
+        errors.push({ code: 'MISSING_ANSWER', message: 'Correct answer must be selected', questionIndex: i })
         isQValid = false
       }
 
@@ -51,6 +51,7 @@ export function useQuizDiagnostics({
         if (seenQuestionMap.has(qHash)) {
           const firstIndex = seenQuestionMap.get(qHash)!
           errors.push({
+            code: 'DUPLICATE_QUESTION',
             message: `Duplicate content & answer with Question ${firstIndex + 1}`,
             questionIndex: i,
           })

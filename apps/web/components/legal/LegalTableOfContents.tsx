@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronRight, ChevronDown, ListFilter, Shield, FileText, ArrowLeft, type LucideIcon } from 'lucide-react'
 import { TERMS_SECTIONS, PRIVACY_SECTIONS, type LegalSection } from '@/lib/constants/legal-content'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface LegalTableOfContentsProps {
   type?: 'terms' | 'privacy'
@@ -25,27 +26,28 @@ export function LegalTableOfContents({
   sections: propSections,
   alternateLink: propAlternateLink,
 }: LegalTableOfContentsProps) {
+  const t = useTranslations()
   const isTerms = type === 'terms'
-  const title = propTitle ?? (isTerms ? 'Terms of Service' : 'Privacy Policy')
-  const lastUpdated = propLastUpdated ?? 'Last updated: April 2026'
+  const title = propTitle ?? t(isTerms ? 'legal.termsTitle' : 'legal.privacyTitle')
+  const lastUpdated = propLastUpdated ?? t('legal.lastUpdated')
   const sections = propSections ?? (isTerms ? TERMS_SECTIONS : PRIVACY_SECTIONS)
   const alternateLink =
     propAlternateLink ??
     (isTerms
       ? {
           href: '/privacy',
-          prompt: 'Looking for Privacy Policy?',
-          label: 'View Privacy Policy',
+          prompt: t('legal.lookingForPrivacy'),
+          label: t('legal.viewPrivacy'),
           icon: Shield,
         }
       : {
           href: '/terms',
-          prompt: 'Looking for Terms of Service?',
-          label: 'View Terms of Service',
+          prompt: t('legal.lookingForTerms'),
+          label: t('legal.viewTerms'),
           icon: FileText,
         })
 
-  const badgeText = isTerms ? 'Rules & Legal' : 'Legal & Privacy'
+  const badgeText = t(isTerms ? 'legal.rulesAndLegal' : 'legal.legalAndPrivacy')
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? '')
   const [mobileExpanded, setMobileExpanded] = useState(false)
 
@@ -102,7 +104,7 @@ export function LegalTableOfContents({
             className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-primary hover:text-primary/90 transition-colors group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-            <span>Back to Home</span>
+            <span>{t('legal.backHome')}</span>
           </Link>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             {badgeText}
@@ -113,12 +115,12 @@ export function LegalTableOfContents({
           onClick={() => setMobileExpanded((prev) => !prev)}
           className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-bold text-card-foreground hover:bg-muted/80 transition-colors"
           aria-expanded={mobileExpanded}
-          aria-label="Toggle Table of Contents"
+          aria-label={t('legal.toggleContents')}
         >
           <div className="flex items-center gap-2 truncate">
             <ListFilter className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-[11px] text-muted-foreground uppercase font-black tracking-wider shrink-0">Jump to:</span>
-            <span className="truncate text-foreground font-extrabold">{activeSection?.shortTitle}</span>
+            <span className="text-[11px] text-muted-foreground uppercase font-black tracking-wider shrink-0">{t('legal.jumpTo')}</span>
+            <span className="truncate text-foreground font-extrabold">{activeSection ? t(activeSection.shortTitleKey as never) : ''}</span>
           </div>
           <ChevronDown
             className={`w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
@@ -144,7 +146,7 @@ export function LegalTableOfContents({
                 >
                   <div className="flex items-center gap-2.5">
                     <sec.icon className={`w-4 h-4 ${sec.iconColorClass ?? 'text-primary'}`} />
-                    <span>{sec.shortTitle}</span>
+                    <span>{t(sec.shortTitleKey as never)}</span>
                   </div>
                   <ChevronRight
                     className={`w-3.5 h-3.5 ${
@@ -167,7 +169,7 @@ export function LegalTableOfContents({
             className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-primary/90 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span>Back to Home</span>
+            <span>{t('legal.backHome')}</span>
           </Link>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             {badgeText}
@@ -175,15 +177,15 @@ export function LegalTableOfContents({
         </div>
 
         <div className="space-y-1">
-          <p className="text-[10px] font-black tracking-widest text-primary uppercase">Legal Center</p>
+          <p className="text-[10px] font-black tracking-widest text-primary uppercase">{t('legal.center')}</p>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">{title}</h1>
           <p className="text-xs font-medium text-muted-foreground pt-1">{lastUpdated}</p>
         </div>
 
         <hr className="border-border" />
 
-        <nav className="space-y-1.5" aria-label="Table of Contents">
-          <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Table of Contents</p>
+        <nav className="space-y-1.5" aria-label={t('legal.tableOfContents')}>
+          <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">{t('legal.tableOfContents')}</p>
           {sections.map((sec) => {
             const isActive = sec.id === activeId
             return (
@@ -203,7 +205,7 @@ export function LegalTableOfContents({
                       isActive ? 'text-primary' : sec.iconColorClass ?? 'text-muted-foreground'
                     }`}
                   />
-                  <span>{sec.shortTitle}</span>
+                  <span>{t(sec.shortTitleKey as never)}</span>
                 </div>
                 <ChevronRight
                   className={`w-3.5 h-3.5 transition-transform ${

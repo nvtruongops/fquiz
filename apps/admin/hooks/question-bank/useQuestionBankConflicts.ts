@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Conflict {
@@ -23,6 +24,7 @@ export interface Conflict {
 }
 
 export function useQuestionBankConflicts(initialCategory: string = 'all') {
+  const t = useTranslations()
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory)
   const [loading, setLoading] = useState(false)
   const [conflicts, setConflicts] = useState<Conflict[]>([])
@@ -47,11 +49,11 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       setConflicts(data.conflicts || [])
     } catch (error) {
       console.error('Error fetching conflicts:', error)
-      toast({ title: 'Error', description: 'Failed to load conflicts list', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.loadConflictsFailed'), type: 'error' })
     } finally {
       setLoading(false)
     }
-  }, [selectedCategory])
+  }, [selectedCategory, t])
 
   useEffect(() => {
     fetchConflicts()
@@ -83,7 +85,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       }
 
       const data = await response.json()
-      toast({ title: 'Success', description: data.message || 'Conflict resolved successfully!', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.conflictResolved'), type: 'success' })
 
       await fetchConflicts()
       setSelectedConflict(null)
@@ -91,7 +93,7 @@ export function useQuestionBankConflicts(initialCategory: string = 'all') {
       setUpdateAllQuizzes(false)
     } catch (error) {
       console.error('Error resolving conflict:', error)
-      toast({ title: 'Error', description: 'Failed to resolve conflict', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.resolveConflictFailed'), type: 'error' })
     } finally {
       setResolving(false)
     }

@@ -1,6 +1,10 @@
+'use client'
+
 import Link from 'next/link'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function MaintenancePage() {
+  const t = useTranslations()
   return (
     <div className="min-h-screen bg-page-bg flex items-center justify-center p-6 text-card-foreground">
       <div className="max-w-md w-full text-center space-y-6">
@@ -26,11 +30,10 @@ export default function MaintenancePage() {
         {/* Text */}
         <div className="space-y-3">
           <h1 className="text-3xl font-black text-primary">
-            System Maintenance
+            {t('error.maintenanceTitle')}
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            The system is currently undergoing scheduled maintenance to improve your experience.
-            Please check back shortly.
+            {t('error.maintenanceDescription')}
           </p>
         </div>
 
@@ -39,12 +42,12 @@ export default function MaintenancePage() {
 
         {/* Footer */}
         <p className="text-sm text-muted-foreground">
-          If you are an administrator,{' '}
+          {t('error.adminPrompt')}{' '}
           <Link
             href="/login?callbackUrl=%2Fadmin"
             className="text-primary font-semibold hover:underline"
           >
-            log in here
+            {t('error.adminLogin')}
           </Link>
         </p>
       </div>

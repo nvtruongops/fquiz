@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { AlertCircle, ShieldCheck, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizDetailErrorViewProps {
   error: any
@@ -11,10 +12,16 @@ interface QuizDetailErrorViewProps {
 }
 
 export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps) {
+  const t = useTranslations()
   const status = error?.status
   const code = error?.code
-  const message = error?.message || 'Unable to load quiz details.'
-  const hint = error?.hint
+  const message = status === 403
+    ? t('quizDetail.accessDeniedDescription')
+    : status === 404
+      ? t('quizDetail.notFoundDescription')
+      : code === 'QUIZ_SOURCE_LOCKED'
+        ? t('quizDetail.retakeUnavailableDescription')
+        : t('quizDetail.unableToLoad')
 
   return (
     <div className="min-h-screen bg-background p-4 text-center">
@@ -33,35 +40,33 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
 
         <h2 className="mb-2 text-xl font-black uppercase tracking-tight text-foreground">
           {status === 403
-            ? 'Access Denied'
+            ? t('quizDetail.accessDenied')
             : status === 404
-              ? 'Quiz Not Found'
+              ? t('quizDetail.notFound')
               : code === 'QUIZ_SOURCE_LOCKED'
-                ? 'Quiz Retake Unavailable'
-                : 'An Error Occurred'}
+                ? t('quizDetail.retakeUnavailable')
+                : t('quizDetail.errorOccurred')}
         </h2>
 
         <p className="mb-8 font-medium text-muted-foreground">{message}</p>
-
-        {hint && <p className="mb-6 text-sm text-muted-foreground">{hint}</p>}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {code === 'QUIZ_SOURCE_LOCKED' ? (
             <>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/explore">Explore Quizzes</Link>
+                <Link href="/explore">{t('quizDetail.exploreQuizzes')}</Link>
               </Button>
               <Button asChild variant="outline" className="py-6 border-border">
-                <Link href="/history">View History</Link>
+                <Link href="/history">{t('quizDetail.viewHistory')}</Link>
               </Button>
             </>
           ) : status === 403 ? (
             <>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/">Explore Quizzes</Link>
+                <Link href="/">{t('quizDetail.exploreQuizzes')}</Link>
               </Button>
               <Button asChild variant="outline" className="py-6 border-border">
-                <Link href="/dashboard">Go to Dashboard</Link>
+                <Link href="/dashboard">{t('quizDetail.dashboard')}</Link>
               </Button>
             </>
           ) : (
@@ -78,10 +83,10 @@ export function QuizDetailErrorView({ error, router }: QuizDetailErrorViewProps)
                 }}
                 className="py-6 border-border"
               >
-                Go Back
+                {t('quizDetail.goBack')}
               </Button>
               <Button asChild className="bg-primary text-primary-foreground py-6">
-                <Link href="/dashboard">Go to Dashboard</Link>
+                <Link href="/dashboard">{t('quizDetail.dashboard')}</Link>
               </Button>
             </div>
           )}

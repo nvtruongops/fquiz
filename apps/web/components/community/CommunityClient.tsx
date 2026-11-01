@@ -12,6 +12,7 @@ import { CommunitySearchFilterBar } from '@/components/community/CommunitySearch
 import { CommunityPostCard } from '@/components/community/CommunityPostCard'
 import { CommunitySidebar } from '@/components/community/CommunitySidebar'
 import { CommunitySkeleton } from '@/components/community/CommunitySkeleton'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const CreatePostModal = dynamic(() => import('@/components/community/CreatePostModal'), {
   loading: () => <Skeleton className="h-64 w-full" />,
@@ -24,6 +25,7 @@ const FeedbackModal = dynamic(() => import('@/components/community/FeedbackModal
 })
 
 export function CommunityClient() {
+  const t = useTranslations()
   const {
     userId,
     authData,
@@ -101,9 +103,9 @@ export function CommunityClient() {
           onOpenFeedback={() => {
             if (!userId) {
               handleGuestAuthPrompt(
-                'Feedback & Suggestions',
-                'Sign in to submit feedback',
-                'Please sign in or create an account to submit feedback, report bugs, or suggest new features for FQuiz.'
+                t('community.feedbackFeature'),
+                t('community.signInFeedback'),
+                t('community.authFeedbackDescription')
               )
             } else {
               setIsFeedbackModalOpen(true)
@@ -112,9 +114,9 @@ export function CommunityClient() {
           onOpenCreatePost={() => {
             if (!userId) {
               handleGuestAuthPrompt(
-                'Community Post',
-                'Sign in to create a post',
-                'Please sign in or create an account to ask questions and share study experience with the FQuiz community.'
+                t('community.postFeature'),
+                t('community.signInCreatePost'),
+                t('community.authPostDescription')
               )
             } else {
               setIsCreateModalOpen(true)
@@ -135,7 +137,7 @@ export function CommunityClient() {
             <div className="bg-card backdrop-blur-xl border border-border rounded-2xl p-4 shadow-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Flame className="w-5 h-5 text-amber-400" />
-                <h2 className="text-lg font-black text-foreground">Latest Discussions</h2>
+                <h2 className="text-lg font-black text-foreground">{t('community.latestDiscussions')}</h2>
                 {isRefetching && <Loader2 className="w-4 h-4 animate-spin text-primary ml-1" />}
               </div>
             </div>
@@ -146,9 +148,9 @@ export function CommunityClient() {
                   <MessageSquare className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-foreground">No discussions yet</h3>
+                  <h3 className="text-lg font-black text-foreground">{t('community.noDiscussions')}</h3>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Be the first to ask a question or share study materials with the FQuiz community!
+                    {t('community.firstDiscussion')}
                   </p>
                 </div>
               </div>
@@ -182,7 +184,7 @@ export function CommunityClient() {
                       variant="outline"
                       className="px-6 py-2.5 rounded-2xl text-xs font-bold border-border hover:bg-muted cursor-pointer"
                     >
-                      <RefreshCw className="w-4 h-4 mr-2" /> Load older posts
+                      <RefreshCw className="w-4 h-4 mr-2" /> {t('community.loadOlder')}
                     </Button>
                   </div>
                 )}
@@ -198,9 +200,9 @@ export function CommunityClient() {
             onOpenFeedback={() => {
               if (!userId) {
                 handleGuestAuthPrompt(
-                  'Feedback & Suggestions',
-                  'Sign in to submit feedback',
-                  'Please sign in or create an account to submit feedback, report bugs, or suggest new features for FQuiz.'
+                  t('community.feedbackFeature'),
+                  t('community.signInFeedback'),
+                  t('community.authFeedbackDescription')
                 )
               } else {
                 setIsFeedbackModalOpen(true)

@@ -6,9 +6,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { invalidateHistoryForQuiz } from '@/lib/core/utils/cache-invalidation'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
-import { extractApiErrorMessage } from '@/lib/core/utils/error-utils'
 import type { QuizDiagnostics } from '@/lib/modules/quiz/quiz-analyzer'
 import type { QuizFormData, QuestionForm } from '@/lib/modules/quiz/types/quiz'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface UseQuizSaveOptions {
   quizId?: string
@@ -81,6 +81,7 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   )
 
   const { toast } = useToast()
+  const t = useTranslations()
 
   const syncToQuestionBank = useCallback(
     async (qId: string, status: string) => {
@@ -114,14 +115,14 @@ export function useQuizSave(options: UseQuizSaveOptions) {
     (status: string) => {
       if (status === 'published') {
         sessionStorage.removeItem(DRAFT_KEY)
-        toast.success('Quiz published successfully!')
+        toast.success(t('quiz.published'))
         router.push(effectiveRedirectOnPublish)
         router.refresh()
       } else {
-        toast.success('Draft saved successfully')
+        toast.success(t('quiz.draftSaved'))
       }
     },
-    [effectiveRedirectOnPublish, router, toast]
+    [effectiveRedirectOnPublish, router, t, toast]
   )
 
   const handleSaveSuccess = useCallback(
@@ -147,23 +148,22 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   const handleSaveError = useCallback(
     (data: any) => {
       if (data.code === 'CONCURRENCY_ERROR') {
-        setError('Data conflict: this quiz was recently modified by someone else. Please reload the page.')
-        toast.error('Data conflict! Please refresh the page.')
+        setError(t('quiz.dataConflictDetails'))
+        toast.error(t('quiz.dataConflict'))
       } else if (data.error === 'question_bank_conflict' && data.conflicts) {
         onServerConflict?.(data.conflicts)
-        setError(
-          data.message ||
-            'Detected conflicting answers with question bank. Please resolve conflicts before syncing.'
-        )
+        setError(t('quiz.bankConflict'))
       } else {
-        const apiMsg = extractApiErrorMessage(data.error)
+        const apiMsg = data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')
+          ? t('quiz.saveQuotaExceeded')
+          : t('quiz.saveFailed')
         setError(apiMsg)
         if (data.quotaExceeded || data.categoryQuotaExceeded || data.code?.includes('QUOTA')) {
           toast.error(apiMsg)
         }
       }
     },
-    [onServerConflict, toast]
+    [onServerConflict, t, toast]
   )
 
   const buildSavePayload = useCallback(
@@ -233,22 +233,22 @@ export function useQuizSave(options: UseQuizSaveOptions) {
         const { res, data } = await executeSaveFetch(payload)
         await handleSaveResponse(res, data, payload.status, quiet)
       } catch {
-        if (!quiet) setError('Connection error. Please try again.')
+        if (!quiet) setError(t('quizSave.connectionError'))
       } finally {
         if (!quiet) setSaving(false)
       }
     },
-    [buildSavePayload, executeSaveFetch, handleSaveResponse, waitForAutosave]
+    [buildSavePayload, executeSaveFetch, handleSaveResponse, waitForAutosave, t]
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (hasImportBlockingErrors) {
-      setError('Import file still has errors. Please fix errors in preview before saving.')
+      setError(t('quizSave.importErrorsRemain'))
       return
     }
     if (!diagnostics.isValid) {
-      setError('Please complete all missing required fields before publishing.')
+      setError(t('quizSave.completeRequiredFields'))
       scrollToQuestion(diagnostics.errors[0]?.questionIndex ?? 0)
       return
     }
@@ -271,7 +271,7 @@ export function useQuizSave(options: UseQuizSaveOptions) {
   const handleSaveDraft = async () => {
     if (!canSaveDraft) return
     if (hasImportBlockingErrors) {
-      setError('Import file still has errors. Please fix errors in preview before saving.')
+      setError(t('quizSave.importErrorsRemain'))
       return
     }
     await doSave('draft')

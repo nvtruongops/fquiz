@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Trash2, Reply, Loader2, MessageSquare } from 'lucide-react'
-import { TYPE_LABELS, TYPE_COLORS, type Feedback } from '@/hooks/feedback/useAdminFeedback'
+import { TYPE_COLORS, type Feedback } from '@/hooks/feedback/useAdminFeedback'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface FeedbackListProps {
   isLoading: boolean
@@ -26,6 +29,8 @@ export function FeedbackList({
   onReplyTarget,
   onDeleteTarget,
 }: FeedbackListProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   return (
     <Card className="border-border bg-card">
       <CardContent className="p-0">
@@ -35,7 +40,7 @@ export function FeedbackList({
           </div>
         ) : feedbacks.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-sm">
-            No feedback found
+            {t('admin.noFeedback')}
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -50,7 +55,7 @@ export function FeedbackList({
                         TYPE_COLORS[fb.type] || TYPE_COLORS.other
                       }`}
                     >
-                      {TYPE_LABELS[fb.type] || fb.type}
+                      {fb.type === 'bug' ? t('admin.bugReport') : fb.type === 'feature' ? t('admin.featureRequest') : fb.type === 'content' ? t('admin.contentFeedback') : t('admin.other')}
                     </span>
                   </div>
 
@@ -59,13 +64,13 @@ export function FeedbackList({
                       value={fb.status}
                       onValueChange={(status) => onUpdateStatus(fb._id, status)}
                     >
-                      <SelectTrigger className="h-7 w-28 text-xs font-semibold" aria-label={`Change status for feedback from ${fb.username}`}>
+                      <SelectTrigger className="h-7 w-28 text-xs font-semibold" aria-label={t('admin.changeFeedbackStatus', { username: fb.username })}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="reviewed">Reviewed</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="pending">{t('admin.pending')}</SelectItem>
+                        <SelectItem value="reviewed">{t('admin.reviewed')}</SelectItem>
+                        <SelectItem value="resolved">{t('admin.resolved')}</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -74,8 +79,8 @@ export function FeedbackList({
                       size="sm"
                       onClick={() => onReplyTarget(fb)}
                       className="h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer"
-                      title="Reply"
-                      aria-label={`Reply to ${fb.username}`}
+                      title={t('admin.reply')}
+                      aria-label={t('admin.replyTo', { username: fb.username })}
                     >
                       <Reply className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
@@ -85,8 +90,8 @@ export function FeedbackList({
                       size="sm"
                       onClick={() => onDeleteTarget(fb)}
                       className="h-7 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
-                      title="Delete"
-                      aria-label={`Delete feedback from ${fb.username}`}
+                      title={t('admin.deletePermanently')}
+                      aria-label={t('admin.deleteFeedbackFrom', { username: fb.username })}
                     >
                       <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
@@ -101,14 +106,14 @@ export function FeedbackList({
                   <div className="ml-4 p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
                     <div className="text-xs font-bold text-primary flex items-center gap-1.5">
                       <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
-                      Admin Reply:
+                      {t('admin.adminReply')}
                     </div>
                     <p className="text-xs text-foreground/90 whitespace-pre-wrap">{fb.reply_message}</p>
                   </div>
                 )}
 
                 <div className="text-[11px] text-muted-foreground">
-                  Submitted: {new Date(fb.created_at).toLocaleString('en-US')}
+                  {t('admin.submitted', { date: new Date(fb.created_at).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US') })}
                 </div>
               </div>
             ))}

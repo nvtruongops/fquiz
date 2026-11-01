@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/shared/ui/dialog'
 import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface StudentClassroomModalsProps {
   joinModalOpen: boolean
@@ -48,15 +49,16 @@ export function StudentClassroomModals({
   onSetConfirmLeaveId,
   onLeaveClass,
 }: StudentClassroomModalsProps) {
+  const t = useTranslations()
   return (
     <>
       {/* Join Classroom Modal */}
       <Dialog open={joinModalOpen} onOpenChange={onSetJoinModalOpen}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border rounded-3xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-foreground">Join Classroom</DialogTitle>
+            <DialogTitle className="text-xl font-black text-foreground">{t('classroom.joinClassroom')}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Enter the 6-character code provided by your instructor to join the class.
+              {t('classroom.joinByCode')}
             </DialogDescription>
           </DialogHeader>
 
@@ -70,10 +72,10 @@ export function StudentClassroomModals({
 
             <div className="space-y-1.5">
               <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                Class Code (*)
+                {t('classroom.classCode')}
               </label>
               <Input
-                placeholder="e.g. ABC123"
+                placeholder={t('classroom.classCodeExample')}
                 value={joinCode}
                 onChange={(e) => onSetJoinCode(e.target.value.toUpperCase())}
                 maxLength={10}
@@ -84,12 +86,12 @@ export function StudentClassroomModals({
 
             <div className="space-y-1.5">
               <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                Class Password (Optional)
+                {t('classroom.classPasswordOptional')}
               </label>
               <div className="relative">
                 <Input
                   type={showJoinPassword ? 'text' : 'password'}
-                  placeholder="Enter password provided by teacher..."
+                  placeholder={t('classroom.enterTeacherPassword')}
                   value={joinPassword}
                   onChange={(e) => onSetJoinPassword(e.target.value)}
                   className="rounded-xl h-11 pr-10 border-border bg-card text-card-foreground"
@@ -111,14 +113,14 @@ export function StudentClassroomModals({
                 onClick={() => onSetJoinModalOpen(false)}
                 className="rounded-xl border-border h-11 text-xs font-bold"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={joining}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider rounded-xl h-11 px-6 cursor-pointer shadow-xs"
               >
-                {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Join Class'}
+                {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : t('classroom.join')}
               </Button>
             </DialogFooter>
           </form>
@@ -129,9 +131,9 @@ export function StudentClassroomModals({
       <Dialog open={!!confirmLeaveId} onOpenChange={(open) => !open && onSetConfirmLeaveId(null)}>
         <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border rounded-3xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-foreground">Confirm Leaving Classroom?</DialogTitle>
+            <DialogTitle className="text-lg font-black text-foreground">{t('classroom.confirmLeave')}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              After leaving, you will no longer have access to assignments or gradebooks in this classroom unless re-approved by the instructor.
+              {t('classroom.leaveWarning')}
             </DialogDescription>
           </DialogHeader>
 
@@ -142,14 +144,14 @@ export function StudentClassroomModals({
               onClick={() => onSetConfirmLeaveId(null)}
               className="rounded-xl border-border h-10 text-xs font-bold"
             >
-              Keep
+              {t('classroom.keep')}
             </Button>
             <Button
               type="button"
               onClick={() => confirmLeaveId && onLeaveClass(confirmLeaveId)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-black text-xs uppercase tracking-wider rounded-xl h-10 px-5 cursor-pointer shadow-xs"
             >
-              Leave Classroom
+              {t('classroom.leave')}
             </Button>
           </DialogFooter>
         </DialogContent>

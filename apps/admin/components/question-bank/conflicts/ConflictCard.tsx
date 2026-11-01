@@ -1,6 +1,9 @@
+'use client'
+
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import type { Conflict } from '@/hooks/question-bank/useQuestionBankConflicts'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ConflictCardProps {
   conflict: Conflict
@@ -9,6 +12,7 @@ interface ConflictCardProps {
 }
 
 export function ConflictCard({ conflict, selected, onClick }: ConflictCardProps) {
+  const t = useTranslations()
   return (
     <div
       onClick={onClick}
@@ -31,15 +35,15 @@ export function ConflictCard({ conflict, selected, onClick }: ConflictCardProps)
           {conflict.text}
         </p>
         <Badge variant="destructive" className="shrink-0">
-          {conflict.answer_groups.length} answer{conflict.answer_groups.length === 1 ? '' : 's'}
+          {t('adminQuestionBank.answerCount', { count: conflict.answer_groups.length })}
         </Badge>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{conflict.total_variants} {conflict.total_variants === 1 ? 'quiz' : 'quizzes'}</span>
+        <span>{t('adminQuestionBank.quizCount', { count: conflict.total_variants })}</span>
         <span>•</span>
         <span>
-          {conflict.answer_groups.reduce((sum, g) => sum + g.count, 0)} variants
+          {t('adminQuestionBank.variantCount', { count: conflict.answer_groups.reduce((sum, g) => sum + g.count, 0) })}
         </span>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { School, FileText } from 'lucide-react'
 import { FQuizLogo } from '@/components/shared/ui/FQuizLogo'
 import { UserDropdown } from '@/components/layout/UserDropdown'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherSidebarProps {
   user?: { _id?: string; name: string; role: string; avatarUrl?: string } | null
@@ -14,21 +15,22 @@ interface TeacherSidebarProps {
 
 export function TeacherSidebar({ user }: TeacherSidebarProps) {
   const pathname = usePathname()
+  const t = useTranslations()
 
   const navItems = [
     {
-      label: 'Classroom Management',
+      labelKey: 'teacher.classroomManagement',
       href: '/teacher/classrooms',
       icon: School,
-      description: 'Classrooms, students & assignments',
+      descriptionKey: 'teacher.classroomsStudentsAssignments',
     },
     {
-      label: 'Quiz Management',
+      labelKey: 'teacher.quizManagement',
       href: '/teacher/quizzes',
       icon: FileText,
-      description: 'Create & manage multiple-choice quizzes',
+      descriptionKey: 'teacher.createManageQuizzes',
     },
-  ]
+  ] as const
 
   return (
     <aside className="w-64 bg-card border-r border-border flex flex-col h-screen sticky top-0 shrink-0 shadow-sm z-40">
@@ -38,7 +40,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
           <FQuizLogo size={32} />
           <div className="flex flex-col">
             <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 w-fit">
-              TEACHER PANEL
+              {t('teacher.panel')}
             </span>
           </div>
         </div>
@@ -48,7 +50,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
       <div className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
         <div className="space-y-1">
           <span className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-primary block mb-2 opacity-80">
-            TEACHING & MANAGEMENT
+            {t('teacher.teachingManagement')}
           </span>
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
@@ -75,10 +77,10 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-xs tracking-tight truncate">{item.label}</span>
+                  <span className="text-xs tracking-tight truncate">{t(item.labelKey)}</span>
                   {!isActive && (
                     <span className="text-[10px] text-muted-foreground font-normal truncate group-hover:text-primary">
-                      {item.description}
+                      {t(item.descriptionKey)}
                     </span>
                   )}
                 </div>
@@ -98,7 +100,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             prefetch={false}
             className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all"
           >
-            Teacher Sign In
+            {t('teacher.signIn')}
           </Link>
         )}
       </div>

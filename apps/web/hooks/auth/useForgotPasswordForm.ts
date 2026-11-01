@@ -3,9 +3,11 @@
 import { useState, useCallback } from 'react'
 import { useToast } from '@/store/shared/toast-store'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function useForgotPasswordForm() {
   const { toast } = useToast()
+  const t = useTranslations()
 
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -27,7 +29,7 @@ export function useForgotPasswordForm() {
       e.preventDefault()
 
       if (!email || !EMAIL_REGEX.test(email)) {
-        toast.error('Please enter a valid email address')
+        toast.error(t('auth.invalidEmail'))
         return
       }
 
@@ -47,19 +49,19 @@ export function useForgotPasswordForm() {
           if (res.status === 429) {
             if (typeof data.retryAfterSec === 'number') {
               setRetryAfterSec(data.retryAfterSec)
-              toast.error(`Code recently sent. Please try again after ${data.retryAfterSec}s`)
+              toast.error(t('auth.codeRecentlySent', { seconds: data.retryAfterSec }))
             } else {
-              toast.error('Too many requests. Please try again shortly.')
+              toast.error(t('auth.tooManyRequests'))
             }
             return
           }
 
           if (res.status >= 500) {
-            toast.error('System is busy. Please try again later.')
+            toast.error(t('auth.systemBusy'))
             return
           }
 
-          toast.error(typeof data.error === 'string' ? data.error : 'Failed to send verification code')
+          toast.error(t('auth.sendCodeFailed'))
           return
         }
 
@@ -68,15 +70,15 @@ export function useForgotPasswordForm() {
         setCodeSent(true)
         setVerified(false)
         toast.success(
-          'If an account exists for this email, a code may be sent. Check your inbox and spam; if it does not arrive, try again later.'
+          t('auth.codeSentNotice')
         )
       } catch {
-        toast.error('System is busy. Please try again later.')
+        toast.error(t('auth.systemBusy'))
       } finally {
         setSendingCode(false)
       }
     },
-    [email, toast]
+    [email, t, toast]
   )
 
   const handleVerifyCode = useCallback(
@@ -84,7 +86,7 @@ export function useForgotPasswordForm() {
       e.preventDefault()
 
       if (!/^\d{6}$/.test(code.trim())) {
-        toast.error('Verification code must be 6 digits')
+        toast.error(t('auth.codeMustSixDigits'))
         return
       }
 
@@ -98,19 +100,19 @@ export function useForgotPasswordForm() {
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {
-          toast.error(typeof data.error === 'string' ? data.error : 'Verification code is invalid or expired')
+          toast.error(t('auth.codeInvalidExpired'))
           return
         }
 
         setVerified(true)
-        toast.success('Code verified. You can now set a new password.')
+        toast.success(t('auth.codeVerified'))
       } catch {
-        toast.error('System is busy. Please try again later.')
+        toast.error(t('auth.systemBusy'))
       } finally {
         setVerifyingCode(false)
       }
     },
-    [code, email, toast]
+    [code, email, t, toast]
   )
 
   const handleResetPassword = useCallback(
@@ -118,17 +120,17 @@ export function useForgotPasswordForm() {
       e.preventDefault()
 
       if (!verified) {
-        toast.error('Please verify the code first')
+        toast.error(t('auth.verifyCodeFirst'))
         return
       }
 
       if (newPassword.length < 8) {
-        toast.error('Password must be at least 8 characters')
+        toast.error(t('auth.passwordMinEight'))
         return
       }
 
       if (newPassword !== confirmPassword) {
-        toast.error('Passwords do not match')
+        toast.error(t('auth.passwordMismatch'))
         return
       }
 
@@ -142,19 +144,19 @@ export function useForgotPasswordForm() {
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {
-          toast.error(typeof data.error === 'string' ? data.error : 'Password reset failed')
+          toast.error(t('auth.passwordResetFailed'))
           return
         }
 
         setDone(true)
-        toast.success('Password reset successfully. You can now sign in.')
+        toast.success(t('auth.passwordResetSuccess'))
       } catch {
-        toast.error('System is busy. Please try again later.')
+        toast.error(t('auth.systemBusy'))
       } finally {
         setResetting(false)
       }
     },
-    [code, confirmPassword, email, newPassword, toast, verified]
+    [code, confirmPassword, email, newPassword, t, toast, verified]
   )
 
   return {

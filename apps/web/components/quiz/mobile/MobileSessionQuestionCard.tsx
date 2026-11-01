@@ -7,6 +7,7 @@ import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 import { cn } from '@/lib/core/utils/cn'
 import type { SessionQuestion } from '@/lib/modules/quiz/types/session'
 import { handleArrowOptionNavigation } from '@/components/quiz/option-keyboard-navigation'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileSessionQuestionCardProps {
   question: SessionQuestion
@@ -49,18 +50,19 @@ function getOptionStatusStyle(showImmediateFeedback: boolean, isCorrect: boolean
 }
 
 function MobileOptionFeedback({ showImmediateFeedback, isCorrect, isSelected }: { showImmediateFeedback: boolean; isCorrect: boolean; isSelected: boolean }) {
+  const t = useTranslations()
   if (!showImmediateFeedback) return null
   if (isCorrect) {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0">
-        <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-success-fg" /> Correct
+        <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-success-fg" /> {t('mobileQuestion.correct')}
       </span>
     )
   }
   if (isSelected) {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0">
-        <XCircle aria-hidden="true" className="h-4 w-4 text-incorrect-fg" /> Incorrect
+        <XCircle aria-hidden="true" className="h-4 w-4 text-incorrect-fg" /> {t('mobileQuestion.incorrect')}
       </span>
     )
   }
@@ -68,45 +70,48 @@ function MobileOptionFeedback({ showImmediateFeedback, isCorrect, isSelected }: 
 }
 
 function MobileQuestionAnnouncement({ effectiveIndex, showImmediateFeedback, answerIsCorrect }: Pick<MobileSessionQuestionCardProps, 'effectiveIndex' | 'showImmediateFeedback' | 'answerIsCorrect'>) {
+  const t = useTranslations()
   const announcement = showImmediateFeedback && answerIsCorrect !== null
-    ? `Question ${effectiveIndex + 1}: ${answerIsCorrect ? 'Correct' : 'Incorrect'}.`
+    ? t('mobileQuestion.announcement', { number: effectiveIndex + 1, status: answerIsCorrect ? t('mobileQuestion.correct') : t('mobileQuestion.incorrect') })
     : ''
   return <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
 }
 
 function MobileQuestionNoteBanner({ isNoteMode }: { isNoteMode: boolean }) {
+  const t = useTranslations()
   if (!isNoteMode) return null
   return (
     <div className="flex items-center gap-2 rounded-xl bg-warning-bg border border-warning-border p-3 text-xs font-bold text-warning-fg">
       <PenTool aria-hidden="true" className="h-4 w-4 text-warning-fg shrink-0 animate-bounce" />
-      <span>Lookup Pen is ON: You can freely highlight text to look up vocabulary (answer selection paused).</span>
+      <span>{t('mobileQuestion.lookupNotice')}</span>
     </div>
   )
 }
 
 function MobileQuestionMeta({ question, effectiveIndex, effectiveTotal, requiredSelectionCount, isQuestionPinned, isPinPending, onTogglePin, currentCourseCode }: Pick<MobileSessionQuestionCardProps, 'question' | 'effectiveIndex' | 'effectiveTotal' | 'requiredSelectionCount' | 'isQuestionPinned' | 'isPinPending' | 'onTogglePin' | 'currentCourseCode'>) {
+  const t = useTranslations()
   return (
     <div className="flex items-start justify-between gap-2">
       <div>
         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary border border-primary/20">
-          Question {effectiveIndex + 1}/{effectiveTotal}
+          {t('mobileQuestion.number', { current: effectiveIndex + 1, total: effectiveTotal })}
         </span>
         <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-          {requiredSelectionCount <= 1 ? '• Select 1 answer' : `• Select ${requiredSelectionCount} answers`}
-          <span className="hidden sm:inline"> • Swipe 👈 👉 to change question</span>
+          {requiredSelectionCount <= 1 ? t('mobileQuestion.selectOne') : t('mobileQuestion.selectCount', { count: requiredSelectionCount })}
+          <span className="hidden sm:inline">{t('mobileQuestion.swipeHint')}</span>
         </p>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
         <button
           type="button" onClick={onTogglePin} disabled={isPinPending}
-          aria-label={isQuestionPinned ? 'Unpin question' : 'Pin question'} aria-pressed={isQuestionPinned}
+          aria-label={t(isQuestionPinned ? 'mobileQuestion.unpin' : 'mobileQuestion.pin')} aria-pressed={isQuestionPinned}
           className={cn(
             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm shrink-0',
             isQuestionPinned ? 'bg-warning-bg text-warning-fg border-warning-border' : 'bg-card text-card-foreground border-border hover:bg-muted'
           )}
         >
           <Bookmark aria-hidden="true" className={cn('w-3.5 h-3.5', isQuestionPinned && 'fill-current text-warning-fg')} />
-          <span>{isQuestionPinned ? 'Pinned' : 'Pin'}</span>
+          <span>{isQuestionPinned ? t('mobileQuestion.pinned') : t('mobileQuestion.pinAction')}</span>
         </button>
         <UsageBadge count={question.usage_count} used_in_quizzes={question.used_in_quizzes} currentCourseCode={currentCourseCode} size="sm" align="right" />
       </div>
@@ -115,6 +120,7 @@ function MobileQuestionMeta({ question, effectiveIndex, effectiveTotal, required
 }
 
 function MobileQuestionBody({ question }: { question: SessionQuestion }) {
+  const t = useTranslations()
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-card-foreground">
       <p className="whitespace-pre-wrap text-base leading-relaxed text-card-foreground">
@@ -122,7 +128,7 @@ function MobileQuestionBody({ question }: { question: SessionQuestion }) {
       </p>
       {question.image_url && (
         <div className="mt-4 overflow-hidden rounded-xl border border-border">
-          <img src={question.image_url} alt="Question Attachment" className="max-h-64 w-full object-contain bg-muted" />
+          <img src={question.image_url} alt={t('mobileQuestion.attachment')} className="max-h-64 w-full object-contain bg-muted" />
         </div>
       )}
     </div>
@@ -196,6 +202,7 @@ export function MobileSessionQuestionCard({
   mode,
   currentCourseCode,
 }: MobileSessionQuestionCardProps) {
+  const t = useTranslations()
   const isSingleChoice = requiredSelectionCount <= 1
 
   return (
@@ -208,7 +215,7 @@ export function MobileSessionQuestionCard({
       {/* Options List */}
       <div
         role={isSingleChoice ? 'radiogroup' : 'group'}
-        aria-label={`Question ${effectiveIndex + 1} answer options`}
+        aria-label={t('mobileQuestion.answerOptions', { number: effectiveIndex + 1 })}
         className="space-y-3"
       >
         {question.options.map((option, optionIndex) => (

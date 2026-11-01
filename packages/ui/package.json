@@ -6,6 +6,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./i18n": "./src/i18n/index.tsx",
     "./tailwind-preset": "./src/tailwind-preset.ts"
   },
   "scripts": {

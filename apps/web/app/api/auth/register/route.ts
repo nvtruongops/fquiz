@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
     }
 
-    const { username, email, password } = result.data
+    const { username, email, password, language } = result.data
     const normalizedEmail = email.toLowerCase().trim()
 
     const codeRecord = await EmailVerification.findOne({
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       email: normalizedEmail, 
       password_hash, 
       role: 'student',
+      language: language ?? 'vi',
       token_version: 1 
     })
 

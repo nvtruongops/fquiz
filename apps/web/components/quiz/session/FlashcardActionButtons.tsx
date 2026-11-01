@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface FlashcardActionButtonsProps {
   onAnswer: (knows: boolean) => void
@@ -18,6 +19,7 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
   enableAnimation = true,
   taggedStatus,
 }: FlashcardActionButtonsProps) {
+  const t = useTranslations()
   return (
     <div className="flex gap-4 sm:gap-6 mt-6">
       <Button
@@ -33,11 +35,11 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
         )}
       >
         <XCircle aria-hidden="true" className="w-5 h-5 text-destructive shrink-0" />
-        <span>Still Learning</span>
+        <span>{t('flashcard.stillLearning')}</span>
         {taggedStatus === 'unknown' ? (
-          <span className="text-[10px] font-black uppercase text-destructive-foreground bg-destructive px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Selected</span>
+          <span className="text-[10px] font-black uppercase text-destructive-foreground bg-destructive px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">{t('flashcard.selected')}</span>
         ) : (
-          <span className="hidden sm:inline-block text-[10px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md ml-auto">← swipe left</span>
+          <span className="hidden sm:inline-block text-[10px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md ml-auto">{t('flashcard.swipeLeft')}</span>
         )}
       </Button>
 
@@ -53,11 +55,11 @@ export const FlashcardActionButtons = React.memo(function FlashcardActionButtons
         )}
       >
         <CheckCircle aria-hidden="true" className="w-5 h-5 shrink-0 text-primary-foreground" />
-        <span>Mastered</span>
+        <span>{t('flashcard.mastered')}</span>
         {taggedStatus === 'known' ? (
-          <span className="text-[10px] font-black uppercase text-primary bg-primary-foreground px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">Selected</span>
+          <span className="text-[10px] font-black uppercase text-primary bg-primary-foreground px-2 py-0.5 rounded-md ml-auto shadow-xs animate-in fade-in">{t('flashcard.selected')}</span>
         ) : (
-          <span className="hidden sm:inline-block text-[10px] font-bold text-primary-foreground/90 bg-primary-foreground/15 px-1.5 py-0.5 rounded-md ml-auto">swipe right →</span>
+          <span className="hidden sm:inline-block text-[10px] font-bold text-primary-foreground/90 bg-primary-foreground/15 px-1.5 py-0.5 rounded-md ml-auto">{t('flashcard.swipeRight')}</span>
         )}
       </Button>
     </div>

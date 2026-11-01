@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import {
   Table,
@@ -7,6 +9,7 @@ import {
   TableRow,
   TableCell,
 } from '@fquiz/ui'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface RecentUser {
   _id: string | { toString(): string }
@@ -22,19 +25,21 @@ interface RecentRegistrationsTableProps {
 }
 
 export function RecentRegistrationsTable({ users }: RecentRegistrationsTableProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   if (users.length === 0) {
-    return <p className="text-muted-foreground text-sm py-4">No users found.</p>
+    return <p className="text-muted-foreground text-sm py-4">{t('admin.noUsersFound')}</p>
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow className="border-b border-border">
-          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">User</TableHead>
-          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Email</TableHead>
-          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Role</TableHead>
-          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</TableHead>
-          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider text-right">Joined Date</TableHead>
+          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">{t('admin.user')}</TableHead>
+          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">{t('admin.email')}</TableHead>
+          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">{t('admin.role')}</TableHead>
+          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">{t('admin.status')}</TableHead>
+          <TableHead className="py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider text-right">{t('admin.joinedDate')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody className="divide-y divide-border">
@@ -55,11 +60,11 @@ export function RecentRegistrationsTable({ users }: RecentRegistrationsTableProp
                     : 'bg-destructive/10 text-destructive border border-destructive/30'
                 }`}
               >
-                {u.status}
+                {u.status === 'active' ? t('admin.active') : t('admin.banned')}
               </span>
             </TableCell>
             <TableCell className="py-3 px-3 text-right text-xs text-muted-foreground">
-              {new Date(u.created_at).toLocaleDateString('en-US')}
+              {new Date(u.created_at).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')}
             </TableCell>
           </TableRow>
         ))}

@@ -12,6 +12,7 @@ import {
 } from '@fquiz/ui'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import type { User } from '@/hooks/users/useAdminUsers'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface UserDeleteDialogProps {
   user: User | null
@@ -28,6 +29,7 @@ export function UserDeleteDialog({
   onConfirm,
   isDeleting = false,
 }: UserDeleteDialogProps) {
+  const t = useTranslations()
   if (!user) return null
 
   return (
@@ -39,16 +41,16 @@ export function UserDeleteDialog({
               <AlertTriangle className="w-5 h-5 text-destructive" aria-hidden="true" />
             </div>
             <div>
-              <DialogTitle className="text-foreground text-lg">Delete User Account</DialogTitle>
+              <DialogTitle className="text-foreground text-lg">{t('admin.deleteUserTitle')}</DialogTitle>
               <DialogDescription className="text-muted-foreground text-sm">
-                This action is permanent and cannot be undone.
+                {t('admin.deleteUserPermanentWarning')}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <p className="text-sm text-foreground my-2">
-          Are you sure you want to delete user <strong className="font-semibold">{user.username}</strong>? All associated sessions, attempts, and profile records will be permanently removed.
+          {t('admin.confirmDeleteUser', { username: user.username })}
         </p>
 
         <DialogFooter className="gap-2 sm:gap-0">
@@ -59,7 +61,7 @@ export function UserDeleteDialog({
             disabled={isDeleting}
             className="cursor-pointer"
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -69,7 +71,7 @@ export function UserDeleteDialog({
             className="cursor-pointer"
           >
             {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />}
-            Delete User
+            {t('admin.deleteUser')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import type { Category } from '@/hooks/categories/useAdminCategories'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CategoryDeleteDialogProps {
   deleteTarget: Category | null
@@ -24,19 +25,19 @@ export function CategoryDeleteDialog({
   onClose,
   onConfirm,
 }: CategoryDeleteDialogProps) {
+  const t = useTranslations()
   return (
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Category</DialogTitle>
+          <DialogTitle>{t('admin.deleteCategoryTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the category{' '}
-            <span className="font-bold text-foreground">{deleteTarget?.name}</span>? This action cannot be undone.
+            {t('admin.confirmDeleteCategory', { name: deleteTarget?.name ?? '' })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -44,7 +45,7 @@ export function CategoryDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Delete
+            {t('admin.delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

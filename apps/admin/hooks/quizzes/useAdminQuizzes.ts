@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Quiz {
@@ -44,6 +45,7 @@ async function fetchCategories(): Promise<Category[]> {
 }
 
 export function useAdminQuizzes() {
+  const t = useTranslations()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -88,10 +90,10 @@ export function useAdminQuizzes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
-      toast({ title: 'Success', description: 'Quiz status updated successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.quizStatusUpdated'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.quizStatusUpdateFailed'), type: 'error' })
     },
   })
 
@@ -104,10 +106,10 @@ export function useAdminQuizzes() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'quizzes'] })
       setDeleteTarget(null)
-      toast({ title: 'Success', description: 'Quiz deleted successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.quizDeleted'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.quizDeleteFailed'), type: 'error' })
     },
   })
 

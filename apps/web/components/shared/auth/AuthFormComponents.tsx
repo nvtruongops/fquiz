@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function DevCodeAndRetryMessage({
   retryAfterSec,
@@ -9,6 +10,7 @@ export function DevCodeAndRetryMessage({
   retryAfterSec: number | null
   devCode: string
 }) {
+  const t = useTranslations()
   return (
     <AnimatePresence>
       {retryAfterSec !== null && (
@@ -18,7 +20,7 @@ export function DevCodeAndRetryMessage({
           exit={{ opacity: 0, y: -4 }}
           className="text-[11px] font-bold text-warning-fg ml-1 mt-1"
         >
-          Please try again after {retryAfterSec} seconds.
+          {t('auth.retryAfterSeconds', { seconds: retryAfterSec })}
         </motion.p>
       )}
       {devCode && (
@@ -28,7 +30,7 @@ export function DevCodeAndRetryMessage({
           exit={{ opacity: 0, y: -4 }}
           className="text-[11px] font-bold text-primary ml-1 mt-1"
         >
-          Dev test code: {devCode}
+          {t('auth.devTestCode')} {devCode}
         </motion.p>
       )}
     </AnimatePresence>

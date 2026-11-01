@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ShieldAlert } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ResolvedAnswer {
   questionIndex: number
@@ -32,16 +33,17 @@ export function QuestionConflictModal({
   totalConflicts,
   onResolve,
 }: QuestionConflictModalProps) {
+  const t = useTranslations()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl bg-card border-border text-card-foreground">
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive font-bold text-lg">
             <ShieldAlert className="w-5 h-5" />
-            Answer Conflicts Detected ({totalConflicts} {totalConflicts === 1 ? 'question' : 'questions'})
+            {t('adminConflict.detectedCount', { count: totalConflicts })}
           </div>
           <DialogDescription className="text-xs text-muted-foreground">
-            Some questions in this quiz already exist in the Question Bank but have different correct answers from your current selection.
+            {t('adminConflict.detectedDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -50,13 +52,13 @@ export function QuestionConflictModal({
             conflicts.map((c: any, i: number) => (
               <div key={i} className="p-3 rounded-lg border border-border bg-muted/20 space-y-2 text-xs">
                 <div className="font-semibold text-foreground flex items-center justify-between">
-                  <span>Question: {c.text || `Item ${i + 1}`}</span>
+                  <span>{t('adminConflict.question')} {c.text || t('adminConflict.itemNumber', { number: i + 1 })}</span>
                   <Badge variant="destructive" className="text-[10px]">
-                    Conflict
+                    {t('adminConflict.conflict')}
                   </Badge>
                 </div>
                 <div className="text-muted-foreground">
-                  <p className="font-medium text-foreground">The Question Bank stores a different correct answer than your current selection.</p>
+                  <p className="font-medium text-foreground">{t('adminConflict.differentCorrectAnswer')}</p>
                 </div>
               </div>
             ))}
@@ -69,7 +71,7 @@ export function QuestionConflictModal({
             onClick={() => onResolve('edit')}
             className="cursor-pointer"
           >
-            Back to Edit Questions
+            {t('adminConflict.backToEdit')}
           </Button>
           <Button
             type="button"
@@ -77,7 +79,7 @@ export function QuestionConflictModal({
             onClick={() => onResolve('force')}
             className="cursor-pointer font-bold"
           >
-            Keep Current Quiz Answers
+            {t('adminConflict.keepCurrentAnswers')}
           </Button>
         </DialogFooter>
       </DialogContent>

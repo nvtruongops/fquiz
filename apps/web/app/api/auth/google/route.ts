@@ -14,6 +14,8 @@ export async function POST(request: Request) {
   const ip = getClientIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
   const route = '/api/auth/google'
+  const localeCookie = request.headers.get('cookie')?.match(/(?:^|;\s*)fquiz-locale=(vi|en)(?:;|$)/)?.[1]
+  const language = localeCookie === 'en' || localeCookie === 'vi' ? localeCookie : undefined
 
   const contentType = request.headers.get('content-type') || ''
   const isFormSubmit = contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')
@@ -168,9 +170,15 @@ export async function POST(request: Request) {
         avatar_url: avatarUrl,
         role: 'student',
         status: 'active',
+        language: language ?? 'vi',
         created_at: new Date(),
         token_version: 1,
       })
+    }
+
+    if (language && user.language !== language) {
+      user.language = language
+      await user.save()
     }
 
     // Status check
@@ -224,6 +232,7 @@ export async function POST(request: Request) {
             name: user.username,
             role: user.role,
             avatarUrl: user.avatar_url || '',
+            language: user.language ?? language ?? 'vi',
             themePreference: user.theme_preference ?? user.themePreference ?? 'light',
           },
         },

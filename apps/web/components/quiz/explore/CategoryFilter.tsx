@@ -16,6 +16,7 @@ import { cn } from '@/lib/core/utils/cn'
 
 import { usePublicCategories, type CategoryItem } from '@/hooks/quiz/usePublicCategories'
 import { CategoryGridSkeleton } from './ExploreSkeleton'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CategoryFilterProps {
   initialCategories?: CategoryItem[]
@@ -29,6 +30,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
   const [dontShowAgain, setDontShowAgain] = useState(false)
   const [enablingNotify, setEnablingNotify] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations()
   const { openAuthPrompt } = useAuthPrompt()
   const { data: authData } = useAuth()
   const queryClient = useQueryClient()
@@ -92,17 +94,17 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Pin Course',
-            title: 'Sign in to pin course',
-            description: 'Pinning a course helps you quickly access and track progress on your favorite quizzes.',
+            featureName: t('categoryUI.pinFeature'),
+            title: t('categoryUI.pinAuthTitle'),
+            description: t('categoryUI.pinAuthDescription'),
             targetUrl: '/explore',
           })
           return
         }
-        toast.error(json.error || 'Failed to pin category')
+        toast.error(t('explore.pinCategoryFailed'))
       } else {
         queryClient.setQueryData(['student', 'pinned-categories'], { pinnedCategories: json.pinnedCategories })
-        toast.success(json.pinned ? 'Pinned category to top' : 'Unpinned category')
+        toast.success(json.pinned ? t('explore.pinnedToTop') : t('explore.unpinned'))
 
         if (json.pinned) {
           try {
@@ -120,7 +122,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
         }
       }
     } catch {
-      toast.error('An error occurred while pinning category')
+      toast.error(t('explore.pinCategoryError'))
     } finally {
       setPinningId(null)
     }
@@ -153,12 +155,12 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
         }),
       })
       if (res.ok) {
-        toast.success(`Enabled email notifications for ${notifyPromptCat?.name || ''}`)
+        toast.success(t('explore.emailNotificationsEnabled', { category: notifyPromptCat?.name || '' }))
       } else {
-        toast.error('Failed to update notification settings')
+        toast.error(t('explore.updateNotificationFailed'))
       }
     } catch {
-      toast.error('An error occurred while enabling notifications')
+      toast.error(t('explore.enableNotificationError'))
     } finally {
       setEnablingNotify(false)
       handleCloseModal()
@@ -192,8 +194,8 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 sm:left-4 text-primary h-4 w-4 pointer-events-none" aria-hidden="true" />
             <Input
-              aria-label="Search study categories"
-              placeholder="Search study categories by name..."
+              aria-label={t('categoryUI.searchLabel')}
+              placeholder={t('categoryUI.searchPlaceholder')}
               className="w-full h-10 sm:h-12 pl-10 sm:pl-11 pr-12 text-xs sm:text-sm border border-input bg-card/90 backdrop-blur-xl rounded-full shadow-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200 placeholder:text-muted-foreground font-medium text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -203,8 +205,8 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
                 type="button"
                 onClick={() => setSearchTerm('')}
                 className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-                aria-label="Clear search"
-                title="Clear search"
+                aria-label={t('categoryUI.clearSearch')}
+                title={t('categoryUI.clearSearch')}
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -224,15 +226,15 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-3 text-destructive">
             <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8" aria-hidden="true" />
           </div>
-          <h3 className="text-sm sm:text-base font-black text-card-foreground uppercase tracking-tight">Unable to load courses</h3>
-          <p className="text-xs font-semibold text-muted-foreground mt-1 mb-4">An error occurred while connecting to the server. Please try again.</p>
+          <h3 className="text-sm sm:text-base font-black text-card-foreground uppercase tracking-tight">{t('categoryUI.loadErrorTitle')}</h3>
+          <p className="text-xs font-semibold text-muted-foreground mt-1 mb-4">{t('categoryUI.loadError')}</p>
           <button
             type="button"
             onClick={() => refetch()}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-            Try again
+            {t('categoryUI.tryAgain')}
           </button>
         </motion.div>
       ) : sortedAndFiltered.length > 0 ? (
@@ -282,7 +284,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
                       </span>
                       <span className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-muted-foreground mt-0.5">
                         <Layers className="w-3 h-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
-                        <span>{cat.quizCount || 0} quizzes</span>
+                        <span>{t('categoryUI.quizCount', { count: cat.quizCount || 0 })}</span>
                       </span>
                     </div>
                   </Link>
@@ -292,14 +294,14 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
                     type="button"
                     onClick={(e) => handleTogglePin(e, cat.id)}
                     disabled={pinningId === cat.id}
-                    aria-label={isPinned ? `Unpin ${cat.name}` : `Pin ${cat.name}`}
+                    aria-label={isPinned ? t('categoryUI.unpinCourse', { name: cat.name }) : t('categoryUI.pinCourse', { name: cat.name })}
                     className={cn(
                       'min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 border active:scale-90',
                       isPinned
                         ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs hover:opacity-80'
                         : 'bg-muted/50 text-muted-foreground hover:text-question-flagged-fg hover:bg-muted border-border/40 hover:border-question-flagged-border/50'
                     )}
-                    title={isPinned ? 'Unpin category' : 'Pin category to top'}
+                    title={isPinned ? t('categoryUI.unpinCategory') : t('categoryUI.pinCategory')}
                   >
                     {pinningId === cat.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -322,12 +324,12 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
             <Search className="w-7 h-7 sm:w-8 sm:h-8" aria-hidden="true" />
           </div>
           <h3 className="text-sm sm:text-base font-black text-card-foreground uppercase tracking-tight">
-            {searchTerm ? 'No courses found' : 'No courses available'}
+            {searchTerm ? t('categoryUI.noCoursesFound') : t('categoryUI.noCoursesAvailable')}
           </h3>
           <p className="text-xs font-semibold text-muted-foreground mt-1">
             {searchTerm
-              ? `No results matching "${searchTerm}".`
-              : 'Course catalog is being updated.'}
+              ? t('categoryUI.searchNoMatch', { query: searchTerm })
+              : t('categoryUI.catalogUpdating')}
           </p>
           {searchTerm && (
             <button
@@ -335,7 +337,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               onClick={() => setSearchTerm('')}
               className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold transition-colors cursor-pointer"
             >
-              Clear search filter
+              {t('categoryUI.clearSearchFilter')}
             </button>
           )}
         </motion.div>
@@ -349,15 +351,15 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               <BellRing className="w-6 h-6" aria-hidden="true" />
             </div>
             <DialogTitle className="text-lg font-black text-card-foreground">
-              Enable email notifications for {notifyPromptCat?.name}?
+              {t('categoryUI.enableNotificationsTitle', { name: notifyPromptCat?.name ?? '' })}
             </DialogTitle>
             <DialogDescription asChild className="text-xs text-muted-foreground font-medium">
               <div className="space-y-1.5 pt-1 text-center">
                 <p>
-                  You just pinned <strong className="text-card-foreground font-extrabold">{notifyPromptCat?.name}</strong>.
+                  {t('categoryUI.youPinned')} <strong className="text-card-foreground font-extrabold">{notifyPromptCat?.name}</strong>.
                 </p>
                 <p className="text-muted-foreground font-semibold">
-                  Would you like to receive automatic email notifications whenever new quizzes are added to this course?
+                  {t('categoryUI.notificationQuestion')}
                 </p>
               </div>
             </DialogDescription>
@@ -370,7 +372,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               onCheckedChange={(checked) => setDontShowAgain(!!checked)}
             />
             <label htmlFor="dont-show-again" className="text-xs font-bold text-muted-foreground cursor-pointer select-none">
-              Do not show again for this category
+              {t('categoryUI.dontShowAgain')}
             </label>
           </div>
 
@@ -380,7 +382,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               onClick={handleCloseModal}
               className="w-full sm:w-1/2 min-h-[44px] px-4 py-2.5 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center"
             >
-              Maybe later / Skip
+              {t('categoryUI.maybeLater')}
             </button>
             <button
               type="button"
@@ -389,7 +391,7 @@ export default function CategoryFilter({ initialCategories, initialPinnedCategor
               className="w-full sm:w-1/2 min-h-[44px] px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               {enablingNotify ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <BellRing className="w-4 h-4" aria-hidden="true" />}
-              Enable email notifications
+              {t('categoryUI.enableNotifications')}
             </button>
           </DialogFooter>
         </DialogContent>

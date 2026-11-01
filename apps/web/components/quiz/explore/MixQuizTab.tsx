@@ -36,6 +36,7 @@ import {
 import { cn } from '@/lib/core/utils/cn'
 import { MIX_QUIZ_MAX_SELECT, MIX_QUIZ_QUESTION_OPTIONS } from '@/lib/modules/quiz/constants/mix-quiz'
 import { useMixQuizGenerator, ActiveMixSession } from '@/hooks/useMixQuizGenerator'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MixQuizTabProps {
   onSessionCreated?: (quizId: string, sessionId: string) => void
@@ -52,6 +53,7 @@ function QuotaExceededDialog({
   onOpenChange: (open: boolean) => void
   message: string
 }) {
+  const t = useTranslations()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-[32px] border border-border bg-card/90 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-0 overflow-hidden">
@@ -61,11 +63,11 @@ function QuotaExceededDialog({
           </div>
 
           <DialogTitle className="text-xl font-black text-card-foreground mb-2">
-            Quota Limit Reached
+            {t('mix.quotaTitle')}
           </DialogTitle>
 
           <DialogDescription className="text-xs font-bold text-muted-foreground leading-relaxed mb-8 px-2">
-            {message || 'You have reached the maximum limit of 10 custom and mixed quizzes. Please delete an older quiz to continue.'}
+            {message || t('mix.quotaExceeded')}
           </DialogDescription>
 
           <div className="flex flex-col gap-3 w-full">
@@ -74,7 +76,7 @@ function QuotaExceededDialog({
               className="h-13 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black shadow-lg shadow-primary/20 active:scale-95 transition-all text-xs uppercase tracking-wider justify-center"
             >
               <Link href="/explore">
-                Explore Quizzes
+                {t('mix.explore')}
               </Link>
             </Button>
             <Button
@@ -82,7 +84,7 @@ function QuotaExceededDialog({
               variant="outline"
               className="h-11 rounded-2xl border-border font-bold text-muted-foreground hover:bg-muted text-xs cursor-pointer"
             >
-              Maybe later
+              {t('mix.maybeLater')}
             </Button>
           </div>
         </div>
@@ -102,7 +104,8 @@ function ActiveSessionBanner({
   onCreateNew: () => void
   isDeleting: boolean
 }) {
-  const modeLabel = session.mode === 'immediate' ? 'Practice' : 'Exam'
+  const t = useTranslations()
+  const modeLabel = session.mode === 'immediate' ? t('mix.practice') : t('mix.exam')
   const modeColor = session.mode === 'immediate' ? 'text-success-fg' : 'text-info-fg'
   const modeBg = session.mode === 'immediate' ? 'bg-success-bg border-success-border' : 'bg-info-bg border-info-border'
 
@@ -113,18 +116,18 @@ function ActiveSessionBanner({
           <Shuffle className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-black text-card-foreground">You have an incomplete Mixed Quiz</h3>
-          <p className="text-sm text-muted-foreground">Continue where you left off or create a new quiz?</p>
+          <h3 className="font-black text-card-foreground">{t('mix.incompleteTitle')}</h3>
+          <p className="text-sm text-muted-foreground">{t('mix.continuePrompt')}</p>
         </div>
       </div>
 
       <div className={cn('rounded-2xl p-4 border space-y-2', modeBg)}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider shadow-xs">
-            Mixed Quiz
+            {t('mix.mixedQuiz')}
           </span>
           <span className="px-2 py-0.5 rounded-full bg-card/80 text-card-foreground text-[10px] font-bold">
-            {session.question_count} questions
+            {t('mix.questionCount', { count: session.question_count })}
           </span>
           <span className={cn('px-2 py-0.5 rounded-full bg-card/80 text-[10px] font-bold', modeColor)}>
             {modeLabel}
@@ -141,7 +144,7 @@ function ActiveSessionBanner({
           className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl h-12 gap-2 cursor-pointer"
         >
           <PlayCircle className="w-4 h-4" />
-          Resume
+          {t('mix.resume')}
         </Button>
         <Button
           onClick={onCreateNew}
@@ -154,7 +157,7 @@ function ActiveSessionBanner({
           ) : (
             <>
               <RefreshCw className="w-4 h-4" />
-              Start Fresh
+              {t('mix.startFresh')}
             </>
           )}
         </Button>
@@ -164,6 +167,7 @@ function ActiveSessionBanner({
 }
 
 export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTabProps) {
+  const t = useTranslations()
   const router = useRouter()
   const stepOffset = embedded ? 0 : 1
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -221,10 +225,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Shuffle className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-black text-card-foreground">Mix Quiz</h2>
+            <h2 className="text-2xl font-black text-card-foreground">{t('mix.title')}</h2>
           </div>
           <p className="text-muted-foreground font-medium text-sm">
-            Select up to {MIX_QUIZ_MAX_SELECT} public quizzes, combine questions, and start practicing immediately.
+            {t('mix.selectUpTo', { max: MIX_QUIZ_MAX_SELECT })}
           </p>
         </div>
       )}
@@ -248,11 +252,11 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-black">1</div>
-            <h2 className="text-sm font-black text-card-foreground uppercase tracking-widest">Select Course Category</h2>
+            <h2 className="text-sm font-black text-card-foreground uppercase tracking-widest">{t('mix.selectCategory')}</h2>
           </div>
           {catsLoading || isPreloading ? (
             <div className="h-14 rounded-2xl bg-muted animate-pulse flex items-center px-4 text-xs font-bold text-muted-foreground">
-              {isPreloading ? 'Restoring configuration...' : 'Loading categories...'}
+              {isPreloading ? t('mix.restoringConfig') : t('mix.loadingCategories')}
             </div>
           ) : (
             <Select
@@ -260,7 +264,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
               onValueChange={(val) => { setSelectedCategoryId(val); setSelectedQuizIds(new Set()) }}
             >
               <SelectTrigger className="w-full h-12 px-4 rounded-xl border-2 border-border bg-card text-card-foreground font-bold shadow-xs transition-all hover:border-primary/50 focus:ring-0">
-                <SelectValue placeholder="Browse question categories..." />
+                <SelectValue placeholder={t('mix.browseCategories')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 border-border shadow-2xl bg-popover text-popover-foreground">
                 {categories.map((cat) => (
@@ -286,16 +290,16 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs sm:text-sm font-black text-foreground uppercase tracking-wider">
-                    Select Quizzes to Mix
+                    {t('mix.selectQuizzes')}
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Choose from 2 to {MIX_QUIZ_MAX_SELECT} quizzes to combine questions</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">{t('mix.chooseQuizRange', { max: MIX_QUIZ_MAX_SELECT })}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-2 shrink-0">
                 {totalPool > 0 && (
                   <Badge variant="outline" className="rounded-full px-3 py-1 font-extrabold text-[10px] bg-success-bg text-success-fg border-success-border shadow-2xs">
-                    Pool: {totalPool} questions
+                    {t('mix.poolCount', { count: totalPool })}
                   </Badge>
                 )}
                 <Badge variant="outline" className={cn(
@@ -304,7 +308,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-muted text-muted-foreground border-border'
                 )}>
-                  {selectedQuizIds.size}/{MIX_QUIZ_MAX_SELECT} SELECTED
+                  {t('mix.selectedCount', { count: selectedQuizIds.size, max: MIX_QUIZ_MAX_SELECT })}
                 </Badge>
               </div>
             </div>
@@ -318,7 +322,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
               ) : quizzes.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground font-bold bg-card/60 rounded-xl border border-dashed border-border text-xs">
-                  No quizzes found in this category
+                  {t('mix.noQuizzesFound')}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto overscroll-contain p-1.5 pr-2.5">
@@ -369,7 +373,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                             </div>
                           )}
                           <div className="flex items-center gap-1 justify-end text-[9.5px] font-bold text-muted-foreground">
-                            <span className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-extrabold border border-border/60">{quiz.questionCount} questions</span>
+                            <span className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-extrabold border border-border/60">{t('mix.questionCount', { count: quiz.questionCount })}</span>
                           </div>
                         </div>
                       </div>
@@ -377,7 +381,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   })}
                   {isFetchingNextPage && (
                     <div className="col-span-full h-12 rounded-xl bg-card border border-border animate-pulse flex items-center justify-center text-xs font-bold text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary mr-2" /> Loading more quizzes...
+                      <Loader2 className="w-4 h-4 animate-spin text-primary mr-2" /> {t('mix.loadingMore')}
                     </div>
                   )}
                 </div>
@@ -395,9 +399,9 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
-                    Number of Questions
+                    {t('mix.questionCountTitle')}
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Select how many random questions to draw from the selected pool</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">{t('mix.questionCountDescription')}</p>
                 </div>
               </div>
 
@@ -414,7 +418,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                         : 'border-border bg-muted/60 text-muted-foreground hover:border-primary/40 hover:bg-card'
                     )}
                   >
-                    {count} QUESTIONS
+                    {t('mix.questionsButton', { count })}
                   </button>
                 ))}
               </div>
@@ -428,9 +432,9 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 </div>
                 <div>
                   <h2 className="text-xs font-black text-foreground uppercase tracking-wider">
-                    Study / Exam Mode
+                    {t('mix.modeTitle')}
                   </h2>
-                  <p className="text-[11px] font-medium text-muted-foreground">Choose your preferred quiz experience</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">{t('mix.chooseExperience')}</p>
                 </div>
               </div>
 
@@ -454,10 +458,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('font-black text-xs uppercase tracking-tight', mode === 'immediate' ? 'text-success-fg' : 'text-card-foreground')}>
-                      Practice
+                      {t('mix.practice')}
                     </p>
                     <p className="text-[10px] font-medium text-muted-foreground leading-snug mt-0.5 truncate">
-                      Instant answers & explanations
+                      {t('mix.instantAnswers')}
                     </p>
                   </div>
                   {mode === 'immediate' && (
@@ -484,10 +488,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn('font-black text-xs uppercase tracking-tight', mode === 'review' ? 'text-info-fg' : 'text-card-foreground')}>
-                      Exam
+                      {t('mix.exam')}
                     </p>
                     <p className="text-[10px] font-medium text-muted-foreground leading-snug mt-0.5 truncate">
-                      Graded upon completion
+                      {t('mix.gradedAtEnd')}
                     </p>
                   </div>
                   {mode === 'review' && (
@@ -502,7 +506,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
               <div className="p-3 bg-warning-bg/90 border border-warning-border/80 rounded-2xl flex items-center gap-2.5 shadow-2xs animate-in fade-in duration-300">
                 <AlertCircle className="w-4 h-4 text-warning-fg shrink-0" />
                 <p className="text-xs font-bold text-warning-fg leading-snug">
-                  Please select 2 or more quizzes on the left to activate mixing.
+                  {t('mix.selectTwoHint')}
                 </p>
               </div>
             )}
@@ -522,7 +526,7 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                 {createMutation.isPending ? (
                   <span className="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    INITIALIZING MIXED SESSION...
+                    {t('mix.initializing')}
                   </span>
                 ) : (
                   <div className="flex items-center justify-between w-full px-4">
@@ -535,10 +539,10 @@ export function MixQuizTab({ onSessionCreated, embedded, categoryId }: MixQuizTa
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70 leading-none mb-1">
-                          {canStart ? 'Confirm configuration & start' : 'Select at least 2 quizzes'}
+                          {canStart ? t('mix.confirmAndStart') : t('mix.selectAtLeastTwo')}
                         </p>
                         <p className="text-base sm:text-lg font-black tracking-tight leading-none uppercase">
-                          {canStart ? 'LAUNCH MIX QUIZ' : 'SELECT QUIZZES TO START'}
+                          {canStart ? t('mix.launch') : t('mix.selectToStart')}
                         </p>
                       </div>
                     </div>

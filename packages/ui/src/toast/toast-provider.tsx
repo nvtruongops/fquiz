@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useToast, type Toast } from './toast-store'
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { useTranslations } from '../i18n'
 
 interface ToastItemProps {
   toast: Toast
@@ -11,6 +12,7 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onRemove }: ToastItemProps) {
+  const t = useTranslations()
   const isAlert = toast.type === 'error' || toast.type === 'warning'
 
   return (
@@ -90,8 +92,8 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         type="button"
         onClick={() => onRemove(toast.id)}
         className="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 cursor-pointer -mr-1 -mt-1"
-        title="Close notification"
-        aria-label="Close notification"
+        title={t('common.closeNotification')}
+        aria-label={t('common.closeNotification')}
       >
         <X className="w-4 h-4" aria-hidden="true" />
       </button>

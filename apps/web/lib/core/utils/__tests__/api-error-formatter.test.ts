@@ -1,6 +1,11 @@
 import { formatApiError, notifyApiError } from '../api-error-formatter'
 import { useToast } from '@/store/shared/toast-store'
 
+jest.mock('@fquiz/ui/i18n', () => {
+  const actual = jest.requireActual('@fquiz/ui/i18n')
+  return { ...actual, getStoredLocale: () => 'en' }
+})
+
 describe('API Error Formatter', () => {
   beforeEach(() => {
     useToast.getState().clearToasts()
@@ -18,7 +23,7 @@ describe('API Error Formatter', () => {
     const formatted = formatApiError(error)
     expect(formatted.title).toBe('Too Many Requests')
     expect(formatted.type).toBe('warning')
-    expect(formatted.message).toBe('Too many requests')
+    expect(formatted.message).toBe('You are sending too many requests. Please wait a moment and try again.')
   })
 
   it('formats 401 unauthorized session expiry as a warning', () => {
@@ -51,6 +56,6 @@ describe('API Error Formatter', () => {
     expect(toasts).toHaveLength(1)
     expect(toasts[0].type).toBe('warning')
     expect(toasts[0].title).toBe('Too Many Requests')
-    expect(toasts[0].message).toBe('Rate limit hit')
+    expect(toasts[0].message).toBe('You are sending too many requests. Please wait a moment and try again.')
   })
 })

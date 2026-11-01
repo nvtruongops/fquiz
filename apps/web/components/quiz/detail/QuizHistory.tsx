@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { format } from 'date-fns'
 import { 
   History, 
   Trophy, 
@@ -20,6 +19,7 @@ import {
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizAttemptItem {
   session_id: string
@@ -56,10 +56,11 @@ interface QuizHistoryProps {
 }
 
 function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
+  const t = useTranslations()
   const config = {
-    immediate: { bg: 'bg-primary/10 text-primary border-primary/20', label: 'Practice', icon: Zap },
-    review: { bg: 'bg-muted text-foreground border-border', label: 'Exam', icon: BookOpen },
-    flashcard: { bg: 'bg-muted text-foreground border-border', label: 'Flashcard', icon: GraduationCap },
+    immediate: { bg: 'bg-primary/10 text-primary border-primary/20', label: t('quizHistory.modePractice'), icon: Zap },
+    review: { bg: 'bg-muted text-foreground border-border', label: t('quizHistory.modeExam'), icon: BookOpen },
+    flashcard: { bg: 'bg-muted text-foreground border-border', label: t('quizHistory.modeFlashcard'), icon: GraduationCap },
   }
   /* eslint-disable-next-line security/detect-object-injection */
   const item = config[mode] ?? config.immediate
@@ -85,6 +86,8 @@ export function QuizHistory({
   onResumeSession,
   className,
 }: QuizHistoryProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   const [currentPage, setCurrentPage] = useState(1)
   const listContainerRef = React.useRef<HTMLDivElement>(null)
 
@@ -100,16 +103,16 @@ export function QuizHistory({
         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-3">
           <History className="w-6 h-6" />
         </div>
-        <h3 className="text-base font-extrabold text-foreground">Attempt History</h3>
+        <h3 className="text-base font-extrabold text-foreground">{t('quizHistory.attemptHistory')}</h3>
         <p className="text-xs text-muted-foreground max-w-xs mt-1 mb-4">
-          Sign in to view your attempt history and track your learning progress.
+          {t('quizHistory.signInHistory')}
         </p>
         <Button 
           onClick={onAuthRequired} 
           className="rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold px-5 h-9"
         >
           <LogIn className="w-3.5 h-3.5 mr-1.5" />
-          Sign in now
+          {t('quizHistory.signInNow')}
         </Button>
       </div>
     )
@@ -119,7 +122,7 @@ export function QuizHistory({
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 bg-card backdrop-blur-md rounded-2xl sm:rounded-[32px] border border-border shadow-xs gap-3 mb-6", className)}>
         <Loader2 className="w-6 h-6 text-primary animate-spin" />
-        <p className="text-xs font-extrabold text-primary uppercase tracking-wider">Loading history...</p>
+        <p className="text-xs font-extrabold text-primary uppercase tracking-wider">{t('quizHistory.loading')}</p>
       </div>
     )
   }
@@ -157,15 +160,15 @@ export function QuizHistory({
             <History className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight">Attempt History</h2>
-            <p className="text-[11px] font-bold text-muted-foreground">Track your progress and results across practice attempts</p>
+            <h2 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight">{t('quizHistory.attemptHistory')}</h2>
+            <p className="text-[11px] font-bold text-muted-foreground">{t('quizHistory.track')}</p>
           </div>
         </div>
 
         {hasCompletedAttempt && (
           <div className="flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black">
             <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-            <span>Best: {maxScoreOnTen.toFixed(1)}/10</span>
+            <span>{t('quizHistory.best')} {maxScoreOnTen.toFixed(1)}/10</span>
           </div>
         )}
       </div>
@@ -178,8 +181,8 @@ export function QuizHistory({
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm font-extrabold text-foreground">You have an incomplete session in progress</p>
-              <p className="text-[11px] font-bold text-muted-foreground">Click here to resume your unanswered questions.</p>
+              <p className="text-xs sm:text-sm font-extrabold text-foreground">{t('quizHistory.incompleteSession')}</p>
+              <p className="text-[11px] font-bold text-muted-foreground">{t('quizHistory.resumeHint')}</p>
             </div>
           </div>
           <Button
@@ -188,7 +191,7 @@ export function QuizHistory({
             className="w-full sm:w-auto rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-black px-4 h-9 shadow-xs shrink-0 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
-            Resume Quiz
+            {t('quizHistory.resumeQuiz')}
           </Button>
         </div>
       )}
@@ -197,8 +200,8 @@ export function QuizHistory({
       {attempts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground space-y-2">
           <History className="w-8 h-8 mx-auto text-muted-foreground/50" />
-          <p className="text-xs font-bold">No attempt history for this quiz yet.</p>
-          <p className="text-[11px] text-muted-foreground">Click &quot;Start Quiz&quot; above to begin your first attempt!</p>
+          <p className="text-xs font-bold">{t('quizHistory.empty')}</p>
+          <p className="text-[11px] text-muted-foreground">{t('quizHistory.emptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -221,18 +224,18 @@ export function QuizHistory({
                   <div className="flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-                      <span className="text-xs font-black text-foreground">Attempt {attemptNumber}</span>
+                      <span className="text-xs font-black text-foreground">{t('quizHistory.attempt', { number: attemptNumber })}</span>
                       <ModeBadge mode={attempt.mode} />
                       {isRetryWrong && (
                         <Badge variant="secondary" className="bg-amber-500/10 text-amber-400 border-none font-extrabold text-[9px] uppercase px-2 py-0.5 gap-1 rounded-full">
                           <RotateCcw className="w-2.5 h-2.5" />
-                          <span>Retry Wrong</span>
+                          <span>{t('quizHistory.retryWrong')}</span>
                         </Badge>
                       )}
                     </div>
 
                     <p className="text-[10px] font-bold text-muted-foreground pl-4">
-                      {format(new Date(attempt.started_at), 'HH:mm — dd/MM/yyyy')}
+                      {new Intl.DateTimeFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(attempt.started_at))}
                     </p>
                   </div>
 
@@ -244,7 +247,7 @@ export function QuizHistory({
                         <span className="text-[10px] font-bold text-muted-foreground">/10</span>
                       </div>
                       <p className="text-[10px] font-bold text-muted-foreground">
-                        {correctCount}/{totalQ} correct
+                        {t('quizHistory.correctRatio', { correct: correctCount, total: totalQ })}
                       </p>
                     </div>
 
@@ -255,7 +258,7 @@ export function QuizHistory({
                       asChild
                     >
                       <Link href={`/quiz/${quizId}/result/${attempt.session_id}`}>
-                        <span>View Results</span>
+                        <span>{t('quizHistory.viewResults')}</span>
                         <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                       </Link>
                     </Button>
@@ -276,11 +279,11 @@ export function QuizHistory({
                 className="h-9 px-3.5 rounded-xl text-xs font-black border-border bg-card hover:bg-muted disabled:opacity-40 shadow-xs cursor-pointer text-foreground"
               >
                 <ChevronLeft className="w-4 h-4 mr-1 text-primary" />
-                <span>Previous</span>
+                <span>{t('quizHistory.previous')}</span>
               </Button>
 
               <div className="flex items-center gap-1 bg-card px-3 py-1.5 rounded-xl border border-border shadow-xs">
-                <span className="text-xs font-black text-primary">Page {safePage}</span>
+                <span className="text-xs font-black text-primary">{t('quizHistory.page', { current: safePage })}</span>
                 <span className="text-[11px] font-bold text-muted-foreground">/ {totalPages}</span>
               </div>
 
@@ -291,7 +294,7 @@ export function QuizHistory({
                 disabled={safePage === totalPages}
                 className="h-9 px-3.5 rounded-xl text-xs font-black border-border bg-card hover:bg-muted disabled:opacity-40 shadow-xs cursor-pointer text-card-foreground"
               >
-                <span>Next</span>
+                <span>{t('quizHistory.next')}</span>
                 <ChevronRight className="w-4 h-4 ml-1 text-primary" />
               </Button>
             </div>
@@ -300,7 +303,7 @@ export function QuizHistory({
               href="/history" 
               className="font-black text-primary hover:text-primary/90 inline-flex items-center gap-1.5 text-xs bg-primary/10 hover:bg-primary/20 px-3.5 py-2 rounded-xl transition-all shadow-xs"
             >
-              <span>View Full History</span>
+              <span>{t('quizHistory.viewFull')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

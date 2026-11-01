@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import type { QuestionStructureReport } from '@/lib/modules/quiz/quiz-import/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ImportedQuestion {
   text: string
@@ -178,6 +179,7 @@ export function useQuizImport({
   courseCode,
   description,
 }: UseQuizImportOptions) {
+  const t = useTranslations()
   const [file, setFile] = React.useState<File | null>(null)
   const [fileSnapshot, setFileSnapshot] = React.useState<File | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -230,21 +232,21 @@ export function useQuizImport({
       .catch(() => {
         setFile(null)
         setFileSnapshot(null)
-        setError('Unable to read the selected file. Please try again.')
+        setError(t('quizImport.readFileFailed'))
         onValidationStateChange?.(true)
         onProcessingStateChange?.(false)
         onPreviewDiagnosticsChange?.([
           {
             level: 'error',
             code: 'IMPORT_FILE_READ_ERROR',
-            message: 'Unable to read the selected file. Please try again.',
+            message: t('quizImport.readFileFailed'),
           },
         ])
       })
       .finally(() => {
         setPreparingFile(false)
       })
-  }, [createFileSnapshot, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange])
+  }, [createFileSnapshot, onValidationStateChange, onPreviewDiagnosticsChange, onProcessingStateChange, t])
 
   const handleDragOver = React.useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -269,10 +271,10 @@ export function useQuizImport({
       if (ext === 'json' || ext === 'txt') {
         processSelectedFile(droppedFile)
       } else {
-        setError('Only .json or .txt file formats are supported')
+        setError(t('quizImport.unsupportedFileType'))
       }
     }
-  }, [processSelectedFile])
+  }, [processSelectedFile, t])
 
   const handleDownloadSample = async (type: 'json' | 'txt') => {
     const url = getSampleUrl(type)
@@ -293,7 +295,7 @@ export function useQuizImport({
       link.click()
       URL.revokeObjectURL(objectUrl)
     } catch {
-      setError('Unable to download sample file. Please try again.')
+      setError(t('quizImport.downloadSampleFailed'))
     } finally {
       setDownloading(null)
     }
@@ -348,9 +350,7 @@ export function useQuizImport({
   const handlePreviewCatchError = (err: unknown) => {
     const message = err instanceof Error ? err.message : ''
     const uploadChanged = /upload file changed|ERR_UPLOAD_FILE_CHANGED/i.test(message)
-    const errText = uploadChanged
-      ? 'File was modified after selection. Please select the file again.'
-      : 'Network error during import preview'
+    const errText = uploadChanged ? t('quizImport.fileChanged') : t('quizImport.previewNetworkError')
 
     setError(errText)
     setPreview(null)
@@ -366,7 +366,7 @@ export function useQuizImport({
 
   const handlePreview = async () => {
     if (!file || !fileSnapshot) {
-      setError('Please select a .json or .txt file')
+      setError(t('quizImport.selectFile'))
       return
     }
 
@@ -394,14 +394,14 @@ export function useQuizImport({
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(typeof data?.error === 'string' ? data.error : 'Unable to preview imported file')
+        setError(t('quizImport.previewFailed'))
         setPreview(null)
         onValidationStateChange?.(true)
         onPreviewDiagnosticsChange?.([
           {
             level: 'error',
             code: 'IMPORT_PREVIEW_FAILED',
-            message: typeof data?.error === 'string' ? data.error : 'Unable to preview imported file',
+            message: t('quizImport.previewFailed'),
           },
         ])
         return
@@ -447,7 +447,7 @@ export function useQuizImport({
     }
 
     if (!conflictsConfirmed) {
-      setError('Please click "Confirm Answer Selection" before applying quiz to the form.')
+      setError(t('quizImport.confirmAnswerSelection'))
       return
     }
 
@@ -465,7 +465,7 @@ export function useQuizImport({
       onApply({ ...quiz, questions }, { bankCheck, previewSummary: preview.summary, diagnostics: preview.diagnostics })
     } catch (err) {
       console.error('Apply with conflict resolution failed:', err)
-      setError('Unable to apply selected answers. Please try again.')
+      setError(t('quizImport.applyAnswersFailed'))
     } finally {
       setApplying(false)
     }
@@ -492,7 +492,7 @@ export function useQuizImport({
       setConflictsConfirmed(true)
     } catch (err) {
       setConflictsConfirmed(false)
-      setError(err instanceof Error ? err.message : 'Unable to sync answers. Please try again.')
+      setError(t('quizImport.syncAnswersFailed'))
     } finally {
       setConfirmingConflicts(false)
     }

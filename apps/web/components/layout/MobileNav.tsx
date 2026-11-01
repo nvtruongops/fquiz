@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useLogout } from '@/hooks/useLogout'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 const MobileNavExamSheet = dynamic(
   () => import('@/components/layout/MobileNavExamSheet').then((mod) => mod.MobileNavExamSheet),
@@ -60,7 +63,7 @@ function MobileNavTab({
         <Icon aria-hidden="true" className={cn('w-5 h-5 transition-transform', active && 'scale-110')} />
         {active && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />}
       </div>
-      <span>{label}</span>
+      <span className="whitespace-nowrap">{label}</span>
     </>
   )
   const className = cn(
@@ -92,10 +95,12 @@ function MobileNavTab({
 }
 
 export function MobileNav({ user }: MobileNavProps) {
+  const t = useTranslations()
   const pathname = usePathname()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [examMenuOpen, setExamMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
   const examTriggerRef = useRef<HTMLButtonElement>(null)
   const userTriggerRef = useRef<HTMLButtonElement>(null)
 
@@ -112,6 +117,21 @@ export function MobileNav({ user }: MobileNavProps) {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useGSAP(() => {
+    if (!navRef.current) return
+    const media = gsap.matchMedia()
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.fromTo(navRef.current, { y: 12, autoAlpha: 0 }, {
+        y: 0,
+        autoAlpha: 1,
+        duration: 0.22,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity,visibility',
+      })
+    })
+    return () => media.revert()
+  }, { scope: navRef })
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)')
@@ -155,11 +175,11 @@ export function MobileNav({ user }: MobileNavProps) {
         ...current,
         user: { ...current.user, themePreference: savedTheme, theme_preference: savedTheme },
       } : current)
-    } catch (error) {
+    } catch {
       if (requestId !== themeRequestRef.current) return
       selectedThemeRef.current = previousTheme
       setTheme(previousTheme)
-      toast.error(error)
+      toast.error(t('nav.themeSaveFailed'))
     }
   }
 
@@ -179,7 +199,8 @@ export function MobileNav({ user }: MobileNavProps) {
   if (isSessionPage) return null
 
   // Active status checks
-  const isHomeActive = pathname === '/' || pathname === '/dashboard'
+  const homeHref = user ? '/dashboard' : '/'
+  const isHomeActive = pathname === homeHref
   const isExamActive =
     pathname === '/explore' ||
     pathname === '/history' ||
@@ -191,23 +212,31 @@ export function MobileNav({ user }: MobileNavProps) {
     pathname?.startsWith('/student/classrooms') || pathname?.startsWith('/teacher/classrooms')
   const isCommunityActive = pathname === '/community'
   const navTabs: MobileNavTabProps[] = [
-    { label: 'Home', icon: Home, active: isHomeActive, href: '/', onClick: closeAllMenus },
+    { label: t('nav.home'), icon: Home, active: isHomeActive, href: homeHref, onClick: closeAllMenus },
     {
-      label: 'Practice', icon: BookCheck, active: isExamActive || examMenuOpen,
-      buttonLabel: 'Open practice menu', expanded: examMenuOpen, triggerRef: examTriggerRef,
+      label: t('nav.practice'), icon: BookCheck, active: isExamActive || examMenuOpen,
+      buttonLabel: t('nav.openPracticeMenu'), expanded: examMenuOpen, triggerRef: examTriggerRef,
       onClick: () => { setUserMenuOpen(false); setExamMenuOpen((prev) => !prev) },
     },
-    { label: 'Classroom', icon: GraduationCap, active: isClassroomActive, href: classroomHref, onClick: closeAllMenus },
-    { label: 'Community', icon: Users, active: isCommunityActive, href: '/community', onClick: closeAllMenus },
+    { label: t('nav.classroom'), icon: GraduationCap, active: isClassroomActive, href: classroomHref, onClick: closeAllMenus },
+    { label: t('nav.communityTab'), icon: Users, active: isCommunityActive, href: '/community', onClick: closeAllMenus },
     {
-      label: 'Account', icon: User, active: isUserActive || userMenuOpen,
-      buttonLabel: 'Open account menu', expanded: userMenuOpen, triggerRef: userTriggerRef,
+      label: t('nav.accountTab'), icon: User, active: isUserActive || userMenuOpen,
+      buttonLabel: t('nav.openAccountMenu'), expanded: userMenuOpen, triggerRef: userTriggerRef,
       onClick: () => { setExamMenuOpen(false); setUserMenuOpen((prev) => !prev) },
     },
   ]
 
   return (
     <>
+      {!user && (
+        <div
+          className="fixed right-3 z-40 lg:hidden"
+          style={{ top: 'max(env(safe-area-inset-top), 0.75rem)' }}
+        >
+          <LocaleSwitcher />
+        </div>
+      )}
 
       {/* BOTTOM SHEET 1: QUIZ / PRACTICE */}
       <MobileNavExamSheet
@@ -232,7 +261,8 @@ export function MobileNav({ user }: MobileNavProps) {
 
       {/* MAIN FIXED BOTTOM NAV BAR */}
       <nav
-        aria-label="Mobile Navigation"
+        ref={navRef}
+        aria-label={t('nav.mobileNavigation')}
         className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur-xl border-t border-border/80 z-40 lg:hidden transition-all duration-300 pb-safe-area-bottom shadow-mobile-nav"
       >
         <div className="flex items-center justify-around h-16 px-1.5 max-w-md mx-auto">

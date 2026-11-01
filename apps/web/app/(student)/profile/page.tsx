@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Loader2 } from 'lucide-react'
 import { useStudentProfile } from '@/hooks/student/useStudentProfile'
 import { ProfileFormCard } from '@/components/student/profile/ProfileFormCard'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const DeleteAccountModal = dynamic(
   () => import('@/components/student/profile/DeleteAccountModal'),
@@ -12,6 +13,7 @@ const DeleteAccountModal = dynamic(
 )
 
 export default function ProfilePage() {
+  const t = useTranslations()
   const {
     loading,
     saving,
@@ -33,7 +35,7 @@ export default function ProfilePage() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex items-center gap-3 text-primary">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm font-bold uppercase tracking-wider">Loading profile...</span>
+          <span className="text-sm font-bold uppercase tracking-wider">{t('profile.loading')}</span>
         </div>
       </div>
     )
@@ -51,13 +53,13 @@ export default function ProfilePage() {
           </div>
           <div className="min-w-0">
             <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-primary-foreground/70 font-extrabold">
-              Profile
+              {t('profile.title')}
             </p>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mt-0.5 sm:mt-1 truncate text-primary-foreground">
-              {profile?.username ?? 'User'}
+              {profile?.username ?? t('common.user')}
             </h1>
             <p className="text-xs sm:text-sm text-primary-foreground/80 mt-1 sm:mt-2 max-w-xl font-medium leading-relaxed hidden sm:block">
-              Manage your personal information to keep your profile consistent, trustworthy, and easily recognized.
+              {t('profile.description')}
             </p>
           </div>
         </div>

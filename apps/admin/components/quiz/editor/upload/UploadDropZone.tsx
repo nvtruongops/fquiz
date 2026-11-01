@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
 import { FileText, Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface UploadDropZoneProps {
   isParsingFile: boolean
@@ -14,6 +17,7 @@ export function UploadDropZone({
   onFileSelect,
   onDrop,
 }: UploadDropZoneProps) {
+  const t = useTranslations()
   return (
     <div
       onDragOver={(e) => e.preventDefault()}
@@ -37,10 +41,10 @@ export function UploadDropZone({
       </div>
       <div>
         <p className="text-sm font-bold text-foreground">
-          Drag and drop your quiz file here, or click to browse
+          {t('adminUpload.dropPrompt')}
         </p>
         <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-          Supports plain text <code className="font-mono font-bold">.txt</code> (formatted as Question 1, A., B., C., D., Answer: A, Description / Explanation) or structured <code className="font-mono font-bold">.json</code>
+          {t('adminUpload.formatHint')}
         </p>
       </div>
     </div>

@@ -22,6 +22,8 @@
     "lint:admin": "npm run lint --workspace=apps/admin",
     "check-types": "turbo check-types",
     "verify:theme": "node .agents/scripts/verify.js --rule=THEME_GOVERNANCE",
+    "audit:i18n": "node .agents/scripts/audit-ui-i18n.cjs",
+    "audit:i18n:strict": "node .agents/scripts/audit-ui-i18n.cjs --strict",
     "scan": "npx fallow",
     "scan:codeql": "codeql database create .codeql-db --language=javascript-typescript --overwrite && codeql database analyze .codeql-db codeql/javascript-queries --format=sarif-latest --output=codeql-results.sarif",
     "codegraph:sync": "codegraph sync",

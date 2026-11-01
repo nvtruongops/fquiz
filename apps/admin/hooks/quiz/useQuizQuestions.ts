@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import type { QuestionItem } from './types'
 
 export function useQuizQuestions(initialQuestions?: any[]) {
+  const t = useTranslations()
   const [questions, setQuestions] = useState<QuestionItem[]>(() => {
     if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       return initialQuestions.map((q: any) => ({
@@ -47,7 +49,7 @@ export function useQuizQuestions(initialQuestions?: any[]) {
 
   function handleRemoveQuestion(index: number) {
     if (questions.length <= 1) {
-      toast({ title: 'Warning', description: 'Quiz must have at least 1 question', type: 'warning' })
+      toast({ title: t('toast.warning'), description: t('admin.quizNeedsQuestion'), type: 'warning' })
       return
     }
     setQuestions((prev) => prev.filter((_, i) => i !== index))
@@ -84,7 +86,7 @@ export function useQuizQuestions(initialQuestions?: any[]) {
     setQuestions((prev) => {
       const clone = [...prev]
       if (clone[qIndex].options.length <= 2) {
-        toast({ title: 'Warning', description: 'Each question requires at least 2 options', type: 'warning' })
+        toast({ title: t('toast.warning'), description: t('admin.questionNeedsOptions'), type: 'warning' })
         return clone
       }
       const updatedOpts = clone[qIndex].options.filter((_, i) => i !== optIndex)
@@ -112,7 +114,7 @@ export function useQuizQuestions(initialQuestions?: any[]) {
   function handleApplyTargetCount() {
     if (typeof targetCount !== 'number' || targetCount <= 0) return
     if (targetCount <= questions.length) {
-      toast({ title: 'Notice', description: `Quiz already has ${questions.length} questions.`, type: 'default' })
+      toast({ title: t('toast.notice'), description: t('admin.quizAlreadyHasQuestions', { count: questions.length }), type: 'default' })
       return
     }
     const needed = targetCount - questions.length
@@ -124,8 +126,8 @@ export function useQuizQuestions(initialQuestions?: any[]) {
     }))
     setQuestions((prev) => [...prev, ...emptySlots])
     toast({
-      title: 'Success',
-      description: `Added ${needed} question slots to reach target of ${targetCount} questions.`,
+      title: t('toast.success'),
+      description: t('admin.questionSlotsAdded', { added: needed, target: targetCount }),
       type: 'success',
     })
   }

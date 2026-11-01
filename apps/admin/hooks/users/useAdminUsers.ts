@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface User {
@@ -39,6 +40,7 @@ async function fetchUsers(
 }
 
 export function useAdminUsers() {
+  const t = useTranslations()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -80,10 +82,10 @@ export function useAdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      toast({ title: 'Success', description: 'User account updated successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.userUpdated'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.userUpdateFailed'), type: 'error' })
     },
   })
 
@@ -98,10 +100,10 @@ export function useAdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      toast({ title: 'Success', description: 'User account deleted successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.userDeleted'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.userDeleteFailed'), type: 'error' })
     },
   })
 

@@ -1,11 +1,14 @@
 'use client'
 
 import React, { useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import Link from 'next/link'
 import { Compass, Clock, Lock } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 import { Dialog, DialogContent, DialogTitle } from '@/components/shared/ui/dialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileNavExamSheetProps {
   open: boolean
@@ -23,7 +26,24 @@ export function MobileNavExamSheet({
   triggerRef,
 }: MobileNavExamSheetProps) {
   const { openAuthPrompt } = useAuthPrompt()
+  const t = useTranslations()
   const handingOffToAuthPrompt = useRef(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    if (!open || !sheetRef.current) return
+    const media = gsap.matchMedia()
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.fromTo(sheetRef.current, { yPercent: 100, autoAlpha: 0 }, {
+        yPercent: 0,
+        autoAlpha: 1,
+        duration: 0.28,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity,visibility',
+      })
+    })
+    return () => media.revert()
+  }, { scope: sheetRef, dependencies: [open] })
 
   const isExploreActive = pathname === '/explore' || pathname?.startsWith('/courses')
   const isHistoryActive = pathname === '/history'
@@ -31,6 +51,7 @@ export function MobileNavExamSheet({
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose() }}>
         <DialogContent
+          ref={sheetRef}
           aria-describedby={undefined}
           onCloseAutoFocus={(event) => {
             event.preventDefault()
@@ -41,16 +62,16 @@ export function MobileNavExamSheet({
             if (triggerRef.current?.getClientRects().length) triggerRef.current.focus()
             else document.querySelector<HTMLElement>('[data-desktop-nav-home]')?.focus()
           }}
-          className="left-1/2 top-auto bottom-0 translate-y-0 w-full max-w-lg bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] sm:rounded-t-[32px] sm:rounded-b-none shadow-2xl p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] gap-0 overflow-hidden max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          className="left-1/2 top-auto bottom-0 translate-y-0 w-full max-w-lg bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] sm:rounded-t-[32px] sm:rounded-b-none shadow-2xl p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] gap-0 overflow-hidden max-h-[72dvh] flex flex-col touch-pan-y lg:hidden data-[state=open]:animate-none data-[state=closed]:animate-none"
         >
           <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20 mx-auto mt-0.5 mb-2.5 shrink-0" />
           <div className="px-2 py-2 pr-10 border-b border-border/60 flex items-center justify-between shrink-0">
             <DialogTitle className="text-xs font-black uppercase tracking-wider text-foreground">
-              Quizzes & Exams
+              {t('nav.quizzesAndExams')}
             </DialogTitle>
           </div>
 
-          <div className="space-y-1.5 pt-1 pb-6 sm:pb-8 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+          <div className="space-y-1.5 pt-1 pb-1 overflow-y-auto custom-scrollbar">
             <Link
               href="/explore"
               prefetch={false}
@@ -72,7 +93,7 @@ export function MobileNavExamSheet({
               >
                 <Compass aria-hidden="true" className="w-4.5 h-4.5" />
               </div>
-              <span>Explore Quizzes</span>
+              <span>{t('nav.exploreQuizzes')}</span>
             </Link>
 
             <Link
@@ -84,8 +105,8 @@ export function MobileNavExamSheet({
                   e.preventDefault()
                   handingOffToAuthPrompt.current = true
                   openAuthPrompt({
-                    featureName: 'Exam History',
-                    description: 'Track progress, review results, and retry incorrect questions',
+                    featureName: t('nav.examHistory'),
+                    description: t('nav.examHistoryDescription'),
                     targetUrl: '/history',
                   })
                 }
@@ -108,7 +129,7 @@ export function MobileNavExamSheet({
                 >
                   <Clock aria-hidden="true" className="w-4.5 h-4.5" />
                 </div>
-                <span>Exam History</span>
+                <span>{t('nav.examHistory')}</span>
               </div>
               {!user && <Lock aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
             </Link>

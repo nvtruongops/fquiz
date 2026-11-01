@@ -4,12 +4,13 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useAuth } from '@/hooks/auth/useAuth'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export const FEEDBACK_TYPES = [
-  { value: 'bug', label: 'Bug Report' },
-  { value: 'feature', label: 'Feature Request' },
-  { value: 'content', label: 'Content Feedback' },
-  { value: 'other', label: 'Other' },
+  { value: 'bug' },
+  { value: 'feature' },
+  { value: 'content' },
+  { value: 'other' },
 ] as const
 
 export type FeedbackType = typeof FEEDBACK_TYPES[number]['value']
@@ -18,6 +19,7 @@ const RATE_LIMIT = 3
 const RATE_WINDOW_MS = 60 * 60 * 1000
 
 export function useCommunityFeed() {
+  const t = useTranslations()
   const { data: authData, isLoading: isAuthLoading } = useAuth()
   const userId = authData?.user?._id
   const queryClient = useQueryClient()
@@ -276,7 +278,7 @@ export function useCommunityFeed() {
     if (!canSubmit) return
 
     if (!checkClientRateLimit()) {
-      setError('You have submitted too much feedback. Please try again later.')
+      setError(t('feedback.rateLimit'))
       return
     }
 
@@ -294,10 +296,10 @@ export function useCommunityFeed() {
       const data = await res.json()
       if (!res.ok) {
         if (res.status === 429) {
-          setError('Too many submissions from this device. Please wait.')
+          setError(t('feedback.deviceRateLimit'))
           startCooldown(60 * 1000)
         } else {
-          setError(data.error || 'An error occurred, please try again.')
+          setError(t('community.postErrorFallback'))
         }
         return
       }
@@ -307,11 +309,11 @@ export function useCommunityFeed() {
       setMessage('')
       setReason('')
     } catch {
-      setError('Server connection error. Please check your network.')
+      setError(t('community.postErrorFallback'))
     } finally {
       setLoading(false)
     }
-  }, [canSubmit, checkClientRateLimit, type, finalMessage, startCooldown])
+  }, [canSubmit, checkClientRateLimit, type, finalMessage, startCooldown, t])
 
   const handleCloseFeedbackModal = useCallback(() => {
     setIsFeedbackModalOpen(false)

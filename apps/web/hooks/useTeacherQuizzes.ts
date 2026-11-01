@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface QuizItem {
   _id: string
@@ -30,6 +31,7 @@ export interface Classroom {
 
 export function useTeacherQuizzes() {
   const { toast } = useToast()
+  const t = useTranslations()
   const [activeTab, setActiveTab] = useState<'quizzes' | 'categories'>('quizzes')
 
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
@@ -114,7 +116,7 @@ export function useTeacherQuizzes() {
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCategoryName.trim()) {
-      setCategoryError('Please enter course code or subject name')
+      setCategoryError(t('teacher.categoryNameRequired'))
       return
     }
 
@@ -136,8 +138,8 @@ export function useTeacherQuizzes() {
       setNewCategoryName('')
       setCreateCategoryOpen(false)
       fetchCategories()
-    } catch (err: any) {
-      setCategoryError(err.message || 'Error creating course category')
+    } catch {
+      setCategoryError(t('teacher.createCategoryFailed'))
     } finally {
       setCreatingCategory(false)
     }
@@ -154,7 +156,7 @@ export function useTeacherQuizzes() {
         setConfirmDeleteCategoryId(null)
         fetchCategories()
       } else {
-        toast.error(data.error || 'Failed to delete course category')
+        toast.error(t('teacher.deleteCategoryFailed'))
       }
     } catch (err) {
       console.error('Failed to delete category:', err)
@@ -171,7 +173,7 @@ export function useTeacherQuizzes() {
   const handleAssignQuiz = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedQuiz || !selectedClassroomId) {
-      setAssignError('Please select a classroom to assign')
+      setAssignError(t('teacher.selectClassroomToAssign'))
       return
     }
 
@@ -198,8 +200,8 @@ export function useTeacherQuizzes() {
       setTimeout(() => {
         setAssignModalOpen(false)
       }, 1500)
-    } catch (err: any) {
-      setAssignError(err.message || 'Error assigning quiz')
+    } catch {
+      setAssignError(t('teacher.assignQuizFailed'))
     } finally {
       setAssigning(false)
     }
@@ -216,7 +218,7 @@ export function useTeacherQuizzes() {
         fetchQuizzes()
       } else {
         const data = await res.json()
-        toast.error(data.error || 'Failed to delete quiz')
+        toast.error(t('teacher.deleteQuizFailed'))
       }
     } catch (err) {
       console.error('Failed to delete quiz:', err)

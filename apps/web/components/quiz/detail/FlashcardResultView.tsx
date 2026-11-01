@@ -11,6 +11,7 @@ import { InteractiveFlashcardResultViewer } from '@/components/quiz/detail/Inter
 import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface ResultQuestion {
   _id: string
@@ -47,6 +48,8 @@ interface ResultData {
 export function FlashcardResultView({ quizId, sessionId, data }: { quizId: string; sessionId: string; data: ResultData }) {
   const router = useRouter()
   const { toast } = useToast()
+  const t = useTranslations()
+  const { locale } = useLocale()
 
   const [, setShowReviewModal] = useState(false)
   const [loadingUnknown, setLoadingUnknown] = useState(false)
@@ -56,13 +59,13 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
   if (!flashcard_stats) return null
 
   const percentage = Math.round((flashcard_stats.cards_known / flashcard_stats.total_cards) * 100)
-  const completedDate = new Date(completed_at).toLocaleString('vi-VN', {
+  const completedDate = new Date(completed_at).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
 
   const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
-  const gradeLabel = percentage >= 80 ? 'EXCELLENT!' : percentage >= 50 ? 'GOOD JOB!' : 'NEEDS PRACTICE!'
+  const gradeLabel = percentage >= 80 ? t('flashcard.excellent') : percentage >= 50 ? t('flashcard.goodJob') : t('flashcard.needsPractice')
 
   // Handle Reviewing only Unknown Cards (reuses session)
   const handleReviewUnknown = async () => {
@@ -82,8 +85,8 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
         : `/quiz/${quizId}/session/${sessionId}/flashcard`
 
       router.push(reviewUrl)
-    } catch (err: any) {
-      toast.error(err.message || 'Error setting up review session')
+    } catch {
+      toast.error(t('quiz.setupReviewFailed'))
     } finally {
       setLoadingUnknown(false)
       setShowReviewModal(false)
@@ -113,8 +116,8 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
         : `/quiz/${quizId}/session/${newSessionId}/flashcard`
 
       router.push(reviewUrl)
-    } catch (err: any) {
-      toast.error(err.message || 'Error creating new session')
+    } catch {
+      toast.error(t('quiz.createSessionFailed'))
     } finally {
       setLoadingAll(false)
       setShowReviewModal(false)
@@ -138,20 +141,20 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
           <div className="flex items-center gap-3.5">
             <div className="flex items-baseline gap-1">
               <span className={`text-2xl sm:text-3xl font-black ${gradeColor} tracking-tight`}>{percentage}%</span>
-              <span className="text-xs font-black text-muted-foreground">mastered</span>
+              <span className="text-xs font-black text-muted-foreground">{t('flashcard.masteredPercent')}</span>
             </div>
             <div className="h-6 w-px bg-border" />
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-wider">{gradeLabel}</p>
               <p className="text-[11px] font-bold text-muted-foreground">
-                Mastered <strong className="text-success-fg">{flashcard_stats.cards_known}</strong>/{flashcard_stats.total_cards} cards · Review needed for <strong className="text-incorrect-fg">{flashcard_stats.cards_unknown}</strong> cards · {completedDate}
+                {t('flashcard.masteredSummary', { known: flashcard_stats.cards_known, total: flashcard_stats.total_cards, unknown: flashcard_stats.cards_unknown, date: completedDate })}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Badge className="bg-primary text-primary-foreground border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full shadow-2xs">
-              Flashcard Study
+              {t('flashcard.study')}
             </Badge>
             {is_temp ? (
               <ExitMixQuizButton sessionId={sessionId} />
@@ -168,17 +171,17 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
                   ) : (
                     <RotateCcw className="mr-1 h-3.5 w-3.5" />
                   )}
-                  Review
+                  {t('flashcard.review')}
                 </Button>
 
                 <Link href={is_guest ? "/explore" : "/dashboard"}>
                   <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
-                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> {is_guest ? "Explore" : "Dashboard"}
+                    <LayoutDashboard className="mr-1 h-3.5 w-3.5" /> {is_guest ? t('flashcard.explore') : t('flashcard.dashboard')}
                   </Button>
                 </Link>
                 <Link href="/history">
                   <Button variant="outline" className="h-8 px-3 rounded-xl border-border text-muted-foreground font-black text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer">
-                    <BookOpen className="mr-1 h-3.5 w-3.5" /> History
+                    <BookOpen className="mr-1 h-3.5 w-3.5" /> {t('flashcard.history')}
                   </Button>
                 </Link>
               </>
@@ -205,15 +208,15 @@ export function FlashcardResultView({ quizId, sessionId, data }: { quizId: strin
         <div className="grid grid-cols-3 gap-4 p-6 bg-card rounded-2xl border border-border">
           <div className="text-center p-4 bg-muted/80 rounded-2xl border border-border">
             <p className="text-2xl sm:text-3xl font-black text-foreground">{flashcard_stats.total_cards}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">Total Cards</p>
+            <p className="text-[10px] text-muted-foreground mt-1 font-black uppercase tracking-wider">{t('flashcard.totalCards')}</p>
           </div>
           <div className="text-center p-4 bg-success-bg rounded-2xl border border-success-border">
             <p className="text-2xl sm:text-3xl font-black text-success-fg">{flashcard_stats.cards_known}</p>
-            <p className="text-[10px] text-success-fg mt-1 font-black uppercase tracking-wider">Mastered</p>
+            <p className="text-[10px] text-success-fg mt-1 font-black uppercase tracking-wider">{t('flashcard.mastered')}</p>
           </div>
           <div className="text-center p-4 bg-incorrect-bg rounded-2xl border border-incorrect-border">
             <p className="text-2xl sm:text-3xl font-black text-incorrect-fg">{flashcard_stats.cards_unknown}</p>
-            <p className="text-[10px] text-incorrect-fg mt-1 font-black uppercase tracking-wider">Needs Review</p>
+            <p className="text-[10px] text-incorrect-fg mt-1 font-black uppercase tracking-wider">{t('flashcard.needsReview')}</p>
           </div>
         </div>
       )}

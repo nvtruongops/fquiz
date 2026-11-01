@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface LLMProviderConfig {
@@ -58,6 +59,7 @@ async function saveSettings(updates: Partial<Settings>): Promise<{ settings: Set
 }
 
 export function useAdminSettings() {
+  const t = useTranslations()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'general' | 'security' | 'llm'>('general')
   const [formState, setFormState] = useState<Partial<Settings>>({})
@@ -89,11 +91,11 @@ export function useAdminSettings() {
     mutationFn: saveSettings,
     onSuccess: (res) => {
       queryClient.setQueryData(['admin', 'settings'], res)
-      toast({ title: 'Success', description: 'System settings saved successfully!', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.settingsSaved'), type: 'success' })
       setSavingProvider(null)
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message || 'Failed to save settings', type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.settingsSaveFailed'), type: 'error' })
       setSavingProvider(null)
     },
   })

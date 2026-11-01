@@ -4,6 +4,7 @@ import * as React from 'react'
 import { FileText, Loader2, UploadCloud } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizImportDropzoneProps {
   file: File | null
@@ -36,6 +37,7 @@ export function QuizImportDropzone({
   onSelectFile,
   onPreview,
 }: Readonly<QuizImportDropzoneProps>) {
+  const t = useTranslations()
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -47,7 +49,7 @@ export function QuizImportDropzone({
           disabled={downloading !== null}
           className="border-border text-card-foreground"
         >
-          {downloading === 'json' ? 'Downloading...' : 'Download sample (.json)'}
+          {downloading === 'json' ? t('quizImport.downloading') : t('quizImport.downloadJson')}
         </Button>
         <Button
           type="button"
@@ -57,7 +59,7 @@ export function QuizImportDropzone({
           disabled={downloading !== null}
           className="border-border text-card-foreground"
         >
-          {downloading === 'txt' ? 'Downloading...' : 'Download sample (.txt)'}
+          {downloading === 'txt' ? t('quizImport.downloading') : t('quizImport.downloadTxt')}
         </Button>
       </div>
 
@@ -89,15 +91,15 @@ export function QuizImportDropzone({
           <div className="space-y-1">
             <p className="font-bold text-sm text-primary">{file.name}</p>
             <p className="text-xs text-muted-foreground">
-              {(file.size / 1024).toFixed(1)} KB — Click or drag another file to replace
+              {t('quizImport.fileReplaceHint', { size: (file.size / 1024).toFixed(1) })}
             </p>
           </div>
         ) : (
           <div className="space-y-1">
             <p className="font-bold text-sm text-card-foreground">
-              Drag & drop a <span className="text-primary">.JSON</span> or <span className="text-primary">.TXT</span> file here
+              {t('quizImport.dropPrompt')} <span className="text-primary">.JSON</span> {t('common.or')} <span className="text-primary">.TXT</span> {t('quizImport.fileHere')}
             </p>
-            <p className="text-xs text-muted-foreground">Or click to select a file from your computer</p>
+            <p className="text-xs text-muted-foreground">{t('quizImport.selectFileHint')}</p>
           </div>
         )}
       </div>
@@ -113,10 +115,10 @@ export function QuizImportDropzone({
             {loading || preparingFile ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Processing preview...
+                {t('quizImport.processingPreview')}
               </span>
             ) : (
-              'Preview & Check Conflicts'
+              t('quizImport.previewConflicts')
             )}
           </Button>
         </div>

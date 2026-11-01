@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useToast } from '@/store/shared/toast-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 export type SettingsResponse = {
   settings: {
@@ -30,6 +31,10 @@ export const TIMEZONES = [
 
 export function useUserSettings() {
   const { toast } = useToast()
+  const { setLocale } = useLocale()
+  const t = useTranslations()
+  const tRef = useRef(t)
+  tRef.current = t
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -62,24 +67,25 @@ export function useUserSettings() {
         })
         if (!res.ok) {
           if (res.status === 404 || res.status === 501) {
-            toast.info('Settings page is under development. Coming soon.')
+            toast.info(tRef.current('settings.loadUnavailable'))
             return
           }
-          toast.error('Failed to load settings')
+          toast.error(tRef.current('settings.loadFailed'))
           return
         }
 
         const data = (await res.json()) as SettingsResponse
         setForm(data.settings)
+        setLocale(data.settings.language)
       } catch {
-        toast.error('System is busy, please try again')
+        toast.error(tRef.current('settings.systemBusy'))
       } finally {
         setLoading(false)
       }
     }
 
     run()
-  }, [toast])
+  }, [setLocale, toast])
 
   async function handleSave() {
     setSaving(true)
@@ -99,19 +105,20 @@ export function useUserSettings() {
 
       if (!res.ok) {
         if (res.status === 404 || res.status === 501) {
-          toast.info('Save settings feature is under development. Coming soon.')
+          toast.info(t('settings.saveUnavailable'))
           return
         }
         const data = await res.json().catch(() => ({}))
-        toast.error(data?.error ?? 'Failed to save settings')
+        toast.error(t('settings.saveFailed'))
         return
       }
 
       const data = (await res.json()) as SettingsResponse
       setForm(data.settings)
-      toast.success('Settings saved successfully')
+      setLocale(data.settings.language)
+      toast.success(t('settings.saved'))
     } catch {
-      toast.error('Unable to save settings at this time')
+      toast.error(t('settings.saveUnavailable'))
     } finally {
       setSaving(false)
     }
@@ -121,23 +128,23 @@ export function useUserSettings() {
     const errors: PasswordErrors = {}
 
     if (!passwordForm.currentPassword.trim()) {
-      errors.currentPassword = 'Please enter your current password'
+      errors.currentPassword = t('settings.enterCurrentPassword')
     }
 
     if (!passwordForm.newPassword) {
-      errors.newPassword = 'Please enter a new password'
+      errors.newPassword = t('settings.enterNewPassword')
     } else if (passwordForm.newPassword.length < 6) {
-      errors.newPassword = 'New password must be at least 6 characters long'
+      errors.newPassword = t('settings.passwordTooShort')
     } else if (passwordForm.newPassword.length > 50) {
-      errors.newPassword = 'New password is too long'
+      errors.newPassword = t('settings.passwordTooLong')
     } else if (passwordForm.currentPassword && passwordForm.currentPassword === passwordForm.newPassword) {
-      errors.newPassword = 'New password must be different from current password'
+      errors.newPassword = t('settings.passwordMustDiffer')
     }
 
     if (!passwordForm.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password'
+      errors.confirmPassword = t('settings.confirmPassword')
     } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      errors.confirmPassword = 'Confirmation password does not match'
+      errors.confirmPassword = t('settings.passwordMismatch')
     }
 
     setPasswordErrors(errors)
@@ -151,6 +158,11 @@ export function useUserSettings() {
 
   function togglePasswordVisibility(field: keyof PasswordForm) {
     setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }))
+  }
+
+  function changeLanguage(language: SettingsResponse['settings']['language']) {
+    setForm((prev) => ({ ...prev, language }))
+    setLocale(language)
   }
 
   async function handleChangePassword(event: React.FormEvent<HTMLFormElement>) {
@@ -174,23 +186,23 @@ export function useUserSettings() {
         if (data?.details) {
           setPasswordErrors(data.details as PasswordErrors)
           const firstError = Object.values(data.details).flat().find(Boolean)
-          toast.error(typeof firstError === 'string' ? firstError : 'Failed to change password')
+          toast.error(typeof firstError === 'string' ? firstError : t('settings.changePasswordFailed'))
           return
         }
 
         if (res.status === 401) {
-          setPasswordErrors({ currentPassword: data?.error ?? 'Current password is incorrect' })
+          setPasswordErrors({ currentPassword: t('settings.currentPasswordIncorrect') })
         }
-        toast.error(data?.error ?? 'Failed to change password')
+        toast.error(t('settings.changePasswordFailed'))
         return
       }
 
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setPasswordErrors({})
       setShowPasswords({ currentPassword: false, newPassword: false, confirmPassword: false })
-      toast.success('Password changed successfully. Please re-login on other devices if needed.')
+      toast.success(t('settings.passwordChanged'))
     } catch {
-      toast.error('Unable to change password at this time')
+      toast.error(t('settings.changePasswordUnavailable'))
     } finally {
       setChangingPassword(false)
     }
@@ -202,6 +214,7 @@ export function useUserSettings() {
     changingPassword,
     form,
     setForm,
+    changeLanguage,
     notificationsEnabled,
     passwordForm,
     passwordErrors,

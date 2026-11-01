@@ -5,14 +5,17 @@ import { Loader2 } from 'lucide-react'
 import { GeneralSettingsCard } from '@/components/settings/GeneralSettingsCard'
 import { PasswordSettingsCard } from '@/components/settings/PasswordSettingsCard'
 import { useUserSettings } from '@/hooks/useUserSettings'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function StudentSettingsPage() {
+  const t = useTranslations()
   const {
     loading,
     saving,
     changingPassword,
     form,
     setForm,
+    changeLanguage,
     notificationsEnabled,
     passwordForm,
     passwordErrors,
@@ -28,7 +31,7 @@ export default function StudentSettingsPage() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex items-center gap-3 text-primary">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm font-bold uppercase tracking-wider">Loading settings...</span>
+          <span className="text-sm font-bold uppercase tracking-wider">{t('settings.loading')}</span>
         </div>
       </div>
     )
@@ -39,13 +42,13 @@ export default function StudentSettingsPage() {
       {/* Header Banner */}
       <section className="rounded-xl sm:rounded-[28px] bg-primary text-primary-foreground p-4 sm:p-6 md:p-8 shadow-xl">
         <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] text-primary-foreground/70 font-extrabold">
-          Settings
+          {t('settings.title')}
         </p>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-primary-foreground mt-0.5 sm:mt-1">
-          Account Settings
+          {t('settings.accountSettings')}
         </h1>
         <p className="text-xs sm:text-sm text-primary-foreground/80 mt-1 sm:mt-2 max-w-2xl font-medium leading-relaxed">
-          Adjust language, notifications, and privacy preferences to suit your learning workflow.
+          {t('settings.description')}
         </p>
       </section>
 
@@ -56,6 +59,7 @@ export default function StudentSettingsPage() {
         notificationsEnabled={notificationsEnabled}
         saving={saving}
         onSave={handleSave}
+        onChangeLanguage={changeLanguage}
       />
 
       {/* Password Change */}

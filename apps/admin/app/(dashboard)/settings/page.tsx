@@ -6,8 +6,10 @@ import { useAdminSettings, DEFAULT_LLM_CONFIG } from '@/hooks/useAdminSettings'
 import { GeneralSettingsCard } from '@/components/settings/GeneralSettingsCard'
 import { SecuritySettingsCard } from '@/components/settings/SecuritySettingsCard'
 import { LLMSettingsCard } from '@/components/settings/LLMSettingsCard'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function AdminSettingsPage() {
+  const t = useTranslations()
   const {
     activeTab, setActiveTab,
     formState, setFormState,
@@ -32,8 +34,8 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">System Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage global parameters, security policies, and AI/LLM providers</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('adminSettings.title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('adminSettings.pageDescription')}</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -45,13 +47,13 @@ export default function AdminSettingsPage() {
         >
           <div className="flex items-center justify-between px-2 pb-1">
             {!isSidebarCollapsed && (
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Navigation</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('adminSettings.navigation')}</span>
             )}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors ml-auto hidden md:block cursor-pointer"
-              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={t(isSidebarCollapsed ? 'adminSettings.expandSidebar' : 'adminSettings.collapseSidebar')}
             >
               {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" aria-hidden="true" /> : <PanelLeftClose className="w-4 h-4" aria-hidden="true" />}
             </button>
@@ -59,32 +61,32 @@ export default function AdminSettingsPage() {
 
           <button
             onClick={() => setActiveTab('general')}
-            aria-label="General Settings"
+            aria-label={t('adminSettings.generalTabAria')}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
               ${activeTab === 'general' ? 'bg-primary text-primary-foreground shadow-sm font-semibold' : 'text-card-foreground hover:bg-muted hover:text-foreground'}`}
           >
             <SlidersHorizontal className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {!isSidebarCollapsed && <span>General</span>}
+            {!isSidebarCollapsed && <span>{t('adminSettings.generalTab')}</span>}
           </button>
 
           <button
             onClick={() => setActiveTab('security')}
-            aria-label="Security & Exams"
+            aria-label={t('adminSettings.securityTab')}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
               ${activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-sm font-semibold' : 'text-card-foreground hover:bg-muted hover:text-foreground'}`}
           >
             <ShieldAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {!isSidebarCollapsed && <span>Security &amp; Exams</span>}
+            {!isSidebarCollapsed && <span>{t('adminSettings.securityTab')}</span>}
           </button>
 
           <button
             onClick={() => setActiveTab('llm')}
-            aria-label="AI & LLM Settings"
+            aria-label={t('adminSettings.llmTabAria')}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-colors text-sm text-left cursor-pointer
               ${activeTab === 'llm' ? 'bg-primary text-primary-foreground shadow-sm font-semibold' : 'text-card-foreground hover:bg-muted hover:text-foreground'}`}
           >
             <Bot className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {!isSidebarCollapsed && <span>AI &amp; LLM</span>}
+            {!isSidebarCollapsed && <span>{t('adminSettings.llmTab')}</span>}
           </button>
         </div>
 

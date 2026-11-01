@@ -1,13 +1,9 @@
-import Link from 'next/link'
 import { connectDB } from '@/lib/db/mongodb'
 import { Category } from '@/lib/models/Category'
 import { Quiz } from '@/lib/models/Quiz'
 import { User } from '@/lib/models/User'
 import { QuizSession } from '@/lib/models/QuizSession'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Layers, FileQuestion, Users, ClipboardList, ArrowRight } from 'lucide-react'
-import { RecentRegistrationsTable } from '@/components/dashboard/RecentRegistrationsTable'
+import { AdminDashboardContent } from '@/components/dashboard/AdminDashboardContent'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,13 +32,6 @@ async function getDashboardData() {
   return { categoryCount, quizCount, userCount, sessionCount, recentUsers }
 }
 
-const statCards = [
-  { key: 'categories', label: 'Categories', icon: Layers, color: 'text-success-fg', bg: 'bg-success-bg' },
-  { key: 'quizzes', label: 'Quizzes', icon: FileQuestion, color: 'text-info-fg', bg: 'bg-info-bg' },
-  { key: 'users', label: 'Students', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-  { key: 'sessions', label: 'Exam Attempts', icon: ClipboardList, color: 'text-warning-fg', bg: 'bg-warning-bg' },
-] as const
-
 export default async function AdminDashboardPage() {
   const { categoryCount, quizCount, userCount, sessionCount, recentUsers } = await getDashboardData()
   const counts: Record<string, number> = {
@@ -52,53 +41,14 @@ export default async function AdminDashboardPage() {
     sessions: sessionCount,
   }
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Overview of key metrics and system activity across FQuiz</p>
-      </div>
+  const serializableUsers = recentUsers.map((user) => ({
+    _id: String(user._id),
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    created_at: new Date(user.created_at).toISOString(),
+  }))
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {statCards.map(({ key, label, icon: Icon, color, bg }) => (
-          <Card key={key} className="bg-card border-border shadow-xs hover:shadow-md transition-shadow text-card-foreground">
-            <CardContent className="pt-5 pb-5 flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-card-foreground">{counts[key]}</p>
-                <p className="text-xs font-medium text-muted-foreground mt-0.5">{label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Button asChild><Link href="/categories">Manage Categories</Link></Button>
-        <Button asChild><Link href="/quizzes">Manage Quizzes</Link></Button>
-        <Button asChild><Link href="/question-bank">Question Bank</Link></Button>
-        <Button asChild><Link href="/users">Manage Users</Link></Button>
-        <Button asChild variant="outline"><Link href="/settings">System Settings</Link></Button>
-      </div>
-
-      {/* Recent Registrations */}
-      <Card className="bg-card border-border shadow-xs text-card-foreground">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-foreground text-lg">Recent Registrations</CardTitle>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/users" className="flex items-center gap-1">
-              View all <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <RecentRegistrationsTable users={recentUsers} />
-        </CardContent>
-      </Card>
-    </div>
-  )
+  return <AdminDashboardContent counts={counts} recentUsers={serializableUsers} />
 }

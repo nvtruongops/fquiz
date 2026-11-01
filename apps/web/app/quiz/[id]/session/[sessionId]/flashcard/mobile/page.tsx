@@ -9,6 +9,7 @@ import { Button } from '@/components/shared/ui/button'
 import { MobileFlashcardView } from '@/components/quiz/flashcard/MobileFlashcardView'
 import { MobileFlashcardHeader } from '@/components/quiz/flashcard/MobileFlashcardHeader'
 import { MobileFlashcardModals } from '@/components/quiz/flashcard/MobileFlashcardModals'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function MobileFlashcardSessionPage() {
   const params = useParams<{ id?: string | string[]; sessionId?: string | string[] }>()
@@ -109,40 +110,43 @@ function MobileFlashcardLoadingState() {
 }
 
 function MobileFlashcardFailureState({ router }: { router: ReturnType<typeof useRouter> }) {
+  const t = useTranslations()
   return (
     <div className="h-[100dvh] flex items-center justify-center bg-background p-8">
       <Button
         onClick={() => router.push('/dashboard')}
         className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs"
       >
-        Back to Home
+        {t('common.backHome')}
       </Button>
     </div>
   )
 }
 
 function MobileFlashcardRetryNotice({ state, onRetryAnswer }: { state: MobileFlashcardSessionState; onRetryAnswer: () => void }) {
+  const t = useTranslations()
   if (!state.answerError || !state.failedAnswer) return null
   return (
     <div role="alert" aria-live="assertive" className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-      <p className="min-w-0">Couldn’t save your answer: {state.answerError.message}</p>
-      <Button type="button" variant="outline" aria-label="Retry saving this answer" disabled={state.isSubmitting} onClick={onRetryAnswer} className="h-11 shrink-0 rounded-lg border-destructive/40 px-3 font-bold text-destructive">
-        Retry
+      <p className="min-w-0">{t('flashcard.saveAnswerFailed')}</p>
+      <Button type="button" variant="outline" aria-label={t('flashcard.retrySavingAnswer')} disabled={state.isSubmitting} onClick={onRetryAnswer} className="h-11 shrink-0 rounded-lg border-destructive/40 px-3 font-bold text-destructive">
+        {t('common.tryAgain')}
       </Button>
     </div>
   )
 }
 
 function MobileFlashcardNavigationFooter({ state, effectiveTotal }: { state: MobileFlashcardSessionState; effectiveTotal: number }) {
+  const t = useTranslations()
   return (
     <footer className="sticky bottom-0 z-20 border-t-2 border-border bg-card p-3 shadow-lg flex-none">
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" disabled={state.actualIndex <= 0} onClick={state.handleBack} className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40">
           <ChevronLeft className="mr-1 h-5 w-5 text-primary" />
-          <span>Previous</span>
+          <span>{t('common.previous')}</span>
         </Button>
         <Button type="button" variant="outline" disabled={state.actualIndex >= effectiveTotal - 1} onClick={state.handleForward} className="h-12 flex-1 rounded-xl font-bold border-border text-foreground cursor-pointer disabled:opacity-40">
-          <span>Next</span>
+          <span>{t('common.next')}</span>
           <ChevronRight className="ml-1 h-5 w-5 text-primary" />
         </Button>
       </div>

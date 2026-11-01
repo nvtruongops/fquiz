@@ -9,6 +9,7 @@ export interface AuthUser {
   email?: string
   role: string
   avatarUrl?: string
+  language?: 'vi' | 'en'
   themePreference?: string
   theme_preference?: string
 }

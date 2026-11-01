@@ -3,6 +3,9 @@ import { create } from 'zustand'
 export interface AuthPromptOptions {
   title?: string
   description?: string
+  titleKey?: string
+  descriptionKey?: string
+  featureNameKey?: string
   featureName?: string
   targetUrl?: string
   /** Open sign-in/register in a new tab so the current page (e.g. an active exam) is never unloaded. */
@@ -13,6 +16,9 @@ interface AuthPromptStore {
   isOpen: boolean
   title: string
   description: string
+  titleKey: string
+  descriptionKey: string
+  featureNameKey: string
   featureName: string
   targetUrl: string
   newTab: boolean
@@ -20,22 +26,24 @@ interface AuthPromptStore {
   closeAuthPrompt: () => void
 }
 
-const DEFAULT_TITLE = 'Sign In Required'
-const DEFAULT_DESC =
-  'Please sign in or create an account to use this feature, track your study progress, and personalize your learning experience.'
-
 export const useAuthPrompt = create<AuthPromptStore>((set) => ({
   isOpen: false,
-  title: DEFAULT_TITLE,
-  description: DEFAULT_DESC,
+  title: '',
+  description: '',
+  titleKey: 'auth.signInRequired',
+  descriptionKey: 'auth.useFeaturePrompt',
+  featureNameKey: '',
   featureName: '',
   targetUrl: '',
   newTab: false,
   openAuthPrompt: (options = {}) =>
     set({
       isOpen: true,
-      title: options.title || DEFAULT_TITLE,
-      description: options.description || DEFAULT_DESC,
+      title: options.title || '',
+      description: options.description || '',
+      titleKey: options.titleKey || 'auth.signInRequired',
+      descriptionKey: options.descriptionKey || 'auth.useFeaturePrompt',
+      featureNameKey: options.featureNameKey || '',
       featureName: options.featureName || '',
       targetUrl: options.targetUrl || '/dashboard',
       newTab: options.newTab ?? false,
@@ -52,10 +60,9 @@ export const useAuthPrompt = create<AuthPromptStore>((set) => ({
  */
 export function promptSessionReauth(): void {
   useAuthPrompt.getState().openAuthPrompt({
-    title: 'Session Expired',
-    description:
-      'Your answers on this page are kept. Sign in again in the new tab, then come back here and retry.',
-    featureName: 'Session',
+    titleKey: 'auth.quizSessionExpired',
+    descriptionKey: 'auth.quizSessionExpiredDescription',
+    featureNameKey: 'auth.sessionFeature',
     targetUrl: '/dashboard',
     newTab: true,
   })

@@ -14,6 +14,7 @@ import { Scan, CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
 import { useQuestionBankMigration } from '@/hooks/question-bank/useQuestionBankMigration'
 import { StepIndicator } from './question-bank/migration/StepIndicator'
 import { MigrationScanReview } from './question-bank/migration/MigrationScanReview'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface Category {
   _id: string
@@ -25,6 +26,7 @@ interface QuestionBankMigrationProps {
 }
 
 export function QuestionBankMigration({ categories }: QuestionBankMigrationProps) {
+  const t = useTranslations()
   const {
     selectedCategory,
     setSelectedCategory,
@@ -46,47 +48,47 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-card-foreground">Question Bank Migration</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">{t('migration.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Scan and migrate questions from existing quizzes into the Question Bank
+          {t('migration.description')}
         </p>
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
         <StepIndicator
           number={1}
-          label="Select"
+          label={t('migration.select')}
           active={step === 'select'}
           completed={['scan', 'review', 'migrate'].includes(step)}
         />
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={2}
-          label="Scan"
+          label={t('migration.scan')}
           active={step === 'scan'}
           completed={['review', 'migrate'].includes(step)}
         />
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <StepIndicator
           number={3}
-          label="Review"
+          label={t('migration.review')}
           active={step === 'review'}
           completed={step === 'migrate'}
         />
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <StepIndicator number={4} label="Migrate" active={step === 'migrate'} completed={false} />
+        <StepIndicator number={4} label={t('migration.migrate')} active={step === 'migrate'} completed={false} />
       </div>
 
       {step === 'select' && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 1: Select Category</CardTitle>
-            <CardDescription>Select a category to scan and migrate questions into the Question Bank</CardDescription>
+            <CardTitle>{t('migration.stepSelectCategory')}</CardTitle>
+            <CardDescription>{t('migration.selectCategoryDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="-- Select category --" />
+                <SelectValue placeholder={t('migration.categoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -108,12 +110,12 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
               {scanning ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Scanning...
+                  {t('migration.scanning')}
                 </>
               ) : (
                 <>
                   <Scan className="h-4 w-4" />
-                  Scan Questions
+                  {t('migration.scanQuestions')}
                 </>
               )}
             </Button>
@@ -126,8 +128,8 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium">Scanning questions...</p>
-              <p className="text-sm text-muted-foreground">Category: {selectedCategoryName}</p>
+              <p className="text-lg font-medium">{t('migration.scanningQuestions')}</p>
+              <p className="text-sm text-muted-foreground">{t('migration.category', { name: selectedCategoryName || '' })}</p>
             </div>
           </CardContent>
         </Card>
@@ -152,9 +154,9 @@ export function QuestionBankMigration({ categories }: QuestionBankMigrationProps
           <CardContent className="py-12">
             <div className="flex flex-col items-center justify-center gap-4">
               <CheckCircle2 className="h-16 w-16 text-success-fg" />
-              <p className="text-2xl font-bold">Migration Completed!</p>
-              <p className="text-muted-foreground">Questions have been successfully migrated into the Question Bank</p>
-              <Button onClick={reset}>Migrate Another Category</Button>
+              <p className="text-2xl font-bold">{t('migration.completed')}</p>
+              <p className="text-muted-foreground">{t('migration.success')}</p>
+              <Button onClick={reset}>{t('migration.anotherCategory')}</Button>
             </div>
           </CardContent>
         </Card>

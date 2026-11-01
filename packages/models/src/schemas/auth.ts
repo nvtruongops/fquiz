@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const LoginSchema = z.object({
   identifier: z.string().min(1, 'Please enter your email or username'),
   password: z.string().min(1, 'Please enter your password'),
+  language: z.enum(['vi', 'en']).optional(),
 })
 
 export const RegisterSchema = z.object({
@@ -16,4 +17,5 @@ export const RegisterSchema = z.object({
     .string()
     .min(6, 'Password must be at least 6 characters')
     .max(50, 'Password is too long'),
+  language: z.enum(['vi', 'en']).optional(),
 })

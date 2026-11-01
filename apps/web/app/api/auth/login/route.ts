@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { identifier, password } = result.data
+    const { identifier, password, language } = result.data
     await connectDB()
 
     // Support login by email OR username
@@ -102,6 +102,11 @@ export async function POST(request: Request) {
       console.warn('[LoginRoute] Anti-sharing check failed:', antiSharingErr)
     }
 
+    if (language && user.language !== language) {
+      user.language = language
+      await user.save()
+    }
+
     const token = await signToken(user._id.toString(), user.role, user.token_version || 1, {
       username: user.username,
       avatarUrl: user.avatar_url || '',
@@ -123,6 +128,7 @@ export async function POST(request: Request) {
         name: user.username,
         role: user.role,
         avatarUrl: user.avatar_url || '',
+        language: user.language ?? language ?? 'vi',
         themePreference: user.theme_preference ?? user.themePreference ?? 'light',
       },
     }, { status: 200 })

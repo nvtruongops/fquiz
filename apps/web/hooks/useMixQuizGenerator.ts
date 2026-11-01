@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { MIX_QUIZ_MAX_SELECT } from '@/lib/modules/quiz/constants/mix-quiz'
 import { usePublicCategories } from '@/hooks/quiz/usePublicCategories'
@@ -74,6 +75,7 @@ export function useMixQuizGenerator(
 ) {
   const router = useRouter()
   const { toast } = useToast()
+  const t = useTranslations()
   const searchParams = useSearchParams()
 
   const categoryIdParam = searchParams.get('categoryId')
@@ -221,7 +223,7 @@ export function useMixQuizGenerator(
       const targetQuizId = data.quizId || 'mix'
       if (data.actual_count && data.actual_count < (questionCount ?? 0)) {
         setPoolWarning(
-          `Question pool only contains ${data.actual_count} questions — selected all available. Starting with ${data.actual_count} questions.`
+          t('mix.questionPoolLimited', { count: data.actual_count })
         )
         setTimeout(() => {
           if (onSessionCreated) onSessionCreated(targetQuizId, data.sessionId)
@@ -234,18 +236,18 @@ export function useMixQuizGenerator(
     },
     onError: (err: any) => {
       if (err.status === 401) {
-        toast.error('Please sign in to use the Mix Quiz feature.')
+        toast.error(t('mix.signInRequired'))
         return
       }
       if (err.status === 429) {
-        const msg = `You have created more than ${err.data?.limit ?? 5} Mix Quizzes in 1 hour.`
+        const msg = t('mix.rateLimit', { limit: err.data?.limit ?? 5 })
         setRateLimitReset(err.data?.reset ?? null)
         setRateLimitMsg(msg)
         toast.error(msg)
       } else if (err.status === 409 && err.data?.quotaExceeded) {
-        setQuotaErrorMsg(err.data.error || 'You have reached the maximum limit of 10 quizzes (custom + mixed). Please complete or delete old quizzes to continue.')
+        setQuotaErrorMsg(t('mix.quotaExceeded'))
       } else {
-        toast.error(err.data?.message || err.data?.error || err.message || 'An error occurred while creating the mix quiz')
+        toast.error(t('mix.createFailed'))
       }
     },
   })

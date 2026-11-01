@@ -9,6 +9,7 @@ import { FlashcardResultView } from '@/components/quiz/detail/FlashcardResultVie
 import { RetryWrongButton } from '@/components/quiz/detail/RetryWrongButton'
 import { GuestClaimBanner } from '@/components/quiz/detail/GuestClaimBanner'
 import { resolveAppBaseUrl } from '@/lib/core/utils/url-utils'
+import { QuizResultNotFound, QuizResultText } from '@/components/quiz/detail/QuizResultText'
 
 interface ResultQuestion {
   _id: string
@@ -61,28 +62,7 @@ export default async function QuizResultPage({ params }: Readonly<QuizResultPage
   const data = await getResult(sessionId)
 
   if (!data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="max-w-md w-full p-8 text-center bg-card rounded-2xl border border-border shadow-xl space-y-4">
-          <h2 className="text-xl font-black text-foreground">Result Not Found</h2>
-          <p className="text-xs font-medium text-muted-foreground">
-            The quiz session does not exist, has expired, or you do not have permission to view it.
-          </p>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <Link href="/dashboard">
-              <Button variant="outline" className="w-full h-10 rounded-xl text-xs font-bold border-border">
-                Back to Dashboard
-              </Button>
-            </Link>
-            <Link href="/explore">
-              <Button className="w-full h-10 rounded-xl text-xs font-black bg-primary text-primary-foreground">
-                Explore Quizzes
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
+    return <QuizResultNotFound />
   }
 
   if (data.mode === 'flashcard' && data.flashcard_stats) {
@@ -100,11 +80,11 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
   const scoreOnTenDisplay = scoreOnTen % 1 === 0 ? scoreOnTen.toFixed(0) : scoreOnTen.toFixed(1)
 
   const gradeColor = percentage >= 80 ? 'text-success-fg' : percentage >= 50 ? 'text-primary' : 'text-warning-fg'
-  const gradeLabel = percentage >= 80 ? 'EXCELLENT!' : percentage >= 50 ? 'GOOD JOB!' : 'KEEP PRACTICING!'
+  const gradeKey = percentage >= 80 ? 'quizResult.gradeExcellent' : percentage >= 50 ? 'quizResult.gradeGood' : 'quizResult.gradePractice'
 
   return (
     <div className="w-full max-w-full min-h-result-page md:h-full flex flex-col gap-3 overflow-hidden px-1 sm:px-0">
-      <h1 className="sr-only">Quiz results</h1>
+      <h1 className="sr-only"><QuizResultText messageKey="quizResult.title" /></h1>
       {/* Top Header Summary Card */}
       <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xs border border-border p-3.5 sm:px-5 sm:py-3.5 shrink-0 space-y-3">
         {/* Top Summary Row */}
@@ -116,15 +96,15 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
             </div>
             <div className="h-6 w-px bg-border" />
             <div className="min-w-0">
-              <p className="text-xs font-black text-foreground uppercase tracking-wider">{gradeLabel}</p>
+              <p className="text-xs font-black text-foreground uppercase tracking-wider"><QuizResultText messageKey={gradeKey} /></p>
               <p className="text-[11px] font-bold text-muted-foreground truncate">
-                {score}/{totalQuestions} correct · {percentage}%
+                <QuizResultText messageKey="quizResult.scoreSummary" values={{ score, total: totalQuestions, percentage }} />
               </p>
             </div>
           </div>
 
           <Badge variant="outline" className="shrink-0 bg-primary/10 text-primary border-primary/25 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full">
-            {mode === 'immediate' ? 'PRACTICE' : 'EXAM'}
+            <QuizResultText messageKey={mode === 'immediate' ? 'quizResult.practice' : 'quizResult.exam'} />
           </Badge>
         </div>
 
@@ -141,20 +121,20 @@ function StandardResultView({ quizId, sessionId, data }: { quizId: string; sessi
 
           <Link href={`/quiz/${quizId}`} className="w-full sm:w-auto">
             <Button className="h-9 sm:h-8 w-full px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs sm:text-[11px] uppercase tracking-wider shadow-2xs transition-all active:scale-95 cursor-pointer justify-center">
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Retake Entire Quiz
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5 shrink-0" /> <QuizResultText messageKey="quizResult.retakeEntireQuiz" />
             </Button>
           </Link>
 
           <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <Link href={is_guest ? "/explore" : "/dashboard"} className="w-full sm:w-auto">
               <Button variant="outline" className="h-9 sm:h-8 w-full px-3 rounded-xl border-border font-bold text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
-                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5 shrink-0" /> {is_guest ? "Explore" : "Dashboard"}
+                <LayoutDashboard className="mr-1.5 h-3.5 w-3.5 shrink-0" /> <QuizResultText messageKey={is_guest ? 'common.exploreQuizzes' : 'dashboard.title'} />
               </Button>
             </Link>
 
             <Link href="/history" className="w-full sm:w-auto">
               <Button variant="outline" className="h-9 sm:h-8 w-full px-3 rounded-xl border-border font-bold text-xs sm:text-[11px] uppercase tracking-wider hover:bg-muted transition-all active:scale-95 cursor-pointer justify-center text-muted-foreground bg-muted/30">
-                <BookOpen className="mr-1.5 h-3.5 w-3.5 shrink-0" /> History
+                <BookOpen className="mr-1.5 h-3.5 w-3.5 shrink-0" /> <QuizResultText messageKey="quizResult.history" />
               </Button>
             </Link>
           </div>

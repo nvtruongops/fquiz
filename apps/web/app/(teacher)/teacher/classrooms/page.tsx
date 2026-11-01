@@ -7,8 +7,10 @@ import { School, Plus, FileText } from 'lucide-react'
 import { useTeacherClassrooms } from '@/hooks/useTeacherClassrooms'
 import { ClassroomsGridList } from '@/components/teacher/classrooms/ClassroomsGridList'
 import { TeacherClassroomModals } from '@/components/teacher/classrooms/TeacherClassroomModals'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function TeacherClassroomsPage() {
+  const t = useTranslations()
   const {
     classrooms,
     totalQuizzes,
@@ -59,15 +61,15 @@ export default function TeacherClassroomsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
-              Teacher Dashboard
+              {t('teacherQuiz.dashboard')}
             </span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-card-foreground flex items-center gap-3">
             <School className="w-8 h-8 text-primary" />
-            Classroom Management &amp; Instruction
+            {t('teacherClassrooms.managementTitle')}
           </h1>
           <p className="text-sm font-medium text-muted-foreground mt-1">
-            Create and manage classrooms, issue join codes to students, and assign quizzes from the FQuiz bank.
+            {t('teacherClassrooms.managementDescription')}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -76,14 +78,14 @@ export default function TeacherClassroomsPage() {
               variant="outline"
               className="border-primary/30 text-primary hover:bg-primary/10 font-bold gap-2 rounded-xl h-11 px-4 transition-all"
             >
-              <FileText className="w-5 h-5" /> Quiz Management
+              <FileText className="w-5 h-5" /> {t('teacherClassrooms.quizManagement')}
             </Button>
           </Link>
           <Button
             onClick={() => setCreateModalOpen(true)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 font-bold gap-2 rounded-xl h-11 px-5 transition-all cursor-pointer"
           >
-            <Plus className="w-5 h-5" /> Create New Classroom
+            <Plus className="w-5 h-5" /> {t('teacherClassrooms.createClassroom')}
           </Button>
         </div>
       </div>

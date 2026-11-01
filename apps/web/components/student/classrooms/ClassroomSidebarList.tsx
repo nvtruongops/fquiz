@@ -10,6 +10,7 @@ import {
 } from '@/components/shared/ui/dropdown-menu'
 import { Users, Pin, PinOff, LogOut, MoreVertical } from 'lucide-react'
 import type { Classroom } from '@/hooks/useStudentClassrooms'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ClassroomSidebarListProps {
   classrooms: Classroom[]
@@ -26,11 +27,12 @@ export function ClassroomSidebarList({
   onTogglePin,
   onConfirmLeave,
 }: ClassroomSidebarListProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-3.5">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <Users className="w-4 h-4 text-primary" /> Enrolled Classrooms ({classrooms.length})
+          <Users className="w-4 h-4 text-primary" /> {t('studentClassrooms.enrolledCount', { count: classrooms.length })}
         </h2>
       </div>
 
@@ -66,7 +68,7 @@ export function ClassroomSidebarList({
                       </CardTitle>
                     </div>
                     <p className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
-                      Class Code: <span className="text-card-foreground font-mono">{c.code}</span>
+                      {t('studentClassrooms.classCode')} <span className="text-card-foreground font-mono">{c.code}</span>
                     </p>
                   </div>
                 </div>
@@ -86,14 +88,14 @@ export function ClassroomSidebarList({
                       className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold cursor-pointer text-card-foreground"
                     >
                       {c.is_pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
-                      <span className="text-xs">{c.is_pinned ? 'Unpin classroom' : 'Pin to top'}</span>
+                      <span className="text-xs">{c.is_pinned ? t('studentClassrooms.unpin') : t('studentClassrooms.pin')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onConfirmLeave(c._id)}
                       className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold text-rose-600 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 text-rose-600" />
-                      <span className="text-xs">Leave classroom</span>
+                      <span className="text-xs">{t('studentClassrooms.leave')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

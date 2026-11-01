@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function PendingAnswerIndicator({
   mode,
@@ -11,11 +12,12 @@ export function PendingAnswerIndicator({
   isPending: boolean
   showImmediateFeedback: boolean
 }) {
+  const t = useTranslations()
   if (mode !== 'immediate' || !submitted || !isPending) return null
 
   return (
     <p role="status" aria-live="polite" className="sr-only">
-      {showImmediateFeedback ? 'Saving answer…' : 'Checking answer…'}
+      {t(showImmediateFeedback ? 'session.savingAnswer' : 'session.checkingAnswer')}
     </p>
   )
 }

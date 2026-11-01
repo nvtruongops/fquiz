@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2, ArrowLeft, Send, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ForgotPasswordFormFieldsProps {
   email: string
@@ -55,6 +56,7 @@ export function ForgotPasswordFormFields({
   onVerifyCode,
   onResetPassword,
 }: ForgotPasswordFormFieldsProps) {
+  const t = useTranslations()
   const inputClasses =
     'w-full rounded-2xl border-2 px-4 py-3.5 text-[14px] outline-none transition-all duration-300 font-medium border-border bg-card/80 text-card-foreground placeholder:text-muted-foreground hover:border-border/80 focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary/10 shadow-2xs'
 
@@ -64,10 +66,10 @@ export function ForgotPasswordFormFields({
 
       <div className="mb-6 text-center sm:text-left">
         <h1 className="text-2xl sm:text-[32px] font-black text-card-foreground tracking-tight leading-tight">
-          Reset Password
+          {t('auth.resetPassword')}
         </h1>
         <p className="text-muted-foreground mt-2 text-sm font-medium">
-          Enter your email to receive a verification code and set a new password.
+          {t('auth.resetPasswordIntro')}
         </p>
       </div>
 
@@ -75,7 +77,7 @@ export function ForgotPasswordFormFields({
       <form onSubmit={onSendCode} noValidate className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="email" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
-            Registered Email
+            {t('auth.registeredEmail')}
           </label>
           <div className="relative">
             <input
@@ -84,7 +86,7 @@ export function ForgotPasswordFormFields({
               autoComplete="email"
               value={email}
               onChange={(e) => onSetEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('auth.registerEmail')}
               disabled={verified}
               className={cn(inputClasses, verified && 'opacity-60 cursor-not-allowed bg-muted')}
             />
@@ -103,7 +105,7 @@ export function ForgotPasswordFormFields({
               <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" />
             ) : (
               <>
-                <span className="tracking-wide drop-shadow-2xs">Send Verification Code</span>
+                <span className="tracking-wide drop-shadow-2xs">{t('auth.sendVerificationCode')}</span>
                 <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform drop-shadow-2xs" />
               </>
             )}
@@ -116,7 +118,7 @@ export function ForgotPasswordFormFields({
         <form onSubmit={onVerifyCode} noValidate className="mt-4 space-y-4 pt-4 border-t border-border">
           <div className="space-y-1">
             <label htmlFor="code" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
-              Verification Code (6 digits)
+              {t('auth.verificationCodeSix')}
             </label>
             <input
               id="code"
@@ -137,14 +139,14 @@ export function ForgotPasswordFormFields({
               disabled={sendingCode}
               className="flex-1 py-3 bg-muted text-foreground hover:bg-muted/80 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
             >
-              {sendingCode ? 'Resending...' : 'Resend Code'}
+              {sendingCode ? t('auth.resending') : t('auth.resendCode')}
             </button>
             <button
               type="submit"
               disabled={verifyingCode}
               className="flex-1 py-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
             >
-              {verifyingCode ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Verify'}
+              {verifyingCode ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t('auth.verify')}
             </button>
           </div>
         </form>
@@ -155,7 +157,7 @@ export function ForgotPasswordFormFields({
         <form onSubmit={onResetPassword} noValidate className="mt-4 space-y-4 pt-4 border-t border-border">
           <div className="space-y-1">
             <label htmlFor="newPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
-              New Password
+              {t('auth.newPassword')}
             </label>
             <div className="relative">
               <input
@@ -178,7 +180,7 @@ export function ForgotPasswordFormFields({
 
           <div className="space-y-1">
             <label htmlFor="confirmPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">
-              Confirm Password
+              {t('auth.confirmPassword')}
             </label>
             <div className="relative">
               <input
@@ -209,7 +211,7 @@ export function ForgotPasswordFormFields({
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />
-                <span>Reset Password</span>
+                <span>{t('auth.resetPassword')}</span>
               </>
             )}
           </button>
@@ -223,10 +225,10 @@ export function ForgotPasswordFormFields({
           className="group inline-flex items-center gap-1.5 text-muted-foreground font-bold hover:text-foreground transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Sign In</span>
+          <span>{t('auth.backToSignIn')}</span>
         </Link>
         <Link href="/register" className="font-bold text-primary hover:underline transition-colors">
-          Create New Account
+          {t('auth.createNewAccount')}
         </Link>
       </div>
     </div>

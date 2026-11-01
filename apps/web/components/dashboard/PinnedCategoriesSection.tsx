@@ -4,12 +4,14 @@ import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Pin } from 'lucide-react'
 import type { PinnedCategoryItem } from '@/hooks/useStudentDashboard'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface PinnedCategoriesSectionProps {
   categories: PinnedCategoryItem[]
 }
 
 export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSection({ categories }: PinnedCategoriesSectionProps) {
+  const t = useTranslations()
   if (!categories || categories.length === 0) return null
 
   return (
@@ -17,13 +19,13 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
       <header className="flex items-center justify-between gap-3">
         <h2 id="pinned-subjects-title" className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
           <Pin aria-hidden="true" className="h-4 w-4 text-primary" />
-          Pinned subjects
+          {t('dashboard.pinnedSubjects')}
         </h2>
         <Link
           href="/explore"
           className="flex min-h-11 shrink-0 items-center rounded-lg px-2 text-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          Manage
+          {t('common.manage')}
         </Link>
       </header>
 
@@ -41,7 +43,7 @@ export const PinnedCategoriesSection = React.memo(function PinnedCategoriesSecti
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-foreground">{category.name}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {category.quizCount} {category.quizCount === 1 ? 'quiz' : 'quizzes'}
+                  {t('dashboard.quizCount', { count: category.quizCount })}
                 </span>
               </span>
               <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />

@@ -16,6 +16,7 @@ import {
   type BankCheckResult,
   type UseQuizImportOptions,
 } from '@/hooks/quiz/useQuizImport'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export type { ImportedQuestion, ImportedQuiz, ImportDiagnostic, ImportPreviewResponse, BankCheckResult }
 
@@ -50,6 +51,33 @@ export function QuizImportPanel({
   courseCode,
   description,
 }: Readonly<Props>) {
+  const t = useTranslations()
+  const getDiagnosticText = (item: ImportDiagnostic) => {
+    switch (item.code) {
+      case 'NO_QUESTIONS': return t('quizImport.diagNoQuestions')
+      case 'UNKNOWN_TOP_LEVEL_FIELD': return t('quizImport.diagUnknownTopField', { field: item.message.split(': ').slice(1).join(': ') })
+      case 'MISSING_QUIZ_META': return t('quizImport.diagMissingMetadata')
+      case 'UNKNOWN_QUIZ_META_FIELD': return t('quizImport.diagUnknownMetadataField', { field: item.message.split(': ').slice(1).join(': ') })
+      case 'INVALID_QUESTIONS_ARRAY': return t('quizImport.diagQuestionsNotArray')
+      case 'MISSING_COURSE_CODE': return t('quizImport.diagMissingCourseCode')
+      case 'COURSE_CODE_TOO_LONG': return t('diagnostic.courseCodeTooLong')
+      case 'INVALID_COURSE_CODE': return t('diagnostic.courseCodeInvalid')
+      case 'MISSING_CATEGORY_ID': return t('quizImport.diagMissingCategory')
+      case 'MISSING_DESCRIPTION': return t('quizImport.diagMissingDescription')
+      case 'CATEGORY_ID_NOT_OBJECT_ID': return t('quizImport.diagInvalidCategory')
+      case 'UNKNOWN_QUESTION_FIELD': return t('quizImport.diagUnknownQuestionField', { field: item.message.split(': ').slice(1).join(': ') })
+      case 'MISSING_QUESTION_TEXT': return t('diagnostic.questionTextRequired')
+      case 'INSUFFICIENT_OPTIONS': return t('quizImport.diagInsufficientOptions')
+      case 'INVALID_CORRECT_ANSWER_TOKEN': return t('quizImport.diagInvalidAnswerToken')
+      case 'MISSING_CORRECT_ANSWER': return t('diagnostic.questionMissingAnswer')
+      case 'CORRECT_ANSWER_OUT_OF_RANGE': return t('quizImport.diagAnswerOutOfRange')
+      case 'DUPLICATE_CORRECT_ANSWER': return t('quizImport.diagDuplicateAnswers')
+      case 'EMPTY_OPTION_IN_MIDDLE': return t('diagnostic.optionGap')
+      case 'DUPLICATE_OPTION': return t('diagnostic.questionDuplicateOption')
+      case 'DUPLICATE_QUESTION': return t('quizImport.diagDuplicateQuestion')
+      default: return t('quizImport.diagGeneric')
+    }
+  }
   const {
     file,
     fileSnapshot,
@@ -90,7 +118,7 @@ export function QuizImportPanel({
       <CardHeader className="pb-3">
         <CardTitle className="text-primary text-lg flex items-center gap-2">
           <Upload className="w-4 h-4" />
-          Upload JSON/TXT Quiz
+          {t('quizImport.uploadQuiz')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -144,18 +172,18 @@ export function QuizImportPanel({
             {checkingBank && (
               <div className="flex items-center gap-2 text-xs text-info-fg bg-info-bg border border-info-border rounded-md p-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Checking question bank...
+                {t('quizImport.checkingBank')}
               </div>
             )}
 
-            {bankCheck && /(Ch\u01B0a ch\u1ECDn m\u00F4n h\u1ECDc|No subject selected)/i.test(bankCheck.summary) && (
+            {bankCheck && !categoryId && (
               <div className="bg-warning-bg border border-warning-border rounded-md p-3">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-warning-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-warning-fg mb-1">No Subject Selected</p>
+                    <p className="font-bold text-warning-fg mb-1">{t('quizImport.noSubject')}</p>
                     <p className="text-warning-fg">
-                      Please select a subject above before uploading files to check for duplicate questions in the Question Bank.
+                      {t('quizImport.selectSubject')}
                     </p>
                   </div>
                 </div>
@@ -177,22 +205,22 @@ export function QuizImportPanel({
                   <CheckCircle2 className="w-4 h-4 text-warning-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
                     <p className="font-bold text-warning-fg mb-1">
-                      ✓ {bankCheck.same_answer_conflicts} questions already in question bank
+                      ✓ {t('quizImport.alreadyInBank', { count: bankCheck.same_answer_conflicts })}
                     </p>
                     <p className="text-warning-fg">
-                      These questions already exist with matching answers. Safe to reuse.
+                      {t('quizImport.reusableQuestions')}
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {bankCheck && bankCheck.conflicts_found === 0 && !/(Ch\u01B0a ch\u1ECDn m\u00F4n h\u1ECDc|No subject selected)/i.test(bankCheck.summary) && (
+            {bankCheck && bankCheck.conflicts_found === 0 && Boolean(categoryId) && (
               <div className="bg-success-bg border border-success-border rounded-md p-3">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-success-fg flex-shrink-0 mt-0.5" />
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-success-fg">✅ All questions are new</p>
+                    <p className="font-bold text-success-fg">{t('quizImport.allNew')}</p>
                   </div>
                 </div>
               </div>
@@ -208,8 +236,8 @@ export function QuizImportPanel({
                     <CheckCircle2 className="w-3.5 h-3.5 text-warning-fg mt-0.5" />
                   )}
                   <span className={item.level === 'error' ? 'text-destructive' : 'text-warning-fg'}>
-                    {item.questionIndex === undefined ? '' : `Question ${item.questionIndex + 1}: `}
-                    {item.message}
+                    {item.questionIndex === undefined ? '' : `${t('quizImport.question', { number: item.questionIndex + 1 })}: `}
+                    {getDiagnosticText(item)}
                   </span>
                 </div>
               ))}
@@ -228,12 +256,12 @@ export function QuizImportPanel({
                   {confirmingConflicts ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Synchronizing...
+                      {t('quizImport.synchronizing')}
                     </span>
                   ) : conflictsConfirmed ? (
-                    'Choices Confirmed'
+                    t('quizImport.choicesConfirmed')
                   ) : (
-                    'Confirm Answer Choices'
+                    t('quizImport.confirmChoices')
                   )}
                 </Button>
               )}
@@ -251,10 +279,10 @@ export function QuizImportPanel({
                 {applying ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Applying...
+                    {t('quizImport.applying')}
                   </span>
                 ) : (
-                  'Apply to Form'
+                  t('quizImport.applyToForm')
                 )}
               </Button>
             </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
+import { enUS, vi } from 'date-fns/locale'
 import {
   Heart, MessageSquare, Clock, Trash2, ChevronDown, ChevronUp, Eye, Loader2
 } from 'lucide-react'
@@ -10,6 +11,7 @@ import { Input } from '@/components/shared/ui/input'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface CommunityPostCardProps {
   post: any
@@ -46,6 +48,8 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   setCommentContent,
   isAuthLoading,
 }: CommunityPostCardProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   const isLiked = userId ? post.likes?.includes(userId) : false
   const isExpanded = expandedPostId === post._id
   const { openAuthPrompt } = useAuthPrompt()
@@ -93,7 +97,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                   disabled={deletePostMutation.isPending}
                   className="px-2.5 py-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground text-[11px] font-bold rounded-lg transition-colors shrink-0"
                 >
-                  {deletePostMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Delete post'}
+                  {deletePostMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : t('community.deletePost')}
                 </button>
                 <button
                   onClick={(e) => {
@@ -102,7 +106,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                   }}
                   className="px-2.5 py-1 bg-muted hover:bg-muted/80 text-muted-foreground text-[11px] font-bold rounded-lg transition-colors shrink-0"
                 >
-                  Cancel
+                  {t('community.cancel')}
                 </button>
               </motion.div>
             ) : null}
@@ -112,7 +116,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
               e.stopPropagation()
               setConfirmingDeletePostId(post._id)
             }}
-            title="Delete post"
+            title={t('community.deletePost')}
             className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 shrink-0"
           >
             <Trash2 className="w-4 h-4" />
@@ -142,7 +146,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           <div>
             <p className="text-xs font-bold text-foreground">{post.authorName}</p>
             <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3 text-muted-foreground" /> {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+              <Clock className="w-3 h-3 text-muted-foreground" /> {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: locale === 'vi' ? vi : enUS })}
             </p>
           </div>
         </div>
@@ -153,16 +157,16 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
               e.stopPropagation()
               if (!userId) {
                 openAuthPrompt({
-                  featureName: 'Like Post',
-                  title: 'Sign in to like post',
-                  description: 'Please sign in or create an account to react and interact with the FQuiz community.',
+                  featureName: t('community.likePost'),
+                  title: t('community.signInLike'),
+                  description: t('community.authLikeDescription'),
                   targetUrl: '/community',
                 })
                 return
               }
               toggleLikeMutation.mutate(post._id)
             }}
-            title={userId ? (isLiked ? 'Unlike' : 'Like') : 'Sign in to like'}
+            title={userId ? (isLiked ? t('community.unlike') : t('community.like')) : t('community.signInToLike')}
             className={cn(
               "flex items-center gap-1 px-2 py-1 rounded-xl transition-all cursor-pointer text-xs font-bold",
               isLiked ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -177,7 +181,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
             <span>{post.comments?.length || 0}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold px-2 py-1" title="Views">
+          <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold px-2 py-1" title={t('community.views')}>
             <Eye className="w-4 h-4 text-muted-foreground" />
             <span>{post.views?.length || 0}</span>
           </div>
@@ -218,6 +222,8 @@ function PostExpandedDetails({
 }: any) {
   const [confirmingDeleteCommentId, setConfirmingDeleteCommentId] = useState<string | null>(null)
   const { openAuthPrompt } = useAuthPrompt()
+  const t = useTranslations()
+  const { locale } = useLocale()
 
   return (
     <motion.div
@@ -235,12 +241,12 @@ function PostExpandedDetails({
 
         <div className="space-y-3">
           <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
-            Comments ({post.comments?.length || 0})
+            {t('community.comments', { count: post.comments?.length || 0 })}
           </h4>
 
           {post.comments?.length === 0 ? (
             <p className="text-muted-foreground font-medium text-center py-4 text-xs bg-muted/50 rounded-2xl">
-              No comments yet. Be the first to reply!
+              {t('community.noComments')}
             </p>
           ) : (
             <div className="space-y-2.5">
@@ -255,7 +261,7 @@ function PostExpandedDetails({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground font-medium">
-                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: locale === 'vi' ? vi : enUS })}
                       </span>
                       {userId && (String(comment.authorId) === String(userId) || authRole === 'admin') && (
                         <div className="relative flex items-center shrink-0">
@@ -278,7 +284,7 @@ function PostExpandedDetails({
                                 >
                                   {deleteCommentMutation.isPending ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : 'Delete'}
+                                  ) : t('community.delete')}
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -287,7 +293,7 @@ function PostExpandedDetails({
                                   }}
                                   className="px-2 py-0.5 bg-muted text-muted-foreground text-[10px] font-bold rounded-md transition-colors shrink-0"
                                 >
-                                  Cancel
+                                  {t('community.cancel')}
                                 </button>
                               </motion.div>
                             ) : null}
@@ -297,7 +303,7 @@ function PostExpandedDetails({
                               e.stopPropagation()
                               setConfirmingDeleteCommentId(confirmingDeleteCommentId === comment._id ? null : comment._id)
                             }}
-                            title="Delete comment"
+                            title={t('community.deleteComment')}
                             className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -331,7 +337,7 @@ function PostExpandedDetails({
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                placeholder="Write a comment... (Press Enter to post)"
+                placeholder={t('community.writeComment')}
                 className="h-10 text-xs font-medium rounded-xl border border-border bg-card text-card-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary focus:border-primary placeholder:text-muted-foreground"
               />
               <Button
@@ -345,7 +351,7 @@ function PostExpandedDetails({
                 }}
                 className="h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold px-4 shrink-0 cursor-pointer"
               >
-                {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post'}
+                {createCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('community.post')}
               </Button>
             </div>
           ) : (
@@ -354,15 +360,15 @@ function PostExpandedDetails({
               onClick={(e) => {
                 e.stopPropagation()
                 openAuthPrompt({
-                  featureName: 'Comment',
-                  title: 'Sign in to comment',
-                  description: 'Please sign in or create an account to join the discussion and share insights with the FQuiz community.',
+                  featureName: t('community.commentFeature'),
+                  title: t('community.signInComment'),
+                  description: t('community.authCommentDescription'),
                   targetUrl: '/community',
                 })
               }}
               className="w-full text-xs font-bold text-primary hover:text-primary/90 block text-center py-2.5 bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/20 transition-all cursor-pointer"
             >
-              Sign in to join the discussion
+              {t('community.joinDiscussion')}
             </button>
           )}
         </div>

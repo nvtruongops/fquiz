@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from 'react'
 import { useToast } from '@/store/shared/toast-store'
 import { WifiOff } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function NetworkStatusNotification() {
   const { toast } = useToast()
+  const t = useTranslations()
   const [isOffline, setIsOffline] = useState(false)
 
   useEffect(() => {
@@ -14,9 +16,9 @@ export function NetworkStatusNotification() {
     const handleOffline = () => {
       setIsOffline(true)
       toast.warning(
-        'Unable to connect to the Internet. Quiz progress or data saving may be interrupted.',
+        t('network.offlineMessage'),
         {
-          title: 'No Internet Connection',
+          title: t('network.offlineTitle'),
           duration: 10000,
         }
       )
@@ -24,8 +26,8 @@ export function NetworkStatusNotification() {
 
     const handleOnline = () => {
       setIsOffline(false)
-      toast.success('Internet connection has been restored.', {
-        title: 'Back Online',
+      toast.success(t('network.onlineMessage'), {
+        title: t('network.onlineTitle'),
         duration: 4000,
       })
     }
@@ -42,7 +44,7 @@ export function NetworkStatusNotification() {
       window.removeEventListener('offline', handleOffline)
       window.removeEventListener('online', handleOnline)
     }
-  }, [toast])
+  }, [toast, t])
 
   if (!isOffline) return null
 
@@ -53,7 +55,7 @@ export function NetworkStatusNotification() {
       className="fixed top-3 inset-x-0 mx-auto w-fit max-w-[92vw] px-4 py-2 rounded-full bg-amber-500/95 text-white backdrop-blur-xl shadow-xl border border-amber-400/40 flex items-center gap-2.5 z-[120] text-xs font-black tracking-tight animate-in fade-in slide-in-from-top-2 duration-300"
     >
       <WifiOff className="w-3.5 h-3.5 animate-pulse shrink-0" aria-hidden="true" />
-      <span>You are offline. Please check your network connection.</span>
+      <span>{t('network.offlineBanner')}</span>
     </div>
   )
 }

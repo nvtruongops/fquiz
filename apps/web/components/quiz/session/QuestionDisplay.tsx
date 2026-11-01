@@ -8,6 +8,7 @@ import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 import { usePinnedQuestions } from '@/hooks/quiz/usePinnedQuestions'
 import { InteractiveText } from '@/components/shared/selection/InteractiveText'
 import { handleArrowOptionNavigation } from '@/components/quiz/option-keyboard-navigation'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuestionDisplayProps {
   question: SessionQuestion
@@ -199,17 +200,19 @@ function StandardAnswerOption({ question, index, isSingleAnswer, isSelected, isF
 }
 
 function StandardAnswerNavigation({ currentIndex, totalQuestions, navigationDisabled, onNavigate }: Pick<QuestionDisplayProps, 'currentIndex' | 'totalQuestions' | 'navigationDisabled' | 'onNavigate'>) {
+  const t = useTranslations()
   return (
     <div className="mt-4 flex items-center justify-center gap-1.5">
-      <button type="button" onClick={() => onNavigate?.(currentIndex - 1)} disabled={navigationDisabled || currentIndex === 0} className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs">Back</button>
-      <button type="button" onClick={() => onNavigate?.(currentIndex + 1)} disabled={navigationDisabled || currentIndex === totalQuestions - 1} className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs">Next</button>
+      <button type="button" onClick={() => onNavigate?.(currentIndex - 1)} disabled={navigationDisabled || currentIndex === 0} className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs">{t('questionUI.back')}</button>
+      <button type="button" onClick={() => onNavigate?.(currentIndex + 1)} disabled={navigationDisabled || currentIndex === totalQuestions - 1} className="px-2.5 py-1 rounded border border-border bg-card text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-none shadow-2xs">{t('questionUI.next')}</button>
     </div>
   )
 }
 
 function StandardAnswerOptions({ question, selectedOptions, focusedOption, isSingleAnswer, isDisabled, onSelectOption }: Pick<QuestionDisplayProps, 'question' | 'selectedOptions' | 'focusedOption' | 'onSelectOption'> & { isSingleAnswer: boolean; isDisabled: boolean }) {
+  const t = useTranslations()
   return (
-    <div role={isSingleAnswer ? 'radiogroup' : 'group'} aria-label={isSingleAnswer ? 'Choose one answer' : 'Choose all correct answers'} className="space-y-3 flex flex-col items-center justify-start pt-2">
+    <div role={isSingleAnswer ? 'radiogroup' : 'group'} aria-label={isSingleAnswer ? t('questionUI.chooseOneAria') : t('questionUI.chooseAllAria')} className="space-y-3 flex flex-col items-center justify-start pt-2">
       {question.options.map((_, index) => (
         <StandardAnswerOption
           key={index} question={question} index={index} isSingleAnswer={isSingleAnswer}
@@ -236,10 +239,11 @@ function StandardAnswerPanel({ question, selectedOptions, focusedOption, showImm
   onSelectOption: (index: number) => void
   leftWidth: number
 }) {
+  const t = useTranslations()
   const isDisabled = showImmediateFeedback || submitted || isPending
   return (
     <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full flex flex-col p-3 border-r border-border bg-muted/20 overflow-y-auto">
-      <h3 className="text-sm font-bold text-center text-blue-800 dark:text-blue-400 mb-3">Answer</h3>
+      <h3 className="text-sm font-bold text-center text-blue-800 dark:text-blue-400 mb-3">{t('questionUI.answer')}</h3>
       <StandardAnswerOptions question={question} selectedOptions={selectedOptions} focusedOption={focusedOption} isSingleAnswer={isSingleAnswer} isDisabled={isDisabled} onSelectOption={onSelectOption} />
       <StandardAnswerNavigation currentIndex={currentIndex} totalQuestions={totalQuestions} navigationDisabled={navigationDisabled} onNavigate={onNavigate} />
     </div>
@@ -259,8 +263,9 @@ function getStandardOptionInteraction(isDisabled: boolean, isNoteActive: boolean
 }
 
 function StandardOptionFeedback({ isCorrect, isWrongSelected }: { isCorrect: boolean; isWrongSelected: boolean }) {
-  if (isCorrect) return <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0 animate-in fade-in duration-200"><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5" /> Correct answer</span>
-  if (isWrongSelected) return <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0 animate-in fade-in duration-200"><XCircle aria-hidden="true" className="w-3.5 h-3.5" /> Your answer is incorrect</span>
+  const t = useTranslations()
+  if (isCorrect) return <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-fg bg-background/90 px-2 py-0.5 rounded border border-success-border shrink-0 animate-in fade-in duration-200"><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5" /> {t('questionUI.correctAnswer')}</span>
+  if (isWrongSelected) return <span className="inline-flex items-center gap-1 text-[11px] font-bold text-incorrect-fg bg-background/90 px-2 py-0.5 rounded border border-incorrect-border shrink-0 animate-in fade-in duration-200"><XCircle aria-hidden="true" className="w-3.5 h-3.5" /> {t('questionUI.incorrectAnswer')}</span>
   return null
 }
 
@@ -305,6 +310,7 @@ function StandardOptionMarker({ letter, isCorrect, isWrongSelected }: { letter: 
 }
 
 function StandardOption({ question, index, isSingleAnswer, selectedOptions, showImmediateFeedback, correctAnswerSet, submitted, isPending, isNoteMode, onSelectOption }: Pick<QuestionDisplayProps, 'question' | 'selectedOptions' | 'showImmediateFeedback' | 'submitted' | 'isPending' | 'isNoteMode' | 'onSelectOption'> & { index: number; isSingleAnswer: boolean; correctAnswerSet: number[] }) {
+  const t = useTranslations()
   const { isSelected, isCorrect, isWrongSelected, isDisabled, isNoteActive } = getStandardOptionState(index, { selectedOptions, showImmediateFeedback, correctAnswerSet, submitted, isPending, isNoteMode })
   const letter = String.fromCodePoint(65 + index)
   return (
@@ -314,7 +320,7 @@ function StandardOption({ question, index, isSingleAnswer, selectedOptions, show
       role={isSingleAnswer ? 'radio' : 'checkbox'}
       aria-checked={isSelected}
       tabIndex={getOptionTabIndex(isSingleAnswer, isSelected, selectedOptions.length, index)}
-      aria-label={`Option ${letter}: ${question.options[index]}`}
+      aria-label={t('questionUI.option', { letter, text: question.options[index] })}
       onKeyDown={isSingleAnswer ? (event) => handleStandardOptionArrowKeyDown(event, index, question.options.length, onSelectOption) : undefined}
       disabled={isDisabled}
       onClick={() => handleStandardOptionClick(isDisabled, isNoteActive, index, onSelectOption)}
@@ -339,11 +345,12 @@ function StandardQuestionHeader({ question, safeDisplayIndex, totalQuestions, re
   handleTogglePin: () => void
   courseCode?: string
 }) {
+  const t = useTranslations()
   return (
     <div className="flex items-center justify-start gap-3 flex-wrap pb-2 border-b border-border w-full">
-      <span className="text-xs font-bold text-foreground">Question {safeDisplayIndex}/{totalQuestions}</span>
-      <span className="text-[11px] text-muted-foreground italic">{requiredSelectionCount === 1 ? '(Choose 1 answer)' : `(Choose ${requiredSelectionCount} answers)`}</span>
-      <button type="button" onClick={handleTogglePin} disabled={togglePinMutation.isPending} className="text-xs text-muted-foreground hover:text-foreground font-medium underline">{isPinned ? 'Unpin' : 'Pin question'}</button>
+      <span className="text-xs font-bold text-foreground">{t('questionUI.questionNumber', { current: safeDisplayIndex, total: totalQuestions })}</span>
+      <span className="text-[11px] text-muted-foreground italic">{requiredSelectionCount === 1 ? t('questionUI.chooseOne') : t('questionUI.chooseMany', { count: requiredSelectionCount })}</span>
+      <button type="button" onClick={handleTogglePin} disabled={togglePinMutation.isPending} className="text-xs text-muted-foreground hover:text-foreground font-medium underline">{isPinned ? t('questionUI.unpin') : t('questionUI.pin')}</button>
       <UsageBadge count={question.usage_count} used_in_quizzes={question.used_in_quizzes} currentCourseCode={courseCode} />
     </div>
   )
@@ -359,14 +366,15 @@ function StandardQuestionPane({ props, requiredSelectionCount, safeDisplayIndex,
   isSingleAnswer: boolean
   correctAnswerSet: number[]
 }) {
+  const t = useTranslations()
   const { question, totalQuestions, courseCode } = props
   return (
     <div className="flex-1 min-w-0 h-full overflow-y-auto p-4 sm:p-6 space-y-4">
       <StandardQuestionHeader question={question} safeDisplayIndex={safeDisplayIndex} totalQuestions={totalQuestions} requiredSelectionCount={requiredSelectionCount} isPinned={isPinned} togglePinMutation={togglePinMutation} handleTogglePin={handleTogglePin} courseCode={courseCode} />
       <div className="max-w-3xl w-full space-y-4">
         <p className="whitespace-pre-wrap text-sm sm:text-base font-normal leading-relaxed text-foreground question-option-font"><InteractiveText content={question.text} sourceType="quiz" sourceId={question._id} /></p>
-        {question.image_url && <div className="my-3 border border-border bg-muted/20 p-2 rounded"><img src={question.image_url} alt="Question illustration" className="max-h-[360px] w-auto object-contain" /></div>}
-        <div role={isSingleAnswer ? 'radiogroup' : 'group'} aria-label={isSingleAnswer ? 'Choose one answer' : 'Choose all correct answers'} className="space-y-2.5 pt-2">
+        {question.image_url && <div className="my-3 border border-border bg-muted/20 p-2 rounded"><img src={question.image_url} alt={t('questionUI.questionIllustration')} className="max-h-[360px] w-auto object-contain" /></div>}
+        <div role={isSingleAnswer ? 'radiogroup' : 'group'} aria-label={isSingleAnswer ? t('questionUI.chooseOneAria') : t('questionUI.chooseAllAria')} className="space-y-2.5 pt-2">
           {question.options.map((_, index) => <StandardOption key={index} question={question} index={index} isSingleAnswer={isSingleAnswer} selectedOptions={props.selectedOptions} showImmediateFeedback={props.showImmediateFeedback} correctAnswerSet={correctAnswerSet} submitted={props.submitted} isPending={props.isPending} isNoteMode={props.isNoteMode} onSelectOption={props.onSelectOption} />)}
         </div>
       </div>
@@ -375,18 +383,20 @@ function StandardQuestionPane({ props, requiredSelectionCount, safeDisplayIndex,
 }
 
 function StandardExamFooter({ wantFinish, setWantFinish, onSubmit, submitDisabled, isPending, onExit }: Pick<QuestionDisplayProps, 'onSubmit' | 'submitDisabled' | 'isPending' | 'onExit'> & { wantFinish: boolean; setWantFinish: (value: boolean) => void }) {
+  const t = useTranslations()
   return (
     <div className="shrink-0 border-t border-border px-4 py-2 bg-card text-foreground font-sans text-xs flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-1.5 cursor-pointer text-xs select-none"><input type="checkbox" checked={wantFinish} onChange={(event) => setWantFinish(event.target.checked)} className="w-3.5 h-3.5 rounded-xs accent-blue-600 cursor-pointer" /><span>I want to finish the exam.</span></label>
-        <button type="button" onClick={onSubmit} disabled={!wantFinish || isPending || submitDisabled} className="px-3 py-1 rounded border border-border bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-none">Finish Exam</button>
+        <label className="flex items-center gap-1.5 cursor-pointer text-xs select-none"><input type="checkbox" checked={wantFinish} onChange={(event) => setWantFinish(event.target.checked)} className="w-3.5 h-3.5 rounded-xs accent-blue-600 cursor-pointer" /><span>{t('questionUI.finishPrompt')}</span></label>
+        <button type="button" onClick={onSubmit} disabled={!wantFinish || isPending || submitDisabled} className="px-3 py-1 rounded border border-border bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-none">{t('questionUI.finishExam')}</button>
       </div>
-      {onExit && <button type="button" onClick={onExit} className="px-3 py-1 rounded border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-none">Exit</button>}
+      {onExit && <button type="button" onClick={onExit} className="px-3 py-1 rounded border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-none">{t('questionUI.exit')}</button>}
     </div>
   )
 }
 
 function StandardQuestionView(props: QuestionDisplayProps) {
+  const t = useTranslations()
   const [wantFinish, setWantFinish] = React.useState(false)
   const { leftWidth, containerRef, handleMouseDown } = useResizableQuestionPanel()
   const state = useQuestionDisplayState(props)
@@ -394,7 +404,7 @@ function StandardQuestionView(props: QuestionDisplayProps) {
     <div ref={containerRef} className="flex flex-col h-full w-full overflow-hidden bg-background text-foreground question-option-font">
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         <StandardAnswerPanel question={props.question} selectedOptions={props.selectedOptions} focusedOption={props.focusedOption} showImmediateFeedback={props.showImmediateFeedback} isPending={props.isPending} submitted={props.submitted} isSingleAnswer={state.isSingleAnswer} currentIndex={props.currentIndex} totalQuestions={props.totalQuestions} navigationDisabled={props.navigationDisabled} onNavigate={props.onNavigate} onSelectOption={props.onSelectOption} leftWidth={leftWidth} />
-        <div onMouseDown={handleMouseDown} className="w-1.5 shrink-0 h-full bg-red-600 hover:bg-red-500 cursor-col-resize select-none transition-colors" title="Drag to resize columns" />
+        <div onMouseDown={handleMouseDown} className="w-1.5 shrink-0 h-full bg-red-600 hover:bg-red-500 cursor-col-resize select-none transition-colors" title={t('questionUI.resizeColumns')} />
         <StandardQuestionPane props={props} requiredSelectionCount={state.requiredSelectionCount} safeDisplayIndex={state.safeDisplayIndex} isPinned={state.isPinned} togglePinMutation={state.togglePinMutation} handleTogglePin={state.handleTogglePin} isSingleAnswer={state.isSingleAnswer} correctAnswerSet={state.correctAnswerSet} />
       </div>
       <StandardExamFooter wantFinish={wantFinish} setWantFinish={setWantFinish} onSubmit={props.onSubmit} submitDisabled={props.submitDisabled} isPending={props.isPending} onExit={props.onExit} />
@@ -486,12 +496,14 @@ function getAnimatedOptionMarkerClasses(state: AnimatedOptionState) {
 }
 
 function AnimatedOptionFeedback({ isCorrect, isWrongSelected }: Pick<AnimatedOptionState, 'isCorrect' | 'isWrongSelected'>) {
-  if (isCorrect) return <span className="inline-flex items-center gap-1 text-xs font-bold text-success-fg bg-background/90 px-2.5 py-1 rounded-md border border-success-border shrink-0 animate-in zoom-in duration-300 shadow-xs"><CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Correct answer</span>
-  if (isWrongSelected) return <span className="inline-flex items-center gap-1 text-xs font-bold text-incorrect-fg bg-background/90 px-2.5 py-1 rounded-md border border-incorrect-border shrink-0 animate-in zoom-in duration-300 shadow-xs"><XCircle aria-hidden="true" className="w-4 h-4" /> Your answer is incorrect</span>
+  const t = useTranslations()
+  if (isCorrect) return <span className="inline-flex items-center gap-1 text-xs font-bold text-success-fg bg-background/90 px-2.5 py-1 rounded-md border border-success-border shrink-0 animate-in zoom-in duration-300 shadow-xs"><CheckCircle2 aria-hidden="true" className="w-4 h-4" /> {t('questionUI.correctAnswer')}</span>
+  if (isWrongSelected) return <span className="inline-flex items-center gap-1 text-xs font-bold text-incorrect-fg bg-background/90 px-2.5 py-1 rounded-md border border-incorrect-border shrink-0 animate-in zoom-in duration-300 shadow-xs"><XCircle aria-hidden="true" className="w-4 h-4" /> {t('questionUI.incorrectAnswer')}</span>
   return null
 }
 
 function AnimatedQuestionOption({ question, option, index, selectedOptions, isSingleAnswer, showImmediateFeedback, correctAnswerSet, focusedOption, isPending, submitted, isNoteMode, onSelectOption }: Pick<QuestionDisplayProps, 'question' | 'selectedOptions' | 'showImmediateFeedback' | 'focusedOption' | 'isPending' | 'submitted' | 'isNoteMode' | 'onSelectOption'> & { option: string; index: number; isSingleAnswer: boolean; correctAnswerSet: number[] }) {
+  const t = useTranslations()
   const state = getAnimatedOptionState(index, { selectedOptions, showImmediateFeedback, correctAnswerSet, focusedOption, isPending, submitted, isNoteMode })
   const letter = String.fromCodePoint(65 + index)
   const handleClick = () => handleStandardOptionClick(state.isAnswerDisabled, state.isNoteActive, index, onSelectOption)
@@ -502,7 +514,7 @@ function AnimatedQuestionOption({ question, option, index, selectedOptions, isSi
       role={isSingleAnswer ? 'radio' : 'checkbox'}
       aria-checked={state.isSelected}
       tabIndex={getOptionTabIndex(isSingleAnswer, state.isSelected, selectedOptions.length, index)}
-      aria-label={`Option ${letter}: ${option}`}
+      aria-label={t('questionUI.option', { letter, text: option })}
       onKeyDown={isSingleAnswer ? (event) => handleStandardOptionArrowKeyDown(event, index, question.options.length, onSelectOption) : undefined}
       onClick={handleClick}
       disabled={state.isAnswerDisabled}
@@ -535,6 +547,7 @@ function AnimatedQuestionView({
   focusedOption,
   isNoteMode,
 }: QuestionDisplayProps) {
+  const t = useTranslations()
   const { requiredSelectionCount, isSingleAnswer, correctAnswerSet, safeDisplayIndex, isPinned, togglePinMutation, handleTogglePin } = useQuestionDisplayState({
     question, currentIndex, totalQuestions, showImmediateFeedback, lastAnswerResult, courseCode, quizTitle, quizId,
   })
@@ -545,10 +558,10 @@ function AnimatedQuestionView({
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-border pb-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs sm:text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 shadow-2xs">
-              Question {safeDisplayIndex}/{totalQuestions}
+              {t('questionUI.questionNumber', { current: safeDisplayIndex, total: totalQuestions })}
             </span>
             <span className="text-xs text-muted-foreground italic font-medium">
-              {requiredSelectionCount === 1 ? '(Choose 1 answer)' : `(Choose ${requiredSelectionCount} answers)`}
+              {requiredSelectionCount === 1 ? t('questionUI.chooseOne') : t('questionUI.chooseMany', { count: requiredSelectionCount })}
             </span>
           </div>
 
@@ -570,7 +583,7 @@ function AnimatedQuestionView({
               )}
             >
               <Bookmark aria-hidden="true" className={cn("w-3.5 h-3.5 transition-transform", isPinned && "fill-current scale-110")} />
-              <span>{isPinned ? 'Pinned' : 'Pin question'}</span>
+              <span>{isPinned ? t('questionUI.pinned') : t('questionUI.pin')}</span>
             </button>
           </div>
         </div>
@@ -580,7 +593,7 @@ function AnimatedQuestionView({
           <div className="mb-4 flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold animate-in fade-in zoom-in-95 duration-200">
             <span className="flex items-center gap-2">
               <PenTool aria-hidden="true" className="w-4 h-4 text-amber-500 animate-bounce" />
-              <span>Vocabulary Lookup Mode is active: Highlight text to look up definitions (option selection is paused).</span>
+              <span>{t('questionUI.vocabularyMode')}</span>
             </span>
           </div>
         )}
@@ -594,7 +607,7 @@ function AnimatedQuestionView({
             <div className="flex min-h-[220px] max-h-question-image w-full items-center justify-center overflow-hidden rounded-lg bg-background">
               <img
                 src={question.image_url}
-                alt="Question illustration"
+                alt={t('questionUI.questionIllustration')}
                 className="h-full max-h-question-image w-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
             </div>
@@ -603,7 +616,7 @@ function AnimatedQuestionView({
 
         <div
           role={isSingleAnswer ? 'radiogroup' : 'group'}
-          aria-label={isSingleAnswer ? 'Choose one answer' : 'Choose all correct answers'}
+          aria-label={isSingleAnswer ? t('questionUI.chooseOneAria') : t('questionUI.chooseAllAria')}
           className="mt-6 space-y-3"
         >
           {question.options.map((option, index) => (
@@ -629,21 +642,23 @@ function AnimatedQuestionView({
   )
 }
 
-function getAnswerAnnouncement(props: QuestionDisplayProps) {
+function getAnswerAnnouncement(props: QuestionDisplayProps, t: ReturnType<typeof useTranslations>) {
   if (!props.showImmediateFeedback || !props.lastAnswerResult) return ''
-  const status = props.lastAnswerResult.isCorrect ? 'Correct' : 'Incorrect'
-  return `Question ${props.currentIndex + 1}: ${status}.`
+  const status = props.lastAnswerResult.isCorrect ? t('questionUI.statusCorrect') : t('questionUI.statusIncorrect')
+  return t('questionUI.announcement', { number: props.currentIndex + 1, status })
 }
 
 function QuestionDisplayContent(props: QuestionDisplayProps) {
+  const t = useTranslations()
   if (!props.question || !Array.isArray(props.question.options)) {
-    return <div className="flex h-full items-center justify-center p-6 text-muted-foreground font-medium">Preparing question...</div>
+    return <div className="flex h-full items-center justify-center p-6 text-muted-foreground font-medium">{t('questionUI.preparing')}</div>
   }
   return props.enableAnimation ? <AnimatedQuestionView {...props} /> : <StandardQuestionView {...props} />
 }
 
 export const QuestionDisplay = React.memo(function QuestionDisplay(props: QuestionDisplayProps) {
-  const answerAnnouncement = getAnswerAnnouncement(props)
+  const t = useTranslations()
+  const answerAnnouncement = getAnswerAnnouncement(props, t)
   return (
     <>
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/shared/ui/dialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface DesktopFlashcardViewProps {
   quizId: string
@@ -275,12 +276,13 @@ function DesktopFlashcardGate({ data, interactions, presentation }: {
   interactions: ReturnType<typeof useDesktopFlashcardInteractions>
   presentation: DesktopFlashcardPresentation
 }) {
+  const t = useTranslations()
   if (data.isLoading && !data.session) {
     return (
       <QuizLoadingOverlay
         isOpen={true}
         progress={presentation.sessionLoader.progress}
-        status={presentation.sessionLoader.status || 'Preparing flashcards...'}
+        status={presentation.sessionLoader.status || t('desktopFlashcard.preparing')}
       />
     )
   }
@@ -288,16 +290,16 @@ function DesktopFlashcardGate({ data, interactions, presentation }: {
   return <DesktopFlashcardRouteStatus data={data} interactions={interactions} presentation={presentation} />
 }
 
-function FlashcardSessionErrorState({ error, router }: {
-  error: NonNullable<FlashcardSessionState['error']>
+function FlashcardSessionErrorState({ router }: {
   router: ReturnType<typeof useRouter>
 }) {
+  const t = useTranslations()
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="p-6 max-w-md w-full text-center">
-        <h2 className="text-xl font-semibold mb-4">An error occurred</h2>
-        <p className="text-muted-foreground mb-6">{error.message || 'Unable to load session'}</p>
-        <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
+        <h2 className="text-xl font-semibold mb-4">{t('desktopFlashcard.errorOccurred')}</h2>
+        <p className="text-muted-foreground mb-6">{t('desktopFlashcard.unableSession')}</p>
+        <Button onClick={() => router.push('/dashboard')}>{t('desktopFlashcard.dashboard')}</Button>
       </Card>
     </div>
   )
@@ -308,8 +310,9 @@ function DesktopFlashcardRouteStatus({ data, interactions, presentation }: {
   interactions: ReturnType<typeof useDesktopFlashcardInteractions>
   presentation: DesktopFlashcardPresentation
 }) {
+  const t = useTranslations()
   if (data.error) {
-    return <FlashcardSessionErrorState error={data.error} router={presentation.router} />
+    return <FlashcardSessionErrorState router={presentation.router} />
   }
 
   const { session, question } = data
@@ -317,9 +320,9 @@ function DesktopFlashcardRouteStatus({ data, interactions, presentation }: {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-6 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold mb-4">No data found</h2>
-          <p className="text-muted-foreground mb-6">Unable to load question details</p>
-          <Button onClick={() => presentation.router.push('/dashboard')}>Return to Dashboard</Button>
+          <h2 className="text-xl font-semibold mb-4">{t('desktopFlashcard.noData')}</h2>
+          <p className="text-muted-foreground mb-6">{t('desktopFlashcard.unableQuestion')}</p>
+          <Button onClick={() => presentation.router.push('/dashboard')}>{t('desktopFlashcard.dashboard')}</Button>
         </Card>
       </div>
     )
@@ -339,11 +342,12 @@ function FlashcardAnswerRetryCard({ answerError, isSubmitting, onRetry }: {
   isSubmitting: boolean
   onRetry: () => void
 }) {
+  const t = useTranslations()
   return (
     <Card className="mt-4 flex w-full max-w-2xl items-center justify-between gap-4 p-4" role="alert">
-      <p className="text-sm text-destructive">{answerError.message || 'Unable to save answer.'}</p>
+      <p className="text-sm text-destructive">{answerError.message || t('desktopFlashcard.unableSave')}</p>
       <Button onClick={onRetry} disabled={isSubmitting} size="sm">
-        {isSubmitting ? 'Retrying…' : 'Retry answer'}
+        {isSubmitting ? t('desktopFlashcard.retrying') : t('desktopFlashcard.retryAnswer')}
       </Button>
     </Card>
   )
@@ -364,6 +368,7 @@ function DesktopFlashcardReadyView({ data, interactions, presentation }: {
   interactions: ReturnType<typeof useDesktopFlashcardInteractions>
   presentation: DesktopFlashcardPresentation
 }) {
+  const t = useTranslations()
   const { session, question, isSubmitting, answerError, failedAnswer, enableAnimation, setEnableAnimation, actualIndex, taggedStatus } = data
   const {
     flashcardRef,
@@ -402,7 +407,7 @@ function DesktopFlashcardReadyView({ data, interactions, presentation }: {
             className="rounded-full bg-card hover:bg-muted text-muted-foreground hover:text-foreground border-border shadow-xs text-xs font-bold gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Exit</span>
+            <span>{t('desktopFlashcard.exit')}</span>
           </Button>
 
           <Dialog open={showGuideModal} onOpenChange={setShowGuideModal}>
@@ -413,33 +418,33 @@ function DesktopFlashcardReadyView({ data, interactions, presentation }: {
                 className="rounded-full text-muted-foreground hover:text-foreground text-xs font-semibold gap-1"
               >
                 <Info className="w-4 h-4" />
-                <span className="hidden sm:inline">Shortcuts</span>
+                <span className="hidden sm:inline">{t('desktopFlashcard.shortcuts')}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md bg-card text-card-foreground border-border">
               <DialogHeader>
                 <DialogTitle className="text-base font-black flex items-center gap-2">
                   <Lightbulb className="w-4 h-4 text-warning-fg" />
-                  Keyboard Shortcuts
+                  {t('desktopFlashcard.keyboardShortcuts')}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 pt-2 text-xs font-medium text-muted-foreground">
                 <div className="flex justify-between py-1.5 border-b border-border">
-                  <span>Flip card (Front / Back)</span>
+                  <span>{t('desktopFlashcard.flipCard')}</span>
                   <kbd className="px-2 py-0.5 bg-muted rounded font-mono font-bold text-foreground">
-                    Space
+                    {t('desktopFlashcard.spaceKey')}
                   </kbd>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-border">
-                  <span>Still Learning (Review again)</span>
+                  <span>{t('desktopFlashcard.stillLearning')}</span>
                   <kbd className="px-2 py-0.5 bg-muted rounded font-mono font-bold text-foreground">
-                    1 or ←
+                    {t('desktopFlashcard.reviewKeys')}
                   </kbd>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-border">
-                  <span>Mastered (Know it)</span>
+                  <span>{t('desktopFlashcard.mastered')}</span>
                   <kbd className="px-2 py-0.5 bg-muted rounded font-mono font-bold text-foreground">
-                    2 or →
+                    {t('desktopFlashcard.masterKeys')}
                   </kbd>
                 </div>
               </div>
@@ -450,18 +455,18 @@ function DesktopFlashcardReadyView({ data, interactions, presentation }: {
         {/* Toggles */}
         <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>Effects</span>
+            <span>{t('desktopFlashcard.effects')}</span>
             <Switch
-              aria-label="Effects"
+              aria-label={t('desktopFlashcard.effects')}
               checked={enableAnimation}
               onCheckedChange={setEnableAnimation}
               className="data-[state=checked]:bg-primary"
             />
           </div>
           <div className="flex items-center gap-2">
-            <span>Explanation</span>
+            <span>{t('desktopFlashcard.explanation')}</span>
             <Switch
-              aria-label="Explanation"
+              aria-label={t('desktopFlashcard.explanation')}
               checked={enableExplanation}
               onCheckedChange={setEnableExplanation}
               className="data-[state=checked]:bg-primary"

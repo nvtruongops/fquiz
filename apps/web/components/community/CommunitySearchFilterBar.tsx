@@ -3,6 +3,7 @@
 import React from 'react'
 import { Input } from '@/components/shared/ui/input'
 import { Search, Tag } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CommunitySearchFilterBarProps {
   searchQuery: string
@@ -15,6 +16,7 @@ export const CommunitySearchFilterBar = React.memo(function CommunitySearchFilte
   setSearchQuery,
   availableTags = [],
 }: CommunitySearchFilterBarProps) {
+  const t = useTranslations()
   // Deduplicate and filter out empty strings
   const tagsToDisplay = Array.from(new Set(availableTags.map(t => t.trim()).filter(Boolean)))
 
@@ -25,7 +27,7 @@ export const CommunitySearchFilterBar = React.memo(function CommunitySearchFilte
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search discussions, titles, topics..."
+          placeholder={t('community.searchPlaceholder')}
           className="pl-11 h-11 rounded-2xl border-2 border-input text-xs font-semibold focus:border-primary bg-card text-foreground placeholder:text-muted-foreground"
         />
       </div>
@@ -33,7 +35,7 @@ export const CommunitySearchFilterBar = React.memo(function CommunitySearchFilte
       {tagsToDisplay.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 shrink-0">
-            <Tag className="w-3 h-3" /> Popular tags:
+            <Tag className="w-3 h-3" /> {t('community.popularTags')}
           </span>
           {tagsToDisplay.map((t) => {
             const isActive = searchQuery.toLowerCase() === t.toLowerCase()

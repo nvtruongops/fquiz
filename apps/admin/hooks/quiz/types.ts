@@ -53,6 +53,14 @@ export interface ParsedFilePreview {
 }
 
 export interface QuizDiagnosticError {
+  code:
+    | 'MISSING_CATEGORY'
+    | 'MISSING_CODE'
+    | 'DUPLICATE_CODE'
+    | 'MISSING_QUESTION'
+    | 'MISSING_OPTIONS'
+    | 'MISSING_ANSWER'
+    | 'DUPLICATE_QUESTION'
   message: string
   questionIndex?: number
 }

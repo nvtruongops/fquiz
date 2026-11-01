@@ -11,8 +11,10 @@ import { QuizActionCard } from '@/components/quiz/detail/QuizActionCard'
 import { QuizDetailErrorView } from '@/components/quiz/detail/QuizDetailErrorView'
 import { QuizDetailSkeleton } from '@/components/quiz/detail/QuizDetailSkeleton'
 import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function QuizDetailPage() {
+  const t = useTranslations()
   const {
     router,
     resolvedQuizId,
@@ -60,7 +62,7 @@ export default function QuizDetailPage() {
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
               type="button"
-              aria-label="Back to quiz list"
+              aria-label={t('quizDetail.backToList')}
               onClick={() => {
                 if (baseCourseCode) {
                   router.push(`/courses/${baseCourseCode}`)
@@ -73,7 +75,7 @@ export default function QuizDetailPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-card hover:bg-muted text-foreground border border-border shadow-xs text-xs font-bold transition-all hover:-translate-x-1 active:translate-x-0 cursor-pointer group shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" aria-hidden="true" />
-              <span>Back</span>
+              <span>{t('common.back')}</span>
             </button>
 
             <QuizStats numQuestions={quiz?.num_questions ?? 0} numAttempts={quiz?.num_attempts ?? 0} />

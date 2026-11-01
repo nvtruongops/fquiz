@@ -11,6 +11,7 @@ import {
 } from '@/components/shared/ui/dialog'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileFlashcardModalsProps {
   questionMapOpen: boolean
@@ -33,6 +34,7 @@ export function MobileFlashcardModals({
   onSelectIndex,
   onConfirmExit,
 }: Readonly<MobileFlashcardModalsProps>) {
+  const t = useTranslations()
   return (
     <>
       {/* Question Map Modal (Card list) */}
@@ -40,7 +42,7 @@ export function MobileFlashcardModals({
         <DialogContent className="max-w-xs rounded-2xl p-5">
           <DialogHeader>
             <DialogTitle className="text-center text-base font-black text-foreground">
-              Flashcard Question List
+              {t('flashcard.questionListTitle')}
             </DialogTitle>
           </DialogHeader>
           <div className="my-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -73,7 +75,7 @@ export function MobileFlashcardModals({
               onClick={() => setQuestionMapOpen(false)}
               className="w-full h-10 rounded-xl font-bold"
             >
-              Close
+              {t('common.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -84,10 +86,10 @@ export function MobileFlashcardModals({
         <DialogContent className="max-w-xs rounded-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-black text-foreground">
-              Exit Flashcard?
+              {t('flashcard.exitConfirmTitle')}
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Your review progress will be saved automatically. You can continue anytime.
+              {t('flashcard.exitConfirmDescription')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2">
@@ -96,7 +98,7 @@ export function MobileFlashcardModals({
               onClick={onConfirmExit}
               className="w-full bg-rose-600 py-5 font-bold text-white hover:bg-rose-700 rounded-xl"
             >
-              Exit Session
+              {t('flashcard.exitSession')}
             </Button>
             <Button
               type="button"
@@ -104,7 +106,7 @@ export function MobileFlashcardModals({
               onClick={() => setExitConfirmOpen(false)}
               className="w-full py-5 font-bold text-muted-foreground"
             >
-              Stay & Continue
+              {t('flashcard.stayContinue')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Compass, Flame } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import type { ActivityItem } from '@/hooks/useStudentDashboard'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface DashboardPrimaryActionProps {
   item: ActivityItem | null
@@ -15,6 +16,7 @@ export const DashboardPrimaryAction = React.memo(function DashboardPrimaryAction
 })
 
 function StartPracticeAction() {
+  const t = useTranslations()
   return (
     <section aria-labelledby="start-practice-title" className="rounded-xl border border-border bg-card p-4 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -23,16 +25,16 @@ function StartPracticeAction() {
             <Compass aria-hidden="true" className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-muted-foreground">Your next step</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('dashboard.nextStep')}</p>
             <h2 id="start-practice-title" className="mt-1 text-base font-semibold tracking-tight text-foreground">
-              Start practicing
+              {t('dashboard.startPracticing')}
             </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">Choose a subject and find a quiz that fits.</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{t('dashboard.chooseSubject')}</p>
           </div>
         </div>
         <Button asChild size="sm" className="h-11 min-h-[44px] w-full shrink-0 rounded-lg px-4 font-semibold shadow-sm shadow-primary/25 sm:w-auto">
           <Link href="/explore">
-            Find a quiz <ArrowRight aria-hidden="true" className="ml-1.5 h-4 w-4" />
+            {t('dashboard.findQuiz')} <ArrowRight aria-hidden="true" className="ml-1.5 h-4 w-4" />
           </Link>
         </Button>
       </div>
@@ -41,6 +43,7 @@ function StartPracticeAction() {
 }
 
 function ResumeQuizAction({ item }: { item: ActivityItem }) {
+  const t = useTranslations()
   const { answeredCount, totalCount, progressPercent } = getResumeProgress(item)
 
   return (
@@ -52,7 +55,7 @@ function ResumeQuizAction({ item }: { item: ActivityItem }) {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="text-xs font-semibold text-warning-fg">In progress</span>
+              <span className="text-xs font-semibold text-warning-fg">{t('dashboard.inProgress')}</span>
               <QuizCode item={item} />
             </div>
             <h2 id="resume-quiz-title" className="mt-1 truncate text-base font-semibold tracking-tight text-foreground">
@@ -64,7 +67,7 @@ function ResumeQuizAction({ item }: { item: ActivityItem }) {
 
         <Button asChild size="sm" className="h-11 min-h-[44px] w-full shrink-0 rounded-lg px-4 font-semibold shadow-sm shadow-primary/25 sm:w-auto">
           <Link href={getResumeHref(item)}>
-            Resume quiz <ArrowRight aria-hidden="true" className="ml-1.5 h-4 w-4" />
+            {t('dashboard.resumeQuiz')} <ArrowRight aria-hidden="true" className="ml-1.5 h-4 w-4" />
           </Link>
         </Button>
       </div>
@@ -86,17 +89,18 @@ function ResumeQuizProgress({
   totalCount: number
   progressPercent: number
 }) {
+  const t = useTranslations()
   if (totalCount === 0) return null
 
   return (
     <div className="mt-2 flex items-center gap-2.5">
       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-        {answeredCount} of {totalCount} answered
+        {t('dashboard.answeredProgress', { answered: answeredCount, total: totalCount })}
       </span>
       <div
         className="h-1.5 w-24 overflow-hidden rounded-full bg-muted"
         role="progressbar"
-        aria-label="Quiz progress"
+        aria-label={t('quiz.progressLabel')}
         aria-valuemin={0}
         aria-valuemax={totalCount}
         aria-valuenow={Math.min(answeredCount, totalCount)}

@@ -15,8 +15,10 @@ import { Search, Plus } from 'lucide-react'
 import { useAdminQuizzes } from '@/hooks/quizzes/useAdminQuizzes'
 import { QuizTable } from '@/components/quizzes/QuizTable'
 import { QuizDeleteDialog } from '@/components/quizzes/QuizDeleteDialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function AdminQuizzesPage() {
+  const t = useTranslations()
   const {
     page,
     setPage,
@@ -40,15 +42,15 @@ export default function AdminQuizzesPage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Quiz Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('admin.quizManagementTitle')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage, review, publish, and create quizzes across the platform
+            {t('admin.quizManagementDescription')}
           </p>
         </div>
         <Link href="/quizzes/new">
           <Button className="gap-2 font-bold shadow-sm cursor-pointer">
             <Plus className="w-4 h-4" />
-            Create New Quiz
+            {t('admin.createNewQuiz')}
           </Button>
         </Link>
       </div>
@@ -58,7 +60,7 @@ export default function AdminQuizzesPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Search by title or category..."
+            placeholder={t('admin.searchQuizzes')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -75,10 +77,10 @@ export default function AdminQuizzesPage() {
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All categories" />
+            <SelectValue placeholder={t('admin.allCategories')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="all">{t('admin.allCategories')}</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c._id} value={c._id}>
                 {c.name}

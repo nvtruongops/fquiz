@@ -10,6 +10,7 @@ import {
 import { UserDropdown } from '@/components/layout/UserDropdown'
 import { NAV_SECTIONS, NavItem } from '@/lib/core/constants/navigation'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 const navSections = NAV_SECTIONS
 
@@ -96,8 +97,8 @@ function getSidebarItemClassName(active: boolean, compact: boolean, mobile: bool
   return cn(layout, state)
 }
 
-function getSidebarItemTitle(compact: boolean, label: string, locked: boolean) {
-  return compact ? label + (locked ? ' (Sign in required)' : '') : undefined
+function getSidebarItemTitle(compact: boolean, label: string, locked: boolean, signInRequired: string) {
+  return compact ? label + (locked ? ` (${signInRequired})` : '') : undefined
 }
 
 function getSidebarIconClassName(active: boolean, mobile: boolean) {
@@ -151,22 +152,24 @@ function SidebarSectionItem({
   mobile: boolean
   onItemClick: (event: React.MouseEvent, item: NavItem) => void
 }) {
+  const t = useTranslations()
   const active = isNavItemActive(item, pathname)
   const locked = !user && item.requiresAuth
   const Icon = item.icon
+  const label = t(item.labelKey)
 
   return (
     <Link
       href={item.href}
       prefetch={false}
       aria-current={active ? 'page' : undefined}
-      title={getSidebarItemTitle(compact, item.label, Boolean(locked))}
+      title={getSidebarItemTitle(compact, label, Boolean(locked), t('nav.signInRequired'))}
       onClick={(event) => onItemClick(event, item)}
       className={getSidebarItemClassName(active, compact, mobile)}
     >
       <div className={cn('flex items-center min-w-0', compact ? '' : 'gap-3')}>
         <Icon className={getSidebarIconClassName(active, mobile)} />
-        <SidebarItemLabel compact={compact} mobile={mobile} label={item.label} />
+      <SidebarItemLabel compact={compact} mobile={mobile} label={label} />
       </div>
       <SidebarGuestLock locked={Boolean(locked)} compact={compact} />
     </Link>
@@ -192,14 +195,15 @@ function SidebarSectionView({
   mobile?: boolean
   onItemClick: (event: React.MouseEvent, item: NavItem) => void
 }) {
+  const t = useTranslations()
   const compact = collapsed && !mobile
 
   return (
     <div className="space-y-1">
-      <SidebarSectionHeading title={section.title} collapsed={collapsed} compact={compact} />
+      <SidebarSectionHeading title={t(section.titleKey)} collapsed={collapsed} compact={compact} />
       <div className={getSidebarSectionItemsClassName(compact)}>
         {section.items.map((item) => (
-          <SidebarSectionItem key={item.href + item.label} item={item} user={user} pathname={pathname} compact={compact} mobile={mobile} onItemClick={onItemClick} />
+          <SidebarSectionItem key={item.href + item.labelKey} item={item} user={user} pathname={pathname} compact={compact} mobile={mobile} onItemClick={onItemClick} />
         ))}
       </div>
     </div>
@@ -211,10 +215,6 @@ type ProtectedNavClick = (event: React.MouseEvent, item: NavItem) => void
 
 function getDashboardHref(user: SidebarUser) {
   return user ? '/dashboard' : '/'
-}
-
-function getDashboardLabel(user: SidebarUser) {
-  return user ? 'Dashboard' : 'Home'
 }
 
 function getDashboardCurrentPage(active: boolean) {
@@ -257,9 +257,10 @@ function SidebarDashboardLink({
   mobile?: boolean
   onClick?: () => void
 }) {
+  const t = useTranslations()
   const active = isDashboardActive(user, pathname)
   const compact = isCompactSidebar(collapsed, mobile)
-  const label = getDashboardLabel(user)
+  const label = t(user ? 'nav.dashboard' : 'nav.home')
   return (
     <Link
       href={getDashboardHref(user)}
@@ -276,6 +277,7 @@ function SidebarDashboardLink({
 }
 
 function SidebarBrandHeader({ collapsed }: { collapsed: boolean }) {
+  const t = useTranslations()
   return (
     <div className={cn('h-16 flex items-center border-b border-border flex-shrink-0 transition-all', collapsed ? 'justify-center px-2' : 'px-6')}>
       <Link href="/" prefetch={false} data-desktop-nav-home="true" className="flex items-center gap-2 group overflow-hidden">
@@ -284,7 +286,7 @@ function SidebarBrandHeader({ collapsed }: { collapsed: boolean }) {
         ) : (
           <div className="flex items-baseline gap-2 whitespace-nowrap overflow-hidden">
             <span className="text-xl font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">FQuiz</span>
-            <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded-md border border-primary/20 leading-none">Platform</span>
+            <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded-md border border-primary/20 leading-none">{t('brand.platform')}</span>
           </div>
         )}
       </Link>
@@ -321,6 +323,7 @@ function SidebarSectionList({
 }
 
 function CompactSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; toggleCollapsed: () => void }) {
+  const t = useTranslations()
   return (
     <div className="w-full flex flex-col items-center gap-2">
       {user ? (
@@ -330,7 +333,7 @@ function CompactSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; to
           href="/login"
           prefetch={false}
           className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
-          title="Sign in / Sign up"
+          title={t('nav.signInOrSignUp')}
         >
           <LogIn className="w-4 h-4" />
         </Link>
@@ -338,10 +341,10 @@ function CompactSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; to
       <button
         type="button"
         onClick={toggleCollapsed}
-        aria-label="Expand sidebar"
+        aria-label={t('nav.expandSidebar')}
         aria-expanded={false}
         className="w-8 h-8 rounded-xl bg-card border border-border shadow-2xs flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer"
-        title="Expand sidebar"
+        title={t('nav.expandSidebar')}
       >
         <ChevronRight aria-hidden="true" className="w-4 h-4" />
       </button>
@@ -350,6 +353,7 @@ function CompactSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; to
 }
 
 function ExpandedSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; toggleCollapsed: () => void }) {
+  const t = useTranslations()
   return (
     <div className="w-full space-y-2">
       {user ? (
@@ -358,41 +362,44 @@ function ExpandedSidebarFooter({ user, toggleCollapsed }: { user: SidebarUser; t
           <button
             type="button"
             onClick={toggleCollapsed}
-            aria-label="Collapse sidebar"
+            aria-label={t('nav.collapseSidebar')}
             aria-expanded={true}
             className="w-7 h-7 rounded-lg bg-card border border-border/80 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
-            title="Collapse sidebar"
+            title={t('nav.collapseSidebar')}
           >
             <ChevronLeft aria-hidden="true" className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
         <div className="p-3 rounded-2xl bg-card border border-border shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0"><User className="w-4 h-4" /></div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-black text-foreground truncate">FQuiz Guest</p>
-                <p className="text-[10px] font-semibold text-muted-foreground truncate">Not signed in</p>
+                <p className="text-xs font-black text-foreground truncate">{t('nav.guest')}</p>
+                <p className="text-[10px] font-semibold text-muted-foreground truncate">{t('nav.notSignedIn')}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label="Collapse sidebar"
-              aria-expanded={true}
-              className="w-6 h-6 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
-              title="Collapse sidebar"
-            >
-              <ChevronLeft aria-hidden="true" className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <LocaleSwitcher />
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-label={t('nav.collapseSidebar')}
+                aria-expanded={true}
+                className="w-6 h-6 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all cursor-pointer shrink-0"
+                title={t('nav.collapseSidebar')}
+              >
+                <ChevronLeft aria-hidden="true" className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-1.5 pt-0.5">
             <Link href="/login" prefetch={false} className="flex items-center justify-center gap-1 h-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-black shadow-xs transition-all cursor-pointer">
-              <LogIn className="w-3 h-3" /><span>Sign in</span>
+              <LogIn className="w-3 h-3" /><span>{t('nav.signIn')}</span>
             </Link>
             <Link href="/register" prefetch={false} className="flex items-center justify-center gap-1 h-8 rounded-xl border border-border bg-muted/50 hover:bg-muted text-foreground text-[11px] font-bold transition-all cursor-pointer">
-              <UserPlus className="w-3 h-3 text-primary" /><span>Sign up</span>
+              <UserPlus className="w-3 h-3 text-primary" /><span>{t('nav.signUp')}</span>
             </Link>
           </div>
         </div>
@@ -439,13 +446,14 @@ function SidebarDesktop({
 }
 
 function MobileDrawerHeader({ onClose }: { onClose: () => void }) {
+  const t = useTranslations()
   return (
     <div className="flex items-center justify-between p-4 border-b border-border">
-      <div className="flex items-center gap-2"><span className="font-black text-foreground text-base">FQuiz Menu</span></div>
+      <div className="flex items-center gap-2"><span className="font-black text-foreground text-base">{t('nav.menu')}</span></div>
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close menu"
+        aria-label={t('nav.closeMenu')}
         className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 cursor-pointer"
       >
         <ChevronLeft aria-hidden="true" className="w-5 h-5" />
@@ -455,19 +463,22 @@ function MobileDrawerHeader({ onClose }: { onClose: () => void }) {
 }
 
 function MobileDrawerFooter({ user, onClose }: { user: SidebarUser; onClose: () => void }) {
+  const t = useTranslations()
   return (
     <div className="p-4 border-t border-border bg-muted/40">
       {user ? (
         <UserDropdown user={user} fullCard={true} />
       ) : (
         <div className="space-y-2">
-          <div className="text-center pb-1">
-            <p className="text-xs font-black text-foreground">You are not signed in</p>
-            <p className="text-[10px] text-muted-foreground font-medium">Sign in to save your practice progress</p>
+          <div className="flex items-center justify-between gap-2 pb-1">
+            <div className="min-w-0">
+              <p className="text-xs font-black text-foreground">{t('nav.guest')}</p>
+              <p className="text-[10px] text-muted-foreground font-medium">{t('nav.youAreNotSignedIn')}</p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Link href="/login" prefetch={false} onClick={onClose} className="flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl shadow-xs text-center">Sign in</Link>
-            <Link href="/register" prefetch={false} onClick={onClose} className="flex items-center justify-center text-xs font-bold bg-card text-foreground border border-border px-3 py-2.5 rounded-xl shadow-xs text-center">Sign up</Link>
+            <Link href="/login" prefetch={false} onClick={onClose} className="flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl shadow-xs text-center">{t('nav.signIn')}</Link>
+            <Link href="/register" prefetch={false} onClick={onClose} className="flex items-center justify-center text-xs font-bold bg-card text-foreground border border-border px-3 py-2.5 rounded-xl shadow-xs text-center">{t('nav.signUp')}</Link>
           </div>
         </div>
       )}
@@ -508,10 +519,15 @@ function SidebarMobile({
 
 function useProtectedNavClick(user: SidebarUser, mobileOpen: boolean, setMobileOpen: (open: boolean) => void): ProtectedNavClick {
   const { openAuthPrompt } = useAuthPrompt()
+  const t = useTranslations()
   return (event, item) => {
     if (user || !item.requiresAuth) return
     event.preventDefault()
-    openAuthPrompt({ featureName: item.label, description: item.description, targetUrl: item.href })
+    openAuthPrompt({
+      featureName: t(item.labelKey),
+      description: item.descriptionKey ? t(item.descriptionKey) : undefined,
+      targetUrl: item.href,
+    })
     if (mobileOpen) setMobileOpen(false)
   }
 }

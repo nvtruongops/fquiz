@@ -26,6 +26,7 @@ import {
 import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const SessionModals = dynamic(
   () => import('@/components/quiz/session/SessionModals').then((mod) => mod.SessionModals),
@@ -62,10 +63,6 @@ function hasRetryableSessionError(isInitialError: boolean, initialError: { statu
     canRetrySessionLoad(isInitialError, initialError),
     canRetrySessionLoad(isPreloadError, preloadError),
   ].some(Boolean)
-}
-
-function getSessionErrorMessage(initialError: { message?: string } | null | undefined, preloadError: { message?: string } | null | undefined) {
-  return [initialError?.message, preloadError?.message].find(Boolean) || 'Unable to load test session.'
 }
 
 function retrySessionQueries(isInitialError: boolean, initialError: { status?: number } | null | undefined, isPreloadError: boolean, preloadError: { status?: number } | null | undefined, refetchInitial: () => unknown, refetchPreload: () => unknown) {
@@ -146,10 +143,11 @@ function getSessionQuestionQuizId(session: DesktopActiveSessionData['session'], 
 }
 
 function SessionFinalizationFailure({ isError }: { isError: boolean }) {
+  const t = useTranslations()
   if (!isError) return null
   return (
     <p role="alert" className="mx-4 my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-      Submission did not finish. Your answers are saved. Select Submit to try again.
+      {t('session.submissionFailedRetry')}
     </p>
   )
 }
@@ -280,12 +278,13 @@ function DesktopSessionErrorState({ router, isInitialError, initialError, isPrel
   refetchInitial: () => unknown
   refetchPreload: () => unknown
 }) {
+  const t = useTranslations()
   return (
     <SessionQueryError
-      title="Session Error"
-      message={getSessionErrorMessage(initialError, preloadError)}
-      backLabel="Go Back"
-      dashboardLabel="Dashboard"
+      title={t('session.errorTitle')}
+      message={t('session.errorDescription')}
+      backLabel={t('common.goBack')}
+      dashboardLabel={t('dashboard.title')}
       canRetry={hasRetryableSessionError(isInitialError, initialError, isPreloadError, preloadError)}
       onRetry={() => retrySessionQueries(isInitialError, initialError, isPreloadError, preloadError, refetchInitial, refetchPreload)}
       onBack={() => navigateBackFromSession(router)}

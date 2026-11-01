@@ -5,6 +5,7 @@ import { CheckCircle2, RotateCcw, Layers, Eye, EyeOff, HelpCircle, BookOpen } fr
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ResultQuestion {
   _id: string
@@ -24,6 +25,7 @@ interface InteractiveFlashcardResultViewerProps {
 type FilterType = 'all' | 'known' | 'unknown'
 
 export function InteractiveFlashcardResultViewer({ questions }: Readonly<InteractiveFlashcardResultViewerProps>) {
+  const t = useTranslations()
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
   const [filter, setFilter] = useState<FilterType>('all')
   const [showAnswer, setShowAnswer] = useState<boolean>(true)
@@ -31,7 +33,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
   if (!questions || questions.length === 0) {
     return (
       <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-medium">
-        No flashcard detail information available.
+        {t('flashResult.empty')}
       </div>
     )
   }
@@ -52,10 +54,10 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
         <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="h-4 w-4 text-primary" />
-            Deck ({totalCards})
+            {t('flashResult.deck', { count: totalCards })}
           </span>
           <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-            Mastered {knownCount}/{totalCards}
+            {t('flashResult.masteredCount', { known: knownCount, total: totalCards })}
           </span>
         </div>
 
@@ -72,7 +74,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            All ({totalCards})
+            {t('flashResult.allCount', { count: totalCards })}
           </button>
           <button
             type="button"
@@ -85,7 +87,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-emerald-500 hover:bg-emerald-500/10'
             )}
           >
-            Mastered ({knownCount})
+            {t('flashResult.masteredCountOnly', { count: knownCount })}
           </button>
           <button
             type="button"
@@ -98,7 +100,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 : 'text-destructive hover:bg-destructive/10'
             )}
           >
-            Needs Review ({unknownCount})
+            {t('flashResult.needsReviewCount', { count: unknownCount })}
           </button>
         </div>
 
@@ -137,11 +139,11 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
 
                 {isKnown ? (
                   <Badge className="bg-success-bg text-success-fg hover:bg-success-bg border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
-                    <CheckCircle2 className="w-3 h-3 mr-0.5 inline" /> Mastered
+                    <CheckCircle2 className="w-3 h-3 mr-0.5 inline" /> {t('flashResult.mastered')}
                   </Badge>
                 ) : (
                   <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] px-1.5 py-0 shrink-0 font-bold">
-                    <RotateCcw className="w-3 h-3 mr-0.5 inline" /> Review
+                    <RotateCcw className="w-3 h-3 mr-0.5 inline" /> {t('flashResult.review')}
                   </Badge>
                 )}
               </button>
@@ -156,15 +158,15 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
         <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">
-              Card {selectedIndex + 1} / {totalCards}
+              {t('flashResult.cardCount', { current: selectedIndex + 1, total: totalCards })}
             </span>
             {currentQuestion.is_correct ? (
               <Badge className="bg-success-bg/20 text-success-fg border-none text-xs font-bold px-2.5 py-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline" /> Your mark: MASTERED
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline" /> {t('flashResult.yourMarkMastered')}
               </Badge>
             ) : (
               <Badge className="bg-destructive/10 text-destructive border-none text-xs font-bold px-2.5 py-0.5">
-                <RotateCcw className="w-3.5 h-3.5 mr-1 inline" /> Your mark: NEEDS REVIEW
+                <RotateCcw className="w-3.5 h-3.5 mr-1 inline" /> {t('flashResult.yourMarkReview')}
               </Badge>
             )}
           </div>
@@ -177,9 +179,9 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
             className="text-xs font-bold text-primary hover:bg-primary/10 rounded-xl"
           >
             {showAnswer ? (
-              <><EyeOff className="w-3.5 h-3.5 mr-1" /> Hide reverse side</>
+              <><EyeOff className="w-3.5 h-3.5 mr-1" /> {t('flashResult.hideReverse')}</>
             ) : (
-              <><Eye className="w-3.5 h-3.5 mr-1" /> Show reverse side</>
+              <><Eye className="w-3.5 h-3.5 mr-1" /> {t('flashResult.showReverse')}</>
             )}
           </Button>
         </div>
@@ -192,9 +194,9 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               <div className="flex items-center justify-between pb-2 border-b border-border mb-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                   <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/60" />
-                  Front Card (Question & Options)
+                  {t('flashResult.frontTitle')}
                 </span>
-                <span className="text-[10px] font-mono text-muted-foreground bg-card px-2 py-0.5 rounded border border-border">Front</span>
+                <span className="text-[10px] font-mono text-muted-foreground bg-card px-2 py-0.5 rounded border border-border">{t('flashResult.front')}</span>
               </div>
 
               {/* Question Text */}
@@ -207,7 +209,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                 <div className="mb-3 flex justify-center">
                   <img
                     src={currentQuestion.image_url}
-                    alt="Question"
+                    alt={t('flashResult.question')}
                     className="max-h-40 rounded-xl object-contain border border-border bg-card p-1"
                   />
                 </div>
@@ -217,7 +219,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               {Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
                 <div className="space-y-2 pt-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
-                    Options:
+                    {t('flashResult.options')}
                   </span>
                   <div className="space-y-1.5">
                     {currentQuestion.options.map((optText: string, optIdx: number) => {
@@ -247,9 +249,9 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
               <div className="flex items-center justify-between pb-2 border-b border-success-fg/20 mb-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-success-fg flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-success-fg" />
-                  Back Card (Answer & Notes)
+                  {t('flashResult.backTitle')}
                 </span>
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200 font-bold">Back</span>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200 font-bold">{t('flashResult.back')}</span>
               </div>
 
               {showAnswer ? (
@@ -257,7 +259,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                   {/* Correct Answer Highlight */}
                   <div className="bg-card p-4 rounded-xl border border-success-border shadow-xs space-y-1 text-card-foreground">
                     <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
-                      Correct Answer:
+                      {t('flashResult.correctAnswer')}
                     </span>
                     {correctIndexes.filter(index => Number.isInteger(index) && index >= 0 && index < currentQuestion.options.length).map(index => (
                     <div key={index} className="flex items-center gap-2 text-sm font-black text-success-fg">
@@ -273,7 +275,7 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                   {currentQuestion.explanation ? (
                     <div className="bg-card p-4 rounded-xl border border-border space-y-1.5 text-xs text-card-foreground leading-relaxed">
                       <span className="font-bold text-primary uppercase tracking-wider text-[10px] flex items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5 text-primary" /> Explanation / Translation / Memory tip:
+                        <BookOpen className="w-3.5 h-3.5 text-primary" /> {t('flashResult.explanationNotes')}
                       </span>
                       <p className="whitespace-pre-line font-medium text-card-foreground pt-1">
                         {currentQuestion.explanation}
@@ -281,15 +283,15 @@ export function InteractiveFlashcardResultViewer({ questions }: Readonly<Interac
                     </div>
                   ) : (
                     <div className="p-4 rounded-xl bg-muted/60 border border-border text-xs text-muted-foreground italic">
-                      No additional explanation available for this question.
+                      {t('flashResult.noExplanation')}
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="h-48 flex flex-col items-center justify-center text-center p-6 bg-muted/60 rounded-xl border border-border text-muted-foreground space-y-2">
                   <EyeOff className="w-8 h-8 text-primary/60" />
-                  <p className="text-xs font-bold text-card-foreground">Back side is currently hidden</p>
-                  <p className="text-[11px] text-muted-foreground">Click &quot;Show reverse side&quot; above to view the answer.</p>
+                  <p className="text-xs font-bold text-card-foreground">{t('flashResult.backHidden')}</p>
+                  <p className="text-[11px] text-muted-foreground">{t('flashResult.showReverseHint')}</p>
                 </div>
               )}
             </div>

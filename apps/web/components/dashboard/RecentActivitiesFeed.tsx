@@ -13,9 +13,11 @@ import {
   Trophy,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { enUS, vi } from 'date-fns/locale'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
 import type { ActivityItem } from '@/hooks/useStudentDashboard'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface RecentActivitiesFeedProps {
   recentActivities: ActivityItem[]
@@ -28,6 +30,7 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
   recentActivities,
   featuredActivityId,
 }: RecentActivitiesFeedProps) {
+  const t = useTranslations()
   const activities = (recentActivities || [])
     .filter((activity) => activity.id !== featuredActivityId)
     .slice(0, MAX_FEED_ITEMS)
@@ -38,14 +41,14 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
         <div className="flex min-w-0 items-center gap-2.5">
           <History aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
           <h2 id="recent-activity-title" className="text-base font-semibold tracking-tight text-foreground">
-            Recent activity
+            {t('recentActivity.title')}
           </h2>
         </div>
         <Link
           href="/history"
           className="flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          View history <ChevronRight aria-hidden="true" className="h-4 w-4" />
+          {t('recentActivity.viewHistory')} <ChevronRight aria-hidden="true" className="h-4 w-4" />
         </Link>
       </header>
 
@@ -55,8 +58,8 @@ export const RecentActivitiesFeed = React.memo(function RecentActivitiesFeed({
             <History aria-hidden="true" className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">No recent activity</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">Your completed quizzes will appear here.</p>
+            <p className="text-sm font-semibold text-foreground">{t('recentActivity.emptyTitle')}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{t('recentActivity.emptyDescription')}</p>
           </div>
         </div>
       ) : (
@@ -136,18 +139,19 @@ const ActivityStatusBadge = React.memo(function ActivityStatusBadge({
   formattedScore: string | null
   scoreNum: number | null
 }) {
+  const t = useTranslations()
   const base = 'shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium'
 
   if (isDeleted) {
-    return <Badge className={cn(base, 'border-border bg-muted text-muted-foreground')}>Deleted</Badge>
+    return <Badge className={cn(base, 'border-border bg-muted text-muted-foreground')}>{t('recentActivity.deleted')}</Badge>
   }
   if (isResumable) {
-    return <Badge className={cn(base, 'border-warning-border bg-warning-bg text-warning-fg')}>In progress</Badge>
+    return <Badge className={cn(base, 'border-warning-border bg-warning-bg text-warning-fg')}>{t('recentActivity.inProgress')}</Badge>
   }
   if (formattedScore !== null && scoreNum !== null) {
     return <Badge className={cn(base, getScoreBadgeClasses(scoreNum))}>{formattedScore}/10</Badge>
   }
-  return <Badge className={cn(base, 'border-success-border bg-success-bg text-success-fg')}>Completed</Badge>
+  return <Badge className={cn(base, 'border-success-border bg-success-bg text-success-fg')}>{t('recentActivity.completed')}</Badge>
 })
 
 function getActivityHref(activity: ActivityItem, isResumable: boolean): string {
@@ -174,6 +178,7 @@ function resolveActivityTitle(quizTitle: string, quizCode?: string) {
 }
 
 const ActivityRow = React.memo(function ActivityRow({ activity }: { activity: ActivityItem }) {
+  const t = useTranslations()
   const isResumable = activity.status === 'active' || activity.hasActiveSession === true
   const isDeleted = activity.quizDeleted === true
   const content = <ActivityDetails activity={activity} />
@@ -185,7 +190,7 @@ const ActivityRow = React.memo(function ActivityRow({ activity }: { activity: Ac
       ) : (
         <Link
           href={getActivityHref(activity, isResumable)}
-          aria-label={`${isResumable ? 'Continue' : 'Review'} ${activity.quizTitle}`}
+          aria-label={`${t(isResumable ? 'recentActivity.continue' : 'recentActivity.review')} ${activity.quizTitle}`}
           className="group flex min-h-16 items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/40 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4"
         >
           {content}
@@ -196,7 +201,9 @@ const ActivityRow = React.memo(function ActivityRow({ activity }: { activity: Ac
 })
 
 const ActivityDetails = React.memo(function ActivityDetails({ activity }: { activity: ActivityItem }) {
-  const view = getActivityView(activity)
+  const { locale } = useLocale()
+  const t = useTranslations()
+  const view = getActivityView(activity, locale, t)
 
   return (
     <>
@@ -230,7 +237,7 @@ interface ActivityView {
   statusStyles: ReturnType<typeof getActivityStatusStyles>
 }
 
-function getActivityView(activity: ActivityItem): ActivityView {
+function getActivityView(activity: ActivityItem, locale: 'vi' | 'en', t: ReturnType<typeof useTranslations>): ActivityView {
   const status = getActivityStatus(activity)
   const displayTime = activity.activityAt || activity.completedAt
   const title = resolveActivityTitle(activity.quizTitle, activity.quizCode)
@@ -238,9 +245,9 @@ function getActivityView(activity: ActivityItem): ActivityView {
   return {
     ...status,
     ...title,
-    timeAgo: displayTime ? formatDistanceToNow(new Date(displayTime), { addSuffix: true }) : 'Recently',
-    progressText: getProgressText(activity),
-    modeLabel: status.isDeleted ? 'Quiz deleted' : status.isFlashcard ? 'Flashcards' : 'Quiz',
+    timeAgo: displayTime ? formatDistanceToNow(new Date(displayTime), { addSuffix: true, locale: locale === 'vi' ? vi : enUS }) : t('recentActivity.recently'),
+    progressText: getProgressText(activity, t),
+    modeLabel: status.isDeleted ? t('recentActivity.quizDeleted') : status.isFlashcard ? t('recentActivity.flashcards') : t('recentActivity.quiz'),
     statusStyles: getActivityStatusStyles(status.isResumable, status.isFlashcard, status.scoreNum, status.isDeleted),
   }
 }
@@ -254,11 +261,11 @@ function getActivityStatus(activity: ActivityItem) {
   return { isDeleted, isResumable, isFlashcard, scoreNum, formattedScore }
 }
 
-function getProgressText(activity: ActivityItem) {
+function getProgressText(activity: ActivityItem, t: ReturnType<typeof useTranslations>) {
   const active = activity.hasActiveSession || activity.status === 'active'
   const answered = active ? (activity.activeAnsweredCount ?? 0) : (activity.correctCount ?? 0)
   const total = active ? (activity.activeTotalCount ?? 0) : (activity.totalCount ?? 0)
-  return total ? `${answered}/${total} questions` : ''
+  return total ? t('recentActivity.questionProgress', { answered, total }) : ''
 }
 
 const ActivityInfo = React.memo(function ActivityInfo({ view }: { view: ActivityView }) {

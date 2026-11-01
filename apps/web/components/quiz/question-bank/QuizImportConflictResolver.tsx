@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { AlertCircle } from 'lucide-react'
 import type { BankCheckResult } from '@/hooks/quiz/useQuizImport'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizImportConflictResolverProps {
   bankCheck: BankCheckResult
@@ -18,6 +19,7 @@ export function QuizImportConflictResolver({
   conflictChoice,
   onConflictChoiceChange,
 }: Readonly<QuizImportConflictResolverProps>) {
+  const t = useTranslations()
   if (bankCheck.different_answer_conflicts === 0) return null
 
   return (
@@ -26,11 +28,10 @@ export function QuizImportConflictResolver({
         <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0 text-xs">
           <p className="font-bold text-sm text-destructive mb-0.5">
-            {bankCheck.different_answer_conflicts} questions have conflicting answers
+            {t('quizImport.conflictingAnswerCount', { count: bankCheck.different_answer_conflicts })}
           </p>
           <p className="text-destructive leading-relaxed mb-3">
-            Identical question and options, but answers differ from the question bank.
-            Select the correct answer and click <span className="font-semibold">&quot;Confirm Answer Choices&quot;</span> to synchronize.
+            {t('quizImport.conflictDescription')}
           </p>
 
           <div className="space-y-3">
@@ -64,14 +65,14 @@ export function QuizImportConflictResolver({
                   <div className="bg-incorrect-bg px-3 py-2 border-b border-incorrect-border">
                     <p className="font-semibold text-destructive leading-snug">
                       <span className="inline-flex items-center justify-center rounded bg-destructive text-destructive-foreground px-1.5 py-0.5 mr-1.5 text-[10px] font-bold align-middle">
-                        Question {c.questionIndex + 1}
+                        {t('quizImport.question', { number: c.questionIndex + 1 })}
                       </span>
                       {q?.text ?? ''}
                     </p>
                   </div>
 
                   <p className="px-3 pt-2 text-[11px] text-muted-foreground">
-                    Select the correct answer to synchronize (default: keep answer from file):
+                    {t('quizImport.selectCorrectAnswer')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
                     <button
@@ -93,7 +94,7 @@ export function QuizImportConflictResolver({
                         >
                           {currentSelected && <span className="w-1.5 h-1.5 rounded-full bg-info-fg" />}
                         </span>
-                        <span>Answer in file (current)</span>
+                        <span>{t('quizImport.answerInFile')}</span>
                       </p>
                       <ul className="space-y-1">
                         {importedLines.length > 0 ? (
@@ -106,7 +107,7 @@ export function QuizImportConflictResolver({
                             </li>
                           ))
                         ) : (
-                          <li className="text-muted-foreground italic">(undefined)</li>
+                          <li className="text-muted-foreground italic">{t('quizImport.undefined')}</li>
                         )}
                       </ul>
                     </button>
@@ -137,11 +138,10 @@ export function QuizImportConflictResolver({
                             >
                               {bankSelected && <span className="w-1.5 h-1.5 rounded-full bg-warning-fg" />}
                             </span>
-                            Answer in question bank
+                            {t('quizImport.answerInBank')}
                             {v.quizzes.length > 0 && (
                               <span className="font-normal text-muted-foreground">
-                                (codes: {v.quizzes.slice(0, 5).join(', ')}
-                                {v.quizzes.length > 5 ? ` +${v.quizzes.length - 5}` : ''})
+                                {t('quizImport.codes', { codes: `${v.quizzes.slice(0, 5).join(', ')}${v.quizzes.length > 5 ? ` +${v.quizzes.length - 5}` : ''}` })}
                               </span>
                             )}
                           </p>
@@ -156,7 +156,7 @@ export function QuizImportConflictResolver({
                                 </li>
                               ))
                             ) : (
-                              <li className="text-muted-foreground italic">(undefined)</li>
+                              <li className="text-muted-foreground italic">{t('quizImport.undefined')}</li>
                             )}
                           </ul>
                         </button>

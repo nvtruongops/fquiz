@@ -1,7 +1,10 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, UploadCloud } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorHeaderProps {
   quizId?: string
@@ -9,6 +12,7 @@ interface QuizEditorHeaderProps {
 }
 
 export function QuizEditorHeader({ quizId, onOpenUploadModal }: QuizEditorHeaderProps) {
+  const t = useTranslations()
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -17,17 +21,17 @@ export function QuizEditorHeader({ quizId, onOpenUploadModal }: QuizEditorHeader
             variant="ghost"
             size="sm"
             className="h-9 px-2 text-muted-foreground hover:text-foreground cursor-pointer"
-            aria-label="Back to quizzes"
+            aria-label={t('adminQuizEditor.backToQuizzes')}
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </Button>
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {quizId ? 'Edit Quiz' : 'Create New Quiz'}
+            {quizId ? t('quizEditor.editQuiz') : t('quizEditor.createQuiz')}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Create and manage official quizzes synchronized directly with the Question Bank
+            {t('adminQuizEditor.description')}
           </p>
         </div>
       </div>
@@ -41,7 +45,7 @@ export function QuizEditorHeader({ quizId, onOpenUploadModal }: QuizEditorHeader
           className="gap-2 text-xs font-semibold cursor-pointer shadow-xs"
         >
           <UploadCloud className="w-4 h-4 text-primary" aria-hidden="true" />
-          Upload Quiz File (.TXT / .JSON)
+          {t('adminQuizEditor.uploadFile')}
         </Button>
       </div>
     </div>

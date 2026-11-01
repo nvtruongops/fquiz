@@ -10,6 +10,7 @@ import {
 } from '@/components/shared/ui/dialog'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizResumeSessionModalProps {
   open: boolean
@@ -28,13 +29,14 @@ export function QuizResumeSessionModal({
   onRestart,
   onCloseResumeDialog,
 }: QuizResumeSessionModalProps) {
+  const t = useTranslations()
   const isFlashcardMode =
     activeSessionInfo?.mode === 'flashcard' || activeSessionInfo?.cardsUnknown > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        closeButtonAriaLabel="Close previous session dialog"
+        closeButtonAriaLabel={t('resume.closeDialog')}
         className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md rounded-t-[24px] rounded-b-none sm:rounded-[24px] border-t sm:border border-border p-0 shadow-2xl overflow-hidden bg-card text-card-foreground flex flex-col h-auto max-h-[88dvh] sm:max-h-[90vh] max-sm:data-[state=open]:slide-in-from-left-0 max-sm:data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-bottom-full data-[state=closed]:slide-out-to-bottom-full sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-1/2 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-1/2 sm:data-[state=closed]:zoom-out-95 [&>button]:z-20 [&>button]:top-3.5 sm:[&>button]:top-4.5 [&>button]:right-3.5 sm:[&>button]:right-4.5 [&>button]:w-9 [&>button]:h-9 [&>button]:rounded-full [&>button]:bg-muted/60 [&>button:hover]:bg-muted [&>button]:text-muted-foreground [&>button:hover]:text-foreground [&>button]:border [&>button]:border-border/60 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:transition-all z-50"
       >
         <div className="flex flex-col h-full w-full">
@@ -48,19 +50,17 @@ export function QuizResumeSessionModal({
                     variant="outline"
                     className="bg-primary/10 text-primary border-primary/20 font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full"
                   >
-                    Flashcard Mode
+                    {t('resume.flashcardMode')}
                   </Badge>
                 </div>
                 <DialogTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-foreground mb-1 gsap-resume-item relative z-10">
-                  Resume Flashcards
+                  {t('resume.resumeFlashcards')}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground text-[11px] sm:text-xs font-medium leading-relaxed gsap-resume-item relative z-10">
-                  For this quiz in <strong className="text-foreground font-bold">Flashcard Mode</strong>, you still have{' '}
-                  <strong className="text-primary font-bold">
-                    {activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0}/
-                    {activeSessionInfo?.totalCards ?? activeSessionInfo?.totalQuestions ?? 0} unlearned cards
-                  </strong>
-                  . Would you like to resume or start fresh?
+                  {t('resume.flashcardDescription', {
+                    unknown: activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0,
+                    total: activeSessionInfo?.totalCards ?? activeSessionInfo?.totalQuestions ?? 0,
+                  })}
                 </DialogDescription>
               </div>
 
@@ -70,10 +70,13 @@ export function QuizResumeSessionModal({
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                      Unlearned cards progress
+                      {t('resume.unlearnedProgress')}
                     </span>
                     <span className="bg-primary/20 text-primary px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                      {activeSessionInfo?.cardsUnknown ?? 0}/{activeSessionInfo?.totalCards ?? 0} unlearned cards
+                      {t('resume.unlearnedCount', {
+                        unknown: activeSessionInfo?.cardsUnknown ?? 0,
+                        total: activeSessionInfo?.totalCards ?? 0,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -85,8 +88,9 @@ export function QuizResumeSessionModal({
                   >
                     <BookOpen className="w-4 h-4" aria-hidden="true" />
                     <span>
-                      Resume (Review{' '}
-                      {activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0} unlearned cards)
+                      {t('resume.resumeReview', {
+                        count: activeSessionInfo?.cardsUnknown ?? activeSessionInfo?.answeredCount ?? 0,
+                      })}
                     </span>
                   </Button>
                   <Button
@@ -95,14 +99,14 @@ export function QuizResumeSessionModal({
                     className="h-11 min-h-[44px] w-full rounded-xl border-border bg-card font-bold text-xs uppercase tracking-wider text-foreground hover:bg-muted transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                    <span>Restart (Start from beginning)</span>
+                    <span>{t('resume.restartFresh')}</span>
                   </Button>
                   <button
                     type="button"
                     onClick={onCloseResumeDialog}
                     className="min-h-[44px] py-2 text-[10.5px] font-extrabold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors cursor-pointer text-center flex items-center justify-center"
                   >
-                    Change study mode
+                    {t('resume.changeStudyMode')}
                   </button>
                 </div>
               </div>
@@ -117,14 +121,14 @@ export function QuizResumeSessionModal({
                     variant="outline"
                     className="bg-primary/10 text-primary border-primary/20 font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full"
                   >
-                    Incomplete Progress
+                    {t('resume.incompleteProgress')}
                   </Badge>
                 </div>
                 <DialogTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-foreground mb-1 gsap-resume-item relative z-10">
-                  Previous Session Detected
+                  {t('resume.previousSession')}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground text-[11px] sm:text-xs font-medium leading-relaxed gsap-resume-item relative z-10">
-                  You have an unfinished quiz session. Would you like to resume where you left off?
+                  {t('resume.unfinishedQuiz')}
                 </DialogDescription>
               </div>
 
@@ -134,10 +138,13 @@ export function QuizResumeSessionModal({
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                      Current Progress
+                      {t('resume.currentProgress')}
                     </span>
                     <span className="bg-primary/20 text-primary px-2.5 py-0.5 rounded-full text-[10px] font-black">
-                      {activeSessionInfo?.answeredCount ?? 0}/{activeSessionInfo?.totalQuestions ?? 0} QUESTIONS
+                      {t('resume.questionsCount', {
+                        answered: activeSessionInfo?.answeredCount ?? 0,
+                        total: activeSessionInfo?.totalQuestions ?? 0,
+                      })}
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-primary/20 rounded-full overflow-hidden">
@@ -153,12 +160,12 @@ export function QuizResumeSessionModal({
                     />
                   </div>
                   <p className="mt-2 text-[10.5px] font-bold text-foreground uppercase tracking-tight">
-                    Mode:{' '}
-                    {activeSessionInfo?.mode === 'immediate'
-                      ? 'Practice'
+                    {t('resume.mode')}{' '}
+                    {t(activeSessionInfo?.mode === 'immediate'
+                      ? 'resume.practice'
                       : activeSessionInfo?.mode === 'flashcard'
-                      ? 'Flashcard'
-                      : 'Exam'}
+                      ? 'resume.flashcard'
+                      : 'resume.exam')}
                   </p>
                 </div>
 
@@ -168,7 +175,7 @@ export function QuizResumeSessionModal({
                     className="h-11 min-h-[44px] w-full rounded-xl bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-primary-foreground shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Play className="w-4 h-4" aria-hidden="true" />
-                    <span>Resume Quiz</span>
+                    <span>{t('resume.resumeQuiz')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -176,14 +183,14 @@ export function QuizResumeSessionModal({
                     className="h-11 min-h-[44px] w-full rounded-xl border-border bg-card font-black uppercase tracking-widest text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                    <span>Restart from Beginning</span>
+                    <span>{t('resume.restartBeginning')}</span>
                   </Button>
                   <button
                     type="button"
                     onClick={onCloseResumeDialog}
                     className="min-h-[44px] py-2 text-[10.5px] font-black text-muted-foreground uppercase tracking-[0.15em] hover:text-foreground transition-colors cursor-pointer text-center flex items-center justify-center"
                   >
-                    Change study mode
+                    {t('resume.changeStudyMode')}
                   </button>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, type Dispatch, type 
 import { useSearchParams } from 'next/navigation'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface Classroom {
   _id: string
@@ -194,6 +195,7 @@ function isClassroomAssignmentsLoading(
 export function useStudentClassrooms() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const t = useTranslations()
   const {
     classrooms,
     setClassrooms,
@@ -247,11 +249,11 @@ export function useStudentClassrooms() {
       setSelectedClassroom(prev => prev || (list.length > 0 ? list[0] : null))
     } catch (err) {
       console.error('Failed to load classrooms:', err)
-      setClassroomsError('Unable to load classrooms. Please try again.')
+      setClassroomsError(t('classroom.loadClassroomsFailed'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   const fetchAssignments = async (classroomId: string) => {
     const requestId = ++assignmentsRequestId.current
@@ -265,7 +267,7 @@ export function useStudentClassrooms() {
     } catch (err) {
       runIfLatest(requestId, assignmentsRequestId, () => {
         console.error('Failed to load assignments:', err)
-        setAssignmentsError('Unable to load assignments. Please try again.')
+        setAssignmentsError(t('classroom.loadAssignmentsFailed'))
       })
     } finally {
       runIfLatest(requestId, assignmentsRequestId, () => setAssignmentsLoading(false))
@@ -290,7 +292,7 @@ export function useStudentClassrooms() {
     e.preventDefault()
     const code = normalizeJoinCode(joinCode)
     if (!code) {
-      setErrorMessage('Classroom code must be exactly 6 characters')
+      setErrorMessage(t('classroom.codeLengthError'))
       return
     }
 
@@ -298,13 +300,13 @@ export function useStudentClassrooms() {
       setJoining(true)
       setErrorMessage('')
       const data = await requestClassroomJoin(code, joinPassword)
-      setSuccessMessage(data.message || 'Joined classroom successfully')
+      setSuccessMessage(t('classroom.joinSuccess'))
       setJoinCode('')
       setJoinPassword('')
       setJoinModalOpen(false)
       fetchClassrooms()
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Error joining classroom')
+    } catch {
+      setErrorMessage(t('classroom.joinFailed'))
     } finally {
       setJoining(false)
     }
@@ -329,7 +331,7 @@ export function useStudentClassrooms() {
     try {
       const error = await requestClassroomLeave(classroomId)
       if (error) {
-        toast.error(error)
+        toast.error(t('classroom.actionFailed'))
         return
       }
       setConfirmLeaveId(null)

@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/shared/ui/dialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface DeleteAccountModalProps {
   open: boolean
@@ -31,20 +32,21 @@ export function DeleteAccountModal({
   deleting,
   onConfirmDelete,
 }: DeleteAccountModalProps) {
+  const t = useTranslations()
   return (
     <>
       <Card className="border-destructive/30 bg-destructive/5 rounded-xl sm:rounded-3xl shadow-xs">
         <CardHeader className="p-3.5 sm:p-6 pb-1 sm:pb-3">
           <CardTitle className="text-sm sm:text-base font-extrabold text-destructive flex items-center gap-2">
-            <Trash2 className="w-4 h-4" /> Danger Zone
+            <Trash2 className="w-4 h-4" /> {t('profile.dangerZone')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3.5 sm:p-6 pt-2 sm:pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-destructive/20">
             <div>
-              <h4 className="text-xs sm:text-sm font-extrabold text-foreground">Request Account Deletion</h4>
+              <h4 className="text-xs sm:text-sm font-extrabold text-foreground">{t('profile.requestDeletion')}</h4>
               <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 font-medium leading-relaxed">
-                A confirmation email will be sent. You have 3 days to recover your account before all data is permanently erased.
+                {t('profile.deletionRequestNotice')}
               </p>
             </div>
             <Button
@@ -52,7 +54,7 @@ export function DeleteAccountModal({
               onClick={() => onOpenChange(true)}
               className="rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold shadow-xs shrink-0 cursor-pointer"
             >
-              Delete Account
+              {t('profile.deleteAccount')}
             </Button>
           </div>
         </CardContent>
@@ -63,10 +65,10 @@ export function DeleteAccountModal({
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2 text-base sm:text-lg font-extrabold">
               <AlertTriangle className="w-5 h-5 text-destructive" />
-              Confirm Account Deletion
+              {t('profile.confirmDeletion')}
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm font-medium text-muted-foreground mt-1.5">
-              This action will schedule your account for permanent deletion in 3 days. Please enter your current password to verify.
+              {t('profile.deletionConfirmNotice')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -75,7 +77,7 @@ export function DeleteAccountModal({
                 htmlFor="del-password"
                 className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-muted-foreground"
               >
-                Current Password
+                {t('profile.currentPassword')}
               </label>
               <div className="relative mt-1.5">
                 <KeyRound className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -84,7 +86,7 @@ export function DeleteAccountModal({
                   type="password"
                   value={password}
                   onChange={(e) => onPasswordChange(e.target.value)}
-                  placeholder="Enter your password to continue"
+                  placeholder={t('profile.passwordContinue')}
                   className="pl-9 sm:pl-10 h-10 rounded-xl text-xs sm:text-sm border-border bg-card font-medium"
                 />
               </div>
@@ -97,7 +99,7 @@ export function DeleteAccountModal({
               disabled={deleting}
               className="rounded-xl text-xs sm:text-sm font-bold"
             >
-              Cancel
+              {t('profile.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -108,10 +110,10 @@ export function DeleteAccountModal({
               {deleting ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing...</span>
+                  <span>{t('profile.processing')}</span>
                 </div>
               ) : (
-                'Submit Deletion Request'
+                t('profile.submitDeletion')
               )}
             </Button>
           </DialogFooter>

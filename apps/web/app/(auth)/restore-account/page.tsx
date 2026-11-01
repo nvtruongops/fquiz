@@ -5,8 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, CheckCircle2, XCircle, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function RestoreAccountContent() {
+  const t = useTranslations()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -18,7 +20,7 @@ function RestoreAccountContent() {
     if (!token) {
       setLoading(false)
       setSuccess(false)
-      setMessage('Account recovery token not found in link.')
+      setMessage(t('auth.restoreTokenMissing'))
       return
     }
 
@@ -34,29 +36,29 @@ function RestoreAccountContent() {
 
         if (!res.ok) {
           setSuccess(false)
-          setMessage(data?.error ?? 'Account recovery failed or link has expired.')
+          setMessage(t('auth.restoreFailed'))
           return
         }
 
         setSuccess(true)
-        setMessage(data?.message ?? 'Your account has been successfully restored!')
+        setMessage(t('auth.restored'))
       } catch {
         setSuccess(false)
-        setMessage('Unable to connect to server. Please check your network connection.')
+        setMessage(t('auth.restoreConnectionError'))
       } finally {
         setLoading(false)
       }
     }
 
     restore()
-  }, [token])
+  }, [token, t])
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <h2 className="text-lg font-black text-card-foreground">Authenticating and restoring account...</h2>
-        <p className="text-xs text-muted-foreground font-medium">Please wait a moment.</p>
+        <h2 className="text-lg font-black text-card-foreground">{t('auth.restoringAccount')}</h2>
+        <p className="text-xs text-muted-foreground font-medium">{t('auth.waitMoment')}</p>
       </div>
     )
   }
@@ -72,7 +74,7 @@ function RestoreAccountContent() {
           )}
         </div>
         <h1 className="text-xl sm:text-2xl font-black text-card-foreground">
-          {success ? 'Account Restored Successfully!' : 'Recovery Failed'}
+          {success ? t('auth.accountRestored') : t('auth.recoveryFailed')}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed">
           {message}
@@ -82,10 +84,10 @@ function RestoreAccountContent() {
       {success && (
         <div className="rounded-2xl bg-success-bg border border-success-border p-4 space-y-2 text-center">
           <div className="flex items-center justify-center gap-1.5 text-success-fg font-bold text-xs">
-            <ShieldCheck className="w-4 h-4" /> Account is Secured
+            <ShieldCheck className="w-4 h-4" /> {t('auth.accountSecured')}
           </div>
           <p className="text-[11px] text-success-fg font-medium">
-            The 72-hour scheduled account deletion has been cancelled. You can now sign in immediately.
+            {t('auth.deletionCancelled')}
           </p>
         </div>
       )}
@@ -95,7 +97,7 @@ function RestoreAccountContent() {
           href="/login"
           className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-md transition-all cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Sign In
+          <ArrowLeft className="w-4 h-4" /> {t('auth.backToSignIn')}
         </Link>
       </div>
     </div>
@@ -103,6 +105,7 @@ function RestoreAccountContent() {
 }
 
 export default function RestoreAccountPage() {
+  const t = useTranslations()
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md bg-card text-card-foreground rounded-3xl border border-border shadow-xl overflow-hidden">
@@ -110,7 +113,7 @@ export default function RestoreAccountPage() {
           fallback={
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-medium">Loading...</p>
+            <p className="text-xs text-muted-foreground font-medium">{t('auth.loading')}</p>
             </div>
           }
         >

@@ -6,66 +6,66 @@ import {
 } from 'lucide-react'
 
 export interface NavItem {
-  label: string
+  labelKey: 'nav.exploreQuizzes' | 'nav.examHistory' | 'nav.myClassrooms' | 'nav.communityForum'
   href: string
   icon: React.ComponentType<{ className?: string }>
   badge?: string
   soon?: boolean
   accentColor?: string
   requiresAuth?: boolean
-  description?: string
+  descriptionKey?: 'nav.exploreQuizzesDescription' | 'nav.examHistoryDescription' | 'nav.myClassroomsDescription' | 'nav.communityForumDescription'
 }
 
 export interface Section {
   id: string
-  title: string
+  titleKey: 'nav.quizzesAndExams' | 'nav.classrooms' | 'nav.community'
   items: NavItem[]
 }
 
 export const NAV_SECTIONS: Section[] = [
   {
     id: 'quiz-exam',
-    title: 'QUIZZES & EXAMS',
+    titleKey: 'nav.quizzesAndExams',
     items: [
       {
-        label: 'Explore Quizzes',
+        labelKey: 'nav.exploreQuizzes',
         href: '/explore',
         icon: Compass,
         requiresAuth: false,
-        description: 'Explore public quiz repository and subject categories',
+        descriptionKey: 'nav.exploreQuizzesDescription',
       },
       {
-        label: 'Exam History',
+        labelKey: 'nav.examHistory',
         href: '/history',
         icon: Clock,
         requiresAuth: true,
-        description: 'Track progress, review results, and retry incorrect questions',
+        descriptionKey: 'nav.examHistoryDescription',
       },
     ],
   },
   {
     id: 'classroom-section',
-    title: 'CLASSROOMS',
+    titleKey: 'nav.classrooms',
     items: [
       {
-        label: 'My Classrooms',
+        labelKey: 'nav.myClassrooms',
         href: '/student/classrooms',
         icon: GraduationCap,
         requiresAuth: true,
-        description: 'Join teacher classrooms, submit assignments, and view grades',
+        descriptionKey: 'nav.myClassroomsDescription',
       },
     ],
   },
   {
     id: 'community',
-    title: 'COMMUNITY',
+    titleKey: 'nav.community',
     items: [
       {
-        label: 'Community Forum',
+        labelKey: 'nav.communityForum',
         href: '/community',
         icon: MessageSquare,
         requiresAuth: false,
-        description: 'Academic exchange, question discussions, and student networking',
+        descriptionKey: 'nav.communityForumDescription',
       },
     ],
   },

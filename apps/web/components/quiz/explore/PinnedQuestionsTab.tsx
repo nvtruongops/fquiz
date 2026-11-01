@@ -6,12 +6,14 @@ import { Bookmark, Trash2, FileText, CheckCircle2, Loader2, Info, Eye, EyeOff, C
 import { Button } from '@/components/shared/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shared/ui/dialog'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface PinnedQuestionsTabProps {
   courseCode: string
 }
 
 export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabProps) {
+  const t = useTranslations()
   const normalizedCode = courseCode.toUpperCase()
 
   const {
@@ -57,7 +59,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] gap-3">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Loading pinned questions...</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('pinned.loading')}</p>
       </div>
     )
   }
@@ -73,14 +75,14 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-black text-foreground uppercase tracking-tight">
-                Pinned Questions ({pinnedQuestions.length}{hasMore ? '+' : ''})
+                {t('pinned.title', { count: pinnedQuestions.length, more: hasMore ? '+' : '' })}
               </h2>
               <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
                 {normalizedCode}
               </span>
             </div>
             <p className="text-xs font-medium text-muted-foreground mt-0.5">
-              Focused questions you have pinned while studying {normalizedCode}
+              {t('pinned.description', { course: normalizedCode })}
             </p>
           </div>
         </div>
@@ -97,12 +99,12 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               {isAllExpanded ? (
                 <>
                   <EyeOff className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-                  Collapse answers
+                  {t('pinned.collapseAnswers')}
                 </>
               ) : (
                 <>
                   <Eye className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  Expand all answers
+                  {t('pinned.expandAllAnswers')}
                 </>
               )}
             </Button>
@@ -116,7 +118,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               className="h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:text-destructive-foreground hover:bg-destructive font-black text-xs transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Clear all
+              {t('pinned.clearAll')}
             </Button>
 
           </div>
@@ -131,10 +133,10 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
             <h3 className="text-base font-black text-foreground uppercase tracking-tight">
-              No pinned questions yet
+              {t('pinned.emptyTitle')}
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              While practicing quizzes for <strong className="text-foreground font-bold">{normalizedCode}</strong>, tap the Pin icon on any question to bookmark it here for targeted revision.
+              {t('pinned.emptyPrompt', { course: normalizedCode })}
             </p>
           </div>
         </div>
@@ -160,14 +162,14 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-primary/10 text-primary">
-                        Question {index + 1}
+                        {t('pinned.question', { number: index + 1 })}
                       </span>
 
                       {/* Display source quiz title / code */}
                       {item.quiz_title && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border">
                           <FileText className="w-3 h-3 text-muted-foreground" />
-                          <span>Quiz: <strong>{item.quiz_title}</strong></span>
+                          <span>{t('pinned.quiz')} <strong>{item.quiz_title}</strong></span>
                         </span>
                       )}
                     </div>
@@ -178,8 +180,8 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       onClick={() => deletePinMutation.mutate(item._id)}
                       disabled={deletePinMutation.isPending}
                       className="p-1.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      aria-label={`Remove pinned question ${index + 1}`}
-                      title="Remove pinned question"
+                      aria-label={t('pinned.removeNumber', { number: index + 1 })}
+                      title={t('pinned.remove')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -203,7 +205,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       <div className="mt-2 max-w-sm rounded-xl border border-border p-2 bg-muted/50">
                         <img
                           src={item.image_url}
-                          alt="Illustration"
+                          alt={t('pinned.illustration')}
                           className="max-h-48 w-full object-contain rounded-lg"
                         />
                       </div>
@@ -222,13 +224,13 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                       {isExpanded ? (
                         <>
                           <EyeOff className="w-3.5 h-3.5" />
-                          <span>Hide answers</span>
+                          <span>{t('pinned.hideAnswers')}</span>
                           <ChevronUp className="w-4 h-4 ml-0.5" />
                         </>
                       ) : (
                         <>
                           <Eye className="w-3.5 h-3.5" />
-                          <span>Show answers</span>
+                          <span>{t('pinned.showAnswers')}</span>
                           <ChevronDown className="w-4 h-4 ml-0.5" />
                         </>
                       )}
@@ -282,7 +284,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
                           <div className="p-3.5 rounded-xl bg-warning-bg/40 border border-warning-border text-xs text-warning-fg flex items-start gap-2 mt-2">
                             <Info className="w-4 h-4 text-warning-fg flex-none mt-0.5" />
                             <div>
-                              <strong className="font-bold">Explanation: </strong>
+                              <strong className="font-bold">{t('pinned.explanation')} </strong>
                               <span>{item.explanation}</span>
                             </div>
                           </div>
@@ -306,7 +308,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
             disabled={isLoadingMore}
             className="min-h-11 rounded-xl border-border px-5 text-foreground"
           >
-            {isLoadingMore ? 'Loading more…' : 'Load more pinned questions'}
+            {isLoadingMore ? t('pinned.loadingMore') : t('pinned.loadMore')}
           </Button>
         </div>
       )}
@@ -319,10 +321,10 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               <Trash2 className="h-7 w-7" />
             </div>
             <DialogTitle className="text-center text-lg font-black text-card-foreground">
-              Clear all pinned questions?
+              {t('pinned.confirmTitle')}
             </DialogTitle>
             <DialogDescription className="text-center text-xs leading-relaxed text-muted-foreground">
-              Are you sure you want to clear all <strong className="text-destructive font-bold">{pinnedQuestions.length} pinned questions</strong> for course {normalizedCode}? This action cannot be undone.
+              {t('pinned.confirmDescription', { count: pinnedQuestions.length, course: normalizedCode })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -332,7 +334,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               onClick={() => setConfirmClearOpen(false)}
               className="flex-1 h-11 rounded-xl border-border text-muted-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
             >
-              Cancel
+              {t('pinned.cancel')}
             </Button>
             <Button
               type="button"
@@ -340,7 +342,7 @@ export default function PinnedQuestionsTab({ courseCode }: PinnedQuestionsTabPro
               disabled={clearAllPinsMutation.isPending}
               className="flex-1 h-11 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold text-xs cursor-pointer"
             >
-              {clearAllPinsMutation.isPending ? 'Clearing...' : 'Clear all'}
+              {clearAllPinsMutation.isPending ? t('pinned.clearing') : t('pinned.clearAll')}
             </Button>
           </DialogFooter>
         </DialogContent>

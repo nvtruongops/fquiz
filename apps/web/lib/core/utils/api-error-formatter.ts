@@ -1,4 +1,5 @@
 import { useToast, type ToastOptions, type ToastType } from '@/store/shared/toast-store'
+import { getStoredLocale, translateMessage } from '@fquiz/ui/i18n'
 
 export interface FormattedError {
   message: string
@@ -12,12 +13,15 @@ export interface FormattedError {
  */
 export function formatApiError(
   error: unknown,
-  fallbackMessage: string = 'An unexpected error occurred. Please try again later.'
+  fallbackMessage?: string
 ): FormattedError {
+  const locale = getStoredLocale()
+  const t = (key: Parameters<typeof translateMessage>[1]) => translateMessage(locale, key)
+  const defaultMessage = fallbackMessage ?? t('notification.unexpectedError')
   if (!error) {
     return {
-      title: 'Error',
-      message: fallbackMessage,
+      title: t('notification.error'),
+      message: defaultMessage,
       type: 'error',
     }
   }
@@ -25,16 +29,16 @@ export function formatApiError(
   // Network / Offline errors
   if (error instanceof TypeError && error.message.toLowerCase().includes('failed to fetch')) {
     return {
-      title: 'Connection Lost',
-      message: 'Unable to connect to the server. Please check your internet connection or reload the page.',
+      title: t('notification.connectionLost'),
+      message: t('notification.connectionLostDescription'),
       type: 'error',
     }
   }
 
   if ((error as any)?.name === 'AbortError') {
     return {
-      title: 'Request Timed Out',
-      message: 'The request took too long to complete. The server may be busy, please try again.',
+      title: t('notification.requestTimedOut'),
+      message: t('notification.requestTimedOutDescription'),
       type: 'warning',
     }
   }
@@ -56,8 +60,8 @@ export function formatApiError(
   if (status === 400) {
     return {
       status,
-      title: 'Invalid Request',
-      message: typeof serverMsg === 'string' && serverMsg ? serverMsg : 'The request payload is invalid or malformed.',
+      title: t('notification.invalidRequest'),
+      message: t('notification.invalidRequestDescription'),
       type: 'error',
     }
   }
@@ -65,8 +69,8 @@ export function formatApiError(
   if (status === 401) {
     return {
       status,
-      title: 'Session Expired',
-      message: typeof serverMsg === 'string' && serverMsg ? serverMsg : 'Your login session has expired. Please log in again.',
+      title: t('notification.sessionExpired'),
+      message: t('notification.sessionExpiredDescription'),
       type: 'warning',
     }
   }
@@ -74,8 +78,8 @@ export function formatApiError(
   if (status === 403) {
     return {
       status,
-      title: 'Access Denied',
-      message: typeof serverMsg === 'string' && serverMsg ? serverMsg : 'You do not have permission to perform this action.',
+      title: t('notification.accessDenied'),
+      message: t('notification.accessDeniedDescription'),
       type: 'error',
     }
   }
@@ -83,8 +87,8 @@ export function formatApiError(
   if (status === 404) {
     return {
       status,
-      title: 'Not Found',
-      message: typeof serverMsg === 'string' && serverMsg ? serverMsg : 'The requested resource or page was not found.',
+      title: t('notification.notFound'),
+      message: t('notification.notFoundDescription'),
       type: 'info',
     }
   }
@@ -92,8 +96,8 @@ export function formatApiError(
   if (status === 429) {
     return {
       status,
-      title: 'Too Many Requests',
-      message: typeof serverMsg === 'string' && serverMsg ? serverMsg : 'You are sending too many requests. Please wait a moment and try again.',
+      title: t('notification.tooManyRequests'),
+      message: t('notification.tooManyRequestsDescription'),
       type: 'warning',
     }
   }
@@ -101,10 +105,8 @@ export function formatApiError(
   if (status === 500) {
     return {
       status,
-      title: 'Internal Server Error',
-      message: typeof serverMsg === 'string' && serverMsg && !serverMsg.includes('Internal Server Error')
-        ? serverMsg
-        : 'The server encountered an error processing your request. Please try again shortly.',
+      title: t('notification.serverError'),
+      message: t('notification.serverErrorDescription'),
       type: 'error',
     }
   }
@@ -112,8 +114,8 @@ export function formatApiError(
   if (status === 502 || status === 503 || status === 504) {
     return {
       status,
-      title: 'Service Unavailable',
-      message: 'The service is temporarily unavailable or undergoing maintenance. Your data is safe, please try again shortly.',
+      title: t('notification.serviceUnavailable'),
+      message: t('notification.serviceUnavailableDescription'),
       type: 'error',
     }
   }
@@ -121,15 +123,15 @@ export function formatApiError(
   // Fallback for standard string/Error messages
   if (typeof serverMsg === 'string' && serverMsg.trim()) {
     return {
-      title: 'Notice',
-      message: serverMsg,
+      title: t('notification.notice'),
+      message: defaultMessage,
       type: 'error',
     }
   }
 
   return {
-    title: 'System Error',
-    message: fallbackMessage,
+    title: t('notification.systemError'),
+    message: defaultMessage,
     type: 'error',
   }
 }

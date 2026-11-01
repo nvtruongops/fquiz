@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { VariantCard } from './VariantCard'
 import type { Conflict } from '@/hooks/question-bank/useQuestionBankConflicts'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ConflictDetailPanelProps {
   selectedConflict: Conflict | null
@@ -25,21 +28,22 @@ export function ConflictDetailPanel({
   onCancel,
   onResolve,
 }: ConflictDetailPanelProps) {
+  const t = useTranslations()
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Details &amp; Resolution</CardTitle>
+        <CardTitle>{t('adminConflict.detailsResolution')}</CardTitle>
       </CardHeader>
       <CardContent>
         {selectedConflict ? (
           <div className="space-y-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Question:</p>
+              <p className="text-sm font-medium text-muted-foreground mb-2">{t('adminConflict.question')}</p>
               <p className="font-medium text-card-foreground">{selectedConflict.text}</p>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-3">Select Correct Answer:</p>
+              <p className="text-sm font-medium text-muted-foreground mb-3">{t('adminConflict.selectCorrectAnswer')}</p>
               <div className="space-y-3">
                 {selectedConflict.answer_groups.map((group, idx) => (
                   <VariantCard
@@ -64,22 +68,22 @@ export function ConflictDetailPanel({
                 htmlFor="update-all"
                 className="text-sm font-medium cursor-pointer text-warning-fg"
               >
-                Update correct answer across all quizzes containing this question
+                {t('adminConflict.updateAllQuizzes')}
               </label>
             </div>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={onCancel} className="flex-1">
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={onResolve} disabled={resolving} className="flex-1">
-                {resolving ? 'Saving...' : 'Save Answer'}
+                {resolving ? t('common.saving') : t('adminConflict.saveAnswer')}
               </Button>
             </div>
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            Select a conflict to view details
+            {t('adminConflict.selectConflict')}
           </div>
         )}
       </CardContent>

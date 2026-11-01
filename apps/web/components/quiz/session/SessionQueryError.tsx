@@ -1,6 +1,7 @@
 import React from 'react'
 import { XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface SessionQueryErrorProps {
   title: string
@@ -25,6 +26,7 @@ export function SessionQueryError({
   onBack,
   onDashboard,
 }: SessionQueryErrorProps) {
+  const t = useTranslations()
   return (
     <div className={mobile
       ? 'flex h-screen items-center justify-center bg-page-bg p-6 text-card-foreground'
@@ -44,7 +46,7 @@ export function SessionQueryError({
                 ? 'w-full bg-primary py-6 text-primary-foreground hover:bg-primary/90 font-black cursor-pointer'
                 : 'h-11 w-full rounded-xl bg-primary text-primary-foreground text-xs font-black'}
             >
-              Retry
+              {t('common.tryAgain')}
             </Button>
           )}
           <div className="grid grid-cols-2 gap-3">

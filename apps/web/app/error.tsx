@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { AlertCircle, RefreshCw, Home } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function RootError({
   error,
@@ -10,6 +11,7 @@ export default function RootError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations()
   useEffect(() => {
     console.error('[RootError] Application Error Boundary caught:', error)
   }, [error])
@@ -23,14 +25,14 @@ export default function RootError({
 
         <div className="space-y-1.5">
           <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            Something went wrong
+            {t('error.rootTitle')}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            The page is temporarily unavailable. Please try again or return to the home page.
+            {t('error.rootDescription')}
           </p>
           {error.digest && (
             <p className="text-[10px] font-mono text-muted-foreground bg-muted/60 py-1 px-2.5 rounded-lg inline-block mt-1">
-              Trace ID: {error.digest}
+              {t('error.traceId')} {error.digest}
             </p>
           )}
         </div>
@@ -42,7 +44,7 @@ export default function RootError({
             className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs sm:text-sm font-bold text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95 shadow-xs"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Try again
+            {t('common.tryAgain')}
           </button>
           <button
             type="button"
@@ -52,7 +54,7 @@ export default function RootError({
             className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-black text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer active:scale-95 shadow-xs"
           >
             <Home className="w-3.5 h-3.5" />
-            Home page
+            {t('common.homePage')}
           </button>
         </div>
       </div>

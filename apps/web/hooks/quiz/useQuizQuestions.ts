@@ -7,6 +7,7 @@ import { useQuestionBankWarning } from '@/hooks/quiz/useQuestionBankWarning'
 import { analyzeQuestionStructure } from '@/lib/modules/quiz/quiz-import/analyzer'
 import { checkDuplicateQuestions } from '@/lib/modules/quiz/quiz-import/duplicate-checker'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const DEFAULT_OPTION_COUNT = 4
 
@@ -34,6 +35,7 @@ export function useQuizQuestions({
   onConflictsResolved,
 }: UseQuizQuestionsOptions) {
   const { toast } = useToast()
+  const t = useTranslations()
   const [targetCount, setTargetCount] = useState(form.questions.length)
   const [targetInput, setTargetInput] = useState(String(form.questions.length))
 
@@ -298,13 +300,13 @@ export function useQuizQuestions({
     onConflictsResolved?.()
 
     if ((importedCategoryToken || importedCourseCode) && !matchedCategory) {
-      toast.error(`No course category matched "${importedCategoryToken || importedCourseCode}". Please select a category manually.`)
+      toast.error(t('quiz.noCategoryMatched', { category: importedCategoryToken || importedCourseCode }))
     }
 
     if (overwriteCount > 0) {
-      toast.success(`File applied: added ${addedCount} questions, overwritten ${overwriteCount} questions with duplicate numbering.`)
+      toast.success(t('quiz.importedFileApplied', { added: addedCount, overwritten: overwriteCount }))
     } else {
-      toast.success(`File applied: added ${addedCount} questions.`)
+      toast.success(t('quiz.importedFileAppliedSimple', { added: addedCount }))
     }
   }
 
@@ -389,9 +391,9 @@ export function useQuizQuestions({
     })
 
     if (freshDiagnostics.length === 0) {
-      toast.success('Report updated: No duplicates or errors remaining in form!')
+      toast.success(t('quiz.noImportIssues'))
     } else {
-      toast.success(`Updated: ${errorCount} errors and ${warningCount} warnings remaining.`)
+      toast.success(t('quiz.importIssuesRemain', { errors: errorCount, warnings: warningCount }))
     }
   }, [form.questions, form.course_code, form.category_id, form.description, appliedImportSummary, toast])
 

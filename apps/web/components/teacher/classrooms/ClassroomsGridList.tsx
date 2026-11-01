@@ -25,6 +25,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import type { Classroom } from '@/hooks/useTeacherClassrooms'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ClassroomsGridListProps {
   classrooms: Classroom[]
@@ -51,6 +52,7 @@ export function ClassroomsGridList({
   onOpenShareModal,
   onConfirmDelete,
 }: ClassroomsGridListProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-8">
       {/* Metric Cards */}
@@ -59,7 +61,7 @@ export function ClassroomsGridList({
           <School className="w-6 h-6 text-primary" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">
-              Active Classrooms
+              {t('classrooms.active')}
             </span>
             <span className="text-2xl font-black text-card-foreground">{classrooms.length}</span>
           </div>
@@ -69,7 +71,7 @@ export function ClassroomsGridList({
           <Users className="w-6 h-6 text-success-fg" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">
-              Total Students
+              {t('classrooms.totalStudents')}
             </span>
             <span className="text-2xl font-black text-card-foreground">{totalStudents}</span>
           </div>
@@ -79,7 +81,7 @@ export function ClassroomsGridList({
           <BookOpen className="w-6 h-6 text-warning-fg" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">
-              My Quizzes
+              {t('classrooms.myQuizzes')}
             </span>
             <span className="text-2xl font-black text-card-foreground">{totalQuizzes}</span>
           </div>
@@ -89,10 +91,10 @@ export function ClassroomsGridList({
           <ShieldCheck className="w-6 h-6 text-primary" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">
-              Teaching Status
+              {t('classrooms.teachingStatus')}
             </span>
             <span className="text-xs font-black text-success-fg bg-success-bg px-2 py-0.5 rounded-full border border-success-border">
-              Ready
+              {t('classrooms.ready')}
             </span>
           </div>
         </div>
@@ -105,12 +107,12 @@ export function ClassroomsGridList({
         </div>
       ) : classrooms.length === 0 ? (
         <div className="py-16 text-center border-2 border-dashed border-border rounded-3xl bg-card p-8 space-y-4">
-          <h3 className="text-xl font-black text-card-foreground">No classrooms yet</h3>
+          <h3 className="text-xl font-black text-card-foreground">{t('classrooms.empty')}</h3>
           <Button
             onClick={onOpenCreateModal}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl px-6 cursor-pointer"
           >
-            Create First Classroom
+            {t('classrooms.createFirst')}
           </Button>
         </div>
       ) : (
@@ -135,6 +137,7 @@ export function ClassroomsGridList({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
+                        aria-label={t('classrooms.actions')}
                         className="p-1.5 rounded-xl text-muted-foreground hover:text-card-foreground hover:bg-muted cursor-pointer"
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -149,21 +152,21 @@ export function ClassroomsGridList({
                         className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold text-card-foreground cursor-pointer hover:bg-muted"
                       >
                         <Key className="w-4 h-4 text-primary" />
-                        <span className="text-xs">{c.password ? 'Change Password' : 'Add Password'}</span>
+                        <span className="text-xs">{c.password ? t('classrooms.changePassword') : t('classrooms.addPassword')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onOpenShareModal(c)}
                         className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold text-card-foreground cursor-pointer hover:bg-muted"
                       >
                         <Share2 className="w-4 h-4 text-success-fg" />
-                        <span className="text-xs">Share Link</span>
+                        <span className="text-xs">{t('classrooms.shareLink')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onConfirmDelete(c._id)}
                         className="flex items-center gap-2.5 py-2 px-3 rounded-xl font-bold text-destructive cursor-pointer hover:bg-incorrect-bg"
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
-                        <span className="text-xs">Delete Classroom</span>
+                        <span className="text-xs">{t('classrooms.delete')}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -173,13 +176,14 @@ export function ClassroomsGridList({
               <CardContent className="p-5 pt-0 text-xs space-y-3">
                 <div className="flex items-center justify-between bg-muted/60 p-2.5 rounded-xl border border-border">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-extrabold uppercase text-muted-foreground">Class Code</span>
+                    <span className="text-[10px] font-extrabold uppercase text-muted-foreground">{t('classrooms.code')}</span>
                     <span className="font-mono font-black text-card-foreground text-sm tracking-wider">
                       {c.code}
                     </span>
                   </div>
                   <button
                     onClick={() => onCopyCode(c.code)}
+                    aria-label={t('classrooms.copyCode')}
                     className="p-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors text-card-foreground cursor-pointer"
                   >
                     {copiedCode === c.code ? <Check className="w-4 h-4 text-success-fg" /> : <Copy className="w-4 h-4" />}
@@ -187,12 +191,12 @@ export function ClassroomsGridList({
                 </div>
 
                 <div className="flex items-center justify-between text-muted-foreground font-semibold pt-1">
-                  <span>{c.student_count || 0} students</span>
+                  <span>{c.student_count || 0} {t('classrooms.students')}</span>
                   <Link
                     href={`/teacher/classrooms/${c._id}`}
                     className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
                   >
-                    Enter class <ArrowRight className="w-3.5 h-3.5" />
+                    {t('classrooms.enter')} <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </CardContent>

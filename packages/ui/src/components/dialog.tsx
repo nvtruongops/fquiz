@@ -47,9 +47,11 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close
         aria-label={closeButtonAriaLabel}
-        className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+        className="group absolute right-3 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted-foreground opacity-100 shadow-none focus:outline-none disabled:pointer-events-none"
       >
-        <X className="h-4 w-4" aria-hidden="true" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/90 shadow-xs transition-colors group-hover:bg-muted group-hover:text-foreground group-focus-visible:ring-2 group-focus-visible:ring-primary/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background">
+          <X className="h-4 w-4" aria-hidden="true" />
+        </span>
         <span className="sr-only">{closeButtonAriaLabel}</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react'
 import { useQuestionBankConflicts } from '@/hooks/question-bank/useQuestionBankConflicts'
 import { ConflictCard } from './question-bank/conflicts/ConflictCard'
 import { ConflictDetailPanel } from './question-bank/conflicts/ConflictDetailPanel'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface Category {
   _id: string
@@ -26,6 +27,7 @@ interface QuestionBankConflictResolverProps {
 }
 
 export function QuestionBankConflictResolver({ categories }: QuestionBankConflictResolverProps) {
+  const t = useTranslations()
   const {
     selectedCategory,
     setSelectedCategory,
@@ -45,23 +47,23 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
   return (
     <div className="space-y-6 text-card-foreground">
       <div>
-        <h2 className="text-2xl font-bold text-card-foreground">Resolve Conflicts</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">{t('conflicts.resolveTitle')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Review and select authoritative correct answers for conflicting questions
+          {t('conflicts.description')}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Select Category</CardTitle>
+          <CardTitle>{t('conflicts.selectCategory')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="-- Select category --" />
+              <SelectValue placeholder={t('conflicts.categoryPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t('conflicts.allCategories')}</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   {cat.name}
@@ -81,7 +83,7 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
       {!loading && selectedCategory && conflicts.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No conflicts found in this category!
+            {t('conflicts.noneFound')}
           </CardContent>
         </Card>
       )}
@@ -91,9 +93,9 @@ export function QuestionBankConflictResolver({ categories }: QuestionBankConflic
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Conflicts List ({conflicts.length})</CardTitle>
+                <CardTitle>{t('conflicts.list', { count: conflicts.length })}</CardTitle>
                 <Button size="sm" variant="outline" onClick={fetchConflicts}>
-                  Refresh
+                  {t('common.refresh')}
                 </Button>
               </div>
             </CardHeader>

@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { withCsrfHeaders } from '@/lib/security/csrf'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 export default function AdminLoginPage() {
+  const t = useTranslations()
   const router = useRouter()
   const studentPortalUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL
   const [identifier, setIdentifier] = useState('')
@@ -46,13 +48,13 @@ export default function AdminLoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Login failed')
+        throw new Error(data.error || t('admin.loginFailed'))
       }
 
       router.push('/')
       router.refresh()
-    } catch (err: any) {
-      setError(err.message || 'Login error')
+    } catch {
+      setError(t('admin.loginError'))
     } finally {
       setLoading(false)
     }
@@ -60,21 +62,24 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-radial from-card via-background to-background relative overflow-hidden">
+      <div className="absolute top-4 right-4 z-20">
+        <LocaleSwitcher />
+      </div>
       {/* Subtle background glow */}
       <div className="absolute w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -top-48 -left-48" />
       <div className="absolute w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -bottom-32 -right-32" />
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">FQuiz Admin Console</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Secure Administration Portal for Administrators</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">{t('admin.loginTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{t('admin.loginDescription')}</p>
         </div>
 
         <Card className="border-border bg-card/80 backdrop-blur-xl shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-bold">Admin Sign In</CardTitle>
+            <CardTitle className="text-lg font-bold">{t('admin.signInTitle')}</CardTitle>
             <CardDescription className="text-xs">
-              Only accounts with Administrator privileges can access this portal
+              {t('admin.signInRestriction')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -88,7 +93,7 @@ export default function AdminLoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor="admin-identifier" className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Email or Username
+                  {t('admin.emailOrUsername')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -96,7 +101,7 @@ export default function AdminLoginPage() {
                     id="admin-identifier"
                     type="text"
                     required
-                    placeholder="admin@example.com"
+                    placeholder={t('admin.loginEmailPlaceholder')}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="pl-9 bg-background/50 border-input focus:border-primary"
@@ -106,7 +111,7 @@ export default function AdminLoginPage() {
 
               <div className="space-y-1.5">
                 <label htmlFor="admin-password" className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Password
+                  {t('admin.password')}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -130,11 +135,11 @@ export default function AdminLoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                    Authenticating...
+                    {t('admin.authenticating')}
                   </>
                 ) : (
                   <>
-                    Sign In
+                    {t('admin.signIn')}
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </>
                 )}
@@ -150,13 +155,13 @@ export default function AdminLoginPage() {
               className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg hover:bg-muted/50 border border-border/40"
             >
               <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-              Student &amp; Teacher Portal
+              {t('admin.studentTeacherPortal')}
             </a>
           </div>
         )}
 
         <div className="text-center mt-6 text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} FQuiz Platform • Zero Trust Isolation Architecture
+          © {new Date().getFullYear()} FQuiz {t('brand.platform')} • {t('admin.portalFooter')}
         </div>
       </div>
     </div>

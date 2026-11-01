@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { Users, Star, Tag, Trash2, X } from 'lucide-react'
 import type { Member } from '@/hooks/teacher/useTeacherClassroomDetail'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface ClassroomMembersTabProps {
   members: Member[]
@@ -24,11 +25,13 @@ export function ClassroomMembersTab({
   onSetConfirmRemoveStudentId,
   onRemoveMember,
 }: ClassroomMembersTabProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   return (
     <div className="space-y-6 mt-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-card-foreground">
-          Enrolled Students ({members.length})
+          {t('classroom.enrolledStudents', { count: members.length })}
         </h2>
       </div>
 
@@ -37,9 +40,9 @@ export function ClassroomMembersTab({
           <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto shadow-xs">
             <Users className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-black text-card-foreground">No students enrolled yet</h3>
+          <h3 className="text-xl font-black text-card-foreground">{t('classroom.noStudents')}</h3>
           <p className="text-sm font-medium text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Share the Class Code <strong className="text-primary font-mono font-black">{classroomCode}</strong> with your students to join.
+            {t('classroom.shareCodeBefore')} <strong className="text-primary font-mono font-black">{classroomCode}</strong> {t('classroom.shareCodeAfter')}
           </p>
         </div>
       ) : (
@@ -55,7 +58,7 @@ export function ClassroomMembersTab({
                   type="button"
                   onClick={() => m.student?._id && onToggleStar(m.student._id)}
                   className="p-1 rounded-lg hover:bg-warning-bg text-muted-foreground hover:text-warning-fg transition-colors cursor-pointer"
-                  title={m.is_starred ? 'Unstar student' : 'Star featured student'}
+                  title={t(m.is_starred ? 'classroom.unstarStudent' : 'classroom.starStudent')}
                 >
                   <Star className={`w-5 h-5 ${m.is_starred ? 'fill-warning-fg text-warning-fg' : ''}`} />
                 </button>
@@ -79,7 +82,7 @@ export function ClassroomMembersTab({
                     </span>
                     {m.is_starred && (
                       <span className="text-[10px] font-bold bg-warning-bg text-warning-fg px-2 py-0.5 rounded-full border border-warning-border flex items-center gap-1">
-                        ★ Featured
+                        {t('classroom.featured')}
                       </span>
                     )}
                   </div>
@@ -103,7 +106,7 @@ export function ClassroomMembersTab({
                       className="text-[11px] font-semibold text-muted-foreground hover:text-primary flex items-center gap-1 hover:underline cursor-pointer"
                     >
                       <Tag className="w-3 h-3" />
-                      {m.tags && m.tags.length > 0 ? 'Edit tags' : '+ Add tag'}
+                      {m.tags && m.tags.length > 0 ? t('classroom.editTags') : t('classroom.addTag')}
                     </button>
                   </div>
                 </div>
@@ -111,18 +114,18 @@ export function ClassroomMembersTab({
 
               <div className="flex items-center justify-between sm:justify-end gap-4">
                 <div className="text-xs font-medium text-muted-foreground">
-                  Joined: {new Date(m.joined_at).toLocaleDateString('en-US')}
+                  {t('classroom.joined', { date: new Date(m.joined_at).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US') })}
                 </div>
 
                 {confirmRemoveStudentId === m.student?._id ? (
                   <div className="flex items-center gap-1.5 bg-incorrect-bg p-1 rounded-xl border border-incorrect-border">
-                    <span className="text-xs font-bold text-destructive px-1">Remove?</span>
+                    <span className="text-xs font-bold text-destructive px-1">{t('classroom.removePrompt')}</span>
                     <Button
                       onClick={() => m.student?._id && onRemoveMember(m.student._id)}
                       size="sm"
                       className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold text-xs rounded-lg h-7 px-2.5 cursor-pointer"
                     >
-                      Remove
+                      {t('classroom.remove')}
                     </Button>
                     <button
                       onClick={() => onSetConfirmRemoveStudentId(null)}
@@ -136,7 +139,7 @@ export function ClassroomMembersTab({
                     type="button"
                     onClick={() => m.student?._id && onSetConfirmRemoveStudentId(m.student._id)}
                     className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-incorrect-bg transition-colors cursor-pointer"
-                    title="Remove student from class"
+                    title={t('classroom.removeStudent')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

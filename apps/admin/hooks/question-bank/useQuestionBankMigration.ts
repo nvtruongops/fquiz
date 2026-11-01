@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface ScanResult {
@@ -20,6 +21,7 @@ export interface ScanResult {
 }
 
 export function useQuestionBankMigration(initialCategoryId: string = '') {
+  const t = useTranslations()
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategoryId)
   const [step, setStep] = useState<'select' | 'scan' | 'review' | 'migrate'>('select')
   const [scanning, setScanning] = useState(false)
@@ -49,10 +51,10 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
       const data = await response.json()
       setScanResult(data)
       setStep('review')
-      toast({ title: 'Success', description: 'Question scan completed!', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.scanCompleted'), type: 'success' })
     } catch (error) {
       console.error('Scan error:', error)
-      toast({ title: 'Error', description: 'Failed to scan questions', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.scanFailed'), type: 'error' })
     } finally {
       setScanning(false)
     }
@@ -79,11 +81,11 @@ export function useQuestionBankMigration(initialCategoryId: string = '') {
       }
 
       const data = await response.json()
-      toast({ title: 'Success', description: data.summary || 'Migration completed successfully!', type: 'success' })
+      toast({ title: t('toast.success'), description: data.summary || t('admin.migrationCompleted'), type: 'success' })
       setStep('migrate')
     } catch (error) {
       console.error('Migration error:', error)
-      toast({ title: 'Error', description: 'Failed to migrate questions', type: 'error' })
+      toast({ title: t('toast.error'), description: t('admin.migrationFailed'), type: 'error' })
     } finally {
       setMigrating(false)
     }

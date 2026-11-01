@@ -5,12 +5,14 @@ import dynamicImport from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { QuestionBankStatus } from '@/components/QuestionBankStatus'
 import { Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function TabLoadingFallback() {
+  const t = useTranslations()
   return (
     <div className="py-12 flex flex-col items-center justify-center text-muted-foreground gap-3">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      <span className="text-sm font-medium">Loading module...</span>
+      <span className="text-sm font-medium">{t('adminQuestionBank.loadingModule')}</span>
     </div>
   )
 }
@@ -40,13 +42,14 @@ interface QuestionBankTabsProps {
 }
 
 export function QuestionBankTabs({ categories }: QuestionBankTabsProps) {
+  const t = useTranslations()
   return (
     <Tabs defaultValue="status" className="space-y-6">
       <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-xl">
-        <TabsTrigger value="status">Status</TabsTrigger>
-        <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        <TabsTrigger value="migration">Migration</TabsTrigger>
-        <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
+        <TabsTrigger value="status">{t('adminQuestionBank.status')}</TabsTrigger>
+        <TabsTrigger value="analytics">{t('adminQuestionBank.analytics')}</TabsTrigger>
+        <TabsTrigger value="migration">{t('adminQuestionBank.migration')}</TabsTrigger>
+        <TabsTrigger value="conflicts">{t('adminQuestionBank.conflicts')}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="status">

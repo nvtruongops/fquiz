@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation'
 import { RegisterSchema } from '@/lib/modules/auth/schemas/auth'
 import { useToast } from '@/store/shared/toast-store'
 import { EMAIL_REGEX } from '@/lib/core/schemas/common'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 export function useRegisterForm() {
   const router = useRouter()
   const { toast } = useToast()
+  const t = useTranslations()
+  const { locale } = useLocale()
 
   const [form, setForm] = useState({
     username: '',
@@ -59,7 +62,7 @@ export function useRegisterForm() {
 
   const handleSendCode = useCallback(async () => {
     if (!form.email || !EMAIL_REGEX.test(form.email)) {
-      setErrors((prev) => ({ ...prev, email: 'Please enter a valid email before sending code' }))
+      setErrors((prev) => ({ ...prev, email: t('auth.registrationEmailRequired') }))
       return
     }
 
@@ -78,26 +81,26 @@ export function useRegisterForm() {
 
       if (res.status === 429 && typeof data.retryAfterSec === 'number') {
         setRetryAfterSec(data.retryAfterSec)
-        toast.error(`Please wait ${data.retryAfterSec}s before requesting another code`)
+        toast.error(t('auth.waitBeforeCode', { seconds: data.retryAfterSec }))
         return
       }
 
       if (!res.ok) {
-        toast.error(typeof data.error === 'string' ? data.error : 'Unable to send verification code')
+        toast.error(t('auth.sendCodeUnavailable'))
         return
       }
 
       setCodeSent(true)
       if (typeof data.dev_code === 'string') setDevCode(data.dev_code)
       toast.success(
-        'If this email can receive a verification code, one will be sent. If you already have an account, sign in instead.'
+        t('auth.registrationCodeSent')
       )
     } catch {
-      toast.error('System is busy. Please try again later.')
+      toast.error(t('auth.systemBusy'))
     } finally {
       setSendingCode(false)
     }
-  }, [form.email, toast])
+  }, [form.email, t, toast])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -115,7 +118,7 @@ export function useRegisterForm() {
       }
 
       if (!/^\d{6}$/.test(form.verificationCode.trim())) {
-        setErrors((prev) => ({ ...prev, verificationCode: 'Verification code must be 6 digits' }))
+        setErrors((prev) => ({ ...prev, verificationCode: t('auth.codeMustSixDigits') }))
         return
       }
 
@@ -132,45 +135,42 @@ export function useRegisterForm() {
             password: form.password,
             confirmPassword: form.confirmPassword,
             verificationCode: form.verificationCode.trim(),
+            language: locale,
           }),
         })
 
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {
-          toast.error(
-            typeof data.error === 'string'
-              ? data.error
-              : 'Registration failed. Please check your information.'
-          )
+          toast.error(t('auth.registrationFailed'))
           return
         }
 
-        toast.success('Registration successful! Welcome to FQuiz.')
+        toast.success(t('auth.registrationSuccess'))
         setSuccess(true)
         const callbackUrl = getCallbackUrl()
         setTimeout(() => router.push(callbackUrl || '/login'), 2000)
       } catch {
-        toast.error('System is busy. Please try again later.')
+        toast.error(t('auth.systemBusy'))
       } finally {
         setLoading(false)
       }
     },
-    [form, getCallbackUrl, router, toast]
+    [form, getCallbackUrl, locale, router, t, toast]
   )
 
   const passwordStrength = (() => {
     const p = form.password
     if (!p) return null
-    if (p.length < 8) return { label: 'Too short', color: 'bg-destructive', level: 1 }
-    if (p.length < 10) return { label: 'Weak', color: 'bg-warning-fg', level: 2 }
-    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: 'Medium', color: 'bg-warning-fg', level: 3 }
-    return { label: 'Strong', color: 'bg-success-fg', level: 4 }
+    if (p.length < 8) return { label: t('auth.passwordTooShort'), color: 'bg-destructive', level: 1 }
+    if (p.length < 10) return { label: t('auth.passwordWeak'), color: 'bg-warning-fg', level: 2 }
+    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return { label: t('auth.passwordMedium'), color: 'bg-warning-fg', level: 3 }
+    return { label: t('auth.passwordStrong'), color: 'bg-success-fg', level: 4 }
   })()
 
-  let sendCodeLabel = 'Send code'
-  if (sendingCode) sendCodeLabel = 'Sending...'
-  else if (codeSent) sendCodeLabel = 'Resend'
+  let sendCodeLabel = t('auth.sendCode')
+  if (sendingCode) sendCodeLabel = t('auth.sending')
+  else if (codeSent) sendCodeLabel = t('auth.resend')
 
   return {
     form,

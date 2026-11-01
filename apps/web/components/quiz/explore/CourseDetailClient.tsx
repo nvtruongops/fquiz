@@ -16,6 +16,7 @@ import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
 import { GsapStaggerContainer } from '@/components/shared/gsap/GsapStaggerContainer'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const MixQuizTab = dynamic(() => import('@/components/quiz/explore/MixQuizTab'), {
   loading: () => (
@@ -49,6 +50,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
 
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const t = useTranslations()
   const { openAuthPrompt } = useAuthPrompt()
   const { data: authData } = useAuth()
 
@@ -73,21 +75,21 @@ export default function CourseDetailClient({ code }: { code: string }) {
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Pin Course',
-            title: 'Sign in to pin course',
-            description: 'Pinning a course helps you quickly access and track progress on your favorite quizzes.',
+            featureName: t('explore.pinCourse'),
+            title: t('explore.signInPinCourse'),
+            description: t('explore.pinCourseDescription'),
             targetUrl: `/courses/${code}`,
           })
           return
         }
-        toast.error(json.error || 'Failed to pin course')
+        toast.error(t('explore.pinCourseFailed'))
       } else {
-        toast.success(json.pinned ? 'Pinned course to top' : 'Unpinned course')
+        toast.success(json.pinned ? t('explore.pinnedToTop') : t('explore.unpinned'))
         queryClient.invalidateQueries({ queryKey: ['courseQuizzes', code.toUpperCase()] })
         queryClient.invalidateQueries({ queryKey: ['student', 'pinned-categories'] })
       }
     } catch {
-      toast.error('An error occurred while pinning course')
+      toast.error(t('explore.pinCourseError'))
     } finally {
       setIsPinningCategory(false)
     }
@@ -130,9 +132,9 @@ export default function CourseDetailClient({ code }: { code: string }) {
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Link
                 href="/explore"
-                aria-label="Back to Course Catalog"
+                aria-label={t('explore.backCourseCatalog')}
                 className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95"
-                title="Back to Course Catalog"
+                title={t('explore.backCourseCatalog')}
               >
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               </Link>
@@ -146,21 +148,21 @@ export default function CourseDetailClient({ code }: { code: string }) {
                   type="button"
                   onClick={handleTogglePinCategory}
                   disabled={isPinningCategory}
-                  aria-label={isCategoryPinned ? `Unpin course ${categoryName}` : `Pin course ${categoryName}`}
+                  aria-label={t(isCategoryPinned ? 'explore.unpinCourseAria' : 'explore.pinCourseAria', { name: categoryName })}
                   className={cn(
                     'inline-flex items-center justify-center gap-1 min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border shadow-2xs shrink-0 active:scale-95',
                     isCategoryPinned
                       ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs ring-1 ring-question-flagged-border/50'
                       : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted border-border hover:border-primary/40'
                   )}
-                  title={isCategoryPinned ? 'Unpin this course' : 'Pin this course'}
+                  title={t(isCategoryPinned ? 'explore.unpinThisCourse' : 'explore.pinThisCourse')}
                 >
                   {isPinningCategory ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
                   ) : (
                     <Pin className={cn('w-3.5 h-3.5 transition-transform', isCategoryPinned && 'fill-current rotate-45')} aria-hidden="true" />
                   )}
-                  <span className="hidden sm:inline">{isCategoryPinned ? 'Pinned' : 'Pin Course'}</span>
+                  <span className="hidden sm:inline">{isCategoryPinned ? t('explore.pinned') : t('explore.pinCourse')}</span>
                 </button>
               )}
             </div>
@@ -168,10 +170,10 @@ export default function CourseDetailClient({ code }: { code: string }) {
             {/* Right: Compact Stats Chip */}
             {totalQuizzes > 0 && (
               <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-muted/60 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-border text-xs shrink-0">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden md:inline">Progress:</span>
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden md:inline">{t('explore.progress')}</span>
                 <span className="font-black text-foreground text-xs sm:text-sm">
                   <span className="text-primary">{completedCount}</span>/{totalQuizzes}
-                  <span className="hidden sm:inline text-muted-foreground font-normal text-xs"> quizzes</span>
+                  <span className="hidden sm:inline text-muted-foreground font-normal text-xs"> {t('explore.quizzes')}</span>
                 </span>
                 <span className="px-1.5 py-0.5 rounded-lg bg-card font-black text-[10px] sm:text-[11px] text-primary border border-border shadow-2xs">
                   {Math.round((completedCount / totalQuizzes) * 100)}%
@@ -185,7 +187,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
             {/* Segmented Tabs Bar: 3-column equal grid on mobile with no overflow */}
             <div
               role="tablist"
-              aria-label="Learning Mode"
+              aria-label={t('explore.learningMode')}
               className="grid grid-cols-3 sm:inline-flex p-1 rounded-xl bg-muted/60 border border-border/60 gap-1 shrink-0"
             >
               <button
@@ -201,7 +203,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
                 )}
               >
                 <List className={cn("w-3.5 h-3.5 shrink-0 hidden xs:inline-block", currentTab === 'list' ? "text-primary-foreground" : "text-primary")} aria-hidden="true" />
-                <span className="truncate">Quizzes ({totalQuizzes})</span>
+                <span className="truncate">{t('explore.quizzesCount', { count: totalQuizzes })}</span>
               </button>
 
               <button
@@ -220,7 +222,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
                 )}
               >
                 <Shuffle className={cn("w-3.5 h-3.5 shrink-0 hidden xs:inline-block", currentTab === 'mix' ? "text-primary-foreground" : "text-success-fg")} aria-hidden="true" />
-                <span className="truncate">Mix Quiz</span>
+                <span className="truncate">{t('explore.mixQuiz')}</span>
               </button>
 
               <button
@@ -236,7 +238,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
                 )}
               >
                 <Bookmark className={cn("w-3.5 h-3.5 shrink-0 hidden xs:inline-block", currentTab === 'pinned' ? "text-primary-foreground" : "text-warning-fg")} aria-hidden="true" />
-                <span className="truncate">Pinned</span>
+                <span className="truncate">{t('explore.pinnedTab')}</span>
                 {pinnedQuestions.length > 0 && (
                   <span className={cn(
                     "px-1.5 py-0.2 text-[10px] rounded-full font-black",
@@ -256,7 +258,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search quizzes..."
+                    placeholder={t('explore.searchQuizzes')}
                     className="pl-8 h-9 rounded-xl border-border/80 text-xs bg-card font-medium text-foreground focus:ring-2 focus:ring-primary/30 transition-all"
                   />
                 </div>
@@ -279,7 +281,7 @@ export default function CourseDetailClient({ code }: { code: string }) {
                             : 'text-muted-foreground hover:text-foreground'
                         )}
                       >
-                        {size === 'all' ? 'All' : size}
+                        {size === 'all' ? t('explore.all') : size}
                       </button>
                     ))}
                   </div>

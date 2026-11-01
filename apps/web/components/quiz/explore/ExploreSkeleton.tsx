@@ -2,13 +2,15 @@
 
 import React from 'react'
 import { Skeleton } from '@/components/shared/ui/skeleton'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function CategoryGridSkeleton({ count = 8 }: { count?: number } = {}) {
+  const t = useTranslations()
   return (
     <div
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full"
       aria-busy="true"
-      aria-label="Loading course categories"
+      aria-label={t('explore.loadingCourseCategories')}
     >
       {Array.from({ length: count }).map((_, i) => (
         <div

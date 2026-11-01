@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/ui/button'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface RetryWrongButtonProps {
   quizId: string
@@ -18,6 +19,7 @@ interface RetryWrongButtonProps {
 export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: RetryWrongButtonProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const t = useTranslations()
   const [loading, setLoading] = useState(false)
 
   if (wrongCount <= 0) return null
@@ -46,8 +48,8 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
         : `/quiz/${quizId}/session/${resData.sessionId}`
 
       router.push(targetUrl)
-    } catch (err: any) {
-      toast.error(err.message || 'Error creating retry session')
+    } catch {
+      toast.error(t('quiz.createRetrySessionFailed'))
     } finally {
       setLoading(false)
     }
@@ -68,7 +70,7 @@ export function RetryWrongButton({ quizId, sessionId, wrongCount, className }: R
       ) : (
         <RotateCcw className="h-3.5 w-3.5 shrink-0" />
       )}
-      Retry {wrongCount} wrong questions
+      {t('quiz.retryWrongCount', { count: wrongCount })}
     </Button>
   )
 }

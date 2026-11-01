@@ -12,6 +12,7 @@ import {
 } from '@/components/shared/ui/dialog'
 import { cn } from '@/lib/core/utils/cn'
 import { AnswerSaveBlockedNotice } from '@/components/quiz/session/SessionSaveStatus'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileSessionDialogsProps {
   confirmOpen: boolean
@@ -50,15 +51,16 @@ export function MobileSessionDialogs({
   isFinalizePending,
   submitDisabled,
 }: MobileSessionDialogsProps) {
+  const t = useTranslations()
   return (
     <>
       {/* Submit Confirmation Dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-xs rounded-2xl p-6 bg-card text-card-foreground border-border">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-card-foreground">Confirm Submission</DialogTitle>
+            <DialogTitle className="text-center text-lg font-black text-card-foreground">{t('session.confirmSubmission')}</DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              You have answered {answeredCount}/{effectiveTotal} questions. Are you sure you want to submit?
+              {t('session.submissionPrompt', { answered: answeredCount, total: effectiveTotal })}
             </DialogDescription>
           </DialogHeader>
           <AnswerSaveBlockedNotice blocked={Boolean(submitDisabled)} />
@@ -69,7 +71,7 @@ export function MobileSessionDialogs({
               disabled={isFinalizePending || submitDisabled}
               className="w-full bg-primary py-5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
             >
-              Submit Quiz
+              {t('session.submitQuiz')}
             </Button>
             <Button
               type="button"
@@ -77,7 +79,7 @@ export function MobileSessionDialogs({
               onClick={() => setConfirmOpen(false)}
               className="w-full py-5 font-bold text-muted-foreground"
             >
-              Keep Going
+              {t('session.keepGoing')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -87,14 +89,14 @@ export function MobileSessionDialogs({
       <Dialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
         <DialogContent className="max-w-xs rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg font-black text-foreground">Exit Exam Room?</DialogTitle>
+            <DialogTitle className="text-center text-lg font-black text-foreground">{t('session.exitRoom')}</DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Your progress will be saved automatically. You can continue later.
+              {t('session.exitNotice')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-col gap-2">
             <Button type="button" variant="destructive" onClick={onConfirmExitQuiz} className="w-full py-5 font-bold">
-              Exit Exam
+              {t('session.exitExam')}
             </Button>
             <Button
               type="button"
@@ -102,7 +104,7 @@ export function MobileSessionDialogs({
               onClick={() => setExitConfirmOpen(false)}
               className="w-full py-5 font-bold text-muted-foreground"
             >
-              Stay & Continue
+              {t('session.stayContinue')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -113,7 +115,7 @@ export function MobileSessionDialogs({
         <DialogContent className="max-w-xs rounded-2xl p-5 bg-card text-card-foreground border-border">
           <DialogHeader>
             <DialogTitle className="text-center text-base font-black text-card-foreground">
-              Question List
+              {t('session.questionList')}
             </DialogTitle>
           </DialogHeader>
           <div className="my-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -125,6 +127,7 @@ export function MobileSessionDialogs({
                   <button
                     key={i}
                     type="button"
+                    aria-label={t('session.questionNumber', { number: i + 1 })}
                     disabled={navigationDisabled}
                     onClick={() => {
                       onNavigate(i)
@@ -152,7 +155,7 @@ export function MobileSessionDialogs({
               onClick={() => setQuestionMapOpen(false)}
               className="w-full h-10 rounded-xl font-bold border-border text-card-foreground"
             >
-              Close
+              {t('session.close')}
             </Button>
           </DialogFooter>
         </DialogContent>

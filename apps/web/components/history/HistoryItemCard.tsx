@@ -20,12 +20,14 @@ import { Card, CardContent } from '@/components/shared/ui/card'
 import { cn } from '@/lib/core/utils/cn'
 import { format } from 'date-fns'
 import type { GroupedQuiz } from '@/hooks/useStudentHistory'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard' }) {
+  const t = useTranslations()
   const config = {
-    immediate: { label: 'Practice', icon: Zap, bg: 'bg-primary/10 text-primary border-primary/20' },
-    review: { label: 'Exam', icon: BookOpen, bg: 'bg-info-bg text-info-fg border-info-border' },
-    flashcard: { label: 'Flashcard', icon: GraduationCap, bg: 'bg-accent/15 text-accent-foreground border-border' },
+    immediate: { label: t('history.practice'), icon: Zap, bg: 'bg-primary/10 text-primary border-primary/20' },
+    review: { label: t('history.exam'), icon: BookOpen, bg: 'bg-info-bg text-info-fg border-info-border' },
+    flashcard: { label: t('history.flashcard'), icon: GraduationCap, bg: 'bg-accent/15 text-accent-foreground border-border' },
   }
   const { label, icon: Icon, bg } =
     config[mode] || { label: mode, icon: BookOpen, bg: 'bg-muted text-muted-foreground border-border' }
@@ -45,6 +47,7 @@ export function ModeBadge({ mode }: { mode: 'immediate' | 'review' | 'flashcard'
 }
 
 export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz }) {
+  const t = useTranslations()
   const [expanded, setExpanded] = useState(false)
   const latestAttempt = quizGroup.attempts[0]
   const attemptCount = quizGroup.attempts.length
@@ -109,10 +112,10 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
               <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground flex-wrap">
                 <span className="inline-flex items-center gap-1 font-bold text-foreground">
                   <Clock className="w-3 h-3 text-muted-foreground" />
-                  Latest: {format(new Date(latestAttempt.started_at), 'HH:mm')}
+                  {t('history.latest')} {format(new Date(latestAttempt.started_at), 'HH:mm')}
                 </span>
                 <span>•</span>
-                <span className="font-semibold text-muted-foreground">{attemptCount} attempts</span>
+                <span className="font-semibold text-muted-foreground">{attemptCount} {t('history.attempts')}</span>
                 <span>•</span>
                 <ModeBadge mode={latestAttempt.mode} />
               </div>
@@ -129,11 +132,11 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
                     <span className="text-base sm:text-lg font-black text-primary leading-none">{maxScore}</span>
                     <span className="text-[10px] font-bold text-muted-foreground">/10</span>
                   </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Best Score</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('history.bestScore')}</p>
                 </div>
               ) : (
                 <Badge className="bg-warning-bg/20 text-warning-fg border border-warning-border font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full">
-                  Incomplete
+                  {t('history.incomplete')}
                 </Badge>
               )}
             </div>
@@ -150,7 +153,7 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
                     expanded && 'bg-muted border-primary/40 text-primary'
                   )}
                 >
-                  <span>Details ({attemptCount})</span>
+                  <span>{t('history.details', { count: attemptCount })}</span>
                   <ChevronDown
                     className={cn('w-3.5 h-3.5 ml-1 transition-transform duration-200', expanded && 'rotate-180')}
                   />
@@ -163,7 +166,7 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
                 asChild
               >
                 <Link href={latestSessionUrl} prefetch={false}>
-                  <span>{latestAttempt.status === 'active' ? 'Continue' : 'View Results'}</span>
+                  <span>{latestAttempt.status === 'active' ? t('history.continue') : t('history.viewResults')}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </Button>
@@ -176,9 +179,9 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
           <div className="border-t border-border/70 bg-muted/20 p-3 sm:p-4 space-y-2 rounded-b-2xl animate-in fade-in-50 duration-200">
             <div className="flex items-center justify-between px-1 mb-2">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                Attempt Progress ({attemptCount})
+                {t('history.attemptProgress', { count: attemptCount })}
               </p>
-              <span className="text-[10px] font-bold text-muted-foreground">Click an attempt to view review details</span>
+              <span className="text-[10px] font-bold text-muted-foreground">{t('history.clickAttemptHint')}</span>
             </div>
 
             <div className="space-y-1.5">
@@ -213,19 +216,19 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
                             : 'bg-muted text-muted-foreground font-bold border border-border/60'
                         )}
                       >
-                        Attempt {attemptCount - idx}
+                        {t('history.attempt', { number: attemptCount - idx })}
                       </span>
 
                       <ModeBadge mode={attempt.mode} />
 
                       {isRetryWrong && (
                         <Badge className="bg-warning-bg/20 text-warning-fg border border-warning-border font-black text-[9px] uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <RotateCcw className="w-2.5 h-2.5" /> Retry Wrong
+                          <RotateCcw className="w-2.5 h-2.5" /> {t('history.retryWrong')}
                         </Badge>
                       )}
 
                       <span className="text-xs font-medium text-muted-foreground">
-                        {format(new Date(attempt.started_at), 'HH:mm')} • {attempt.duration_minutes || 0} min
+                        {format(new Date(attempt.started_at), 'HH:mm')} • {attempt.duration_minutes || 0} {t('history.minutes')}
                       </span>
                     </div>
 
@@ -242,16 +245,16 @@ export function GroupedQuizTimelineCard({ quizGroup }: { quizGroup: GroupedQuiz 
                             {formattedScore}/10
                           </span>
                           <p className="text-[9px] font-bold text-muted-foreground">
-                            {attempt.correct_count}/{attempt.total_questions} correct
+                            {attempt.correct_count}/{attempt.total_questions} {t('history.correct')}
                           </p>
                         </div>
                       ) : (
                         <div className="text-right flex flex-col items-end">
                           <Badge className="bg-warning-bg/20 text-warning-fg border border-warning-border font-black text-[9px] uppercase px-2 py-0.5 rounded-full">
-                            In Progress
+                            {t('history.inProgress')}
                           </Badge>
                           <span className="text-[9px] font-bold text-warning-fg mt-0.5">
-                            {attempt.answered_count ?? 0}/{attempt.total_questions} answered
+                            {attempt.answered_count ?? 0}/{attempt.total_questions} {t('history.answered')}
                           </span>
                         </div>
                       )}

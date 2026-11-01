@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Menu, XCircle } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileFlashcardHeaderProps {
   categoryName?: string
@@ -24,6 +25,7 @@ export function MobileFlashcardHeader({
   onOpenQuestionMap,
   onOpenExitConfirm,
 }: Readonly<MobileFlashcardHeaderProps>) {
+  const t = useTranslations()
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-card text-card-foreground shadow-xs flex-none">
       <div className="flex items-center justify-between px-3 py-3">
@@ -32,7 +34,7 @@ export function MobileFlashcardHeader({
           <button
             onClick={onOpenQuestionMap}
             className="h-11 w-11 rounded-2xl bg-muted text-primary hover:bg-muted/80 flex items-center justify-center shrink-0 border border-border cursor-pointer transition-colors"
-            title="Question list"
+            title={t('flashcard.questionList')}
           >
             <Menu className="h-5 w-5 text-primary" strokeWidth={2.2} />
           </button>
@@ -50,19 +52,19 @@ export function MobileFlashcardHeader({
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center text-xs font-black tracking-tight">
-              <span className="text-success-fg font-black">{stats.known} Known</span>
+              <span className="text-success-fg font-black">{t('flashcard.knownCount', { count: stats.known })}</span>
               <span className="text-muted-foreground font-normal mx-1">|</span>
-              <span className="text-destructive font-black">{stats.unknown} Unknown</span>
+              <span className="text-destructive font-black">{t('flashcard.unknownCount', { count: stats.unknown })}</span>
             </div>
             <p className="text-[11px] font-bold text-primary mt-0.5">
-              {actualIndex + 1}/{effectiveTotal} cards
+              {t('flashcard.cardProgress', { current: actualIndex + 1, total: effectiveTotal })}
             </p>
           </div>
 
           <button
             onClick={onOpenExitConfirm}
             className="h-11 w-11 rounded-full bg-incorrect-bg hover:bg-incorrect-bg/80 text-destructive flex items-center justify-center shrink-0 cursor-pointer transition-colors border border-incorrect-border ml-1"
-            title="Exit"
+            title={t('common.exit')}
           >
             <XCircle className="h-6 w-6 text-destructive" strokeWidth={1.8} />
           </button>

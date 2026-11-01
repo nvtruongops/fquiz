@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ClassroomDetail {
   _id: string
@@ -54,6 +55,7 @@ export interface StudentReport {
 
 export function useTeacherClassroomDetail(classroomId: string) {
   const { toast } = useToast()
+  const t = useTranslations()
 
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -176,7 +178,7 @@ export function useTeacherClassroomDetail(classroomId: string) {
     async (e: React.FormEvent) => {
       e.preventDefault()
       if (!selectedQuizId || !assignmentTitle.trim()) {
-        setErrorMessage('Please select a quiz and enter an assignment title')
+        setErrorMessage(t('teacher.assignmentFieldsRequired'))
         return
       }
 
@@ -200,8 +202,8 @@ export function useTeacherClassroomDetail(classroomId: string) {
         setAssignmentTitle('')
         setDueAt('')
         fetchAssignments()
-      } catch (err: any) {
-        setErrorMessage(err.message || 'Error assigning quiz')
+      } catch {
+        setErrorMessage(t('teacher.assignQuizFailed'))
       } finally {
         setAssigning(false)
       }
@@ -291,7 +293,7 @@ export function useTeacherClassroomDetail(classroomId: string) {
           await Promise.allSettled([fetchMembers(), fetchClassroomDetail()])
         } else {
           const data = await res.json()
-          toast.error(data.error || 'Failed to remove student')
+          toast.error(t('teacher.removeStudentFailed'))
         }
       } catch (err) {
         console.error('Error removing student:', err)

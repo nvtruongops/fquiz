@@ -1,9 +1,12 @@
+'use client'
+
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pencil, Trash2, Search, Loader2, Plus, Check, X } from 'lucide-react'
 import type { Category } from '@/hooks/categories/useAdminCategories'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CategoryListProps {
   search: string
@@ -40,17 +43,18 @@ export function CategoryList({
   onUpdate,
   onDeleteTarget,
 }: CategoryListProps) {
+  const t = useTranslations()
   return (
     <Card className="border-border bg-card">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
-        <CardTitle className="text-base font-bold">Categories List</CardTitle>
+        <CardTitle className="text-base font-bold">{t('admin.categoriesList')}</CardTitle>
         <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search categories..."
-            aria-label="Search categories"
+            placeholder={t('admin.searchCategories')}
+            aria-label={t('admin.searchCategories')}
             className="pl-9 h-9"
           />
         </div>
@@ -61,8 +65,8 @@ export function CategoryList({
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Enter new category name..."
-            aria-label="Enter new category name"
+            placeholder={t('admin.enterCategoryName')}
+            aria-label={t('admin.enterCategoryName')}
             className="h-10"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && newName.trim()) {
@@ -80,7 +84,7 @@ export function CategoryList({
             ) : (
               <Plus className="w-4 h-4" aria-hidden="true" />
             )}
-            Add Category
+            {t('admin.addCategory')}
           </Button>
         </div>
 
@@ -90,7 +94,7 @@ export function CategoryList({
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-sm">
-            No matching categories found
+            {t('admin.noMatchingCategories')}
           </div>
         ) : (
           <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
@@ -105,14 +109,14 @@ export function CategoryList({
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       className="h-8 text-sm"
-                      aria-label="Edit category name"
+                      aria-label={t('admin.editCategoryName')}
                       autoFocus
                     />
                     <Button
                       size="sm"
                       onClick={() => onUpdate(cat._id, editName.trim())}
                       disabled={!editName.trim() || isUpdating}
-                      aria-label="Save category name"
+                      aria-label={t('admin.saveCategoryName')}
                     >
                       <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
@@ -120,7 +124,7 @@ export function CategoryList({
                       size="sm"
                       variant="outline"
                       onClick={() => setEditId(null)}
-                      aria-label="Cancel editing"
+                      aria-label={t('admin.cancelEditing')}
                     >
                       <X className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
@@ -137,7 +141,7 @@ export function CategoryList({
                       setEditId(cat._id)
                       setEditName(cat.name)
                     }}
-                    aria-label={`Edit category ${cat.name}`}
+                    aria-label={t('admin.editCategory', { name: cat.name })}
                     className="h-8 px-2 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
@@ -146,7 +150,7 @@ export function CategoryList({
                     variant="ghost"
                     size="sm"
                     onClick={() => onDeleteTarget(cat)}
-                    aria-label={`Delete category ${cat.name}`}
+                    aria-label={t('admin.deleteCategory', { name: cat.name })}
                     className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />

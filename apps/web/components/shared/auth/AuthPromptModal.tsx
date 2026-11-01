@@ -13,9 +13,11 @@ import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 import { LogIn, UserPlus, Lock, X, Sun, Moon, Sparkles, Leaf, Heart } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export function AuthPromptModal() {
-  const { isOpen, title, description, featureName, targetUrl, newTab, closeAuthPrompt } = useAuthPrompt()
+  const t = useTranslations()
+  const { isOpen, title, description, titleKey, descriptionKey, featureName, featureNameKey, targetUrl, newTab, closeAuthPrompt } = useAuthPrompt()
   const [mounted, setMounted] = useState(false)
   const [showCustomThemes, setShowCustomThemes] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -47,11 +49,11 @@ export function AuthPromptModal() {
             {featureName ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider border border-primary/20">
                 <Lock className="w-3 h-3" />
-                <span>{featureName}</span>
+                <span>{featureNameKey ? t(featureNameKey as never) : featureName}</span>
               </span>
             ) : (
               <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                FQuiz Account
+                {t('auth.account')}
               </span>
             )}
           </div>
@@ -60,7 +62,7 @@ export function AuthPromptModal() {
             <button
               type="button"
               className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer active:scale-95"
-              title="Close"
+              title={t('auth.close')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -71,11 +73,11 @@ export function AuthPromptModal() {
         <div className="space-y-3 pt-1">
           <div className="space-y-1 text-left">
             <DialogTitle className="text-base sm:text-lg font-black text-foreground tracking-tight leading-snug">
-              {title || 'Sign In Required'}
+              {title || t(titleKey as never)}
             </DialogTitle>
 
             <DialogDescription className="text-xs text-muted-foreground font-medium leading-relaxed">
-              {description || 'Please sign in or create an account to use this feature.'}
+              {description || t(descriptionKey as never)}
             </DialogDescription>
           </div>
 
@@ -90,7 +92,7 @@ export function AuthPromptModal() {
               className="w-full flex items-center justify-center gap-2.5 h-11 sm:h-12 px-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-black shadow-xs transition-all cursor-pointer active:scale-98"
             >
               <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
+              <span>{t('auth.signIn')}</span>
             </Link>
 
             <Link
@@ -102,7 +104,7 @@ export function AuthPromptModal() {
               className="w-full flex items-center justify-center gap-2.5 h-11 sm:h-12 px-4 rounded-2xl border border-border/70 bg-muted hover:bg-muted/80 text-foreground text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer active:scale-98"
             >
               <UserPlus className="w-4 h-4 text-primary" />
-              <span>Create New Account</span>
+              <span>{t('auth.createNewAccount')}</span>
             </Link>
           </div>
 
@@ -111,7 +113,7 @@ export function AuthPromptModal() {
             <div className="pt-3 border-t border-border/80">
               <div className="flex items-center justify-between px-1 mb-1.5">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                  Appearance
+                  {t('auth.appearance')}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
@@ -127,7 +129,7 @@ export function AuthPromptModal() {
                   )}
                 >
                   <Sun className="w-3.5 h-3.5" />
-                  <span>Light</span>
+                  <span>{t('theme.light')}</span>
                 </button>
                 <button
                   type="button"
@@ -141,7 +143,7 @@ export function AuthPromptModal() {
                   )}
                 >
                   <Moon className="w-3.5 h-3.5" />
-                  <span>Dark</span>
+                  <span>{t('theme.dark')}</span>
                 </button>
                 <button
                   type="button"
@@ -152,7 +154,7 @@ export function AuthPromptModal() {
                   )}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Custom</span>
+                  <span>{t('theme.custom')}</span>
                 </button>
               </div>
 
@@ -167,7 +169,7 @@ export function AuthPromptModal() {
                     )}
                   >
                     <Leaf className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Green</span>
+                    <span>{t('theme.green')}</span>
                   </button>
                   <button
                     type="button"
@@ -178,7 +180,7 @@ export function AuthPromptModal() {
                     )}
                   >
                     <Heart className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Pink</span>
+                    <span>{t('theme.pink')}</span>
                   </button>
                 </div>
               )}
@@ -191,7 +193,7 @@ export function AuthPromptModal() {
             onClick={closeAuthPrompt}
             className="w-full text-center pt-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            Maybe later / Continue browsing
+            {t('auth.continueBrowsing')}
           </button>
         </div>
       </DialogContent>

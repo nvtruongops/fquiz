@@ -4,6 +4,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Bot, Save, Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface LLMSettingsCardProps {
   activeProvider: 'gemini' | 'openai' | 'custom'
@@ -18,15 +19,16 @@ export const LLMSettingsCard = React.memo(function LLMSettingsCard({
   onSave,
   isSaving,
 }: LLMSettingsCardProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
       <Card className="border-border bg-card shadow-xs text-card-foreground">
         <CardHeader>
           <CardTitle className="text-primary text-lg flex items-center gap-2">
-            <Bot className="w-5 h-5" aria-hidden="true" /> Active AI Provider
+            <Bot className="w-5 h-5" aria-hidden="true" /> {t('adminSettings.activeAiProvider')}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Select the AI provider that powers text generation across the platform
+            {t('adminSettings.aiProviderDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -63,7 +65,7 @@ export const LLMSettingsCard = React.memo(function LLMSettingsCard({
           ) : (
             <Save className="w-4 h-4 mr-2" aria-hidden="true" />
           )}
-          Save LLM Settings
+          {t('adminSettings.saveLlmSettings')}
         </Button>
       </div>
     </div>

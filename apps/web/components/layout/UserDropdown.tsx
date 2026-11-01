@@ -21,6 +21,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AuthResponse } from '@/hooks/auth/useAuth'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface UserDropdownProps {
   user: { name: string; role: string; avatarUrl?: string }
@@ -36,6 +37,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
   const { theme, setTheme } = useTheme()
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const t = useTranslations()
   const themeRequestRef = useRef(0)
   const selectedThemeRef = useRef(theme ?? 'light')
 
@@ -60,7 +62,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
         headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ theme: newTheme }),
       })
-      if (!response.ok) throw new Error('Could not save your theme preference. Try again.')
+      if (!response.ok) throw new Error(t('nav.themeSaveFailed'))
 
       const data = await response.json()
       if (requestId !== themeRequestRef.current) return
@@ -74,11 +76,11 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
         ...current,
         user: { ...current.user, themePreference: savedTheme, theme_preference: savedTheme },
       } : current)
-    } catch (error) {
+    } catch {
       if (requestId !== themeRequestRef.current) return
       selectedThemeRef.current = previousTheme
       setTheme(previousTheme)
-      toast.error(error)
+      toast.error(t('nav.themeSaveFailed'))
     }
   }
 
@@ -90,7 +92,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
   const isTeacher = user.role === 'teacher'
   const hasAvatar = !!user.avatarUrl && !avatarError
 
-  const roleLabel = isAdmin ? 'Administrator' : isDev ? 'Developer' : isTeacher ? 'Teacher' : 'Student'
+  const roleLabel = t(isAdmin ? 'nav.roleAdministrator' : isDev ? 'nav.roleDeveloper' : isTeacher ? 'nav.roleTeacher' : 'nav.roleStudent')
 
   return (
     <DropdownMenu>
@@ -199,7 +201,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                   <Sparkles className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-sm font-bold truncate">Admin Dashboard</span>
+                <span className="text-sm font-bold truncate">{t('nav.adminDashboard')}</span>
               </Link>
             </DropdownMenuItem>
           )}
@@ -211,7 +213,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                     <GraduationCap className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-sm font-bold truncate">Student Portal</span>
+                  <span className="text-sm font-bold truncate">{t('nav.studentPortal')}</span>
                 </Link>
               </DropdownMenuItem>
             ) : (
@@ -220,7 +222,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                     <School className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-sm font-bold truncate">Teacher Portal</span>
+                  <span className="text-sm font-bold truncate">{t('nav.teacherPortal')}</span>
                 </Link>
               </DropdownMenuItem>
             )
@@ -231,7 +233,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <User className="w-4 h-4" />
               </div>
-              <span className="text-sm">Profile</span>
+              <span className="text-sm">{t('nav.profile')}</span>
             </Link>
           </DropdownMenuItem>
 
@@ -240,7 +242,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <Settings className="w-4 h-4" />
               </div>
-              <span className="text-sm">Settings</span>
+              <span className="text-sm">{t('nav.accountSettings')}</span>
             </Link>
           </DropdownMenuItem>
         </div>
@@ -260,15 +262,15 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   )}
                 </div>
                 <div className="flex flex-col min-w-0 text-left">
-                  <span className="text-sm font-semibold truncate">Appearance</span>
+                  <span className="text-sm font-semibold truncate">{t('nav.appearance')}</span>
                   <span className="text-[10px] text-muted-foreground font-bold truncate">
                     {theme === 'dark'
-                      ? 'Dark'
+                      ? t('nav.dark')
                       : theme === 'green'
-                      ? 'Custom: Green'
+                      ? t('nav.customGreen')
                       : theme === 'pink'
-                      ? 'Custom: Pink'
-                      : 'Light'}
+                      ? t('nav.customPink')
+                      : t('nav.light')}
                   </span>
                 </div>
               </DropdownMenuSubTrigger>
@@ -282,7 +284,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 >
                   <div className="flex items-center gap-2.5">
                     <Sun className="w-4 h-4 text-primary" />
-                    <span>Light</span>
+                    <span>{t('nav.light')}</span>
                   </div>
                   {theme === 'light' && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
@@ -296,7 +298,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                 >
                   <div className="flex items-center gap-2.5">
                     <Moon className="w-4 h-4 text-primary" />
-                    <span>Dark</span>
+                    <span>{t('nav.dark')}</span>
                   </div>
                   {theme === 'dark' && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
@@ -310,7 +312,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                   >
                     <div className="flex items-center gap-2.5">
                       <Palette className="w-4 h-4 text-primary" />
-                      <span>Custom Themes</span>
+                      <span>{t('nav.customThemes')}</span>
                     </div>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent sideOffset={8} className="w-48 p-1.5 bg-card border border-border rounded-2xl shadow-xl z-50">
@@ -323,7 +325,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                     >
                       <div className="flex items-center gap-2.5">
                         <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Green Theme</span>
+                    <span>{t('nav.greenTheme')}</span>
                       </div>
                       {theme === 'green' && <Check className="w-4 h-4 text-primary" />}
                     </DropdownMenuItem>
@@ -337,7 +339,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
                     >
                       <div className="flex items-center gap-2.5">
                         <Heart className="w-4 h-4 text-rose-500" />
-                        <span>Pink Theme</span>
+                    <span>{t('nav.pinkTheme')}</span>
                       </div>
                       {theme === 'pink' && <Check className="w-4 h-4 text-primary" />}
                     </DropdownMenuItem>
@@ -357,7 +359,7 @@ export function UserDropdown({ user, compact = false, fullCard = false }: UserDr
             <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive">
               <LogOut className="w-4 h-4" />
             </div>
-            <span className="text-sm font-semibold">Sign Out</span>
+            <span className="text-sm font-semibold">{t('nav.signOut')}</span>
           </DropdownMenuItem>
         </div>
       </DropdownMenuContent>

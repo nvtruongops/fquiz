@@ -8,6 +8,7 @@ import { Trash2, Plus, CheckCircle2, AlertCircle } from 'lucide-react'
 import { ImageUpload } from '@/components/quiz/shared/ImageUpload'
 import { cn } from '@/lib/core/utils/cn'
 import { QuestionForm } from '@/lib/modules/quiz/types/quiz'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
 
@@ -38,6 +39,7 @@ export function QuestionEditorCard({
   error,
   isQuestionBankMatch
 }: QuestionEditorCardProps) {
+  const t = useTranslations()
   return (
     <Card id={`q-card-${index}`} className={cn(
       "bg-card border-border shadow-xs group transition-all duration-300",
@@ -52,13 +54,24 @@ export function QuestionEditorCard({
             {isQuestionBankMatch && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 animate-pulse">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">In Question Bank</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t('editor.inQuestionBank')}</span>
               </div>
             )}
             {error && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-destructive/10 text-destructive rounded-full border border-destructive/20">
                 <AlertCircle className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{error.message}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  {error.code === 'EMPTY_TEXT' ? t('diagnostic.questionEmptyText')
+                    : error.code === 'EMPTY_OPTIONS' ? t('diagnostic.questionEmptyOptions')
+                    : error.code === 'INSUFFICIENT_OPTIONS' ? t('diagnostic.questionInsufficientOptions', { count: question.options.length })
+                    : error.code === 'EMPTY_OPTION' ? t('diagnostic.questionEmptyOption', { number: Number(error.message.match(/#(\d+)/)?.[1] ?? 1) })
+                    : error.code === 'DUPLICATE_OPTIONS' ? t('diagnostic.questionDuplicateOption')
+                    : error.code === 'MISSING_CORRECT_ANSWER' ? t('diagnostic.questionMissingAnswer')
+                    : t('diagnostic.questionAnswerOutOfBounds', {
+                      index: Number(error.message.match(/index (\d+)/)?.[1] ?? 0),
+                      count: question.options.length,
+                    })}
+                </span>
               </div>
             )}
           </div>
@@ -68,6 +81,7 @@ export function QuestionEditorCard({
             size="icon"
             onClick={() => removeQuestion(index)}
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+            aria-label={t('editor.removeQuestion')}
           >
             <Trash2 className="w-5 h-5" />
           </Button>
@@ -77,17 +91,17 @@ export function QuestionEditorCard({
           {/* Question Text & Image */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1 space-y-2">
-              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground">Question Content</label>
+              <label htmlFor={`question-text-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('editor.questionContent')}</label>
               <Textarea
                 id={`question-text-${index}`}
-                placeholder="Enter question text here..."
+                placeholder={t('editor.enterQuestionText')}
                 value={question.text}
                 onChange={(e) => updateQuestion(index, 'text', e.target.value)}
                 className="min-h-[120px] rounded-xl border-border focus:ring-primary text-base bg-background text-foreground"
               />
             </div>
             <div className="w-full md:w-[240px] shrink-0">
-              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Question Image</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">{t('editor.questionImage')}</span>
               <ImageUpload
                 value={question.image_url}
                 onChange={(url) => updateQuestion(index, 'image_url', url)}
@@ -99,8 +113,8 @@ export function QuestionEditorCard({
           {/* Options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Answer Options</span>
-              <span className="text-[10px] font-bold text-muted-foreground">Check the box for correct answer(s) (multiple allowed)</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('editor.answerOptions')}</span>
+              <span className="text-[10px] font-bold text-muted-foreground">{t('editor.multipleCorrectOptions')}</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {question.options.map((option, oi) => (
@@ -122,7 +136,7 @@ export function QuestionEditorCard({
                     <Textarea
                       value={option}
                       onChange={(e) => updateOption(index, oi, e.target.value)}
-                      placeholder={`Option ${OPTION_LABELS[oi]}...`}
+                      placeholder={t('editor.option', { label: OPTION_LABELS[oi] })}
                       className="border-none bg-transparent focus-visible:ring-0 text-sm py-2 min-h-[40px] resize-none overflow-hidden text-foreground"
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
@@ -134,6 +148,7 @@ export function QuestionEditorCard({
                       <button
                         type="button"
                         onClick={() => toggleCorrect(index, oi)}
+                        aria-label={t('editor.markCorrectAnswer', { label: OPTION_LABELS[oi] })}
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer",
                           question.correct_answers.includes(oi)
@@ -146,6 +161,7 @@ export function QuestionEditorCard({
                       <button
                         type="button"
                         onClick={() => removeOption(index, oi)}
+                        aria-label={t('editor.removeOption', { label: OPTION_LABELS[oi] })}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover/opt:opacity-100 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -161,7 +177,7 @@ export function QuestionEditorCard({
                   className="h-14 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="text-sm font-bold">Add Option</span>
+                  <span className="text-sm font-bold">{t('editor.addOptionButton')}</span>
                 </button>
               )}
             </div>
@@ -169,10 +185,10 @@ export function QuestionEditorCard({
 
           {/* Explanation */}
           <div className="pt-4 border-t border-border">
-            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Answer Explanation</label>
+            <label htmlFor={`question-explanation-${index}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">{t('editor.answerExplanation')}</label>
             <Textarea
               id={`question-explanation-${index}`}
-              placeholder="Why is this answer correct? Explain to help learners understand..."
+              placeholder={t('editor.explanationPrompt')}
               value={question.explanation}
               onChange={(e) => updateQuestion(index, 'explanation', e.target.value)}
               className="rounded-xl border-border min-h-[80px] focus:ring-primary bg-card text-foreground"

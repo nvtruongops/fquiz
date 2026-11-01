@@ -4,8 +4,10 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function ResetPasswordForm() {
+  const t = useTranslations()
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token') ?? ''
@@ -23,10 +25,10 @@ function ResetPasswordForm() {
       <div className="w-full max-w-md">
         <div className="bg-card text-card-foreground rounded-2xl shadow-sm border border-destructive/30 p-8 text-center">
           <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-card-foreground mb-2">Invalid Link</h2>
-          <p className="text-sm text-muted-foreground mb-4">Password reset token is missing or invalid.</p>
+          <h2 className="text-lg font-bold text-card-foreground mb-2">{t('auth.invalidLink')}</h2>
+          <p className="text-sm text-muted-foreground mb-4">{t('auth.resetTokenInvalid')}</p>
           <Link href="/forgot-password" className="text-sm text-primary font-medium hover:underline">
-            Request a new link
+            {t('auth.requestNewLink')}
           </Link>
         </div>
       </div>
@@ -38,8 +40,8 @@ function ResetPasswordForm() {
     setServerError('')
     const errs: typeof errors = {}
 
-    if (password.length < 8) errs.password = 'Password must be at least 8 characters'
-    if (password !== confirm) errs.confirm = 'Passwords do not match'
+    if (password.length < 8) errs.password = t('auth.passwordMinEight')
+    if (password !== confirm) errs.confirm = t('auth.passwordMismatch')
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
     setLoading(true)
@@ -53,14 +55,14 @@ function ResetPasswordForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setServerError(data.error ?? 'An error occurred')
+        setServerError(t('auth.errorOccurred'))
         return
       }
 
       setSuccess(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch {
-      setServerError('An error occurred, please try again')
+      setServerError(t('auth.tryAgainError'))
     } finally {
       setLoading(false)
     }
@@ -73,8 +75,8 @@ function ResetPasswordForm() {
           <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-7 h-7 text-success-fg" />
           </div>
-          <h2 className="text-xl font-bold text-card-foreground mb-2">Reset Successful!</h2>
-          <p className="text-sm text-muted-foreground">Redirecting to sign-in page…</p>
+          <h2 className="text-xl font-bold text-card-foreground mb-2">{t('auth.resetSuccessful')}</h2>
+          <p className="text-sm text-muted-foreground">{t('auth.redirectingSignIn')}</p>
         </div>
       </div>
     )
@@ -87,14 +89,14 @@ function ResetPasswordForm() {
       
       <div className="relative bg-card text-card-foreground rounded-[32px] shadow-sm border border-border p-8 sm:p-10 transition-all duration-500">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-card-foreground">Reset Password</h1>
-          <p className="text-sm text-muted-foreground mt-1">Enter a new password for your account.</p>
+          <h1 className="text-2xl font-bold text-card-foreground">{t('auth.resetPassword')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('auth.newPasswordForAccount')}</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-card-foreground mb-1.5">
-              New Password
+              {t('auth.newPassword')}
             </label>
             <div className="relative">
               <input
@@ -102,7 +104,7 @@ function ResetPasswordForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
+                placeholder={t('auth.passwordMinLengthPlaceholder')}
                 className={`w-full rounded-xl border px-3.5 py-2.5 pr-10 text-sm outline-none transition-colors
                   focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
                   ${errors.password ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
@@ -111,7 +113,7 @@ function ResetPasswordForm() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground cursor-pointer"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -121,14 +123,14 @@ function ResetPasswordForm() {
 
           <div>
             <label htmlFor="confirm" className="block text-sm font-medium text-card-foreground mb-1.5">
-              Confirm Password
+              {t('auth.confirmPassword')}
             </label>
             <input
               id="confirm"
               type={showPassword ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Re-enter password"
+              placeholder={t('auth.reenterPassword')}
               className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors
                 focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card text-card-foreground placeholder:text-muted-foreground
                 ${errors.confirm ? 'border-destructive bg-incorrect-bg' : 'border-border bg-muted/50 hover:border-primary/50'}`}
@@ -147,7 +149,7 @@ function ResetPasswordForm() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl shadow-md transition-all disabled:opacity-60 cursor-pointer"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reset Password'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('auth.resetPassword')}
           </button>
         </form>
       </div>

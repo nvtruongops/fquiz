@@ -1,8 +1,8 @@
 import { Skeleton } from '@/components/shared/ui/skeleton'
 
-export function LegalSkeleton({ title }: { title: string }) {
+export function LegalSkeleton({ title, loadingLabel }: { title: string; loadingLabel?: string }) {
   return (
-    <main className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 md:px-8 space-y-6" aria-busy="true" aria-label={`Loading ${title}`}>
+    <main className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 md:px-8 space-y-6" aria-busy="true" aria-label={loadingLabel ?? `Loading ${title}`}>
       {/* Grid Layout Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: TOC Skeleton */}

@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ConflictPreviewProps {
   conflict: {
@@ -15,11 +18,12 @@ interface ConflictPreviewProps {
 }
 
 export function ConflictPreview({ conflict }: ConflictPreviewProps) {
+  const t = useTranslations()
   return (
     <div className="border rounded-lg p-4 bg-destructive/5 border-destructive/20 text-card-foreground">
       <div className="flex items-start justify-between mb-2">
         <p className="font-medium text-card-foreground">{conflict.text}</p>
-        <Badge variant="destructive">{conflict.variant_count} variants</Badge>
+        <Badge variant="destructive">{t('adminQuestionBank.variantCount', { count: conflict.variant_count })}</Badge>
       </div>
 
       <div className="space-y-2 mt-3">
@@ -27,7 +31,7 @@ export function ConflictPreview({ conflict }: ConflictPreviewProps) {
           <div key={idx} className="text-sm">
             <span className="font-medium text-card-foreground">{variant.course_code}:</span>{' '}
             <span className="text-muted-foreground">
-              Answer:{' '}
+              {t('adminQuestionBank.answer')} {' '}
               {variant.correct_answer.map((i) => variant.options[i]).join(', ')}
             </span>
           </div>

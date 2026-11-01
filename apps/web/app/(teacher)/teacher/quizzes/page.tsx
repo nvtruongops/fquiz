@@ -11,8 +11,10 @@ import { TeacherQuizFilterToolbar } from '@/components/teacher/quizzes/TeacherQu
 import { TeacherCategoryCard } from '@/components/teacher/quizzes/TeacherCategoryCard'
 import { TeacherCreateCategoryModal } from '@/components/teacher/quizzes/TeacherCreateCategoryModal'
 import { TeacherAssignQuizModal } from '@/components/teacher/quizzes/TeacherAssignQuizModal'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function TeacherQuizzesPage() {
+  const t = useTranslations()
   const tq = useTeacherQuizzes()
 
   return (
@@ -30,7 +32,7 @@ export default function TeacherQuizzesPage() {
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Quiz Repository ({tq.filteredQuizzes.length})</span>
+          <span>{t('teacherQuiz.repositoryCount', { count: tq.filteredQuizzes.length })}</span>
         </button>
 
         <button
@@ -42,7 +44,7 @@ export default function TeacherQuizzesPage() {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Course Codes &amp; Categories ({tq.categories.length})</span>
+          <span>{t('teacherQuiz.categoriesCount', { count: tq.categories.length })}</span>
         </button>
       </div>
 
@@ -61,7 +63,7 @@ export default function TeacherQuizzesPage() {
             <div className="py-16 text-center text-muted-foreground font-semibold"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
           ) : tq.filteredQuizzes.length === 0 ? (
             <div className="py-16 text-center border-2 border-dashed border-border rounded-3xl bg-card p-8 space-y-4">
-              <h3 className="text-xl font-black text-card-foreground">No quizzes found</h3>
+              <h3 className="text-xl font-black text-card-foreground">{t('teacherQuiz.noQuizzes')}</h3>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,9 +86,9 @@ export default function TeacherQuizzesPage() {
       {tq.activeTab === 'categories' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-card-foreground">Course Code List ({tq.categories.length})</h2>
+            <h2 className="text-lg font-black text-card-foreground">{t('teacherQuiz.courseCodeList', { count: tq.categories.length })}</h2>
             <Button onClick={() => tq.setCreateCategoryOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl cursor-pointer">
-              + Create New Category
+              {t('teacherQuiz.createCategory')}
             </Button>
           </div>
 

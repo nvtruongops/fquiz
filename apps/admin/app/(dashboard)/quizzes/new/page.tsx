@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { QuizEditorWithQuestionBank, type Category } from '@/components/quiz/QuizEditorWithQuestionBank'
 import { Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 async function fetchCategories(): Promise<Category[]> {
   const res = await fetch('/api/categories', { credentials: 'include' })
@@ -15,6 +16,7 @@ async function fetchCategories(): Promise<Category[]> {
 }
 
 export default function AdminNewQuizPage() {
+  const t = useTranslations()
   const { data: categories = [], isLoading, error } = useQuery({
     queryKey: ['admin', 'categories'],
     queryFn: fetchCategories,
@@ -25,7 +27,7 @@ export default function AdminNewQuizPage() {
     return (
       <div className="p-12 flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm font-medium text-muted-foreground">Loading categories and initializing editor...</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('adminQuizEditor.loadingCategories')}</p>
       </div>
     )
   }
@@ -33,7 +35,7 @@ export default function AdminNewQuizPage() {
   if (error) {
     return (
       <div className="p-12 text-center text-destructive">
-        Unable to connect to the server to load categories.
+        {t('adminQuizEditor.loadCategoriesError')}
       </div>
     )
   }

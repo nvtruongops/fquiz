@@ -5,6 +5,7 @@ import { Bot, Send, Loader2, Layers, CheckCircle2, ChevronDown, BookOpen, Sparkl
 import { Button } from '@/components/shared/ui/button'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 import type { QuizAIIntent } from '@/lib/modules/ai/quiz-assistant/schemas/quiz-assistant.schema'
 
 interface QuizAIAssistantDrawerProps {
@@ -109,6 +110,7 @@ function FormattedMessageText({ text }: { text: string }) {
 }
 
 export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, currentQuestion }: QuizAIAssistantDrawerProps) {
+  const t = useTranslations()
   const { data: authData } = useAuth()
   const isDev = authData?.user?.role === 'dev'
 
@@ -218,7 +220,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
-        text: err instanceof Error ? err.message : 'An error occurred while processing your request.',
+        text: t('quizAI.processingError'),
         confidence: 'low',
         responseMode: 'db_fallback',
         timestamp: new Date(),
@@ -268,12 +270,12 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
-                  Exam AI Assistant
+                  {t('quizAI.title')}
                   <span className="px-1.5 py-0.5 rounded-md bg-warning-bg text-warning-fg text-[9px] font-extrabold border border-warning-border uppercase tracking-tight">
-                    DEV ONLY
+                    {t('quizAI.devOnly')}
                   </span>
                 </h3>
-                <p className="text-[10px] text-muted-foreground font-medium">Question bank verification & Pedagogical explanations</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{t('quizAI.subtitle')}</p>
               </div>
             </div>
             <Button
@@ -308,7 +310,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-card border border-border text-foreground text-[11px] font-sans space-y-1">
                       <div className="flex items-center gap-1.5 font-bold text-primary">
                         <Layers className="w-3.5 h-3.5 text-primary" />
-                        <span>Formula Breakdown & Calculation Steps:</span>
+                        <span>{t('quizAI.formulaBreakdown')}</span>
                       </div>
                       <p className="text-muted-foreground whitespace-pre-wrap">{msg.formulaExplanation}</p>
                     </div>
@@ -319,7 +321,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-info-bg border border-info-border text-info-fg text-[11px] space-y-1">
                       <div className="flex items-center gap-1.5 font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5 text-info-fg" />
-                        <span>Found similar question in Question Bank:</span>
+                        <span>{t('quizAI.similarQuestionFound')}</span>
                       </div>
                       {msg.similarQuestionDetails && (
                         <p className="text-info-fg/90 whitespace-pre-wrap">{msg.similarQuestionDetails}</p>
@@ -332,17 +334,17 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                     <div className="p-2.5 rounded-xl bg-card border border-border text-foreground text-[10px] space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                         <BookOpen className="w-3 h-3 text-primary" />
-                        <span>Reference Evidence ({msg.evidenceUsed.length} matching questions):</span>
+                      <span>{t('quizAI.referenceEvidence')} ({msg.evidenceUsed.length}):</span>
                       </div>
                       <div className="space-y-2">
                         {msg.evidenceUsed.map((ev, idx) => (
                           <div key={idx} className="p-2 rounded-xl bg-muted/50 border border-border/70 text-muted-foreground space-y-1.5">
                             <div className="flex items-center justify-between font-semibold">
                               <span className="text-primary font-bold">
-                                {ev.sourceType === 'question_bank' ? '🏷️ Question Bank' : '🏷️ Course Quiz'}
+                                {ev.sourceType === 'question_bank' ? t('quizAI.sourceQuestionBank') : t('quizAI.sourceCourseQuiz')}
                               </span>
                               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-card border border-border font-bold text-foreground">
-                                Match: {Math.round(ev.relevance * 100)}%
+                                {t('quizAI.match')} {Math.round(ev.relevance * 100)}%
                               </span>
                             </div>
 
@@ -352,16 +354,16 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                             {ev.matchedAnswerText && (
                               <div className="flex items-center gap-1 text-[10px] text-success-fg font-semibold bg-success-bg/80 border border-success-border/60 px-2 py-0.5 rounded-lg">
                                 <Check className="w-3 h-3 shrink-0" />
-                                <span>Correct answer for this question: <strong>{ev.matchedAnswerText}</strong></span>
+                                <span>{t('quizAI.correctAnswer')} <strong>{ev.matchedAnswerText}</strong></span>
                               </div>
                             )}
 
                             {/* Transparent Scoring Breakdown */}
                             {ev.breakdown && (
                               <div className="pt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground font-mono">
-                                <span>🎯 Answer match: <strong>{Math.round(ev.breakdown.optionScore * 100)}%</strong></span>
-                                <span>📝 Context: <strong>{Math.round(ev.breakdown.questionScore * 100)}%</strong></span>
-                                <span>📚 Subject: <strong>{Math.round(ev.breakdown.subjectScore * 100)}%</strong></span>
+                                <span>{t('quizAI.answerMatch')} <strong>{Math.round(ev.breakdown.optionScore * 100)}%</strong></span>
+                                <span>{t('quizAI.context')} <strong>{Math.round(ev.breakdown.questionScore * 100)}%</strong></span>
+                                <span>{t('quizAI.subject')} <strong>{Math.round(ev.breakdown.subjectScore * 100)}%</strong></span>
                               </div>
                             )}
                           </div>
@@ -377,19 +379,19 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                       {msg.responseMode === 'cached' && (
                         <span className="inline-flex items-center gap-1 font-bold text-info-fg bg-info-bg border border-info-border px-2 py-0.5 rounded-full">
                           <Zap className="w-2.5 h-2.5" />
-                          Source: Cache
+                          {t('quizAI.sourceCache')}
                         </span>
                       )}
                       {msg.responseMode === 'db_fallback' && (
                         <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">
                           <Database className="w-2.5 h-2.5" />
-                          Source: DB Fallback
+                          {t('quizAI.sourceFallback')}
                         </span>
                       )}
                       {msg.responseMode === 'llm' && (
                         <span className="inline-flex items-center gap-1 font-medium text-muted-foreground bg-muted/60 border border-border/80 px-2 py-0.5 rounded-full">
                           <Bot className="w-2.5 h-2.5 text-primary" />
-                          Source: Direct AI
+                          {t('quizAI.sourceAI')}
                         </span>
                       )}
 
@@ -397,19 +399,19 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                       {msg.confidence === 'high' && (
                         <span className="inline-flex items-center gap-1 font-bold text-success-fg bg-success-bg border border-success-border px-2 py-0.5 rounded-full">
                           <ShieldCheck className="w-2.5 h-2.5" />
-                          Confidence: High
+                          {t('quizAI.confidenceHigh')}
                         </span>
                       )}
                       {msg.confidence === 'medium' && (
                         <span className="inline-flex items-center gap-1 font-semibold text-warning-fg bg-warning-bg border border-warning-border px-2 py-0.5 rounded-full">
                           <Sparkles className="w-2.5 h-2.5" />
-                          Confidence: Medium
+                          {t('quizAI.confidenceMedium')}
                         </span>
                       )}
                       {msg.confidence === 'low' && (
                         <span className="inline-flex items-center gap-1 font-medium text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">
                           <HelpCircle className="w-2.5 h-2.5" />
-                          Confidence: Reference
+                          {t('quizAI.confidenceReference')}
                         </span>
                       )}
                     </div>
@@ -418,12 +420,12 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                   {/* Micro-Feedback Thumbs Up/Down for P4 Telemetry */}
                   {msg.sender === 'assistant' && msg.id !== 'welcome-msg' && (
                     <div className="flex items-center gap-2 pt-1 mt-0.5 border-t border-border/40">
-                      <span className="text-[10px] text-muted-foreground font-medium">Helpful?</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{t('quizAI.helpfulPrompt')}</span>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          title="Helpful"
-                          aria-label="Feedback: response is helpful"
+                          title={t('quizAI.helpful')}
+                          aria-label={t('quizAI.feedbackHelpful')}
                           onClick={() => handleFeedback(msg, true)}
                           className={`p-1 rounded-md transition-colors cursor-pointer ${
                             msg.feedback === true
@@ -435,8 +437,8 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                         </button>
                         <button
                           type="button"
-                          title="Not helpful"
-                          aria-label="Feedback: response is not helpful"
+                          title={t('quizAI.notHelpful')}
+                          aria-label={t('quizAI.feedbackNotHelpful')}
                           onClick={() => handleFeedback(msg, false)}
                           className={`p-1 rounded-md transition-colors cursor-pointer ${
                             msg.feedback === false
@@ -456,31 +458,31 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
             {/* Quick Action Suggestions */}
             {messages.length === 1 && !isLoading && (
               <div className="pt-1 space-y-1.5 animate-in fade-in duration-200">
-                <p className="text-[10px] font-semibold text-muted-foreground px-1">Quick Prompts:</p>
+                <p className="text-[10px] font-semibold text-muted-foreground px-1">{t('quizAI.quickPrompts')}</p>
                 <div className="flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => handleSend('Why is my selected answer incorrect?', 'EXPLAIN_WRONG_ANSWER')}
+                    onClick={() => handleSend(t('quizAI.promptExplainWrong'), 'EXPLAIN_WRONG_ANSWER')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>❓ Why is my selected answer incorrect?</span>
-                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">EXPLAIN</span>
+                    <span>{t('quizAI.promptExplainWrong')}</span>
+                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">{t('quizAI.explain')}</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSend('How should I approach solving this question?', 'SOLVE_QUESTION')}
+                    onClick={() => handleSend(t('quizAI.promptSolve'), 'SOLVE_QUESTION')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>💡 Suggested approach & solution steps</span>
-                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">SOLVE</span>
+                    <span>{t('quizAI.promptSolve')}</span>
+                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">{t('quizAI.solve')}</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSend('Find similar questions in the question bank', 'FIND_SIMILAR_QUESTION')}
+                    onClick={() => handleSend(t('quizAI.promptSimilar'), 'FIND_SIMILAR_QUESTION')}
                     className="text-[11px] px-3 py-1.5 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-medium transition-colors text-left cursor-pointer flex items-center justify-between group"
                   >
-                    <span>🔍 Find similar questions in question bank</span>
-                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">RETRIEVE</span>
+                    <span>{t('quizAI.promptSimilar')}</span>
+                    <span className="text-[9px] text-muted-foreground group-hover:text-primary transition-colors">{t('quizAI.retrieve')}</span>
                   </button>
                 </div>
               </div>
@@ -490,7 +492,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
               <div className="flex justify-start">
                 <div className="bg-muted border border-border rounded-2xl rounded-bl-xs p-3 text-xs text-muted-foreground flex items-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                  <span>AI Assistant is retrieving data and analyzing...</span>
+                  <span>{t('quizAI.loading')}</span>
                 </div>
               </div>
             )}
@@ -510,7 +512,7 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask AI about answers, formulas..."
+                placeholder={t('quizAI.inputPlaceholder')}
                 disabled={isLoading}
                 className="flex-1 h-9 px-3 rounded-xl border border-border bg-background text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
               />
@@ -529,8 +531,8 @@ export function QuizAIAssistantDrawer({ sessionId, currentQuestionIndex, current
       {/* Floating Circular Action Button */}
       <button
         type="button"
-        title="Exam AI Assistant (DEV ONLY)"
-        aria-label="Exam AI Assistant (DEV ONLY)"
+        title={t('quizAI.buttonLabel')}
+        aria-label={t('quizAI.buttonLabel')}
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-12 h-12 rounded-full bg-primary text-primary-foreground border border-border shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center group"
       >

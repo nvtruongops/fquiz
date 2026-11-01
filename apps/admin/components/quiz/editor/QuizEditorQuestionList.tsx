@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Lock } from 'lucide-react'
 import { QuizEditorQuestionCard } from './QuizEditorQuestionCard'
 import type { QuestionItem } from '@/hooks/quiz/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorQuestionListProps {
   questions: QuestionItem[]
@@ -31,11 +34,12 @@ export function QuizEditorQuestionList({
   onToggleCorrect,
   onUpdateExplanation,
 }: QuizEditorQuestionListProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-foreground">
-          2. Question List ({questions.length})
+          {t('adminQuizEditor.questionListCount', { count: questions.length })}
         </h2>
         <Button
           type="button"
@@ -45,16 +49,16 @@ export function QuizEditorQuestionList({
           className="gap-1.5 text-xs font-semibold cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Question
+          {t('quizEditor.addQuestion')}
         </Button>
       </div>
 
       {!isCategorySelected ? (
         <div className="p-8 border-2 border-dashed border-border rounded-2xl text-center bg-muted/10 space-y-2">
           <Lock className="w-8 h-8 text-muted-foreground mx-auto" />
-          <p className="text-sm font-bold text-foreground">Editor is temporarily locked</p>
+          <p className="text-sm font-bold text-foreground">{t('adminQuizEditor.editorLocked')}</p>
           <p className="text-xs text-muted-foreground">
-            Please select a Category in section 1 to unlock the question editor.
+            {t('adminQuizEditor.selectCategoryToUnlock')}
           </p>
         </div>
       ) : (

@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface PinnedQuestionItem {
   _id: string
@@ -34,6 +35,7 @@ export function usePinnedQuestions(
 ) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const t = useTranslations()
 
   const normalizedCode = courseCode?.trim().toUpperCase()
 
@@ -95,13 +97,13 @@ export function usePinnedQuestions(
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
       if (data.pinned) {
-        toast.success('Question pinned successfully')
+        toast.success(t('quiz.questionPinned'))
       } else {
-        toast.info('Question unpinned')
+        toast.info(t('quiz.questionUnpinned'))
       }
     },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Failed to pin/unpin question')
+    onError: () => {
+      toast.error(t('quiz.pinQuestionFailed'))
     },
   })
 
@@ -123,10 +125,10 @@ export function usePinnedQuestions(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
-      toast.success('Question removed from pinned list')
+      toast.success(t('quiz.questionRemovedFromPinned'))
     },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Failed to delete pinned question')
+    onError: () => {
+      toast.error(t('quiz.deletePinnedQuestionFailed'))
     },
   })
 
@@ -150,10 +152,10 @@ export function usePinnedQuestions(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['student', 'pinned-questions'] })
-      toast.success('All pinned questions cleared')
+      toast.success(t('quiz.allPinnedQuestionsCleared'))
     },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Error clearing pinned questions')
+    onError: () => {
+      toast.error(t('quiz.clearPinnedQuestionsFailed'))
     },
   })
 

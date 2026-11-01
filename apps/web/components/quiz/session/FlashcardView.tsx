@@ -7,6 +7,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { FlashcardActionButtons } from './FlashcardActionButtons'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 import { InteractiveText } from '@/components/shared/selection/InteractiveText'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface FlashcardViewProps {
   question: {
@@ -64,6 +65,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
   enableExplanation = false,
   taggedStatus,
 }, ref) => {
+  const t = useTranslations()
   const [isFlipped, setIsFlipped] = useState(false)
   const [, setShowExplanation] = useState(false)
 
@@ -126,7 +128,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
     return (
       <div className="w-full max-w-3xl mx-auto px-4">
         <div className="p-8 text-center border border-gray-200 rounded-lg">
-          <p className="text-muted-foreground">Invalid question data</p>
+          <p className="text-muted-foreground">{t('flashcard.invalidData')}</p>
         </div>
       </div>
     )
@@ -149,7 +151,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               className="absolute top-4 left-6 z-50 pointer-events-none bg-destructive text-destructive-foreground px-4 py-2 rounded-2xl border-2 border-background shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider"
             >
               <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive-foreground" />
-              <span>Still Learning</span>
+              <span>{t('flashcard.stillLearning')}</span>
             </motion.div>
 
             <motion.div
@@ -157,7 +159,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
               className="absolute top-4 right-6 z-50 pointer-events-none bg-primary text-primary-foreground px-4 py-2 rounded-2xl border-2 border-primary-foreground/20 shadow-xl flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider"
             >
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-              <span>Mastered</span>
+              <span>{t('flashcard.mastered')}</span>
             </motion.div>
           </>
         )}
@@ -180,7 +182,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           {/* Card Header */}
           <div className="flex items-center justify-between text-xs font-bold text-muted-foreground border-b border-border pb-3 gap-2 relative z-20">
             <span className="flex items-center gap-1.5 text-primary font-extrabold shrink-0">
-              <RotateCw className={cn("w-3.5 h-3.5", enableAnimation && "transition-transform duration-500", enableAnimation && isFlipped && "rotate-180")} /> Card {questionNumber} / {totalQuestions}
+              <RotateCw className={cn("w-3.5 h-3.5", enableAnimation && "transition-transform duration-500", enableAnimation && isFlipped && "rotate-180")} /> {t('flashcard.cardNumber', { current: questionNumber, total: totalQuestions })}
             </span>
 
             {/* Center Badge: UsageBadge */}
@@ -197,16 +199,16 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             <div className="flex items-center gap-2 shrink-0">
               {taggedStatus === 'known' && (
                 <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20 shadow-2xs animate-in fade-in">
-                  <CheckCircle className="w-3 h-3 text-primary" /> Mastered
+                  <CheckCircle className="w-3 h-3 text-primary" /> {t('flashcard.mastered')}
                 </span>
               )}
               {taggedStatus === 'unknown' && (
                 <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20 shadow-2xs animate-in fade-in">
-                  <XCircle className="w-3 h-3 text-destructive" /> Still Learning
+                  <XCircle className="w-3 h-3 text-destructive" /> {t('flashcard.stillLearning')}
                 </span>
               )}
               <span className="text-[10px] uppercase tracking-wider bg-muted px-2.5 py-0.5 rounded-full font-black text-muted-foreground">
-                {isFlipped ? 'Back (Answer)' : 'Front (Question)'}
+                {isFlipped ? t('flashcard.backAnswer') : t('flashcard.frontQuestion')}
               </span>
             </div>
           </div>
@@ -245,7 +247,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
             ) : (
               <div className="space-y-3 text-center">
                 <span className="text-[10px] font-black uppercase tracking-wider text-success-fg bg-success-bg px-3 py-1 rounded-full border border-success-border inline-block shadow-2xs">
-                  Correct Answer
+                  {t('flashcard.correctAnswer')}
                 </span>
                 <div className="space-y-2">
                   {correctAnswers.map((item, idx) => (
@@ -264,7 +266,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
                 </div>
                 {question.explanation && enableExplanation && (
                   <div className="p-3.5 bg-muted/50 rounded-2xl border border-border text-left space-y-1 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">Explanation:</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">{t('flashcard.explanation')}</span>
                     <p className="text-xs text-foreground leading-relaxed">
                       {question.explanation}
                     </p>
@@ -277,7 +279,7 @@ export const FlashcardView = forwardRef<FlashcardViewRef, FlashcardViewProps>(({
           {/* Card Footer */}
           <div className="text-center pt-2 border-t border-border">
             <span className="text-[10px] font-bold text-muted-foreground flex items-center justify-center gap-1">
-              <MousePointerClick className="w-3 h-3" /> {enableAnimation ? 'Swipe left/right or tap to flip card' : 'Tap card to flip'}
+              <MousePointerClick className="w-3 h-3" /> {enableAnimation ? t('flashcard.swipeHint') : t('flashcard.tapHint')}
             </span>
           </div>
         </motion.div>

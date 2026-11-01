@@ -12,6 +12,7 @@ import { UploadDropZone } from './upload/UploadDropZone'
 import { UploadQuickJumpBar } from './upload/UploadQuickJumpBar'
 import { UploadQuestionBreakdownItem } from './upload/UploadQuestionBreakdownItem'
 import type { ParsedFilePreview } from '@/hooks/quiz/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorFileUploadModalProps {
   open: boolean
@@ -44,6 +45,7 @@ export function QuizEditorFileUploadModal({
   onApplyFilePreview,
   onScrollToReviewQuestion,
 }: QuizEditorFileUploadModalProps) {
+  const t = useTranslations()
   const filteredReviewDetails = useMemo(() => {
     if (!filePreview?.checkResult?.details) return []
     if (reviewFilter === 'all') return filePreview.checkResult.details
@@ -74,10 +76,10 @@ export function QuizEditorFileUploadModal({
           <div>
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
               <UploadCloud className="w-5 h-5 text-primary" aria-hidden="true" />
-              Upload &amp; Cross-Check Question Bank (.TXT / .JSON)
+              {t('upload.crossCheckTitle')}
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              Automatically parses description, questions, options, and correct answers to cross-check with the category bank
+              {t('upload.crossCheckDescription')}
             </CardDescription>
           </div>
           <Button
@@ -88,7 +90,7 @@ export function QuizEditorFileUploadModal({
               setFilePreview(null)
             }}
             className="h-8 w-8 p-0 cursor-pointer"
-            aria-label="Close modal"
+            aria-label={t('upload.closeModal')}
           >
             <X className="w-4 h-4" aria-hidden="true" />
           </Button>
@@ -119,7 +121,7 @@ export function QuizEditorFileUploadModal({
                         </span>
                       </span>
                       <p className="text-xs text-muted-foreground">
-                        Parsed: <strong>{filePreview.rawQuestions.length}</strong> question(s)
+                        {t('upload.parsedQuestions', { count: filePreview.rawQuestions.length })}
                       </p>
                     </div>
                   </div>
@@ -135,7 +137,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      All ({filePreview.rawQuestions.length})
+                      {t('upload.all', { count: filePreview.rawQuestions.length })}
                     </button>
                     <button
                       type="button"
@@ -146,7 +148,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
                       }`}
                     >
-                      Conflicts ({conflictIndices.length})
+                      {t('upload.conflicts', { count: conflictIndices.length })}
                     </button>
                     <button
                       type="button"
@@ -157,7 +159,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                       }`}
                     >
-                      New ({newIndices.length})
+                      {t('upload.new', { count: newIndices.length })}
                     </button>
                     <button
                       type="button"
@@ -168,7 +170,7 @@ export function QuizEditorFileUploadModal({
                           : 'bg-success-bg/40 border-success-border/60 text-success-fg hover:bg-success-bg/80'
                       }`}
                     >
-                      In Bank ({reusedIndices.length})
+                      {t('upload.inBank', { count: reusedIndices.length })}
                     </button>
                   </div>
                 </div>
@@ -186,7 +188,7 @@ export function QuizEditorFileUploadModal({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Database className="w-4 h-4 text-primary" />
-                    Cross-Checked Questions (Showing {filteredReviewDetails.length} / {filePreview.rawQuestions.length}):
+                    {t('upload.crossCheckedQuestions', { shown: filteredReviewDetails.length, total: filePreview.rawQuestions.length })}
                   </span>
                   {reviewFilter !== 'all' && (
                     <button
@@ -194,7 +196,7 @@ export function QuizEditorFileUploadModal({
                       onClick={() => setReviewFilter('all')}
                       className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
                     >
-                      Show all questions
+                      {t('upload.showAll')}
                     </button>
                   )}
                 </div>
@@ -223,7 +225,7 @@ export function QuizEditorFileUploadModal({
               onClick={() => setFilePreview(null)}
               className="cursor-pointer"
             >
-              Choose Another File
+              {t('upload.chooseAnother')}
             </Button>
             <Button
               type="button"
@@ -232,7 +234,7 @@ export function QuizEditorFileUploadModal({
               className="font-bold gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-              Apply {filePreview.rawQuestions.length} Question(s) to Quiz
+              {t('upload.applyQuestions', { count: filePreview.rawQuestions.length })}
             </Button>
           </div>
         )}

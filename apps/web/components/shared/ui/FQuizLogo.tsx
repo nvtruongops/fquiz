@@ -1,5 +1,8 @@
+'use client'
+
 import React, { useId } from 'react'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface FQuizLogoProps {
   size?: number
@@ -14,6 +17,7 @@ export const FQuizLogo: React.FC<FQuizLogoProps> = ({
   showText = false,
   textClassName,
 }) => {
+  const t = useTranslations()
   const instanceId = useId()
   const brandGreenId = `fq-brand-green-${instanceId.replaceAll(':', '')}`
   const goldSparkleId = `fq-gold-sparkle-${instanceId.replaceAll(':', '')}`
@@ -81,7 +85,7 @@ export const FQuizLogo: React.FC<FQuizLogoProps> = ({
             FQuiz
           </span>
           <span className="text-[9px] font-bold uppercase tracking-widest text-primary mt-0.5">
-            AI Language & Exam
+            {t('brand.tagline')}
           </span>
         </div>
       )}

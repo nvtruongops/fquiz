@@ -6,6 +6,7 @@ import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
 import { AlertCircle, Check } from 'lucide-react'
 import { QuizItem, Classroom } from '@/hooks/useTeacherQuizzes'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherAssignQuizModalProps {
   open: boolean
@@ -36,13 +37,14 @@ export function TeacherAssignQuizModal({
   assignSuccess,
   assignError,
 }: TeacherAssignQuizModalProps) {
+  const t = useTranslations()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
         <DialogHeader>
-          <DialogTitle className="text-lg font-black text-card-foreground">Assign Quiz to Classroom</DialogTitle>
+          <DialogTitle className="text-lg font-black text-card-foreground">{t('teacherAssign.title')}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {selectedQuiz && `Quiz: ${selectedQuiz.title} (${selectedQuiz.course_code})`}
+            {selectedQuiz && t('teacherAssign.quizSummary', { title: selectedQuiz.title, code: selectedQuiz.course_code })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4 py-2">
@@ -59,10 +61,10 @@ export function TeacherAssignQuizModal({
             </div>
           )}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-card-foreground">Select Classroom (*)</label>
+            <label className="text-sm font-semibold text-card-foreground">{t('teacherAssign.selectClassroom')}</label>
             {classrooms.length === 0 ? (
               <div className="text-xs text-warning-fg bg-warning-bg p-3 rounded-xl border border-warning-border">
-                You do not have any classrooms. Please create a classroom before assigning quizzes.
+                {t('teacherAssign.noClassrooms')}
               </div>
             ) : (
               <select
@@ -72,7 +74,7 @@ export function TeacherAssignQuizModal({
               >
                 {classrooms.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.name} (Code: {c.code})
+                    {c.name} ({t('teacherAssign.code')} {c.code})
                   </option>
                 ))}
               </select>
@@ -80,7 +82,7 @@ export function TeacherAssignQuizModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-card-foreground">Due Date (Optional)</label>
+            <label className="text-sm font-semibold text-card-foreground">{t('teacherAssign.dueDateOptional')}</label>
             <Input
               type="datetime-local"
               value={dueDate}
@@ -91,14 +93,14 @@ export function TeacherAssignQuizModal({
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl border-border">
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={assigning || classrooms.length === 0}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl cursor-pointer"
             >
-              {assigning ? 'Assigning...' : 'Confirm Assignment'}
+              {assigning ? t('teacherAssign.assigning') : t('teacherAssign.confirm')}
             </Button>
           </DialogFooter>
         </form>

@@ -11,6 +11,7 @@ import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { cn } from '@/lib/core/utils/cn'
 import { compareQuizBySemester } from '@/lib/core/utils/semester'
 import { useCourseQuizzes, type CourseQuizzesResponse } from '@/hooks/quiz/useCourseQuizzes'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function QuizSkeleton() {
   return (
@@ -76,6 +77,7 @@ export default function CourseQuizList({
   const [pinningQuizId, setPinningQuizId] = useState<string | null>(null)
   const [localCurrentPage, setLocalCurrentPage] = useState(1)
   const { toast } = useToast()
+  const t = useTranslations()
   const { openAuthPrompt } = useAuthPrompt()
   const queryClient = useQueryClient()
 
@@ -119,14 +121,14 @@ export default function CourseQuizList({
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Save Quiz',
-            title: 'Sign in to save quiz',
-            description: 'Save quizzes to your personal list to review and practice anytime.',
+            featureName: t('courseQuiz.saveFeature'),
+            title: t('courseQuiz.saveAuthTitle'),
+            description: t('courseQuiz.saveAuthDescription'),
             targetUrl: `/courses/${code}`,
           })
           return
         }
-        toast.error(json.error || 'Failed to save quiz')
+        toast.error(t('explore.saveQuizFailed'))
         return
       }
 
@@ -145,9 +147,9 @@ export default function CourseQuizList({
       queryClient.invalidateQueries({ queryKey: ['student', 'quizzes'] })
       queryClient.invalidateQueries({ queryKey: ['student', 'categories'] })
 
-      toast.success(json.message || (isUnsaving ? 'Removed quiz from saved list' : 'Saved quiz successfully'))
+      toast.success(isUnsaving ? t('explore.quizRemovedSaved') : t('explore.quizSaved'))
     } catch {
-      toast.error('An error occurred while saving quiz')
+      toast.error(t('explore.saveQuizError'))
     } finally {
       setSavingQuizId(null)
     }
@@ -165,14 +167,14 @@ export default function CourseQuizList({
       if (!res.ok) {
         if (res.status === 401) {
           openAuthPrompt({
-            featureName: 'Pin Quiz',
-            title: 'Sign in to pin quiz',
-            description: 'Pin important quizzes to the top of the list for focused review.',
+            featureName: t('courseQuiz.pinFeature'),
+            title: t('courseQuiz.pinAuthTitle'),
+            description: t('courseQuiz.pinAuthDescription'),
             targetUrl: `/courses/${code}`,
           })
           return
         }
-        toast.error(json.error || 'Failed to pin quiz')
+        toast.error(t('explore.pinQuizFailed'))
         return
       }
 
@@ -188,9 +190,9 @@ export default function CourseQuizList({
         }
       })
 
-      toast.success(isPinned ? 'Pinned quiz to top' : 'Unpinned quiz')
+      toast.success(isPinned ? t('explore.pinnedToTop') : t('explore.unpinned'))
     } catch {
-      toast.error('An error occurred while pinning quiz')
+      toast.error(t('explore.pinQuizError'))
     } finally {
       setPinningQuizId(null)
     }
@@ -231,7 +233,7 @@ export default function CourseQuizList({
   if (isError) {
     return (
       <div className="text-center py-12 text-red-600 bg-red-50/50 border border-red-200 rounded-3xl backdrop-blur-md">
-        Unable to load quizzes. Please try again later.
+        {t('courseQuiz.loadError')}
       </div>
     )
   }
@@ -239,7 +241,7 @@ export default function CourseQuizList({
   if (rawQuizzes.length === 0) {
     return (
       <div className="text-center py-16 text-muted-foreground font-semibold border border-dashed border-border bg-card/40 backdrop-blur-md rounded-3xl">
-        No quizzes available in this category.
+        {t('courseQuiz.emptyCategory')}
       </div>
     )
   }
@@ -263,7 +265,7 @@ export default function CourseQuizList({
     <div className="space-y-5">
       {filteredQuizzes.length === 0 ? (
         <div className="text-center py-14 text-muted-foreground text-xs font-semibold bg-card/40 border border-border/80 rounded-3xl backdrop-blur-md">
-          No quizzes found matching keyword &quot;{searchQuery}&quot;
+          {t('courseQuiz.noSearchMatch', { query: searchQuery })}
         </div>
       ) : (
         <>
@@ -311,7 +313,7 @@ export default function CourseQuizList({
                           {isPinned && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-question-flagged-bg text-question-flagged-fg border border-question-flagged-border">
                               <Pin className="w-2.5 h-2.5 fill-current rotate-45" aria-hidden="true" />
-                              Pinned
+                              {t('courseQuiz.pinned')}
                             </span>
                           )}
                         </div>
@@ -321,23 +323,23 @@ export default function CourseQuizList({
                       <div className="space-y-2">
                         <div className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-primary" />
-                          {quiz.questionCount} questions
+                          {t('courseQuiz.questionCount', { count: quiz.questionCount })}
                         </div>
 
                         <div>
                           {isCompleted ? (
                             <Badge className="border-0 text-white font-black text-[10px] px-3 py-1 rounded-full bg-success shadow-2xs uppercase tracking-wider whitespace-nowrap">
-                              Highest score: {(() => {
+                              {t('courseQuiz.highestScore', { score: (() => {
                                 const val = (quiz.bestScore! / quiz.questionCount) * 10
                                 return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)
-                              })()}/10
+                              })() })}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
                               className="text-[10px] text-muted-foreground border-border font-extrabold px-3 py-1 rounded-full bg-muted uppercase tracking-wider whitespace-nowrap"
                             >
-                              Not attempted
+                              {t('courseQuiz.notAttempted')}
                             </Badge>
                           )}
                         </div>
@@ -350,7 +352,7 @@ export default function CourseQuizList({
                         href={`/quiz/${quiz._id}`}
                         className="flex-1 min-w-0 min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary-hover shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
                       >
-                        Start Quiz
+                        {t('courseQuiz.startQuiz')}
                         <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                       </Link>
 
@@ -362,14 +364,14 @@ export default function CourseQuizList({
                           handlePinQuiz(quiz._id)
                         }}
                         disabled={pinningQuizId === quiz._id}
-                        aria-label={isPinned ? `Unpin quiz ${quiz.title}` : `Pin quiz ${quiz.title}`}
+                        aria-label={isPinned ? t('courseQuiz.unpinQuiz', { title: quiz.title }) : t('courseQuiz.pinQuiz', { title: quiz.title })}
                         className={cn(
                           'min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isPinned
                             ? 'bg-question-flagged-bg text-question-flagged-fg border-question-flagged-border shadow-xs'
                             : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
-                        title={isPinned ? 'Unpin quiz' : 'Pin quiz to top'}
+                        title={isPinned ? t('courseQuiz.unpinTooltip') : t('courseQuiz.pinTooltip')}
                       >
                         {pinningQuizId === quiz._id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
@@ -386,14 +388,14 @@ export default function CourseQuizList({
                           handleSaveQuiz(quiz._id)
                         }}
                         disabled={savingQuizId === quiz._id}
-                        aria-label={isSaved ? `Remove quiz ${quiz.title} from saved` : `Save quiz ${quiz.title}`}
+                        aria-label={isSaved ? t('courseQuiz.removeSaved', { title: quiz.title }) : t('courseQuiz.saveQuiz', { title: quiz.title })}
                         className={cn(
                           'min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center transition-all duration-300 border cursor-pointer shrink-0 active:scale-95',
                           isSaved
                             ? 'bg-warning-bg/30 text-warning-fg border-warning-border shadow-2xs'
                             : 'bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-border/80'
                         )}
-                        title="Save quiz to library"
+                        title={t('courseQuiz.saveTooltip')}
                       >
                         {savingQuizId === quiz._id ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
@@ -412,7 +414,7 @@ export default function CourseQuizList({
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <span className="text-xs font-semibold text-muted-foreground">
-                Page {currentPage} / {totalPages} (Total {filteredQuizzes.length} quizzes)
+                {t('courseQuiz.pageTotal', { page: currentPage, pages: totalPages, count: filteredQuizzes.length })}
               </span>
 
               <div className="flex items-center gap-1.5">
@@ -420,10 +422,10 @@ export default function CourseQuizList({
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  aria-label="Previous page"
+                  aria-label={t('courseQuiz.previousPage')}
                   className="min-h-[44px] px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center"
                 >
-                  &larr; Prev
+                  {t('courseQuiz.prev')}
                 </button>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -431,7 +433,7 @@ export default function CourseQuizList({
                     key={page}
                     type="button"
                     onClick={() => setCurrentPage(page)}
-                    aria-label={`Page ${page}`}
+                    aria-label={t('courseQuiz.page', { page })}
                     aria-current={currentPage === page ? 'page' : undefined}
                     className={cn(
                       'min-w-[44px] min-h-[44px] rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center',
@@ -448,10 +450,10 @@ export default function CourseQuizList({
                   type="button"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  aria-label="Next page"
+                  aria-label={t('courseQuiz.nextPage')}
                   className="min-h-[44px] px-3 py-1.5 rounded-xl border border-border text-xs font-bold bg-card text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center"
                 >
-                  Next &rarr;
+                  {t('courseQuiz.next')}
                 </button>
               </div>
             </div>

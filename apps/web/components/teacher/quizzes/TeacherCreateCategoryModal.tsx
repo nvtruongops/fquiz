@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
 import { AlertCircle } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherCreateCategoryModalProps {
   open: boolean
@@ -25,13 +26,14 @@ export function TeacherCreateCategoryModal({
   creating,
   error,
 }: TeacherCreateCategoryModalProps) {
+  const t = useTranslations()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
         <DialogHeader>
-          <DialogTitle className="text-lg font-black text-card-foreground">Create New Course Code</DialogTitle>
+          <DialogTitle className="text-lg font-black text-card-foreground">{t('teacherCategory.createTitle')}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Enter the course name or subject topic to create.
+            {t('teacherCategory.createDescription')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4 py-2">
@@ -42,9 +44,9 @@ export function TeacherCreateCategoryModal({
             </div>
           )}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-card-foreground">Course Code / Name (*)</label>
+            <label className="text-sm font-semibold text-card-foreground">{t('teacherCategory.courseName')}</label>
             <Input
-              placeholder="Enter course name or subject topic..."
+              placeholder={t('teacherCategory.courseNamePlaceholder')}
               value={categoryName}
               onChange={(e) => onCategoryNameChange(e.target.value)}
               required
@@ -53,14 +55,14 @@ export function TeacherCreateCategoryModal({
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl border-border">
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={creating}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl cursor-pointer"
             >
-              {creating ? 'Creating...' : 'Create Course Code'}
+              {creating ? t('teacherCategory.creating') : t('teacherCategory.createAction')}
             </Button>
           </DialogFooter>
         </form>

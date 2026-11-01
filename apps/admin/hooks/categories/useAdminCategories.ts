@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Category {
@@ -18,6 +19,7 @@ async function fetchCategories(): Promise<Category[]> {
 }
 
 export function useAdminCategories() {
+  const t = useTranslations()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [newName, setNewName] = useState('')
@@ -48,10 +50,10 @@ export function useAdminCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setNewName('')
-      toast({ title: 'Success', description: 'Category created successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.categoryCreated'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.categoryCreateFailed'), type: 'error' })
     },
   })
 
@@ -71,10 +73,10 @@ export function useAdminCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setEditId(null)
-      toast({ title: 'Success', description: 'Category updated successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.categoryUpdated'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.categoryUpdateFailed'), type: 'error' })
     },
   })
 
@@ -90,10 +92,10 @@ export function useAdminCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
       setDeleteTarget(null)
-      toast({ title: 'Success', description: 'Category deleted successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.categoryDeleted'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.categoryDeleteFailed'), type: 'error' })
     },
   })
 

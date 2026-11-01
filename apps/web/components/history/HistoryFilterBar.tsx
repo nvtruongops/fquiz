@@ -5,6 +5,7 @@ import { Search, CheckCircle2, AlertCircle, GraduationCap } from 'lucide-react'
 import { Input } from '@/components/shared/ui/input'
 import { cn } from '@/lib/core/utils/cn'
 import type { FilterStatus, FilterMode } from '@/hooks/useStudentHistory'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface HistoryFilterBarProps {
   search: string
@@ -51,14 +52,15 @@ export function HistoryFilterBar({
   modeFilter,
   onModeFilterChange,
 }: HistoryFilterBarProps) {
+  const t = useTranslations()
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border shadow-2xs">
       {/* Search Box */}
       <div className="relative flex-1 group">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input
-          aria-label="Search quiz history"
-          placeholder="Search quiz code, title, or subject..."
+          aria-label={t('history.search')}
+          placeholder={t('history.searchPlaceholder')}
           className="pl-10 h-10 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary text-xs transition-all shadow-none"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -74,28 +76,28 @@ export function HistoryFilterBar({
             onModeFilterChange('all')
           }}
         >
-          All
+          {t('history.all')}
         </HistoryFilterButton>
         <HistoryFilterButton
           selected={statusFilter === 'completed'}
           onClick={() => toggleFilter(statusFilter, 'completed', 'all', onStatusFilterChange)}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-          <span>Completed</span>
+          <span>{t('history.completed')}</span>
         </HistoryFilterButton>
         <HistoryFilterButton
           selected={statusFilter === 'active'}
           onClick={() => toggleFilter(statusFilter, 'active', 'all', onStatusFilterChange)}
         >
           <AlertCircle className="w-3.5 h-3.5 text-warning-fg" />
-          <span>In Progress</span>
+          <span>{t('history.inProgress')}</span>
         </HistoryFilterButton>
         <HistoryFilterButton
           selected={modeFilter === 'flashcard'}
           onClick={() => toggleFilter(modeFilter, 'flashcard', 'all', onModeFilterChange)}
         >
           <GraduationCap className="w-3.5 h-3.5" />
-          <span>Flashcard</span>
+          <span>{t('history.flashcard')}</span>
         </HistoryFilterButton>
       </div>
     </div>

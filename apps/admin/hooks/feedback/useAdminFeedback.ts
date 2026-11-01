@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 
 export interface Feedback {
@@ -13,13 +14,6 @@ export interface Feedback {
   reply_message?: string
   replied_at?: string
   created_at: string
-}
-
-export const TYPE_LABELS: Record<string, string> = {
-  bug: 'Bug report',
-  feature: 'Feature request',
-  content: 'Content feedback',
-  other: 'Other',
 }
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -46,6 +40,7 @@ async function fetchFeedbacks(
 }
 
 export function useAdminFeedback() {
+  const t = useTranslations()
   const queryClient = useQueryClient()
   const [type, setType] = useState('all')
   const [status, setStatus] = useState('all')
@@ -72,7 +67,7 @@ export function useAdminFeedback() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
-      toast({ title: 'Success', description: 'Feedback status updated successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.feedbackUpdated'), type: 'success' })
     },
   })
 
@@ -90,10 +85,10 @@ export function useAdminFeedback() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
       setReplyTarget(null)
       setReplyText('')
-      toast({ title: 'Success', description: 'Reply sent successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.replySent'), type: 'success' })
     },
-    onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, type: 'error' })
+    onError: () => {
+      toast({ title: t('toast.error'), description: t('admin.replyFailed'), type: 'error' })
     },
   })
 
@@ -106,7 +101,7 @@ export function useAdminFeedback() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
       setDeleteTarget(null)
-      toast({ title: 'Success', description: 'Feedback deleted successfully', type: 'success' })
+      toast({ title: t('toast.success'), description: t('admin.feedbackDeleted'), type: 'success' })
     },
   })
 

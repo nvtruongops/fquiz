@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import type { Feedback } from '@/hooks/feedback/useAdminFeedback'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface FeedbackDeleteDialogProps {
   deleteTarget: Feedback | null
@@ -24,18 +25,19 @@ export function FeedbackDeleteDialog({
   onClose,
   onConfirm,
 }: FeedbackDeleteDialogProps) {
+  const t = useTranslations()
   return (
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Feedback</DialogTitle>
+          <DialogTitle>{t('admin.deleteFeedbackTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this feedback? This action cannot be undone.
+            {t('admin.confirmDeleteFeedback')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -43,7 +45,7 @@ export function FeedbackDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Confirm Delete
+            {t('admin.confirmDelete')}
           </Button>
         </DialogFooter>
       </DialogContent>

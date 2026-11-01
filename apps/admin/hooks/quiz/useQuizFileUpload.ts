@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { parseQuizFileContent } from '@/lib/utils/quiz-file-parser'
 import { useQuizBankSync } from './useQuizBankSync'
 import type { QuestionItem, ParsedFilePreview } from './types'
@@ -21,6 +22,7 @@ export function useQuizFileUpload({
   setCourseCode,
   setQuestions,
 }: UseQuizFileUploadProps) {
+  const t = useTranslations()
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [isParsingFile, setIsParsingFile] = useState(false)
   const [filePreview, setFilePreview] = useState<ParsedFilePreview | null>(null)
@@ -39,8 +41,8 @@ export function useQuizFileUpload({
   function handleOpenUploadModal() {
     if (!categoryId) {
       toast({
-        title: 'Subject/Category required',
-        description: 'Please select a subject first so the system can verify against the question bank!',
+        title: t('admin.subjectRequired'),
+        description: t('admin.selectSubjectForBank'),
         type: 'warning',
       })
       const catSelect = document.getElementById('category-select-trigger')
@@ -98,8 +100,8 @@ export function useQuizFileUpload({
       } else {
         setReviewFilter('all')
       }
-    } catch (err: any) {
-      toast({ title: 'File read error', description: err.message, type: 'error' })
+    } catch {
+      toast({ title: t('admin.fileReadError'), description: t('admin.fileReadError'), type: 'error' })
     } finally {
       setIsParsingFile(false)
       if (fileInputRef.current) fileInputRef.current.value = ''

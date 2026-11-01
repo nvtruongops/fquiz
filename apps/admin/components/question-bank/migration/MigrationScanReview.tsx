@@ -11,6 +11,7 @@ import {
 import { Upload, Loader2 } from 'lucide-react'
 import { ConflictPreview } from './ConflictPreview'
 import type { ScanResult } from '@/hooks/question-bank/useQuestionBankMigration'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MigrationScanReviewProps {
   scanResult: ScanResult
@@ -29,12 +30,13 @@ export function MigrationScanReview({
   onBack,
   onMigrate,
 }: MigrationScanReviewProps) {
+  const t = useTranslations()
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Quizzes</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('migrationScan.totalQuizzes')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{scanResult.total_quizzes}</div>
@@ -43,7 +45,7 @@ export function MigrationScanReview({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('migrationScan.totalQuestions')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{scanResult.total_questions}</div>
@@ -52,21 +54,21 @@ export function MigrationScanReview({
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Unique Questions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('migrationScan.uniqueQuestions')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-success-fg">{scanResult.unique_questions}</div>
-            <p className="text-xs text-muted-foreground mt-1">Ready for immediate migration</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('migrationScan.ready')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Conflicts</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('migrationScan.conflicts')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-destructive">{scanResult.conflicts}</div>
-            <p className="text-xs text-muted-foreground mt-1">Requires review</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('migrationScan.review')}</p>
           </CardContent>
         </Card>
       </div>
@@ -74,8 +76,8 @@ export function MigrationScanReview({
       {scanResult.conflicts > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Conflict Resolution</CardTitle>
-            <CardDescription>Choose how to handle questions with differing answers</CardDescription>
+            <CardTitle>{t('migrationScan.resolution')}</CardTitle>
+            <CardDescription>{t('migrationScan.chooseStrategy')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Select
@@ -86,9 +88,9 @@ export function MigrationScanReview({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="skip">Skip - Only migrate non-conflicting questions</SelectItem>
-                <SelectItem value="keep_first">Keep first encountered answer</SelectItem>
-                <SelectItem value="keep_most_used">Keep most frequently used answer</SelectItem>
+                <SelectItem value="skip">{t('migrationScan.skip')}</SelectItem>
+                <SelectItem value="keep_first">{t('migrationScan.keepFirst')}</SelectItem>
+                <SelectItem value="keep_most_used">{t('migrationScan.keepMostUsed')}</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -98,7 +100,7 @@ export function MigrationScanReview({
       {(scanResult.conflict_details?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Conflict Details ({scanResult.conflicts})</CardTitle>
+            <CardTitle>{t('migrationScan.details', { count: scanResult.conflicts })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -112,18 +114,18 @@ export function MigrationScanReview({
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack}>
-          Back
+          {t('migrationScan.back')}
         </Button>
         <Button onClick={onMigrate} disabled={migrating} className="gap-2">
           {migrating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Migrating...
+              {t('migrationScan.migrating')}
             </>
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              Start Migration
+              {t('migrationScan.start')}
             </>
           )}
         </Button>

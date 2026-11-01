@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import Link from 'next/link'
 import {
   User,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { Dialog, DialogContent, DialogTitle } from '@/components/shared/ui/dialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileNavUserSheetProps {
   open: boolean
@@ -41,30 +44,43 @@ export function MobileNavUserSheet({
 }: MobileNavUserSheetProps) {
   const [avatarError, setAvatarError] = useState(false)
   const [showCustomThemes, setShowCustomThemes] = useState(false)
+  const t = useTranslations()
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    if (!open || !sheetRef.current) return
+    const media = gsap.matchMedia()
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.fromTo(sheetRef.current, { yPercent: 100, autoAlpha: 0 }, {
+        yPercent: 0,
+        autoAlpha: 1,
+        duration: 0.28,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity,visibility',
+      })
+    })
+    return () => media.revert()
+  }, { scope: sheetRef, dependencies: [open] })
 
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
   const hasAvatar = !!user?.avatarUrl && !avatarError
 
-  const roleLabel =
-    user?.role === 'admin'
-      ? 'Admin'
-      : user?.role === 'teacher'
-      ? 'Teacher'
-      : 'Student'
+  const roleLabel = t(user?.role === 'admin' ? 'nav.roleAdmin' : user?.role === 'teacher' ? 'nav.roleTeacher' : 'nav.roleStudent')
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose() }}>
         <DialogContent
+          ref={sheetRef}
           aria-describedby={undefined}
           onCloseAutoFocus={(event) => {
             event.preventDefault()
             if (triggerRef.current?.getClientRects().length) triggerRef.current.focus()
             else document.querySelector<HTMLElement>('[data-desktop-nav-home]')?.focus()
           }}
-          className="left-1/2 top-auto bottom-0 translate-y-0 w-full max-w-lg bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] sm:rounded-t-[32px] sm:rounded-b-none shadow-2xl p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] gap-0 overflow-y-auto custom-scrollbar max-h-[85dvh] flex flex-col touch-pan-y lg:hidden"
+          className="left-1/2 top-auto bottom-0 translate-y-0 w-full max-w-lg bg-card/95 backdrop-blur-2xl border-t border-border/80 rounded-t-[32px] sm:rounded-t-[32px] sm:rounded-b-none shadow-2xl p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] gap-0 overflow-y-auto custom-scrollbar max-h-[82dvh] flex flex-col touch-pan-y lg:hidden data-[state=open]:animate-none data-[state=closed]:animate-none"
         >
-          <DialogTitle className="sr-only">User Account</DialogTitle>
-          <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20 mx-auto mt-0.5 mb-2.5 shrink-0" />
+          <DialogTitle className="sr-only">{t('nav.userAccount')}</DialogTitle>
+          <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20 mx-auto mt-0.5 mb-3.5 shrink-0" />
           {user ? (
             <>
               <div className="p-3 pr-10 bg-muted/40 border border-border/60 rounded-2xl flex items-center justify-between mb-1 shrink-0">
@@ -103,7 +119,7 @@ export function MobileNavUserSheet({
                     <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary border border-primary/15 flex items-center justify-center shrink-0">
                       <User aria-hidden="true" className="w-4 h-4" />
                     </div>
-                    <span>Profile</span>
+                    <span>{t('nav.profile')}</span>
                   </div>
                   <ChevronRight aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
                 </Link>
@@ -118,7 +134,7 @@ export function MobileNavUserSheet({
                     <div className="w-8 h-8 rounded-xl bg-muted text-muted-foreground border border-border/50 flex items-center justify-center shrink-0">
                       <Settings aria-hidden="true" className="w-4 h-4" />
                     </div>
-                    <span>Account Settings</span>
+                    <span>{t('nav.accountSettings')}</span>
                   </div>
                   <ChevronRight aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
                 </Link>
@@ -129,13 +145,13 @@ export function MobileNavUserSheet({
                     onClose()
                     onLogout()
                   }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-2xl text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer active:scale-98"
+                  className="w-full flex items-center justify-between p-2.5 rounded-2xl text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer active:scale-98 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center shrink-0">
                       <LogOut aria-hidden="true" className="w-4 h-4" />
                     </div>
-                    <span>Sign out</span>
+                    <span>{t('nav.signOut')}</span>
                   </div>
                 </button>
 
@@ -143,7 +159,7 @@ export function MobileNavUserSheet({
                   <div className="pt-3 border-t border-border/60 mt-2">
                     <div className="flex items-center justify-between px-2 mb-1.5">
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                        Theme
+                        {t('nav.theme')}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
@@ -161,7 +177,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Sun aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Light</span>
+                        <span>{t('nav.light')}</span>
                       </button>
                       <button
                         type="button"
@@ -177,7 +193,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Moon aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Dark</span>
+                        <span>{t('nav.dark')}</span>
                       </button>
                       <button
                         type="button"
@@ -190,7 +206,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Sparkles aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Custom</span>
+                        <span>{t('nav.custom')}</span>
                       </button>
                     </div>
 
@@ -207,7 +223,7 @@ export function MobileNavUserSheet({
                           )}
                         >
                           <Leaf aria-hidden="true" className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Green</span>
+                          <span>{t('nav.green')}</span>
                         </button>
                         <button
                           type="button"
@@ -220,7 +236,7 @@ export function MobileNavUserSheet({
                           )}
                         >
                           <Heart aria-hidden="true" className="w-3.5 h-3.5 text-rose-500" />
-                          <span>Pink</span>
+                          <span>{t('nav.pink')}</span>
                         </button>
                       </div>
                     )}
@@ -232,7 +248,7 @@ export function MobileNavUserSheet({
             <>
               <div className="px-2 py-2 pr-10 border-b border-border/60 flex items-center justify-between shrink-0 mb-1">
                 <span className="text-xs font-black uppercase tracking-wider text-foreground">
-                  FQuiz Account
+                  {t('nav.account')}
                 </span>
               </div>
 
@@ -244,7 +260,7 @@ export function MobileNavUserSheet({
                   className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-98"
                 >
                   <LogIn aria-hidden="true" className="w-4.5 h-4.5 shrink-0" />
-                  <span>Sign in now</span>
+                  <span>{t('nav.signIn')}</span>
                 </Link>
                 <Link
                   href="/register"
@@ -253,14 +269,14 @@ export function MobileNavUserSheet({
                   className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold bg-muted/70 hover:bg-muted text-foreground border border-border/60 shadow-xs transition-all active:scale-98"
                 >
                   <UserPlus aria-hidden="true" className="w-4.5 h-4.5 shrink-0 text-primary" />
-                  <span>Create new account</span>
+                  <span>{t('nav.signUp')}</span>
                 </Link>
 
                 {mounted && (
                   <div className="pt-3 border-t border-border/60 mt-2">
                     <div className="flex items-center justify-between px-2 mb-1.5">
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                        Theme
+                        {t('nav.theme')}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
@@ -278,7 +294,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Sun aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Light</span>
+                        <span>{t('nav.light')}</span>
                       </button>
                       <button
                         type="button"
@@ -294,7 +310,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Moon aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Dark</span>
+                        <span>{t('nav.dark')}</span>
                       </button>
                       <button
                         type="button"
@@ -307,7 +323,7 @@ export function MobileNavUserSheet({
                         )}
                       >
                         <Sparkles aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Custom</span>
+                        <span>{t('nav.custom')}</span>
                       </button>
                     </div>
 
@@ -324,7 +340,7 @@ export function MobileNavUserSheet({
                           )}
                         >
                           <Leaf aria-hidden="true" className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Green</span>
+                          <span>{t('nav.green')}</span>
                         </button>
                         <button
                           type="button"
@@ -337,7 +353,7 @@ export function MobileNavUserSheet({
                           )}
                         >
                           <Heart aria-hidden="true" className="w-3.5 h-3.5 text-rose-500" />
-                          <span>Pink</span>
+                          <span>{t('nav.pink')}</span>
                         </button>
                       </div>
                     )}

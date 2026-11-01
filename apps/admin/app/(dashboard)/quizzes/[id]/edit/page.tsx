@@ -4,6 +4,7 @@ import { use } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { QuizEditorWithQuestionBank, type Category } from '@/components/quiz/QuizEditorWithQuestionBank'
 import { Loader2 } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 async function fetchCategories(): Promise<Category[]> {
   const res = await fetch('/api/categories', { credentials: 'include' })
@@ -23,6 +24,7 @@ async function fetchQuiz(id: string) {
 }
 
 export default function AdminEditQuizPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = useTranslations()
   const resolvedParams = use(params)
   const quizId = resolvedParams.id
 
@@ -43,7 +45,7 @@ export default function AdminEditQuizPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-12 flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-        <p className="text-sm font-medium text-muted-foreground">Loading quiz details...</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('adminQuizEditor.loadingDetails')}</p>
       </div>
     )
   }
@@ -51,7 +53,7 @@ export default function AdminEditQuizPage({ params }: { params: Promise<{ id: st
   if (error || !quiz) {
     return (
       <div className="p-12 text-center text-destructive">
-        Quiz not found or an error occurred while loading.
+        {t('adminQuizEditor.loadQuizError')}
       </div>
     )
   }

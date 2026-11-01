@@ -12,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/shared/ui/select'
-import { useToast } from '@/store/shared/toast-store'
 import { TIMEZONES, type SettingsResponse } from '@/hooks/useUserSettings'
 import { cn } from '@/lib/core/utils/cn'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 interface GeneralSettingsCardProps {
   form: SettingsResponse['settings']
@@ -22,6 +22,7 @@ interface GeneralSettingsCardProps {
   notificationsEnabled: boolean
   saving: boolean
   onSave: () => Promise<void>
+  onChangeLanguage: (language: 'vi' | 'en') => void
 }
 
 export function GeneralSettingsCard({
@@ -30,15 +31,16 @@ export function GeneralSettingsCard({
   notificationsEnabled,
   saving,
   onSave,
+  onChangeLanguage,
 }: GeneralSettingsCardProps) {
-  const { toast } = useToast()
+  const t = useTranslations()
 
   return (
     <Card className="rounded-xl sm:rounded-3xl border-border bg-card text-card-foreground shadow-xs">
       <CardHeader className="p-3.5 sm:p-6 pb-1 sm:pb-3">
         <CardTitle className="text-primary text-base sm:text-xl font-extrabold flex items-center gap-1.5 sm:gap-2">
           <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-          General Settings
+          {t('settings.general')}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3.5 sm:p-6 pt-2 sm:pt-4 space-y-4 sm:space-y-6">
@@ -47,7 +49,7 @@ export function GeneralSettingsCard({
           <div className="rounded-xl sm:rounded-2xl border border-border bg-muted/30 p-3.5 sm:p-5">
             <div className="text-primary text-sm sm:text-lg font-extrabold flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-5">
               <Globe2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              Display & Regional
+              {t('settings.displayRegional')}
             </div>
             <div className="space-y-3.5 sm:space-y-5">
               <div>
@@ -55,27 +57,11 @@ export function GeneralSettingsCard({
                   htmlFor="student-language"
                   className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.18em] text-muted-foreground"
                 >
-                  Language
+                  {t('settings.language')}
                 </label>
-                <Select
-                  value={form.language}
-                  onValueChange={(value: 'vi' | 'en') => {
-                    if (value !== form.language) {
-                      toast.info('Language switching is under development. Coming soon.')
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    id="student-language"
-                    className="mt-1.5 h-9 sm:h-10 text-xs sm:text-sm rounded-lg sm:rounded-xl border-input bg-card text-foreground"
-                  >
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border text-popover-foreground">
-                    <SelectItem value="vi">Vietnamese</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="mt-1.5">
+                  <LocaleSwitcher id="student-language" fullWidth onLocaleChange={onChangeLanguage} />
+                </div>
               </div>
 
               <div>
@@ -83,13 +69,13 @@ export function GeneralSettingsCard({
                   htmlFor="student-timezone"
                   className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.18em] text-muted-foreground"
                 >
-                  Timezone
+                  {t('settings.timezone')}
                 </label>
                 <Select
                   value={form.timezone}
                   onValueChange={(value) => {
                     if (value !== form.timezone) {
-                      toast.info('Timezone switching is under development. Coming soon.')
+                      setForm((previous) => ({ ...previous, timezone: value }))
                     }
                   }}
                 >
@@ -97,7 +83,7 @@ export function GeneralSettingsCard({
                     id="student-timezone"
                     className="mt-1.5 h-9 sm:h-10 text-xs sm:text-sm rounded-lg sm:rounded-xl border-input bg-card text-foreground"
                   >
-                    <SelectValue placeholder="Select timezone" />
+                    <SelectValue placeholder={t('settings.selectTimezone')} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border text-popover-foreground">
                     {TIMEZONES.map((tz) => (
@@ -116,7 +102,7 @@ export function GeneralSettingsCard({
             <div className="flex items-center justify-between mb-3 sm:mb-5">
               <div className="text-primary text-sm sm:text-lg font-extrabold flex items-center gap-1.5 sm:gap-2">
                 <BellRing className="w-4 h-4 sm:w-5 sm:h-5" />
-                Notification Preferences
+                {t('settings.notifications')}
               </div>
               <span
                 className={cn(
@@ -126,7 +112,7 @@ export function GeneralSettingsCard({
                     : 'bg-muted text-muted-foreground border-border'
                 )}
               >
-                {form.notifyEmail ? 'Enabled' : 'Disabled'}
+                {form.notifyEmail ? t('settings.enabled') : t('settings.disabled')}
               </span>
             </div>
 
@@ -138,9 +124,9 @@ export function GeneralSettingsCard({
                     <Mail className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-extrabold text-xs sm:text-sm text-foreground">Pinned Category Quiz Emails</p>
+                  <p className="font-extrabold text-xs sm:text-sm text-foreground">{t('settings.pinnedQuizEmails')}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
-                      Receive automatic email notifications when new quizzes are posted in your pinned subjects.
+                      {t('settings.pinnedQuizEmailsDescription')}
                     </p>
                   </div>
                 </div>
@@ -153,7 +139,7 @@ export function GeneralSettingsCard({
                       notifyQuizReminder: checked,
                     }))
                   }}
-                  aria-label="Enable pinned category quiz emails"
+                  aria-label={t('settings.enablePinnedQuizEmails')}
                 />
               </div>
             </div>
@@ -167,7 +153,7 @@ export function GeneralSettingsCard({
             className="h-9 sm:h-10 px-4 rounded-lg sm:rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer w-full sm:w-fit justify-center"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Settings
+            {t('settings.save')}
           </Button>
         </div>
       </CardContent>

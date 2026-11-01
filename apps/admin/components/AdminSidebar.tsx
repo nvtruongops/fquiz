@@ -11,16 +11,17 @@ import {
 import { cn } from '../lib/utils/cn'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 import { Dialog, DialogContent, DialogTitle } from './ui/dialog'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 const navItems = [
-  { href: '/',               label: 'Dashboard',           icon: LayoutDashboard, exact: true },
-  { href: '/categories',     label: 'Categories',          icon: Layers,          exact: false },
-  { href: '/quizzes',        label: 'Quizzes',             icon: FileQuestion,    exact: false },
-  { href: '/question-bank',  label: 'Question Bank',       icon: Database,        exact: false },
-  { href: '/users',          label: 'Users',               icon: Users,           exact: false },
-  { href: '/feedback',       label: 'Feedback',            icon: MessageSquare,   exact: false },
-  { href: '/settings',       label: 'Settings',            icon: Settings,        exact: false },
-]
+  { href: '/',               key: 'admin.dashboard',     icon: LayoutDashboard, exact: true },
+  { href: '/categories',     key: 'admin.categories',     icon: Layers,          exact: false },
+  { href: '/quizzes',        key: 'admin.quizzes',        icon: FileQuestion,    exact: false },
+  { href: '/question-bank',  key: 'admin.questionBank',   icon: Database,        exact: false },
+  { href: '/users',          key: 'admin.users',          icon: Users,           exact: false },
+  { href: '/feedback',       key: 'admin.feedback',       icon: MessageSquare,   exact: false },
+  { href: '/settings',       key: 'admin.settings',       icon: Settings,        exact: false },
+] as const
 
 interface AdminSidebarProps {
   user?: {
@@ -35,6 +36,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileTriggerRef = useRef<HTMLButtonElement>(null)
+  const t = useTranslations()
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
@@ -63,13 +65,13 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             </div>
             <div>
               <span className="font-bold text-foreground text-sm tracking-tight block">FQuiz Admin</span>
-              <span className="text-[10px] text-muted-foreground font-mono block">Zero Trust Portal</span>
+          <span className="text-[10px] text-muted-foreground font-mono block">{t('admin.zeroTrustPortal')}</span>
             </div>
           </Link>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map(({ href, label, icon: Icon, exact }) => {
+          {navItems.map(({ href, key, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
             return (
               <Link
@@ -85,13 +87,14 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                 )}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
+                {t(key)}
               </Link>
             )
           })}
         </nav>
 
         <div className="px-3 py-3 border-t border-border space-y-2">
+          <LocaleSwitcher />
           {user && (
             <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-muted/40 border border-border/50">
               <div className="w-7 h-7 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center border border-primary/30 text-xs shrink-0">
@@ -109,7 +112,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t('admin.signOut')}
           </button>
         </div>
       </>
@@ -136,7 +139,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-          aria-label="Toggle menu"
+          aria-label={t('admin.toggleMenu')}
           aria-expanded={mobileOpen}
           aria-haspopup="dialog"
         >
@@ -155,7 +158,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           }}
           className="left-0 top-0 translate-x-0 translate-y-0 w-64 max-w-none h-[100dvh] max-h-[100dvh] bg-card border-r border-border rounded-none p-0 gap-0 flex flex-col overflow-y-auto md:hidden"
         >
-          <DialogTitle className="sr-only">Admin menu</DialogTitle>
+          <DialogTitle className="sr-only">{t('admin.menu')}</DialogTitle>
           {renderNavLinks(() => setMobileOpen(false))}
         </DialogContent>
       </Dialog>

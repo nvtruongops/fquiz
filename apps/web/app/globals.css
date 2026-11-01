@@ -10,6 +10,12 @@
      =================================================================== */
   :root,
   .light {
+    /* Intrinsic flag colors: fixed across themes, independent of UI palette. */
+    --locale-flag-vn-red: 4 77% 47%;
+    --locale-flag-vn-yellow: 52 100% 50%;
+    --locale-flag-us-white: 0 0% 100%;
+    --locale-flag-us-red: 354 68% 42%;
+    --locale-flag-us-blue: 241 29% 33%;
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;

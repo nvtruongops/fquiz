@@ -3,6 +3,7 @@
 import React from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { Sparkles, MessageCircle, Plus } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CommunityHeaderProps {
   onOpenFeedback: () => void
@@ -13,6 +14,7 @@ export const CommunityHeader = React.memo(function CommunityHeader({
   onOpenFeedback,
   onOpenCreatePost,
 }: CommunityHeaderProps) {
+  const t = useTranslations()
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
       <div className="flex items-center gap-4">
@@ -21,13 +23,13 @@ export const CommunityHeader = React.memo(function CommunityHeader({
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">FQuiz Learning Community</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">{t('community.title')}</h1>
             <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              Discussions
+              {t('community.discussions')}
             </span>
           </div>
           <p className="text-xs font-medium text-muted-foreground mt-0.5">
-            Q&A study strategies, discuss vocabulary & contribute feedback to help build FQuiz.
+            {t('community.description')}
           </p>
         </div>
       </div>
@@ -38,14 +40,14 @@ export const CommunityHeader = React.memo(function CommunityHeader({
           variant="outline"
           className="rounded-2xl text-xs font-bold border-border text-foreground hover:bg-muted"
         >
-          <MessageCircle className="w-4 h-4 mr-1.5 text-primary" /> Send Feedback
+          <MessageCircle className="w-4 h-4 mr-1.5 text-primary" /> {t('community.sendFeedback')}
         </Button>
 
         <Button
           onClick={onOpenCreatePost}
           className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-2xl shadow-md px-5"
         >
-          <Plus className="w-4 h-4 mr-1.5" /> New Post
+          <Plus className="w-4 h-4 mr-1.5" /> {t('community.newPost')}
         </Button>
       </div>
     </div>

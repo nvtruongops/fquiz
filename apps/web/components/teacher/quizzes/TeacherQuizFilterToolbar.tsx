@@ -3,6 +3,7 @@
 import React from 'react'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/shared/ui/input'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface TeacherQuizFilterToolbarProps {
   searchQuery: string
@@ -13,12 +14,13 @@ export function TeacherQuizFilterToolbar({
   searchQuery,
   onSearchChange,
 }: TeacherQuizFilterToolbarProps) {
+  const t = useTranslations()
   return (
     <div className="flex items-center gap-3 bg-card p-2 rounded-2xl border border-border shadow-xs">
       <div className="relative flex-1">
         <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
         <Input
-          placeholder="Search by quiz title or course code..."
+          placeholder={t('teacherQuiz.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 border-0 bg-transparent focus-visible:ring-0 text-sm text-card-foreground"

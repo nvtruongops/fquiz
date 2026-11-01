@@ -14,8 +14,10 @@ import { useAdminFeedback } from '@/hooks/feedback/useAdminFeedback'
 import { FeedbackList } from '@/components/feedback/FeedbackList'
 import { FeedbackReplyDialog } from '@/components/feedback/FeedbackReplyDialog'
 import { FeedbackDeleteDialog } from '@/components/feedback/FeedbackDeleteDialog'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function AdminFeedbackPage() {
+  const t = useTranslations()
   const {
     type,
     setType,
@@ -39,9 +41,9 @@ export default function AdminFeedbackPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Feedback &amp; Bug Reports</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.feedbackTitle')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Review and respond to user feedback, suggestions, and bug reports
+          {t('admin.feedbackDescription')}
         </p>
       </div>
 
@@ -50,7 +52,7 @@ export default function AdminFeedbackPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Search by content, sender..."
+            placeholder={t('admin.searchFeedback')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -59,26 +61,26 @@ export default function AdminFeedbackPage() {
 
         <Select value={type} onValueChange={setType}>
           <SelectTrigger>
-            <SelectValue placeholder="All feedback types" />
+            <SelectValue placeholder={t('admin.allFeedbackTypes')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="bug">Bug report</SelectItem>
-            <SelectItem value="feature">Feature request</SelectItem>
-            <SelectItem value="content">Content feedback</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="all">{t('admin.allTypes')}</SelectItem>
+            <SelectItem value="bug">{t('admin.bugReport')}</SelectItem>
+            <SelectItem value="feature">{t('admin.featureRequest')}</SelectItem>
+            <SelectItem value="content">{t('admin.contentFeedback')}</SelectItem>
+            <SelectItem value="other">{t('admin.other')}</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger>
-            <SelectValue placeholder="All statuses" />
+            <SelectValue placeholder={t('admin.allStatuses')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="reviewed">Reviewed</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="all">{t('admin.allStatuses')}</SelectItem>
+            <SelectItem value="pending">{t('admin.pending')}</SelectItem>
+            <SelectItem value="reviewed">{t('admin.reviewed')}</SelectItem>
+            <SelectItem value="resolved">{t('admin.resolved')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

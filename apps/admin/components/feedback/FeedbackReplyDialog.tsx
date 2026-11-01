@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import type { Feedback } from '@/hooks/feedback/useAdminFeedback'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface FeedbackReplyDialogProps {
   replyTarget: Feedback | null
@@ -28,13 +29,14 @@ export function FeedbackReplyDialog({
   onClose,
   onSubmitReply,
 }: FeedbackReplyDialogProps) {
+  const t = useTranslations()
   return (
     <Dialog open={!!replyTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reply to {replyTarget?.username}&apos;s Feedback</DialogTitle>
+          <DialogTitle>{t('admin.replyTitle', { username: replyTarget?.username ?? '' })}</DialogTitle>
           <DialogDescription className="text-xs">
-            Your reply will be saved and visible to the student
+            {t('admin.replyVisibleToStudent')}
           </DialogDescription>
         </DialogHeader>
 
@@ -46,7 +48,7 @@ export function FeedbackReplyDialog({
           <textarea
             rows={4}
             required
-            placeholder="Type your reply here..."
+            placeholder={t('admin.enterReply')}
             value={replyText}
             onChange={(e) => onChangeReplyText(e.target.value)}
             className="w-full resize-none border p-3 text-sm rounded-lg outline-none border-border focus:border-primary bg-background"
@@ -55,14 +57,14 @@ export function FeedbackReplyDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             disabled={isPending || !replyText.trim()}
             onClick={onSubmitReply}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Send Reply
+            {t('admin.sendReply')}
           </Button>
         </DialogFooter>
       </DialogContent>

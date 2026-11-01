@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import { useToast } from '@/store/shared/toast-store'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
 import { promptSessionReauth } from '@/store/shared/auth-prompt-store'
 
@@ -210,6 +211,7 @@ async function submitAnswer(
 export function useSubmitAnswer(sessionId: string, canWrite: () => boolean = () => true) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const t = useTranslations()
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const permissionRef = useRef({ sessionId, canWrite })
   permissionRef.current = { sessionId, canWrite }
@@ -244,7 +246,7 @@ export function useSubmitAnswer(sessionId: string, canWrite: () => boolean = () 
 
     onError: (error, _variables, context) => {
       if (context && permissionRef.current.sessionId !== context.sessionId) return
-      toast.error(error.message || 'Failed to submit answer, please try again')
+      toast.error(t('quiz.submitAnswerFailed'))
     },
   })
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { cn } from '@/lib/core/utils/cn'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface GoogleSignInButtonProps {
   callbackUrl?: string | null
@@ -24,6 +25,8 @@ declare global {
 }
 
 export function GoogleSignInButton({ callbackUrl, className, text = 'Continue with Google', showDivider = true }: GoogleSignInButtonProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   const [btnWidth, setBtnWidth] = useState(340)
   const containerRef = useRef<HTMLDivElement>(null)
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''
@@ -77,7 +80,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Continue wi
             width: String(btnWidth),
             text: text.toLowerCase().startsWith('sign up') ? 'signup_with' : 'signin_with',
             shape: 'pill',
-            locale: 'en',
+            locale,
             logo_alignment: 'center',
           })
         }
@@ -95,7 +98,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Continue wi
     } else {
       initializeGsi()
     }
-  }, [clientId, callbackUrl, btnWidth, text])
+  }, [clientId, callbackUrl, btnWidth, text, locale])
 
   if (!clientId) {
     return null
@@ -110,7 +113,7 @@ export function GoogleSignInButton({ callbackUrl, className, text = 'Continue wi
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs font-black uppercase tracking-widest">
-            <span className="bg-card px-3 text-muted-foreground">or</span>
+            <span className="bg-card px-3 text-muted-foreground">{t('auth.or')}</span>
           </div>
         </div>
       )}

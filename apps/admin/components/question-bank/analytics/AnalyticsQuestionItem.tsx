@@ -1,8 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { AnalyticsQuestion } from '@/hooks/question-bank/useQuestionBankAnalytics'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface AnalyticsQuestionItemProps {
   question: AnalyticsQuestion
@@ -10,6 +13,7 @@ interface AnalyticsQuestionItemProps {
 }
 
 export function AnalyticsQuestionItem({ question, index }: AnalyticsQuestionItemProps) {
+  const t = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -25,11 +29,11 @@ export function AnalyticsQuestionItem({ question, index }: AnalyticsQuestionItem
 
           <div className="flex items-center gap-3 ml-8 flex-wrap">
             <Badge variant="secondary" className="text-xs">
-              Used {question.usage_count} time{question.usage_count === 1 ? '' : 's'}
+              {t('adminQuestionBank.usedCount', { count: question.usage_count })}
             </Badge>
             {question.used_in_quizzes.length > 0 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">In:</span>
+                <span className="text-xs text-muted-foreground">{t('adminQuestionBank.in')}</span>
                 {question.used_in_quizzes.slice(0, 3).map((code) => (
                   <Badge key={code} variant="outline" className="text-[10px]">
                     {code}
@@ -49,12 +53,12 @@ export function AnalyticsQuestionItem({ question, index }: AnalyticsQuestionItem
           {isOpen ? (
             <>
               <ChevronUp className="h-4 w-4" />
-              Hide
+              {t('common.hide')}
             </>
           ) : (
             <>
               <ChevronDown className="h-4 w-4" />
-              View
+              {t('common.view')}
             </>
           )}
         </Button>

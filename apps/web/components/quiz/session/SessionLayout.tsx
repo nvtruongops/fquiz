@@ -10,6 +10,7 @@ import { useQuizKeyboardNavigation } from '@/hooks/quiz/useQuizKeyboardNavigatio
 import { useQuizSessionStore } from '@/store/quiz/quiz-session.store'
 import dynamic from 'next/dynamic'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const QuizAIAssistantDrawer = dynamic(
   () => import('@/components/quiz/session/QuizAIAssistantDrawer').then((m) => m.QuizAIAssistantDrawer),
@@ -59,6 +60,7 @@ export const SessionLayout = React.memo(function SessionLayout({
   onSubmit,
   onExit
 }: SessionLayoutProps) {
+  const t = useTranslations()
   const { session, question } = sessionData
   const effectiveTotal = session.totalQuestions || 0
 
@@ -113,15 +115,15 @@ export const SessionLayout = React.memo(function SessionLayout({
       {isReadOnlyTab && (
         <div className="bg-warning-bg border-b border-warning-border text-warning-fg px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-medium z-50">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Chế độ xem (Multi-tab Lock):</span>
-            <span>Phiên thi này đang mở ở một tab khác. Tab này chỉ có quyền đọc để bảo toàn tiến độ thi.</span>
+            <span className="font-semibold">{t('session.readOnlyMode')}</span>
+            <span>{t('session.otherTabReadOnly')}</span>
           </div>
           <button
             type="button"
             onClick={takeOverLease}
             className="bg-warning-fg text-warning-bg px-2.5 py-1 rounded text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0"
           >
-            Tiếp tục làm tại tab này
+            {t('session.continueInThisTab')}
           </button>
         </div>
       )}

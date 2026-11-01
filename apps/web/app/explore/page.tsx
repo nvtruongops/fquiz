@@ -4,12 +4,13 @@ import { verifySession } from '@/lib/modules/auth/dal'
 import AppLayout from '@/components/layout/AppLayout'
 import { ExploreSkeleton } from '@/components/quiz/explore/ExploreSkeleton'
 import { getPublicCategories, getStudentPinnedCategoryIds } from '@/lib/modules/quiz/services/category.service'
+import { ExplorePageHeading } from '@/components/quiz/explore/ExplorePageHeading'
+import { getLocalizedMetadata } from '@/lib/core/utils/metadata'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = {
-  title: 'Explore Study Categories & Quizzes | FQuiz',
-  description: 'Browse study categories and discover quizzes across disciplines on FQuiz.',
+export async function generateMetadata() {
+  return getLocalizedMetadata('explore')
 }
 
 async function CategoryFilterLoader({ userId }: { userId?: string }) {
@@ -47,14 +48,7 @@ export default async function ExplorePage() {
       </div>
 
       <div className="w-full pt-1 sm:pt-3 pb-24 sm:pb-28 lg:pb-16 relative z-10 space-y-3 sm:space-y-6">
-        <div className="text-center max-w-3xl mx-auto px-2 space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-3 duration-500">
-            Explore Study Categories & Quizzes
-          </h1>
-          <p className="text-xs sm:text-sm font-semibold text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
-            Browse study categories to discover quizzes for practice across disciplines.
-          </p>
-        </div>
+        <ExplorePageHeading />
 
         <Suspense fallback={<ExploreSkeleton />}>
           <CategoryFilterLoader userId={user?.userId} />

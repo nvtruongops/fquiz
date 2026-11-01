@@ -12,8 +12,10 @@ import { HistorySkeleton } from '@/components/history/HistorySkeleton'
 import { HistoryFilterBar } from '@/components/history/HistoryFilterBar'
 import { HistoryGroupList } from '@/components/history/HistoryGroupList'
 import { useStudentHistory } from '@/hooks/useStudentHistory'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function HistoryContent() {
+  const t = useTranslations()
   const {
     page,
     setPage,
@@ -41,13 +43,13 @@ function HistoryContent() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-black uppercase tracking-wider">
               <HistoryIcon className="w-3 h-3" />
-              <span>Learning Journey</span>
+              <span>{t('history.learningJourney')}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Quiz History
+              {t('history.title')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Track your study progress, scores achieved, and review details for every quiz attempt.
+              {t('history.description')}
             </p>
           </div>
 
@@ -58,8 +60,8 @@ function HistoryContent() {
                 {stats.totalQuizzes}
               </div>
               <div className="text-left">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Quizzes Taken</p>
-                <p className="text-xs font-black text-foreground">{stats.totalAttempts} attempts</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{t('history.quizzesTaken')}</p>
+                <p className="text-xs font-black text-foreground">{t('history.attemptCount', { count: stats.totalAttempts })}</p>
               </div>
             </div>
 
@@ -68,8 +70,8 @@ function HistoryContent() {
                 <Trophy className="w-3.5 h-3.5" />
               </div>
               <div className="text-left">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Perfect Scores</p>
-                <p className="text-xs font-black text-foreground">{stats.perfectScores} scored 10/10</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{t('history.perfectScores')}</p>
+                <p className="text-xs font-black text-foreground">{t('history.scoredPerfect', { count: stats.perfectScores })}</p>
               </div>
             </div>
           </div>
@@ -106,7 +108,7 @@ function HistoryContent() {
               className="rounded-xl border-border hover:bg-muted shadow-2xs h-9 px-4 text-xs font-bold cursor-pointer"
             >
               <ChevronLeft size={14} className="mr-1" />
-              Previous
+              {t('common.previous')}
             </Button>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-black text-primary px-3 py-1.5 bg-primary/10 rounded-xl border border-primary/20">
@@ -122,7 +124,7 @@ function HistoryContent() {
               disabled={page === data.totalPages}
               className="rounded-xl border-border hover:bg-muted shadow-2xs h-9 px-4 text-xs font-bold cursor-pointer"
             >
-              Next
+              {t('common.next')}
               <ChevronRight size={14} className="ml-1" />
             </Button>
           </div>

@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, MinusCircle, ChevronLeft, ChevronRight, BookOpen
 import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export interface ResultQuestion {
   _id: string
@@ -35,6 +36,7 @@ function matchesFilter(q: ResultQuestion, filter: FilterType) {
 }
 
 export function InteractiveResultViewer({ questions }: Readonly<InteractiveResultViewerProps>) {
+  const t = useTranslations()
   // Find first wrong or unanswered question as default selected index, or 0
   const firstWrongIndex = questions.findIndex(q => !q.is_correct)
   const initialIndex = firstWrongIndex >= 0 ? firstWrongIndex : 0
@@ -46,7 +48,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
   if (!questions || questions.length === 0) {
     return (
       <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-bold text-xs">
-        No question detail information available.
+        {t('result.empty')}
       </div>
     )
   }
@@ -92,18 +94,18 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           type="button"
           onClick={() => setIsMobileMatrixOpen(!isMobileMatrixOpen)}
           aria-expanded={isMobileMatrixOpen}
-          aria-label="Expand or collapse question list"
+          aria-label={t('result.toggleList')}
           className="w-full flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border shrink-0 cursor-pointer md:cursor-default select-none text-left"
         >
           <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <BookOpen aria-hidden="true" className="h-4 w-4 text-primary shrink-0" />
-            Questions ({totalQuestions})
+            {t('result.questionCount', { count: totalQuestions })}
             <span className="inline-flex md:hidden items-center text-[10px] font-black text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full border border-border">
               {isMobileMatrixOpen ? <ChevronUp aria-hidden="true" className="h-3 w-3" /> : <ChevronDown aria-hidden="true" className="h-3 w-3" />}
             </span>
           </span>
           <span className="text-[11px] font-black text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border">
-            Correct {correctCount}/{totalQuestions}
+            {t('result.correctRatio', { correct: correctCount, total: totalQuestions })}
           </span>
         </button>
 
@@ -122,7 +124,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              All ({totalQuestions})
+              {t('result.allCount', { count: totalQuestions })}
             </button>
             <button
               type="button"
@@ -135,7 +137,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-success-fg hover:bg-success-bg/40'
               )}
             >
-              Correct ({correctCount})
+              {t('result.correctCount', { count: correctCount })}
             </button>
             <button
               type="button"
@@ -148,7 +150,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-incorrect-fg hover:bg-incorrect-bg/50'
               )}
             >
-              Wrong ({incorrectCount})
+              {t('result.wrongCount', { count: incorrectCount })}
             </button>
             <button
               type="button"
@@ -161,7 +163,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                   : 'text-muted-foreground hover:bg-muted'
               )}
             >
-              Skipped ({unansweredCount})
+              {t('result.skippedCount', { count: unansweredCount })}
             </button>
           </div>
 
@@ -191,14 +193,17 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
                     key={q._id || idx}
                     type="button"
                     onClick={() => handleSelectQuestion(idx)}
-                    aria-label={`Question ${idx + 1}: ${notAnswered ? 'Unanswered' : isCorrect ? 'Correct' : 'Incorrect'}`}
+                    aria-label={t('result.questionAria', {
+                      current: idx + 1,
+                      status: notAnswered ? t('result.unanswered') : isCorrect ? t('result.correct') : t('result.incorrect'),
+                    })}
                     aria-current={isSelected ? 'step' : undefined}
                     className={cn(
                       'w-6 h-6 sm:w-8 sm:h-8 rounded-lg text-[10px] sm:text-[11px] font-black transition-all flex items-center justify-center relative select-none mx-auto border border-transparent cursor-pointer',
                       btnBg,
                       isSelected && 'border-2 border-primary ring-2 ring-primary/20 font-black z-10 shadow-2xs'
                     )}
-                    title={`Question ${idx + 1}: ${notAnswered ? 'Unanswered' : isCorrect ? 'Correct' : 'Incorrect'}`}
+                    title={`${t('result.questionNumber', { current: idx + 1, total: totalQuestions })}: ${notAnswered ? t('result.unanswered') : isCorrect ? t('result.correct') : t('result.incorrect')}`}
                   >
                     {idx + 1}
                   </button>
@@ -210,13 +215,13 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
           {/* Legend Footer */}
           <div className="pt-2 mt-1.5 border-t border-border flex items-center justify-around text-[9px] sm:text-[10px] font-black text-muted-foreground select-none shrink-0">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-success-fg inline-block" /> Correct
+              <span className="w-2 h-2 rounded-full bg-success-fg inline-block" /> {t('result.correct')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-incorrect-fg inline-block" /> Incorrect
+              <span className="w-2 h-2 rounded-full bg-incorrect-fg inline-block" /> {t('result.incorrect')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> Skipped
+              <span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> {t('result.skipped')}
             </span>
           </div>
         </div>
@@ -226,7 +231,7 @@ export function InteractiveResultViewer({ questions }: Readonly<InteractiveResul
       <div className="md:col-span-9 lg:col-span-9 xl:col-span-9 h-full min-h-0 flex flex-col overflow-hidden">
         {filteredPosition < 0 ? (
           <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground font-bold text-xs">
-            No questions match this filter.
+            {t('result.noFilterMatch')}
           </div>
         ) : (
           <QuestionDetailCard
@@ -262,6 +267,7 @@ function QuestionDetailCard({
   onPrev: () => void
   onNext: () => void
 }>) {
+  const t = useTranslations()
   const [showExplanation, setShowExplanation] = useState<boolean>(false)
   const correctAnswers = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
   const submittedAnswers =
@@ -280,22 +286,22 @@ function QuestionDetailCard({
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 rounded-xl bg-muted text-muted-foreground font-black text-xs uppercase tracking-wider border border-border">
-            QUESTION {idx + 1} / {totalQuestions}
+            {t('result.questionNumber', { current: idx + 1, total: totalQuestions })}
           </span>
         </div>
 
         <div>
           {notAnswered ? (
             <Badge className="bg-muted text-muted-foreground border border-border text-xs font-black px-3 py-1.5 rounded-full">
-              <MinusCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1 inline text-muted-foreground" /> Unanswered
+              <MinusCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1 inline text-muted-foreground" /> {t('result.unanswered')}
             </Badge>
           ) : q.is_correct ? (
             <Badge className="bg-success-bg text-success-fg border border-success-border text-xs font-black px-3 py-1.5 rounded-full">
-              <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-success-fg" /> Correct
+              <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-success-fg" /> {t('result.correct')}
             </Badge>
           ) : (
             <Badge className="bg-incorrect-bg text-incorrect-fg border border-incorrect-border text-xs font-black px-3 py-1.5 rounded-full">
-              <XCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-incorrect-fg" /> Incorrect
+              <XCircle aria-hidden="true" className="h-3.5 w-3.5 mr-1.5 inline text-incorrect-fg" /> {t('result.incorrect')}
             </Badge>
           )}
         </div>
@@ -400,14 +406,14 @@ function QuestionDetailCard({
               onClick={() => setShowExplanation(!showExplanation)}
               className="h-9 px-4 rounded-full border-info-border bg-info-bg text-info-fg hover:bg-info-bg/80 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
-              VIEW EXPLANATION
+              {t('result.viewExplanation')}
               {showExplanation ? <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" /> : <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />}
             </Button>
 
             {showExplanation && (
               <div className="mt-2.5 p-4 rounded-2xl bg-info-bg border border-info-border space-y-1.5 select-none animate-in fade-in slide-in-from-top-1 duration-200 text-card-foreground">
                 <p className="text-xs font-black text-info-fg uppercase tracking-wider flex items-center gap-1.5">
-                  <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 text-info-fg" /> Detailed Explanation
+                  <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 text-info-fg" /> {t('result.detailedExplanation')}
                 </p>
                 <p className="text-xs sm:text-[13px] text-info-fg leading-relaxed whitespace-pre-wrap select-none font-bold">
                   {q.explanation}
@@ -426,7 +432,7 @@ function QuestionDetailCard({
           disabled={!canPrev}
           className="h-10 sm:h-9 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border-border disabled:opacity-40 text-muted-foreground bg-muted/80 hover:bg-muted cursor-pointer"
         >
-          <ChevronLeft aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> PREV QUESTION
+          <ChevronLeft aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> {t('result.prevQuestion')}
         </Button>
 
         <span className="text-xs font-black text-muted-foreground uppercase tracking-wider">
@@ -438,7 +444,7 @@ function QuestionDetailCard({
           disabled={!canNext}
           className="h-10 sm:h-9 px-4 rounded-2xl bg-primary hover:bg-primary-hover text-primary-foreground font-black text-xs uppercase tracking-wider disabled:opacity-40 cursor-pointer"
         >
-          NEXT QUESTION <ChevronRight aria-hidden="true" className="ml-1 h-3.5 w-3.5" />
+          {t('result.nextQuestion')} <ChevronRight aria-hidden="true" className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

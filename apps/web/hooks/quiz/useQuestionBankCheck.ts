@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDebounce } from '@/hooks/shared/useDebounce'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuestionInput {
   text: string
@@ -55,6 +56,7 @@ export function useQuestionBankCheck({
   autoCheck = true,
   debounceMs = 1000,
 }: UseQuestionBankCheckOptions) {
+  const t = useTranslations()
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<CheckResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -106,12 +108,12 @@ export function useQuestionBankCheck({
       setResult(data)
     } catch (err) {
       console.error('Question bank check error:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(t('quiz.questionBankCheckFailed'))
       setResult(null)
     } finally {
       setChecking(false)
     }
-  }, [categoryId, debouncedQuestions, enabled])
+  }, [categoryId, debouncedQuestions, enabled, t])
 
   // Auto-check when questions change (debounced)
   useEffect(() => {

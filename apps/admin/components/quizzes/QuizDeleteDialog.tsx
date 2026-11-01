@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import type { Quiz } from '@/hooks/quizzes/useAdminQuizzes'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizDeleteDialogProps {
   deleteTarget: Quiz | null
@@ -24,19 +25,19 @@ export function QuizDeleteDialog({
   onClose,
   onConfirm,
 }: QuizDeleteDialogProps) {
+  const t = useTranslations()
   return (
     <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Quiz</DialogTitle>
+          <DialogTitle>{t('admin.deleteQuizTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete quiz{' '}
-            <span className="font-bold text-foreground">{deleteTarget?.title}</span>? This action cannot be undone.
+            {t('admin.confirmDeleteQuiz', { title: deleteTarget?.title ?? '' })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -44,7 +45,7 @@ export function QuizDeleteDialog({
             onClick={onConfirm}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Confirm Delete
+            {t('admin.confirmDelete')}
           </Button>
         </DialogFooter>
       </DialogContent>

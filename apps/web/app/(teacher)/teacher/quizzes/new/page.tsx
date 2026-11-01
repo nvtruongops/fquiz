@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface Category {
   _id: string
@@ -10,6 +11,7 @@ interface Category {
 }
 
 export default function TeacherCreateQuizPage() {
+  const t = useTranslations()
   const { data, isLoading } = useQuery({
     queryKey: ['teacher', 'categories'],
     queryFn: async () => {
@@ -25,7 +27,7 @@ export default function TeacherCreateQuizPage() {
     return (
       <div className="p-8 flex items-center gap-2 text-muted-foreground font-semibold">
         <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        Loading categories...
+        {t('teacherQuiz.loadingCategories')}
       </div>
     )
   }

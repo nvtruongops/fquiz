@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from '@/hooks/useToast'
+import { useTranslations } from '@fquiz/ui/i18n'
 import { withCsrfHeaders } from '@/lib/security/csrf'
 import type { QuestionItem, BankCheckResult, ParsedFilePreview } from './types'
 
@@ -20,6 +21,7 @@ export function useQuizBankSync({
   setCourseCode,
   setQuestions,
 }: UseQuizBankSyncProps) {
+  const t = useTranslations()
   const [showSyncConfirmModal, setShowSyncConfirmModal] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
 
@@ -130,14 +132,14 @@ export function useQuizBankSync({
 
         if (failedCount > 0) {
           toast({
-            title: 'Question Bank sync warning',
-            description: `Updated ${successCount}/${syncTasks.length} conflicting questions. ${failedCount} questions encountered errors during sync.`,
+            title: t('admin.questionBankSyncWarning'),
+            description: t('admin.syncPartial', { success: successCount, total: syncTasks.length, failed: failedCount }),
             type: 'warning',
           })
         } else {
           toast({
-            title: 'Question Bank & Quizzes updated',
-            description: `Overwrote new answers for ${successCount} conflicting questions in Question Bank and all related quizzes`,
+            title: t('admin.questionBankAndQuizzesUpdated'),
+            description: t('admin.syncComplete', { count: successCount }),
             type: 'success',
           })
         }
@@ -147,12 +149,12 @@ export function useQuizBankSync({
       setShowSyncConfirmModal(false)
       onSuccess?.()
       toast({
-        title: 'Questions imported successfully',
-        description: `Imported and cross-checked ${processedQuestions.length} questions with Question Bank`,
+        title: t('admin.questionsImported'),
+        description: t('admin.importedAndChecked', { count: processedQuestions.length }),
         type: 'success',
       })
-    } catch (err: any) {
-      toast({ title: 'Error applying questions', description: err.message, type: 'error' })
+    } catch {
+      toast({ title: t('admin.applyQuestionsFailed'), description: t('admin.applyQuestionsFailed'), type: 'error' })
     } finally {
       setIsSyncing(false)
     }

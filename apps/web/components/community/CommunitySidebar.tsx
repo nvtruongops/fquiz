@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/shared/ui/button'
 import { Flame, Lightbulb, Eye } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface CommunitySidebarProps {
   postsData: any
@@ -18,13 +19,14 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
   setSearchQuery,
   onOpenFeedback,
 }: CommunitySidebarProps) {
+  const t = useTranslations()
   return (
     <aside className="lg:col-span-4 space-y-6">
       {/* Widget 1: Featured Topics */}
       <div className="bg-card backdrop-blur-xl border border-border rounded-3xl p-6 shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-foreground font-black text-sm border-b border-border pb-3">
           <Flame className="w-4 h-4 text-amber-400" />
-          <span>Featured Topics</span>
+          <span>{t('community.featuredTopics')}</span>
         </div>
 
         {postsData?.featuredTopics && postsData.featuredTopics.length > 0 ? (
@@ -54,7 +56,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
                       'text-[10px] font-bold',
                       isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'
                     )}>
-                      {topic.postCount} posts
+                      {t('community.postCount', { count: topic.postCount })}
                     </span>
                   </div>
                 </button>
@@ -63,7 +65,7 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
           </div>
         ) : (
           <p className="text-xs font-medium text-muted-foreground text-center py-2">
-            No hashtag topics yet
+            {t('community.noTopics')}
           </p>
         )}
       </div>
@@ -72,16 +74,16 @@ export const CommunitySidebar = React.memo(function CommunitySidebar({
       <div className="bg-card border border-primary/20 rounded-3xl p-6 shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-primary font-black text-sm">
           <Lightbulb className="w-4 h-4 text-amber-400" />
-          <span>Feedback & Suggestions</span>
+          <span>{t('community.feedbackFeature')}</span>
         </div>
         <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-          Encountered a technical issue or have a feature idea? Do not hesitate to share your feedback with us!
+          {t('community.feedbackPrompt')}
         </p>
         <Button
           onClick={onOpenFeedback}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs py-2.5 shadow-xs"
         >
-          Submit Feedback
+          {t('community.submitFeedback')}
         </Button>
       </div>
     </aside>

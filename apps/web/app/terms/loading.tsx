@@ -1,5 +1,5 @@
-import { LegalSkeleton } from '@/components/legal/LegalSkeleton'
+import { LegalLoading } from '@/components/legal/LegalLoading'
 
 export default function TermsLoading() {
-  return <LegalSkeleton title="Terms of Service" />
+  return <LegalLoading type="terms" />
 }

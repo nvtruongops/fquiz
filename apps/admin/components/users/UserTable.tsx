@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,6 +21,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import type { User, UsersResponse } from '@/hooks/users/useAdminUsers'
+import { useLocale, useTranslations } from '@fquiz/ui/i18n'
 
 interface UserTableProps {
   isLoading: boolean
@@ -45,12 +48,14 @@ export function UserTable({
   onUpdateStatus,
   onDeleteUser,
 }: UserTableProps) {
+  const t = useTranslations()
+  const { locale } = useLocale()
   return (
     <div className="space-y-4">
       {isError && (
         <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          <span>{error?.message || 'Failed to load user list'}</span>
-          <Button type="button" variant="outline" onClick={onRetry}>Retry</Button>
+          <span>{error?.message || t('admin.failedToLoadUsers')}</span>
+          <Button type="button" variant="outline" onClick={onRetry}>{t('admin.retry')}</Button>
         </div>
       )}
       <Card className="border-border bg-card">
@@ -61,19 +66,19 @@ export function UserTable({
             </div>
           ) : !data || (isError && data.users.length === 0) ? null : data.users.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              No matching accounts found
+              {t('admin.noMatchingAccounts')}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/30">
                   <tr>
-                    <th className="text-left py-3 px-4 font-semibold">User</th>
-                    <th className="text-left py-3 px-4 font-semibold">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold">Role</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold">Created Date</th>
-                    <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                    <th className="text-left py-3 px-4 font-semibold">{t('admin.user')}</th>
+                    <th className="text-left py-3 px-4 font-semibold">{t('admin.email')}</th>
+                    <th className="text-left py-3 px-4 font-semibold">{t('admin.role')}</th>
+                    <th className="text-left py-3 px-4 font-semibold">{t('admin.status')}</th>
+                    <th className="text-left py-3 px-4 font-semibold">{t('admin.createdDate')}</th>
+                    <th className="text-right py-3 px-4 font-semibold">{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -92,20 +97,20 @@ export function UserTable({
                         <td className="py-3 px-4">
                           {isRootAdmin ? (
                             <Badge variant="outline" className="font-mono font-bold uppercase text-[11px]">
-                              Admin
+                              {t('nav.roleAdmin')}
                             </Badge>
                           ) : (
                             <Select
                               value={u.role}
                               onValueChange={(newRole) => onUpdateRole(u._id, newRole)}
                             >
-                              <SelectTrigger className="h-8 w-28 text-xs font-semibold" aria-label={`Change role for ${u.username}`}>
+                              <SelectTrigger className="h-8 w-28 text-xs font-semibold" aria-label={t('admin.changeRoleFor', { username: u.username })}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="student">Student</SelectItem>
-                                <SelectItem value="teacher">Teacher</SelectItem>
-                                <SelectItem value="dev">Dev</SelectItem>
+                                <SelectItem value="student">{t('nav.roleStudent')}</SelectItem>
+                                <SelectItem value="teacher">{t('nav.roleTeacher')}</SelectItem>
+                                <SelectItem value="dev">{t('admin.dev')}</SelectItem>
                               </SelectContent>
                             </Select>
                           )}
@@ -115,16 +120,16 @@ export function UserTable({
                             variant={u.status === 'active' ? 'success' : 'destructive'}
                             className="text-xs capitalize"
                           >
-                            {u.status}
+                            {u.status === 'active' ? t('admin.active') : t('admin.banned')}
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-xs text-muted-foreground">
-                          {new Date(u.created_at).toLocaleDateString('en-US')}
+                          {new Date(u.created_at).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')}
                         </td>
                         <td className="py-3 px-4 text-right">
                           {isRootAdmin ? (
                             <span className="text-[11px] text-muted-foreground font-mono italic pr-2">
-                              Protected
+                              {t('admin.protected')}
                             </span>
                           ) : (
                             <div className="flex items-center justify-end gap-1.5">
@@ -133,8 +138,8 @@ export function UserTable({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'banned')}
-                                  title="Suspend account"
-                                  aria-label={`Suspend account ${u.username}`}
+                                  title={t('admin.suspendAccount')}
+                                  aria-label={t('admin.suspendAccountFor', { username: u.username })}
                                   className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                                 >
                                   <UserX className="w-4 h-4" aria-hidden="true" />
@@ -144,8 +149,8 @@ export function UserTable({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onUpdateStatus(u._id, 'active')}
-                                  title="Activate account"
-                                  aria-label={`Activate account ${u.username}`}
+                                  title={t('admin.activateAccount')}
+                                  aria-label={t('admin.activateAccountFor', { username: u.username })}
                                   className="h-8 px-2 text-muted-foreground hover:text-success-fg cursor-pointer"
                                 >
                                   <UserCheck className="w-4 h-4" aria-hidden="true" />
@@ -156,8 +161,8 @@ export function UserTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onDeleteUser(u)}
-                                title="Delete permanently"
-                                aria-label={`Delete account ${u.username}`}
+                                title={t('admin.deletePermanently')}
+                                aria-label={t('admin.deleteAccountFor', { username: u.username })}
                                 className="h-8 px-2 text-muted-foreground hover:text-destructive cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -178,7 +183,7 @@ export function UserTable({
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">{data.total}</span> {data.total === 1 ? 'account' : 'accounts'}
+            {data.total === 1 ? t('admin.totalAccount', { count: data.total }) : t('admin.totalAccounts', { count: data.total })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -186,19 +191,19 @@ export function UserTable({
               size="sm"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
-              aria-label="Previous page"
+              aria-label={t('common.previousPage')}
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </Button>
             <span className="text-xs font-medium px-2">
-              Page {page} of {data.totalPages}
+              {t('admin.pageOf', { page, total: data.totalPages })}
             </span>
             <Button
               variant="outline"
               size="sm"
               disabled={page >= data.totalPages}
               onClick={() => onPageChange(page + 1)}
-              aria-label="Next page"
+              aria-label={t('common.nextPage')}
             >
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </Button>

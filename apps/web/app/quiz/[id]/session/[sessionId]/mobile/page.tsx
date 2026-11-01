@@ -15,6 +15,7 @@ import { SessionSaveStatus } from '@/components/quiz/session/SessionSaveStatus'
 import { SessionQueryError } from '@/components/quiz/session/SessionQueryError'
 import { QuizSessionSkeleton } from '@/components/quiz/session/QuizSessionSkeleton'
 import { shouldShowSessionSkeleton } from '@/hooks/quiz/session-rendering'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 type MobileSessionController = ReturnType<typeof useMobileQuizSessionController>
 type MobileSessionData = NonNullable<MobileSessionController['activeData']>
@@ -25,11 +26,6 @@ const MOBILE_RETRY_BLOCKED_STATUSES = new Set([404, 410])
 
 function canRetryMobileSessionLoad(isError: boolean, error: { status?: number } | null | undefined) {
   return isError && !MOBILE_RETRY_BLOCKED_STATUSES.has(error?.status ?? 0)
-}
-
-function getMobileSessionErrorMessage(ctrl: MobileSessionController) {
-  return [ctrl.initialError?.message, ctrl.preloadError?.message].find(Boolean)
-    || 'Please check your network connection and try again'
 }
 
 function hasRetryableMobileSessionError(ctrl: MobileSessionController) {
@@ -56,12 +52,13 @@ function navigateBackFromMobileSession(router: MobileSessionController['router']
 }
 
 function MobileSessionErrorState({ ctrl }: { ctrl: MobileSessionController }) {
+  const t = useTranslations()
   return (
     <SessionQueryError
-      title="Exam Room Error"
-      message={getMobileSessionErrorMessage(ctrl)}
-      backLabel="Back"
-      dashboardLabel="Back to Dashboard"
+      title={t('session.errorTitle')}
+      message={t('session.errorDescription')}
+      backLabel={t('common.goBack')}
+      dashboardLabel={t('dashboard.title')}
       mobile
       canRetry={hasRetryableMobileSessionError(ctrl)}
       onRetry={() => retryMobileSessionQueries(ctrl)}
@@ -174,20 +171,22 @@ function getMobileReadyViewState(ctrl: MobileSessionController, activeData: Mobi
 }
 
 function MobileSessionReadOnlyNotice({ isReadOnlyTab, takeOverLease }: { isReadOnlyTab: boolean; takeOverLease: () => void }) {
+  const t = useTranslations()
   if (!isReadOnlyTab) return null
   return (
     <div className="flex items-center justify-between gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-xs text-warning-fg">
-      <span>Read-only: session open in another tab.</span>
-      <button type="button" onClick={takeOverLease} className="shrink-0 font-semibold underline">Continue here</button>
+      <span>{t('session.otherTabReadOnly')}</span>
+      <button type="button" onClick={takeOverLease} className="shrink-0 font-semibold underline">{t('session.continueInThisTab')}</button>
     </div>
   )
 }
 
 function MobileSessionFinalizationFailure({ isError }: { isError: boolean }) {
+  const t = useTranslations()
   if (!isError) return null
   return (
     <p role="alert" className="mx-4 my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-      Submission did not finish. Your answers are saved. Select Submit to try again.
+      {t('session.submissionFailedRetry')}
     </p>
   )
 }

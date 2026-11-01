@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/ui/button'
 import { FileText, CheckCircle2, AlertTriangle, AlertCircle, ChevronDown, ChevronUp, HelpCircle, X, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import type { QuestionStructureReport } from '@/lib/modules/quiz/quiz-import/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface Props {
   report: QuestionStructureReport
@@ -34,18 +35,45 @@ interface Props {
 }
 
 export function QuestionStructureReportCard({ report, importSummary, bankStatus, diagnostics, onSelectQuestion, onReanalyze, onClose, className }: Readonly<Props>) {
+  const t = useTranslations()
   const [showNonStandardList, setShowNonStandardList] = React.useState(false)
+  const getDiagnosticText = (diagnostic: NonNullable<Props['diagnostics']>[number]) => {
+    switch (diagnostic.code) {
+      case 'NO_QUESTIONS': return t('quizImport.diagNoQuestions')
+      case 'UNKNOWN_TOP_LEVEL_FIELD': return t('quizImport.diagUnknownTopField', { field: diagnostic.message.split(': ').slice(1).join(': ') })
+      case 'MISSING_QUIZ_META': return t('quizImport.diagMissingMetadata')
+      case 'UNKNOWN_QUIZ_META_FIELD': return t('quizImport.diagUnknownMetadataField', { field: diagnostic.message.split(': ').slice(1).join(': ') })
+      case 'INVALID_QUESTIONS_ARRAY': return t('quizImport.diagQuestionsNotArray')
+      case 'MISSING_COURSE_CODE': return t('quizImport.diagMissingCourseCode')
+      case 'COURSE_CODE_TOO_LONG': return t('diagnostic.courseCodeTooLong')
+      case 'INVALID_COURSE_CODE': return t('diagnostic.courseCodeInvalid')
+      case 'MISSING_CATEGORY_ID': return t('quizImport.diagMissingCategory')
+      case 'MISSING_DESCRIPTION': return t('quizImport.diagMissingDescription')
+      case 'CATEGORY_ID_NOT_OBJECT_ID': return t('quizImport.diagInvalidCategory')
+      case 'UNKNOWN_QUESTION_FIELD': return t('quizImport.diagUnknownQuestionField', { field: diagnostic.message.split(': ').slice(1).join(': ') })
+      case 'MISSING_QUESTION_TEXT': return t('diagnostic.questionTextRequired')
+      case 'INSUFFICIENT_OPTIONS': return t('quizImport.diagInsufficientOptions')
+      case 'INVALID_CORRECT_ANSWER_TOKEN': return t('quizImport.diagInvalidAnswerToken')
+      case 'MISSING_CORRECT_ANSWER': return t('diagnostic.questionMissingAnswer')
+      case 'CORRECT_ANSWER_OUT_OF_RANGE': return t('quizImport.diagAnswerOutOfRange')
+      case 'DUPLICATE_CORRECT_ANSWER': return t('quizImport.diagDuplicateAnswers')
+      case 'EMPTY_OPTION_IN_MIDDLE': return t('diagnostic.optionGap')
+      case 'DUPLICATE_OPTION': return t('diagnostic.questionDuplicateOption')
+      case 'DUPLICATE_QUESTION': return t('quizImport.diagDuplicateQuestion')
+      default: return t('quizImport.diagGeneric')
+    }
+  }
 
   const multiAnswerBreakdownText = Object.entries(report.multiCorrectBreakdown)
-    .map(([count, num]) => `${num} with ${count} correct answers`)
+    .map(([count, num]) => t('report.breakdownCorrectAnswers', { count: num, answers: count }))
     .join(', ')
 
   const lessOptionsBreakdownText = Object.entries(report.lessThanFourBreakdown)
-    .map(([count, num]) => `${num} with ${count} options`)
+    .map(([count, num]) => t('report.breakdownOptions', { count: num, options: count }))
     .join(', ')
 
   const moreOptionsBreakdownText = Object.entries(report.moreThanFourBreakdown)
-    .map(([count, num]) => `${num} with ${count} options`)
+    .map(([count, num]) => t('report.breakdownOptions', { count: num, options: count }))
     .join(', ')
 
   return (
@@ -54,7 +82,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-primary" />
           <CardTitle className="text-xs font-black uppercase tracking-wider text-foreground">
-            File Structure & Question Bank Analysis Report
+            {t('report.structureTitle')}
           </CardTitle>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -67,11 +95,11 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
               className="h-7 px-2.5 text-[11px] font-bold border-primary/40 text-primary hover:bg-primary/10 flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Update report</span>
+              <span>{t('report.update')}</span>
             </Button>
           )}
           <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary bg-primary/10">
-            Reference only
+            {t('report.referenceOnly')}
           </Badge>
           {onClose && (
             <Button
@@ -92,10 +120,10 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         {importSummary && (
           <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border text-xs">
             <Badge variant="outline" className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded-md", importSummary.isValid ? "bg-success-bg text-success-fg border-success-border" : "bg-warning-bg text-warning-fg border-warning-border")}>
-              {importSummary.isValid ? 'Valid' : 'Errors found'}
+              {importSummary.isValid ? t('report.valid') : t('report.errorsFound')}
             </Badge>
             <span className="text-xs text-muted-foreground font-medium">
-              Total: {importSummary.totalQuestions} | Valid: {importSummary.validQuestions} | Errors: {importSummary.errors} | Warnings: {importSummary.warnings}
+              {t('report.summary', { total: importSummary.totalQuestions, valid: importSummary.validQuestions, errors: importSummary.errors, warnings: importSummary.warnings })}
             </span>
           </div>
         )}
@@ -104,10 +132,10 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-success-bg/30 border border-success-border/60 rounded-xl space-y-1 text-xs text-success-fg">
             <div className="flex items-center gap-1.5 font-bold">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-success-fg" />
-              <span>✓ {bankStatus.sameAnswerCount} questions already in question bank</span>
+              <span>✓ {t('report.questionsAlreadyMatch', { count: bankStatus.sameAnswerCount })}</span>
             </div>
             <p className="text-[11px] text-success-fg/90 pl-5 leading-relaxed">
-              These questions already exist with matching answers. Safe to reuse.
+              {t('report.matchingAnswersSafe')}
             </p>
           </div>
         )}
@@ -116,7 +144,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-incorrect-bg/40 border border-incorrect-border/60 rounded-xl space-y-1 text-xs text-destructive">
             <div className="flex items-center gap-1.5 font-bold">
               <AlertTriangle className="w-4 h-4 shrink-0 text-destructive" />
-              <span>⚠️ {bankStatus.differentAnswerCount} questions have conflicting answers with the question bank</span>
+              <span>⚠️ {t('report.questionAnswerConflicts', { count: bankStatus.differentAnswerCount })}</span>
             </div>
           </div>
         )}
@@ -126,16 +154,16 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
           <div className="p-3 bg-warning-bg/30 border border-warning-border/60 rounded-xl space-y-2 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-warning-fg">
               <AlertCircle className="w-4 h-4 shrink-0 text-warning-fg" />
-              <span>File Notes & Warnings ({diagnostics.length})</span>
+              <span>{t('report.fileNotesWarnings', { count: diagnostics.length })}</span>
             </div>
             <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
               {diagnostics.map((item, idx) => (
                 <div key={`${item.code}-${idx}`} className="flex items-start justify-between gap-2 text-warning-fg/90 bg-card/60 p-2 rounded-lg border border-warning-border/40">
                   <div className="flex items-start gap-1.5">
                     <span className="font-bold shrink-0">
-                      {item.questionIndex !== undefined ? `Question ${item.questionIndex + 1}:` : '•'}
+                      {item.questionIndex !== undefined ? t('report.questionNumber', { number: item.questionIndex + 1 }) : '•'}
                     </span>
-                    <span className="leading-snug">{item.message}</span>
+                    <span className="leading-snug">{getDiagnosticText(item)}</span>
                   </div>
                   {item.questionIndex !== undefined && onSelectQuestion && (
                     <Button
@@ -145,7 +173,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
                       onClick={() => onSelectQuestion(item.questionIndex!)}
                       className="h-6 px-2 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/10 shrink-0 cursor-pointer"
                     >
-                      View question
+                      {t('report.viewQuestion')}
                     </Button>
                   )}
                 </div>
@@ -158,7 +186,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="p-2.5 bg-info-bg/40 border border-info-border/60 rounded-xl flex items-start gap-2 text-info-fg text-xs">
           <HelpCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed">
-            Report lists option count and correct answer count in the file. <strong>You can still create quizzes normally with all of these questions.</strong>
+            {t('report.helper')}
           </span>
         </div>
 
@@ -166,78 +194,78 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Total Questions */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Total Questions</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">{t('report.totalQuestions')}</span>
             <span className="text-lg font-black text-foreground">{report.total}</span>
-            <span className="text-[10px] text-muted-foreground block">questions in file</span>
+            <span className="text-[10px] text-muted-foreground block">{t('report.questionsInFile')}</span>
           </div>
 
           {/* Standard Count */}
           <div className="p-3 bg-success-bg/30 rounded-xl border border-success-border/50 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-success-fg block">Standard (4 opts + 1 ans)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-success-fg block">{t('report.standardFormat')}</span>
             <span className="text-lg font-black text-success-fg">{report.standardCount}</span>
-            <span className="text-[10px] text-success-fg/80 block">{Math.round((report.standardCount / (report.total || 1)) * 100)}% of total questions</span>
+            <span className="text-[10px] text-success-fg/80 block">{t('report.percentOfQuestions', { percent: Math.round((report.standardCount / (report.total || 1)) * 100) })}</span>
           </div>
 
           {/* Correct Answers Stat */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Correct Answers</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">{t('report.correctAnswers')}</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold text-foreground">{report.singleCorrectCount} single-answer</span>
+              <span className="text-sm font-bold text-foreground">{t('report.singleAnswerCount', { count: report.singleCorrectCount })}</span>
             </div>
             {report.multiCorrectCount > 0 ? (
               <span className="text-[10px] font-medium text-warning-fg block">
-                ⚠️ {report.multiCorrectCount} questions &gt; 1 answer {multiAnswerBreakdownText ? `(${multiAnswerBreakdownText})` : ''}
+                ⚠️ {t('report.multipleAnswerCount', { count: report.multiCorrectCount })} {multiAnswerBreakdownText ? `(${multiAnswerBreakdownText})` : ''}
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground block">100% single-answer</span>
+              <span className="text-[10px] text-muted-foreground block">{t('report.allSingleAnswer')}</span>
             )}
           </div>
 
           {/* Option Counts Stat */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Options Count</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">{t('report.optionsCount')}</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold text-foreground">{report.fourOptionsCount} 4-option</span>
+              <span className="text-sm font-bold text-foreground">{t('report.fourOptionCount', { count: report.fourOptionsCount })}</span>
             </div>
             {(report.lessThanFourOptionsCount > 0 || report.moreThanFourOptionsCount > 0) ? (
               <span className="text-[10px] font-medium text-warning-fg block">
-                ⚠️ {report.lessThanFourOptionsCount + report.moreThanFourOptionsCount} non-4-option questions
+              ⚠️ {t('report.nonFourOptionCount', { count: report.lessThanFourOptionsCount + report.moreThanFourOptionsCount })}
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground block">100% 4-option</span>
+              <span className="text-[10px] text-muted-foreground block">{t('report.allFourOptions')}</span>
             )}
           </div>
         </div>
 
         {/* Detailed Breakdown Tags */}
         <div className="p-3 bg-card border border-border rounded-xl space-y-2">
-          <span className="text-xs font-bold text-foreground block">Question structure distribution details:</span>
+          <span className="text-xs font-bold text-foreground block">{t('report.structureDistribution')}</span>
           <div className="flex flex-wrap gap-1.5 text-xs">
             <Badge variant="outline" className="bg-success-bg/40 text-success-fg border-success-border/60">
-              ✓ 1 Correct answer: {report.singleCorrectCount} questions
+              ✓ {t('report.oneCorrectAnswer', { count: report.singleCorrectCount })}
             </Badge>
             {report.multiCorrectCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ &gt; 1 Correct answer: {report.multiCorrectCount} questions ({multiAnswerBreakdownText})
+                ⚠️ {t('report.moreThanOneCorrectAnswer', { count: report.multiCorrectCount, breakdown: multiAnswerBreakdownText })}
               </Badge>
             )}
             {report.zeroCorrectCount > 0 && (
               <Badge variant="outline" className="bg-incorrect-bg text-destructive border-incorrect-border">
-                ❌ No correct answer: {report.zeroCorrectCount} questions
+                ❌ {t('report.noCorrectAnswer', { count: report.zeroCorrectCount })}
               </Badge>
             )}
 
             <Badge variant="outline" className="bg-success-bg/40 text-success-fg border-success-border/60">
-              ✓ Exactly 4 options: {report.fourOptionsCount} questions
+              ✓ {t('report.exactlyFourOptions', { count: report.fourOptionsCount })}
             </Badge>
             {report.lessThanFourOptionsCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ 2-3 options: {report.lessThanFourOptionsCount} questions ({lessOptionsBreakdownText})
+                ⚠️ {t('report.twoOrThreeOptions', { count: report.lessThanFourOptionsCount, breakdown: lessOptionsBreakdownText })}
               </Badge>
             )}
             {report.moreThanFourOptionsCount > 0 && (
               <Badge variant="outline" className="bg-warning-bg text-warning-fg border-warning-border font-medium">
-                ⚠️ &gt; 4 options: {report.moreThanFourOptionsCount} questions ({moreOptionsBreakdownText})
+                ⚠️ {t('report.moreThanFourOptions', { count: report.moreThanFourOptionsCount, breakdown: moreOptionsBreakdownText })}
               </Badge>
             )}
           </div>
@@ -254,7 +282,7 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
             >
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 text-warning-fg" />
-                <span>List of {report.nonStandardCount} non-standard questions (4 options + 1 answer)</span>
+                <span>{t('report.listNonStandard', { count: report.nonStandardCount })}</span>
               </div>
               {showNonStandardList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
@@ -272,11 +300,11 @@ export function QuestionStructureReportCard({ report, importSummary, bankStatus,
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">Question {q.questionIndex + 1}:</span>
+                      <span className="font-bold text-primary">{t('report.questionNumber', { number: q.questionIndex + 1 })}</span>
                       <span className="text-muted-foreground">{q.reasons.join(' | ')}</span>
                     </div>
                     {onSelectQuestion && (
-                      <span className="text-[10px] text-primary font-bold hover:underline shrink-0">View question</span>
+                      <span className="text-[10px] text-primary font-bold hover:underline shrink-0">{t('report.viewQuestion')}</span>
                     )}
                   </div>
                 ))}

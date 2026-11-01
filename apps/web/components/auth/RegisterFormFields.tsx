@@ -6,6 +6,7 @@ import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
 import { DevCodeAndRetryMessage } from '@/components/shared/auth/AuthFormComponents'
 import { GoogleSignInButton } from '@/components/shared/auth/GoogleSignInButton'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface RegisterFormFieldsProps {
   form: {
@@ -40,13 +41,14 @@ function registerInputClasses(error?: string) {
 }
 
 function RegisterEmailField({ form, errors, sendingCode, sendCodeLabel, onChange, onSendCode, retryAfterSec, devCode }: Pick<RegisterFormFieldsProps, 'form' | 'errors' | 'sendingCode' | 'sendCodeLabel' | 'onChange' | 'onSendCode' | 'retryAfterSec' | 'devCode'>) {
+  const t = useTranslations()
   return (
     <div className="space-y-1.5">
-      <label htmlFor="email" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">Email</label>
+      <label htmlFor="email" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">{t('auth.registerEmail')}</label>
       <div className="relative flex gap-2 items-center">
         <input
           id="email" name="email" type="email" autoComplete="email" value={form.email}
-          onChange={onChange} placeholder="you@email.com" aria-invalid={Boolean(errors.email)}
+          onChange={onChange} placeholder={t('auth.registerEmail')} aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
           className={cn(registerInputClasses(errors.email), 'flex-1 min-w-0')}
         />
@@ -64,13 +66,14 @@ function RegisterEmailField({ form, errors, sendingCode, sendCodeLabel, onChange
 }
 
 function RegisterIdentityFields({ form, errors, onChange }: Pick<RegisterFormFieldsProps, 'form' | 'errors' | 'onChange'>) {
+  const t = useTranslations()
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4">
       <div className="space-y-1.5">
-        <label htmlFor="verificationCode" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">Verification Code</label>
+        <label htmlFor="verificationCode" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">{t('auth.verificationCode')}</label>
         <input
           id="verificationCode" name="verificationCode" type="text" inputMode="numeric" maxLength={6}
-          value={form.verificationCode} onChange={onChange} placeholder="6 digits"
+          value={form.verificationCode} onChange={onChange} placeholder={t('auth.codePlaceholder')}
           aria-invalid={Boolean(errors.verificationCode)}
           aria-describedby={errors.verificationCode ? 'verification-code-error' : undefined}
           className={cn(registerInputClasses(errors.verificationCode), 'tracking-widest font-mono text-center placeholder:tracking-normal placeholder:font-sans')}
@@ -78,10 +81,10 @@ function RegisterIdentityFields({ form, errors, onChange }: Pick<RegisterFormFie
         {errors.verificationCode && <p id="verification-code-error" role="alert" className="text-destructive text-xs font-bold ml-1 mt-1">{errors.verificationCode}</p>}
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="username" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">Username</label>
+        <label htmlFor="username" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">{t('auth.username')}</label>
         <input
           id="username" name="username" type="text" autoComplete="username" value={form.username}
-          onChange={onChange} placeholder="fquiz_user" aria-invalid={Boolean(errors.username)}
+          onChange={onChange} placeholder={t('auth.usernamePlaceholder')} aria-invalid={Boolean(errors.username)}
           aria-describedby={errors.username ? 'username-error' : undefined}
           className={registerInputClasses(errors.username)}
         />
@@ -101,6 +104,7 @@ function PasswordVisibilityInput({ id, label, value, visible, onToggle, onChange
   error?: string
   errorId: string
 }) {
+  const t = useTranslations()
   return (
     <div className="relative">
       <input
@@ -110,7 +114,7 @@ function PasswordVisibilityInput({ id, label, value, visible, onToggle, onChange
         className={cn(registerInputClasses(error), 'pr-11')}
       />
       <button
-        type="button" aria-label={`${visible ? 'Hide' : 'Show'} ${label}`}
+        type="button" aria-label={`${t(visible ? 'auth.hidePassword' : 'auth.showPassword')} ${label}`}
         onClick={() => onToggle(!visible)}
         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground p-1 transition-colors cursor-pointer"
       >
@@ -135,10 +139,11 @@ function PasswordStrengthMeter({ strength }: { strength: RegisterFormFieldsProps
 }
 
 function RegisterPasswordField({ form, errors, showPassword, onSetShowPassword, onChange, passwordStrength }: Pick<RegisterFormFieldsProps, 'form' | 'errors' | 'showPassword' | 'onSetShowPassword' | 'onChange' | 'passwordStrength'>) {
+  const t = useTranslations()
   return (
     <div className="space-y-1.5">
-      <label htmlFor="password" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">Password</label>
-      <PasswordVisibilityInput id="password" label="password" value={form.password} visible={showPassword} onToggle={onSetShowPassword} onChange={onChange} error={errors.password} errorId="password-error" />
+      <label htmlFor="password" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">{t('auth.password')}</label>
+      <PasswordVisibilityInput id="password" label={t('auth.password')} value={form.password} visible={showPassword} onToggle={onSetShowPassword} onChange={onChange} error={errors.password} errorId="password-error" />
       {errors.password && <p id="password-error" role="alert" className="text-destructive text-xs font-bold ml-1 mt-1">{errors.password}</p>}
       <PasswordStrengthMeter strength={passwordStrength} />
     </div>
@@ -146,21 +151,23 @@ function RegisterPasswordField({ form, errors, showPassword, onSetShowPassword, 
 }
 
 function RegisterConfirmPasswordField({ form, errors, showPassword, onSetShowPassword, onChange }: Pick<RegisterFormFieldsProps, 'form' | 'errors' | 'onChange'> & { showPassword: boolean; onSetShowPassword: (value: boolean) => void }) {
+  const t = useTranslations()
   return (
     <div className="space-y-1.5">
-      <label htmlFor="confirmPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">Confirm Password</label>
-      <PasswordVisibilityInput id="confirmPassword" label="password confirmation" value={form.confirmPassword} visible={showPassword} onToggle={onSetShowPassword} onChange={onChange} error={errors.confirmPassword} errorId="confirm-password-error" />
+      <label htmlFor="confirmPassword" className="text-xs font-bold text-card-foreground ml-1 uppercase tracking-wider">{t('auth.confirmPassword')}</label>
+      <PasswordVisibilityInput id="confirmPassword" label={t('auth.confirmPassword')} value={form.confirmPassword} visible={showPassword} onToggle={onSetShowPassword} onChange={onChange} error={errors.confirmPassword} errorId="confirm-password-error" />
       {errors.confirmPassword && <p id="confirm-password-error" role="alert" className="text-destructive text-xs font-bold ml-1 mt-1">{errors.confirmPassword}</p>}
     </div>
   )
 }
 
 function RegisterSubmitButton({ loading }: { loading: boolean }) {
+  const t = useTranslations()
   return (
     <button type="submit" disabled={loading} className="group relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3.5 sm:py-4 rounded-2xl transition-all duration-300 shadow-[0_8px_20px_rgba(93,123,111,0.25)] border border-primary/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden mt-3 sm:mt-4 cursor-pointer active:scale-[0.98]">
       <div className="absolute inset-0 bg-primary-foreground/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
       {loading ? <Loader2 className="w-5 h-5 animate-spin drop-shadow-2xs" /> : <>
-        <span className="tracking-wide drop-shadow-2xs">Complete Registration</span>
+        <span className="tracking-wide drop-shadow-2xs">{t('auth.registrationComplete')}</span>
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform drop-shadow-2xs" />
       </>}
     </button>
@@ -169,15 +176,16 @@ function RegisterSubmitButton({ loading }: { loading: boolean }) {
 
 export function RegisterFormFields({ form, showPassword, onSetShowPassword, errors, loading, sendingCode, devCode, retryAfterSec, passwordStrength, sendCodeLabel, onChange, onSendCode, onSubmit }: RegisterFormFieldsProps) {
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const t = useTranslations()
 
   return (
     <div className="relative bg-card/80 backdrop-blur-2xl rounded-[2.5rem] border border-border p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
       <div className="mb-6 text-center sm:text-left">
-        <h1 className="text-2xl sm:text-3xl font-black text-card-foreground tracking-tight leading-tight">Create Account</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-card-foreground tracking-tight leading-tight">{t('auth.createAccount')}</h1>
         <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm font-medium">
-          Start your learning journey with FQuiz
+          {t('auth.learningJourney')}
         </p>
       </div>
 
@@ -190,13 +198,13 @@ export function RegisterFormFields({ form, showPassword, onSetShowPassword, erro
       </form>
 
       {/* Google Sign In */}
-      <GoogleSignInButton text="Sign up with Google" />
+      <GoogleSignInButton text={t('auth.googleSignUp')} />
 
       {/* Footer */}
       <p className="mt-5 sm:mt-6 text-center text-xs sm:text-sm text-muted-foreground font-medium">
-        Already have an account?{' '}
+        {t('auth.alreadyHaveAccount')}{' '}
         <Link href="/login" className="font-bold text-primary hover:underline transition-colors">
-          Sign in now
+          {t('auth.signInNow')}
         </Link>
       </p>
     </div>

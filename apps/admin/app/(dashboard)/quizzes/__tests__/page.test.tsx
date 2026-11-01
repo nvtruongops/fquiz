@@ -2,6 +2,10 @@ import React from 'react'
 import { renderHook, resetHooks } from '../../../../../../test/hookHarness'
 import AdminQuizzesPage from '../page'
 
+jest.mock('@fquiz/ui/i18n', () => ({
+  useTranslations: () => (key: string) => key === 'admin.searchQuizzes' ? 'Search by title or category...' : key,
+}))
+
 const setPage = jest.fn()
 const setSearch = jest.fn()
 

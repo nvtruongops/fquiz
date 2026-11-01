@@ -6,6 +6,9 @@ let cleanups: (() => void)[] = []
 let dirty = false
 
 export const reactHooks = {
+  createContext(defaultValue: any) {
+    return { _currentValue: defaultValue, Provider: ({ children }: any) => children }
+  },
   useState(initial: any) {
     const index = cursor++
     if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial
@@ -18,6 +21,10 @@ export const reactHooks = {
   useRef(initial: any) {
     const index = cursor++
     return slots[index] ?? (slots[index] = { current: initial })
+  },
+  useContext(context: any) {
+    cursor++
+    return context._currentValue
   },
   useCallback(fn: any, deps: any[]) {
     const index = cursor++

@@ -1,5 +1,5 @@
-import { LegalSkeleton } from '@/components/legal/LegalSkeleton'
+import { LegalLoading } from '@/components/legal/LegalLoading'
 
 export default function PrivacyLoading() {
-  return <LegalSkeleton title="Privacy Policy" />
+  return <LegalLoading type="privacy" />
 }

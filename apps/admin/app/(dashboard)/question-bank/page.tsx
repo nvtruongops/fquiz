@@ -1,6 +1,6 @@
 import { connectDB } from '@/lib/db/mongodb'
 import { Category } from '@/lib/models/Category'
-import { QuestionBankTabs } from '@/components/question-bank/QuestionBankTabs'
+import { QuestionBankPageView } from '@/components/question-bank/QuestionBankPageView'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,26 +20,12 @@ export default async function QuestionBankPage() {
     }))
 
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Question Bank</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage, analyze quality, resolve conflicts, and synchronize questions by subject
-          </p>
-        </div>
-
-        <QuestionBankTabs categories={serialized} />
-      </div>
+      <QuestionBankPageView categories={serialized} />
     )
   } catch (error) {
     console.error('Error loading question bank page:', error)
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-bold text-destructive mb-2">Error Loading Data</h2>
-        <p className="text-muted-foreground text-sm">
-          Unable to connect to the database. Please try again.
-        </p>
-      </div>
+      <QuestionBankPageView error />
     )
   }
 }

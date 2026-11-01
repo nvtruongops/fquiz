@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface AnalyticsPaginationProps {
   currentPage: number
@@ -14,6 +17,7 @@ export function AnalyticsPagination({
   loading,
   onPageChange,
 }: AnalyticsPaginationProps) {
+  const t = useTranslations()
   if (totalPages <= 1) return null
 
   return (
@@ -24,7 +28,7 @@ export function AnalyticsPagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1 || loading}
       >
-        Previous
+        {t('common.previous')}
       </Button>
 
       <div className="flex items-center gap-1">
@@ -65,7 +69,7 @@ export function AnalyticsPagination({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages || loading}
       >
-        Next
+        {t('common.next')}
       </Button>
     </div>
   )

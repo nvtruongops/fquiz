@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { HelpCircle, Users } from 'lucide-react'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizStatsProps {
   numQuestions: number
@@ -9,6 +10,7 @@ interface QuizStatsProps {
 }
 
 export function QuizStats({ numQuestions, numAttempts }: QuizStatsProps) {
+  const t = useTranslations()
   return (
     <div className="inline-flex items-center gap-1.5 sm:gap-2 flex-wrap">
       {/* Total Questions */}
@@ -17,9 +19,9 @@ export function QuizStats({ numQuestions, numAttempts }: QuizStatsProps) {
           <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Questions:</span>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{t('quizStats.questions')}</span>
           <span className="font-black text-foreground text-xs sm:text-sm">{numQuestions}</span>
-          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">items</span>
+          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">{t('quizStats.items')}</span>
         </div>
       </div>
 
@@ -29,9 +31,9 @@ export function QuizStats({ numQuestions, numAttempts }: QuizStatsProps) {
           <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Attempts:</span>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{t('quizStats.attempts')}</span>
           <span className="font-black text-foreground text-xs sm:text-sm">{numAttempts ?? 0}</span>
-          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">plays</span>
+          <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">{t('quizStats.plays')}</span>
         </div>
       </div>
     </div>

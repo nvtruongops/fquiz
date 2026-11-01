@@ -1,6 +1,11 @@
 import React from 'react'
 import { SessionQueryError } from '../SessionQueryError'
 
+jest.mock('@fquiz/ui/i18n', () => {
+  const actual = jest.requireActual('@fquiz/ui/i18n')
+  return { ...actual, useTranslations: () => (key: string) => actual.translateMessage('en', key) }
+})
+
 function findElementWithText(node: React.ReactNode, text: string): React.ReactElement | undefined {
   if (Array.isArray(node)) {
     return node.map((child) => findElementWithText(child, text)).find(Boolean)
@@ -24,7 +29,7 @@ it('offers an in-place Retry action without invoking navigation actions', () => 
     onBack: back,
     onDashboard: dashboard,
   })!
-  const retryButton = findElementWithText(view, 'Retry')!
+  const retryButton = findElementWithText(view, 'Try again')!
 
   retryButton.props.onClick()
 
@@ -46,7 +51,7 @@ it('offers the same in-place Retry action in the mobile error layout', () => {
     onBack: jest.fn(),
     onDashboard: jest.fn(),
   })!
-  const retryButton = findElementWithText(view, 'Retry')!
+  const retryButton = findElementWithText(view, 'Try again')!
 
   retryButton.props.onClick()
 
@@ -65,5 +70,5 @@ it('hides Retry for terminal session errors', () => {
     onDashboard: jest.fn(),
   })!
 
-  expect(findElementWithText(view, 'Retry')).toBeUndefined()
+  expect(findElementWithText(view, 'Try again')).toBeUndefined()
 })

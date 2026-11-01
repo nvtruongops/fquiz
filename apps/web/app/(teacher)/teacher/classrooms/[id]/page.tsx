@@ -9,8 +9,10 @@ import { ClassroomDetailHeader } from '@/components/teacher/classroom/ClassroomD
 import { ClassroomAssignmentsTab } from '@/components/teacher/classroom/ClassroomAssignmentsTab'
 import { ClassroomMembersTab } from '@/components/teacher/classroom/ClassroomMembersTab'
 import { ClassroomModals } from '@/components/teacher/classroom/ClassroomModals'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 export default function TeacherClassroomDetailPage() {
+  const t = useTranslations()
   const params = useParams()
   const classroomId = params.id as string
 
@@ -55,7 +57,7 @@ export default function TeacherClassroomDetailPage() {
   if (loading) {
     return (
       <div className="py-16 text-center text-muted-foreground font-semibold">
-        Loading classroom details...
+        {t('teacherClassrooms.loadingDetails')}
       </div>
     )
   }
@@ -63,7 +65,7 @@ export default function TeacherClassroomDetailPage() {
   if (!classroom) {
     return (
       <div className="py-16 text-center text-destructive font-semibold">
-        Classroom not found.
+        {t('teacherClassrooms.notFound')}
       </div>
     )
   }
@@ -80,13 +82,13 @@ export default function TeacherClassroomDetailPage() {
             value="assignments"
             className="px-4 py-2 text-xs font-bold gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
           >
-            <BookOpen className="w-4 h-4" /> Assignments & Quizzes ({assignments.length})
+            <BookOpen className="w-4 h-4" /> {t('teacherClassrooms.assignmentsCount', { count: assignments.length })}
           </TabsTrigger>
           <TabsTrigger
             value="members"
             className="px-4 py-2 text-xs font-bold gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
           >
-            <Users className="w-4 h-4" /> Students ({members.length})
+            <Users className="w-4 h-4" /> {t('teacherClassrooms.studentsCount', { count: members.length })}
           </TabsTrigger>
         </TabsList>
 

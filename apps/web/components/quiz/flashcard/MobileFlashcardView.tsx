@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/ui/button'
 import { ScrollArea } from '@/components/shared/ui/scroll-area'
 import { UsageBadge } from '@/components/quiz/shared/UsageBadge'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 function SwipeIndicator({
   isDragging,
@@ -98,6 +99,7 @@ export function MobileFlashcardView({
   enableAnimation = true,
   taggedStatus,
 }: Readonly<MobileFlashcardViewProps>) {
+  const t = useTranslations()
   const [isFlipped, setIsFlipped] = useState(false)
   const [showExplanation, setShowExplanation] = useState(false)
   const touchCoordsRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false })
@@ -274,12 +276,12 @@ export function MobileFlashcardView({
                       <div className="flex items-center justify-end">
                         {taggedStatus === 'known' && (
                           <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                            <CheckCircle2 className="w-3 h-3 text-primary" /> Mastered
+                            <CheckCircle2 className="w-3 h-3 text-primary" /> {t('desktopFlashcard.mastered')}
                           </span>
                         )}
                         {taggedStatus === 'unknown' && (
                           <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
-                            <XCircle className="w-3 h-3 text-destructive" /> Still Learning
+                            <XCircle className="w-3 h-3 text-destructive" /> {t('desktopFlashcard.stillLearning')}
                           </span>
                         )}
                       </div>
@@ -287,7 +289,7 @@ export function MobileFlashcardView({
                   </div>
 
                   {question.image_url && (
-                    <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
+                    <img src={question.image_url} alt={t('questionUI.questionIllustration')} className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
                   )}
 
                   <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
@@ -309,7 +311,7 @@ export function MobileFlashcardView({
 
               <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
                 <div className="px-4 py-1.5 bg-muted/80 backdrop-blur-sm rounded-full border border-border flex items-center gap-2">
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">Tap to flip</span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">{t('mobileFlashcard.tapToFlip')}</span>
                   <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
                 </div>
               </div>
@@ -325,7 +327,7 @@ export function MobileFlashcardView({
                   <div className="flex flex-col min-h-full justify-center items-center py-4 space-y-5">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-success-bg border border-success-border rounded-full">
                       <CheckCircle2 className="h-3.5 w-3.5 text-success-fg" strokeWidth={2.5} />
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-success-fg">Correct Answer</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-success-fg">{t('questionUI.correctAnswer')}</span>
                     </div>
 
                     <div className="w-full space-y-2">
@@ -346,7 +348,7 @@ export function MobileFlashcardView({
                         className="h-10 px-4 rounded-xl bg-muted border border-border text-foreground text-[10px] font-black uppercase tracking-widest hover:bg-muted/80"
                       >
                         <Lightbulb className="mr-2 h-3.5 w-3.5 text-primary" />
-                        View explanation
+                        {t('mobileFlashcard.viewExplanation')}
                       </Button>
                     )}
                   </div>
@@ -357,7 +359,7 @@ export function MobileFlashcardView({
                     <div className="flex items-center justify-between mb-4 pt-4 px-4">
                       <div className="flex items-center gap-2 text-foreground">
                         <Lightbulb className="h-4 w-4 text-primary" strokeWidth={2.5} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Detailed Explanation</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('explanationUI.title')}</span>
                       </div>
                       <Button onClick={(e) => { e.stopPropagation(); setShowExplanation(false); }} variant="ghost" className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:bg-muted">
                         <XCircle className="h-5 w-5" />
@@ -370,7 +372,7 @@ export function MobileFlashcardView({
                     </ScrollArea>
                     <div className="p-4 pt-2">
                       <Button onClick={(e) => { e.stopPropagation(); setShowExplanation(false); }} className="w-full h-12 bg-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg">
-                        Close explanation
+                        {t('mobileFlashcard.closeExplanation')}
                       </Button>
                     </div>
                   </div>
@@ -387,7 +389,7 @@ export function MobileFlashcardView({
                     taggedStatus === 'unknown' && "ring-2 ring-destructive ring-offset-2 bg-destructive/20"
                   )}
                 >
-                  <XCircle className="mr-2 h-4 w-4" strokeWidth={2.5} /> Still Learning
+                  <XCircle className="mr-2 h-4 w-4" strokeWidth={2.5} /> {t('desktopFlashcard.stillLearning')}
                 </Button>
                 <Button
                   onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(true); }}
@@ -397,7 +399,7 @@ export function MobileFlashcardView({
                     taggedStatus === 'known' && "ring-2 ring-primary ring-offset-2"
                   )}
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" strokeWidth={2.5} /> Mastered
+                  <CheckCircle2 className="mr-2 h-4 w-4" strokeWidth={2.5} /> {t('desktopFlashcard.mastered')}
                 </Button>
               </div>
             </div>
@@ -435,6 +437,7 @@ function StaticMobileFlashcardCard({
   questionFontSize,
   optionFontSize,
 }: any) {
+  const t = useTranslations()
   return (
     <div className="w-full h-full flex flex-col bg-background select-none touch-none overflow-hidden overscroll-none">
       <div
@@ -466,12 +469,12 @@ function StaticMobileFlashcardCard({
                   <div className="flex items-center justify-end">
                     {taggedStatus === 'known' && (
                       <span className="flex items-center gap-1 text-[10px] uppercase font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                        <CheckCircle2 className="w-3 h-3 text-primary" /> Mastered
+                        <CheckCircle2 className="w-3 h-3 text-primary" /> {t('desktopFlashcard.mastered')}
                       </span>
                     )}
                     {taggedStatus === 'unknown' && (
                       <span className="flex items-center gap-1 text-[10px] uppercase font-black text-destructive bg-destructive/10 px-2.5 py-0.5 rounded-full border border-destructive/20">
-                        <XCircle className="w-3 h-3 text-destructive" /> Still Learning
+                        <XCircle className="w-3 h-3 text-destructive" /> {t('desktopFlashcard.stillLearning')}
                       </span>
                     )}
                   </div>
@@ -479,7 +482,7 @@ function StaticMobileFlashcardCard({
               </div>
 
               {question.image_url && (
-                <img src={question.image_url} alt="Q" className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
+                <img src={question.image_url} alt={t('questionUI.questionIllustration')} className="max-h-[100px] w-auto object-contain rounded-xl mx-auto mb-2" />
               )}
 
               <h2 className={cn("font-normal text-card-foreground text-center leading-relaxed px-1", questionFontSize)}>
@@ -539,7 +542,7 @@ function StaticMobileFlashcardCard({
                   >
                     <div className="flex items-center">
                       <Lightbulb className="mr-2 h-3.5 w-3.5 text-primary" />
-                      Detailed Explanation
+                      {t('explanationUI.title')}
                     </div>
                     {showExplanation ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
@@ -567,7 +570,7 @@ function StaticMobileFlashcardCard({
                   taggedStatus === 'unknown' && "ring-2 ring-destructive ring-offset-2 bg-destructive/20"
                 )}
               >
-                <XCircle className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> Still Learning
+                <XCircle className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> {t('desktopFlashcard.stillLearning')}
               </Button>
               <Button
                 onClick={(e) => { e.stopPropagation(); setIsFlipped(false); onAnswer(true); }}
@@ -577,13 +580,13 @@ function StaticMobileFlashcardCard({
                   taggedStatus === 'known' && "ring-2 ring-primary ring-offset-2"
                 )}
               >
-                <CheckCircle2 className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> Mastered
+                <CheckCircle2 className="mr-1.5 h-4 w-4" strokeWidth={2.5} /> {t('desktopFlashcard.mastered')}
               </Button>
             </div>
           ) : (
             <div className="mt-3 pt-3 border-t border-border flex justify-center z-20">
               <Button onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} variant="outline" className="w-full max-w-xs h-12 rounded-xl border-border text-foreground font-black uppercase tracking-wider text-[10px] bg-muted/60">
-                Show Answer
+                {t('mobileFlashcard.showAnswer')}
               </Button>
             </div>
           )}

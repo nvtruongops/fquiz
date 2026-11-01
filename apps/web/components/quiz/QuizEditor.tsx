@@ -9,12 +9,7 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 const QuizImportPanel = dynamic(
   () => import('@/components/quiz/question-bank/QuizImportPanel').then((m) => m.QuizImportPanel),
   {
-    loading: () => (
-      <div className="flex items-center justify-center p-8 bg-card rounded-2xl border border-border">
-        <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-        <span className="text-xs font-bold text-muted-foreground">Loading quiz import tool...</span>
-      </div>
-    ),
+    loading: QuizImportToolLoading,
     ssr: false,
   }
 )
@@ -27,6 +22,17 @@ import { QuestionEditorCard } from '@/components/quiz/editor/QuestionEditorCard'
 import { EditorProgressHub } from '@/components/quiz/editor/EditorProgressHub'
 import { EditorControlPanel } from '@/components/quiz/editor/EditorControlPanel'
 import { useQuizEditor } from '@/hooks/useQuizEditor'
+import { useTranslations } from '@fquiz/ui/i18n'
+
+function QuizImportToolLoading() {
+  const t = useTranslations()
+  return (
+    <div className="flex items-center justify-center p-8 bg-card rounded-2xl border border-border">
+      <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+      <span className="text-xs font-bold text-muted-foreground">{t('quizEditor.loadingImportTool')}</span>
+    </div>
+  )
+}
 
 interface Props {
   initialData?: Partial<QuizFormData>
@@ -48,6 +54,7 @@ interface Props {
 }
 
 export function QuizEditor(props: Props) {
+  const t = useTranslations()
   const {
     initialData,
     quizId,
@@ -141,7 +148,7 @@ export function QuizEditor(props: Props) {
           <div className="flex-1 w-full space-y-6">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-2xl font-bold text-primary">
-                {quizId ? 'Edit Quiz' : 'Create New Quiz'}
+                {t(quizId ? 'quizEditor.editQuiz' : 'quizEditor.createQuiz')}
               </h1>
             </div>
 
@@ -157,7 +164,7 @@ export function QuizEditor(props: Props) {
                 <CardContent className="pt-6 text-center">
                   <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground font-medium">
-                    Please select a subject above to continue creating quiz
+                    {t('quizEditor.selectSubjectHint')}
                   </p>
                 </CardContent>
               </Card>
@@ -179,7 +186,7 @@ export function QuizEditor(props: Props) {
                         }, 0)
                       }}
                     >
-                      {showImportPanel ? 'Hide JSON/TXT file upload' : 'Upload JSON/TXT file'}
+                      {showImportPanel ? t('quizEditor.hideImportFile') : t('quizEditor.uploadImportFile')}
                     </Button>
                   </div>
                 )}
@@ -248,7 +255,7 @@ export function QuizEditor(props: Props) {
                     onClick={addQuestion}
                     className="h-16 px-12 rounded-2xl bg-card border-2 border-primary text-primary font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all shadow-lg hover:shadow-xl"
                   >
-                    + Add Next Question
+                    {t('quizEditor.addNextQuestion')}
                   </Button>
                 </div>
               </>

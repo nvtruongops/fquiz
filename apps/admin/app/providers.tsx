@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@fquiz/ui'
+import { LocaleProvider } from '@fquiz/ui/i18n'
 import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
@@ -20,6 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
+    <LocaleProvider>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
@@ -28,5 +30,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
+    </LocaleProvider>
   )
 }

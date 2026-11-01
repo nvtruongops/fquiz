@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Loader2, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react'
 import type { Category } from '@/hooks/quiz/types'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface QuizEditorMetadataCardProps {
   categories: Category[]
@@ -44,16 +45,17 @@ export function QuizEditorMetadataCard({
   onApplyTargetCount,
   currentQuestionsCount,
 }: QuizEditorMetadataCardProps) {
+  const t = useTranslations()
   const isCategorySelected = Boolean(categoryId)
 
   return (
     <Card className="border-border bg-card shadow-xs">
       <CardHeader className="pb-3 border-b border-border/60">
         <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
-          <span>1. Category &amp; Quiz Code</span>
+          <span>{t('adminQuizMetadata.section')}</span>
           {!isCategorySelected && (
             <Badge variant="outline" className="text-[10px] text-warning-fg border-warning-border bg-warning-bg">
-              Awaiting category selection
+              {t('adminQuizMetadata.awaitingCategory')}
             </Badge>
           )}
         </CardTitle>
@@ -63,11 +65,11 @@ export function QuizEditorMetadataCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-1.5">
             <label htmlFor="category-select-trigger" className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1">
-              Category <span className="text-destructive">*</span>
+              {t('adminQuizMetadata.category')} <span className="text-destructive">*</span>
             </label>
             <Select value={categoryId} onValueChange={onSelectCategory}>
-              <SelectTrigger id="category-select-trigger" aria-label="Select quiz category" className="h-10 bg-background">
-                <SelectValue placeholder="— Click to select a category —" />
+              <SelectTrigger id="category-select-trigger" aria-label={t('adminQuizMetadata.selectCategoryAria')} className="h-10 bg-background">
+                <SelectValue placeholder={t('adminQuizMetadata.selectCategoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
@@ -77,20 +79,20 @@ export function QuizEditorMetadataCard({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">Category containing quizzes and question bank</p>
+            <p className="text-[11px] text-muted-foreground">{t('adminQuizMetadata.categoryHint')}</p>
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="quiz-course-code" className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center gap-1">
-                Quiz Code <span className="text-destructive">*</span>
+                {t('adminQuizMetadata.quizCode')} <span className="text-destructive">*</span>
               </span>
               {isCheckingCode && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" aria-hidden="true" />}
             </label>
             <div className="relative">
               <Input
                 id="quiz-course-code"
-                placeholder="Enter quiz code..."
+                placeholder={t('adminQuizMetadata.codePlaceholder')}
                 value={courseCode}
                 onChange={(e) => onChangeCourseCode(e.target.value.toUpperCase())}
                 className={`font-mono uppercase h-10 ${
@@ -113,10 +115,13 @@ export function QuizEditorMetadataCard({
             </div>
             {codeDuplicateInfo?.exists ? (
               <p className="text-[11px] font-semibold text-destructive">
-                ⚠️ This quiz code already exists ({codeDuplicateInfo.quiz?.course_code} - {codeDuplicateInfo.quiz?.questionCount} {codeDuplicateInfo.quiz?.questionCount === 1 ? 'question' : 'questions'})
+                {t(codeDuplicateInfo.quiz?.questionCount === 1 ? 'adminQuizMetadata.duplicateCodeSingular' : 'adminQuizMetadata.duplicateCodePlural', {
+                  code: codeDuplicateInfo.quiz?.course_code ?? '',
+                  count: codeDuplicateInfo.quiz?.questionCount ?? 0,
+                })}
               </p>
             ) : (
-              <p className="text-[11px] text-muted-foreground">Unique identifier for this quiz in the system</p>
+              <p className="text-[11px] text-muted-foreground">{t('adminQuizMetadata.uniqueCodeHint')}</p>
             )}
           </div>
         </div>
@@ -124,11 +129,11 @@ export function QuizEditorMetadataCard({
         {/* Row 2: Description */}
         <div className="space-y-1.5">
           <label htmlFor="quiz-description" className="text-xs font-bold text-foreground uppercase tracking-wider">
-            Description / Quiz Notes
+            {t('adminQuizMetadata.description')}
           </label>
           <Input
             id="quiz-description"
-            placeholder="Enter description or quiz notes..."
+            placeholder={t('adminQuizMetadata.descriptionPlaceholder')}
             value={description}
             onChange={(e) => onChangeDescription(e.target.value)}
             className="h-10"
@@ -140,13 +145,13 @@ export function QuizEditorMetadataCard({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
             <span>
-              Quick question scaffolding: <strong>{currentQuestionsCount}</strong> current question(s)
+              {t('adminQuizMetadata.quickScaffolding', { count: currentQuestionsCount })}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Input
               id="quiz-target-count"
-              aria-label="Target question count"
+              aria-label={t('adminQuizMetadata.targetCount')}
               type="number"
               placeholder="60"
               value={targetCount}
@@ -163,7 +168,7 @@ export function QuizEditorMetadataCard({
               disabled={typeof targetCount !== 'number' || targetCount <= currentQuestionsCount}
               className="h-8 text-xs cursor-pointer"
             >
-              Apply
+              {t('adminQuizMetadata.apply')}
             </Button>
           </div>
         </div>

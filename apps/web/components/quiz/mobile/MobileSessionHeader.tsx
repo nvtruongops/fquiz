@@ -5,6 +5,7 @@ import { Menu, PenTool, Hand, XCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { QuizTimer } from '@/components/quiz/shared/QuizTimer'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface MobileSessionHeaderProps {
   categoryName?: string
@@ -41,6 +42,7 @@ export function MobileSessionHeader({
   onOpenQuestionMap,
   onOpenExitConfirm,
 }: MobileSessionHeaderProps) {
+  const t = useTranslations()
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-card shadow-sm text-card-foreground pt-[env(safe-area-inset-top)]">
       <div className="flex items-center justify-between px-2 py-3">
@@ -49,7 +51,7 @@ export function MobileSessionHeader({
             variant="ghost"
             size="icon"
             onClick={onOpenQuestionMap}
-            aria-label="Open question navigation map"
+            aria-label={t('mobileSession.openQuestionMap')}
             className="h-11 w-11 rounded-xl bg-muted text-primary hover:bg-muted/80 cursor-pointer shrink-0"
           >
             <Menu aria-hidden="true" className="h-5 w-5" />
@@ -66,12 +68,12 @@ export function MobileSessionHeader({
               variant="ghost"
               size="icon"
               onClick={toggleNoteMode}
-              aria-label="Toggle vocabulary lookup pen"
+              aria-label={t('mobileSession.toggleLookupPen')}
               aria-pressed={isNoteMode}
               title={
                 isNoteMode
-                  ? 'Vocabulary Lookup Pen ON (Click to return to quiz)'
-                  : 'Enable Vocabulary Lookup Pen (Highlight text without selecting answers)'
+                  ? t('mobileSession.lookupPenOn')
+                  : t('mobileSession.lookupPenOff')
               }
               className={cn(
                 'h-11 w-11 rounded-xl transition-all flex items-center justify-center cursor-pointer shrink-0',
@@ -88,12 +90,12 @@ export function MobileSessionHeader({
             variant="ghost"
             size="icon"
             onClick={toggleHandedness}
-            aria-label="Toggle handedness"
+            aria-label={t('mobileSession.toggleHandedness')}
             aria-pressed={isRightHanded}
             title={
               isRightHanded
-                ? 'Right-handed mode (Click to switch to Left)'
-                : 'Left-handed mode (Click to switch to Right)'
+                ? t('mobileSession.rightHanded')
+                : t('mobileSession.leftHanded')
             }
             className={cn(
               'h-11 w-11 rounded-xl transition-all flex items-center justify-center gap-0.5 cursor-pointer shrink-0',
@@ -115,14 +117,14 @@ export function MobileSessionHeader({
               className="text-primary text-sm"
             />
             <p className="text-[10px] font-bold text-muted-foreground">
-              {answeredCount}/{effectiveTotal} answered
+              {t('mobileSession.answeredCount', { count: answeredCount, total: effectiveTotal })}
             </p>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onOpenExitConfirm}
-            aria-label="Exit quiz session"
+            aria-label={t('mobileSession.exitSession')}
             className="h-11 w-11 rounded-xl bg-incorrect-bg text-destructive hover:bg-incorrect-bg/80 cursor-pointer shrink-0"
           >
             <XCircle aria-hidden="true" className="h-5 w-5" />
@@ -135,7 +137,7 @@ export function MobileSessionHeader({
         aria-valuenow={answeredCount}
         aria-valuemin={0}
         aria-valuemax={effectiveTotal}
-        aria-label="Session progress"
+        aria-label={t('mobileSession.sessionProgress')}
       >
         <div
           className="h-full w-full bg-primary origin-left transition-transform duration-300 ease-out will-change-transform"

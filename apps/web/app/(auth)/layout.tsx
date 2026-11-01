@@ -4,10 +4,12 @@ import React from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Sparkles, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/core/utils/cn'
+import { LocaleSwitcher, useTranslations } from '@fquiz/ui/i18n'
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter()
   const pathname = usePathname()
+  const t = useTranslations()
   
   const isRegister = pathname === '/register'
   const isLogin = pathname === '/login'
@@ -21,8 +23,11 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
           className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-card/90 backdrop-blur-md border border-border shadow-xs text-card-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:translate-y-0 font-bold text-[11px] sm:text-xs tracking-wider cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>Back to Home</span>
+          <span>{t('auth.backHome')}</span>
         </button>
+      </div>
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-50">
+        <LocaleSwitcher />
       </div>
 
       {/* Background Aurora Mesh (Optimized lightweight blur) */}
@@ -46,7 +51,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
       {/* Footer Decoration */}
       <div className="relative z-10 mt-4 sm:mt-10 flex items-center gap-2 text-muted-foreground text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
         <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span>Smart Learning Platform</span>
+        <span>{t('auth.smartLearning')}</span>
       </div>
     </div>
   )

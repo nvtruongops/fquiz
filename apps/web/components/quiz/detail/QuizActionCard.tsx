@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/shared/ui/button'
 import { Badge } from '@/components/shared/ui/badge'
 import { cn } from '@/lib/core/utils/cn'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 const QuizResumeSessionModal = dynamic(
   () => import('@/components/quiz/shared/QuizResumeSessionModal'),
@@ -72,6 +73,7 @@ export function QuizActionCard({
   hasHistory,
   latestSessionId,
 }: QuizActionCardProps) {
+  const t = useTranslations()
   const router = useRouter()
   const [guestReminderOpen, setGuestReminderOpen] = React.useState(false)
 
@@ -90,17 +92,17 @@ export function QuizActionCard({
         <div className="border-b border-border pb-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">
-              Study Options
+              {t('quizAction.studyOptions')}
             </h3>
             <Badge
               variant="outline"
               className="bg-primary/10 text-primary border-primary/20 font-black text-[9px] uppercase px-2 py-0.5 rounded-full"
             >
-              Personalized
+              {t('quizAction.personalized')}
             </Badge>
           </div>
           <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
-            Configure your session to match your study preferences
+            {t('quizAction.configureSession')}
           </p>
         </div>
 
@@ -111,8 +113,8 @@ export function QuizActionCard({
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-extrabold uppercase tracking-wider text-foreground truncate">Auto-Grading</p>
-              <p className="text-[8px] font-bold text-muted-foreground uppercase truncate">100% Graded</p>
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-foreground truncate">{t('quizAction.autoGrading')}</p>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase truncate">{t('quizAction.allGraded')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-2 sm:p-2.5 transition-colors">
@@ -120,8 +122,8 @@ export function QuizActionCard({
               <Zap className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-extrabold uppercase tracking-wider text-foreground truncate">Instant Feedback</p>
-              <p className="text-[8px] font-bold text-muted-foreground uppercase truncate">Instant Results</p>
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-foreground truncate">{t('quizAction.instantFeedback')}</p>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase truncate">{t('quizAction.instantResults')}</p>
             </div>
           </div>
         </div>
@@ -133,16 +135,16 @@ export function QuizActionCard({
               <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">
                 1
               </span>
-              Study Mode
+              {t('quizAction.studyMode')}
             </span>
             <span className="text-[10px] font-semibold text-muted-foreground">
-              3 study modes
+              {t('quizAction.studyModesCount', { count: 3 })}
             </span>
           </div>
 
           <div
             role="radiogroup"
-            aria-label="Study Mode"
+            aria-label={t('quizAction.studyMode')}
             className="grid grid-cols-1 gap-2"
           >
             {/* Immediate Mode */}
@@ -150,7 +152,7 @@ export function QuizActionCard({
               type="button"
               role="radio"
               aria-checked={selectedMode === 'immediate'}
-              aria-label="Instant Answers: Show explanations and answers immediately after each question"
+              aria-label={`${t('quizAction.instantAnswers')}: ${t('quizAction.instantAnswersDescription')}`}
               onClick={() => onModeChange('immediate')}
               className={cn(
                 'p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer group relative overflow-hidden',
@@ -171,9 +173,9 @@ export function QuizActionCard({
                   <Sparkles className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-xs text-foreground">Instant Answers</p>
+                  <p className="font-bold text-xs text-foreground">{t('quizAction.instantAnswers')}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">
-                    Show explanations and answers immediately after each question
+                    {t('quizAction.instantAnswersDescription')}
                   </p>
                 </div>
               </div>
@@ -189,7 +191,7 @@ export function QuizActionCard({
               type="button"
               role="radio"
               aria-checked={selectedMode === 'review'}
-              aria-label="Exam Simulation: Realistic test environment, graded upon completion"
+              aria-label={`${t('quizAction.examSimulation')}: ${t('quizAction.examSimulationDescription')}`}
               onClick={() => onModeChange('review')}
               className={cn(
                 'p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer group relative overflow-hidden',
@@ -210,9 +212,9 @@ export function QuizActionCard({
                   <FileText className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-xs text-foreground">Exam Simulation</p>
+                  <p className="font-bold text-xs text-foreground">{t('quizAction.examSimulation')}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">
-                    Realistic test environment, graded upon completion
+                    {t('quizAction.examSimulationDescription')}
                   </p>
                 </div>
               </div>
@@ -228,7 +230,7 @@ export function QuizActionCard({
               type="button"
               role="radio"
               aria-checked={selectedMode === 'flashcard'}
-              aria-label="Flashcard Study: Flip cards to memorize key terminology and concepts"
+              aria-label={`${t('quizAction.flashcardStudy')}: ${t('quizAction.flashcardDescription')}`}
               onClick={() => onModeChange('flashcard')}
               className={cn(
                 'p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer group relative overflow-hidden',
@@ -249,9 +251,9 @@ export function QuizActionCard({
                   <BookOpen className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-xs text-foreground">Flashcard Study</p>
+                  <p className="font-bold text-xs text-foreground">{t('quizAction.flashcardStudy')}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">
-                    Flip cards to memorize key terminology and concepts
+                    {t('quizAction.flashcardDescription')}
                   </p>
                 </div>
               </div>
@@ -271,13 +273,13 @@ export function QuizActionCard({
               <span className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black">
                 2
               </span>
-              Question Order
+              {t('quizAction.questionOrder')}
             </span>
           </div>
 
           <div
             role="radiogroup"
-            aria-label="Question Order"
+            aria-label={t('quizAction.questionOrder')}
             className="grid grid-cols-2 gap-2"
           >
             {/* Sequential */}
@@ -285,7 +287,7 @@ export function QuizActionCard({
               type="button"
               role="radio"
               aria-checked={selectedDifficulty === 'sequential'}
-              aria-label="Default Order: Sequential from question 1 to end"
+              aria-label={`${t('quizAction.defaultOrder')}: ${t('quizAction.sequentialDescription')}`}
               onClick={() => onDifficultyChange('sequential')}
               className={cn(
                 'p-2.5 rounded-xl border-2 text-left transition-all duration-200 flex items-start gap-2 cursor-pointer group relative overflow-hidden',
@@ -306,7 +308,7 @@ export function QuizActionCard({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
-                  <p className="font-bold text-[11px] sm:text-xs text-foreground truncate">Default</p>
+                  <p className="font-bold text-[11px] sm:text-xs text-foreground truncate">{t('quizAction.defaultOrder')}</p>
                   {selectedDifficulty === 'sequential' && (
                     <span className="w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                       <Check className="w-2 h-2 stroke-[3]" aria-hidden="true" />
@@ -314,7 +316,7 @@ export function QuizActionCard({
                   )}
                 </div>
                 <p className="text-[9.5px] text-muted-foreground mt-0.5 leading-tight">
-                  Question 1 to end
+                  {t('quizAction.sequentialDescription')}
                 </p>
               </div>
             </button>
@@ -324,7 +326,7 @@ export function QuizActionCard({
               type="button"
               role="radio"
               aria-checked={selectedDifficulty === 'random'}
-              aria-label="Random Shuffle: Randomize question positions in quiz"
+              aria-label={`${t('quizAction.shuffle')}: ${t('quizAction.randomizeDescription')}`}
               onClick={() => onDifficultyChange('random')}
               className={cn(
                 'p-2.5 rounded-xl border-2 text-left transition-all duration-200 flex items-start gap-2 cursor-pointer group relative overflow-hidden',
@@ -345,7 +347,7 @@ export function QuizActionCard({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
-                  <p className="font-bold text-[11px] sm:text-xs text-foreground truncate">Shuffle</p>
+                  <p className="font-bold text-[11px] sm:text-xs text-foreground truncate">{t('quizAction.shuffle')}</p>
                   {selectedDifficulty === 'random' && (
                     <span className="w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                       <Check className="w-2 h-2 stroke-[3]" aria-hidden="true" />
@@ -353,7 +355,7 @@ export function QuizActionCard({
                   )}
                 </div>
                 <p className="text-[9.5px] text-muted-foreground mt-0.5 leading-tight">
-                  Randomize question order
+                  {t('quizAction.randomizeDescription')}
                 </p>
               </div>
             </button>
@@ -371,12 +373,12 @@ export function QuizActionCard({
               {isStarting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  <span>Initializing...</span>
+                  <span>{t('quizAction.initializing')}</span>
                 </>
               ) : (
                 <>
                   <PlayCircle className="h-4 w-4" aria-hidden="true" />
-                  <span>Start Now</span>
+                  <span>{t('quizAction.startNow')}</span>
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </>
               )}
@@ -391,7 +393,7 @@ export function QuizActionCard({
             >
               <Link href={`/history/${quizId}/${latestSessionId}`}>
                 <History className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                View previous attempt
+                {t('quizAction.viewPreviousAttempt')}
               </Link>
             </Button>
           )}

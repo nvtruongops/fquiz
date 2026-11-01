@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, Lightbulb, HelpCircle, Sparkles, ChevronRight } 
 import { cn } from '@/lib/core/utils/cn'
 import { SessionQuestion, QuestionFeedback } from '@/lib/modules/quiz/types/session'
 import { InteractiveText } from '@/components/shared/selection/InteractiveText'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface ExplanationPanelProps {
   question: SessionQuestion
@@ -31,6 +32,7 @@ function StaticExplanationView({
   questionId?: string
   onClose?: () => void
 }) {
+  const t = useTranslations()
   return (
     <div className="flex h-full flex-col font-sans space-y-3 text-card-foreground">
       {/* Panel Header */}
@@ -41,10 +43,10 @@ function StaticExplanationView({
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground leading-none">
-              Detailed Explanation
+              {t('explanationUI.title')}
             </h3>
             <p className="text-[10px] font-medium text-muted-foreground mt-1">
-              Answer analysis & concepts
+              {t('explanationUI.subtitle')}
             </p>
           </div>
         </div>
@@ -62,12 +64,12 @@ function StaticExplanationView({
               {lastAnswerResult?.isCorrect ? (
                 <>
                   <CheckCircle2 className="w-3 h-3 text-success-fg" />
-                  Correct
+                  {t('explanationUI.correct')}
                 </>
               ) : (
                 <>
                   <XCircle className="w-3 h-3 text-destructive" />
-                  Incorrect
+                  {t('explanationUI.incorrect')}
                 </>
               )}
             </span>
@@ -78,7 +80,7 @@ function StaticExplanationView({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              title="Collapse explanation panel"
+              title={t('explanationUI.collapse')}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -97,22 +99,22 @@ function StaticExplanationView({
                   <XCircle className="h-4 w-4 text-destructive shrink-0" />
                 )}
                 <span className={lastAnswerResult?.isCorrect ? "text-success-fg" : "text-destructive"}>
-                  {lastAnswerResult?.isCorrect ? 'Correct!' : 'Incorrect!'}
+                  {lastAnswerResult?.isCorrect ? t('explanationUI.correctBang') : t('explanationUI.incorrectBang')}
                 </span>
               </div>
               {correctLetters && (
                 <p className="font-semibold text-success-fg">
-                  Correct answer: {correctLetters}
+                  {t('explanationUI.correctAnswer', { letters: correctLetters })}
                 </p>
               )}
               <p className="whitespace-pre-wrap leading-relaxed text-foreground">
-                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : 'No explanation available for this question.'}
+                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : t('explanationUI.noExplanationAvailable')}
               </p>
             </div>
           </div>
         ) : (
           <div className="border border-dashed border-border bg-muted p-4 rounded-xl text-xs text-muted-foreground">
-            <p>No explanation yet. Detailed explanation will appear here after answering in practice mode.</p>
+            <p>{t('explanationUI.staticEmpty')}</p>
           </div>
         )}
       </div>
@@ -135,6 +137,7 @@ function AnimatedExplanationView({
   questionId?: string
   onClose?: () => void
 }) {
+  const t = useTranslations()
   return (
     <div className="flex h-full flex-col font-sans space-y-3 text-card-foreground">
       {/* Panel Header */}
@@ -145,10 +148,10 @@ function AnimatedExplanationView({
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground leading-none">
-              Detailed Explanation
+              {t('explanationUI.title')}
             </h3>
             <p className="text-[10px] font-medium text-muted-foreground mt-1">
-              Answer analysis & concepts
+              {t('explanationUI.subtitle')}
             </p>
           </div>
         </div>
@@ -166,12 +169,12 @@ function AnimatedExplanationView({
               {lastAnswerResult?.isCorrect ? (
                 <>
                   <CheckCircle2 className="w-3 h-3 text-success-fg" />
-                  Correct
+                  {t('explanationUI.correct')}
                 </>
               ) : (
                 <>
                   <XCircle className="w-3 h-3 text-destructive" />
-                  Incorrect
+                  {t('explanationUI.incorrect')}
                 </>
               )}
             </span>
@@ -182,7 +185,7 @@ function AnimatedExplanationView({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer"
-              title="Collapse explanation panel"
+              title={t('explanationUI.collapse')}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -211,12 +214,12 @@ function AnimatedExplanationView({
               <div className="space-y-0.5">
                 <h4 className="font-bold text-xs sm:text-sm">
                   {lastAnswerResult?.isCorrect
-                    ? 'Correct! You answered correctly.'
-                    : 'Incorrect! Please read the explanation below.'}
+                    ? t('explanationUI.correctSentence')
+                    : t('explanationUI.incorrectSentence')}
                 </h4>
                 {correctLetters && (
                   <p className="text-xs font-semibold text-success-fg mt-1">
-                    Correct answer: {correctLetters}
+                    {t('explanationUI.correctAnswer', { letters: correctLetters })}
                   </p>
                 )}
               </div>
@@ -226,10 +229,10 @@ function AnimatedExplanationView({
             <div className="bg-card backdrop-blur-md rounded-2xl border border-border p-4 shadow-sm space-y-2 text-card-foreground">
               <div className="flex items-center gap-1.5 text-xs font-bold text-card-foreground">
                 <Sparkles className="w-3.5 h-3.5 text-warning-fg" />
-                <span>Explanation:</span>
+                <span>{t('explanationUI.explanation')}</span>
               </div>
               <div className="text-xs sm:text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap font-medium pt-1">
-                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : 'No explanation provided for this question.'}
+                {explanationText ? <InteractiveText content={explanationText} sourceType="quiz" sourceId={questionId} /> : t('explanationUI.noExplanationProvided')}
               </div>
             </div>
           </div>
@@ -240,10 +243,10 @@ function AnimatedExplanationView({
             </div>
             <div className="space-y-1">
               <h4 className="text-xs font-bold text-card-foreground">
-                No explanation yet
+                {t('explanationUI.noExplanationYet')}
               </h4>
               <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
-                After choosing an answer in practice mode, the detailed explanation will appear here.
+                {t('explanationUI.practiceEmpty')}
               </p>
             </div>
           </div>

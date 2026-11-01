@@ -14,6 +14,7 @@ import { Loader2, Search, X } from 'lucide-react'
 import { useQuestionBankAnalytics } from '@/hooks/question-bank/useQuestionBankAnalytics'
 import { AnalyticsQuestionItem } from './question-bank/analytics/AnalyticsQuestionItem'
 import { AnalyticsPagination } from './question-bank/analytics/AnalyticsPagination'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface Category {
   _id: string
@@ -25,6 +26,7 @@ interface QuestionBankAnalyticsProps {
 }
 
 export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps) {
+  const t = useTranslations()
   const {
     loading,
     data,
@@ -41,9 +43,9 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-card-foreground">Question Bank Analytics</h2>
+          <h2 className="text-2xl font-bold text-card-foreground">{t('questionBankAnalytics.analyticsTitle')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Analyze question usage frequency and quality across subjects
+            {t('questionBankAnalytics.analyticsDescription')}
           </p>
         </div>
 
@@ -51,8 +53,8 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
-              placeholder="Search questions, answers, codes..."
-              aria-label="Search questions, answers, codes"
+              placeholder={t('questionBankAnalytics.searchPlaceholder')}
+              aria-label={t('questionBankAnalytics.searchLabel')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-8 text-sm"
@@ -61,7 +63,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                aria-label="Clear search query"
+                aria-label={t('questionBankAnalytics.clearSearch')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -70,11 +72,11 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[220px]" aria-label="Filter by category">
-              <SelectValue placeholder="Select category" />
+            <SelectTrigger className="w-full sm:w-[220px]" aria-label={t('questionBankAnalytics.filterCategory')}>
+              <SelectValue placeholder={t('questionBankAnalytics.selectCategory')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t('questionBankAnalytics.allCategories')}</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   {cat.name}
@@ -88,7 +90,7 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            {debouncedSearch ? 'Questions Found' : 'Total Questions'}
+            {debouncedSearch ? t('questionBankAnalytics.questionsFound') : t('questionBankAnalytics.totalQuestions')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -104,20 +106,20 @@ export function QuestionBankAnalytics({ categories }: QuestionBankAnalyticsProps
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             {debouncedSearch
-              ? `No questions found matching "${debouncedSearch}"`
+              ? t('questionBankAnalytics.emptySearch', { query: debouncedSearch })
               : selectedCategory !== 'all'
-              ? 'No questions found in this category'
-              : 'No questions in the Question Bank'}
+              ? t('questionBankAnalytics.emptyCategory')
+              : t('questionBankAnalytics.emptyBank')}
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Questions List</CardTitle>
+              <CardTitle>{t('questionBankAnalytics.questionsList')}</CardTitle>
               {data.total_pages > 1 && (
                 <div className="text-sm text-muted-foreground">
-                  Page {data.page} of {data.total_pages} (Total: {data.total_questions} questions)
+                  {t('questionBankAnalytics.page')} {data.page} {t('questionBankAnalytics.of')} {data.total_pages} {t('questionBankAnalytics.total', { count: data.total_questions })}
                 </div>
               )}
             </div>

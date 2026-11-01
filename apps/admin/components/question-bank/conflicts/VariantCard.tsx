@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface VariantCardProps {
   group: {
@@ -17,6 +20,7 @@ interface VariantCardProps {
 }
 
 export function VariantCard({ group, selected, onClick }: VariantCardProps) {
+  const t = useTranslations()
   return (
     <div
       onClick={onClick}
@@ -37,9 +41,9 @@ export function VariantCard({ group, selected, onClick }: VariantCardProps) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Badge variant={selected ? 'default' : 'secondary'}>
-            {group.count} {group.count === 1 ? 'quiz uses' : 'quizzes use'} this answer
+            {t('adminConflict.answerUsage', { count: group.count })}
           </Badge>
-          {selected && <span className="text-success-fg font-bold text-sm">✓ Selected</span>}
+          {selected && <span className="text-success-fg font-bold text-sm">✓ {t('common.selected')}</span>}
         </div>
       </div>
 
@@ -69,14 +73,14 @@ export function VariantCard({ group, selected, onClick }: VariantCardProps) {
 
       {group.sample_variant.explanation && (
         <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-1 font-medium">Explanation:</p>
+          <p className="text-xs text-muted-foreground mb-1 font-medium">{t('common.explanation')}</p>
           <p className="text-xs text-card-foreground">{group.sample_variant.explanation}</p>
         </div>
       )}
 
       <div className="mt-3 pt-3 border-t border-border">
         <p className="text-xs text-muted-foreground mb-1 font-medium">
-          Currently used in:
+          {t('adminConflict.currentlyUsedIn')}
         </p>
         <div className="flex flex-wrap gap-1">
           {group.quizzes.slice(0, 5).map((code) => (

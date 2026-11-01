@@ -10,6 +10,7 @@ import { Category, QuizFormData } from '@/lib/modules/quiz/types/quiz'
 import { Check, Loader2, AlertCircle } from 'lucide-react'
 import { useDebounce } from '@/hooks/shared/useDebounce'
 import { getCsrfTokenFromCookie } from '@/lib/core/security/csrf'
+import { useTranslations } from '@fquiz/ui/i18n'
 
 interface EditorMetadataFormProps {
   form: QuizFormData
@@ -24,6 +25,7 @@ export function EditorMetadataForm({
   categories, 
   quizId
 }: EditorMetadataFormProps) {
+  const t = useTranslations()
   const [checkingCode, setCheckingCode] = React.useState(false)
   const [codeDuplicate, setCodeDuplicate] = React.useState<{
     exists: boolean
@@ -89,11 +91,11 @@ export function EditorMetadataForm({
             </div>
             <div className="flex-1">
               <CardTitle className="text-primary text-lg font-black uppercase tracking-tight flex items-center justify-between">
-                <span>Select Subject {!form.category_id && <span className="text-destructive">*</span>}</span>
+                <span>{t('editorMetadata.selectSubject')} {!form.category_id && <span className="text-destructive">*</span>}</span>
               </CardTitle>
               {!form.category_id && (
                 <p className="text-[11px] font-bold text-amber-500 mt-0.5">
-                   Required: Please select a subject before continuing
+                   {t('editorMetadata.subjectRequired')}
                 </p>
               )}
             </div>
@@ -114,17 +116,17 @@ export function EditorMetadataForm({
                 ? "border-2 border-amber-500/80 bg-card text-muted-foreground" 
                 : "border-border bg-card text-foreground focus:ring-2 focus:ring-primary/20"
             )}>
-              <SelectValue placeholder="— Select a subject to begin —" />
+              <SelectValue placeholder={t('editorMetadata.subjectPlaceholder')} />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl p-2">
               {categories.length === 0 ? (
                 <SelectItem value="__no_category__" disabled className="font-bold text-muted-foreground italic">
-                  — No subjects available —
+                  {t('editorMetadata.noSubjects')}
                 </SelectItem>
               ) : (
                 <>
                   <SelectItem value="__placeholder__" disabled className="text-muted-foreground font-bold">
-                    — Select subject —
+                    {t('editorMetadata.selectSubjectOption')}
                   </SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat._id} value={cat._id} className="font-bold text-foreground rounded-xl hover:bg-primary/10 transition-colors cursor-pointer">
@@ -143,11 +145,11 @@ export function EditorMetadataForm({
           <CardContent className="pt-8 px-6 sm:px-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="course-code-input" className="text-[11px] font-black text-primary uppercase tracking-wider">Course Code / Quiz Code</label>
+                <label htmlFor="course-code-input" className="text-[11px] font-black text-primary uppercase tracking-wider">{t('editorMetadata.courseCode')}</label>
                 <div className="relative">
                   <Input
                     id="course-code-input"
-                    placeholder="Enter quiz code or exam reference..."
+                    placeholder={t('editorMetadata.codePlaceholder')}
                     value={form.course_code}
                     maxLength={150}
                     onChange={(e) => setForm(p => ({ ...p, course_code: e.target.value }))}
@@ -167,8 +169,12 @@ export function EditorMetadataForm({
                   <div className="flex items-start gap-1.5 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 animate-in fade-in duration-200">
                     <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Duplicate code warning:</span> Code <code className="bg-amber-500/20 px-1 py-0.5 rounded font-mono font-bold text-amber-500">{codeDuplicate.quiz?.course_code}</code> is already in use by quiz: <span className="font-semibold">&quot;{codeDuplicate.quiz?.title}&quot;</span> ({codeDuplicate.quiz?.questionCount} questions).
-                      <p className="text-[11px] text-amber-500/80 mt-0.5">Please change the code (e.g., {form.course_code}_V2) to avoid duplicates.</p>
+                      <span className="font-bold">{t('editorMetadata.duplicateTitle')}</span> {t('editorMetadata.duplicateDescription', {
+                        code: codeDuplicate.quiz?.course_code ?? '',
+                        title: codeDuplicate.quiz?.title ?? '',
+                        count: codeDuplicate.quiz?.questionCount ?? 0,
+                      })}
+                      <p className="text-[11px] text-amber-500/80 mt-0.5">{t('editorMetadata.duplicateHint', { code: form.course_code })}</p>
                     </div>
                   </div>
                 )}
@@ -176,12 +182,12 @@ export function EditorMetadataForm({
                 {codeDuplicate && !codeDuplicate.exists && form.course_code.trim() && !checkingCode && (
                   <div className="flex items-center gap-1.5 text-xs text-primary font-bold px-1">
                     <Check className="w-3.5 h-3.5 text-primary" />
-                    <span>Code available (no duplicates)</span>
+                    <span>{t('editorMetadata.codeAvailable')}</span>
                   </div>
                 )}
               </div>
               <div className="space-y-2">
-                <span className="text-[11px] font-black text-primary uppercase tracking-wider block">Visibility Status</span>
+                <span className="text-[11px] font-black text-primary uppercase tracking-wider block">{t('editorMetadata.visibility')}</span>
                 <Select
                   value={form.status}
                   onValueChange={(v: any) => setForm(p => ({ ...p, status: v }))}
@@ -190,17 +196,17 @@ export function EditorMetadataForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
-                    <SelectItem value="published" className="font-bold text-xs">Public (Published)</SelectItem>
-                    <SelectItem value="draft" className="font-bold text-xs">Draft</SelectItem>
+                    <SelectItem value="published" className="font-bold text-xs">{t('editorMetadata.published')}</SelectItem>
+                    <SelectItem value="draft" className="font-bold text-xs">{t('editorMetadata.draft')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor="description-textarea" className="text-sm font-bold text-primary">Quiz Description (Optional)</label>
+              <label htmlFor="description-textarea" className="text-sm font-bold text-primary">{t('editorMetadata.description')}</label>
               <Textarea
                 id="description-textarea"
-                placeholder="Enter a brief description for this quiz..."
+                placeholder={t('editorMetadata.descriptionPlaceholder')}
                 value={form.description}
                 onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
                 className="rounded-xl border-border min-h-[100px] focus:ring-primary bg-background text-foreground"
