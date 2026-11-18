@@ -61,7 +61,7 @@ export async function GET(
 
     const rawQuizzes = await Quiz.find(
       query,
-      { title: 1, questionCount: 1, course_code: 1, category_id: 1 }
+      { title: 1, questionCount: 1, studentCount: 1, course_code: 1, category_id: 1 }
     ).lean()
 
     // Deduplicate quizzes by string ID

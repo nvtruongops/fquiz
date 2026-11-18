@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { motion } from 'framer-motion'
-import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Pin } from 'lucide-react'
+import { Trophy, HelpCircle, ExternalLink, Bookmark, Loader2, Pin, Users } from 'lucide-react'
 import { useToast } from '@/store/shared/toast-store'
 import { useAuthPrompt } from '@/store/shared/auth-prompt-store'
 import { withCsrfHeaders } from '@/lib/core/security/csrf'
@@ -321,9 +321,15 @@ export default function CourseQuizList({
 
                       {/* Metadata & Status Badge */}
                       <div className="space-y-2">
-                        <div className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-primary" />
-                          {t('courseQuiz.questionCount', { count: quiz.questionCount })}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            {t('courseQuiz.questionCount', { count: quiz.questionCount })}
+                          </span>
+                          <span className="flex items-center gap-1.5" title={t('courseQuiz.attemptsLabel')}>
+                            <Users className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            {t('courseQuiz.attempts', { count: quiz.studentCount ?? 0 })}
+                          </span>
                         </div>
 
                         <div>

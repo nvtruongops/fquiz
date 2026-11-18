@@ -6,6 +6,7 @@ export interface QuizItem {
   _id: string
   title: string
   questionCount: number
+  studentCount: number
   bestScore: number | null
 }
 
