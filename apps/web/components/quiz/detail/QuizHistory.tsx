@@ -205,7 +205,7 @@ export function QuizHistory({
         </div>
       ) : (
         <div className="space-y-3">
-          <div ref={listContainerRef} className="space-y-2.5 max-h-[380px] overflow-y-auto quiz-scroll pr-1.5 scroll-smooth">
+          <div ref={listContainerRef} className="space-y-2.5">
             {displayedAttempts.map((attempt, idx) => {
               const attemptIndexInTotal = startIndex + idx
               const attemptNumber = attempts.length - attemptIndexInTotal

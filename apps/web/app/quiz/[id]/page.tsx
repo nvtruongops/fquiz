@@ -106,7 +106,7 @@ export default function QuizDetailPage() {
           </div>
 
           {/* Action Card & Stats Column */}
-          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 lg:sticky lg:top-24 h-fit order-2 lg:order-2">
+          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8 h-fit order-2 lg:order-2">
             <div className="quiz-detail-section">
               <QuizActionCard
                 quizId={resolvedQuizId}

@@ -54,7 +54,7 @@ function AppLayoutContent({ children, user, showNavbar = true, className, fixedH
               showNavbar ? `${desktopLeftPadding} pt-0` : 'pt-0'
             )}
           >
-            <div className="w-full flex-1 min-h-0 px-2 sm:px-5 py-2 animate-in fade-in duration-500 overflow-y-auto overscroll-contain pb-20 lg:pb-6">
+            <div className="w-full flex-1 min-h-0 px-2 sm:px-5 py-2 animate-in fade-in duration-500 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] pb-20 lg:pb-6">
               {children}
             </div>
           </main>

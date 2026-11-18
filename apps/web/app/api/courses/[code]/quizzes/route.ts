@@ -61,7 +61,7 @@ export async function GET(
 
     const rawQuizzes = await Quiz.find(
       query,
-      { title: 1, questionCount: 1, studentCount: 1, course_code: 1, category_id: 1 }
+      { title: 1, questionCount: 1, course_code: 1, category_id: 1 }
     ).lean()
 
     // Deduplicate quizzes by string ID
@@ -85,6 +85,34 @@ export async function GET(
     }
 
     const quizIds = quizzes.map((q) => q._id)
+
+    // Live unique-participant counts (same rule as the quiz detail page).
+    // Quiz.studentCount is denormalized and can lag, so it is not used here.
+    const participantCountMap = new Map<string, number>()
+    if (quizIds.length > 0) {
+      const participantRows = await QuizSession.aggregate<{ _id: mongoose.Types.ObjectId; total: number }>([
+        { $match: { quiz_id: { $in: quizIds } } },
+        {
+          $group: {
+            _id: {
+              quiz: '$quiz_id',
+              who: {
+                $cond: [
+                  { $eq: ['$is_guest', true] },
+                  { $ifNull: ['$guest_id', '$_id'] },
+                  { $ifNull: ['$student_id', '$_id'] },
+                ],
+              },
+            },
+          },
+        },
+        { $group: { _id: '$_id.quiz', total: { $sum: 1 } } },
+      ])
+      for (const row of participantRows) {
+        participantCountMap.set(row._id.toString(), row.total)
+      }
+    }
+
     let scoreMap = new Map<string, number>()
 
     let savedQuizIds: string[] = []
@@ -133,7 +161,12 @@ export async function GET(
         .filter((id): id is string => Boolean(id))
     }
 
-    const result = quizzes.map((quiz: any) => mapCourseQuizRow(quiz, scoreMap))
+    const result = quizzes.map((quiz: any) =>
+      mapCourseQuizRow(
+        { ...quiz, studentCount: participantCountMap.get(quiz._id.toString()) ?? 0 },
+        scoreMap
+      )
+    )
 
     // Sort: Chronological by semester key (newest year & season first, FE before RE)
     result.sort((a, b) => compareQuizBySemester(a.title, b.title))
